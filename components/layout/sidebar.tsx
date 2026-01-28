@@ -1,8 +1,9 @@
 "use client";
-import { useTheme } from "next-themes";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useTheme } from "next-themes";
 import {
   SquaresFour,
   Users,
@@ -12,6 +13,8 @@ import {
   Gear,
   CaretDown,
   SidebarSimple,
+  Sun,
+  Moon,
 } from "phosphor-react";
 
 const navigation = [
@@ -25,7 +28,7 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
+  const { setTheme, theme } = useTheme();
 
   return (
     <aside className="flex w-60 flex-col border-r bg-neutral-100 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800">
@@ -41,8 +44,15 @@ export function Sidebar() {
         />
       </div>
 
-      <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-        Toggle theme
+      <button
+        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        className="flex items-center justify-center gap-2 rounded-lg bg-neutral-200 dark:bg-neutral-800 px-3 py-2 text-sm text-neutral-600 dark:text-neutral-400"
+        aria-label="Toggle theme"
+      >
+        <Sun size={16} className="hidden dark:block" />
+        <Moon size={16} className="block dark:hidden" />
+        <span className="hidden dark:inline">Light mode</span>
+        <span className="inline dark:hidden">Dark mode</span>
       </button>
 
       {/* Navigation */}
@@ -97,11 +107,11 @@ export function Sidebar() {
             <div className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
               Angel Uriostegui
             </div>
-            <div className="text-xs text-neutral-400 dark:text-neutral-500">
+            <div className="text-xs text-neutral-500 dark:text-neutral-500">
               Pro Plan
             </div>
           </div>
-          <CaretDown className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
+          <CaretDown className="h-4 w-4 text-neutral-500" />
         </div>
       </div>
     </aside>

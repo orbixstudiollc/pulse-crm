@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, Figtree } from "next/font/google";
 import "@/styles/globals.css";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const figtree = Figtree({
   variable: "--font-figtree",
