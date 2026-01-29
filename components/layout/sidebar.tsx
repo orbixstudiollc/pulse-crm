@@ -76,7 +76,7 @@ export function Sidebar() {
         {!collapsed && (
           <button
             onClick={() => setCollapsed(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-800"
+            className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-800"
             aria-label="Collapse sidebar"
           >
             <SidebarSimple
@@ -162,11 +162,10 @@ export function Sidebar() {
       </div>
 
       {/* User */}
-      {/* User */}
       <div
         className={cn(
-          "border-t border-neutral-200 dark:border-neutral-800 py-6",
-          collapsed ? "px-3" : "px-5",
+          "border-t border-neutral-200 dark:border-neutral-800",
+          collapsed ? "py-5 px-3" : "py-6 px-5",
         )}
       >
         <div className="relative flex items-center gap-3">
@@ -185,7 +184,7 @@ export function Sidebar() {
           {/* User info */}
           <div
             className={cn(
-              "flex-1 overflow-hidden space-y-1 transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
+              "flex-1 overflow-hidden space-y-1 transition-all duration-200 ease-in-out",
               collapsed
                 ? "w-0 opacity-0 translate-x-2 pointer-events-none"
                 : "w-auto opacity-100 translate-x-0",

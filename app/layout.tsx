@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Instrument_Serif, Figtree } from "next/font/google";
+import { Figtree, Instrument_Serif } from "next/font/google";
 import "@/styles/globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
