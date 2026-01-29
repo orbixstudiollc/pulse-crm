@@ -1,14 +1,26 @@
+"use client";
+
 import { cn } from "@/lib/utils";
-import { ButtonHTMLAttributes, forwardRef } from "react";
+import { ButtonHTMLAttributes, forwardRef, ReactNode } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "outline";
   size?: "sm" | "md" | "lg";
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    { className, variant = "primary", size = "md", children, ...props },
+    {
+      className,
+      variant = "primary",
+      size = "md",
+      leftIcon,
+      rightIcon,
+      children,
+      ...props
+    },
     ref,
   ) => {
     return (
@@ -27,15 +39,17 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               variant === "outline",
           },
           {
-            "h-8 px-3 text-xs": size === "sm",
-            "h-10 px-4 text-sm": size === "md",
-            "h-12 px-6 text-base": size === "lg",
+            "h-8 px-3 text-xs gap-1.5": size === "sm",
+            "h-11 px-3 text-sm gap-2": size === "md",
+            "h-12 px-6 text-base gap-2.5": size === "lg",
           },
           className,
         )}
         {...props}
       >
+        {leftIcon}
         {children}
+        {rightIcon}
       </button>
     );
   },

@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui";
+import { Button, ExportIcon, PlusIcon } from "@/components/ui";
 
 export default function CustomersPage() {
   return (
@@ -8,7 +8,14 @@ export default function CustomersPage() {
           Customers
         </h1>
 
-        <Button>Add Lead</Button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" leftIcon={<ExportIcon size={20} />}>
+            Export
+          </Button>
+          <Button leftIcon={<PlusIcon size={20} weight="bold" />}>
+            Add Customer
+          </Button>
+        </div>
       </div>
     </div>
   );

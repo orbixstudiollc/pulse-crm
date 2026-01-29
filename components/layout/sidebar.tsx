@@ -5,25 +5,25 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-  Gauge,
-  Users,
-  Funnel,
-  CurrencyDollar,
-  Activity,
-  Gear,
-  CaretDown,
-  SidebarSimple,
-} from "phosphor-react";
+  CaretDownIcon,
+  CurrencyDollarIcon,
+  FunnelIcon,
+  GaugeIcon,
+  GearIcon,
+  PulseIcon,
+  SidebarSimpleIcon,
+  UsersIcon,
+} from "../ui";
 import { UpgradeCard } from "../upgrade-card";
 import Image from "next/image";
 
 const navigation = [
-  { name: "Overview", href: "/dashboard/overview", icon: Gauge },
-  { name: "Customers", href: "/dashboard/customers", icon: Users },
-  { name: "Leads", href: "/dashboard/leads", icon: Funnel },
-  { name: "Sales", href: "/dashboard/sales", icon: CurrencyDollar },
-  { name: "Activity", href: "/dashboard/activity", icon: Activity },
-  { name: "Settings", href: "/dashboard/settings", icon: Gear },
+  { name: "Overview", href: "/dashboard/overview", icon: GaugeIcon },
+  { name: "Customers", href: "/dashboard/customers", icon: UsersIcon },
+  { name: "Leads", href: "/dashboard/leads", icon: FunnelIcon },
+  { name: "Sales", href: "/dashboard/sales", icon: CurrencyDollarIcon },
+  { name: "Activity", href: "/dashboard/activity", icon: PulseIcon },
+  { name: "Settings", href: "/dashboard/settings", icon: GearIcon },
 ];
 
 export function Sidebar() {
@@ -79,7 +79,7 @@ export function Sidebar() {
             className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-800"
             aria-label="Collapse sidebar"
           >
-            <SidebarSimple
+            <SidebarSimpleIcon
               weight="regular"
               size={20}
               className="text-neutral-500 dark:text-neutral-400"
@@ -96,7 +96,7 @@ export function Sidebar() {
             className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-800"
             aria-label="Expand sidebar"
           >
-            <SidebarSimple
+            <SidebarSimpleIcon
               weight="regular"
               size={20}
               className="text-neutral-500 dark:text-neutral-400"
@@ -176,7 +176,7 @@ export function Sidebar() {
             width={40}
             height={40}
             className={cn(
-              "h-10 w-10 shrink-0 rounded-full object-cover transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]",
+              "h-10 w-10 shrink-0 rounded-full object-cover transition-transform duration-200 ease-in-out",
               collapsed ? "mx-auto" : "",
             )}
           />
@@ -197,7 +197,7 @@ export function Sidebar() {
           </div>
 
           {/* Caret */}
-          <CaretDown
+          <CaretDownIcon
             className={cn(
               "h-4 w-4 text-neutral-500 transition-opacity duration-150",
               collapsed ? "opacity-0" : "opacity-100",

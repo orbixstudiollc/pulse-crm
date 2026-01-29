@@ -1,4 +1,9 @@
-import { Button } from "@/components/ui";
+import {
+  Button,
+  CalendarBlankIcon,
+  CaretDownIcon,
+  PlusIcon,
+} from "@/components/ui";
 
 export default function OverviewPage() {
   return (
@@ -8,7 +13,18 @@ export default function OverviewPage() {
           Welcome back, Angel
         </h1>
 
-        <Button>Add Lead</Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            leftIcon={<CalendarBlankIcon size={20} />}
+            rightIcon={<CaretDownIcon size={20} />}
+          >
+            This Month
+          </Button>
+          <Button leftIcon={<PlusIcon size={20} weight="bold" />}>
+            Add Lead
+          </Button>
+        </div>
       </div>
     </div>
   );

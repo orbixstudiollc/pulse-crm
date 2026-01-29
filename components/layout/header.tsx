@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { MagnifyingGlass, CalendarBlank, Bell } from "phosphor-react";
+import { BellIcon, CalendarBlankIcon, MagnifyingGlassIcon } from "../ui";
 
 export function Header() {
   const pathname = usePathname();
@@ -31,7 +31,7 @@ export function Header() {
       <div className="flex items-center gap-3">
         {/* Search */}
         <div className="flex items-center gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 py-2">
-          <MagnifyingGlass size={16} className="text-neutral-500" />
+          <MagnifyingGlassIcon size={16} className="text-neutral-500" />
           <span className="text-sm text-neutral-500">Search...</span>
           <kbd className="ml-4 rounded bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 text-xs text-neutral-500">
             ⌘K
@@ -40,7 +40,7 @@ export function Header() {
 
         {/* Calendar */}
         <button className="flex h-10 w-10 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800">
-          <CalendarBlank
+          <CalendarBlankIcon
             size={20}
             className="text-neutral-600 dark:text-neutral-400"
           />
@@ -48,7 +48,10 @@ export function Header() {
 
         {/* Notifications */}
         <button className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800">
-          <Bell size={20} className="text-neutral-600 dark:text-neutral-400" />
+          <BellIcon
+            size={20}
+            className="text-neutral-600 dark:text-neutral-400"
+          />
           <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-green-500" />
         </button>
       </div>
