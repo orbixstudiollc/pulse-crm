@@ -14,8 +14,8 @@ import {
   SidebarSimpleIcon,
   UsersIcon,
 } from "../ui";
-import { UpgradeCard } from "../upgrade-card";
 import Image from "next/image";
+import { UpgradeCard } from "../features";
 
 const navigation = [
   { name: "Overview", href: "/dashboard/overview", icon: GaugeIcon },
@@ -38,7 +38,6 @@ export function Sidebar() {
         collapsed ? "w-18" : "w-60",
       )}
     >
-      {/* Logo */}
       <div
         className={cn(
           "flex items-center gap-3 px-5 py-6",
@@ -46,37 +45,26 @@ export function Sidebar() {
         )}
       >
         <div className="relative flex items-center">
-          {/* Full logo */}
-          <span
-            className={cn(
-              "absolute left-0 font-serif text-4xl italic text-neutral-950 dark:text-neutral-50",
-              "transition-all duration-200 ease-in-out",
-              collapsed
-                ? "opacity-0 translate-x-2 pointer-events-none"
-                : "opacity-100 translate-x-0",
-            )}
+          <Link
+            href="/dashboard/overview"
+            className="relative flex items-center h-10"
           >
-            Pulse
-          </span>
-
-          {/* Collapsed logo */}
-          <span
-            className={cn(
-              "font-serif text-4xl italic text-neutral-950 dark:text-neutral-50",
-              "transition-all duration-200 ease-in-out",
-              collapsed
-                ? "opacity-100 translate-x-0 scale-105 tracking-tight"
-                : "opacity-0 -translate-x-2 pointer-events-none",
-            )}
-          >
-            P
-          </span>
+            <span
+              className={cn(
+                "font-serif text-4xl italic text-neutral-950 dark:text-neutral-50",
+                "transition-all duration-300 ease-out",
+                collapsed ? "scale-95" : "scale-100",
+              )}
+            >
+              {collapsed ? "P" : "Pulse"}
+            </span>
+          </Link>
         </div>
 
         {!collapsed && (
           <button
             onClick={() => setCollapsed(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-800"
+            className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-800"
             aria-label="Collapse sidebar"
           >
             <SidebarSimpleIcon
@@ -136,8 +124,10 @@ export function Sidebar() {
 
                   <span
                     className={cn(
-                      "overflow-hidden transition-all duration-150 ease-in-out",
-                      collapsed ? "w-0 opacity-0" : "w-auto opacity-100 ml-3",
+                      "overflow-hidden whitespace-nowrap transition-all duration-300 ease-out",
+                      collapsed
+                        ? "max-w-0 opacity-0 ml-0"
+                        : "max-w-37.5 opacity-100 ml-3",
                     )}
                   >
                     {item.name}

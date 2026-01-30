@@ -1,7 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { BellIcon, CalendarBlankIcon, MagnifyingGlassIcon } from "../ui";
+import { CalendarBlankIcon, IconButton } from "../ui";
+import { SearchBar } from "./SearchBar";
+import { NotificationsDropdown } from "../features";
 
 export function Header() {
   const pathname = usePathname();
@@ -30,30 +32,19 @@ export function Header() {
       {/* Actions */}
       <div className="flex items-center gap-3">
         {/* Search */}
-        <div className="flex items-center gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 py-2">
-          <MagnifyingGlassIcon size={16} className="text-neutral-500" />
-          <span className="text-sm text-neutral-500">Search...</span>
-          <kbd className="ml-4 rounded bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 text-xs text-neutral-500">
-            ⌘K
-          </kbd>
-        </div>
+        <SearchBar />
 
-        {/* Calendar */}
-        <button className="flex h-10 w-10 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800">
-          <CalendarBlankIcon
-            size={20}
-            className="text-neutral-600 dark:text-neutral-400"
-          />
-        </button>
+        <IconButton
+          icon={
+            <CalendarBlankIcon
+              size={20}
+              className="text-neutral-600 dark:text-neutral-400"
+            />
+          }
+          aria-label="Calendar"
+        />
 
-        {/* Notifications */}
-        <button className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800">
-          <BellIcon
-            size={20}
-            className="text-neutral-600 dark:text-neutral-400"
-          />
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-green-500" />
-        </button>
+        <NotificationsDropdown />
       </div>
     </header>
   );

@@ -1,4 +1,4 @@
-import { Button, Progress } from "./ui";
+import { Button, Progress } from "../ui";
 
 interface UpgradeCardProps {
   current: number;

@@ -14,4 +14,8 @@ export {
   BellIcon,
   PlusIcon,
   ExportIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  ArrowElbowDownLeftIcon,
+  CheckIcon,
 } from "@phosphor-icons/react";
