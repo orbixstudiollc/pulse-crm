@@ -10,6 +10,7 @@ import {
   FunnelIcon,
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
+import { useClickOutside } from "@/hooks";
 
 interface Notification {
   id: string;
@@ -94,36 +95,7 @@ export function NotificationsDropdown() {
 
   const unreadCount = items.filter((n) => !n.read).length;
 
-  // Close on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-      }
-    };
-
-    if (open) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
-
-  // Close on escape
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-
-    if (open) {
-      document.addEventListener("keydown", handleEscape);
-    }
-
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [open]);
+  useClickOutside(dropdownRef, () => setOpen(false), open);
 
   const markAllAsRead = () => {
     setItems((prev) => prev.map((n) => ({ ...n, read: true })));

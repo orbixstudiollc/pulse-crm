@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { CalendarBlankIcon, IconButton } from "../ui";
 import { SearchBar } from "./SearchBar";
-import { NotificationsDropdown } from "../features";
+import { CalendarDropdown, NotificationsDropdown } from "../features";
 
 export function Header() {
   const pathname = usePathname();
@@ -31,19 +31,8 @@ export function Header() {
 
       {/* Actions */}
       <div className="flex items-center gap-3">
-        {/* Search */}
         <SearchBar />
-
-        <IconButton
-          icon={
-            <CalendarBlankIcon
-              size={20}
-              className="text-neutral-600 dark:text-neutral-400"
-            />
-          }
-          aria-label="Calendar"
-        />
-
+        <CalendarDropdown />
         <NotificationsDropdown />
       </div>
     </header>
