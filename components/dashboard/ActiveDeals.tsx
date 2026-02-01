@@ -87,7 +87,7 @@ export function ActiveDeals({
                 key={stage.name}
                 className={cn(
                   stage.color,
-                  "rounded-lg transition-all duration-200 cursor-pointer",
+                  "rounded-md transition-all duration-200 cursor-pointer",
                   isHovered && "scale-y-110 brightness-110",
                   isOtherHovered && "opacity-40",
                 )}
