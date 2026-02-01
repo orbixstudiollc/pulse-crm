@@ -35,7 +35,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               variant === "secondary",
             "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800":
               variant === "ghost",
-            "border border-neutral-200 dark:border-neutral-700 bg-transparent text-neutral-950 dark:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800":
+            "border border-neutral-200 dark:border-neutral-800 bg-transparent text-neutral-950 dark:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800":
               variant === "outline",
           },
           {

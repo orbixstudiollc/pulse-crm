@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { CalendarBlankIcon, IconButton } from "../ui";
 import { SearchBar } from "./SearchBar";
 import { CalendarDropdown, NotificationsDropdown } from "../features";
 

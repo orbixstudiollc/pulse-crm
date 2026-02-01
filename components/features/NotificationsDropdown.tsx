@@ -131,9 +131,8 @@ export function NotificationsDropdown() {
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+                className="text-xs font-medium text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
               >
-                <CheckIcon size={14} />
                 Mark all as read
               </button>
             )}

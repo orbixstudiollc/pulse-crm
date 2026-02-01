@@ -7,6 +7,7 @@ export {
   CaretRightIcon,
   GaugeIcon,
   UsersIcon,
+  UsersThreeIcon,
   FunnelIcon,
   CurrencyDollarIcon,
   PulseIcon,
@@ -20,5 +21,7 @@ export {
   ArrowDownIcon,
   ArrowRightIcon,
   ArrowElbowDownLeftIcon,
+  ArrowUpRightIcon,
   CheckIcon,
+  TrophyIcon,
 } from "@phosphor-icons/react";
