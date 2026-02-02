@@ -141,12 +141,14 @@ export function ActivityFeed({
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
-                {activity.title}
-              </p>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
-                {activity.description}
-              </p>
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                  {activity.title}
+                </p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
+                  {activity.description}
+                </p>
+              </div>
 
               {/* Status + Time */}
               <div className="flex items-center gap-2 mt-1.5">

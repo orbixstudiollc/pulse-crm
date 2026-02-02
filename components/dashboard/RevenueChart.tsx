@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   AreaChart,
   Area,
@@ -10,11 +11,10 @@ import {
   CartesianGrid,
 } from "recharts";
 import {
-  CalendarBlankIcon,
-  CaretDownIcon,
   ArrowUpRightIcon,
-  Button,
   IconButton,
+  Dropdown,
+  yearOptions,
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
@@ -81,6 +81,8 @@ export function RevenueChart({
   data = defaultData,
   className,
 }: RevenueChartProps) {
+  const [year, setYear] = useState("this_year");
+
   return (
     <div
       className={cn(
@@ -95,14 +97,7 @@ export function RevenueChart({
         </h3>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            leftIcon={<CalendarBlankIcon size={20} />}
-            rightIcon={<CaretDownIcon size={20} />}
-          >
-            This Year
-          </Button>
-
+          <Dropdown options={yearOptions} value={year} onChange={setYear} />
           <IconButton
             icon={<ArrowUpRightIcon size={20} />}
             aria-label="Open in new tab"

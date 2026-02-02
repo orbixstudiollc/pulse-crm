@@ -2,15 +2,13 @@ import {
   ActiveDeals,
   ActivityFeed,
   LatestLeads,
+  PageHeader,
+  PageHeaderActions,
   RevenueChart,
   StatCard,
 } from "@/components/dashboard";
 import {
-  Button,
-  CalendarBlankIcon,
-  CaretDownIcon,
   CurrencyDollarIcon,
-  PlusIcon,
   TrophyIcon,
   UsersThreeIcon,
 } from "@/components/ui";
@@ -19,24 +17,9 @@ export default function OverviewPage() {
   return (
     <div className="space-y-4">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-2">
-          Welcome back, Angel
-        </h1>
-
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            leftIcon={<CalendarBlankIcon size={20} />}
-            rightIcon={<CaretDownIcon size={20} />}
-          >
-            This Month
-          </Button>
-          <Button leftIcon={<PlusIcon size={20} weight="bold" />}>
-            Add Lead
-          </Button>
-        </div>
-      </div>
+      <PageHeader title="Welcome back, Angel">
+        <PageHeaderActions />
+      </PageHeader>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

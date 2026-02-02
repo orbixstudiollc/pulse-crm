@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import {
-  CalendarBlankIcon,
-  CaretDownIcon,
   ArrowUpRightIcon,
   DotsThreeVerticalIcon,
   IconButton,
   Button,
   Badge,
+  Dropdown,
+  dateRangeOptions,
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
@@ -121,6 +121,7 @@ export function LatestLeads({
   className,
 }: LatestLeadsProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [dateRange, setDateRange] = useState("this_month");
   const leadsPerPage = 6;
   const startIndex = (currentPage - 1) * leadsPerPage + 1;
   const endIndex = Math.min(currentPage * leadsPerPage, totalLeads);
@@ -139,13 +140,11 @@ export function LatestLeads({
         </h3>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            leftIcon={<CalendarBlankIcon size={16} />}
-            rightIcon={<CaretDownIcon size={16} />}
-          >
-            This Month
-          </Button>
+          <Dropdown
+            options={dateRangeOptions}
+            value={dateRange}
+            onChange={setDateRange}
+          />
 
           <IconButton
             icon={
