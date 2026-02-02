@@ -1,6 +1,10 @@
-export { Button } from "./Button";
-export { Progress } from "./Progress";
-export { IconButton } from "./IconButton";
+export * from "./Button";
+export * from "./Progress";
+export * from "./IconButton";
+export * from "./Modal";
+export * from "./Input";
+export * from "./Select";
+export * from "./Textarea";
 export * from "./Icons";
 export * from "./Badge";
 export * from "./Dropdown";
