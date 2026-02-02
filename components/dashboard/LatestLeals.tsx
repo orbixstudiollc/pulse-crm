@@ -192,7 +192,7 @@ export function LatestLeads({
                 {/* Lead */}
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-[0.5px] border-neutral-200 dark:border-neutral-500/30 bg-neutral-100 dark:bg-neutral-500/15 text-sm font-medium text-neutral-600 dark:text-neutral-400">
                       {getInitials(lead.name)}
                     </div>
                     <div>

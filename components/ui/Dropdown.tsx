@@ -41,18 +41,12 @@ export function Dropdown({
         variant="outline"
         size={size}
         onClick={() => setOpen(!open)}
-        leftIcon={
-          icon && (
-            <span className="text-neutral-500 dark:text-neutral-400">
-              {icon}
-            </span>
-          )
-        }
+        leftIcon={icon}
         rightIcon={
           <CaretDownIcon
             size={16}
             className={cn(
-              "text-neutral-400 transition-transform duration-200",
+              "transition-transform duration-200",
               open && "rotate-180",
             )}
           />
