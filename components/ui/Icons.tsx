@@ -1,10 +1,12 @@
 "use client";
 
 export {
+  // Navigation & Layout
   SidebarSimpleIcon,
   CaretDownIcon,
   CaretLeftIcon,
   CaretRightIcon,
+  // Dashboard
   GaugeIcon,
   UsersIcon,
   UsersThreeIcon,
@@ -12,16 +14,20 @@ export {
   CurrencyDollarIcon,
   PulseIcon,
   GearIcon,
+  // Actions
   CalendarBlankIcon,
   MagnifyingGlassIcon,
   BellIcon,
   PlusIcon,
   ExportIcon,
+  DotsThreeVerticalIcon,
+  // Arrows
   ArrowUpIcon,
   ArrowDownIcon,
   ArrowRightIcon,
   ArrowElbowDownLeftIcon,
   ArrowUpRightIcon,
+  // Status
   CheckIcon,
   TrophyIcon,
 } from "@phosphor-icons/react";

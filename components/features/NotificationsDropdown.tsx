@@ -22,24 +22,6 @@ interface Notification {
   type: "lead" | "deal" | "contact" | "system";
 }
 
-// const iconStyles: Record<string, string> = {
-//   lead: "border-[0.5px] border-green-200 dark:border-green-400/30 bg-green-100 dark:bg-green-400/15 text-green-600 dark:text-green-400",
-//   deal: "border-[0.5px] border-blue-200 dark:border-blue-400/30 bg-blue-100 dark:bg-blue-400/15 text-blue-600 dark:text-blue-400",
-//   contact:
-//     "border-[0.5px] border-purple-200 dark:border-purple-400/30 bg-purple-100 dark:bg-purple-400/15 text-purple-600 dark:text-purple-400",
-//   system:
-//     "border-[0.5px] border-neutral-200 dark:border-neutral-400/30 bg-neutral-100 dark:bg-neutral-400/15 text-neutral-600 dark:text-neutral-400",
-// };
-
-const iconStyles: Record<string, string> = {
-  lead: "border-[0.5px] border-neutral-200 dark:border-neutral-400/30 bg-neutral-100 dark:bg-neutral-400/15 text-neutral-950 dark:text-neutral-50",
-  deal: "border-[0.5px] border-neutral-200 dark:border-neutral-400/30 bg-neutral-100 dark:bg-neutral-400/15 text-neutral-950 dark:text-neutral-50",
-  contact:
-    "border-[0.5px] border-neutral-200 dark:border-neutral-400/30 bg-neutral-100 dark:bg-neutral-400/15 text-neutral-950 dark:text-neutral-50",
-  system:
-    "border-[0.5px] border-neutral-200 dark:border-neutral-400/30 bg-neutral-100 dark:bg-neutral-400/15 text-neutral-950 dark:text-neutral-50",
-};
-
 const notifications: Notification[] = [
   {
     id: "1",
@@ -169,12 +151,7 @@ export function NotificationsDropdown() {
                   )}
                 >
                   {/* Icon */}
-                  <span
-                    className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-full shrink-0 mt-0.5",
-                      iconStyles[notification.type],
-                    )}
-                  >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full shrink-0 mt-0.5 border-[0.5px] border-neutral-200 dark:border-neutral-400/30 bg-neutral-100 dark:bg-neutral-400/15 text-neutral-950 dark:text-neutral-50">
                     {notification.icon}
                   </span>
 

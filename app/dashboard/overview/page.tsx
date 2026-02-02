@@ -1,4 +1,10 @@
-import { ActiveDeals, RevenueChart, StatCard } from "@/components/dashboard";
+import {
+  ActiveDeals,
+  ActivityFeed,
+  LatestLeads,
+  RevenueChart,
+  StatCard,
+} from "@/components/dashboard";
 import {
   Button,
   CalendarBlankIcon,
@@ -73,6 +79,12 @@ export default function OverviewPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <RevenueChart className="lg:col-span-2" />
         <ActiveDeals />
+      </div>
+
+      {/* Leads & Activity Row */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <LatestLeads className="lg:col-span-2" />
+        <ActivityFeed />
       </div>
     </div>
   );
