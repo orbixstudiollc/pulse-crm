@@ -5,3 +5,5 @@ export { LatestLeads } from "./LatestLeals";
 export { ActivityFeed } from "./ActivityFeed";
 export { PageHeader } from "./PageHeader";
 export { PageHeaderActions } from "./PageHeaderActions";
+export * from "./FilterBar";
+export { CustomersTable } from "./CustomersTable";

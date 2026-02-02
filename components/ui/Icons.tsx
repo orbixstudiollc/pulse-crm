@@ -29,5 +29,7 @@ export {
   ArrowUpRightIcon,
   // Status
   CheckIcon,
+  CheckCircleIcon,
   TrophyIcon,
+  WarningIcon,
 } from "@phosphor-icons/react";

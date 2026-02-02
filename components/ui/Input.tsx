@@ -1,16 +1,17 @@
 "use client";
 
-import { forwardRef, InputHTMLAttributes } from "react";
+import { forwardRef, InputHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   required?: boolean;
   prefix?: string;
+  leftIcon?: ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, required, prefix, className, id, ...props }, ref) => {
+  ({ label, required, prefix, leftIcon, className, id, ...props }, ref) => {
     return (
       <div className="space-y-1.5">
         {label && (
@@ -23,7 +24,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           </label>
         )}
         <div className="relative">
-          {prefix && (
+          {leftIcon && (
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500">
+              {leftIcon}
+            </span>
+          )}
+          {prefix && !leftIcon && (
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-neutral-500 dark:text-neutral-400">
               {prefix}
             </span>
@@ -32,8 +38,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={id}
             className={cn(
-              "w-full rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-neutral-50 focus:ring-offset-2 transition-colors",
-              prefix && "pl-7",
+              "w-full rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 transition-shadow focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-[0_0_0_2px_#ffffff,0_0_0_4px_#0a0a0a] dark:focus:shadow-[0_0_0_2px_#171717,0_0_0_4px_#fafafa]",
+              (leftIcon || prefix) && "pl-10",
               className,
             )}
             {...props}

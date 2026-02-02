@@ -8,3 +8,4 @@ export * from "./Textarea";
 export * from "./Icons";
 export * from "./Badge";
 export * from "./Dropdown";
+export * from "./Checkbox";

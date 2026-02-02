@@ -269,7 +269,12 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   };
 
   return (
-    <Modal open={open} onClose={handleClose} className="max-w-xl">
+    <Modal
+      open={open}
+      onClose={handleClose}
+      position="top"
+      className="max-w-xl"
+    >
       {/* Search input */}
       <div className="flex items-center gap-3 border-b border-neutral-200 dark:border-neutral-800 px-5 py-4">
         <MagnifyingGlassIcon size={20} className="text-neutral-400 shrink-0" />

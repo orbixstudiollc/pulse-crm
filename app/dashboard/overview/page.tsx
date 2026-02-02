@@ -30,7 +30,7 @@ export default function OverviewPage() {
           icon={
             <CurrencyDollarIcon
               size={20}
-              className="text-neutral-600 dark:text-neutral-400"
+              className="text-neutral-950 dark:text-neutral-50"
             />
           }
         />
@@ -41,7 +41,7 @@ export default function OverviewPage() {
           icon={
             <TrophyIcon
               size={20}
-              className="text-neutral-600 dark:text-neutral-400"
+              className="text-neutral-950 dark:text-neutral-50"
             />
           }
         />
@@ -52,7 +52,7 @@ export default function OverviewPage() {
           icon={
             <UsersThreeIcon
               size={20}
-              className="text-neutral-600 dark:text-neutral-400"
+              className="text-neutral-950 dark:text-neutral-50"
             />
           }
         />

@@ -41,7 +41,7 @@ export function Dropdown({
         variant="outline"
         size={size}
         onClick={() => setOpen(!open)}
-        leftIcon={icon}
+        leftIcon={icon || undefined}
         rightIcon={
           <CaretDownIcon
             size={16}

@@ -1,0 +1,55 @@
+"use client";
+
+import { forwardRef, InputHTMLAttributes } from "react";
+import { CheckIcon } from "@/components/ui/Icons";
+import { cn } from "@/lib/utils";
+
+interface CheckboxProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "type"
+> {
+  label?: string;
+}
+
+export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
+  ({ label, className, checked, ...props }, ref) => {
+    return (
+      <label className="inline-flex items-center gap-2 cursor-pointer">
+        <div className="relative">
+          <input
+            ref={ref}
+            type="checkbox"
+            checked={checked}
+            className="peer sr-only"
+            {...props}
+          />
+          <div
+            className={cn(
+              "flex h-5 w-5 items-center justify-center rounded-md border transition-all",
+              "border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900",
+              "peer-checked:border-neutral-950 peer-checked:bg-neutral-950 dark:peer-checked:border-neutral-50 dark:peer-checked:bg-neutral-50",
+              "peer-focus-visible:shadow-[0_0_0_2px_#ffffff,0_0_0_4px_#0a0a0a] dark:peer-focus-visible:shadow-[0_0_0_2px_#171717,0_0_0_4px_#fafafa]",
+              className,
+            )}
+          >
+            <CheckIcon
+              size={14}
+              weight="bold"
+              className={cn(
+                "text-white dark:text-neutral-950 transition-opacity",
+                checked ? "opacity-100" : "opacity-0",
+              )}
+            />
+          </div>
+        </div>
+        {label && (
+          <span className="text-sm text-neutral-950 dark:text-neutral-50">
+            {label}
+          </span>
+        )}
+      </label>
+    );
+  },
+);
+
+Checkbox.displayName = "Checkbox";

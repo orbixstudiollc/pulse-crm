@@ -178,9 +178,6 @@ export function LatestLeads({
               <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                 Contacted
               </th>
-              <th className="text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 px-3 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                Actions
-              </th>
             </tr>
           </thead>
           <tbody>
@@ -237,18 +234,6 @@ export function LatestLeads({
                   <span className="text-sm text-neutral-500 dark:text-neutral-400">
                     {lead.contacted}
                   </span>
-                </td>
-
-                {/* Actions */}
-                <td className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  <div className="flex justify-center">
-                    <button className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
-                      <DotsThreeVerticalIcon
-                        size={20}
-                        className="text-neutral-500"
-                      />
-                    </button>
-                  </div>
                 </td>
               </tr>
             ))}

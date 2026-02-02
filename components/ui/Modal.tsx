@@ -7,10 +7,17 @@ interface ModalProps {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  position?: "center" | "top";
   className?: string;
 }
 
-export function Modal({ open, onClose, children, className }: ModalProps) {
+export function Modal({
+  open,
+  onClose,
+  children,
+  position = "center",
+  className,
+}: ModalProps) {
   // Handle ESC key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -34,7 +41,11 @@ export function Modal({ open, onClose, children, className }: ModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh] bg-black/40 dark:bg-black/60"
+      className={cn(
+        "fixed inset-0 z-50 flex justify-center bg-black/40 dark:bg-black/60",
+        position === "center" && "items-center",
+        position === "top" && "items-start pt-[20vh]",
+      )}
       onClick={onClose}
     >
       <div
