@@ -163,7 +163,7 @@ export function LatestLeads({
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
+            <tr className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
               <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3">
                 Lead
               </th>
@@ -188,7 +188,7 @@ export function LatestLeads({
             {leads.map((lead) => (
               <tr
                 key={lead.id}
-                className="border-b border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
               >
                 {/* Lead */}
                 <td className="px-5 py-4">
@@ -222,7 +222,7 @@ export function LatestLeads({
                 </td>
 
                 {/* Score */}
-                <td className="px-5 py-4 border-l border-neutral-200 dark:border-neutral-800">
+                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <div
                     className={cn(
                       "flex h-9 w-9 items-center justify-center rounded-full border-[0.5px] text-sm font-semibold",
