@@ -17,139 +17,16 @@ import {
 } from "@/components/ui";
 import { CustomerDrawer } from "./CustomerDrawer";
 import { cn } from "@/lib/utils";
+import { customers as defaultCustomers, Customer } from "@/lib/data/customers";
 
 type CustomerStatus = "active" | "pending" | "inactive";
 type CustomerPlan = "enterprise" | "pro" | "starter";
-
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  avatar: string;
-  status: CustomerStatus;
-  plan: CustomerPlan;
-  mrr: number;
-  health: number;
-  lastContact: string;
-  // Extended fields for drawer
-  company?: string;
-  industry?: string;
-  phone?: string;
-  location?: string;
-  lifetimeValue?: number;
-  tenure?: number;
-}
 
 interface CustomersTableProps {
   customers?: Customer[];
   totalCustomers?: number;
   className?: string;
 }
-
-const defaultCustomers: Customer[] = [
-  {
-    id: "1",
-    name: "James Anderson",
-    email: "j.anderson@nextgen.io",
-    avatar: "/images/avatars/avatar-1.jpg",
-    status: "active",
-    plan: "enterprise",
-    mrr: 2450,
-    health: 92,
-    lastContact: "2 hours ago",
-    company: "NextGen Solutions",
-    industry: "Technology",
-    phone: "+1 (555) 123-4567",
-    location: "San Francisco, CA",
-    lifetimeValue: 58800,
-    tenure: 24,
-  },
-  {
-    id: "2",
-    name: "Sarah Johnson",
-    email: "sarah.johnson@acme.com",
-    avatar: "/images/avatars/avatar-2.jpg",
-    status: "active",
-    plan: "pro",
-    mrr: 149,
-    health: 85,
-    lastContact: "5 hours ago",
-    company: "Acme Corp",
-    industry: "Manufacturing",
-    phone: "+1 (555) 234-5678",
-    location: "New York, NY",
-    lifetimeValue: 3576,
-    tenure: 18,
-  },
-  {
-    id: "3",
-    name: "Jennifer Walsh",
-    email: "j.walsh@globaltech.com",
-    avatar: "/images/avatars/avatar-3.jpg",
-    status: "pending",
-    plan: "enterprise",
-    mrr: 4200,
-    health: 68,
-    lastContact: "1 day ago",
-    company: "GlobalTech Inc",
-    industry: "Finance",
-    phone: "+1 (555) 345-6789",
-    location: "Chicago, IL",
-    lifetimeValue: 75600,
-    tenure: 12,
-  },
-  {
-    id: "4",
-    name: "David Kim",
-    email: "david.kim@innovate.co",
-    avatar: "/images/avatars/avatar-4.jpg",
-    status: "active",
-    plan: "pro",
-    mrr: 299,
-    health: 94,
-    lastContact: "3 hours ago",
-    company: "Innovate Co",
-    industry: "Healthcare",
-    phone: "+1 (555) 456-7890",
-    location: "Seattle, WA",
-    lifetimeValue: 7176,
-    tenure: 24,
-  },
-  {
-    id: "5",
-    name: "Emily Johnson",
-    email: "emily@designstudio.com",
-    avatar: "/images/avatars/avatar-5.jpg",
-    status: "inactive",
-    plan: "starter",
-    mrr: 49,
-    health: 32,
-    lastContact: "2 weeks ago",
-    company: "Design Studio",
-    industry: "Creative",
-    phone: "+1 (555) 567-8901",
-    location: "Austin, TX",
-    lifetimeValue: 588,
-    tenure: 6,
-  },
-  {
-    id: "6",
-    name: "Robert Patel",
-    email: "r.patel@financeplus.com",
-    avatar: "/images/avatars/avatar-6.jpg",
-    status: "active",
-    plan: "enterprise",
-    mrr: 8500,
-    health: 88,
-    lastContact: "1 hour ago",
-    company: "Finance Plus",
-    industry: "Finance",
-    phone: "+1 (555) 678-9012",
-    location: "Boston, MA",
-    lifetimeValue: 204000,
-    tenure: 36,
-  },
-];
 
 const statusConfig: Record<
   CustomerStatus,

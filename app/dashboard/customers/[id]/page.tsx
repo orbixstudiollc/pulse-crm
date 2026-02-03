@@ -1,7 +1,6 @@
-// app/dashboard/customers/[id]/page.tsx
 "use client";
 
-import { useState } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -10,44 +9,15 @@ import {
   Textarea,
   EnvelopeIcon,
   PhoneIcon,
-  PencilSimpleIcon,
   CalendarBlankIcon,
   CheckCircleIcon,
   CurrencyDollarIcon,
   DotsThreeVerticalIcon,
-  PlusIcon,
-  ClockIcon,
   NoteIcon,
   VideoIcon,
   FileTextIcon,
 } from "@/components/ui";
-
-// Mock customer data
-const mockCustomer = {
-  id: "1",
-  name: "Sarah Chen",
-  email: "sarah.chen@acmecorp.com",
-  avatar:
-    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face",
-  status: "active",
-  plan: "enterprise",
-  monthlyRevenue: 2450,
-  healthScore: 92,
-  lifetimeValue: 58800,
-  tenure: "24 mo",
-  phone: "+1 (555) 123-4567",
-  company: "Acme Corp",
-  jobTitle: "VP of Engineering",
-  industry: "Technology",
-  website: "acmecorp.com",
-  companySize: "201-500 employees",
-  location: "San Francisco, CA",
-  timezone: "Pacific Time (PT)",
-  customerSince: "Jan 15, 2023",
-  lastContact: "2 hours ago",
-  renewalDate: "Jan 15, 2025",
-  tags: ["VIP", "Enterprise", "Tech", "API User"],
-};
+import { getCustomerById } from "@/lib/data/customers";
 
 const activityItems = [
   {
@@ -122,7 +92,14 @@ const notes = [
   },
 ];
 
-export default function CustomerDetailPage() {
+export default function CustomerDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const { id } = use(params);
+  const customer = getCustomerById(id);
+
   const [activeTab, setActiveTab] = useState<"activity" | "deals">("activity");
   const [newNote, setNewNote] = useState("");
 
@@ -134,6 +111,20 @@ export default function CustomerDetailPage() {
     }).format(value);
   };
 
+  if (!customer) {
+    return (
+      <div className="py-20 text-center">
+        <p className="text-neutral-500">Customer not found</p>
+        <Link
+          href="/dashboard/customers"
+          className="text-sm text-blue-500 hover:underline"
+        >
+          Back to customers
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="py-6 px-8">
       {/* Header */}
@@ -141,8 +132,8 @@ export default function CustomerDetailPage() {
         <div className="flex items-center gap-6">
           <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-200 dark:border-neutral-700">
             <Image
-              src={mockCustomer.avatar}
-              alt={mockCustomer.name}
+              src={customer.avatar}
+              alt={customer.name}
               fill
               className="object-cover"
               unoptimized
@@ -150,18 +141,17 @@ export default function CustomerDetailPage() {
           </div>
           <div>
             <h1 className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
-              {mockCustomer.name}
+              {customer.name}
             </h1>
             <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-2">
-              {mockCustomer.email}
+              {customer.email}
             </p>
             <div className="flex items-center gap-2">
               <Badge variant="success">
-                {mockCustomer.status === "active" ? "Active" : "Inactive"}
+                {customer.status === "active" ? "Active" : "Inactive"}
               </Badge>
               <Badge variant="info">
-                {mockCustomer.plan.charAt(0).toUpperCase() +
-                  mockCustomer.plan.slice(1)}
+                {customer.plan.charAt(0).toUpperCase() + customer.plan.slice(1)}
               </Badge>
             </div>
           </div>
@@ -178,7 +168,7 @@ export default function CustomerDetailPage() {
       <div className="grid grid-cols-4 gap-4 mb-8">
         <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 text-center">
           <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
-            {formatCurrency(mockCustomer.monthlyRevenue)}
+            {formatCurrency(customer.monthlyRevenue)}
           </p>
           <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
             Monthly Revenue
@@ -186,7 +176,7 @@ export default function CustomerDetailPage() {
         </div>
         <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 text-center">
           <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
-            {mockCustomer.healthScore}
+            {customer.healthScore}
           </p>
           <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
             Health Score
@@ -194,7 +184,7 @@ export default function CustomerDetailPage() {
         </div>
         <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 text-center">
           <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
-            ${(mockCustomer.lifetimeValue / 1000).toFixed(1)}K
+            ${(customer.lifetimeValue / 1000).toFixed(1)}K
           </p>
           <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
             Lifetime Value
@@ -202,7 +192,7 @@ export default function CustomerDetailPage() {
         </div>
         <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 text-center">
           <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
-            {mockCustomer.tenure}
+            {customer.tenure}
           </p>
           <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
             Tenure
@@ -295,7 +285,7 @@ export default function CustomerDetailPage() {
               <h2 className="text-lg font-serif text-neutral-950 dark:text-neutral-50">
                 Details
               </h2>
-              <Link href={`/dashboard/customers/${mockCustomer.id}/edit`}>
+              <Link href={`/dashboard/customers/${customer.id}/edit`}>
                 <button className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
                   Edit Customer
                 </button>
@@ -307,7 +297,7 @@ export default function CustomerDetailPage() {
                   Phone
                 </p>
                 <p className="text-sm text-neutral-950 dark:text-neutral-50">
-                  {mockCustomer.phone}
+                  {customer.phone}
                 </p>
               </div>
               <div>
@@ -315,7 +305,7 @@ export default function CustomerDetailPage() {
                   Company
                 </p>
                 <p className="text-sm text-neutral-950 dark:text-neutral-50">
-                  {mockCustomer.company}
+                  {customer.company}
                 </p>
               </div>
               <div>
@@ -323,7 +313,7 @@ export default function CustomerDetailPage() {
                   Job Title
                 </p>
                 <p className="text-sm text-neutral-950 dark:text-neutral-50">
-                  {mockCustomer.jobTitle}
+                  {customer.jobTitle}
                 </p>
               </div>
               <div>
@@ -331,7 +321,7 @@ export default function CustomerDetailPage() {
                   Industry
                 </p>
                 <p className="text-sm text-neutral-950 dark:text-neutral-50">
-                  {mockCustomer.industry}
+                  {customer.industry}
                 </p>
               </div>
               <div>
@@ -339,7 +329,7 @@ export default function CustomerDetailPage() {
                   Website
                 </p>
                 <p className="text-sm text-neutral-950 dark:text-neutral-50">
-                  {mockCustomer.website}
+                  {customer.website}
                 </p>
               </div>
               <div>
@@ -347,7 +337,7 @@ export default function CustomerDetailPage() {
                   Company Size
                 </p>
                 <p className="text-sm text-neutral-950 dark:text-neutral-50">
-                  {mockCustomer.companySize}
+                  {customer.companySize}
                 </p>
               </div>
               <div>
@@ -355,7 +345,7 @@ export default function CustomerDetailPage() {
                   Location
                 </p>
                 <p className="text-sm text-neutral-950 dark:text-neutral-50">
-                  {mockCustomer.location}
+                  {customer.location}
                 </p>
               </div>
               <div>
@@ -363,7 +353,7 @@ export default function CustomerDetailPage() {
                   Timezone
                 </p>
                 <p className="text-sm text-neutral-950 dark:text-neutral-50">
-                  {mockCustomer.timezone}
+                  {customer.timezone}
                 </p>
               </div>
             </div>
@@ -460,7 +450,7 @@ export default function CustomerDetailPage() {
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center">
                 <span className="text-xl font-semibold text-green-600 dark:text-green-400">
-                  {mockCustomer.healthScore}
+                  {customer.healthScore}
                 </span>
               </div>
               <div>
@@ -485,7 +475,7 @@ export default function CustomerDetailPage() {
                   Monthly Revenue
                 </p>
                 <p className="text-xl font-semibold text-neutral-950 dark:text-neutral-50">
-                  {formatCurrency(mockCustomer.monthlyRevenue)}
+                  {formatCurrency(customer.monthlyRevenue)}
                 </p>
                 <p className="text-xs text-green-600 dark:text-green-400">
                   +15% from last month
@@ -496,7 +486,7 @@ export default function CustomerDetailPage() {
                   Lifetime Value
                 </p>
                 <p className="text-xl font-semibold text-neutral-950 dark:text-neutral-50">
-                  {formatCurrency(mockCustomer.lifetimeValue)}
+                  {formatCurrency(customer.lifetimeValue)}
                 </p>
               </div>
             </div>
@@ -508,7 +498,7 @@ export default function CustomerDetailPage() {
               Tags
             </p>
             <div className="flex flex-wrap gap-2">
-              {mockCustomer.tags.map((tag) => (
+              {customer.tags.map((tag) => (
                 <span
                   key={tag}
                   className="px-2.5 py-1 text-xs rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
@@ -530,7 +520,7 @@ export default function CustomerDetailPage() {
                   Customer Since
                 </p>
                 <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
-                  {mockCustomer.customerSince}
+                  {customer.customerSince}
                 </p>
               </div>
               <div>
@@ -538,7 +528,7 @@ export default function CustomerDetailPage() {
                   Last Contact
                 </p>
                 <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
-                  {mockCustomer.lastContact}
+                  {customer.lastContact}
                 </p>
               </div>
               <div>
@@ -546,7 +536,7 @@ export default function CustomerDetailPage() {
                   Renewal Date
                 </p>
                 <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
-                  {mockCustomer.renewalDate}
+                  {customer.renewalDate}
                 </p>
               </div>
             </div>
