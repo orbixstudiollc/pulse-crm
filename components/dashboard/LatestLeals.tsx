@@ -3,12 +3,12 @@
 import { useState } from "react";
 import {
   ArrowUpRightIcon,
-  DotsThreeVerticalIcon,
   IconButton,
   Button,
   Badge,
   Dropdown,
   dateRangeOptions,
+  Avatar,
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
@@ -107,14 +107,6 @@ function getScoreStyle(score: number) {
   return "border-neutral-200 dark:border-neutral-500/30 bg-neutral-100 text-neutral-500 dark:bg-neutral-500/15 dark:text-neutral-400";
 }
 
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase();
-}
-
 export function LatestLeads({
   leads = defaultLeads,
   totalLeads = 156,
@@ -189,9 +181,7 @@ export function LatestLeads({
                 {/* Lead */}
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-[0.5px] border-neutral-200 dark:border-neutral-500/30 bg-neutral-100 dark:bg-neutral-500/15 text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                      {getInitials(lead.name)}
-                    </div>
+                    <Avatar name={lead.name} />
                     <div>
                       <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
                         {lead.name}

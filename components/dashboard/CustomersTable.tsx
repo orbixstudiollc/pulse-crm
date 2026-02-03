@@ -1,15 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import {
+  Avatar,
   Badge,
   Checkbox,
   Dropdown,
-  DotsThreeVerticalIcon,
+  Progress,
+  ActionMenu,
+  EyeIcon,
+  PencilSimpleIcon,
+  EnvelopeIcon,
+  TrashIcon,
   CaretLeftIcon,
   CaretRightIcon,
 } from "@/components/ui";
+import { CustomerDrawer } from "./CustomerDrawer";
 import { cn } from "@/lib/utils";
 
 type CustomerStatus = "active" | "pending" | "inactive";
@@ -25,6 +31,13 @@ interface Customer {
   mrr: number;
   health: number;
   lastContact: string;
+  // Extended fields for drawer
+  company?: string;
+  industry?: string;
+  phone?: string;
+  location?: string;
+  lifetimeValue?: number;
+  tenure?: number;
 }
 
 interface CustomersTableProps {
@@ -44,6 +57,12 @@ const defaultCustomers: Customer[] = [
     mrr: 2450,
     health: 92,
     lastContact: "2 hours ago",
+    company: "NextGen Solutions",
+    industry: "Technology",
+    phone: "+1 (555) 123-4567",
+    location: "San Francisco, CA",
+    lifetimeValue: 58800,
+    tenure: 24,
   },
   {
     id: "2",
@@ -55,6 +74,12 @@ const defaultCustomers: Customer[] = [
     mrr: 149,
     health: 85,
     lastContact: "5 hours ago",
+    company: "Acme Corp",
+    industry: "Manufacturing",
+    phone: "+1 (555) 234-5678",
+    location: "New York, NY",
+    lifetimeValue: 3576,
+    tenure: 18,
   },
   {
     id: "3",
@@ -66,6 +91,12 @@ const defaultCustomers: Customer[] = [
     mrr: 4200,
     health: 68,
     lastContact: "1 day ago",
+    company: "GlobalTech Inc",
+    industry: "Finance",
+    phone: "+1 (555) 345-6789",
+    location: "Chicago, IL",
+    lifetimeValue: 75600,
+    tenure: 12,
   },
   {
     id: "4",
@@ -77,6 +108,12 @@ const defaultCustomers: Customer[] = [
     mrr: 299,
     health: 94,
     lastContact: "3 hours ago",
+    company: "Innovate Co",
+    industry: "Healthcare",
+    phone: "+1 (555) 456-7890",
+    location: "Seattle, WA",
+    lifetimeValue: 7176,
+    tenure: 24,
   },
   {
     id: "5",
@@ -88,6 +125,12 @@ const defaultCustomers: Customer[] = [
     mrr: 49,
     health: 32,
     lastContact: "2 weeks ago",
+    company: "Design Studio",
+    industry: "Creative",
+    phone: "+1 (555) 567-8901",
+    location: "Austin, TX",
+    lifetimeValue: 588,
+    tenure: 6,
   },
   {
     id: "6",
@@ -99,6 +142,12 @@ const defaultCustomers: Customer[] = [
     mrr: 8500,
     health: 88,
     lastContact: "1 hour ago",
+    company: "Finance Plus",
+    industry: "Finance",
+    phone: "+1 (555) 678-9012",
+    location: "Boston, MA",
+    lifetimeValue: 204000,
+    tenure: 36,
   },
 ];
 
@@ -127,12 +176,6 @@ const rowsPerPageOptions = [
   { label: "50", value: "50" },
 ];
 
-function getHealthColor(health: number) {
-  if (health >= 80) return "bg-green-500";
-  if (health >= 50) return "bg-amber-500";
-  return "bg-red-500";
-}
-
 function formatMRR(value: number) {
   return `$${value.toLocaleString()}`;
 }
@@ -145,6 +188,10 @@ export function CustomersTable({
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState("5");
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null,
+  );
 
   const perPage = parseInt(rowsPerPage);
   const totalPages = Math.ceil(totalCustomers / perPage);
@@ -163,6 +210,11 @@ export function CustomersTable({
     setSelectedRows((prev) =>
       prev.includes(id) ? prev.filter((r) => r !== id) : [...prev, id],
     );
+  };
+
+  const handleViewDetails = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setDrawerOpen(true);
   };
 
   const isAllSelected = selectedRows.length === customers.length;
@@ -191,10 +243,40 @@ export function CustomersTable({
   return (
     <div
       className={cn(
-        "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950",
+        "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden",
         className,
       )}
     >
+      {/* Bulk Actions Bar */}
+      {selectedRows.length > 0 && (
+        <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
+          <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+            {selectedRows.length} item{selectedRows.length > 1 ? "s" : ""}{" "}
+            selected
+          </span>
+          <div className="flex items-center gap-4">
+            <button className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
+              Email
+            </button>
+            <button className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
+              Edit
+            </button>
+            <button className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
+              Export
+            </button>
+            <button className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors">
+              Delete
+            </button>
+            <button
+              onClick={() => setSelectedRows([])}
+              className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+            >
+              Clear selection
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-800">
         <h3 className="text-lg font-serif text-neutral-950 dark:text-neutral-50">
@@ -213,7 +295,7 @@ export function CustomersTable({
               setCurrentPage(1);
             }}
             icon={null}
-            size="sm"
+            size="md"
           />
           <span className="text-sm text-neutral-500 dark:text-neutral-400">
             rows
@@ -225,30 +307,30 @@ export function CustomersTable({
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
+            <tr className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
               {/* Checkbox */}
               <th className="w-12 px-5 py-3">
                 <Checkbox checked={isAllSelected} onChange={toggleSelectAll} />
               </th>
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3">
+              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                 Customer
               </th>
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3">
+              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                 Status
               </th>
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3">
+              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                 Plan
               </th>
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3">
+              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                 MRR
               </th>
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3">
+              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                 Health
               </th>
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3">
+              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                 Last Contact
               </th>
-              <th className="text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 px-3 py-3">
+              <th className="text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 px-3 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                 Actions
               </th>
             </tr>
@@ -257,7 +339,7 @@ export function CustomersTable({
             {customers.map((customer) => (
               <tr
                 key={customer.id}
-                className="border-b border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
               >
                 {/* Checkbox */}
                 <td className="w-12 px-5 py-4">
@@ -268,14 +350,12 @@ export function CustomersTable({
                 </td>
 
                 {/* Customer */}
-                <td className="px-5 py-4">
+                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <div className="flex items-center gap-3">
-                    <Image
+                    <Avatar
                       src={customer.avatar}
-                      alt={customer.name}
-                      width={40}
-                      height={40}
-                      className="h-10 w-10 rounded-full object-cover"
+                      name={customer.name}
+                      size="lg"
                     />
                     <div>
                       <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
@@ -289,38 +369,34 @@ export function CustomersTable({
                 </td>
 
                 {/* Status */}
-                <td className="px-5 py-4">
+                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <Badge variant={statusConfig[customer.status].variant}>
                     {statusConfig[customer.status].label}
                   </Badge>
                 </td>
 
                 {/* Plan */}
-                <td className="px-5 py-4">
+                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <Badge variant={planConfig[customer.plan].variant}>
                     {planConfig[customer.plan].label}
                   </Badge>
                 </td>
 
                 {/* MRR */}
-                <td className="px-5 py-4">
+                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
                     {formatMRR(customer.mrr)}
                   </span>
                 </td>
 
                 {/* Health */}
-                <td className="px-5 py-4">
+                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <div className="flex items-center gap-3">
-                    <div className="h-2 w-16 rounded-full bg-neutral-200 dark:bg-neutral-700 overflow-hidden">
-                      <div
-                        className={cn(
-                          "h-full rounded-full",
-                          getHealthColor(customer.health),
-                        )}
-                        style={{ width: `${customer.health}%` }}
-                      />
-                    </div>
+                    <Progress
+                      value={customer.health}
+                      color="auto"
+                      className="w-16"
+                    />
                     <span className="text-sm text-neutral-600 dark:text-neutral-400">
                       {customer.health}
                     </span>
@@ -328,21 +404,35 @@ export function CustomersTable({
                 </td>
 
                 {/* Last Contact */}
-                <td className="px-5 py-4">
+                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <span className="text-sm text-neutral-500 dark:text-neutral-400">
                     {customer.lastContact}
                   </span>
                 </td>
 
                 {/* Actions */}
-                <td className="px-3 py-4">
+                <td className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <div className="flex justify-center">
-                    <button className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
-                      <DotsThreeVerticalIcon
-                        size={20}
-                        className="text-neutral-500"
-                      />
-                    </button>
+                    <ActionMenu
+                      items={[
+                        {
+                          label: "View Details",
+                          icon: <EyeIcon size={18} />,
+                          onClick: () => handleViewDetails(customer),
+                        },
+                        {
+                          label: "Edit Customer",
+                          icon: <PencilSimpleIcon size={18} />,
+                          onClick: () => console.log("Edit", customer.id),
+                        },
+                        {
+                          label: "Delete Customer",
+                          icon: <TrashIcon size={18} />,
+                          onClick: () => console.log("Delete", customer.id),
+                          variant: "danger",
+                        },
+                      ]}
+                    />
                   </div>
                 </td>
               </tr>
@@ -416,6 +506,31 @@ export function CustomersTable({
           </button>
         </div>
       </div>
+
+      {/* Customer Details Drawer */}
+      <CustomerDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        customer={
+          selectedCustomer
+            ? {
+                name: selectedCustomer.name,
+                email: selectedCustomer.email,
+                avatar: selectedCustomer.avatar,
+                monthlyRevenue: selectedCustomer.mrr,
+                healthScore: selectedCustomer.health,
+                lifetimeValue: selectedCustomer.lifetimeValue || 0,
+                tenure: selectedCustomer.tenure || 0,
+                status: selectedCustomer.status,
+                plan: selectedCustomer.plan,
+                company: selectedCustomer.company || "",
+                industry: selectedCustomer.industry || "",
+                phone: selectedCustomer.phone || "",
+                location: selectedCustomer.location || "",
+              }
+            : null
+        }
+      />
     </div>
   );
 }

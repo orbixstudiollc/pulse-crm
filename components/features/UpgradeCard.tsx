@@ -19,6 +19,7 @@ export function UpgradeCard({
           {current} / {max}
         </span>
       </div>
+
       <Progress value={current} max={max} className="mb-3" />
       <Button className="w-full">Upgrade to Unlimited</Button>
     </div>

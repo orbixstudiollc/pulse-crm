@@ -1,12 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import {
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  Input,
-  Dropdown,
-} from "@/components/ui";
+import { FunnelIcon, MagnifyingGlassIcon, XIcon } from "@/components/ui/Icons";
+import { Input } from "@/components/ui/Input";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { cn } from "@/lib/utils";
 
 interface FilterBarProps {
@@ -14,6 +11,7 @@ interface FilterBarProps {
   onSearchChange?: (value: string) => void;
   filters?: {
     key: string;
+    label: string;
     options: { label: string; value: string }[];
     defaultValue?: string;
   }[];
@@ -49,6 +47,14 @@ export function FilterBar({
     onFilterChange?.(key, value);
   };
 
+  const clearFilter = (key: string) => {
+    const filter = filters.find((f) => f.key === key);
+    const defaultValue =
+      filter?.defaultValue || filter?.options[0]?.value || "";
+    setFilterValues((prev) => ({ ...prev, [key]: defaultValue }));
+    onFilterChange?.(key, defaultValue);
+  };
+
   const handleClearAll = () => {
     setSearchValue("");
     onSearchChange?.("");
@@ -67,6 +73,13 @@ export function FilterBar({
       );
     });
   };
+
+  // Get active filters (not default/all values)
+  const activeFilters = filters.filter((filter) => {
+    const currentValue = filterValues[filter.key];
+    const defaultValue = filter.defaultValue || filter.options[0]?.value || "";
+    return currentValue !== defaultValue;
+  });
 
   return (
     <div
@@ -90,26 +103,54 @@ export function FilterBar({
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 p-5">
-        {/* Search */}
-        <Input
-          leftIcon={<MagnifyingGlassIcon size={18} />}
-          value={searchValue}
-          onChange={handleSearchChange}
-          placeholder={searchPlaceholder}
-          className="w-56"
-        />
-
-        {/* Filter Dropdowns */}
-        {filters.map((filter) => (
-          <Dropdown
-            key={filter.key}
-            options={filter.options}
-            value={filterValues[filter.key]}
-            onChange={(value) => handleFilterChange(filter.key, value)}
-            icon={null}
+      <div className="p-5 space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Search */}
+          <Input
+            leftIcon={<MagnifyingGlassIcon size={18} />}
+            value={searchValue}
+            onChange={handleSearchChange}
+            placeholder={searchPlaceholder}
+            className="w-60"
           />
-        ))}
+
+          {/* Filter Dropdowns */}
+          {filters.map((filter) => (
+            <Dropdown
+              key={filter.key}
+              options={filter.options}
+              value={filterValues[filter.key]}
+              onChange={(value) => handleFilterChange(filter.key, value)}
+              icon={null}
+            />
+          ))}
+        </div>
+
+        {/* Active Filter Tags */}
+        {activeFilters.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            {activeFilters.map((filter) => {
+              const selectedOption = filter.options.find(
+                (opt) => opt.value === filterValues[filter.key],
+              );
+              return (
+                <button
+                  key={filter.key}
+                  onClick={() => clearFilter(filter.key)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-sm text-neutral-950 dark:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                >
+                  <span>
+                    {filter.label}: {selectedOption?.label.toLowerCase()}
+                  </span>
+                  <XIcon
+                    size={14}
+                    className="text-neutral-500 dark:text-neutral-400"
+                  />
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -128,14 +169,14 @@ export const customerPlanOptions = [
   { label: "Enterprise", value: "enterprise" },
   { label: "Pro", value: "pro" },
   { label: "Starter", value: "starter" },
+  { label: "Free", value: "free" },
 ];
 
 export const customerScoreOptions = [
   { label: "All Scores", value: "all" },
-  { label: "90+", value: "90" },
-  { label: "70-89", value: "70" },
-  { label: "50-69", value: "50" },
-  { label: "Below 50", value: "below50" },
+  { label: "High (80-100)", value: "90" },
+  { label: "Medium (50-79)", value: "70" },
+  { label: "Low (0-49)", value: "50" },
 ];
 
 export const timeRangeOptions = [

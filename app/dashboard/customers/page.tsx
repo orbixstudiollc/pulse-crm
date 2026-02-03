@@ -72,12 +72,28 @@ export default function CustomersPage() {
         filters={[
           {
             key: "status",
+            label: "Status",
             options: customerStatusOptions,
             defaultValue: "all",
           },
-          { key: "plan", options: customerPlanOptions, defaultValue: "all" },
-          { key: "score", options: customerScoreOptions, defaultValue: "all" },
-          { key: "time", options: timeRangeOptions, defaultValue: "all" },
+          {
+            key: "plan",
+            label: "Plan",
+            options: customerPlanOptions,
+            defaultValue: "all",
+          },
+          {
+            key: "health",
+            label: "Health",
+            options: customerScoreOptions,
+            defaultValue: "all",
+          },
+          {
+            key: "time",
+            label: "Time",
+            options: timeRangeOptions,
+            defaultValue: "all",
+          },
         ]}
       />
 
