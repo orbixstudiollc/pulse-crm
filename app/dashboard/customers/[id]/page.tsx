@@ -215,7 +215,7 @@ export default function CustomerDetailPage({
                               </p>
                               <div className="flex items-center gap-2 mt-1.5">
                                 {item.badge && (
-                                  <Badge variant={item.badge.variant} size="sm">
+                                  <Badge variant={item.badge.variant}>
                                     {item.badge.label}
                                   </Badge>
                                 )}
