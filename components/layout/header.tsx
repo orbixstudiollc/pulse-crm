@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import { SearchBar } from "./SearchBar";
 import { CalendarDropdown, NotificationsDropdown } from "../features";
-// Hello
 
 export function Header() {
   const pathname = usePathname();
