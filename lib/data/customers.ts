@@ -266,7 +266,6 @@ export function getCustomerById(id: string): Customer | undefined {
   return customers.find((c) => c.id === id);
 }
 
-// Activity data for customer details page
 export interface ActivityItem {
   id: string;
   type: "email" | "call" | "deal" | "meeting" | "note";
@@ -274,7 +273,14 @@ export interface ActivityItem {
   description: string;
   badge?: {
     label: string;
-    variant: "success" | "info" | "warning" | "neutral";
+    variant:
+      | "green"
+      | "amber"
+      | "blue"
+      | "red"
+      | "emerald"
+      | "violet"
+      | "neutral";
   };
   meta?: string;
 }
@@ -286,7 +292,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "email",
       title: "Email sent: Q4 Product Update",
       description: "Shared the latest product roadmap and upcoming features",
-      badge: { label: "Opened", variant: "success" },
+      badge: { label: "Opened", variant: "green" },
       meta: "Clicked 2 links",
     },
     {
@@ -295,7 +301,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       title: "Call completed: Quarterly Review",
       description:
         "30 minute call discussing renewal and expansion opportunities",
-      badge: { label: "Positive", variant: "success" },
+      badge: { label: "Positive", variant: "green" },
       meta: "32 min",
     },
     {
@@ -303,7 +309,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "meeting",
       title: "Meeting: Technical Integration Review",
       description: "Reviewed API implementation with engineering team",
-      badge: { label: "Completed", variant: "success" },
+      badge: { label: "Completed", variant: "green" },
       meta: "3 attendees",
     },
     {
@@ -320,7 +326,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "email",
       title: "Email sent: Q4 Product Update",
       description: "Shared the latest product roadmap and upcoming features",
-      badge: { label: "Opened", variant: "success" },
+      badge: { label: "Opened", variant: "green" },
       meta: "Clicked 2 links",
     },
     {
@@ -329,7 +335,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       title: "Call completed: Quarterly Review",
       description:
         "30 minute call discussing renewal and expansion opportunities",
-      badge: { label: "Positive", variant: "success" },
+      badge: { label: "Positive", variant: "green" },
       meta: "32 min",
     },
     {
@@ -337,7 +343,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "deal",
       title: "Deal closed: Enterprise Upgrade",
       description: "Upgraded from Pro to Enterprise plan - $2,450/mo",
-      badge: { label: "Won", variant: "success" },
+      badge: { label: "Won", variant: "green" },
       meta: "$29,400 ARR",
     },
     {
@@ -345,7 +351,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "meeting",
       title: "Meeting: API Integration Demo",
       description: "Technical deep-dive with engineering team",
-      badge: { label: "Tomorrow, 2:00 PM", variant: "info" },
+      badge: { label: "Tomorrow, 2:00 PM", variant: "blue" },
       meta: "4 attendees",
     },
     {
@@ -359,7 +365,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "email",
       title: "Email received: Feature Request",
       description: "Requested Salesforce integration",
-      badge: { label: "Replied", variant: "success" },
+      badge: { label: "Replied", variant: "green" },
       meta: "2 hr response time",
     },
   ],
@@ -369,7 +375,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "email",
       title: "Email sent: Renewal Reminder",
       description: "Contract renewal coming up in 30 days",
-      badge: { label: "Opened", variant: "success" },
+      badge: { label: "Opened", variant: "green" },
       meta: "1 click",
     },
     {
@@ -377,7 +383,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "call",
       title: "Call attempted: Renewal Discussion",
       description: "Left voicemail about upcoming renewal",
-      badge: { label: "No Answer", variant: "warning" },
+      badge: { label: "No Answer", variant: "amber" },
       meta: "2 min",
     },
     {
@@ -385,7 +391,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "meeting",
       title: "Meeting scheduled: Renewal Discussion",
       description: "Review contract terms and expansion options",
-      badge: { label: "Next Week", variant: "info" },
+      badge: { label: "Next Week", variant: "blue" },
       meta: "2 attendees",
     },
     {
@@ -402,7 +408,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "call",
       title: "Call completed: Product Feedback",
       description: "David shared ideas for new dashboard features",
-      badge: { label: "Positive", variant: "success" },
+      badge: { label: "Positive", variant: "green" },
       meta: "45 min",
     },
     {
@@ -410,7 +416,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "email",
       title: "Email sent: Feature Update",
       description: "Shared updates on requested features from last call",
-      badge: { label: "Opened", variant: "success" },
+      badge: { label: "Opened", variant: "green" },
       meta: "Clicked 3 links",
     },
     {
@@ -424,7 +430,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "meeting",
       title: "Meeting: Product Roadmap Preview",
       description: "Exclusive preview of Q1 features",
-      badge: { label: "Completed", variant: "success" },
+      badge: { label: "Completed", variant: "green" },
       meta: "2 attendees",
     },
   ],
@@ -434,21 +440,21 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "email",
       title: "Email sent: Re-engagement Campaign",
       description: "Sent tips and best practices guide",
-      badge: { label: "Not Opened", variant: "warning" },
+      badge: { label: "Not Opened", variant: "amber" },
     },
     {
       id: "2",
       type: "email",
       title: "Email sent: Special Offer",
       description: "Offered 20% discount for annual commitment",
-      badge: { label: "Not Opened", variant: "warning" },
+      badge: { label: "Not Opened", variant: "amber" },
     },
     {
       id: "3",
       type: "call",
       title: "Call attempted: Check-in",
       description: "Attempted to reach Emily for a quick check-in",
-      badge: { label: "No Answer", variant: "warning" },
+      badge: { label: "No Answer", variant: "amber" },
       meta: "Left voicemail",
     },
     {
@@ -464,7 +470,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "deal",
       title: "Deal closed: Annual Contract Renewal",
       description: "Renewed enterprise contract for another year",
-      badge: { label: "Won", variant: "success" },
+      badge: { label: "Won", variant: "green" },
       meta: "$102,000 ARR",
     },
     {
@@ -472,7 +478,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "call",
       title: "Call completed: Executive Review",
       description: "Quarterly business review with CTO",
-      badge: { label: "Positive", variant: "success" },
+      badge: { label: "Positive", variant: "green" },
       meta: "1 hour",
     },
     {
@@ -480,7 +486,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "meeting",
       title: "Meeting: Roadmap Preview",
       description: "Exclusive preview of upcoming enterprise features",
-      badge: { label: "Completed", variant: "success" },
+      badge: { label: "Completed", variant: "green" },
       meta: "5 attendees",
     },
     {
@@ -488,7 +494,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "email",
       title: "Email sent: Executive Summary",
       description: "Quarterly ROI report and usage analytics",
-      badge: { label: "Opened", variant: "success" },
+      badge: { label: "Opened", variant: "green" },
       meta: "Forwarded to team",
     },
     {
@@ -503,7 +509,7 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       type: "meeting",
       title: "Meeting: Strategic Planning",
       description: "2025 roadmap alignment with Finance Plus goals",
-      badge: { label: "Jan 15, 2025", variant: "info" },
+      badge: { label: "Jan 15, 2025", variant: "blue" },
       meta: "6 attendees",
     },
   ],
