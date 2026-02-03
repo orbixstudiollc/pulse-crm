@@ -12,7 +12,7 @@ export function FormSection({
   children,
 }: FormSectionProps) {
   return (
-    <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6">
+    <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
       <div className="mb-5">
         <h3 className="text-lg font-serif text-neutral-950 dark:text-neutral-50">
           {title}
