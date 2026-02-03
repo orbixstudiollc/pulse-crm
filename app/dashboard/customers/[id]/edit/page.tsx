@@ -395,7 +395,11 @@ export default function EditCustomerPage({
               label="Plan"
               options={planOptions}
               value={plan}
-              onChange={(e) => setPlan(e.target.value)}
+              onChange={(e) =>
+                setPlan(
+                  e.target.value as "enterprise" | "pro" | "starter" | "free",
+                )
+              }
             />
             <Input
               label="Monthly Revenue"
