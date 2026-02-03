@@ -27,6 +27,8 @@ export {
   PencilSimpleIcon,
   EnvelopeIcon,
   TrashIcon,
+  UploadSimpleIcon,
+  ImageIcon,
   // Arrows
   ArrowUpIcon,
   ArrowDownIcon,

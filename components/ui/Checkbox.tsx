@@ -33,7 +33,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             )}
           >
             <CheckIcon
-              size={14}
+              size={12}
               weight="bold"
               className={cn(
                 "text-white dark:text-neutral-950 transition-opacity",

@@ -12,3 +12,6 @@ export * from "./Checkbox";
 export * from "./Avatar";
 export * from "./ActionMenu";
 export * from "./Drawer";
+export * from "./FormSection";
+export * from "./RadioGroup";
+export * from "./TagInput";

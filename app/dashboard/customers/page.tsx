@@ -16,6 +16,7 @@ import {
   UsersThreeIcon,
   WarningIcon,
 } from "@/components/ui";
+import Link from "next/link";
 
 export default function CustomersPage() {
   return (
@@ -24,9 +25,11 @@ export default function CustomersPage() {
         <Button variant="outline" leftIcon={<ExportIcon size={20} />}>
           Export
         </Button>
-        <Button leftIcon={<PlusIcon size={20} weight="bold" />}>
-          Add Customer
-        </Button>
+        <Link href="/dashboard/customers/add">
+          <Button leftIcon={<PlusIcon size={20} weight="bold" />}>
+            Add Customer
+          </Button>
+        </Link>
       </PageHeader>
 
       {/* Stats Grid */}
