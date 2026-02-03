@@ -384,7 +384,9 @@ export default function EditCustomerPage({
             label="Status"
             options={statusOptions}
             value={status}
-            onChange={setStatus}
+            onChange={(value) =>
+              setStatus(value as "active" | "pending" | "inactive")
+            }
             className="mb-4"
           />
 
