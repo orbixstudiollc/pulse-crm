@@ -127,10 +127,12 @@ export default function AddCustomerPage() {
     setSaving(false);
     setShowToast(true);
 
-    // Navigate after toast is shown
+    // Navigate to the new customer's detail page
+    // In real app, you'd get the ID from the API response
+    const newCustomerId = Date.now().toString(); // Mock ID
+
     setTimeout(() => {
-      router.push("/dashboard/customers");
-      // Later: router.push(`/dashboard/customers/${customerId}`);
+      router.push(`/dashboard/customers/${newCustomerId}`);
     }, 1500);
   };
 

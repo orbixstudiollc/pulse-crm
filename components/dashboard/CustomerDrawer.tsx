@@ -8,11 +8,13 @@ import {
   PencilSimpleIcon,
   UserIcon,
 } from "@/components/ui";
+import Link from "next/link";
 
 interface CustomerDrawerProps {
   open: boolean;
   onClose: () => void;
   customer: {
+    id: string;
     name: string;
     email: string;
     avatar?: string;
@@ -61,16 +63,26 @@ export function CustomerDrawer({
       footer={
         customer ? (
           <div className="flex gap-3">
-            <Button
-              variant="outline"
+            <Link
+              href={`/dashboard/customers/${customer.id}/edit`}
               className="flex-1"
-              leftIcon={<PencilSimpleIcon size={18} />}
             >
-              Edit
-            </Button>
-            <Button className="flex-1" leftIcon={<UserIcon size={18} />}>
-              View Full Profile
-            </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                leftIcon={<PencilSimpleIcon size={18} />}
+              >
+                Edit
+              </Button>
+            </Link>
+            <Link
+              href={`/dashboard/customers/${customer.id}`}
+              className="flex-1"
+            >
+              <Button className="w-full" leftIcon={<UserIcon size={18} />}>
+                View Full Profile
+              </Button>
+            </Link>
           </div>
         ) : null
       }

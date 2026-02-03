@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, ReactNode } from "react";
+import Link from "next/link";
 import { DotsThreeVerticalIcon } from "@/components/ui/Icons";
 import { useClickOutside } from "@/hooks";
 import { cn } from "@/lib/utils";
@@ -8,7 +9,8 @@ import { cn } from "@/lib/utils";
 interface ActionMenuItem {
   label: string;
   icon?: ReactNode;
-  onClick: () => void;
+  onClick?: () => void;
+  href?: string;
   variant?: "default" | "danger";
 }
 
@@ -34,6 +36,31 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
     setOpen(true);
   };
 
+  const itemClassName = (variant?: "default" | "danger") =>
+    cn(
+      "flex w-full items-center gap-3 px-3 py-2.5 text-sm text-left rounded-lg transition-colors",
+      variant === "danger"
+        ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
+        : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800",
+    );
+
+  const itemContent = (item: ActionMenuItem) => (
+    <>
+      {item.icon && (
+        <span
+          className={cn(
+            item.variant === "danger"
+              ? "text-red-600 dark:text-red-400"
+              : "text-neutral-400 dark:text-neutral-500",
+          )}
+        >
+          {item.icon}
+        </span>
+      )}
+      {item.label}
+    </>
+  );
+
   return (
     <div className="relative" ref={menuRef}>
       <button
@@ -55,34 +82,29 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
           )}
         >
           <div className="space-y-1">
-            {items.map((item, index) => (
-              <button
-                key={index}
-                onClick={() => {
-                  item.onClick();
-                  setOpen(false);
-                }}
-                className={cn(
-                  "flex w-full items-center gap-3 px-3 py-2.5 text-sm text-left rounded-lg transition-colors",
-                  item.variant === "danger"
-                    ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
-                    : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800",
-                )}
-              >
-                {item.icon && (
-                  <span
-                    className={cn(
-                      item.variant === "danger"
-                        ? "text-red-600 dark:text-red-400"
-                        : "text-neutral-400 dark:text-neutral-500",
-                    )}
-                  >
-                    {item.icon}
-                  </span>
-                )}
-                {item.label}
-              </button>
-            ))}
+            {items.map((item, index) =>
+              item.href ? (
+                <Link
+                  key={index}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className={itemClassName(item.variant)}
+                >
+                  {itemContent(item)}
+                </Link>
+              ) : (
+                <button
+                  key={index}
+                  onClick={() => {
+                    item.onClick?.();
+                    setOpen(false);
+                  }}
+                  className={itemClassName(item.variant)}
+                >
+                  {itemContent(item)}
+                </button>
+              ),
+            )}
           </div>
         </div>
       )}

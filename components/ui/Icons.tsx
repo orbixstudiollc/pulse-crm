@@ -6,6 +6,7 @@ export {
   CaretDownIcon,
   CaretLeftIcon,
   CaretRightIcon,
+
   // Dashboard
   GaugeIcon,
   UsersIcon,
@@ -15,6 +16,7 @@ export {
   CurrencyDollarIcon,
   PulseIcon,
   GearIcon,
+
   // Actions
   CalendarBlankIcon,
   MagnifyingGlassIcon,
@@ -29,16 +31,25 @@ export {
   TrashIcon,
   UploadSimpleIcon,
   ImageIcon,
+
   // Arrows
   ArrowUpIcon,
   ArrowDownIcon,
   ArrowRightIcon,
   ArrowElbowDownLeftIcon,
   ArrowUpRightIcon,
+
   // Status
   CheckIcon,
   CheckCircleIcon,
   TrophyIcon,
   WarningIcon,
   CircleNotchIcon,
+
+  // Communication & Activity
+  PhoneIcon,
+  VideoIcon,
+  NoteIcon,
+  FileTextIcon,
+  ClockIcon,
 } from "@phosphor-icons/react";

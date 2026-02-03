@@ -213,7 +213,17 @@ export function CustomersTable({
   };
 
   const handleViewDetails = (customer: Customer) => {
-    setSelectedCustomer(customer);
+    setSelectedCustomer({
+      ...customer,
+      monthlyRevenue: customer.mrr,
+      healthScore: customer.health,
+      lifetimeValue: customer.lifetimeValue || 0,
+      tenure: customer.tenure || 0,
+      company: customer.company || "",
+      industry: customer.industry || "",
+      phone: customer.phone || "",
+      location: customer.location || "",
+    });
     setDrawerOpen(true);
   };
 
@@ -339,10 +349,14 @@ export function CustomersTable({
             {customers.map((customer) => (
               <tr
                 key={customer.id}
+                onClick={() => handleViewDetails(customer)}
                 className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
               >
                 {/* Checkbox */}
-                <td className="w-12 px-5 py-4">
+                <td
+                  className="w-12 px-5 py-4"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Checkbox
                     checked={selectedRows.includes(customer.id)}
                     onChange={() => toggleSelectRow(customer.id)}
@@ -411,7 +425,10 @@ export function CustomersTable({
                 </td>
 
                 {/* Actions */}
-                <td className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                <td
+                  className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="flex justify-center">
                     <ActionMenu
                       items={[
@@ -423,7 +440,7 @@ export function CustomersTable({
                         {
                           label: "Edit Customer",
                           icon: <PencilSimpleIcon size={18} />,
-                          onClick: () => console.log("Edit", customer.id),
+                          href: `/dashboard/customers/${customer.id}/edit`,
                         },
                         {
                           label: "Delete Customer",
