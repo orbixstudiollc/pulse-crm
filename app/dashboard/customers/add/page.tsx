@@ -16,6 +16,7 @@ import {
   XIcon,
   CheckIcon,
 } from "@/components/ui";
+import Image from "next/image";
 
 const industryOptions = [
   { label: "Technology", value: "technology" },
@@ -66,11 +67,27 @@ interface CustomField {
 }
 
 export default function AddCustomerPage() {
+  const [avatar, setAvatar] = useState<string | null>(null);
   const [status, setStatus] = useState("active");
   const [tags, setTags] = useState<string[]>(["VIP", "Enterprise"]);
   const [customFields, setCustomFields] = useState<CustomField[]>([
     { id: "1", name: "", value: "" },
   ]);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatar(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeAvatar = () => {
+    setAvatar(null);
+  };
 
   const addCustomField = () => {
     setCustomFields([
@@ -109,20 +126,59 @@ export default function AddCustomerPage() {
           description="Customer's personal and contact details"
         >
           {/* Photo Upload */}
+          {/* Photo Upload */}
           <div className="flex items-center gap-5 mb-6">
-            <div className="w-24 h-24 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center border border-neutral-200 dark:border-neutral-700">
-              <UserIcon size={32} className="text-neutral-400" />
+            <div className="relative w-24 h-24 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+              {avatar ? (
+                <>
+                  <Image
+                    src={avatar}
+                    alt="Avatar preview"
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                  <button
+                    type="button"
+                    onClick={removeAvatar}
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity"
+                  >
+                    <XIcon size={24} className="text-white" />
+                  </button>
+                </>
+              ) : (
+                <UserIcon size={32} className="text-neutral-400" />
+              )}
             </div>
             <div className="space-y-2">
               <Button
                 variant="outline"
                 leftIcon={<UploadSimpleIcon size={16} />}
+                onClick={() =>
+                  document.getElementById("avatar-upload")?.click()
+                }
               >
-                Upload Photo
+                {avatar ? "Change Photo" : "Upload Photo"}
               </Button>
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
               <p className="text-xs text-neutral-500 dark:text-neutral-400">
                 JPG, PNG or GIF. Max 2MB.
               </p>
+              {avatar && (
+                <button
+                  type="button"
+                  onClick={removeAvatar}
+                  className="text-xs text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                >
+                  Remove Photo
+                </button>
+              )}
             </div>
           </div>
 
@@ -252,14 +308,16 @@ export default function AddCustomerPage() {
         >
           <div className="space-y-3">
             {customFields.map((field) => (
-              <div key={field.id} className="flex items-center gap-3">
+              <div
+                key={field.id}
+                className="grid grid-cols-[1fr_1fr_auto] gap-3 items-center"
+              >
                 <Input
                   placeholder="Field name"
                   value={field.name}
                   onChange={(e) =>
                     updateCustomField(field.id, "name", e.target.value)
                   }
-                  className="flex-1"
                 />
                 <Input
                   placeholder="Value"
@@ -267,7 +325,6 @@ export default function AddCustomerPage() {
                   onChange={(e) =>
                     updateCustomField(field.id, "value", e.target.value)
                   }
-                  className="flex-1"
                 />
                 <button
                   type="button"

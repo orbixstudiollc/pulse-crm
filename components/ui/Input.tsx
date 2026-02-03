@@ -6,12 +6,16 @@ import { cn } from "@/lib/utils";
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   required?: boolean;
+  optional?: boolean;
   prefix?: string;
   leftIcon?: ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, required, prefix, leftIcon, className, id, ...props }, ref) => {
+  (
+    { label, required, optional, prefix, leftIcon, className, id, ...props },
+    ref,
+  ) => {
     return (
       <div className="space-y-1.5">
         {label && (
@@ -21,6 +25,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           >
             {label}
             {required && <span className="text-red-500 ml-0.5">*</span>}
+            {optional && (
+              <span className="text-neutral-400 dark:text-neutral-500 font-normal ml-1">
+                (optional)
+              </span>
+            )}
           </label>
         )}
         <div className="relative">
