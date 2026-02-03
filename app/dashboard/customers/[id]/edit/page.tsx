@@ -1,0 +1,555 @@
+// app/dashboard/customers/[id]/edit/page.tsx
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import {
+  Button,
+  Input,
+  Select,
+  Textarea,
+  FormSection,
+  RadioGroup,
+  TagInput,
+  UserIcon,
+  UploadSimpleIcon,
+  PlusIcon,
+  XIcon,
+  CheckIcon,
+  CircleNotchIcon,
+  TrashIcon,
+  Toast,
+} from "@/components/ui";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+
+const industryOptions = [
+  { label: "Technology", value: "technology" },
+  { label: "Healthcare", value: "healthcare" },
+  { label: "Finance", value: "finance" },
+  { label: "Manufacturing", value: "manufacturing" },
+  { label: "Retail", value: "retail" },
+  { label: "Education", value: "education" },
+  { label: "Media & Entertainment", value: "media" },
+  { label: "Other", value: "other" },
+];
+
+const companySizeOptions = [
+  { label: "1-10 employees", value: "1-10" },
+  { label: "11-50 employees", value: "11-50" },
+  { label: "51-200 employees", value: "51-200" },
+  { label: "201-500 employees", value: "201-500" },
+  { label: "501-1000 employees", value: "501-1000" },
+  { label: "1000+ employees", value: "1000+" },
+];
+
+const countryOptions = [
+  { label: "United States", value: "us" },
+  { label: "United Kingdom", value: "uk" },
+  { label: "Canada", value: "ca" },
+  { label: "Australia", value: "au" },
+  { label: "Germany", value: "de" },
+  { label: "France", value: "fr" },
+  { label: "Other", value: "other" },
+];
+
+const planOptions = [
+  { label: "Free", value: "free" },
+  { label: "Starter - $49/mo", value: "starter" },
+  { label: "Pro - $149/mo", value: "pro" },
+  { label: "Enterprise - Custom", value: "enterprise" },
+];
+
+const statusOptions = [
+  { value: "active", label: "Active", description: "Customer has full access" },
+  { value: "pending", label: "Pending", description: "Awaiting confirmation" },
+];
+
+interface CustomField {
+  id: string;
+  name: string;
+  value: string;
+}
+
+// Mock customer data - in real app this would come from API/database
+const mockCustomer = {
+  id: "1",
+  firstName: "Marcus",
+  lastName: "Rodriguez",
+  email: "marcus.rodriguez@innovatehub.com",
+  phone: "+1 (512) 634-7892",
+  avatar:
+    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
+  company: "Innovate Hub",
+  jobTitle: "Chief Technology Officer",
+  industry: "finance",
+  companySize: "51-200",
+  website: "https://innovatehub.com",
+  streetAddress: "1205 West 6th Street, Floor 2",
+  city: "Austin",
+  state: "Texas",
+  postalCode: "78703",
+  country: "us",
+  status: "active",
+  plan: "enterprise",
+  monthlyRevenue: "$28,500.00",
+  tags: ["VIP", "Enterprise", "Tech Leader", "Finance"],
+  notes:
+    "Marcus joined during our enterprise pilot program in late 2023. His team of 45 developers actively uses our platform for financial data analytics. Very tech-savvy and provides excellent product feedback. Interested in expanding to additional departments. Next renewal discussion scheduled for February 2025.",
+  customFields: [
+    { id: "1", name: "Lead Source", value: "Conference (FinTech Summit 2023)" },
+    { id: "2", name: "Customer Since", value: "November 2023" },
+    { id: "3", name: "Account Manager", value: "Jennifer Kim" },
+    { id: "4", name: "Last Contact", value: "December 20, 2024" },
+  ],
+};
+
+export default function EditCustomerPage() {
+  const router = useRouter();
+
+  // Form state - prefilled with mock data
+  const [avatar, setAvatar] = useState<string | null>(mockCustomer.avatar);
+  const [firstName, setFirstName] = useState(mockCustomer.firstName);
+  const [lastName, setLastName] = useState(mockCustomer.lastName);
+  const [email, setEmail] = useState(mockCustomer.email);
+  const [phone, setPhone] = useState(mockCustomer.phone);
+  const [company, setCompany] = useState(mockCustomer.company);
+  const [jobTitle, setJobTitle] = useState(mockCustomer.jobTitle);
+  const [industry, setIndustry] = useState(mockCustomer.industry);
+  const [companySize, setCompanySize] = useState(mockCustomer.companySize);
+  const [website, setWebsite] = useState(mockCustomer.website);
+  const [streetAddress, setStreetAddress] = useState(
+    mockCustomer.streetAddress,
+  );
+  const [city, setCity] = useState(mockCustomer.city);
+  const [state, setState] = useState(mockCustomer.state);
+  const [postalCode, setPostalCode] = useState(mockCustomer.postalCode);
+  const [country, setCountry] = useState(mockCustomer.country);
+  const [status, setStatus] = useState(mockCustomer.status);
+  const [plan, setPlan] = useState(mockCustomer.plan);
+  const [monthlyRevenue, setMonthlyRevenue] = useState(
+    mockCustomer.monthlyRevenue,
+  );
+  const [tags, setTags] = useState<string[]>(mockCustomer.tags);
+  const [notes, setNotes] = useState(mockCustomer.notes);
+  const [customFields, setCustomFields] = useState<CustomField[]>(
+    mockCustomer.customFields,
+  );
+
+  // UI state
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatar(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeAvatar = () => {
+    setAvatar(null);
+  };
+
+  const addCustomField = () => {
+    setCustomFields([
+      ...customFields,
+      { id: Date.now().toString(), name: "", value: "" },
+    ]);
+  };
+
+  const removeCustomField = (id: string) => {
+    setCustomFields(customFields.filter((field) => field.id !== id));
+  };
+
+  const updateCustomField = (
+    id: string,
+    key: "name" | "value",
+    value: string,
+  ) => {
+    setCustomFields(
+      customFields.map((field) =>
+        field.id === id ? { ...field, [key]: value } : field,
+      ),
+    );
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    setSaving(false);
+    setToastMessage("Changes saved successfully");
+    setShowToast(true);
+
+    // Navigate after toast is shown
+    setTimeout(() => {
+      router.push("/dashboard/customers");
+    }, 1500);
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    setDeleting(false);
+    setToastMessage("Customer deleted successfully");
+    setShowToast(true);
+
+    // Navigate after toast is shown
+    setTimeout(() => {
+      router.push("/dashboard/customers");
+    }, 1500);
+  };
+
+  return (
+    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 py-14 px-8">
+      <div className="max-w-3xl mx-auto space-y-6">
+        {/* Page Title */}
+        <h1 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
+          Edit Customer
+        </h1>
+
+        {/* Basic Information */}
+        <FormSection
+          title="Basic information"
+          description="Customer's personal and contact details"
+        >
+          {/* Photo Upload */}
+          <div className="flex items-center gap-5 mb-6">
+            <div className="relative w-24 h-24 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+              {avatar ? (
+                <>
+                  <Image
+                    src={avatar}
+                    alt="Avatar preview"
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                  <button
+                    type="button"
+                    onClick={removeAvatar}
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity"
+                  >
+                    <XIcon size={24} className="text-white" />
+                  </button>
+                </>
+              ) : (
+                <UserIcon size={32} className="text-neutral-400" />
+              )}
+            </div>
+            <div className="space-y-2">
+              <Button
+                variant="outline"
+                leftIcon={<UploadSimpleIcon size={16} />}
+                onClick={() =>
+                  document.getElementById("avatar-upload")?.click()
+                }
+              >
+                {avatar ? "Change Photo" : "Upload Photo"}
+              </Button>
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                JPG, PNG or GIF. Max 2MB.
+              </p>
+              {avatar && (
+                <button
+                  type="button"
+                  onClick={removeAvatar}
+                  className="text-xs text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                >
+                  Remove Photo
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Name Fields */}
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <Input
+              label="First Name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+            />
+            <Input
+              label="Last Name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+            />
+          </div>
+
+          {/* Contact Fields */}
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Email Address"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <Input
+              label="Phone Number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              optional
+            />
+          </div>
+        </FormSection>
+
+        {/* Company Information */}
+        <FormSection
+          title="Company information"
+          description="Details about the customer's organization"
+        >
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <Input
+              label="Company Name"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+            />
+            <Input
+              label="Job Title"
+              value={jobTitle}
+              onChange={(e) => setJobTitle(e.target.value)}
+              optional
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <Select
+              label="Industry"
+              options={industryOptions}
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
+            />
+            <Select
+              label="Company Size"
+              options={companySizeOptions}
+              value={companySize}
+              onChange={(e) => setCompanySize(e.target.value)}
+            />
+          </div>
+
+          <Input
+            label="Website"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            optional
+          />
+        </FormSection>
+
+        {/* Address */}
+        <FormSection
+          title="Address"
+          description="Customer's location information"
+        >
+          <div className="mb-4">
+            <Input
+              label="Street Address"
+              value={streetAddress}
+              onChange={(e) => setStreetAddress(e.target.value)}
+              optional
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <Input
+              label="City"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            />
+            <Input
+              label="State / Region"
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Postal Code"
+              value={postalCode}
+              onChange={(e) => setPostalCode(e.target.value)}
+            />
+            <Select
+              label="Country"
+              options={countryOptions}
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+            />
+          </div>
+        </FormSection>
+
+        {/* Account Settings */}
+        <FormSection
+          title="Account Settings"
+          description="Configure customer's plan and status"
+        >
+          <RadioGroup
+            name="status"
+            label="Status"
+            options={statusOptions}
+            value={status}
+            onChange={setStatus}
+            className="mb-4"
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Plan"
+              options={planOptions}
+              value={plan}
+              onChange={(e) => setPlan(e.target.value)}
+            />
+            <Input
+              label="Monthly Revenue"
+              value={monthlyRevenue}
+              onChange={(e) => setMonthlyRevenue(e.target.value)}
+              optional
+            />
+          </div>
+        </FormSection>
+
+        {/* Tags */}
+        <FormSection
+          title="Tags"
+          description="Add tags to categorize this customer"
+        >
+          <TagInput tags={tags} onChange={setTags} placeholder="Add a tag..." />
+        </FormSection>
+
+        {/* Notes */}
+        <FormSection
+          title="Notes"
+          description="Add any additional information about this customer"
+        >
+          <Textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={4}
+          />
+        </FormSection>
+
+        {/* Custom Fields */}
+        <FormSection
+          title="Custom Fields"
+          description="Add custom data fields for this customer"
+        >
+          <div className="space-y-3">
+            {customFields.map((field) => (
+              <div
+                key={field.id}
+                className="grid grid-cols-[1fr_1fr_auto] gap-3 items-center"
+              >
+                <Input
+                  placeholder="Field name"
+                  value={field.name}
+                  onChange={(e) =>
+                    updateCustomField(field.id, "name", e.target.value)
+                  }
+                />
+                <Input
+                  placeholder="Value"
+                  value={field.value}
+                  onChange={(e) =>
+                    updateCustomField(field.id, "value", e.target.value)
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() => removeCustomField(field.id)}
+                  className="flex h-10.5 w-10.5 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-300 dark:hover:border-red-500/30 transition-colors group"
+                >
+                  <XIcon
+                    size={18}
+                    className="text-neutral-400 group-hover:text-red-500"
+                  />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={addCustomField}
+            className="flex items-center gap-2 mt-4 px-4 py-2.5 text-sm font-medium text-neutral-600 dark:text-neutral-400 border border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+          >
+            <PlusIcon size={18} />
+            Add Custom Field
+          </button>
+        </FormSection>
+
+        {/* Danger Zone - Delete Customer */}
+        <div className="rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-6">
+          <h3 className="text-base font-medium text-red-600 dark:text-red-400 mb-2">
+            Delete Customer
+          </h3>
+          <p className="text-sm text-red-600/80 dark:text-red-400/80 mb-4">
+            Once you delete a customer, there is no going back. All associated
+            data including notes, activity history, and deals will be
+            permanently removed.
+          </p>
+          <Button
+            variant="outline"
+            leftIcon={
+              deleting ? (
+                <CircleNotchIcon size={18} className="animate-spin" />
+              ) : (
+                <TrashIcon size={18} />
+              )
+            }
+            onClick={handleDelete}
+            disabled={deleting}
+            className="border-red-300 dark:border-red-500/50 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20"
+          >
+            {deleting ? "Deleting..." : "Delete Customer"}
+          </Button>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="flex items-center justify-between pt-6 border-t border-neutral-200 dark:border-neutral-800">
+          <Link href="/dashboard/customers">
+            <Button variant="ghost">Cancel</Button>
+          </Link>
+          <Button
+            leftIcon={
+              saving ? (
+                <CircleNotchIcon size={18} className="animate-spin" />
+              ) : (
+                <CheckIcon size={18} />
+              )
+            }
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? "Saving Changes" : "Save Changes"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Toast */}
+      <Toast
+        open={showToast}
+        onClose={() => setShowToast(false)}
+        message={toastMessage}
+        variant="success"
+      />
+    </div>
+  );
+}
