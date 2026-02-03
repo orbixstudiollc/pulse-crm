@@ -18,6 +18,7 @@ import {
   CircleNotchIcon,
   TrashIcon,
   Toast,
+  DeleteConfirmModal,
 } from "@/components/ui";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -114,6 +115,7 @@ export default function EditCustomerPage({
   const [deleting, setDeleting] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   if (!customer) {
     return (
@@ -184,6 +186,7 @@ export default function EditCustomerPage({
     setDeleting(true);
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setDeleting(false);
+    setShowDeleteModal(false);
     setToastMessage("Customer deleted successfully");
     setShowToast(true);
     setTimeout(() => {
@@ -471,11 +474,11 @@ export default function EditCustomerPage({
         </FormSection>
 
         {/* Danger Zone */}
-        <div className="rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-6">
+        <div className="rounded-xl border border-red-200 dark:border-red-500/30 bg-white dark:bg-neutral-950 p-6">
           <h3 className="text-base font-medium text-red-600 dark:text-red-400 mb-2">
             Delete Customer
           </h3>
-          <p className="text-sm text-red-600/80 dark:text-red-400/80 mb-4">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
             Once you delete a customer, there is no going back. All associated
             data including notes, activity history, and deals will be
             permanently removed.
@@ -489,9 +492,9 @@ export default function EditCustomerPage({
                 <TrashIcon size={18} />
               )
             }
-            onClick={handleDelete}
+            onClick={() => setShowDeleteModal(true)}
             disabled={deleting}
-            className="border-red-300 dark:border-red-500/50 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20"
+            className="bg-red-500 dark:bg-red-600 border-red-500 dark:border-red-600 text-white hover:bg-red-600 dark:hover:bg-red-700 hover:border-red-600 dark:hover:border-red-700"
           >
             {deleting ? "Deleting..." : "Delete Customer"}
           </Button>
@@ -523,6 +526,15 @@ export default function EditCustomerPage({
         onClose={() => setShowToast(false)}
         message={toastMessage}
         variant="success"
+      />
+
+      <DeleteConfirmModal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+        title="Delete Customer"
+        itemName={`${firstName} ${lastName}`}
+        loading={deleting}
       />
     </div>
   );

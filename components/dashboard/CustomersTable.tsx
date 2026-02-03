@@ -227,7 +227,7 @@ export function CustomersTable({
               <tr
                 key={customer.id}
                 onClick={() => handleViewDetails(customer)}
-                className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer"
               >
                 {/* Checkbox */}
                 <td
@@ -284,12 +284,12 @@ export function CustomersTable({
                 <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <div className="flex items-center gap-3">
                     <Progress
-                      value={customer.health}
+                      value={customer.healthScore}
                       color="auto"
                       className="w-16"
                     />
                     <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                      {customer.health}
+                      {customer.healthScore}
                     </span>
                   </div>
                 </td>
@@ -413,7 +413,7 @@ export function CustomersTable({
                 email: selectedCustomer.email,
                 avatar: selectedCustomer.avatar,
                 monthlyRevenue: selectedCustomer.mrr,
-                healthScore: selectedCustomer.health,
+                healthScore: selectedCustomer.healthScore,
                 lifetimeValue: selectedCustomer.lifetimeValue || 0,
                 tenure: selectedCustomer.tenure || 0,
                 status: selectedCustomer.status,

@@ -2,7 +2,7 @@ export interface Customer {
   id: string;
   firstName: string;
   lastName: string;
-  name: string; // computed: firstName + lastName
+  name: string;
   email: string;
   phone: string;
   avatar: string;
@@ -25,7 +25,7 @@ export interface Customer {
   state: string;
   postalCode: string;
   country: string;
-  location: string; // computed: city + state
+  location: string;
   timezone: string;
   // Dates
   customerSince: string;
@@ -298,6 +298,21 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       badge: { label: "Positive", variant: "success" },
       meta: "32 min",
     },
+    {
+      id: "3",
+      type: "meeting",
+      title: "Meeting: Technical Integration Review",
+      description: "Reviewed API implementation with engineering team",
+      badge: { label: "Completed", variant: "success" },
+      meta: "3 attendees",
+    },
+    {
+      id: "4",
+      type: "note",
+      title: "Note added",
+      description:
+        "Team is interested in expanding to 3 additional departments",
+    },
   ],
   "2": [
     {
@@ -348,6 +363,150 @@ export const activityByCustomerId: Record<string, ActivityItem[]> = {
       meta: "2 hr response time",
     },
   ],
+  "3": [
+    {
+      id: "1",
+      type: "email",
+      title: "Email sent: Renewal Reminder",
+      description: "Contract renewal coming up in 30 days",
+      badge: { label: "Opened", variant: "success" },
+      meta: "1 click",
+    },
+    {
+      id: "2",
+      type: "call",
+      title: "Call attempted: Renewal Discussion",
+      description: "Left voicemail about upcoming renewal",
+      badge: { label: "No Answer", variant: "warning" },
+      meta: "2 min",
+    },
+    {
+      id: "3",
+      type: "meeting",
+      title: "Meeting scheduled: Renewal Discussion",
+      description: "Review contract terms and expansion options",
+      badge: { label: "Next Week", variant: "info" },
+      meta: "2 attendees",
+    },
+    {
+      id: "4",
+      type: "note",
+      title: "Note added",
+      description:
+        "Jennifer mentioned budget concerns - may need to discuss pricing",
+    },
+  ],
+  "4": [
+    {
+      id: "1",
+      type: "call",
+      title: "Call completed: Product Feedback",
+      description: "David shared ideas for new dashboard features",
+      badge: { label: "Positive", variant: "success" },
+      meta: "45 min",
+    },
+    {
+      id: "2",
+      type: "email",
+      title: "Email sent: Feature Update",
+      description: "Shared updates on requested features from last call",
+      badge: { label: "Opened", variant: "success" },
+      meta: "Clicked 3 links",
+    },
+    {
+      id: "3",
+      type: "note",
+      title: "Note added",
+      description: "Very engaged user, potential case study candidate",
+    },
+    {
+      id: "4",
+      type: "meeting",
+      title: "Meeting: Product Roadmap Preview",
+      description: "Exclusive preview of Q1 features",
+      badge: { label: "Completed", variant: "success" },
+      meta: "2 attendees",
+    },
+  ],
+  "5": [
+    {
+      id: "1",
+      type: "email",
+      title: "Email sent: Re-engagement Campaign",
+      description: "Sent tips and best practices guide",
+      badge: { label: "Not Opened", variant: "warning" },
+    },
+    {
+      id: "2",
+      type: "email",
+      title: "Email sent: Special Offer",
+      description: "Offered 20% discount for annual commitment",
+      badge: { label: "Not Opened", variant: "warning" },
+    },
+    {
+      id: "3",
+      type: "call",
+      title: "Call attempted: Check-in",
+      description: "Attempted to reach Emily for a quick check-in",
+      badge: { label: "No Answer", variant: "warning" },
+      meta: "Left voicemail",
+    },
+    {
+      id: "4",
+      type: "note",
+      title: "Note added",
+      description: "At risk of churning. Last login was 3 weeks ago.",
+    },
+  ],
+  "6": [
+    {
+      id: "1",
+      type: "deal",
+      title: "Deal closed: Annual Contract Renewal",
+      description: "Renewed enterprise contract for another year",
+      badge: { label: "Won", variant: "success" },
+      meta: "$102,000 ARR",
+    },
+    {
+      id: "2",
+      type: "call",
+      title: "Call completed: Executive Review",
+      description: "Quarterly business review with CTO",
+      badge: { label: "Positive", variant: "success" },
+      meta: "1 hour",
+    },
+    {
+      id: "3",
+      type: "meeting",
+      title: "Meeting: Roadmap Preview",
+      description: "Exclusive preview of upcoming enterprise features",
+      badge: { label: "Completed", variant: "success" },
+      meta: "5 attendees",
+    },
+    {
+      id: "4",
+      type: "email",
+      title: "Email sent: Executive Summary",
+      description: "Quarterly ROI report and usage analytics",
+      badge: { label: "Opened", variant: "success" },
+      meta: "Forwarded to team",
+    },
+    {
+      id: "5",
+      type: "note",
+      title: "Note added",
+      description:
+        "Robert mentioned potential for expanding to European offices in Q2",
+    },
+    {
+      id: "6",
+      type: "meeting",
+      title: "Meeting: Strategic Planning",
+      description: "2025 roadmap alignment with Finance Plus goals",
+      badge: { label: "Jan 15, 2025", variant: "info" },
+      meta: "6 attendees",
+    },
+  ],
 };
 
 // Notes data
@@ -359,6 +518,22 @@ export interface Note {
 }
 
 export const notesByCustomerId: Record<string, Note[]> = {
+  "1": [
+    {
+      id: "1",
+      author: "You",
+      date: "Dec 18, 2024",
+      content:
+        "Key enterprise account. Technical team is very engaged with our API. Discussed expansion to 3 additional departments in Q1.",
+    },
+    {
+      id: "2",
+      author: "Sarah Kim",
+      date: "Dec 5, 2024",
+      content:
+        "Had a great quarterly review call. James is very happy with the platform performance and mentioned they want to explore our analytics features.",
+    },
+  ],
   "2": [
     {
       id: "1",
@@ -373,6 +548,77 @@ export const notesByCustomerId: Record<string, Note[]> = {
       date: "Nov 28, 2025",
       content:
         "Great quarterly review call. Sarah mentioned they're expanding their team and might need additional seats in Q1. Very happy with the product so far.",
+    },
+  ],
+  "3": [
+    {
+      id: "1",
+      author: "You",
+      date: "Dec 1, 2024",
+      content:
+        "Pending contract renewal. Jennifer mentioned some budget constraints. Need to schedule a review call before Dec 10th deadline to discuss options.",
+    },
+    {
+      id: "2",
+      author: "Mike Johnson",
+      date: "Nov 15, 2024",
+      content:
+        "Health score dropped from 82 to 68 last month. Usage has declined. Need to investigate root cause and re-engage.",
+    },
+  ],
+  "4": [
+    {
+      id: "1",
+      author: "You",
+      date: "Dec 12, 2024",
+      content:
+        "David is one of our most engaged Pro users. Provides excellent product feedback. Strong candidate for case study or testimonial.",
+    },
+    {
+      id: "2",
+      author: "You",
+      date: "Nov 20, 2024",
+      content:
+        "Discussed potential upgrade to Enterprise. David said he needs to get budget approval first. Will follow up in January.",
+    },
+  ],
+  "5": [
+    {
+      id: "1",
+      author: "You",
+      date: "Nov 15, 2024",
+      content:
+        "Low engagement - hasn't logged in for 3 weeks. Sent re-engagement email campaign but no response. Consider phone outreach.",
+    },
+    {
+      id: "2",
+      author: "You",
+      date: "Oct 28, 2024",
+      content:
+        "Emily mentioned her team is very small and may not need all features. At risk of downgrading or churning.",
+    },
+  ],
+  "6": [
+    {
+      id: "1",
+      author: "You",
+      date: "Dec 20, 2024",
+      content:
+        "Largest enterprise account. Very strategic relationship. Robert mentioned potential for expanding to their European offices in Q2 2025.",
+    },
+    {
+      id: "2",
+      author: "Sarah Kim",
+      date: "Dec 5, 2024",
+      content:
+        "Completed annual contract renewal for $102,000. They're very happy with the platform and considering adding more seats for their Boston and London teams.",
+    },
+    {
+      id: "3",
+      author: "You",
+      date: "Nov 10, 2024",
+      content:
+        "Executive review went great. CFO joined the call and was impressed with the ROI metrics we presented. Strong advocate internally.",
     },
   ],
 };
