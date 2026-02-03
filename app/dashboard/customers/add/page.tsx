@@ -113,7 +113,7 @@ export default function AddCustomerPage() {
   };
 
   return (
-    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 py-10 px-8">
+    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 py-14 px-8">
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Page Title */}
         <h1 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
