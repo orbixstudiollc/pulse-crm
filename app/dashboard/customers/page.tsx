@@ -20,7 +20,7 @@ import Link from "next/link";
 
 export default function CustomersPage() {
   return (
-    <div className="space-y-4">
+    <div className="py-6 px-8 space-y-4">
       <PageHeader title="Customers">
         <Button variant="outline" leftIcon={<ExportIcon size={20} />}>
           Export

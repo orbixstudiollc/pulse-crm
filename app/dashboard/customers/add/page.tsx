@@ -96,207 +96,212 @@ export default function AddCustomerPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-10 space-y-6">
-      {/* Page Title */}
-      <h1 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
-        Add Customer
-      </h1>
+    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 py-10 px-8">
+      <div className="max-w-3xl mx-auto space-y-6">
+        {/* Page Title */}
+        <h1 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
+          Add Customer
+        </h1>
 
-      {/* Basic Information */}
-      <FormSection
-        title="Basic information"
-        description="Customer's personal and contact details"
-      >
-        {/* Photo Upload */}
-        <div className="flex items-center gap-5 mb-6">
-          <div className="w-24 h-24 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center border border-neutral-200 dark:border-neutral-700">
-            <UserIcon size={32} className="text-neutral-400" />
-          </div>
-          <div className="space-y-2">
-            <Button variant="outline" leftIcon={<UploadSimpleIcon size={16} />}>
-              Upload Photo
-            </Button>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              JPG, PNG or GIF. Max 2MB.
-            </p>
-          </div>
-        </div>
-
-        {/* Name Fields */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <Input label="First Name" placeholder="Enter first name" />
-          <Input label="Last Name" placeholder="Enter last name" />
-        </div>
-
-        {/* Contact Fields */}
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            label="Email Address"
-            type="email"
-            placeholder="email@example.com"
-          />
-          <Input
-            label="Phone Number"
-            placeholder="+1 (555) 000-0000"
-            optional
-          />
-        </div>
-      </FormSection>
-
-      {/* Company Information */}
-      <FormSection
-        title="Company information"
-        description="Details about the customer's organization"
-      >
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <Input label="Company Name" placeholder="Enter company name" />
-          <Input
-            label="Job Title"
-            placeholder="e.g. Marketing Manager"
-            optional
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <Select
-            label="Industry"
-            placeholder="Select industry"
-            options={industryOptions}
-          />
-          <Select
-            label="Company Size"
-            placeholder="Select size"
-            options={companySizeOptions}
-          />
-        </div>
-
-        <Input label="Website" placeholder="https://example.com" optional />
-      </FormSection>
-
-      {/* Address */}
-      <FormSection
-        title="Address"
-        description="Customer's location information"
-      >
-        <div className="mb-4">
-          <Input
-            label="Street Address"
-            placeholder="123 Main Street"
-            optional
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <Input label="City" placeholder="City" />
-          <Input label="State / Region" placeholder="State" />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <Input label="Postal Code" placeholder="12345" />
-          <Select
-            label="Country"
-            placeholder="Select country"
-            options={countryOptions}
-          />
-        </div>
-      </FormSection>
-
-      {/* Account Settings */}
-      <FormSection
-        title="Account Settings"
-        description="Configure customer's plan and status"
-      >
-        <RadioGroup
-          name="status"
-          label="Status"
-          options={statusOptions}
-          value={status}
-          onChange={setStatus}
-          className="mb-4"
-        />
-
-        <div className="grid grid-cols-2 gap-4">
-          <Select
-            label="Plan"
-            placeholder="Select plan"
-            options={planOptions}
-          />
-          <Input label="Monthly Revenue" placeholder="$0.00" optional />
-        </div>
-      </FormSection>
-
-      {/* Tags */}
-      <FormSection
-        title="Tags"
-        description="Add tags to categorize this customer"
-      >
-        <TagInput tags={tags} onChange={setTags} placeholder="Add a tag..." />
-      </FormSection>
-
-      {/* Notes */}
-      <FormSection
-        title="Notes"
-        description="Add any additional information about this customer"
-      >
-        <Textarea placeholder="Add notes about this customer..." rows={4} />
-      </FormSection>
-
-      {/* Custom Fields */}
-      <FormSection
-        title="Custom Fields"
-        description="Add custom data fields for this customer"
-      >
-        <div className="space-y-3">
-          {customFields.map((field) => (
-            <div key={field.id} className="flex items-center gap-3">
-              <Input
-                placeholder="Field name"
-                value={field.name}
-                onChange={(e) =>
-                  updateCustomField(field.id, "name", e.target.value)
-                }
-                className="flex-1"
-              />
-              <Input
-                placeholder="Value"
-                value={field.value}
-                onChange={(e) =>
-                  updateCustomField(field.id, "value", e.target.value)
-                }
-                className="flex-1"
-              />
-              <button
-                type="button"
-                onClick={() => removeCustomField(field.id)}
-                className="flex h-[42px] w-[42px] items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-300 dark:hover:border-red-500/30 transition-colors group"
-              >
-                <XIcon
-                  size={18}
-                  className="text-neutral-400 group-hover:text-red-500"
-                />
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <button
-          type="button"
-          onClick={addCustomField}
-          className="flex items-center gap-2 mt-4 px-4 py-2.5 text-sm font-medium text-neutral-600 dark:text-neutral-400 border border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+        {/* Basic Information */}
+        <FormSection
+          title="Basic information"
+          description="Customer's personal and contact details"
         >
-          <PlusIcon size={18} />
-          Add Custom Field
-        </button>
-      </FormSection>
+          {/* Photo Upload */}
+          <div className="flex items-center gap-5 mb-6">
+            <div className="w-24 h-24 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center border border-neutral-200 dark:border-neutral-700">
+              <UserIcon size={32} className="text-neutral-400" />
+            </div>
+            <div className="space-y-2">
+              <Button
+                variant="outline"
+                leftIcon={<UploadSimpleIcon size={16} />}
+              >
+                Upload Photo
+              </Button>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                JPG, PNG or GIF. Max 2MB.
+              </p>
+            </div>
+          </div>
 
-      {/* Footer Actions */}
-      <div className="flex items-center justify-between pt-6 border-t border-neutral-200 dark:border-neutral-800">
-        <Link href="/dashboard/customers">
-          <Button variant="ghost">Cancel</Button>
-        </Link>
-        <div className="flex items-center gap-3">
-          <Button variant="outline">Save as Draft</Button>
-          <Button leftIcon={<CheckIcon size={18} />}>Save Customer</Button>
+          {/* Name Fields */}
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <Input label="First Name" placeholder="Enter first name" />
+            <Input label="Last Name" placeholder="Enter last name" />
+          </div>
+
+          {/* Contact Fields */}
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Email Address"
+              type="email"
+              placeholder="email@example.com"
+            />
+            <Input
+              label="Phone Number"
+              placeholder="+1 (555) 000-0000"
+              optional
+            />
+          </div>
+        </FormSection>
+
+        {/* Company Information */}
+        <FormSection
+          title="Company information"
+          description="Details about the customer's organization"
+        >
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <Input label="Company Name" placeholder="Enter company name" />
+            <Input
+              label="Job Title"
+              placeholder="e.g. Marketing Manager"
+              optional
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <Select
+              label="Industry"
+              placeholder="Select industry"
+              options={industryOptions}
+            />
+            <Select
+              label="Company Size"
+              placeholder="Select size"
+              options={companySizeOptions}
+            />
+          </div>
+
+          <Input label="Website" placeholder="https://example.com" optional />
+        </FormSection>
+
+        {/* Address */}
+        <FormSection
+          title="Address"
+          description="Customer's location information"
+        >
+          <div className="mb-4">
+            <Input
+              label="Street Address"
+              placeholder="123 Main Street"
+              optional
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <Input label="City" placeholder="City" />
+            <Input label="State / Region" placeholder="State" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Postal Code" placeholder="12345" />
+            <Select
+              label="Country"
+              placeholder="Select country"
+              options={countryOptions}
+            />
+          </div>
+        </FormSection>
+
+        {/* Account Settings */}
+        <FormSection
+          title="Account Settings"
+          description="Configure customer's plan and status"
+        >
+          <RadioGroup
+            name="status"
+            label="Status"
+            options={statusOptions}
+            value={status}
+            onChange={setStatus}
+            className="mb-4"
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Plan"
+              placeholder="Select plan"
+              options={planOptions}
+            />
+            <Input label="Monthly Revenue" placeholder="$0.00" optional />
+          </div>
+        </FormSection>
+
+        {/* Tags */}
+        <FormSection
+          title="Tags"
+          description="Add tags to categorize this customer"
+        >
+          <TagInput tags={tags} onChange={setTags} placeholder="Add a tag..." />
+        </FormSection>
+
+        {/* Notes */}
+        <FormSection
+          title="Notes"
+          description="Add any additional information about this customer"
+        >
+          <Textarea placeholder="Add notes about this customer..." rows={4} />
+        </FormSection>
+
+        {/* Custom Fields */}
+        <FormSection
+          title="Custom Fields"
+          description="Add custom data fields for this customer"
+        >
+          <div className="space-y-3">
+            {customFields.map((field) => (
+              <div key={field.id} className="flex items-center gap-3">
+                <Input
+                  placeholder="Field name"
+                  value={field.name}
+                  onChange={(e) =>
+                    updateCustomField(field.id, "name", e.target.value)
+                  }
+                  className="flex-1"
+                />
+                <Input
+                  placeholder="Value"
+                  value={field.value}
+                  onChange={(e) =>
+                    updateCustomField(field.id, "value", e.target.value)
+                  }
+                  className="flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeCustomField(field.id)}
+                  className="flex h-10.5 w-10.5 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-300 dark:hover:border-red-500/30 transition-colors group"
+                >
+                  <XIcon
+                    size={18}
+                    className="text-neutral-400 group-hover:text-red-500"
+                  />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={addCustomField}
+            className="flex items-center gap-2 mt-4 px-4 py-2.5 text-sm font-medium text-neutral-600 dark:text-neutral-400 border border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+          >
+            <PlusIcon size={18} />
+            Add Custom Field
+          </button>
+        </FormSection>
+
+        {/* Footer Actions */}
+        <div className="flex items-center justify-between pt-6 border-t border-neutral-200 dark:border-neutral-800">
+          <Link href="/dashboard/customers">
+            <Button variant="ghost">Cancel</Button>
+          </Link>
+          <div className="flex items-center gap-3">
+            <Button variant="outline">Save as Draft</Button>
+            <Button leftIcon={<CheckIcon size={18} />}>Save Customer</Button>
+          </div>
         </div>
       </div>
     </div>
