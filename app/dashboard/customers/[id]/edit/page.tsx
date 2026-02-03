@@ -1,7 +1,6 @@
-// app/dashboard/customers/[id]/edit/page.tsx
 "use client";
 
-import { useState } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import {
   Button,
@@ -22,25 +21,26 @@ import {
 } from "@/components/ui";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { getCustomerById } from "@/lib/data/customers";
 
 const industryOptions = [
-  { label: "Technology", value: "technology" },
-  { label: "Healthcare", value: "healthcare" },
-  { label: "Finance", value: "finance" },
-  { label: "Manufacturing", value: "manufacturing" },
-  { label: "Retail", value: "retail" },
-  { label: "Education", value: "education" },
-  { label: "Media & Entertainment", value: "media" },
-  { label: "Other", value: "other" },
+  { label: "Technology", value: "Technology" },
+  { label: "Healthcare", value: "Healthcare" },
+  { label: "Finance", value: "Finance" },
+  { label: "Manufacturing", value: "Manufacturing" },
+  { label: "Retail", value: "Retail" },
+  { label: "Education", value: "Education" },
+  { label: "Creative", value: "Creative" },
+  { label: "Other", value: "Other" },
 ];
 
 const companySizeOptions = [
-  { label: "1-10 employees", value: "1-10" },
-  { label: "11-50 employees", value: "11-50" },
-  { label: "51-200 employees", value: "51-200" },
-  { label: "201-500 employees", value: "201-500" },
-  { label: "501-1000 employees", value: "501-1000" },
-  { label: "1000+ employees", value: "1000+" },
+  { label: "1-10 employees", value: "1-10 employees" },
+  { label: "11-50 employees", value: "11-50 employees" },
+  { label: "51-200 employees", value: "51-200 employees" },
+  { label: "201-500 employees", value: "201-500 employees" },
+  { label: "501-1000 employees", value: "501-1000 employees" },
+  { label: "1000+ employees", value: "1000+ employees" },
 ];
 
 const countryOptions = [
@@ -71,69 +71,42 @@ interface CustomField {
   value: string;
 }
 
-// Mock customer data - in real app this would come from API/database
-const mockCustomer = {
-  id: "1",
-  firstName: "Marcus",
-  lastName: "Rodriguez",
-  email: "marcus.rodriguez@innovatehub.com",
-  phone: "+1 (512) 634-7892",
-  avatar:
-    "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-  company: "Innovate Hub",
-  jobTitle: "Chief Technology Officer",
-  industry: "finance",
-  companySize: "51-200",
-  website: "https://innovatehub.com",
-  streetAddress: "1205 West 6th Street, Floor 2",
-  city: "Austin",
-  state: "Texas",
-  postalCode: "78703",
-  country: "us",
-  status: "active",
-  plan: "enterprise",
-  monthlyRevenue: "$28,500.00",
-  tags: ["VIP", "Enterprise", "Tech Leader", "Finance"],
-  notes:
-    "Marcus joined during our enterprise pilot program in late 2023. His team of 45 developers actively uses our platform for financial data analytics. Very tech-savvy and provides excellent product feedback. Interested in expanding to additional departments. Next renewal discussion scheduled for February 2025.",
-  customFields: [
-    { id: "1", name: "Lead Source", value: "Conference (FinTech Summit 2023)" },
-    { id: "2", name: "Customer Since", value: "November 2023" },
-    { id: "3", name: "Account Manager", value: "Jennifer Kim" },
-    { id: "4", name: "Last Contact", value: "December 20, 2024" },
-  ],
-};
-
-export default function EditCustomerPage() {
+export default function EditCustomerPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const customer = getCustomerById(id);
   const router = useRouter();
 
-  // Form state - prefilled with mock data
-  const [avatar, setAvatar] = useState<string | null>(mockCustomer.avatar);
-  const [firstName, setFirstName] = useState(mockCustomer.firstName);
-  const [lastName, setLastName] = useState(mockCustomer.lastName);
-  const [email, setEmail] = useState(mockCustomer.email);
-  const [phone, setPhone] = useState(mockCustomer.phone);
-  const [company, setCompany] = useState(mockCustomer.company);
-  const [jobTitle, setJobTitle] = useState(mockCustomer.jobTitle);
-  const [industry, setIndustry] = useState(mockCustomer.industry);
-  const [companySize, setCompanySize] = useState(mockCustomer.companySize);
-  const [website, setWebsite] = useState(mockCustomer.website);
+  // Form state - prefilled with customer data
+  const [avatar, setAvatar] = useState<string | null>(customer?.avatar || null);
+  const [firstName, setFirstName] = useState(customer?.firstName || "");
+  const [lastName, setLastName] = useState(customer?.lastName || "");
+  const [email, setEmail] = useState(customer?.email || "");
+  const [phone, setPhone] = useState(customer?.phone || "");
+  const [company, setCompany] = useState(customer?.company || "");
+  const [jobTitle, setJobTitle] = useState(customer?.jobTitle || "");
+  const [industry, setIndustry] = useState(customer?.industry || "");
+  const [companySize, setCompanySize] = useState(customer?.companySize || "");
+  const [website, setWebsite] = useState(customer?.website || "");
   const [streetAddress, setStreetAddress] = useState(
-    mockCustomer.streetAddress,
+    customer?.streetAddress || "",
   );
-  const [city, setCity] = useState(mockCustomer.city);
-  const [state, setState] = useState(mockCustomer.state);
-  const [postalCode, setPostalCode] = useState(mockCustomer.postalCode);
-  const [country, setCountry] = useState(mockCustomer.country);
-  const [status, setStatus] = useState(mockCustomer.status);
-  const [plan, setPlan] = useState(mockCustomer.plan);
+  const [city, setCity] = useState(customer?.city || "");
+  const [state, setState] = useState(customer?.state || "");
+  const [postalCode, setPostalCode] = useState(customer?.postalCode || "");
+  const [country, setCountry] = useState(customer?.country || "");
+  const [status, setStatus] = useState(customer?.status || "active");
+  const [plan, setPlan] = useState(customer?.plan || "starter");
   const [monthlyRevenue, setMonthlyRevenue] = useState(
-    mockCustomer.monthlyRevenue,
+    customer?.mrr ? `$${customer.mrr.toLocaleString()}` : "",
   );
-  const [tags, setTags] = useState<string[]>(mockCustomer.tags);
-  const [notes, setNotes] = useState(mockCustomer.notes);
+  const [tags, setTags] = useState<string[]>(customer?.tags || []);
+  const [notes, setNotes] = useState(customer?.notes || "");
   const [customFields, setCustomFields] = useState<CustomField[]>(
-    mockCustomer.customFields,
+    customer?.customFields || [],
   );
 
   // UI state
@@ -141,6 +114,22 @@ export default function EditCustomerPage() {
   const [deleting, setDeleting] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+
+  if (!customer) {
+    return (
+      <div className="py-20 text-center">
+        <p className="text-neutral-500 dark:text-neutral-400 mb-4">
+          Customer not found
+        </p>
+        <Link
+          href="/dashboard/customers"
+          className="text-sm text-neutral-950 dark:text-neutral-50 hover:underline"
+        >
+          Back to customers
+        </Link>
+      </div>
+    );
+  }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -182,31 +171,21 @@ export default function EditCustomerPage() {
 
   const handleSave = async () => {
     setSaving(true);
-
-    // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
-
     setSaving(false);
     setToastMessage("Changes saved successfully");
     setShowToast(true);
-
-    // Navigate after toast is shown
     setTimeout(() => {
-      router.push("/dashboard/customers");
+      router.push(`/dashboard/customers/${id}`);
     }, 1500);
   };
 
   const handleDelete = async () => {
     setDeleting(true);
-
-    // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
-
     setDeleting(false);
     setToastMessage("Customer deleted successfully");
     setShowToast(true);
-
-    // Navigate after toast is shown
     setTimeout(() => {
       router.push("/dashboard/customers");
     }, 1500);
@@ -215,7 +194,6 @@ export default function EditCustomerPage() {
   return (
     <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 py-14 px-8">
       <div className="max-w-3xl mx-auto space-y-6">
-        {/* Page Title */}
         <h1 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
           Edit Customer
         </h1>
@@ -225,7 +203,6 @@ export default function EditCustomerPage() {
           title="Basic information"
           description="Customer's personal and contact details"
         >
-          {/* Photo Upload */}
           <div className="flex items-center gap-5 mb-6">
             <div className="relative w-24 h-24 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center border border-neutral-200 dark:border-neutral-700 overflow-hidden">
               {avatar ? (
@@ -235,7 +212,7 @@ export default function EditCustomerPage() {
                     alt="Avatar preview"
                     fill
                     className="object-cover"
-                    unoptimized
+                    unoptimized={avatar.startsWith("data:")}
                   />
                   <button
                     type="button"
@@ -281,7 +258,6 @@ export default function EditCustomerPage() {
             </div>
           </div>
 
-          {/* Name Fields */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <Input
               label="First Name"
@@ -295,7 +271,6 @@ export default function EditCustomerPage() {
             />
           </div>
 
-          {/* Contact Fields */}
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Email Address"
@@ -495,7 +470,7 @@ export default function EditCustomerPage() {
           </button>
         </FormSection>
 
-        {/* Danger Zone - Delete Customer */}
+        {/* Danger Zone */}
         <div className="rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-6">
           <h3 className="text-base font-medium text-red-600 dark:text-red-400 mb-2">
             Delete Customer
@@ -524,7 +499,7 @@ export default function EditCustomerPage() {
 
         {/* Footer Actions */}
         <div className="flex items-center justify-between pt-6 border-t border-neutral-200 dark:border-neutral-800">
-          <Link href="/dashboard/customers">
+          <Link href={`/dashboard/customers/${id}`}>
             <Button variant="ghost">Cancel</Button>
           </Link>
           <Button
@@ -543,7 +518,6 @@ export default function EditCustomerPage() {
         </div>
       </div>
 
-      {/* Toast */}
       <Toast
         open={showToast}
         onClose={() => setShowToast(false)}

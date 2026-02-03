@@ -408,6 +408,7 @@ export function CustomersTable({
         customer={
           selectedCustomer
             ? {
+                id: selectedCustomer.id,
                 name: selectedCustomer.name,
                 email: selectedCustomer.email,
                 avatar: selectedCustomer.avatar,

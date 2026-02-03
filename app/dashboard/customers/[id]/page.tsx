@@ -13,92 +13,35 @@ import {
   CheckCircleIcon,
   CurrencyDollarIcon,
   DotsThreeVerticalIcon,
-  NoteIcon,
-  VideoIcon,
   FileTextIcon,
+  VideoIcon,
+  NoteIcon,
 } from "@/components/ui";
-import { getCustomerById } from "@/lib/data/customers";
+import {
+  activityByCustomerId,
+  getCustomerById,
+  notesByCustomerId,
+} from "@/lib/data/customers";
 
-const activityItems = [
-  {
-    id: "1",
-    type: "email",
-    title: "Email sent: Q4 Product Update",
-    description: "Shared the latest product roadmap and upcoming features",
-    badge: { label: "Opened", variant: "success" as const },
-    meta: "Clicked 2 links",
-    icon: EnvelopeIcon,
-  },
-  {
-    id: "2",
-    type: "call",
-    title: "Call completed: Quarterly Review",
-    description:
-      "30 minute call discussing renewal and expansion opportunities",
-    badge: { label: "Positive", variant: "success" as const },
-    meta: "32 min",
-    icon: PhoneIcon,
-  },
-  {
-    id: "3",
-    type: "deal",
-    title: "Deal closed: Enterprise Upgrade",
-    description: "Upgraded from Pro to Enterprise plan - $2,450/mo",
-    badge: { label: "Won", variant: "success" as const },
-    meta: "$29,400 ARR",
-    icon: CurrencyDollarIcon,
-  },
-  {
-    id: "4",
-    type: "meeting",
-    title: "Meeting: API Integration Demo",
-    description: "Technical deep-dive with engineering team",
-    badge: { label: "Tomorrow, 2:00 PM", variant: "info" as const },
-    meta: "4 attendees",
-    icon: VideoIcon,
-  },
-  {
-    id: "5",
-    type: "note",
-    title: "Note added",
-    description: "Customer interested in API access and custom integrations",
-    icon: NoteIcon,
-  },
-  {
-    id: "6",
-    type: "email",
-    title: "Email received: Feature Request",
-    description: "Requested Salesforce integration",
-    badge: { label: "Replied", variant: "success" as const },
-    meta: "2 hr response time",
-    icon: EnvelopeIcon,
-  },
-];
-
-const notes = [
-  {
-    id: "1",
-    author: "You",
-    date: "Dec 10, 2025",
-    content:
-      "Customer interested in API access and custom integrations. They want to build a custom dashboard for their engineering team. Follow up next week with technical documentation.",
-  },
-  {
-    id: "2",
-    author: "You",
-    date: "Nov 28, 2025",
-    content:
-      "Great quarterly review call. Sarah mentioned they're expanding their team and might need additional seats in Q1. Very happy with the product so far.",
-  },
-];
+// Icon mapping for activity types
+const activityIconMap = {
+  email: EnvelopeIcon,
+  call: PhoneIcon,
+  deal: CurrencyDollarIcon,
+  meeting: VideoIcon,
+  note: NoteIcon,
+};
 
 export default function CustomerDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
   const customer = getCustomerById(id);
+
+  const activityItems = activityByCustomerId[id] || [];
+  const customerNotes = notesByCustomerId[id] || [];
 
   const [activeTab, setActiveTab] = useState<"activity" | "deals">("activity");
   const [newNote, setNewNote] = useState("");
@@ -114,10 +57,12 @@ export default function CustomerDetailPage({
   if (!customer) {
     return (
       <div className="py-20 text-center">
-        <p className="text-neutral-500">Customer not found</p>
+        <p className="text-neutral-500 dark:text-neutral-400 mb-4">
+          Customer not found
+        </p>
         <Link
           href="/dashboard/customers"
-          className="text-sm text-blue-500 hover:underline"
+          className="text-sm text-neutral-950 dark:text-neutral-50 hover:underline"
         >
           Back to customers
         </Link>
@@ -136,7 +81,6 @@ export default function CustomerDetailPage({
               alt={customer.name}
               fill
               className="object-cover"
-              unoptimized
             />
           </div>
           <div>
@@ -147,10 +91,27 @@ export default function CustomerDetailPage({
               {customer.email}
             </p>
             <div className="flex items-center gap-2">
-              <Badge variant="success">
-                {customer.status === "active" ? "Active" : "Inactive"}
+              <Badge
+                variant={
+                  customer.status === "active"
+                    ? "green"
+                    : customer.status === "pending"
+                      ? "amber"
+                      : "neutral"
+                }
+              >
+                {customer.status.charAt(0).toUpperCase() +
+                  customer.status.slice(1)}
               </Badge>
-              <Badge variant="info">
+              <Badge
+                variant={
+                  customer.plan === "enterprise"
+                    ? "violet"
+                    : customer.plan === "pro"
+                      ? "blue"
+                      : "neutral"
+                }
+              >
                 {customer.plan.charAt(0).toUpperCase() + customer.plan.slice(1)}
               </Badge>
             </div>
@@ -168,7 +129,7 @@ export default function CustomerDetailPage({
       <div className="grid grid-cols-4 gap-4 mb-8">
         <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 text-center">
           <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
-            {formatCurrency(customer.monthlyRevenue)}
+            {formatCurrency(customer.mrr)}
           </p>
           <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
             Monthly Revenue
@@ -192,7 +153,7 @@ export default function CustomerDetailPage({
         </div>
         <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 text-center">
           <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
-            {customer.tenure}
+            {customer.tenure} mo
           </p>
           <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
             Tenure
@@ -229,47 +190,58 @@ export default function CustomerDetailPage({
             </div>
             <div className="p-4">
               {activeTab === "activity" && (
-                <div className="space-y-1">
-                  {activityItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-start gap-4 p-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors group"
-                    >
-                      <div className="w-9 h-9 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center flex-shrink-0">
-                        <item.icon
-                          size={18}
-                          className="text-neutral-500 dark:text-neutral-400"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
-                          {item.title}
-                        </p>
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                          {item.description}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          {item.badge && (
-                            <Badge variant={item.badge.variant} size="sm">
-                              {item.badge.label}
-                            </Badge>
-                          )}
-                          {item.meta && (
-                            <span className="text-xs text-neutral-400 dark:text-neutral-500">
-                              · {item.meta}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800">
-                        <DotsThreeVerticalIcon
-                          size={18}
-                          className="text-neutral-400"
-                        />
-                      </button>
+                <>
+                  {activityItems.length > 0 ? (
+                    <div className="space-y-1">
+                      {activityItems.map((item) => {
+                        const Icon = activityIconMap[item.type];
+                        return (
+                          <div
+                            key={item.id}
+                            className="flex items-start gap-4 p-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors group"
+                          >
+                            <div className="w-9 h-9 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center flex-shrink-0">
+                              <Icon
+                                size={18}
+                                className="text-neutral-500 dark:text-neutral-400"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                                {item.title}
+                              </p>
+                              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                {item.description}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1.5">
+                                {item.badge && (
+                                  <Badge variant={item.badge.variant} size="sm">
+                                    {item.badge.label}
+                                  </Badge>
+                                )}
+                                {item.meta && (
+                                  <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                                    · {item.meta}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800">
+                              <DotsThreeVerticalIcon
+                                size={18}
+                                className="text-neutral-400"
+                              />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
+                  ) : (
+                    <div className="py-12 text-center text-neutral-500 dark:text-neutral-400">
+                      <p>No activity yet</p>
+                    </div>
+                  )}
+                </>
               )}
               {activeTab === "deals" && (
                 <div className="py-12 text-center text-neutral-500 dark:text-neutral-400">
@@ -364,23 +336,29 @@ export default function CustomerDetailPage({
             <h2 className="text-lg font-serif text-neutral-950 dark:text-neutral-50 mb-6">
               Notes
             </h2>
-            <div className="space-y-6 mb-6">
-              {notes.map((note) => (
-                <div key={note.id}>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
-                      {note.author}
-                    </p>
-                    <p className="text-xs text-neutral-400 dark:text-neutral-500">
-                      {note.date}
+            {customerNotes.length > 0 ? (
+              <div className="space-y-6 mb-6">
+                {customerNotes.map((note) => (
+                  <div key={note.id}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                        {note.author}
+                      </p>
+                      <p className="text-xs text-neutral-400 dark:text-neutral-500">
+                        {note.date}
+                      </p>
+                    </div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                      {note.content}
                     </p>
                   </div>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                    {note.content}
-                  </p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">
+                No notes yet
+              </p>
+            )}
             <div className="space-y-3">
               <Textarea
                 value={newNote}
@@ -455,10 +433,16 @@ export default function CustomerDetailPage({
               </div>
               <div>
                 <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
-                  Excellent
+                  {customer.healthScore >= 80
+                    ? "Excellent"
+                    : customer.healthScore >= 60
+                      ? "Good"
+                      : "At Risk"}
                 </p>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  High engagement, active user
+                  {customer.healthScore >= 80
+                    ? "High engagement, active user"
+                    : "Needs attention"}
                 </p>
               </div>
             </div>
@@ -475,7 +459,7 @@ export default function CustomerDetailPage({
                   Monthly Revenue
                 </p>
                 <p className="text-xl font-semibold text-neutral-950 dark:text-neutral-50">
-                  {formatCurrency(customer.monthlyRevenue)}
+                  {formatCurrency(customer.mrr)}
                 </p>
                 <p className="text-xs text-green-600 dark:text-green-400">
                   +15% from last month
