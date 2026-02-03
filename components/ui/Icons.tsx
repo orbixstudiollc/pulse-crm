@@ -40,4 +40,5 @@ export {
   CheckCircleIcon,
   TrophyIcon,
   WarningIcon,
+  CircleNotchIcon,
 } from "@phosphor-icons/react";

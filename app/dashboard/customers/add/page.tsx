@@ -15,8 +15,11 @@ import {
   PlusIcon,
   XIcon,
   CheckIcon,
+  CircleNotchIcon,
+  Toast,
 } from "@/components/ui";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const industryOptions = [
   { label: "Technology", value: "technology" },
@@ -67,12 +70,15 @@ interface CustomField {
 }
 
 export default function AddCustomerPage() {
+  const router = useRouter();
   const [avatar, setAvatar] = useState<string | null>(null);
   const [status, setStatus] = useState("active");
   const [tags, setTags] = useState<string[]>(["VIP", "Enterprise"]);
   const [customFields, setCustomFields] = useState<CustomField[]>([
     { id: "1", name: "", value: "" },
   ]);
+  const [saving, setSaving] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -110,6 +116,22 @@ export default function AddCustomerPage() {
         field.id === id ? { ...field, [key]: value } : field,
       ),
     );
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    setSaving(false);
+    setShowToast(true);
+
+    // Navigate after toast is shown
+    setTimeout(() => {
+      router.push("/dashboard/customers");
+      // Later: router.push(`/dashboard/customers/${customerId}`);
+    }, 1500);
   };
 
   return (
@@ -357,10 +379,30 @@ export default function AddCustomerPage() {
           </Link>
           <div className="flex items-center gap-3">
             <Button variant="outline">Save as Draft</Button>
-            <Button leftIcon={<CheckIcon size={18} />}>Save Customer</Button>
+            <Button
+              leftIcon={
+                saving ? (
+                  <CircleNotchIcon size={18} className="animate-spin" />
+                ) : (
+                  <CheckIcon size={18} />
+                )
+              }
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? "Saving Customer" : "Save Customer"}
+            </Button>
           </div>
         </div>
       </div>
+
+      {/* Toast */}
+      <Toast
+        open={showToast}
+        onClose={() => setShowToast(false)}
+        message="Customer saved successfully"
+        variant="success"
+      />
     </div>
   );
 }
