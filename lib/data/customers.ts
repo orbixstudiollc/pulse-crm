@@ -628,3 +628,175 @@ export const notesByCustomerId: Record<string, Note[]> = {
     },
   ],
 };
+
+export type DealStage =
+  | "prospecting"
+  | "qualification"
+  | "proposal"
+  | "negotiation"
+  | "closed_won"
+  | "closed_lost";
+
+export interface Deal {
+  id: string;
+  name: string;
+  company: string;
+  value: string;
+  valuePeriod: "mo" | "yr";
+  stage: DealStage;
+  probability: number;
+  createdDate: string;
+  expectedCloseDate: string;
+}
+
+const stageConfig: Record<
+  DealStage,
+  {
+    label: string;
+    variant: "amber" | "blue" | "green" | "red" | "violet" | "neutral";
+  }
+> = {
+  prospecting: { label: "Prospecting", variant: "neutral" },
+  qualification: { label: "Qualification", variant: "blue" },
+  proposal: { label: "Proposal", variant: "violet" },
+  negotiation: { label: "Negotiation", variant: "amber" },
+  closed_won: { label: "Closed Won", variant: "green" },
+  closed_lost: { label: "Closed Lost", variant: "red" },
+};
+
+export { stageConfig };
+
+export const dealsByCustomerId: Record<string, Deal[]> = {
+  "1": [
+    {
+      id: "1",
+      name: "Enterprise Renewal 2025",
+      company: "NextGen Solutions",
+      value: "$29,400",
+      valuePeriod: "yr",
+      stage: "negotiation",
+      probability: 75,
+      createdDate: "Dec 1, 2025",
+      expectedCloseDate: "Jan 15, 2026",
+    },
+    {
+      id: "2",
+      name: "API Add-On Package",
+      company: "NextGen Solutions",
+      value: "$500",
+      valuePeriod: "mo",
+      stage: "proposal",
+      probability: 60,
+      createdDate: "Nov 15, 2025",
+      expectedCloseDate: "Feb 1, 2026",
+    },
+  ],
+  "2": [
+    {
+      id: "1",
+      name: "Enterprise Renewal 2025",
+      company: "Acme Corp",
+      value: "$29,400",
+      valuePeriod: "yr",
+      stage: "negotiation",
+      probability: 75,
+      createdDate: "Dec 1, 2025",
+      expectedCloseDate: "Jan 15, 2026",
+    },
+    {
+      id: "2",
+      name: "Enterprise Upgrade",
+      company: "Acme Corp",
+      value: "$2,450",
+      valuePeriod: "mo",
+      stage: "closed_won",
+      probability: 100,
+      createdDate: "Nov 15, 2025",
+      expectedCloseDate: "Dec 15, 2025",
+    },
+    {
+      id: "3",
+      name: "Initial Pro Plan",
+      company: "Acme Corp",
+      value: "$149",
+      valuePeriod: "mo",
+      stage: "closed_won",
+      probability: 100,
+      createdDate: "Jan 10, 2025",
+      expectedCloseDate: "Jan 15, 2025",
+    },
+  ],
+  "3": [
+    {
+      id: "1",
+      name: "Enterprise Renewal",
+      company: "GlobalTech Inc",
+      value: "$50,400",
+      valuePeriod: "yr",
+      stage: "qualification",
+      probability: 40,
+      createdDate: "Nov 1, 2025",
+      expectedCloseDate: "Dec 10, 2025",
+    },
+  ],
+  "4": [
+    {
+      id: "1",
+      name: "Pro to Enterprise Upgrade",
+      company: "Innovate Co",
+      value: "$2,450",
+      valuePeriod: "mo",
+      stage: "proposal",
+      probability: 50,
+      createdDate: "Dec 5, 2025",
+      expectedCloseDate: "Feb 1, 2026",
+    },
+    {
+      id: "2",
+      name: "Initial Pro Plan",
+      company: "Innovate Co",
+      value: "$299",
+      valuePeriod: "mo",
+      stage: "closed_won",
+      probability: 100,
+      createdDate: "Jan 5, 2023",
+      expectedCloseDate: "Jan 10, 2023",
+    },
+  ],
+  "5": [],
+  "6": [
+    {
+      id: "1",
+      name: "Annual Contract Renewal",
+      company: "Finance Plus",
+      value: "$102,000",
+      valuePeriod: "yr",
+      stage: "closed_won",
+      probability: 100,
+      createdDate: "Nov 1, 2024",
+      expectedCloseDate: "Jan 1, 2025",
+    },
+    {
+      id: "2",
+      name: "European Expansion",
+      company: "Finance Plus",
+      value: "$8,500",
+      valuePeriod: "mo",
+      stage: "prospecting",
+      probability: 20,
+      createdDate: "Dec 15, 2025",
+      expectedCloseDate: "Mar 1, 2026",
+    },
+    {
+      id: "3",
+      name: "Analytics Add-On",
+      company: "Finance Plus",
+      value: "$1,200",
+      valuePeriod: "mo",
+      stage: "negotiation",
+      probability: 80,
+      createdDate: "Dec 1, 2025",
+      expectedCloseDate: "Jan 15, 2026",
+    },
+  ],
+};

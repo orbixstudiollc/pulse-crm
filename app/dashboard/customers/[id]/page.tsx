@@ -6,23 +6,36 @@ import Image from "next/image";
 import {
   Button,
   Badge,
+  Progress,
   Textarea,
   EnvelopeIcon,
   PhoneIcon,
   CalendarBlankIcon,
   CheckCircleIcon,
   CurrencyDollarIcon,
-  DotsThreeVerticalIcon,
   FileTextIcon,
   VideoIcon,
   NoteIcon,
+  ActionMenu,
+  EyeIcon,
+  TrashIcon,
 } from "@/components/ui";
 import {
   activityByCustomerId,
   getCustomerById,
   notesByCustomerId,
+  dealsByCustomerId,
+  stageConfig,
 } from "@/lib/data/customers";
 import { cn } from "@/lib/utils";
+import {
+  CompleteMeetingModal,
+  ScheduleMeetingModal,
+  ActivityDetailDrawer,
+  CreateTaskModal,
+  CreateDealModal,
+  CreateInvoiceModal,
+} from "@/components/features";
 
 // Icon mapping for activity types
 const activityIconMap = {
@@ -43,9 +56,19 @@ export default function CustomerDetailPage({
 
   const activityItems = activityByCustomerId[id] || [];
   const customerNotes = notesByCustomerId[id] || [];
+  const customerDeals = dealsByCustomerId[id] || [];
 
   const [activeTab, setActiveTab] = useState<"activity" | "deals">("activity");
   const [newNote, setNewNote] = useState("");
+  const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState<
+    (typeof activityItems)[0] | null
+  >(null);
+  const [showActivityDrawer, setShowActivityDrawer] = useState(false);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showDealModal, setShowDealModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -235,12 +258,26 @@ export default function CustomerDetailPage({
                                 )}
                               </div>
                             </div>
-                            <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800">
-                              <DotsThreeVerticalIcon
-                                size={18}
-                                className="text-neutral-400"
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                              <ActionMenu
+                                items={[
+                                  {
+                                    label: "View Details",
+                                    icon: <EyeIcon size={16} />,
+                                    onClick: () => {
+                                      setSelectedActivity(item);
+                                      setShowActivityDrawer(true);
+                                    },
+                                  },
+                                  {
+                                    label: "Delete Activity",
+                                    icon: <TrashIcon size={16} />,
+                                    variant: "danger",
+                                    onClick: () => {},
+                                  },
+                                ]}
                               />
-                            </button>
+                            </div>
                           </div>
                         );
                       })}
@@ -253,9 +290,97 @@ export default function CustomerDetailPage({
                 </>
               )}
               {activeTab === "deals" && (
-                <div className="py-12 text-center text-neutral-500 dark:text-neutral-400">
-                  <p>No deals to display</p>
-                </div>
+                <>
+                  {customerDeals.length > 0 ? (
+                    <div className="p-4 space-y-4">
+                      {customerDeals.map((deal) => {
+                        const isClosed =
+                          deal.stage === "closed_won" ||
+                          deal.stage === "closed_lost";
+                        return (
+                          <div
+                            key={deal.id}
+                            className={cn(
+                              "rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 overflow-hidden transition-all hover:border-neutral-300 dark:hover:border-neutral-700 hover:shadow-sm",
+                              isClosed && "opacity-70 hover:opacity-100",
+                            )}
+                          >
+                            {/* Card Header */}
+                            <div className="flex items-center justify-between px-4 py-3.5 border-b border-neutral-200 dark:border-neutral-800">
+                              <div>
+                                <p className="text-[15px] font-semibold text-neutral-950 dark:text-neutral-50">
+                                  {deal.name}
+                                </p>
+                                <p className="text-[13px] text-neutral-500 dark:text-neutral-400">
+                                  {deal.company}
+                                </p>
+                              </div>
+                              <p className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
+                                {deal.value}/{deal.valuePeriod}
+                              </p>
+                            </div>
+
+                            {/* Card Body */}
+                            <div className="px-4 py-3.5 space-y-3.5">
+                              {/* Stage */}
+                              <div className="flex items-center gap-3">
+                                <span className="text-[13px] text-neutral-500 dark:text-neutral-400 w-20">
+                                  Stage
+                                </span>
+                                <Badge
+                                  variant={stageConfig[deal.stage].variant}
+                                >
+                                  {stageConfig[deal.stage].label}
+                                </Badge>
+                              </div>
+
+                              {/* Probability - only show if not closed */}
+                              {!isClosed && (
+                                <div className="flex items-center gap-3">
+                                  <span className="text-[13px] text-neutral-500 dark:text-neutral-400 w-20">
+                                    Probability
+                                  </span>
+                                  <Progress
+                                    value={deal.probability}
+                                    color="green"
+                                    className="flex-1"
+                                  />
+                                  <span className="text-[13px] font-medium text-neutral-950 dark:text-neutral-50 w-10 text-right">
+                                    {deal.probability}%
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Dates */}
+                              <div className="flex items-center gap-6">
+                                <div>
+                                  <span className="text-xs text-neutral-400 dark:text-neutral-500 block mb-0.5">
+                                    Created
+                                  </span>
+                                  <span className="text-[13px] font-medium text-neutral-950 dark:text-neutral-50">
+                                    {deal.createdDate}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-xs text-neutral-400 dark:text-neutral-500 block mb-0.5">
+                                    {isClosed ? "Closed" : "Expected Close"}
+                                  </span>
+                                  <span className="text-[13px] font-medium text-neutral-950 dark:text-neutral-50">
+                                    {deal.expectedCloseDate}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="py-12 text-center text-neutral-500 dark:text-neutral-400">
+                      <p>No deals to display</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -397,7 +522,10 @@ export default function CustomerDetailPage({
               Quick Actions
             </p>
             <div className="grid grid-cols-2 gap-3">
-              <button className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+              <button
+                onClick={() => setShowMeetingModal(true)}
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              >
                 <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
                   <CalendarBlankIcon
                     size={18}
@@ -408,7 +536,10 @@ export default function CustomerDetailPage({
                   Schedule Meeting
                 </span>
               </button>
-              <button className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+              <button
+                onClick={() => setShowTaskModal(true)}
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              >
                 <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
                   <CheckCircleIcon
                     size={18}
@@ -419,7 +550,10 @@ export default function CustomerDetailPage({
                   Create Task
                 </span>
               </button>
-              <button className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+              <button
+                onClick={() => setShowDealModal(true)}
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              >
                 <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
                   <CurrencyDollarIcon
                     size={18}
@@ -430,7 +564,10 @@ export default function CustomerDetailPage({
                   Create Deal
                 </span>
               </button>
-              <button className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+              <button
+                onClick={() => setShowInvoiceModal(true)}
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              >
                 <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
                   <FileTextIcon
                     size={18}
@@ -551,6 +688,60 @@ export default function CustomerDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Schedule Meeting Modal */}
+      <ScheduleMeetingModal
+        open={showMeetingModal}
+        onClose={() => setShowMeetingModal(false)}
+        customerName={customer.name}
+      />
+
+      {/* Activity Detail Drawer */}
+      <ActivityDetailDrawer
+        open={showActivityDrawer}
+        onClose={() => setShowActivityDrawer(false)}
+        activity={selectedActivity}
+        customerName={customer.name}
+        onMarkComplete={() => {
+          setShowActivityDrawer(false);
+          setShowCompleteModal(true);
+        }}
+        onReschedule={() => {
+          setShowActivityDrawer(false);
+          setShowMeetingModal(true);
+        }}
+      />
+
+      {/* Complete Meeting Modal */}
+      <CompleteMeetingModal
+        open={showCompleteModal}
+        onClose={() => setShowCompleteModal(false)}
+        onComplete={(data) => {
+          console.log("Meeting completed:", data);
+          setShowCompleteModal(false);
+        }}
+      />
+
+      {/* Create Task Modal */}
+      <CreateTaskModal
+        open={showTaskModal}
+        onClose={() => setShowTaskModal(false)}
+        customerName={customer.name}
+      />
+
+      {/* Create Deal Modal */}
+      <CreateDealModal
+        open={showDealModal}
+        onClose={() => setShowDealModal(false)}
+      />
+
+      {/* Create Invoice Modal */}
+      <CreateInvoiceModal
+        open={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+        customerPlan={customer.plan}
+        customerMrr={customer.mrr}
+      />
     </div>
   );
 }

@@ -52,4 +52,9 @@ export {
   NoteIcon,
   FileTextIcon,
   ClockIcon,
+
+  // Sentiment
+  ThumbsUpIcon,
+  ThumbsDownIcon,
+  MinusCircleIcon,
 } from "@phosphor-icons/react";
