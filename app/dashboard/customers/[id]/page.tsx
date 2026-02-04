@@ -22,6 +22,7 @@ import {
   getCustomerById,
   notesByCustomerId,
 } from "@/lib/data/customers";
+import { cn } from "@/lib/utils";
 
 // Icon mapping for activity types
 const activityIconMap = {
@@ -73,7 +74,7 @@ export default function CustomerDetailPage({
   return (
     <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 p-8">
       {/* Header + Stats Card */}
-      <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 mb-6">
+      <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 mb-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-6">
@@ -139,7 +140,7 @@ export default function CustomerDetailPage({
             </p>
           </div>
           <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
-            <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+            <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
               {customer.healthScore}
             </p>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
@@ -147,7 +148,7 @@ export default function CustomerDetailPage({
             </p>
           </div>
           <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
-            <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+            <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
               ${(customer.lifetimeValue / 1000).toFixed(1)}K
             </p>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
@@ -155,7 +156,7 @@ export default function CustomerDetailPage({
             </p>
           </div>
           <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
-            <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+            <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
               {customer.tenure} mo
             </p>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
@@ -192,19 +193,23 @@ export default function CustomerDetailPage({
                 Deals
               </button>
             </div>
-            <div className="p-4">
+            <div>
               {activeTab === "activity" && (
                 <>
                   {activityItems.length > 0 ? (
                     <div className="space-y-1">
-                      {activityItems.map((item) => {
+                      {activityItems.map((item, index) => {
                         const Icon = activityIconMap[item.type];
                         return (
                           <div
                             key={item.id}
-                            className="flex items-start gap-4 p-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors group"
+                            className={cn(
+                              "flex items-start gap-4 py-4 px-5 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors group",
+                              index !== activityItems.length - 1 &&
+                                "border-b-[0.5px] border-neutral-200 dark:border-neutral-800",
+                            )}
                           >
-                            <div className="w-9 h-9 rounded-lg bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center flex-shrink-0">
+                            <div className="w-9 h-9 rounded-full border-[0.5px] border-neutral-200 dark:border-neutral-400/30 bg-neutral-100 dark:bg-neutral-400/15 flex items-center justify-center shrink-0">
                               <Icon
                                 size={18}
                                 className="text-neutral-500 dark:text-neutral-400"
@@ -388,43 +393,51 @@ export default function CustomerDetailPage({
         <div className="space-y-6">
           {/* Quick Actions */}
           <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-4">
+            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
               Quick Actions
             </p>
             <div className="grid grid-cols-2 gap-3">
-              <button className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors">
-                <CalendarBlankIcon
-                  size={20}
-                  className="text-neutral-500 dark:text-neutral-400"
-                />
-                <span className="text-xs text-neutral-600 dark:text-neutral-400">
+              <button className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
+                  <CalendarBlankIcon
+                    size={18}
+                    className="text-neutral-600 dark:text-neutral-400"
+                  />
+                </div>
+                <span className="text-sm font-medium text-neutral-950 dark:text-white">
                   Schedule Meeting
                 </span>
               </button>
-              <button className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors">
-                <CheckCircleIcon
-                  size={20}
-                  className="text-neutral-500 dark:text-neutral-400"
-                />
-                <span className="text-xs text-neutral-600 dark:text-neutral-400">
+              <button className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
+                  <CheckCircleIcon
+                    size={18}
+                    className="text-neutral-600 dark:text-neutral-400"
+                  />
+                </div>
+                <span className="text-sm font-medium text-neutral-950 dark:text-white">
                   Create Task
                 </span>
               </button>
-              <button className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors">
-                <CurrencyDollarIcon
-                  size={20}
-                  className="text-neutral-500 dark:text-neutral-400"
-                />
-                <span className="text-xs text-neutral-600 dark:text-neutral-400">
+              <button className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
+                  <CurrencyDollarIcon
+                    size={18}
+                    className="text-neutral-600 dark:text-neutral-400"
+                  />
+                </div>
+                <span className="text-sm font-medium text-neutral-950 dark:text-white">
                   Create Deal
                 </span>
               </button>
-              <button className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors">
-                <FileTextIcon
-                  size={20}
-                  className="text-neutral-500 dark:text-neutral-400"
-                />
-                <span className="text-xs text-neutral-600 dark:text-neutral-400">
+              <button className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
+                  <FileTextIcon
+                    size={18}
+                    className="text-neutral-600 dark:text-neutral-400"
+                  />
+                </div>
+                <span className="text-sm font-medium text-neutral-950 dark:text-white">
                   Send Invoice
                 </span>
               </button>
@@ -433,7 +446,7 @@ export default function CustomerDetailPage({
 
           {/* Health Score */}
           <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-4">
+            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
               Health Score
             </p>
             <div className="flex items-center gap-4">
@@ -461,7 +474,7 @@ export default function CustomerDetailPage({
 
           {/* Revenue */}
           <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-4">
+            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
               Revenue
             </p>
             <div className="space-y-4">
@@ -489,7 +502,7 @@ export default function CustomerDetailPage({
 
           {/* Tags */}
           <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-4">
+            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
               Tags
             </p>
             <div className="flex flex-wrap gap-2">
@@ -506,7 +519,7 @@ export default function CustomerDetailPage({
 
           {/* Key Dates */}
           <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-4">
+            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
               Key Dates
             </p>
             <div className="space-y-4">

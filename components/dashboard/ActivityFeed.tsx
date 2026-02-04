@@ -135,7 +135,7 @@ export function ActivityFeed({
             )}
           >
             {/* Icon */}
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-[0.5px] border-neutral-200 dark:border-neutral-500/30 bg-neutral-100 text-neutral-600 dark:bg-neutral-500/15 dark:text-neutral-400">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-[0.5px] border-neutral-200 dark:border-neutral-400/30 bg-neutral-100 text-neutral-600 dark:bg-neutral-400/15 dark:text-neutral-400">
               {activityIcons[activity.type]}
             </div>
 

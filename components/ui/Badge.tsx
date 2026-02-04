@@ -19,18 +19,18 @@ interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  red: "border-red-200 dark:border-red-500/30 bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400",
+  red: "border-red-200 dark:border-red-400/30 bg-red-100 text-red-600 dark:bg-red-400/15 dark:text-red-400",
   amber:
-    "border-amber-200 dark:border-amber-500/30 bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400",
+    "border-amber-200 dark:border-amber-400/30 bg-amber-100 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400",
   green:
-    "border-green-200 dark:border-green-500/30 bg-green-100 text-green-600 dark:bg-green-500/15 dark:text-green-400",
-  blue: "border-blue-200 dark:border-blue-500/30 bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
+    "border-green-200 dark:border-green-400/30 bg-green-100 text-green-600 dark:bg-green-400/15 dark:text-green-400",
+  blue: "border-blue-200 dark:border-blue-400/30 bg-blue-100 text-blue-600 dark:bg-blue-400/15 dark:text-blue-400",
   emerald:
-    "border-emerald-200 dark:border-emerald-500/30 bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400",
+    "border-emerald-200 dark:border-emerald-400/30 bg-emerald-100 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-400",
   violet:
-    "border-violet-200 dark:border-violet-500/30 bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400",
+    "border-violet-200 dark:border-violet-400/30 bg-violet-100 text-violet-600 dark:bg-violet-400/15 dark:text-violet-400",
   neutral:
-    "border-neutral-200 dark:border-neutral-500/30 bg-neutral-100 text-neutral-600 dark:bg-neutral-500/15 dark:text-neutral-400",
+    "border-neutral-200 dark:border-neutral-400/30 bg-neutral-100 text-neutral-600 dark:bg-neutral-400/15 dark:text-neutral-400",
 };
 
 const dotStyles: Record<BadgeVariant, string> = {

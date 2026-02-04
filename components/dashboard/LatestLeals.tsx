@@ -99,12 +99,12 @@ const statusConfig: Record<
 
 function getScoreStyle(score: number) {
   if (score >= 80) {
-    return "border-green-200 dark:border-green-500/30 bg-green-100 text-green-600 dark:bg-green-500/15 dark:text-green-400";
+    return "border-green-200 dark:border-green-400/30 bg-green-100 text-green-600 dark:bg-green-400/15 dark:text-green-400";
   }
   if (score >= 60) {
-    return "border-amber-200 dark:border-amber-500/30 bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400";
+    return "border-amber-200 dark:border-amber-400/30 bg-amber-100 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400";
   }
-  return "border-neutral-200 dark:border-neutral-500/30 bg-neutral-100 text-neutral-500 dark:bg-neutral-500/15 dark:text-neutral-400";
+  return "border-neutral-200 dark:border-neutral-400/30 bg-neutral-100 text-neutral-600 dark:bg-neutral-400/15 dark:text-neutral-400";
 }
 
 export function LatestLeads({
