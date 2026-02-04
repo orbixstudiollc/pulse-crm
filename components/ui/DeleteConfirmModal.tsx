@@ -26,7 +26,7 @@ export function DeleteConfirmModal({
     : "Are you sure you want to delete this item? This action cannot be undone and will permanently remove all associated data.";
 
   return (
-    <Modal open={open} onClose={onClose} title="">
+    <Modal open={open} onClose={onClose}>
       <div className="p-6 text-center sm:text-left">
         {/* Icon */}
         <div className="mx-auto sm:mx-0 w-12 h-12 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center mb-4">

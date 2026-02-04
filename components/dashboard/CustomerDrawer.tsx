@@ -23,7 +23,7 @@ interface CustomerDrawerProps {
     lifetimeValue: number;
     tenure: number;
     status: "active" | "pending" | "inactive";
-    plan: "enterprise" | "pro" | "starter";
+    plan: "enterprise" | "pro" | "starter" | "free";
     company: string;
     industry: string;
     phone: string;
@@ -41,6 +41,7 @@ const planConfig = {
   enterprise: { label: "Enterprise", variant: "violet" as const },
   pro: { label: "Pro", variant: "blue" as const },
   starter: { label: "Starter", variant: "neutral" as const },
+  free: { label: "Free", variant: "neutral" as const },
 };
 
 function formatCurrency(value: number) {

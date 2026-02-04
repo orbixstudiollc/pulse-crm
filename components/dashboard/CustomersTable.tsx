@@ -10,7 +10,6 @@ import {
   ActionMenu,
   EyeIcon,
   PencilSimpleIcon,
-  EnvelopeIcon,
   TrashIcon,
   CaretLeftIcon,
   CaretRightIcon,
@@ -20,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { customers as defaultCustomers, Customer } from "@/lib/data/customers";
 
 type CustomerStatus = "active" | "pending" | "inactive";
-type CustomerPlan = "enterprise" | "pro" | "starter";
+type CustomerPlan = "enterprise" | "pro" | "starter" | "free";
 
 interface CustomersTableProps {
   customers?: Customer[];
@@ -37,13 +36,11 @@ const statusConfig: Record<
   inactive: { label: "Inactive", variant: "neutral" },
 };
 
-const planConfig: Record<
-  CustomerPlan,
-  { label: string; variant: "violet" | "blue" | "neutral" }
-> = {
-  enterprise: { label: "Enterprise", variant: "violet" },
-  pro: { label: "Pro", variant: "blue" },
-  starter: { label: "Starter", variant: "neutral" },
+const planConfig = {
+  enterprise: { label: "Enterprise", variant: "violet" as const },
+  pro: { label: "Pro", variant: "blue" as const },
+  starter: { label: "Starter", variant: "neutral" as const },
+  free: { label: "Free", variant: "neutral" as const },
 };
 
 const rowsPerPageOptions = [
@@ -90,17 +87,7 @@ export function CustomersTable({
   };
 
   const handleViewDetails = (customer: Customer) => {
-    setSelectedCustomer({
-      ...customer,
-      monthlyRevenue: customer.mrr,
-      healthScore: customer.health,
-      lifetimeValue: customer.lifetimeValue || 0,
-      tenure: customer.tenure || 0,
-      company: customer.company || "",
-      industry: customer.industry || "",
-      phone: customer.phone || "",
-      location: customer.location || "",
-    });
+    setSelectedCustomer(customer);
     setDrawerOpen(true);
   };
 
