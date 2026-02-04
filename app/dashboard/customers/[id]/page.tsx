@@ -44,6 +44,8 @@ const activityIconMap = {
   deal: CurrencyDollarIcon,
   meeting: VideoIcon,
   note: NoteIcon,
+  task: CheckCircleIcon,
+  invoice: FileTextIcon,
 };
 
 export default function CustomerDetailPage({

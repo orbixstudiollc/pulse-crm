@@ -4,7 +4,7 @@ import { Drawer, Badge, Button, CalendarBlankIcon } from "@/components/ui";
 
 interface ActivityDetail {
   id: string;
-  type: "email" | "call" | "deal" | "meeting" | "note";
+  type: "email" | "call" | "deal" | "meeting" | "note" | "task" | "invoice";
   title: string;
   description: string;
   badge?: {

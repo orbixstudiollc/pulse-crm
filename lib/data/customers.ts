@@ -268,7 +268,7 @@ export function getCustomerById(id: string): Customer | undefined {
 
 export interface ActivityItem {
   id: string;
-  type: "email" | "call" | "deal" | "meeting" | "note";
+  type: "email" | "call" | "deal" | "meeting" | "note" | "task" | "invoice";
   title: string;
   description: string;
   badge?: {
