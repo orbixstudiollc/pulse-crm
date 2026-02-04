@@ -71,93 +71,97 @@ export default function CustomerDetailPage({
   }
 
   return (
-    <div className="py-6 px-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-6">
-          <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-200 dark:border-neutral-700">
-            <Image
-              src={customer.avatar}
-              alt={customer.name}
-              fill
-              className="object-cover"
-            />
-          </div>
-          <div>
-            <h1 className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
-              {customer.name}
-            </h1>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-2">
-              {customer.email}
-            </p>
-            <div className="flex items-center gap-2">
-              <Badge
-                variant={
-                  customer.status === "active"
-                    ? "green"
-                    : customer.status === "pending"
-                      ? "amber"
-                      : "neutral"
-                }
-              >
-                {customer.status.charAt(0).toUpperCase() +
-                  customer.status.slice(1)}
-              </Badge>
-              <Badge
-                variant={
-                  customer.plan === "enterprise"
-                    ? "violet"
-                    : customer.plan === "pro"
-                      ? "blue"
-                      : "neutral"
-                }
-              >
-                {customer.plan.charAt(0).toUpperCase() + customer.plan.slice(1)}
-              </Badge>
+    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 p-8">
+      {/* Header + Stats Card */}
+      <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 mb-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-6">
+            <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-200 dark:border-neutral-700">
+              <Image
+                src={customer.avatar}
+                alt={customer.name}
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div>
+              <h1 className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+                {customer.name}
+              </h1>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-2">
+                {customer.email}
+              </p>
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant={
+                    customer.status === "active"
+                      ? "green"
+                      : customer.status === "pending"
+                        ? "amber"
+                        : "neutral"
+                  }
+                >
+                  {customer.status.charAt(0).toUpperCase() +
+                    customer.status.slice(1)}
+                </Badge>
+                <Badge
+                  variant={
+                    customer.plan === "enterprise"
+                      ? "violet"
+                      : customer.plan === "pro"
+                        ? "blue"
+                        : "neutral"
+                  }
+                >
+                  {customer.plan.charAt(0).toUpperCase() +
+                    customer.plan.slice(1)}
+                </Badge>
+              </div>
             </div>
           </div>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" leftIcon={<PhoneIcon size={18} />}>
+              Call
+            </Button>
+            <Button leftIcon={<EnvelopeIcon size={18} />}>Send Email</Button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" leftIcon={<PhoneIcon size={18} />}>
-            Call
-          </Button>
-          <Button leftIcon={<EnvelopeIcon size={18} />}>Send Email</Button>
-        </div>
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
-        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 text-center">
-          <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
-            {formatCurrency(customer.mrr)}
-          </p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
-            Monthly Revenue
-          </p>
-        </div>
-        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 text-center">
-          <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
-            {customer.healthScore}
-          </p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
-            Health Score
-          </p>
-        </div>
-        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 text-center">
-          <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
-            ${(customer.lifetimeValue / 1000).toFixed(1)}K
-          </p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
-            Lifetime Value
-          </p>
-        </div>
-        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 text-center">
-          <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
-            {customer.tenure} mo
-          </p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
-            Tenure
-          </p>
+        {/* Stats */}
+        <div className="grid grid-cols-4 gap-4">
+          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
+            <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+              {formatCurrency(customer.mrr)}
+            </p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+              Monthly Revenue
+            </p>
+          </div>
+          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
+            <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+              {customer.healthScore}
+            </p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+              Health Score
+            </p>
+          </div>
+          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
+            <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+              ${(customer.lifetimeValue / 1000).toFixed(1)}K
+            </p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+              Lifetime Value
+            </p>
+          </div>
+          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
+            <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+              {customer.tenure} mo
+            </p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+              Tenure
+            </p>
+          </div>
         </div>
       </div>
 
@@ -252,9 +256,9 @@ export default function CustomerDetailPage({
           </div>
 
           {/* Details */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-serif text-neutral-950 dark:text-neutral-50">
+          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
+            <div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-800">
+              <h2 className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
                 Details
               </h2>
               <Link href={`/dashboard/customers/${customer.id}/edit`}>
@@ -263,111 +267,118 @@ export default function CustomerDetailPage({
                 </button>
               </Link>
             </div>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-5">
-              <div>
-                <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
-                  Phone
-                </p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50">
-                  {customer.phone}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
-                  Company
-                </p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50">
-                  {customer.company}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
-                  Job Title
-                </p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50">
-                  {customer.jobTitle}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
-                  Industry
-                </p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50">
-                  {customer.industry}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
-                  Website
-                </p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50">
-                  {customer.website}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
-                  Company Size
-                </p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50">
-                  {customer.companySize}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
-                  Location
-                </p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50">
-                  {customer.location}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
-                  Timezone
-                </p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50">
-                  {customer.timezone}
-                </p>
+
+            <div className="p-6">
+              <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+                <div>
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
+                    Phone
+                  </p>
+                  <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                    {customer.phone}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
+                    Company
+                  </p>
+                  <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                    {customer.company}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
+                    Job Title
+                  </p>
+                  <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                    {customer.jobTitle}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
+                    Industry
+                  </p>
+                  <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                    {customer.industry}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
+                    Website
+                  </p>
+                  <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                    {customer.website}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
+                    Company Size
+                  </p>
+                  <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                    {customer.companySize}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
+                    Location
+                  </p>
+                  <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                    {customer.location}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
+                    Timezone
+                  </p>
+                  <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                    {customer.timezone}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Notes */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-            <h2 className="text-lg font-serif text-neutral-950 dark:text-neutral-50 mb-6">
-              Notes
-            </h2>
-            {customerNotes.length > 0 ? (
-              <div className="space-y-6 mb-6">
-                {customerNotes.map((note) => (
-                  <div key={note.id}>
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
-                        {note.author}
-                      </p>
-                      <p className="text-xs text-neutral-400 dark:text-neutral-500">
-                        {note.date}
+          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
+            <div className="p-6 border-b border-neutral-200 dark:border-neutral-800">
+              <h2 className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
+                Notes
+              </h2>
+            </div>
+            <div className="p-6">
+              {customerNotes.length > 0 ? (
+                <div className="space-y-6 mb-6">
+                  {customerNotes.map((note) => (
+                    <div key={note.id}>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                          {note.author}
+                        </p>
+                        <p className="text-xs text-neutral-400 dark:text-neutral-500">
+                          {note.date}
+                        </p>
+                      </div>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                        {note.content}
                       </p>
                     </div>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                      {note.content}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">
-                No notes yet
-              </p>
-            )}
-            <div className="space-y-3">
-              <Textarea
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                placeholder="Add a note..."
-                rows={3}
-              />
-              <div className="flex justify-end">
-                <Button size="sm">Add Note</Button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">
+                  No notes yet
+                </p>
+              )}
+              <div className="space-y-3">
+                <Textarea
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Add a note..."
+                  rows={3}
+                />
+                <div className="flex justify-end">
+                  <Button size="sm">Add Note</Button>
+                </div>
               </div>
             </div>
           </div>
