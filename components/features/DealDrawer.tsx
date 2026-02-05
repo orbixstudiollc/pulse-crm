@@ -10,6 +10,7 @@ import {
   formatDealCurrency,
 } from "@/lib/data/sales";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 interface DealDrawerProps {
   open: boolean;
@@ -95,9 +96,11 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
           >
             Mark Lost
           </Button>
-          <Button className="flex-1" rightIcon={<ArrowRightIcon size={18} />}>
-            View Details
-          </Button>
+          <Link href={`/dashboard/sales/${deal.id}`} className="flex-1">
+            <Button className="w-full" rightIcon={<ArrowRightIcon size={18} />}>
+              View Details
+            </Button>
+          </Link>
         </div>
       }
     >

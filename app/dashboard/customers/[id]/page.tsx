@@ -20,7 +20,6 @@ import {
   EyeIcon,
   TrashIcon,
   PencilSimpleIcon,
-  DotsThreeIcon,
 } from "@/components/ui";
 import {
   activityByCustomerId,
@@ -35,8 +34,8 @@ import {
   ScheduleMeetingModal,
   ActivityDetailDrawer,
   CreateTaskModal,
-  CreateDealModal,
   CreateInvoiceModal,
+  AddDealModal,
 } from "@/components/features";
 import { usePageHeader } from "@/hooks";
 
@@ -764,9 +763,23 @@ export default function CustomerDetailPage({
       />
 
       {/* Create Deal Modal */}
-      <CreateDealModal
+      <AddDealModal
         open={showDealModal}
         onClose={() => setShowDealModal(false)}
+        mode="add"
+        initialData={{
+          name: "",
+          customer: customer.name,
+          value: "",
+          stage: "discovery",
+          probability: "25",
+          expectedClose: "",
+          notes: "",
+        }}
+        onSubmit={(data) => {
+          console.log("Deal created:", data);
+          setShowDealModal(false);
+        }}
       />
 
       {/* Create Invoice Modal */}

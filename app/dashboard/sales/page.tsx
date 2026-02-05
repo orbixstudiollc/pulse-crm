@@ -2,16 +2,9 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { Button, Badge, Progress, PlusIcon, FadersIcon } from "@/components/ui";
 import {
-  Button,
-  Badge,
-  Progress,
-  PlusIcon,
-  IconButton,
-  FadersIcon,
-} from "@/components/ui";
-import {
-  CreateDealModal,
+  AddDealModal,
   DealDrawer,
   FilterDealsModal,
 } from "@/components/features";
@@ -221,9 +214,14 @@ export default function SalesPage() {
       </div>
 
       {/* Create Deal Modal */}
-      <CreateDealModal
+      <AddDealModal
         open={showAddDeal}
         onClose={() => setShowAddDeal(false)}
+        mode="add"
+        onSubmit={(data) => {
+          console.log("Deal created:", data);
+          setShowAddDeal(false);
+        }}
       />
 
       {/* Deal Quick View Drawer */}
