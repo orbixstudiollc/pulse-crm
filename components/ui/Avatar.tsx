@@ -16,6 +16,7 @@ const sizeClasses = {
   md: "h-9 w-9 text-sm",
   lg: "h-10 w-10 text-sm",
   xl: "h-12 w-12 text-base",
+  "2xl": "h-20 w-20 text-2xl",
 };
 
 function getInitials(name: string) {

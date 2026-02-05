@@ -17,6 +17,7 @@ import {
   CaretRightIcon,
   UsersThreeIcon,
   CheckCircleIcon,
+  SparkleIcon,
 } from "@/components/ui";
 import { PageHeader, FilterBar, StatCard } from "@/components/dashboard";
 import { AddLeadModal } from "@/components/features";
@@ -28,8 +29,7 @@ import {
   leadScoreOptions,
   getLeadScoreStyle,
 } from "@/lib/data/leads";
-import { cn } from "@/lib/utils";
-import { Sparkle } from "@phosphor-icons/react";
+import { cn, formatCurrency } from "@/lib/utils";
 import { LeadDrawer } from "@/components/dashboard";
 import { type Lead } from "@/lib/data/leads";
 
@@ -39,10 +39,6 @@ const rowsPerPageOptions = [
   { label: "25", value: "25" },
   { label: "50", value: "50" },
 ];
-
-function formatCurrency(value: number) {
-  return `$${value.toLocaleString()}`;
-}
 
 export default function LeadsPage() {
   const [showAddLead, setShowAddLead] = useState(false);
@@ -194,7 +190,7 @@ export default function LeadsPage() {
           value="64"
           change={{ value: "+8%", trend: "up" }}
           icon={
-            <Sparkle
+            <SparkleIcon
               size={24}
               className="text-neutral-600 dark:text-neutral-400"
             />

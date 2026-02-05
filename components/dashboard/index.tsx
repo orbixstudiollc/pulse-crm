@@ -1,7 +1,7 @@
 export { StatCard } from "./StatCard";
 export { RevenueChart } from "./RevenueChart";
 export { ActiveDeals } from "./ActiveDeals";
-export { LatestLeads } from "./LatestLeals";
+export { LatestLeads } from "./LatestLeads";
 export { ActivityFeed } from "./ActivityFeed";
 export { PageHeader } from "./PageHeader";
 export { PageHeaderActions } from "./PageHeaderActions";

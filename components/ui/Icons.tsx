@@ -6,6 +6,7 @@ export {
   CaretDownIcon,
   CaretLeftIcon,
   CaretRightIcon,
+  ArrowLeftIcon,
 
   // Dashboard
   GaugeIcon,
@@ -16,6 +17,7 @@ export {
   CurrencyDollarIcon,
   PulseIcon,
   GearIcon,
+  SparkleIcon,
 
   // Actions
   CalendarBlankIcon,
