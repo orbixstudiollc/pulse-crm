@@ -30,6 +30,8 @@ import {
 } from "@/lib/data/leads";
 import { cn } from "@/lib/utils";
 import { Sparkle } from "@phosphor-icons/react";
+import { LeadDrawer } from "@/components/dashboard";
+import { type Lead } from "@/lib/data/leads";
 
 const rowsPerPageOptions = [
   { label: "5", value: "5" },
@@ -51,6 +53,23 @@ export default function LeadsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [scoreFilter, setScoreFilter] = useState("all");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editLead, setEditLead] = useState<Lead | null>(null);
+
+  const editLeadFormData = editLead
+    ? {
+        firstName: editLead.name.split(" ")[0],
+        lastName: editLead.name.split(" ").slice(1).join(" "),
+        email: editLead.email,
+        company: editLead.company,
+        phone: editLead.phone,
+        source: editLead.source.toLowerCase().replace(" ", "-"),
+        value: editLead.estimatedValue.toString(),
+        notes: "",
+      }
+    : undefined;
 
   // Filter leads
   const filteredLeads = allLeads.filter((lead) => {
@@ -313,10 +332,17 @@ export default function LeadsPage() {
               {paginatedLeads.map((lead) => (
                 <tr
                   key={lead.id}
-                  className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                  onClick={() => {
+                    setSelectedLead(lead);
+                    setDrawerOpen(true);
+                  }}
+                  className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer"
                 >
                   {/* Checkbox */}
-                  <td className="w-12 px-5 py-4">
+                  <td
+                    className="w-12 px-5 py-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Checkbox
                       checked={selectedRows.includes(lead.id)}
                       onChange={() => toggleSelectRow(lead.id)}
@@ -379,19 +405,28 @@ export default function LeadsPage() {
                   </td>
 
                   {/* Actions */}
-                  <td className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                  <td
+                    className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <div className="flex justify-center">
                       <ActionMenu
                         items={[
                           {
                             label: "View Details",
                             icon: <EyeIcon size={18} />,
-                            onClick: () => {},
+                            onClick: () => {
+                              setSelectedLead(lead);
+                              setDrawerOpen(true);
+                            },
                           },
                           {
                             label: "Edit Lead",
                             icon: <PencilSimpleIcon size={18} />,
-                            onClick: () => {},
+                            onClick: () => {
+                              setEditLead(lead);
+                              setShowEditModal(true);
+                            },
                           },
                           {
                             label: "Delete Lead",
@@ -479,6 +514,28 @@ export default function LeadsPage() {
         onClose={() => setShowAddLead(false)}
         onSubmit={(data) => {
           console.log("New lead:", data);
+        }}
+      />
+
+      {/* Lead Details Drawer */}
+      <LeadDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        lead={selectedLead}
+        onEdit={() => {
+          setEditLead(selectedLead);
+          setShowEditModal(true);
+        }}
+      />
+
+      <AddLeadModal
+        key={showEditModal ? `edit-${editLead?.id}` : "closed"}
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        mode="edit"
+        initialData={editLeadFormData}
+        onSubmit={(data) => {
+          console.log("Updated lead:", data);
         }}
       />
     </div>

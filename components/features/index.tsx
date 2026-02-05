@@ -10,3 +10,4 @@ export { CreateTaskModal } from "./CreateTaskModal";
 export { CreateDealModal } from "./CreateDealModal";
 export { CreateInvoiceModal } from "./CreateInvoiceModal";
 export { AddLeadModal } from "./AddLeadModal";
+export { ConvertLeadModal } from "./ConvertLeadModal";

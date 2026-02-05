@@ -8,6 +8,7 @@ import {
   Select,
   Textarea,
   PlusIcon,
+  CheckIcon,
 } from "@/components/ui";
 
 import { X } from "@phosphor-icons/react";
@@ -16,6 +17,8 @@ interface AddLeadModalProps {
   open: boolean;
   onClose: () => void;
   onSubmit?: (data: LeadFormData) => void;
+  initialData?: LeadFormData;
+  mode?: "add" | "edit";
 }
 
 export interface LeadFormData {
@@ -35,9 +38,11 @@ const sourceOptions = [
   { label: "LinkedIn", value: "linkedin" },
   { label: "Cold Outreach", value: "cold-outreach" },
   { label: "Event", value: "event" },
+  { label: "Google Ads", value: "google-ads" },
+  { label: "Cold Call", value: "cold-call" },
 ];
 
-const initialFormData: LeadFormData = {
+const emptyFormData: LeadFormData = {
   firstName: "",
   lastName: "",
   email: "",
@@ -48,8 +53,18 @@ const initialFormData: LeadFormData = {
   notes: "",
 };
 
-export function AddLeadModal({ open, onClose, onSubmit }: AddLeadModalProps) {
-  const [formData, setFormData] = useState<LeadFormData>(initialFormData);
+export function AddLeadModal({
+  open,
+  onClose,
+  onSubmit,
+  initialData,
+  mode = "add",
+}: AddLeadModalProps) {
+  const [formData, setFormData] = useState<LeadFormData>(
+    initialData || emptyFormData,
+  );
+
+  const isEdit = mode === "edit";
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -61,18 +76,21 @@ export function AddLeadModal({ open, onClose, onSubmit }: AddLeadModalProps) {
   };
 
   const handleSubmit = () => {
-    // Basic validation
     if (!formData.firstName || !formData.lastName || !formData.email) {
       return;
     }
 
     onSubmit?.(formData);
-    setFormData(initialFormData);
+    if (!isEdit) {
+      setFormData(emptyFormData);
+    }
     onClose();
   };
 
   const handleClose = () => {
-    setFormData(initialFormData);
+    if (!isEdit) {
+      setFormData(emptyFormData);
+    }
     onClose();
   };
 
@@ -81,7 +99,7 @@ export function AddLeadModal({ open, onClose, onSubmit }: AddLeadModalProps) {
       {/* Header */}
       <div className="flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-800">
         <h2 className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
-          Add Lead
+          {isEdit ? "Edit Lead" : "Add Lead"}
         </h2>
         <button
           onClick={handleClose}
@@ -154,7 +172,7 @@ export function AddLeadModal({ open, onClose, onSubmit }: AddLeadModalProps) {
             placeholder="Select source..."
           />
           <Input
-            label="Est. Value"
+            label="Estimated Value"
             type="number"
             name="value"
             value={formData.value}
@@ -181,9 +199,15 @@ export function AddLeadModal({ open, onClose, onSubmit }: AddLeadModalProps) {
         </Button>
         <Button
           onClick={handleSubmit}
-          leftIcon={<PlusIcon size={18} weight="bold" />}
+          leftIcon={
+            isEdit ? (
+              <CheckIcon size={18} weight="bold" />
+            ) : (
+              <PlusIcon size={18} weight="bold" />
+            )
+          }
         >
-          Add Lead
+          {isEdit ? "Save Changes" : "Add Lead"}
         </Button>
       </div>
     </Modal>
