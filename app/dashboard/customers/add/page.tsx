@@ -125,9 +125,8 @@ export default function AddCustomerPage() {
     setSaving(false);
     setShowToast(true);
 
-    const newCustomerId = Date.now().toString();
     setTimeout(() => {
-      router.push(`/dashboard/customers/${newCustomerId}`);
+      router.push("/dashboard/customers");
     }, 1500);
   }, [router]);
 
