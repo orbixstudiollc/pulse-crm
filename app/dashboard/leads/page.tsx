@@ -181,7 +181,7 @@ export default function LeadsPage() {
           icon={
             <UsersThreeIcon
               size={24}
-              className="text-neutral-600 dark:text-neutral-400"
+              className="text-neutral-950 dark:text-neutral-50"
             />
           }
         />
@@ -192,7 +192,7 @@ export default function LeadsPage() {
           icon={
             <SparkleIcon
               size={24}
-              className="text-neutral-600 dark:text-neutral-400"
+              className="text-neutral-950 dark:text-neutral-50"
             />
           }
         />
@@ -203,7 +203,7 @@ export default function LeadsPage() {
           icon={
             <CheckCircleIcon
               size={24}
-              className="text-neutral-600 dark:text-neutral-400"
+              className="text-neutral-950 dark:text-neutral-50"
             />
           }
         />

@@ -18,6 +18,7 @@ export {
   PulseIcon,
   GearIcon,
   SparkleIcon,
+  FadersIcon,
 
   // Actions
   CalendarBlankIcon,
