@@ -11,19 +11,12 @@ import {
   Avatar,
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
-
-type LeadStatus = "hot" | "warm" | "cold";
-
-interface Lead {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-  status: LeadStatus;
-  source: string;
-  score: number;
-  contacted: string;
-}
+import {
+  leads as allLeads,
+  leadStatusConfig,
+  getLeadScoreStyle,
+  type Lead,
+} from "@/lib/data/leads";
 
 interface LatestLeadsProps {
   leads?: Lead[];
@@ -31,85 +24,9 @@ interface LatestLeadsProps {
   className?: string;
 }
 
-const defaultLeads: Lead[] = [
-  {
-    id: "1",
-    name: "John Smith",
-    email: "john@example.com",
-    status: "hot",
-    source: "Website",
-    score: 92,
-    contacted: "2 hours ago",
-  },
-  {
-    id: "2",
-    name: "Emily Davis",
-    email: "emily@startup.io",
-    status: "warm",
-    source: "Referral",
-    score: 78,
-    contacted: "1 day ago",
-  },
-  {
-    id: "3",
-    name: "Michael Brown",
-    email: "mbrown@corp.com",
-    status: "hot",
-    source: "LinkedIn",
-    score: 88,
-    contacted: "3 hours ago",
-  },
-  {
-    id: "4",
-    name: "Sarah Wilson",
-    email: "sarah@design.co",
-    status: "cold",
-    source: "Event",
-    score: 45,
-    contacted: "1 day ago",
-  },
-  {
-    id: "5",
-    name: "David Lee",
-    email: "dlee@enterprise.com",
-    status: "warm",
-    source: "Website",
-    score: 72,
-    contacted: "2 days ago",
-  },
-  {
-    id: "6",
-    name: "Jennifer Taylor",
-    email: "jtaylor@stars.co",
-    status: "cold",
-    source: "LinkedIn",
-    score: 40,
-    contacted: "3 days ago",
-  },
-];
-
-const statusConfig: Record<
-  LeadStatus,
-  { label: string; variant: "red" | "amber" | "neutral" }
-> = {
-  hot: { label: "Hot", variant: "red" },
-  warm: { label: "Warm", variant: "amber" },
-  cold: { label: "Cold", variant: "neutral" },
-};
-
-function getScoreStyle(score: number) {
-  if (score >= 80) {
-    return "border-green-200 dark:border-green-400/30 bg-green-100 text-green-600 dark:bg-green-400/15 dark:text-green-400";
-  }
-  if (score >= 60) {
-    return "border-amber-200 dark:border-amber-400/30 bg-amber-100 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400";
-  }
-  return "border-neutral-200 dark:border-neutral-400/30 bg-neutral-100 text-neutral-600 dark:bg-neutral-400/15 dark:text-neutral-400";
-}
-
 export function LatestLeads({
-  leads = defaultLeads,
-  totalLeads = 156,
+  leads = allLeads.slice(0, 6),
+  totalLeads = allLeads.length,
   className,
 }: LatestLeadsProps) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -195,8 +112,8 @@ export function LatestLeads({
 
                 {/* Status */}
                 <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  <Badge variant={statusConfig[lead.status].variant} dot>
-                    {statusConfig[lead.status].label}
+                  <Badge variant={leadStatusConfig[lead.status].variant} dot>
+                    {leadStatusConfig[lead.status].label}
                   </Badge>
                 </td>
 
@@ -212,7 +129,7 @@ export function LatestLeads({
                   <div
                     className={cn(
                       "flex h-9 w-9 items-center justify-center rounded-full border-[0.5px] text-sm font-semibold",
-                      getScoreStyle(lead.score),
+                      getLeadScoreStyle(lead.score),
                     )}
                   >
                     {lead.score}
@@ -222,7 +139,7 @@ export function LatestLeads({
                 {/* Contacted */}
                 <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                    {lead.contacted}
+                    {lead.createdDate}
                   </span>
                 </td>
               </tr>
