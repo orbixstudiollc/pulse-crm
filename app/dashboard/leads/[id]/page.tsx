@@ -37,6 +37,7 @@ import {
   ActivityDetailDrawer,
   CompleteMeetingModal,
   ConvertLeadModal,
+  AddLeadModal,
 } from "@/components/features";
 import { usePageHeader } from "@/hooks";
 
@@ -75,6 +76,20 @@ export default function LeadDetailPage({
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const editLeadFormData = lead
+    ? {
+        firstName: lead.name.split(" ")[0],
+        lastName: lead.name.split(" ").slice(1).join(" "),
+        email: lead.email,
+        company: lead.company,
+        phone: lead.phone,
+        source: lead.source.toLowerCase().replace(" ", "-"),
+        value: lead.estimatedValue.toString(),
+        notes: "",
+      }
+    : undefined;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -87,7 +102,11 @@ export default function LeadDetailPage({
   const headerActions = useMemo(
     () => (
       <>
-        <Button variant="outline" leftIcon={<PencilSimpleIcon size={16} />}>
+        <Button
+          variant="outline"
+          leftIcon={<PencilSimpleIcon size={16} />}
+          onClick={() => setShowEditModal(true)}
+        >
           Edit Lead
         </Button>
         <ActionMenu
@@ -102,7 +121,7 @@ export default function LeadDetailPage({
         />
       </>
     ),
-    [],
+    [setShowEditModal],
   );
 
   usePageHeader({
@@ -513,6 +532,18 @@ export default function LeadDetailPage({
         open={showToast}
         onClose={() => setShowToast(false)}
         message={`${lead.name} has been converted to a customer`}
+      />
+
+      <AddLeadModal
+        key={showEditModal ? `edit-${id}` : "closed"}
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        mode="edit"
+        initialData={editLeadFormData}
+        onSubmit={(data) => {
+          console.log("Updated lead:", data);
+          setShowEditModal(false);
+        }}
       />
     </div>
   );
