@@ -1,3 +1,9 @@
+export interface DealContact {
+  name: string;
+  email: string;
+  avatar: string;
+}
+
 export interface PipelineDeal {
   id: string;
   name: string;
@@ -7,6 +13,11 @@ export interface PipelineDeal {
   closeDate: string;
   ownerAvatar: string;
   stage: PipelineStage;
+  // Extended fields for drawer
+  createdDate: string;
+  lastActivity: string;
+  contact: DealContact;
+  notes: string;
 }
 
 export type PipelineStage =
@@ -33,6 +44,15 @@ export const pipelineDeals: PipelineDeal[] = [
     closeDate: "Dec 30",
     ownerAvatar: "/images/avatars/avatar-1.jpg",
     stage: "discovery",
+    createdDate: "Nov 15, 2024",
+    lastActivity: "2 days ago",
+    contact: {
+      name: "James Anderson",
+      email: "j.anderson@techflow.io",
+      avatar: "/images/avatars/avatar-1.jpg",
+    },
+    notes:
+      "Initial discovery call completed. Interested in enterprise features.",
   },
   {
     id: "d2",
@@ -43,6 +63,14 @@ export const pipelineDeals: PipelineDeal[] = [
     closeDate: "Jan 5",
     ownerAvatar: "/images/avatars/avatar-2.jpg",
     stage: "discovery",
+    createdDate: "Nov 20, 2024",
+    lastActivity: "1 day ago",
+    contact: {
+      name: "Sarah Chen",
+      email: "s.chen@datasyncpro.com",
+      avatar: "/images/avatars/avatar-2.jpg",
+    },
+    notes: "Evaluating annual plan options. Needs SSO and audit logs.",
   },
   {
     id: "d3",
@@ -53,6 +81,14 @@ export const pipelineDeals: PipelineDeal[] = [
     closeDate: "Jan 8",
     ownerAvatar: "/images/avatars/avatar-3.jpg",
     stage: "discovery",
+    createdDate: "Dec 1, 2024",
+    lastActivity: "3 days ago",
+    contact: {
+      name: "Michael Torres",
+      email: "m.torres@innovatetech.io",
+      avatar: "/images/avatars/avatar-3.jpg",
+    },
+    notes: "Small team looking to scale. Budget approved for Q1.",
   },
   {
     id: "d4",
@@ -63,6 +99,14 @@ export const pipelineDeals: PipelineDeal[] = [
     closeDate: "Jan 12",
     ownerAvatar: "/images/avatars/avatar-4.jpg",
     stage: "discovery",
+    createdDate: "Dec 5, 2024",
+    lastActivity: "5 days ago",
+    contact: {
+      name: "Emily Richards",
+      email: "e.richards@cloudbase.dev",
+      avatar: "/images/avatars/avatar-4.jpg",
+    },
+    notes: "Early-stage startup. Interested in starter tier with room to grow.",
   },
 
   // Proposal
@@ -75,6 +119,15 @@ export const pipelineDeals: PipelineDeal[] = [
     closeDate: "Dec 28",
     ownerAvatar: "/images/avatars/avatar-5.jpg",
     stage: "proposal",
+    createdDate: "Oct 10, 2024",
+    lastActivity: "1 day ago",
+    contact: {
+      name: "David Kim",
+      email: "d.kim@acmecorp.com",
+      avatar: "/images/avatars/avatar-5.jpg",
+    },
+    notes:
+      "Proposal sent for full platform migration. Decision expected by EOY.",
   },
   {
     id: "p2",
@@ -85,6 +138,14 @@ export const pipelineDeals: PipelineDeal[] = [
     closeDate: "Jan 3",
     ownerAvatar: "/images/avatars/avatar-6.jpg",
     stage: "proposal",
+    createdDate: "Nov 5, 2024",
+    lastActivity: "4 days ago",
+    contact: {
+      name: "Lisa Wang",
+      email: "l.wang@startuplabs.io",
+      avatar: "/images/avatars/avatar-6.jpg",
+    },
+    notes: "Custom API integration proposal. Waiting on technical review.",
   },
   {
     id: "p3",
@@ -95,6 +156,14 @@ export const pipelineDeals: PipelineDeal[] = [
     closeDate: "Jan 15",
     ownerAvatar: "/images/avatars/avatar-1.jpg",
     stage: "proposal",
+    createdDate: "Nov 12, 2024",
+    lastActivity: "6 days ago",
+    contact: {
+      name: "Robert Hayes",
+      email: "r.hayes@globalsystems.net",
+      avatar: "/images/avatars/avatar-1.jpg",
+    },
+    notes: "Needs custom reporting module. Proposal under internal review.",
   },
 
   // Negotiation
@@ -107,6 +176,15 @@ export const pipelineDeals: PipelineDeal[] = [
     closeDate: "Dec 26",
     ownerAvatar: "/images/avatars/avatar-2.jpg",
     stage: "negotiation",
+    createdDate: "Sep 20, 2024",
+    lastActivity: "Today",
+    contact: {
+      name: "Alexandra Foster",
+      email: "a.foster@megacorp.com",
+      avatar: "/images/avatars/avatar-2.jpg",
+    },
+    notes:
+      "Final pricing negotiation. Legal review in progress. Very likely to close.",
   },
   {
     id: "n2",
@@ -117,6 +195,14 @@ export const pipelineDeals: PipelineDeal[] = [
     closeDate: "Dec 29",
     ownerAvatar: "/images/avatars/avatar-3.jpg",
     stage: "negotiation",
+    createdDate: "Oct 15, 2024",
+    lastActivity: "1 day ago",
+    contact: {
+      name: "Chris Martinez",
+      email: "c.martinez@fastscale.io",
+      avatar: "/images/avatars/avatar-3.jpg",
+    },
+    notes: "Negotiating multi-year discount. Champion is VP of Engineering.",
   },
 
   // Closed Won
@@ -129,6 +215,15 @@ export const pipelineDeals: PipelineDeal[] = [
     closeDate: "Dec 20",
     ownerAvatar: "/images/avatars/avatar-4.jpg",
     stage: "closed_won",
+    createdDate: "Aug 15, 2024",
+    lastActivity: "Dec 20",
+    contact: {
+      name: "Nina Patel",
+      email: "n.patel@brightpath.com",
+      avatar: "/images/avatars/avatar-4.jpg",
+    },
+    notes:
+      "Successfully upgraded from starter to pro plan. Great relationship.",
   },
   {
     id: "w2",
@@ -139,6 +234,14 @@ export const pipelineDeals: PipelineDeal[] = [
     closeDate: "Dec 18",
     ownerAvatar: "/images/avatars/avatar-5.jpg",
     stage: "closed_won",
+    createdDate: "Jul 1, 2024",
+    lastActivity: "Dec 18",
+    contact: {
+      name: "Tom Bradley",
+      email: "t.bradley@nextgensolutions.com",
+      avatar: "/images/avatars/avatar-5.jpg",
+    },
+    notes: "Annual renewal with 15% increase. Expanded to 3 more departments.",
   },
   {
     id: "w3",
@@ -149,6 +252,14 @@ export const pipelineDeals: PipelineDeal[] = [
     closeDate: "Dec 15",
     ownerAvatar: "/images/avatars/avatar-6.jpg",
     stage: "closed_won",
+    createdDate: "Sep 1, 2024",
+    lastActivity: "Dec 15",
+    contact: {
+      name: "Rachel Kim",
+      email: "r.kim@summitgroup.co",
+      avatar: "/images/avatars/avatar-6.jpg",
+    },
+    notes: "Signed annual contract after successful pilot program.",
   },
 
   // Closed Lost
@@ -161,6 +272,15 @@ export const pipelineDeals: PipelineDeal[] = [
     closeDate: "Dec 22",
     ownerAvatar: "/images/avatars/avatar-1.jpg",
     stage: "closed_lost",
+    createdDate: "Oct 5, 2024",
+    lastActivity: "Dec 22",
+    contact: {
+      name: "Mark Sullivan",
+      email: "m.sullivan@retrotech.com",
+      avatar: "/images/avatars/avatar-1.jpg",
+    },
+    notes:
+      "Lost to competitor. Main reason: pricing and legacy system support.",
   },
   {
     id: "l2",
@@ -171,6 +291,14 @@ export const pipelineDeals: PipelineDeal[] = [
     closeDate: "Dec 19",
     ownerAvatar: "/images/avatars/avatar-2.jpg",
     stage: "closed_lost",
+    createdDate: "Nov 1, 2024",
+    lastActivity: "Dec 19",
+    contact: {
+      name: "Jenny Liu",
+      email: "j.liu@novalabs.io",
+      avatar: "/images/avatars/avatar-2.jpg",
+    },
+    notes: "Budget was reallocated internally. May revisit in Q2.",
   },
 ];
 
@@ -180,6 +308,14 @@ export const pipelineStages: { id: PipelineStage; label: string }[] = [
   { id: "negotiation", label: "Negotiation" },
   { id: "closed_won", label: "Closed Won" },
   { id: "closed_lost", label: "Closed Lost" },
+];
+
+// Ordered active stages for the progress indicator
+export const activeStageOrder: PipelineStage[] = [
+  "discovery",
+  "proposal",
+  "negotiation",
+  "closed_won",
 ];
 
 export function getDealsByStage(stage: PipelineStage): PipelineDeal[] {
@@ -201,4 +337,8 @@ export function formatDealCurrency(value: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+export function getStageLabel(stage: PipelineStage): string {
+  return pipelineStages.find((s) => s.id === stage)?.label ?? stage;
 }

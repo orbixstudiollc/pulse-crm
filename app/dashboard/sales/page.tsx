@@ -7,11 +7,19 @@ import {
   Badge,
   Progress,
   PlusIcon,
-  ClockIcon,
   IconButton,
   FadersIcon,
 } from "@/components/ui";
-import { CreateDealModal } from "@/components/features";
+import {
+  CreateDealModal,
+  DealDrawer,
+  FilterDealsModal,
+} from "@/components/features";
+import {
+  type DealFilters,
+  defaultFilters,
+  getActiveFilterCount,
+} from "@/components/features/FilterDealsModal";
 import {
   pipelineDeals,
   pipelineStages,
@@ -55,6 +63,12 @@ function getProbabilityColor(
 export default function SalesPage() {
   const [activeTab, setActiveTab] = useState<"active" | "closed">("active");
   const [showAddDeal, setShowAddDeal] = useState(false);
+  const [selectedDeal, setSelectedDeal] = useState<PipelineDeal | null>(null);
+  const [showDrawer, setShowDrawer] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<DealFilters>(defaultFilters);
+
+  const activeFilterCount = getActiveFilterCount(filters);
 
   const activeDeals = pipelineDeals.filter((d) =>
     activeStageIds.includes(d.stage),
@@ -124,8 +138,18 @@ export default function SalesPage() {
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          <IconButton icon={<ClockIcon size={20} />} />
-          <IconButton icon={<FadersIcon size={20} />} />
+          <Button
+            variant="outline"
+            leftIcon={<FadersIcon size={18} />}
+            onClick={() => setShowFilters(true)}
+          >
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-neutral-950 dark:bg-neutral-50 px-1.5 text-xs font-semibold text-white dark:text-neutral-950">
+                {activeFilterCount}
+              </span>
+            )}
+          </Button>
           <Button
             leftIcon={<PlusIcon size={20} weight="bold" />}
             onClick={() => setShowAddDeal(true)}
@@ -134,6 +158,7 @@ export default function SalesPage() {
           </Button>
         </div>
       </div>
+
       {/* Kanban Board */}
       <div className="flex gap-4 overflow-x-auto pb-4 flex-1">
         {visibleStages.map((stageId) => {
@@ -180,17 +205,40 @@ export default function SalesPage() {
               {/* Deal Cards */}
               <div className="flex-1 px-4 pb-4 space-y-3 overflow-y-auto">
                 {deals.map((deal) => (
-                  <DealCard key={deal.id} deal={deal} />
+                  <DealCard
+                    key={deal.id}
+                    deal={deal}
+                    onClick={() => {
+                      setSelectedDeal(deal);
+                      setShowDrawer(true);
+                    }}
+                  />
                 ))}
               </div>
             </div>
           );
         })}
       </div>
+
       {/* Create Deal Modal */}
       <CreateDealModal
         open={showAddDeal}
         onClose={() => setShowAddDeal(false)}
+      />
+
+      {/* Deal Quick View Drawer */}
+      <DealDrawer
+        open={showDrawer}
+        onClose={() => setShowDrawer(false)}
+        deal={selectedDeal}
+      />
+
+      {/* Filter Modal */}
+      <FilterDealsModal
+        open={showFilters}
+        onClose={() => setShowFilters(false)}
+        filters={filters}
+        onApply={setFilters}
       />
     </div>
   );
@@ -198,12 +246,21 @@ export default function SalesPage() {
 
 // ─── Deal Card ───────────────────────────────────────────────────────────────
 
-function DealCard({ deal }: { deal: PipelineDeal }) {
+function DealCard({
+  deal,
+  onClick,
+}: {
+  deal: PipelineDeal;
+  onClick: () => void;
+}) {
   const isClosed = deal.stage === "closed_won" || deal.stage === "closed_lost";
   const isWon = deal.stage === "closed_won";
 
   return (
-    <div className="rounded-xl border-[0.5px] border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 hover:border-neutral-300 dark:hover:border-neutral-700 hover:shadow-sm transition-all cursor-pointer py-1">
+    <div
+      onClick={onClick}
+      className="rounded-xl border-[0.5px] border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 hover:border-neutral-300 dark:hover:border-neutral-700 hover:shadow-sm transition-all cursor-pointer py-1"
+    >
       {/* Top row: Name + Value */}
       <div className="flex items-start justify-between px-5 py-4">
         <div className="min-w-0 flex-1 mr-3">
