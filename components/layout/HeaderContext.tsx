@@ -9,10 +9,9 @@ import {
 } from "react";
 
 interface HeaderConfig {
-  /** Show back button with link */
   backHref?: string;
-  /** Right-side actions (replaces default search/calendar/notifications) */
   actions?: ReactNode;
+  breadcrumbLabel?: string;
 }
 
 interface HeaderContextType {

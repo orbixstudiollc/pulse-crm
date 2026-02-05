@@ -91,16 +91,14 @@ export default function LeadDetailPage({
           Edit Lead
         </Button>
         <ActionMenu
-          trigger={
-            <button className="flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800">
-              <DotsThreeIcon size={20} />
-            </button>
-          }
-          items={
-            [
-              /* menu items */
-            ]
-          }
+          items={[
+            {
+              label: "Delete Lead",
+              icon: <TrashIcon size={16} />,
+              variant: "danger",
+              onClick: () => {},
+            },
+          ]}
         />
       </>
     ),
@@ -110,6 +108,7 @@ export default function LeadDetailPage({
   usePageHeader({
     backHref: "/dashboard/leads",
     actions: headerActions,
+    breadcrumbLabel: lead?.name,
   });
 
   if (!lead) {

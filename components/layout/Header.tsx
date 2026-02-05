@@ -32,20 +32,29 @@ export function Header() {
         )}
 
         <nav className="flex items-center gap-2 text-xs">
-          {segments.map((segment, index) => (
-            <span key={segment} className="flex items-center gap-2">
-              {index > 0 && <span className="text-neutral-500">/</span>}
-              <span
-                className={
-                  index === segments.length - 1
-                    ? "font-medium text-neutral-950 dark:text-neutral-50 uppercase"
-                    : "text-neutral-500 uppercase"
-                }
-              >
-                {decodeURIComponent(segment)}
+          {segments.map((segment, index) => {
+            // Replace ID-like segments (numeric or long hashes) with breadcrumbLabel
+            const isIdSegment = /^[0-9]+$/.test(segment) || segment.length > 20;
+            const displayText =
+              isIdSegment && config.breadcrumbLabel
+                ? config.breadcrumbLabel
+                : decodeURIComponent(segment);
+
+            return (
+              <span key={index} className="flex items-center gap-2">
+                {index > 0 && <span className="text-neutral-500">/</span>}
+                <span
+                  className={
+                    index === segments.length - 1
+                      ? "font-medium text-neutral-950 dark:text-neutral-50 uppercase"
+                      : "text-neutral-500 uppercase"
+                  }
+                >
+                  {displayText}
+                </span>
               </span>
-            </span>
-          ))}
+            );
+          })}
         </nav>
       </div>
 

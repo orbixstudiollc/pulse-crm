@@ -156,6 +156,7 @@ export default function EditCustomerPage({
   usePageHeader({
     backHref: `/dashboard/customers/${id}`,
     actions: headerActions,
+    breadcrumbLabel: customer?.name,
   });
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
