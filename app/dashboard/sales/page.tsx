@@ -263,11 +263,11 @@ function DealCard({
     >
       {/* Top row: Name + Value */}
       <div className="flex items-start justify-between px-5 py-4">
-        <div className="min-w-0 flex-1 mr-3">
-          <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 truncate">
+        <div className="min-w-0 flex-1 mr-3 space-y-1">
+          <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
             {deal.name}
           </p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
             {deal.company}
           </p>
         </div>
@@ -284,25 +284,25 @@ function DealCard({
               {isWon ? "Won" : "Lost"}
             </Badge>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
               <Progress
                 value={deal.probability}
                 color={getProbabilityColor(deal.probability)}
                 size="sm"
                 className="w-16"
               />
-              <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+              <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
                 {deal.probability}%
               </span>
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-neutral-500 dark:text-neutral-400">
             {deal.closeDate}
           </span>
-          <div className="relative h-7 w-7 rounded-full overflow-hidden border border-neutral-200 dark:border-neutral-700">
+          <div className="relative h-8 w-8 rounded-full overflow-hidden border border-neutral-200 dark:border-neutral-700">
             <Image
               src={deal.ownerAvatar}
               alt="Deal owner"
