@@ -8,13 +8,9 @@ import {
   Progress,
   PlusIcon,
   ClockIcon,
-  TrophyIcon,
-  CheckCircleIcon,
-  XIcon,
   IconButton,
   FadersIcon,
 } from "@/components/ui";
-import { PageHeader } from "@/components/dashboard";
 import { CreateDealModal } from "@/components/features";
 import {
   pipelineDeals,
@@ -37,6 +33,15 @@ const activeStageIds: PipelineStage[] = [
 
 // Closed stages (shown in "Closed Deals" tab)
 const closedStageIds: PipelineStage[] = ["closed_won", "closed_lost"];
+
+// Stage badge colors
+const stageColors: Record<PipelineStage, string> = {
+  discovery: "bg-blue-500",
+  proposal: "bg-amber-500",
+  negotiation: "bg-violet-500",
+  closed_won: "bg-green-500",
+  closed_lost: "bg-red-500",
+};
 
 // Probability color based on value
 function getProbabilityColor(
@@ -62,7 +67,7 @@ export default function SalesPage() {
     activeTab === "active" ? activeStageIds : closedStageIds;
 
   return (
-    <div className="py-6 px-8 space-y-4">
+    <div className="py-6 px-8 flex flex-col gap-4 min-h-full">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-5">
@@ -129,9 +134,8 @@ export default function SalesPage() {
           </Button>
         </div>
       </div>
-
       {/* Kanban Board */}
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="flex gap-4 overflow-x-auto pb-4 flex-1">
         {visibleStages.map((stageId) => {
           const stage = pipelineStages.find((s) => s.id === stageId)!;
           const deals = getDealsByStage(stageId);
@@ -141,7 +145,7 @@ export default function SalesPage() {
           return (
             <div
               key={stageId}
-              className="flex flex-col min-w-[340px] flex-1 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900"
+              className="flex flex-col min-w-85 flex-1 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900"
             >
               {/* Column Header */}
               <div className="flex items-center justify-between p-4">
@@ -149,7 +153,12 @@ export default function SalesPage() {
                   <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
                     {stage.label}
                   </h3>
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-green-500 px-1.5 text-xs font-semibold text-white">
+                  <span
+                    className={cn(
+                      "flex h-5 min-w-5 items-center justify-center rounded-md px-1.5 text-xs font-semibold text-white",
+                      stageColors[stageId],
+                    )}
+                  >
                     {count}
                   </span>
                 </div>
@@ -169,7 +178,7 @@ export default function SalesPage() {
               </div>
 
               {/* Deal Cards */}
-              <div className="flex-1 px-4 pb-4 space-y-3 overflow-y-auto max-h-[calc(100vh-320px)]">
+              <div className="flex-1 px-4 pb-4 space-y-3 overflow-y-auto">
                 {deals.map((deal) => (
                   <DealCard key={deal.id} deal={deal} />
                 ))}
@@ -178,7 +187,6 @@ export default function SalesPage() {
           );
         })}
       </div>
-
       {/* Create Deal Modal */}
       <CreateDealModal
         open={showAddDeal}
