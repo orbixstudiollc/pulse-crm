@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -19,6 +19,8 @@ import {
   ActionMenu,
   EyeIcon,
   TrashIcon,
+  PencilSimpleIcon,
+  DotsThreeIcon,
 } from "@/components/ui";
 import {
   activityByCustomerId,
@@ -36,6 +38,7 @@ import {
   CreateDealModal,
   CreateInvoiceModal,
 } from "@/components/features";
+import { usePageHeader } from "@/hooks";
 
 // Icon mapping for activity types
 const activityIconMap = {
@@ -79,6 +82,36 @@ export default function CustomerDetailPage({
       minimumFractionDigits: 0,
     }).format(value);
   };
+
+  const headerActions = useMemo(
+    () => (
+      <>
+        <Link href={`/dashboard/customers/${id}/edit`}>
+          <Button variant="outline" leftIcon={<PencilSimpleIcon size={16} />}>
+            Edit Customer
+          </Button>
+        </Link>
+        <ActionMenu
+          trigger={
+            <button className="flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800">
+              <DotsThreeIcon size={20} />
+            </button>
+          }
+          items={
+            [
+              /* menu items */
+            ]
+          }
+        />
+      </>
+    ),
+    [id],
+  );
+
+  usePageHeader({
+    backHref: "/dashboard/customers",
+    actions: headerActions,
+  });
 
   if (!customer) {
     return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useMemo } from "react";
 import Link from "next/link";
 import {
   Button,
@@ -20,6 +20,8 @@ import {
   CurrencyDollarIcon,
   FileTextIcon,
   Toast,
+  PencilSimpleIcon,
+  DotsThreeIcon,
 } from "@/components/ui";
 import {
   getLeadById,
@@ -36,6 +38,7 @@ import {
   CompleteMeetingModal,
   ConvertLeadModal,
 } from "@/components/features";
+import { usePageHeader } from "@/hooks";
 
 // Icon mapping for activity types
 const activityIconMap: Record<
@@ -80,6 +83,34 @@ export default function LeadDetailPage({
       minimumFractionDigits: 0,
     }).format(value);
   };
+
+  const headerActions = useMemo(
+    () => (
+      <>
+        <Button variant="outline" leftIcon={<PencilSimpleIcon size={16} />}>
+          Edit Lead
+        </Button>
+        <ActionMenu
+          trigger={
+            <button className="flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800">
+              <DotsThreeIcon size={20} />
+            </button>
+          }
+          items={
+            [
+              /* menu items */
+            ]
+          }
+        />
+      </>
+    ),
+    [],
+  );
+
+  usePageHeader({
+    backHref: "/dashboard/leads",
+    actions: headerActions,
+  });
 
   if (!lead) {
     return (

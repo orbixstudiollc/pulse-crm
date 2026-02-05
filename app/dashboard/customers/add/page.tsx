@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import {
   Button,
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { usePageHeader } from "@/hooks";
 
 const industryOptions = [
   { label: "Technology", value: "technology" },
@@ -118,23 +119,38 @@ export default function AddCustomerPage() {
     );
   };
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     setSaving(true);
-
-    // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
-
     setSaving(false);
     setShowToast(true);
 
-    // Navigate to the new customer's detail page
-    // In real app, you'd get the ID from the API response
-    const newCustomerId = Date.now().toString(); // Mock ID
-
+    const newCustomerId = Date.now().toString();
     setTimeout(() => {
       router.push(`/dashboard/customers/${newCustomerId}`);
     }, 1500);
-  };
+  }, [router]);
+
+  const headerActions = useMemo(
+    () => (
+      <>
+        <Button variant="outline">Save as Draft</Button>
+        <Button
+          leftIcon={<CheckIcon size={16} />}
+          onClick={handleSave}
+          loading={saving}
+        >
+          Save Customer
+        </Button>
+      </>
+    ),
+    [saving, handleSave],
+  );
+
+  usePageHeader({
+    backHref: "/dashboard/customers",
+    actions: headerActions,
+  });
 
   return (
     <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 py-14 px-8">

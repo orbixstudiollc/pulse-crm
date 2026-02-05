@@ -26,6 +26,7 @@ export {
   PlusIcon,
   ExportIcon,
   DotsThreeVerticalIcon,
+  DotsThreeIcon,
   XIcon,
   EyeIcon,
   PencilSimpleIcon,

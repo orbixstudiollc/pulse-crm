@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useMemo, useCallback, useState } from "react";
 import Link from "next/link";
 import {
   Button,
@@ -23,6 +23,7 @@ import {
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { getCustomerById } from "@/lib/data/customers";
+import { usePageHeader } from "@/hooks";
 
 const industryOptions = [
   { label: "Technology", value: "Technology" },
@@ -117,21 +118,39 @@ export default function EditCustomerPage({
   const [toastMessage, setToastMessage] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  if (!customer) {
-    return (
-      <div className="py-20 text-center">
-        <p className="text-neutral-500 dark:text-neutral-400 mb-4">
-          Customer not found
-        </p>
-        <Link
-          href="/dashboard/customers"
-          className="text-sm text-neutral-950 dark:text-neutral-50 hover:underline"
-        >
-          Back to customers
+  const handleSave = useCallback(async () => {
+    setSaving(true);
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    setSaving(false);
+    setToastMessage("Changes saved successfully");
+    setShowToast(true);
+    setTimeout(() => {
+      router.push(`/dashboard/customers/${id}`);
+    }, 1500);
+  }, [router, id]);
+
+  const headerActions = useMemo(
+    () => (
+      <>
+        <Link href={`/dashboard/customers/${id}`}>
+          <Button variant="ghost">Cancel</Button>
         </Link>
-      </div>
-    );
-  }
+        <Button
+          leftIcon={<CheckIcon size={16} />}
+          onClick={handleSave}
+          loading={saving}
+        >
+          Save Changes
+        </Button>
+      </>
+    ),
+    [id, saving, handleSave],
+  );
+
+  usePageHeader({
+    backHref: `/dashboard/customers/${id}`,
+    actions: headerActions,
+  });
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -171,17 +190,6 @@ export default function EditCustomerPage({
     );
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setSaving(false);
-    setToastMessage("Changes saved successfully");
-    setShowToast(true);
-    setTimeout(() => {
-      router.push(`/dashboard/customers/${id}`);
-    }, 1500);
-  };
-
   const handleDelete = async () => {
     setDeleting(true);
     await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -193,6 +201,22 @@ export default function EditCustomerPage({
       router.push("/dashboard/customers");
     }, 1500);
   };
+
+  if (!customer) {
+    return (
+      <div className="py-20 text-center">
+        <p className="text-neutral-500 dark:text-neutral-400 mb-4">
+          Customer not found
+        </p>
+        <Link
+          href="/dashboard/customers"
+          className="text-sm text-neutral-950 dark:text-neutral-50 hover:underline"
+        >
+          Back to customers
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 py-14 px-8">
