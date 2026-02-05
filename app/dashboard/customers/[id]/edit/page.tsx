@@ -136,11 +136,17 @@ export default function EditCustomerPage({
           <Button variant="ghost">Cancel</Button>
         </Link>
         <Button
-          leftIcon={<CheckIcon size={16} />}
+          leftIcon={
+            saving ? (
+              <CircleNotchIcon size={16} className="animate-spin" />
+            ) : (
+              <CheckIcon size={16} />
+            )
+          }
           onClick={handleSave}
-          loading={saving}
+          disabled={saving}
         >
-          Save Changes
+          {saving ? "Saving..." : "Save Changes"}
         </Button>
       </>
     ),

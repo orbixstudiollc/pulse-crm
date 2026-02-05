@@ -136,11 +136,17 @@ export default function AddCustomerPage() {
       <>
         <Button variant="outline">Save as Draft</Button>
         <Button
-          leftIcon={<CheckIcon size={16} />}
+          leftIcon={
+            saving ? (
+              <CircleNotchIcon size={16} className="animate-spin" />
+            ) : (
+              <CheckIcon size={16} />
+            )
+          }
           onClick={handleSave}
-          loading={saving}
+          disabled={saving}
         >
-          Save Customer
+          {saving ? "Saving..." : "Save Customer"}
         </Button>
       </>
     ),
