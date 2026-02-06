@@ -53,6 +53,7 @@ export {
   NoteIcon,
   FileTextIcon,
   ClockIcon,
+  MonitorIcon,
   // Sentiment
   ThumbsUpIcon,
   ThumbsDownIcon,

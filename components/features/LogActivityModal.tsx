@@ -14,11 +14,12 @@ import {
   UsersThreeIcon,
   XIcon,
   ClockIcon,
+  MonitorIcon,
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 // Activity types
-type ActivityType = "call" | "meeting" | "task" | "email" | "note";
+type ActivityType = "call" | "meeting" | "task" | "email" | "note" | "demo";
 
 // Related entity type
 interface RelatedEntity {
@@ -38,7 +39,7 @@ const mockEntities: RelatedEntity[] = [
 ];
 
 // Activity type config
-const activityTypes: {
+const activityTypeConfig: {
   id: ActivityType;
   label: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -49,9 +50,22 @@ const activityTypes: {
   { id: "note", label: "Note", icon: NoteIcon },
 ];
 
+// Event type config (for calendar)
+const eventTypeConfig: {
+  id: ActivityType;
+  label: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+}[] = [
+  { id: "call", label: "Call", icon: PhoneIcon },
+  { id: "meeting", label: "Meeting", icon: CalendarBlankIcon },
+  { id: "task", label: "Task", icon: CheckCircleIcon },
+  { id: "demo", label: "Demo", icon: MonitorIcon },
+];
+
 // Duration options
 const durationOptions = [
   { label: "15 minutes", value: "15" },
+  { label: "25 minutes", value: "25" },
   { label: "30 minutes", value: "30" },
   { label: "45 minutes", value: "45" },
   { label: "1 hour", value: "60" },
@@ -75,6 +89,8 @@ interface LogActivityModalProps {
     notes: string;
   }) => void;
   mode?: "create" | "edit";
+  /** Use "activity" for Activity page, "event" for Calendar page */
+  variant?: "activity" | "event";
   initialData?: {
     type: ActivityType;
     title: string;
@@ -91,11 +107,31 @@ export function LogActivityModal({
   onClose,
   onSubmit,
   mode = "create",
+  variant = "activity",
   initialData,
 }: LogActivityModalProps) {
+  // Get the appropriate type config based on variant
+  const typeOptions =
+    variant === "event" ? eventTypeConfig : activityTypeConfig;
+  const defaultType = variant === "event" ? "call" : "call";
+
+  // Labels based on variant
+  const labels = {
+    activity: {
+      title: mode === "edit" ? "Edit Activity" : "Log Activity",
+      submit: mode === "edit" ? "Update Activity" : "Save Activity",
+      placeholder: "e.g., Call with John about proposal",
+    },
+    event: {
+      title: mode === "edit" ? "Edit Event" : "Schedule Event",
+      submit: mode === "edit" ? "Update Event" : "Schedule Event",
+      placeholder: "e.g., Discovery call with Acme Corp",
+    },
+  };
+
   // Initialize state directly from props (use key prop on parent to reset)
   const [activityType, setActivityType] = useState<ActivityType>(
-    initialData?.type || "call",
+    initialData?.type || defaultType,
   );
   const [title, setTitle] = useState(initialData?.title || "");
   const [relatedTo, setRelatedTo] = useState<RelatedEntity | null>(
@@ -152,7 +188,7 @@ export function LogActivityModal({
       {/* Header */}
       <div className="flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-800">
         <h2 className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
-          {mode === "edit" ? "Edit Activity" : "Log Activity"}
+          {labels[variant].title}
         </h2>
         <button
           onClick={onClose}
@@ -170,7 +206,7 @@ export function LogActivityModal({
             Activity Type
           </label>
           <div className="flex gap-2">
-            {activityTypes.map((type) => {
+            {typeOptions.map((type) => {
               const Icon = type.icon;
               const isSelected = activityType === type.id;
               return (
@@ -197,7 +233,7 @@ export function LogActivityModal({
         <Input
           label="Title"
           required
-          placeholder="e.g., Call with John about proposal"
+          placeholder={labels[variant].placeholder}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
@@ -347,7 +383,7 @@ export function LogActivityModal({
           Cancel
         </Button>
         <Button onClick={handleSubmit} disabled={!title}>
-          {mode === "edit" ? "Update Activity" : "Save Activity"}
+          {labels[variant].submit}
         </Button>
       </div>
     </Modal>
