@@ -150,7 +150,7 @@ export default function LeadsPage() {
       <div className="grid grid-cols-3 gap-4">
         <StatCard
           label="Total Leads"
-          value={filteredLeads.length.toString()}
+          value={allLeads.length.toString()}
           change={{ value: "+12%", trend: "up" }}
           icon={
             <UsersThreeIcon

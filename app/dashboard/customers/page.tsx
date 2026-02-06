@@ -77,13 +77,10 @@ export default function CustomersPage() {
     }
   };
 
-  // Calculate stats from filtered data
-  const activeCount = filteredCustomers.filter(
-    (c) => c.status === "active",
-  ).length;
-  const atRiskCount = filteredCustomers.filter(
-    (c) => c.healthScore < 50,
-  ).length;
+  // Calculate overall stats (not affected by filters)
+  const totalCustomers = allCustomers.length;
+  const activeCount = allCustomers.filter((c) => c.status === "active").length;
+  const atRiskCount = allCustomers.filter((c) => c.healthScore < 50).length;
 
   return (
     <div className="py-6 px-8 space-y-4">
@@ -102,7 +99,7 @@ export default function CustomersPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <StatCard
           label="Total Customers"
-          value={filteredCustomers.length.toLocaleString()}
+          value={totalCustomers.toLocaleString()}
           change={{ value: "+12.5%", trend: "up" }}
           icon={
             <UsersThreeIcon
