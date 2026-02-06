@@ -15,3 +15,4 @@ export { FilterDealsModal } from "./FilterDealsModal";
 export { MarkDealLostModal } from "./MarkDealLostModal";
 export { MarkDealWonModal } from "./MarkDealWonModal";
 export { AddDealModal, type DealFormData } from "./AddDealModal";
+export { LogActivityModal } from "./LogActivityModal";

@@ -22,6 +22,7 @@ import {
   ActivityDetailDrawer,
   ScheduleMeetingModal,
   CompleteMeetingModal,
+  LogActivityModal,
 } from "@/components/features";
 import {
   activities as allActivities,
@@ -71,6 +72,8 @@ export default function ActivityPage() {
   const [showActivityDrawer, setShowActivityDrawer] = useState(false);
   const [showMeetingModal, setShowMeetingModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [showLogActivityModal, setShowLogActivityModal] = useState(false);
+  const [editActivity, setEditActivity] = useState<Activity | null>(null);
 
   // Filter activities
   const filteredActivities = allActivities.filter((activity) => {
@@ -139,7 +142,13 @@ export default function ActivityPage() {
         <Button variant="outline" leftIcon={<ExportIcon size={18} />}>
           Export
         </Button>
-        <Button leftIcon={<PlusIcon size={20} weight="bold" />}>
+        <Button
+          leftIcon={<PlusIcon size={20} weight="bold" />}
+          onClick={() => {
+            setEditActivity(null);
+            setShowLogActivityModal(true);
+          }}
+        >
           Log Activity
         </Button>
       </PageHeader>
@@ -245,7 +254,10 @@ export default function ActivityPage() {
                     setSelectedActivity(activity);
                     setShowActivityDrawer(true);
                   }}
-                  onEdit={() => console.log("Edit:", activity.id)}
+                  onEdit={() => {
+                    setEditActivity(activity);
+                    setShowLogActivityModal(true);
+                  }}
                   onDelete={() => console.log("Delete:", activity.id)}
                 />
               );
@@ -291,6 +303,10 @@ export default function ActivityPage() {
                         label: "Log Your First Activity",
                         icon: <PlusIcon size={18} weight="bold" />,
                         variant: "primary",
+                        onClick: () => {
+                          setEditActivity(null);
+                          setShowLogActivityModal(true);
+                        },
                       },
                     ]
               }
@@ -340,6 +356,37 @@ export default function ActivityPage() {
         onComplete={(data) => {
           console.log("Meeting completed:", data);
           setShowCompleteModal(false);
+        }}
+      />
+
+      {/* Log/Edit Activity Modal */}
+      <LogActivityModal
+        key={editActivity ? `edit-${editActivity.id}` : "create"}
+        open={showLogActivityModal}
+        onClose={() => {
+          setShowLogActivityModal(false);
+          setEditActivity(null);
+        }}
+        mode={editActivity ? "edit" : "create"}
+        initialData={
+          editActivity
+            ? {
+                type: editActivity.type,
+                title: editActivity.title,
+                relatedTo: {
+                  id: editActivity.relatedTo.id,
+                  name: editActivity.relatedTo.name,
+                  type: editActivity.relatedTo.type,
+                },
+                date: editActivity.date,
+                time: editActivity.time || "",
+                duration: "30",
+                notes: editActivity.description,
+              }
+            : undefined
+        }
+        onSubmit={(data) => {
+          console.log("Activity saved:", data);
         }}
       />
     </div>
