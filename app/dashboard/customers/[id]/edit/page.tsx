@@ -284,7 +284,7 @@ export default function EditCustomerPage({
                 <button
                   type="button"
                   onClick={removeAvatar}
-                  className="text-xs text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  className="text-sm font-medium text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                 >
                   Remove Photo
                 </button>
