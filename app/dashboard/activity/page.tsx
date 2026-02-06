@@ -16,11 +16,18 @@ import {
   ActivityRow,
   TableHeader,
   TableFooter,
+  EmptyState,
 } from "@/components/dashboard";
+import {
+  ActivityDetailDrawer,
+  ScheduleMeetingModal,
+  CompleteMeetingModal,
+} from "@/components/features";
 import {
   activities as allActivities,
   activityStats,
   statusConfig,
+  type Activity,
   type ActivityType,
 } from "@/lib/data/activities";
 
@@ -56,6 +63,14 @@ export default function ActivityPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [relatedToFilter, setRelatedToFilter] = useState("all");
+
+  // Activity drawer state
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
+    null,
+  );
+  const [showActivityDrawer, setShowActivityDrawer] = useState(false);
+  const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
 
   // Filter activities
   const filteredActivities = allActivities.filter((activity) => {
@@ -100,6 +115,21 @@ export default function ActivityPage() {
         break;
     }
     setCurrentPage(1);
+  };
+
+  // Convert Activity to drawer-compatible format
+  const getDrawerActivity = (activity: Activity) => {
+    const status = statusConfig[activity.status];
+    return {
+      id: activity.id,
+      type: activity.type,
+      title: activity.title,
+      description: activity.description,
+      badge: { label: status.label, variant: status.variant },
+      meta: activity.time
+        ? `${activity.date}, ${activity.time}`
+        : activity.date,
+    };
   };
 
   return (
@@ -211,16 +241,60 @@ export default function ActivityPage() {
                   description={activity.description}
                   badge={{ label: status.label, variant: status.variant }}
                   meta={meta}
-                  onView={() => console.log("View:", activity.id)}
+                  onView={() => {
+                    setSelectedActivity(activity);
+                    setShowActivityDrawer(true);
+                  }}
                   onEdit={() => console.log("Edit:", activity.id)}
                   onDelete={() => console.log("Delete:", activity.id)}
                 />
               );
             })
           ) : (
-            <div className="py-12 text-center text-neutral-500 dark:text-neutral-400">
-              <p>No activities found</p>
-            </div>
+            <EmptyState
+              icon={<ActivityIcon size={24} />}
+              title={
+                searchValue ||
+                statusFilter !== "all" ||
+                typeFilter !== "all" ||
+                relatedToFilter !== "all"
+                  ? "No activities found"
+                  : "No activities yet"
+              }
+              description={
+                searchValue ||
+                statusFilter !== "all" ||
+                typeFilter !== "all" ||
+                relatedToFilter !== "all"
+                  ? "Try adjusting your search or filters to find what you're looking for."
+                  : "Start tracking your sales activities by logging calls, meetings, tasks, and notes."
+              }
+              actions={
+                searchValue ||
+                statusFilter !== "all" ||
+                typeFilter !== "all" ||
+                relatedToFilter !== "all"
+                  ? [
+                      {
+                        label: "Clear Filters",
+                        variant: "outline",
+                        onClick: () => {
+                          setSearchValue("");
+                          setStatusFilter("all");
+                          setTypeFilter("all");
+                          setRelatedToFilter("all");
+                        },
+                      },
+                    ]
+                  : [
+                      {
+                        label: "Log Your First Activity",
+                        icon: <PlusIcon size={18} weight="bold" />,
+                        variant: "primary",
+                      },
+                    ]
+              }
+            />
           )}
         </div>
 
@@ -235,6 +309,39 @@ export default function ActivityPage() {
           itemLabel="activities"
         />
       </div>
+
+      {/* Activity Detail Drawer */}
+      <ActivityDetailDrawer
+        open={showActivityDrawer}
+        onClose={() => setShowActivityDrawer(false)}
+        activity={selectedActivity ? getDrawerActivity(selectedActivity) : null}
+        customerName={selectedActivity?.relatedTo.name || ""}
+        onMarkComplete={() => {
+          setShowActivityDrawer(false);
+          setShowCompleteModal(true);
+        }}
+        onReschedule={() => {
+          setShowActivityDrawer(false);
+          setShowMeetingModal(true);
+        }}
+      />
+
+      {/* Schedule Meeting Modal (for reschedule) */}
+      <ScheduleMeetingModal
+        open={showMeetingModal}
+        onClose={() => setShowMeetingModal(false)}
+        customerName={selectedActivity?.relatedTo.name || ""}
+      />
+
+      {/* Complete Meeting Modal */}
+      <CompleteMeetingModal
+        open={showCompleteModal}
+        onClose={() => setShowCompleteModal(false)}
+        onComplete={(data) => {
+          console.log("Meeting completed:", data);
+          setShowCompleteModal(false);
+        }}
+      />
     </div>
   );
 }

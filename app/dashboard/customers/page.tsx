@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
 import {
   customerPlanOptions,
   customerScoreOptions,
@@ -7,6 +11,8 @@ import {
   PageHeader,
   StatCard,
   timeRangeOptions,
+  EmptyState,
+  TableHeader,
 } from "@/components/dashboard";
 import {
   Button,
@@ -15,10 +21,70 @@ import {
   PlusIcon,
   UsersThreeIcon,
   WarningIcon,
+  UploadIcon,
 } from "@/components/ui";
-import Link from "next/link";
+import { customers as allCustomers } from "@/lib/data/customers";
 
 export default function CustomersPage() {
+  const [searchValue, setSearchValue] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [planFilter, setPlanFilter] = useState("all");
+  const [healthFilter, setHealthFilter] = useState("all");
+
+  // Filter customers
+  const filteredCustomers = allCustomers.filter((customer) => {
+    // Search filter
+    const matchesSearch =
+      searchValue === "" ||
+      customer.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+      customer.email.toLowerCase().includes(searchValue.toLowerCase()) ||
+      customer.company.toLowerCase().includes(searchValue.toLowerCase());
+
+    // Status filter
+    const matchesStatus =
+      statusFilter === "all" || customer.status === statusFilter;
+
+    // Plan filter
+    const matchesPlan = planFilter === "all" || customer.plan === planFilter;
+
+    // Health score filter
+    let matchesHealth = true;
+    if (healthFilter !== "all") {
+      const threshold = parseInt(healthFilter);
+      if (threshold === 90) {
+        matchesHealth = customer.healthScore >= 80;
+      } else if (threshold === 70) {
+        matchesHealth = customer.healthScore >= 50 && customer.healthScore < 80;
+      } else if (threshold === 50) {
+        matchesHealth = customer.healthScore < 50;
+      }
+    }
+
+    return matchesSearch && matchesStatus && matchesPlan && matchesHealth;
+  });
+
+  const handleFilterChange = (key: string, value: string) => {
+    switch (key) {
+      case "status":
+        setStatusFilter(value);
+        break;
+      case "plan":
+        setPlanFilter(value);
+        break;
+      case "health":
+        setHealthFilter(value);
+        break;
+    }
+  };
+
+  // Calculate stats from filtered data
+  const activeCount = filteredCustomers.filter(
+    (c) => c.status === "active",
+  ).length;
+  const atRiskCount = filteredCustomers.filter(
+    (c) => c.healthScore < 50,
+  ).length;
+
   return (
     <div className="py-6 px-8 space-y-4">
       <PageHeader title="Customers">
@@ -36,7 +102,7 @@ export default function CustomersPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <StatCard
           label="Total Customers"
-          value="45,401"
+          value={filteredCustomers.length.toLocaleString()}
           change={{ value: "+12.5%", trend: "up" }}
           icon={
             <UsersThreeIcon
@@ -47,7 +113,7 @@ export default function CustomersPage() {
         />
         <StatCard
           label="Active"
-          value="40,034"
+          value={activeCount.toLocaleString()}
           change={{ value: "+24.5%", trend: "up" }}
           icon={
             <CheckCircleIcon
@@ -58,7 +124,7 @@ export default function CustomersPage() {
         />
         <StatCard
           label="At Risk"
-          value="5,320"
+          value={atRiskCount.toLocaleString()}
           change={{ value: "+15.2%", trend: "up" }}
           icon={
             <WarningIcon
@@ -72,6 +138,7 @@ export default function CustomersPage() {
       {/* Filters */}
       <FilterBar
         searchPlaceholder="Search customers..."
+        onSearchChange={setSearchValue}
         filters={[
           {
             key: "status",
@@ -98,10 +165,74 @@ export default function CustomersPage() {
             defaultValue: "all",
           },
         ]}
+        onFilterChange={handleFilterChange}
       />
 
-      {/* Customers Table */}
-      <CustomersTable />
+      {/* Customers Table or Empty State */}
+      {filteredCustomers.length > 0 ? (
+        <CustomersTable
+          customers={filteredCustomers}
+          totalCustomers={filteredCustomers.length}
+        />
+      ) : (
+        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
+          <TableHeader
+            title="All Customers"
+            rowsPerPage="5"
+            onRowsPerPageChange={() => {}}
+          />
+          <EmptyState
+            icon={<UsersThreeIcon size={24} />}
+            title={
+              searchValue ||
+              statusFilter !== "all" ||
+              planFilter !== "all" ||
+              healthFilter !== "all"
+                ? "No customers found"
+                : "No customers yet"
+            }
+            description={
+              searchValue ||
+              statusFilter !== "all" ||
+              planFilter !== "all" ||
+              healthFilter !== "all"
+                ? "Try adjusting your search or filters to find what you're looking for."
+                : "Get started by adding your first customer. Import from a CSV or add them manually."
+            }
+            actions={
+              searchValue ||
+              statusFilter !== "all" ||
+              planFilter !== "all" ||
+              healthFilter !== "all"
+                ? [
+                    {
+                      label: "Clear Filters",
+                      variant: "outline",
+                      onClick: () => {
+                        setSearchValue("");
+                        setStatusFilter("all");
+                        setPlanFilter("all");
+                        setHealthFilter("all");
+                      },
+                    },
+                  ]
+                : [
+                    {
+                      label: "Import CSV",
+                      icon: <UploadIcon size={18} />,
+                      variant: "outline",
+                    },
+                    {
+                      label: "Add Customer",
+                      icon: <PlusIcon size={18} weight="bold" />,
+                      variant: "primary",
+                      href: "/dashboard/customers/add",
+                    },
+                  ]
+            }
+          />
+        </div>
+      )}
     </div>
   );
 }

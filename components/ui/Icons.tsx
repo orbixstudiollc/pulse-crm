@@ -34,6 +34,7 @@ export {
   TrashIcon,
   UploadSimpleIcon,
   ImageIcon,
+  UploadIcon,
   // Arrows
   ArrowUpIcon,
   ArrowDownIcon,

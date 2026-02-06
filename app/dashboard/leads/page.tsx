@@ -15,6 +15,8 @@ import {
   UsersThreeIcon,
   CheckCircleIcon,
   SparkleIcon,
+  FunnelIcon,
+  UploadIcon,
 } from "@/components/ui";
 import {
   PageHeader,
@@ -23,6 +25,7 @@ import {
   TableHeader,
   TableFooter,
   LeadDrawer,
+  EmptyState,
 } from "@/components/dashboard";
 import { AddLeadModal } from "@/components/features";
 import {
@@ -69,15 +72,19 @@ export default function LeadsPage() {
       searchValue === "" ||
       lead.name.toLowerCase().includes(searchValue.toLowerCase()) ||
       lead.email.toLowerCase().includes(searchValue.toLowerCase());
+
     const matchesStatus =
       statusFilter === "all" || lead.status === statusFilter;
+
     const matchesSource =
       sourceFilter === "all" || lead.source === sourceFilter;
+
     const matchesScore =
       scoreFilter === "all" ||
       (scoreFilter === "high" && lead.score >= 80) ||
       (scoreFilter === "medium" && lead.score >= 60 && lead.score < 80) ||
       (scoreFilter === "low" && lead.score < 60);
+
     return matchesSearch && matchesStatus && matchesSource && matchesScore;
   });
 
@@ -143,7 +150,7 @@ export default function LeadsPage() {
       <div className="grid grid-cols-3 gap-4">
         <StatCard
           label="Total Leads"
-          value="847"
+          value={filteredLeads.length.toString()}
           change={{ value: "+12%", trend: "up" }}
           icon={
             <UsersThreeIcon
@@ -242,159 +249,218 @@ export default function LeadsPage() {
           }}
         />
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-                <th className="w-12 px-5 py-3">
-                  <Checkbox
-                    checked={isAllSelected}
-                    onChange={toggleSelectAll}
-                  />
-                </th>
-                <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  Lead
-                </th>
-                <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  Status
-                </th>
-                <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  Source
-                </th>
-                <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  Est. Value
-                </th>
-                <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  Score
-                </th>
-                <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  Created
-                </th>
-                <th className="text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 px-3 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedLeads.map((lead) => (
-                <tr
-                  key={lead.id}
-                  onClick={() => {
-                    setSelectedLead(lead);
-                    setDrawerOpen(true);
-                  }}
-                  className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer"
-                >
-                  {/* Checkbox */}
-                  <td
-                    className="w-12 px-5 py-4"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Checkbox
-                      checked={selectedRows.includes(lead.id)}
-                      onChange={() => toggleSelectRow(lead.id)}
-                    />
-                  </td>
-                  {/* Lead */}
-                  <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                    <div className="flex items-center gap-3">
-                      <Avatar name={lead.name} />
-                      <div>
-                        <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
-                          {lead.name}
-                        </p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                          {lead.email}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  {/* Status */}
-                  <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                    <Badge variant={leadStatusConfig[lead.status].variant} dot>
-                      {leadStatusConfig[lead.status].label}
-                    </Badge>
-                  </td>
-                  {/* Source */}
-                  <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                      {lead.source}
-                    </span>
-                  </td>
-                  {/* Est. Value */}
-                  <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                    <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
-                      {formatCurrency(lead.estimatedValue)}
-                    </span>
-                  </td>
-                  {/* Score */}
-                  <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                    <div
-                      className={cn(
-                        "flex h-9 w-9 items-center justify-center rounded-full border-[0.5px] text-sm font-semibold",
-                        getLeadScoreStyle(lead.score),
-                      )}
-                    >
-                      {lead.score}
-                    </div>
-                  </td>
-                  {/* Created */}
-                  <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                    <span className="text-sm text-neutral-500 dark:text-neutral-400">
-                      {lead.createdDate}
-                    </span>
-                  </td>
-                  {/* Actions */}
-                  <td
-                    className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex justify-center">
-                      <ActionMenu
-                        items={[
-                          {
-                            label: "View Details",
-                            icon: <EyeIcon size={18} />,
-                            onClick: () => {
-                              setSelectedLead(lead);
-                              setDrawerOpen(true);
-                            },
-                          },
-                          {
-                            label: "Edit Lead",
-                            icon: <PencilSimpleIcon size={18} />,
-                            onClick: () => {
-                              setEditLead(lead);
-                              setShowEditModal(true);
-                            },
-                          },
-                          {
-                            label: "Delete Lead",
-                            icon: <TrashIcon size={18} />,
-                            onClick: () => {},
-                            variant: "danger",
-                          },
-                        ]}
+        {/* Table or Empty State */}
+        {filteredLeads.length > 0 ? (
+          <>
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
+                    <th className="w-12 px-5 py-3">
+                      <Checkbox
+                        checked={isAllSelected}
+                        onChange={toggleSelectAll}
                       />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </th>
+                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                      Lead
+                    </th>
+                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                      Status
+                    </th>
+                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                      Source
+                    </th>
+                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                      Est. Value
+                    </th>
+                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                      Score
+                    </th>
+                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                      Created
+                    </th>
+                    <th className="text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 px-3 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedLeads.map((lead) => (
+                    <tr
+                      key={lead.id}
+                      onClick={() => {
+                        setSelectedLead(lead);
+                        setDrawerOpen(true);
+                      }}
+                      className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer"
+                    >
+                      {/* Checkbox */}
+                      <td
+                        className="w-12 px-5 py-4"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Checkbox
+                          checked={selectedRows.includes(lead.id)}
+                          onChange={() => toggleSelectRow(lead.id)}
+                        />
+                      </td>
+                      {/* Lead */}
+                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                        <div className="flex items-center gap-3">
+                          <Avatar name={lead.name} />
+                          <div>
+                            <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                              {lead.name}
+                            </p>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                              {lead.email}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      {/* Status */}
+                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                        <Badge
+                          variant={leadStatusConfig[lead.status].variant}
+                          dot
+                        >
+                          {leadStatusConfig[lead.status].label}
+                        </Badge>
+                      </td>
+                      {/* Source */}
+                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                          {lead.source}
+                        </span>
+                      </td>
+                      {/* Est. Value */}
+                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                        <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                          {formatCurrency(lead.estimatedValue)}
+                        </span>
+                      </td>
+                      {/* Score */}
+                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                        <div
+                          className={cn(
+                            "flex h-9 w-9 items-center justify-center rounded-full border-[0.5px] text-sm font-semibold",
+                            getLeadScoreStyle(lead.score),
+                          )}
+                        >
+                          {lead.score}
+                        </div>
+                      </td>
+                      {/* Created */}
+                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                        <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                          {lead.createdDate}
+                        </span>
+                      </td>
+                      {/* Actions */}
+                      <td
+                        className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex justify-center">
+                          <ActionMenu
+                            items={[
+                              {
+                                label: "View Details",
+                                icon: <EyeIcon size={18} />,
+                                onClick: () => {
+                                  setSelectedLead(lead);
+                                  setDrawerOpen(true);
+                                },
+                              },
+                              {
+                                label: "Edit Lead",
+                                icon: <PencilSimpleIcon size={18} />,
+                                onClick: () => {
+                                  setEditLead(lead);
+                                  setShowEditModal(true);
+                                },
+                              },
+                              {
+                                label: "Delete Lead",
+                                icon: <TrashIcon size={18} />,
+                                onClick: () => {},
+                                variant: "danger",
+                              },
+                            ]}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-        {/* Table Footer with Pagination */}
-        <TableFooter
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={filteredLeads.length}
-          startIndex={displayStart}
-          endIndex={displayEnd}
-          onPageChange={setCurrentPage}
-          itemLabel="leads"
-        />
+            {/* Table Footer with Pagination */}
+            <TableFooter
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredLeads.length}
+              startIndex={displayStart}
+              endIndex={displayEnd}
+              onPageChange={setCurrentPage}
+              itemLabel="leads"
+            />
+          </>
+        ) : (
+          <EmptyState
+            icon={<FunnelIcon size={24} />}
+            title={
+              searchValue ||
+              statusFilter !== "all" ||
+              sourceFilter !== "all" ||
+              scoreFilter !== "all"
+                ? "No leads found"
+                : "No leads yet"
+            }
+            description={
+              searchValue ||
+              statusFilter !== "all" ||
+              sourceFilter !== "all" ||
+              scoreFilter !== "all"
+                ? "Try adjusting your search or filters to find what you're looking for."
+                : "Start building your pipeline by importing leads or adding your first one manually."
+            }
+            actions={
+              searchValue ||
+              statusFilter !== "all" ||
+              sourceFilter !== "all" ||
+              scoreFilter !== "all"
+                ? [
+                    {
+                      label: "Clear Filters",
+                      variant: "outline",
+                      onClick: () => {
+                        setSearchValue("");
+                        setStatusFilter("all");
+                        setSourceFilter("all");
+                        setScoreFilter("all");
+                      },
+                    },
+                  ]
+                : [
+                    {
+                      label: "Import Leads",
+                      icon: <UploadIcon size={18} />,
+                      variant: "outline",
+                    },
+                    {
+                      label: "Add Lead",
+                      icon: <PlusIcon size={18} weight="bold" />,
+                      variant: "primary",
+                      onClick: () => setShowAddLead(true),
+                    },
+                  ]
+            }
+          />
+        )}
       </div>
 
       {/* Add Lead Modal */}
