@@ -9,3 +9,7 @@ export * from "./FilterBar";
 export { CustomersTable } from "./CustomersTable";
 export { CustomerDrawer } from "./CustomerDrawer";
 export { LeadDrawer } from "./LeadDrawer";
+export { Pagination } from "./Pagination";
+export { ActivityRow, type ActivityRowType } from "./ActivityRow";
+export { TableHeader } from "./TableHeader";
+export { TableFooter } from "./TableFooter";
