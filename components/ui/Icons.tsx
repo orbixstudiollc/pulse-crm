@@ -1,5 +1,4 @@
 "use client";
-
 export {
   // Navigation & Layout
   SidebarSimpleIcon,
@@ -7,7 +6,6 @@ export {
   CaretLeftIcon,
   CaretRightIcon,
   ArrowLeftIcon,
-
   // Dashboard
   GaugeIcon,
   UsersIcon,
@@ -19,13 +17,14 @@ export {
   GearIcon,
   SparkleIcon,
   FadersIcon,
-
+  ActivityIcon,
   // Actions
   CalendarBlankIcon,
   MagnifyingGlassIcon,
   BellIcon,
   PlusIcon,
   ExportIcon,
+  DownloadSimpleIcon as DownloadIcon,
   DotsThreeVerticalIcon,
   DotsThreeIcon,
   XIcon,
@@ -35,28 +34,24 @@ export {
   TrashIcon,
   UploadSimpleIcon,
   ImageIcon,
-
   // Arrows
   ArrowUpIcon,
   ArrowDownIcon,
   ArrowRightIcon,
   ArrowElbowDownLeftIcon,
   ArrowUpRightIcon,
-
   // Status
   CheckIcon,
   CheckCircleIcon,
   TrophyIcon,
   WarningIcon,
   CircleNotchIcon,
-
   // Communication & Activity
   PhoneIcon,
   VideoIcon,
   NoteIcon,
   FileTextIcon,
   ClockIcon,
-
   // Sentiment
   ThumbsUpIcon,
   ThumbsDownIcon,
