@@ -6,20 +6,24 @@ import {
   Badge,
   Avatar,
   Checkbox,
-  Dropdown,
   ActionMenu,
   ExportIcon,
   PlusIcon,
   EyeIcon,
   PencilSimpleIcon,
   TrashIcon,
-  CaretLeftIcon,
-  CaretRightIcon,
   UsersThreeIcon,
   CheckCircleIcon,
   SparkleIcon,
 } from "@/components/ui";
-import { PageHeader, FilterBar, StatCard } from "@/components/dashboard";
+import {
+  PageHeader,
+  FilterBar,
+  StatCard,
+  TableHeader,
+  TableFooter,
+  LeadDrawer,
+} from "@/components/dashboard";
 import { AddLeadModal } from "@/components/features";
 import {
   leads as allLeads,
@@ -28,17 +32,9 @@ import {
   leadSourceOptions,
   leadScoreOptions,
   getLeadScoreStyle,
+  type Lead,
 } from "@/lib/data/leads";
 import { cn, formatCurrency } from "@/lib/utils";
-import { LeadDrawer } from "@/components/dashboard";
-import { type Lead } from "@/lib/data/leads";
-
-const rowsPerPageOptions = [
-  { label: "5", value: "5" },
-  { label: "10", value: "10" },
-  { label: "25", value: "25" },
-  { label: "50", value: "50" },
-];
 
 export default function LeadsPage() {
   const [showAddLead, setShowAddLead] = useState(false);
@@ -127,35 +123,6 @@ export default function LeadsPage() {
     }
     setCurrentPage(1);
   };
-
-  // Pagination page numbers
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-      if (currentPage > 3) pages.push("...");
-      for (
-        let i = Math.max(2, currentPage - 1);
-        i <= Math.min(totalPages - 1, currentPage + 1);
-        i++
-      ) {
-        pages.push(i);
-      }
-      if (currentPage < totalPages - 2) pages.push("...");
-      pages.push(totalPages);
-    }
-    return pages;
-  };
-
-  // Stats
-  const totalLeads = allLeads.length;
-  const newThisWeek = allLeads.filter((l) =>
-    l.createdDate.includes("Jan 1"),
-  ).length;
-  const hotLeads = allLeads.filter((l) => l.status === "hot").length;
-  const conversionRate = Math.round((hotLeads / totalLeads) * 100);
 
   return (
     <div className="py-6 px-8 space-y-4">
@@ -266,29 +233,14 @@ export default function LeadsPage() {
         )}
 
         {/* Table Header */}
-        <div className="flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-800">
-          <h3 className="text-lg font-serif text-neutral-950 dark:text-neutral-50">
-            All Leads
-          </h3>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              Show
-            </span>
-            <Dropdown
-              options={rowsPerPageOptions}
-              value={rowsPerPage}
-              onChange={(value) => {
-                setRowsPerPage(value);
-                setCurrentPage(1);
-              }}
-              icon={null}
-              size="md"
-            />
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              rows
-            </span>
-          </div>
-        </div>
+        <TableHeader
+          title="All Leads"
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(value) => {
+            setRowsPerPage(value);
+            setCurrentPage(1);
+          }}
+        />
 
         {/* Table */}
         <div className="overflow-x-auto">
@@ -344,7 +296,6 @@ export default function LeadsPage() {
                       onChange={() => toggleSelectRow(lead.id)}
                     />
                   </td>
-
                   {/* Lead */}
                   <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                     <div className="flex items-center gap-3">
@@ -359,28 +310,24 @@ export default function LeadsPage() {
                       </div>
                     </div>
                   </td>
-
                   {/* Status */}
                   <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                     <Badge variant={leadStatusConfig[lead.status].variant} dot>
                       {leadStatusConfig[lead.status].label}
                     </Badge>
                   </td>
-
                   {/* Source */}
                   <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                     <span className="text-sm text-neutral-600 dark:text-neutral-400">
                       {lead.source}
                     </span>
                   </td>
-
                   {/* Est. Value */}
                   <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                     <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
                       {formatCurrency(lead.estimatedValue)}
                     </span>
                   </td>
-
                   {/* Score */}
                   <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                     <div
@@ -392,14 +339,12 @@ export default function LeadsPage() {
                       {lead.score}
                     </div>
                   </td>
-
                   {/* Created */}
                   <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                     <span className="text-sm text-neutral-500 dark:text-neutral-400">
                       {lead.createdDate}
                     </span>
                   </td>
-
                   {/* Actions */}
                   <td
                     className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800"
@@ -440,68 +385,16 @@ export default function LeadsPage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between px-5 py-4 border-t border-neutral-200 dark:border-neutral-800">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            Showing{" "}
-            <span className="font-medium text-neutral-950 dark:text-neutral-50">
-              {displayStart}–{displayEnd}
-            </span>{" "}
-            of{" "}
-            <span className="font-medium text-neutral-950 dark:text-neutral-50">
-              {filteredLeads.length}
-            </span>{" "}
-            leads
-          </p>
-
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:pointer-events-none transition-colors"
-            >
-              <CaretLeftIcon
-                size={16}
-                className="text-neutral-600 dark:text-neutral-400"
-              />
-            </button>
-
-            {getPageNumbers().map((page, index) =>
-              page === "..." ? (
-                <span
-                  key={`ellipsis-${index}`}
-                  className="flex h-9 w-9 items-center justify-center text-sm text-neutral-500"
-                >
-                  ...
-                </span>
-              ) : (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page as number)}
-                  className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium transition-colors",
-                    currentPage === page
-                      ? "bg-neutral-950 dark:bg-neutral-50 text-white dark:text-neutral-950"
-                      : "border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800",
-                  )}
-                >
-                  {page}
-                </button>
-              ),
-            )}
-
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages || totalPages === 0}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:pointer-events-none transition-colors"
-            >
-              <CaretRightIcon
-                size={16}
-                className="text-neutral-600 dark:text-neutral-400"
-              />
-            </button>
-          </div>
-        </div>
+        {/* Table Footer with Pagination */}
+        <TableFooter
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredLeads.length}
+          startIndex={displayStart}
+          endIndex={displayEnd}
+          onPageChange={setCurrentPage}
+          itemLabel="leads"
+        />
       </div>
 
       {/* Add Lead Modal */}
@@ -524,6 +417,7 @@ export default function LeadsPage() {
         }}
       />
 
+      {/* Edit Lead Modal */}
       <AddLeadModal
         key={showEditModal ? `edit-${editLead?.id}` : "closed"}
         open={showEditModal}

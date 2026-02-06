@@ -14,13 +14,12 @@ import {
   CheckCircleIcon,
   CurrencyDollarIcon,
   FileTextIcon,
-  VideoIcon,
-  NoteIcon,
   ActionMenu,
   EyeIcon,
   TrashIcon,
   PencilSimpleIcon,
 } from "@/components/ui";
+import { ActivityRow, type ActivityRowType } from "@/components/dashboard";
 import {
   activityByCustomerId,
   getCustomerById,
@@ -39,17 +38,6 @@ import {
 } from "@/components/features";
 import { usePageHeader } from "@/hooks";
 
-// Icon mapping for activity types
-const activityIconMap = {
-  email: EnvelopeIcon,
-  call: PhoneIcon,
-  deal: CurrencyDollarIcon,
-  meeting: VideoIcon,
-  note: NoteIcon,
-  task: CheckCircleIcon,
-  invoice: FileTextIcon,
-};
-
 export default function CustomerDetailPage({
   params,
 }: {
@@ -57,7 +45,6 @@ export default function CustomerDetailPage({
 }) {
   const { id } = use(params);
   const customer = getCustomerById(id);
-
   const activityItems = activityByCustomerId[id] || [];
   const customerNotes = notesByCustomerId[id] || [];
   const customerDeals = dealsByCustomerId[id] || [];
@@ -249,71 +236,28 @@ export default function CustomerDetailPage({
                 Deals
               </button>
             </div>
+
             <div>
               {activeTab === "activity" && (
                 <>
                   {activityItems.length > 0 ? (
-                    <div className="space-y-1">
-                      {activityItems.map((item, index) => {
-                        const Icon = activityIconMap[item.type];
-                        return (
-                          <div
-                            key={item.id}
-                            className={cn(
-                              "flex items-start gap-4 py-4 px-5 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors group",
-                              index !== activityItems.length - 1 &&
-                                "border-b-[0.5px] border-neutral-200 dark:border-neutral-800",
-                            )}
-                          >
-                            <div className="w-9 h-9 rounded-full border-[0.5px] border-neutral-200 dark:border-neutral-400/30 bg-neutral-100 dark:bg-neutral-400/15 flex items-center justify-center shrink-0">
-                              <Icon
-                                size={18}
-                                className="text-neutral-500 dark:text-neutral-400"
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
-                                {item.title}
-                              </p>
-                              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                                {item.description}
-                              </p>
-                              <div className="flex items-center gap-2 mt-1.5">
-                                {item.badge && (
-                                  <Badge variant={item.badge.variant}>
-                                    {item.badge.label}
-                                  </Badge>
-                                )}
-                                {item.meta && (
-                                  <span className="text-xs text-neutral-400 dark:text-neutral-500">
-                                    · {item.meta}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                              <ActionMenu
-                                items={[
-                                  {
-                                    label: "View Details",
-                                    icon: <EyeIcon size={16} />,
-                                    onClick: () => {
-                                      setSelectedActivity(item);
-                                      setShowActivityDrawer(true);
-                                    },
-                                  },
-                                  {
-                                    label: "Delete Activity",
-                                    icon: <TrashIcon size={16} />,
-                                    variant: "danger",
-                                    onClick: () => {},
-                                  },
-                                ]}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
+                    <div>
+                      {activityItems.map((item) => (
+                        <ActivityRow
+                          key={item.id}
+                          id={item.id}
+                          type={item.type as ActivityRowType}
+                          title={item.title}
+                          description={item.description}
+                          badge={item.badge}
+                          meta={item.meta}
+                          onView={() => {
+                            setSelectedActivity(item);
+                            setShowActivityDrawer(true);
+                          }}
+                          onDelete={() => {}}
+                        />
+                      ))}
                     </div>
                   ) : (
                     <div className="py-12 text-center text-neutral-500 dark:text-neutral-400">
@@ -322,6 +266,7 @@ export default function CustomerDetailPage({
                   )}
                 </>
               )}
+
               {activeTab === "deals" && (
                 <>
                   {customerDeals.length > 0 ? (
@@ -430,7 +375,6 @@ export default function CustomerDetailPage({
                 </button>
               </Link>
             </div>
-
             <div className="p-6">
               <div className="grid grid-cols-2 gap-x-8 gap-y-5">
                 <div>

@@ -5,21 +5,19 @@ import {
   Avatar,
   Badge,
   Checkbox,
-  Dropdown,
   Progress,
   ActionMenu,
   EyeIcon,
   PencilSimpleIcon,
   TrashIcon,
-  CaretLeftIcon,
-  CaretRightIcon,
 } from "@/components/ui";
 import { CustomerDrawer } from "./CustomerDrawer";
+import { TableHeader } from "./TableHeader";
+import { TableFooter } from "./TableFooter";
 import { cn } from "@/lib/utils";
 import { customers as defaultCustomers, Customer } from "@/lib/data/customers";
 
 type CustomerStatus = "active" | "pending" | "inactive";
-type CustomerPlan = "enterprise" | "pro" | "starter" | "free";
 
 interface CustomersTableProps {
   customers?: Customer[];
@@ -42,13 +40,6 @@ const planConfig = {
   starter: { label: "Starter", variant: "neutral" as const },
   free: { label: "Free", variant: "neutral" as const },
 };
-
-const rowsPerPageOptions = [
-  { label: "5", value: "5" },
-  { label: "10", value: "10" },
-  { label: "25", value: "25" },
-  { label: "50", value: "50" },
-];
 
 function formatMRR(value: number) {
   return `$${value.toLocaleString()}`;
@@ -93,27 +84,6 @@ export function CustomersTable({
 
   const isAllSelected = selectedRows.length === customers.length;
 
-  // Generate page numbers for pagination
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-      if (currentPage > 3) pages.push("...");
-      for (
-        let i = Math.max(2, currentPage - 1);
-        i <= Math.min(totalPages - 1, currentPage + 1);
-        i++
-      ) {
-        pages.push(i);
-      }
-      if (currentPage < totalPages - 2) pages.push("...");
-      pages.push(totalPages);
-    }
-    return pages;
-  };
-
   return (
     <div
       className={cn(
@@ -151,31 +121,15 @@ export function CustomersTable({
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-800">
-        <h3 className="text-lg font-serif text-neutral-950 dark:text-neutral-50">
-          All Customers
-        </h3>
-
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-neutral-500 dark:text-neutral-400">
-            Show
-          </span>
-          <Dropdown
-            options={rowsPerPageOptions}
-            value={rowsPerPage}
-            onChange={(value) => {
-              setRowsPerPage(value);
-              setCurrentPage(1);
-            }}
-            icon={null}
-            size="md"
-          />
-          <span className="text-sm text-neutral-500 dark:text-neutral-400">
-            rows
-          </span>
-        </div>
-      </div>
+      {/* Table Header */}
+      <TableHeader
+        title="All Customers"
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={(value) => {
+          setRowsPerPage(value);
+          setCurrentPage(1);
+        }}
+      />
 
       {/* Table */}
       <div className="overflow-x-auto">
@@ -226,7 +180,6 @@ export function CustomersTable({
                     onChange={() => toggleSelectRow(customer.id)}
                   />
                 </td>
-
                 {/* Customer */}
                 <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <div className="flex items-center gap-3">
@@ -245,28 +198,24 @@ export function CustomersTable({
                     </div>
                   </div>
                 </td>
-
                 {/* Status */}
                 <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <Badge variant={statusConfig[customer.status].variant}>
                     {statusConfig[customer.status].label}
                   </Badge>
                 </td>
-
                 {/* Plan */}
                 <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <Badge variant={planConfig[customer.plan].variant}>
                     {planConfig[customer.plan].label}
                   </Badge>
                 </td>
-
                 {/* MRR */}
                 <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
                     {formatMRR(customer.mrr)}
                   </span>
                 </td>
-
                 {/* Health */}
                 <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <div className="flex items-center gap-3">
@@ -280,14 +229,12 @@ export function CustomersTable({
                     </span>
                   </div>
                 </td>
-
                 {/* Last Contact */}
                 <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <span className="text-sm text-neutral-500 dark:text-neutral-400">
                     {customer.lastContact}
                   </span>
                 </td>
-
                 {/* Actions */}
                 <td
                   className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800"
@@ -322,71 +269,16 @@ export function CustomersTable({
         </table>
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between px-5 py-4 border-t border-neutral-200 dark:border-neutral-800">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          Showing{" "}
-          <span className="font-medium text-neutral-950 dark:text-neutral-50">
-            {startIndex}–{endIndex}
-          </span>{" "}
-          of{" "}
-          <span className="font-medium text-neutral-950 dark:text-neutral-50">
-            {totalCustomers}
-          </span>{" "}
-          customers
-        </p>
-
-        <div className="flex items-center gap-1">
-          {/* Previous */}
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:pointer-events-none transition-colors"
-          >
-            <CaretLeftIcon
-              size={16}
-              className="text-neutral-600 dark:text-neutral-400"
-            />
-          </button>
-
-          {/* Page Numbers */}
-          {getPageNumbers().map((page, index) =>
-            page === "..." ? (
-              <span
-                key={`ellipsis-${index}`}
-                className="flex h-9 w-9 items-center justify-center text-sm text-neutral-500"
-              >
-                ...
-              </span>
-            ) : (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page as number)}
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium transition-colors",
-                  currentPage === page
-                    ? "bg-neutral-950 dark:bg-neutral-50 text-white dark:text-neutral-950"
-                    : "border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800",
-                )}
-              >
-                {page}
-              </button>
-            ),
-          )}
-
-          {/* Next */}
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:pointer-events-none transition-colors"
-          >
-            <CaretRightIcon
-              size={16}
-              className="text-neutral-600 dark:text-neutral-400"
-            />
-          </button>
-        </div>
-      </div>
+      {/* Table Footer with Pagination */}
+      <TableFooter
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalCustomers}
+        startIndex={startIndex}
+        endIndex={endIndex}
+        onPageChange={setCurrentPage}
+        itemLabel="customers"
+      />
 
       {/* Customer Details Drawer */}
       <CustomerDrawer
