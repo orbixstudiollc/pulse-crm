@@ -15,14 +15,13 @@ import {
   UploadSimpleIcon,
   BellIcon,
   XIcon,
-} from "@/components/ui";
-import { DeleteConfirmModal } from "@/components/ui";
-import {
   LockIcon,
   GearSixIcon,
   PuzzlePieceIcon,
   CreditCardIcon,
-} from "@phosphor-icons/react";
+} from "@/components/ui";
+import { DeleteConfirmModal } from "@/components/ui";
+import type { IconWeight } from "@phosphor-icons/react";
 
 // ── Settings navigation tabs ────────────────────────────────────────────────
 type SettingsTab =
@@ -38,7 +37,7 @@ const settingsTabs: {
   label: string;
   icon: React.ComponentType<{
     size?: number;
-    weight?: string;
+    weight?: IconWeight;
     className?: string;
   }>;
 }[] = [

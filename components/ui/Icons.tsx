@@ -58,4 +58,9 @@ export {
   ThumbsUpIcon,
   ThumbsDownIcon,
   MinusCircleIcon,
+  // Settings
+  LockIcon,
+  GearSixIcon,
+  PuzzlePieceIcon,
+  CreditCardIcon,
 } from "@phosphor-icons/react";
