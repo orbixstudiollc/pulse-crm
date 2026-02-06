@@ -14,7 +14,6 @@ import {
   UsersThreeIcon,
   XIcon,
   ClockIcon,
-  EnvelopeIcon,
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
@@ -47,7 +46,6 @@ const activityTypes: {
   { id: "call", label: "Call", icon: PhoneIcon },
   { id: "meeting", label: "Meeting", icon: CalendarBlankIcon },
   { id: "task", label: "Task", icon: CheckCircleIcon },
-  { id: "email", label: "Email", icon: EnvelopeIcon },
   { id: "note", label: "Note", icon: NoteIcon },
 ];
 
