@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 interface ProgressProps {
   value: number;
   max?: number;
-  color?: "auto" | "green" | "amber" | "red" | "neutral";
+  color?: "auto" | "green" | "amber" | "red" | "neutral" | "blue" | "yellow";
   size?: "sm" | "md";
   className?: string;
 }
@@ -19,6 +19,8 @@ const colorClasses = {
   amber: "bg-amber-500",
   red: "bg-red-500",
   neutral: "bg-neutral-500",
+  blue: "bg-blue-500",
+  yellow: "bg-yellow-500",
 };
 
 const sizeClasses = {

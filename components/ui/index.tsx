@@ -17,3 +17,4 @@ export * from "./RadioGroup";
 export * from "./TagInput";
 export * from "./Toast";
 export * from "./DeleteConfirmModal";
+export * from "./Toggle";

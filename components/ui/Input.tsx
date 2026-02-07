@@ -9,11 +9,22 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   optional?: boolean;
   prefix?: string;
   leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   (
-    { label, required, optional, prefix, leftIcon, className, id, ...props },
+    {
+      label,
+      required,
+      optional,
+      prefix,
+      leftIcon,
+      rightIcon,
+      className,
+      id,
+      ...props
+    },
     ref,
   ) => {
     return (
@@ -49,10 +60,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             className={cn(
               "w-full rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 transition-shadow focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-[0_0_0_2px_#ffffff,0_0_0_4px_#0a0a0a] dark:focus:shadow-[0_0_0_2px_#171717,0_0_0_4px_#fafafa]",
               (leftIcon || prefix) && "pl-10",
+              rightIcon && "pr-10",
               className,
             )}
             {...props}
           />
+          {rightIcon && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center">
+              {rightIcon}
+            </span>
+          )}
         </div>
       </div>
     );

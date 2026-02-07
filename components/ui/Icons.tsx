@@ -29,6 +29,7 @@ export {
   DotsThreeIcon,
   XIcon,
   EyeIcon,
+  EyeSlashIcon,
   PencilSimpleIcon,
   EnvelopeIcon,
   TrashIcon,
@@ -63,4 +64,9 @@ export {
   GearSixIcon,
   PuzzlePieceIcon,
   CreditCardIcon,
+  // Devices
+  DeviceMobileIcon,
+  // Billing
+  StarIcon,
+  LightningIcon,
 } from "@phosphor-icons/react";
