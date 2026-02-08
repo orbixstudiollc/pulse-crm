@@ -113,6 +113,7 @@ export default function LoginPage() {
                   label="Remember me"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
+                  className="dark:bg-neutral-800"
                 />
                 <Link
                   href="/forgot-password"
