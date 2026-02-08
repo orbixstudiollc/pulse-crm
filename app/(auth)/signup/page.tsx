@@ -78,6 +78,7 @@ export default function RegisterPage() {
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   required
+                  className="dark:bg-neutral-800 dark:border-neutral-700"
                 />
                 <Input
                   label="Last Name"
@@ -85,6 +86,7 @@ export default function RegisterPage() {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   required
+                  className="dark:bg-neutral-800 dark:border-neutral-700"
                 />
               </div>
 
@@ -95,6 +97,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                className="dark:bg-neutral-800 dark:border-neutral-700"
               />
 
               <div>
@@ -121,6 +124,7 @@ export default function RegisterPage() {
                       </button>
                     ) : undefined
                   }
+                  className="dark:bg-neutral-800 dark:border-neutral-700"
                 />
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
                   Use 8+ characters with a mix of letters &amp; numbers
@@ -158,7 +162,7 @@ export default function RegisterPage() {
             <div className="grid grid-cols-3 gap-3">
               <button
                 type="button"
-                className="flex items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-4 py-3 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                className="flex items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 py-3 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-700"
               >
                 <Image
                   src="/images/auth/google.svg"
@@ -170,19 +174,20 @@ export default function RegisterPage() {
               </button>
               <button
                 type="button"
-                className="flex items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-4 py-3 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                className="flex items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 py-3 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-700"
               >
                 <Image
                   src="/images/auth/github.svg"
                   alt="GitHub"
                   width={20}
                   height={20}
+                  className="dark:invert"
                   unoptimized
                 />
               </button>
               <button
                 type="button"
-                className="flex items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-4 py-3 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                className="flex items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 py-3 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-700"
               >
                 <Image
                   src="/images/auth/facebook.svg"
@@ -223,13 +228,13 @@ export default function RegisterPage() {
       </div>
 
       {/* ── Right column: hero panel ──────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-neutral-950 dark:bg-neutral-900 p-24 overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-neutral-950 dark:bg-neutral-50 p-24 overflow-hidden">
         {/* Marketing copy */}
         <div className="max-w-md pt-8">
-          <h2 className="text-5xl font-onest font-medium text-white leading-tight mb-4">
+          <h2 className="text-5xl font-onest font-medium text-white dark:text-neutral-950 leading-tight mb-4">
             Manage your sales pipeline with ease
           </h2>
-          <p className="text-lg text-neutral-400">
+          <p className="text-lg text-neutral-400 dark:text-neutral-600">
             Join thousands of sales teams who use Pulse to close more deals,
             faster.
           </p>
@@ -238,12 +243,19 @@ export default function RegisterPage() {
         {/* Dashboard preview */}
         <div className="relative mt-12 flex-1 min-h-0 -mr-24 -mb-24 -ml-20">
           <div className="absolute inset-0">
-            <div className="relative h-full w-full overflow-hidden rounded-tl-xl shadow-2xl">
+            <div className="relative h-full w-full overflow-hidden rounded-tl-xl">
               <Image
                 src="/images/auth/overview-preview-light.png"
                 alt="Pulse CRM Dashboard"
                 fill
-                className="object-cover object-top"
+                className="object-cover object-top dark:hidden"
+                unoptimized
+              />
+              <Image
+                src="/images/auth/overview-preview-dark.png"
+                alt="Pulse CRM Dashboard"
+                fill
+                className="object-cover object-top hidden dark:block"
                 unoptimized
               />
             </div>

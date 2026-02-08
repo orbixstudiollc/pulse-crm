@@ -97,6 +97,7 @@ export default function ResetPasswordPage() {
                     </button>
                   ) : undefined
                 }
+                className="dark:bg-neutral-800 dark:border-neutral-700"
               />
 
               <Input
@@ -124,6 +125,7 @@ export default function ResetPasswordPage() {
                     </button>
                   ) : undefined
                 }
+                className="dark:bg-neutral-800 dark:border-neutral-700"
               />
 
               <Button
@@ -151,13 +153,13 @@ export default function ResetPasswordPage() {
       </div>
 
       {/* ── Right column: hero panel ──────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-neutral-950 dark:bg-neutral-900 p-24 overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-neutral-950 dark:bg-neutral-50 p-24 overflow-hidden">
         {/* Marketing copy */}
         <div className="max-w-md pt-8">
-          <h2 className="text-5xl font-onest font-medium text-white leading-tight mb-4">
+          <h2 className="text-5xl font-onest font-medium text-white dark:text-neutral-950 leading-tight mb-4">
             Manage your sales pipeline with ease
           </h2>
-          <p className="text-lg text-neutral-400">
+          <p className="text-lg text-neutral-400 dark:text-neutral-600">
             Join thousands of sales teams who use Pulse to close more deals,
             faster.
           </p>
@@ -166,12 +168,19 @@ export default function ResetPasswordPage() {
         {/* Dashboard preview */}
         <div className="relative mt-12 flex-1 min-h-0 -mr-24 -mb-24 -ml-20">
           <div className="absolute inset-0">
-            <div className="relative h-full w-full overflow-hidden rounded-tl-xl shadow-2xl">
+            <div className="relative h-full w-full overflow-hidden rounded-tl-xl">
               <Image
                 src="/images/auth/overview-preview-light.png"
                 alt="Pulse CRM Dashboard"
                 fill
-                className="object-cover object-top"
+                className="object-cover object-top dark:hidden"
+                unoptimized
+              />
+              <Image
+                src="/images/auth/overview-preview-dark.png"
+                alt="Pulse CRM Dashboard"
+                fill
+                className="object-cover object-top hidden dark:block"
                 unoptimized
               />
             </div>
