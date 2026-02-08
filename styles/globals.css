@@ -10,6 +10,7 @@
     --color-foreground: var(--foreground);
     --font-sans: var(--font-figtree);
     --font-serif: var(--font-serif);
+    --font-onest: var(--font-onest);
 }
 
 @media (prefers-color-scheme: dark) {
