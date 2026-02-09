@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import {
@@ -617,7 +618,9 @@ const languageOptions = [
 ];
 
 function PreferencesSection() {
-  const [theme, setTheme] = useState<ThemeOption>("system");
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [timezone, setTimezone] = useState("pt");
   const [dateFormat, setDateFormat] = useState("mm/dd/yyyy");
   const [timeFormat, setTimeFormat] = useState("12h");
@@ -660,7 +663,7 @@ function PreferencesSection() {
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {themes.map((t) => {
-            const isSelected = theme === t.id;
+            const isSelected = mounted && theme === t.id;
             return (
               <button
                 key={t.id}

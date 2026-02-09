@@ -13,11 +13,9 @@
     --font-onest: var(--font-onest);
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --background: #0a0a0a;
-        --foreground: #fafafa;
-    }
+.dark {
+    --background: #0a0a0a;
+    --foreground: #fafafa;
 }
 
 body {
@@ -25,4 +23,4 @@ body {
     color: var(--foreground);
 }
 
-/*@custom-variant dark (&:where(.dark, .dark *));*/
+@custom-variant dark (&:where(.dark, .dark *));
