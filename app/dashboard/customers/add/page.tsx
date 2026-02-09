@@ -138,11 +138,7 @@ export default function AddCustomerPage() {
           leftIcon={
             saving ? (
               <CircleNotchIcon size={16} className="animate-spin" />
-            ) : (
-              <span className="hidden sm:inline-flex">
-                <CheckIcon size={16} />
-              </span>
-            )
+            ) : undefined
           }
           onClick={handleSave}
           disabled={saving}
