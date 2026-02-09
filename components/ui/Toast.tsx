@@ -30,13 +30,14 @@ export function Toast({
   return (
     <AnimatePresence>
       {open && (
+        <div className="fixed bottom-6 left-4 right-4 sm:left-auto z-50">
         <motion.div
-          initial={{ opacity: 0, y: 20, x: "-50%" }}
-          animate={{ opacity: 1, y: 0, x: "-50%" }}
-          exit={{ opacity: 0, y: 20, x: "-50%" }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
           transition={{ duration: 0.2 }}
           className={cn(
-            "fixed bottom-6 left-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg",
+            "flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg",
             "bg-neutral-900 dark:bg-neutral-50 text-white dark:text-neutral-900",
           )}
         >
@@ -53,14 +54,15 @@ export function Toast({
               className="text-red-400 dark:text-red-600"
             />
           )}
-          <span className="text-sm font-medium">{message}</span>
+          <span className="text-sm font-medium flex-1">{message}</span>
           <button
             onClick={onClose}
-            className="ml-2 text-neutral-400 hover:text-white dark:text-neutral-500 dark:hover:text-neutral-900 transition-colors"
+            className="ml-2 shrink-0 text-neutral-400 hover:text-white dark:text-neutral-500 dark:hover:text-neutral-900 transition-colors"
           >
             <XIcon size={16} />
           </button>
         </motion.div>
+        </div>
       )}
     </AnimatePresence>
   );
