@@ -74,11 +74,11 @@ export default function SalesPage() {
     activeTab === "active" ? activeStageIds : closedStageIds;
 
   return (
-    <div className="py-6 px-8 flex flex-col gap-4 min-h-full">
+    <div className="py-6 px-4 sm:px-6 lg:px-8 flex flex-col gap-4 min-h-full">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-5">
-          <h1 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+          <h1 className="text-2xl sm:text-3xl font-serif text-neutral-950 dark:text-neutral-50">
             Sales Pipeline
           </h1>
 
@@ -163,7 +163,7 @@ export default function SalesPage() {
           return (
             <div
               key={stageId}
-              className="flex flex-col min-w-85 flex-1 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900"
+              className="flex flex-col min-w-72 sm:min-w-85 flex-1 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900"
             >
               {/* Column Header */}
               <div className="flex items-center justify-between p-4">

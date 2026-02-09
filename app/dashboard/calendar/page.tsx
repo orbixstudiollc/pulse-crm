@@ -142,7 +142,7 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Header - Full Width */}
       <PageHeader title="Calendar">
         <Button variant="outline" leftIcon={<ExportIcon size={18} />}>
@@ -195,7 +195,7 @@ export default function CalendarPage() {
       </div>
 
       {/* Calendar + Upcoming Sidebar */}
-      <div className="flex gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Calendar Grid */}
         <div className="flex-1 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
           {/* Day Headers */}
@@ -273,7 +273,7 @@ export default function CalendarPage() {
         </div>
 
         {/* Upcoming Sidebar */}
-        <div className="w-72 shrink-0">
+        <div className="w-full lg:w-72 lg:shrink-0">
           <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
             <h2 className="text-lg font-serif text-neutral-950 dark:text-neutral-50 mb-5">
               Upcoming

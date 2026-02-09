@@ -226,7 +226,7 @@ export default function EditCustomerPage({
   }
 
   return (
-    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 py-14 px-8">
+    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 py-8 sm:py-14 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto space-y-6">
         <h1 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
           Edit Customer
@@ -305,7 +305,7 @@ export default function EditCustomerPage({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Email Address"
               type="email"
@@ -390,7 +390,7 @@ export default function EditCustomerPage({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Postal Code"
               value={postalCode}
@@ -421,7 +421,7 @@ export default function EditCustomerPage({
             className="mb-4"
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label="Plan"
               options={planOptions}

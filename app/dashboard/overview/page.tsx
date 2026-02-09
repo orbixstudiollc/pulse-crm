@@ -15,7 +15,7 @@ import {
 
 export default function OverviewPage() {
   return (
-    <div className="py-6 px-8 space-y-4">
+    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
       {/* Page Header */}
       <PageHeader title="Welcome back, Angel">
         <PageHeaderActions />

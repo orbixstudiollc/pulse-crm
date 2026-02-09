@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
   CaretDownIcon,
@@ -13,9 +14,11 @@ import {
   PulseIcon,
   SidebarSimpleIcon,
   UsersIcon,
+  XIcon,
 } from "../ui";
 import Image from "next/image";
 import { UpgradeCard } from "../features";
+import { useSidebar } from "./SidebarContext";
 
 const navigation = [
   { name: "Overview", href: "/dashboard/overview", icon: GaugeIcon },
@@ -26,18 +29,23 @@ const navigation = [
   { name: "Settings", href: "/dashboard/settings", icon: GearIcon },
 ];
 
-export function Sidebar() {
+// ── Shared sidebar content ──────────────────────────────────────────────────
+
+function SidebarContent({
+  collapsed,
+  onCollapse,
+  onExpand,
+  onNavClick,
+}: {
+  collapsed: boolean;
+  onCollapse: () => void;
+  onExpand: () => void;
+  onNavClick?: () => void;
+}) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <aside
-      className={cn(
-        "flex flex-col border-r bg-neutral-100 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800",
-        "transition-[width] duration-300 ease-in-out",
-        collapsed ? "w-18" : "w-60",
-      )}
-    >
+    <>
       <div
         className={cn(
           "flex items-center gap-3 px-5 py-6",
@@ -48,6 +56,7 @@ export function Sidebar() {
           <Link
             href="/dashboard/overview"
             className="relative flex items-center h-10"
+            onClick={onNavClick}
           >
             <span
               className={cn(
@@ -63,7 +72,7 @@ export function Sidebar() {
 
         {!collapsed && (
           <button
-            onClick={() => setCollapsed(true)}
+            onClick={onCollapse}
             className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-800"
             aria-label="Collapse sidebar"
           >
@@ -80,7 +89,7 @@ export function Sidebar() {
       {collapsed && (
         <div className="flex justify-center px-2 pb-4">
           <button
-            onClick={() => setCollapsed(false)}
+            onClick={onExpand}
             className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-800"
             aria-label="Expand sidebar"
           >
@@ -102,6 +111,7 @@ export function Sidebar() {
               <li key={item.name}>
                 <Link
                   href={item.href}
+                  onClick={onNavClick}
                   className={cn(
                     "flex items-center rounded-lg text-sm font-medium border",
                     "transition-[background-color,color,box-shadow,border-color] duration-200 ease-in-out",
@@ -195,6 +205,86 @@ export function Sidebar() {
           />
         </div>
       </div>
+    </>
+  );
+}
+
+// ── Desktop Sidebar (inline, collapsible) ───────────────────────────────────
+
+export function Sidebar() {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <aside
+      className={cn(
+        "hidden lg:flex flex-col border-r bg-neutral-100 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800",
+        "transition-[width] duration-300 ease-in-out",
+        collapsed ? "w-18" : "w-60",
+      )}
+    >
+      <SidebarContent
+        collapsed={collapsed}
+        onCollapse={() => setCollapsed(true)}
+        onExpand={() => setCollapsed(false)}
+      />
     </aside>
+  );
+}
+
+// ── Mobile Sidebar (overlay drawer) ─────────────────────────────────────────
+
+export function MobileSidebar() {
+  const { mobileOpen, closeMobile } = useSidebar();
+  const pathname = usePathname();
+
+  // Close when route changes
+  useEffect(() => {
+    closeMobile();
+  }, [pathname, closeMobile]);
+
+  // Lock body scroll when open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
+  return (
+    <AnimatePresence>
+      {mobileOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={closeMobile}
+          />
+
+          {/* Sidebar panel */}
+          <motion.aside
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed left-0 top-0 h-full w-60 bg-neutral-100 dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 z-50 flex flex-col lg:hidden"
+          >
+            <SidebarContent
+              collapsed={false}
+              onCollapse={closeMobile}
+              onExpand={() => {}}
+              onNavClick={closeMobile}
+            />
+          </motion.aside>
+        </>
+      )}
+    </AnimatePresence>
   );
 }

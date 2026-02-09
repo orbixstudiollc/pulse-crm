@@ -183,7 +183,7 @@ function ProfileSection() {
 
       {/* Form fields */}
       <div className="space-y-5">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="First Name"
             value={firstName}
@@ -203,7 +203,7 @@ function ProfileSection() {
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Phone Number"
             value={phone}
@@ -419,7 +419,7 @@ function SecuritySection() {
           }
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="New Password"
             type={showNewPassword ? "text" : "password"}
@@ -658,7 +658,7 @@ function PreferencesSection() {
         <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-3">
           Theme
         </p>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {themes.map((t) => {
             const isSelected = theme === t.id;
             return (
@@ -708,7 +708,7 @@ function PreferencesSection() {
 
       {/* Dropdowns */}
       <div className="space-y-5">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
             label="Timezone"
             options={timezoneOptions}
@@ -723,7 +723,7 @@ function PreferencesSection() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
             label="Time Format"
             options={timeFormatOptions}
@@ -1119,7 +1119,7 @@ function BillingSection() {
       </div>
 
       {/* Upgrade banner */}
-      <div className="mt-6 flex items-center justify-between rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 px-6 py-5">
+      <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 px-6 py-5">
         <div className="flex items-center gap-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/30">
             <LightningIcon
@@ -1191,14 +1191,16 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="flex h-full bg-white dark:bg-neutral-950">
-      {/* Settings sub-sidebar — flush to edges */}
-      <div className="w-60 shrink-0 border-r border-neutral-200 dark:border-neutral-800 py-6 px-5">
-        <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4">
-          Settings
-        </p>
-        <nav>
-          <ul className="space-y-1.5">
+    <div className="flex flex-col md:flex-row h-full bg-white dark:bg-neutral-950">
+      {/* Settings sidebar — horizontal scroll on mobile, vertical on desktop */}
+      <div className="md:w-60 md:shrink-0 border-b md:border-b-0 md:border-r border-neutral-200 dark:border-neutral-800">
+        <div className="px-5 pt-6 pb-0 md:pb-6">
+          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4">
+            Settings
+          </p>
+        </div>
+        <nav className="overflow-x-auto md:overflow-x-visible px-5 pb-4 md:pb-0">
+          <ul className="flex md:flex-col gap-1.5 min-w-max md:min-w-0">
             {settingsTabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -1206,7 +1208,7 @@ export default function SettingsPage() {
                   <button
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      "flex items-center w-full rounded-lg text-sm font-medium border px-3 py-2.5",
+                      "flex items-center whitespace-nowrap rounded-lg text-sm font-medium border px-3 py-2.5",
                       "transition-[background-color,color,box-shadow,border-color] duration-200 ease-in-out",
                       isActive
                         ? "bg-white dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 border-neutral-200 dark:border-neutral-700 shadow-[0_0_0_2px_#ffffff,0_0_0_4px_#0a0a0a] dark:shadow-[0_0_0_2px_#171717,0_0_0_4px_#fafafa]"
@@ -1224,7 +1226,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Content area */}
-      <div className="flex-1 min-w-0 overflow-y-auto py-10 px-12">
+      <div className="flex-1 min-w-0 overflow-y-auto py-6 px-4 sm:py-8 sm:px-6 lg:py-10 lg:px-12">
         {renderContent()}
       </div>
     </div>

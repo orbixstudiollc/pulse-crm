@@ -115,12 +115,12 @@ export default function CustomerDetailPage({
   }
 
   return (
-    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 p-8">
+    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 p-4 sm:p-6 lg:p-8">
       {/* Header + Stats Card */}
       <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 mb-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-4 sm:gap-6">
             <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-200 dark:border-neutral-700">
               <Image
                 src={customer.avatar}
@@ -166,14 +166,16 @@ export default function CustomerDetailPage({
           </div>
           <div className="flex items-center gap-3">
             <Button variant="outline" leftIcon={<PhoneIcon size={18} />}>
-              Call
+              <span className="hidden sm:inline">Call</span>
             </Button>
-            <Button leftIcon={<EnvelopeIcon size={18} />}>Send Email</Button>
+            <Button leftIcon={<EnvelopeIcon size={18} />}>
+              <span className="hidden sm:inline">Send Email</span>
+            </Button>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
             <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
               {formatCurrency(customer.mrr)}
@@ -209,9 +211,9 @@ export default function CustomerDetailPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content - Left 2 columns */}
-        <div className="col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6">
           {/* Activity / Deals Tabs */}
           <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
             <div className="flex border-b border-neutral-200 dark:border-neutral-800">
@@ -376,7 +378,7 @@ export default function CustomerDetailPage({
               </Link>
             </div>
             <div className="p-6">
-              <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
                 <div>
                   <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
                     Phone

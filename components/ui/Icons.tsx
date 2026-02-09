@@ -1,6 +1,7 @@
 "use client";
 export {
   // Navigation & Layout
+  ListIcon,
   SidebarSimpleIcon,
   CaretDownIcon,
   CaretLeftIcon,

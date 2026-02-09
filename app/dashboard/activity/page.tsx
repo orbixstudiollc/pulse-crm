@@ -136,7 +136,7 @@ export default function ActivityPage() {
   };
 
   return (
-    <div className="py-6 px-8 space-y-4">
+    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
       {/* Header */}
       <PageHeader title="Activities">
         <Button variant="outline" leftIcon={<ExportIcon size={18} />}>
@@ -154,7 +154,7 @@ export default function ActivityPage() {
       </PageHeader>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           label="Total Activities"
           value={activityStats.totalActivities}

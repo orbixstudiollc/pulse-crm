@@ -83,7 +83,7 @@ export default function CustomersPage() {
   const atRiskCount = allCustomers.filter((c) => c.healthScore < 50).length;
 
   return (
-    <div className="py-6 px-8 space-y-4">
+    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
       <PageHeader title="Customers">
         <Button variant="outline" leftIcon={<ExportIcon size={20} />}>
           Export

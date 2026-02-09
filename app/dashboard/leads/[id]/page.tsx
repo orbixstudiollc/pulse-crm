@@ -126,16 +126,16 @@ export default function LeadDetailPage({
   }
 
   return (
-    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 p-8">
+    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 p-4 sm:p-6 lg:p-8">
       {/* Header + Stats Card */}
       <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 mb-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-4 sm:gap-6">
             <Avatar
               name={lead.name}
               size="xl"
-              className="h-20! w-20! text-2xl!"
+              className="h-16! w-16! sm:h-20! sm:w-20! text-xl! sm:text-2xl!"
             />
             <div>
               <h1 className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-2">
@@ -169,7 +169,7 @@ export default function LeadDetailPage({
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
             <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
               {formatCurrency(lead.estimatedValue)}
@@ -205,9 +205,9 @@ export default function LeadDetailPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content - Left 2 columns */}
-        <div className="col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6">
           {/* Activity */}
           <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
             <div className="p-6 border-b border-neutral-200 dark:border-neutral-800">

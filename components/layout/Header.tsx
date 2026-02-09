@@ -5,20 +5,34 @@ import Link from "next/link";
 import { SearchBar } from "./SearchBar";
 import { CalendarDropdown, NotificationsDropdown } from "../features";
 import { useHeader } from "./HeaderContext";
-import { CaretLeftIcon } from "../ui";
+import { CaretLeftIcon, ListIcon } from "../ui";
+import { useSidebar } from "./SidebarContext";
 
 export function Header() {
   const pathname = usePathname();
   const { config } = useHeader();
+  const { openMobile } = useSidebar();
   const segments = pathname.split("/").filter(Boolean);
 
   // Check if any page has set custom actions
   const hasCustomActions = !!config.actions;
 
   return (
-    <header className="flex h-20 items-center justify-between border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-8">
-      {/* Left: Back button + Breadcrumb */}
+    <header className="flex h-16 lg:h-20 items-center justify-between border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 lg:px-8">
+      {/* Left: Mobile menu + Back button + Breadcrumb */}
       <div className="flex items-center gap-3">
+        {/* Mobile hamburger */}
+        <button
+          onClick={openMobile}
+          className="flex lg:hidden h-10 w-10 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+          aria-label="Open menu"
+        >
+          <ListIcon
+            size={20}
+            className="text-neutral-600 dark:text-neutral-400"
+          />
+        </button>
+
         {config.backHref && (
           <Link
             href={config.backHref}
@@ -31,7 +45,7 @@ export function Header() {
           </Link>
         )}
 
-        <nav className="flex items-center gap-2 text-xs">
+        <nav className="hidden sm:flex items-center gap-2 text-xs">
           {segments.map((segment, index) => {
             // Replace ID-like segments (numeric or long hashes) with breadcrumbLabel
             const isIdSegment = /^[0-9]+$/.test(segment) || segment.length > 20;

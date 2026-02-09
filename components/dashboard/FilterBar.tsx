@@ -111,7 +111,7 @@ export function FilterBar({
             value={searchValue}
             onChange={handleSearchChange}
             placeholder={searchPlaceholder}
-            className="w-60"
+            className="w-full sm:w-60"
           />
 
           {/* Filter Dropdowns */}

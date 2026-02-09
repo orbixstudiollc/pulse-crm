@@ -201,7 +201,7 @@ export default function DealDetailPage({
   }
 
   return (
-    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 p-8">
+    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 p-4 sm:p-6 lg:p-8">
       {/* Header Card */}
       <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 mb-6">
         {/* Header */}
@@ -235,7 +235,7 @@ export default function DealDetailPage({
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
             <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
               {deal.daysInStage}
@@ -272,9 +272,9 @@ export default function DealDetailPage({
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content - Left 2 columns */}
-        <div className="col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6">
           {/* Activity */}
           <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
             <div className="p-6 border-b border-neutral-200 dark:border-neutral-800">
