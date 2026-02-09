@@ -79,7 +79,6 @@ export default function LoginPage() {
                 placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
                 className="dark:bg-neutral-800 dark:border-neutral-700"
               />
 
@@ -89,7 +88,6 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
                 rightIcon={
                   password ? (
                     <button

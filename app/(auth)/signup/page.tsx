@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,7 @@ import {
 // ── Register Page ───────────────────────────────────────────────────────────
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -26,7 +28,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setTimeout(() => {
-      setLoading(false);
+      router.push("/verify-email");
     }, 1500);
   };
 
@@ -77,7 +79,6 @@ export default function RegisterPage() {
                   placeholder="John"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  required
                   className="dark:bg-neutral-800 dark:border-neutral-700"
                 />
                 <Input
@@ -85,7 +86,6 @@ export default function RegisterPage() {
                   placeholder="Smith"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  required
                   className="dark:bg-neutral-800 dark:border-neutral-700"
                 />
               </div>
