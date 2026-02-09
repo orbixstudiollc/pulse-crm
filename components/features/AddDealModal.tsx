@@ -135,7 +135,7 @@ function DealForm({
         />
 
         {/* Value & Stage */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Value"
             type="number"
@@ -155,7 +155,7 @@ function DealForm({
         </div>
 
         {/* Probability & Expected Close */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
             label="Probability"
             name="probability"

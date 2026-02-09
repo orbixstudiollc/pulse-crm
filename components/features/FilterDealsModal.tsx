@@ -147,7 +147,7 @@ export function FilterDealsModal({
   };
 
   return (
-    <Modal open={open} onClose={onClose} className="max-w-2xl">
+    <Modal open={open} onClose={onClose} className="sm:max-w-2xl">
       <div>
         {/* Header */}
         <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 p-5">
@@ -162,7 +162,7 @@ export function FilterDealsModal({
           </button>
         </div>
         {/* Filter Grid */}
-        <div className="grid grid-cols-2 gap-x-6 gap-y-6 p-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6 p-5">
           {/* Close Date - Radio */}
           <div>
             <SectionLabel>Close Date</SectionLabel>

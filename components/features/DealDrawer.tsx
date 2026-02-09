@@ -111,7 +111,7 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
         }
       >
         {/* Deal Header */}
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-6">
           <div>
             <h3 className="text-2xl font-serif text-neutral-950 dark:text-neutral-50">
               {deal.name}
@@ -120,7 +120,7 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
               {deal.company}
             </p>
           </div>
-          <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50">
+          <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 sm:shrink-0">
             {formatDealCurrency(deal.value)}
           </p>
         </div>

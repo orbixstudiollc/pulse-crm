@@ -112,7 +112,7 @@ export function AddLeadModal({
       {/* Body */}
       <div className="p-5 space-y-5 max-h-[60vh] overflow-y-auto">
         {/* Name Row */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="First Name"
             required
@@ -143,7 +143,7 @@ export function AddLeadModal({
         />
 
         {/* Company & Phone Row */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Company"
             name="company"
@@ -162,7 +162,7 @@ export function AddLeadModal({
         </div>
 
         {/* Source & Value Row */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
             label="Source"
             name="source"

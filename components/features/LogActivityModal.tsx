@@ -205,7 +205,7 @@ export function LogActivityModal({
           <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-2">
             Activity Type
           </label>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {typeOptions.map((type) => {
               const Icon = type.icon;
               const isSelected = activityType === type.id;
@@ -322,7 +322,7 @@ export function LogActivityModal({
         </div>
 
         {/* Date & Time */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-2">
               Date

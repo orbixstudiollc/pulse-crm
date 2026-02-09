@@ -47,7 +47,7 @@ export function Modal({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
           className={cn(
-            "fixed inset-0 z-50 flex justify-center bg-black/40 dark:bg-black/60",
+            "fixed inset-0 z-50 flex justify-center px-4 bg-black/40 dark:bg-black/60",
             position === "center" && "items-center",
             position === "top" && "items-start pt-[20vh]",
           )}

@@ -102,7 +102,7 @@ export function CompleteMeetingModal({
         </div>
 
         {/* Duration & Follow Up */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
             label="Duration"
             value={duration}

@@ -73,7 +73,7 @@ export function CreateInvoiceModal({
         />
 
         {/* Amount & Currency */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Amount"
             type="number"
@@ -96,7 +96,7 @@ export function CreateInvoiceModal({
         </div>
 
         {/* Issue Date & Due Date */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Issue Date"
             type="date"

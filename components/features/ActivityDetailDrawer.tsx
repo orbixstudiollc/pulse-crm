@@ -128,7 +128,7 @@ function MeetingDetails({
       {!isCompleted && (
         <div>
           <SectionHeader>Add to Calendar</SectionHeader>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
               <CalendarBlankIcon size={16} />
               Google Calendar
