@@ -1,19 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
   Button,
   EnvelopeIcon,
   ArrowLeftIcon,
-  ArrowUpRightIcon,
+  ArrowRightIcon,
   CircleNotchIcon,
 } from "@/components/ui";
 
 // ── Verify Email Page ───────────────────────────────────────────────────────
 
 export default function VerifyEmailPage() {
+  const router = useRouter();
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
 
@@ -70,10 +72,10 @@ export default function VerifyEmailPage() {
             {/* Open Email App button */}
             <Button
               className="w-full mt-8"
-              leftIcon={<ArrowUpRightIcon size={18} />}
-              onClick={() => window.open("https://mail.google.com", "_blank")}
+              rightIcon={<ArrowRightIcon size={18} />}
+              onClick={() => router.push("/onboarding")}
             >
-              Open Email App
+              Continue
             </Button>
 
             {/* Resend */}
