@@ -404,9 +404,7 @@ export default function AddCustomerPage() {
               leftIcon={
                 saving ? (
                   <CircleNotchIcon size={18} className="animate-spin" />
-                ) : (
-                  <CheckIcon size={18} />
-                )
+                ) : undefined
               }
               onClick={handleSave}
               disabled={saving}
