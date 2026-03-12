@@ -25,7 +25,7 @@ export function SearchBar() {
       {/* Mobile: icon-only button */}
       <button
         onClick={() => setOpen(true)}
-        className="flex md:hidden h-11 w-11 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
+        className="flex md:hidden h-11 w-11 items-center justify-center rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
         aria-label="Search"
       >
         <MagnifyingGlassIcon size={20} className="text-neutral-500" />
@@ -34,7 +34,7 @@ export function SearchBar() {
       {/* Desktop: full search bar */}
       <button
         onClick={() => setOpen(true)}
-        className="hidden md:flex h-11 w-60 items-center gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 px-4 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
+        className="hidden md:flex h-11 w-60 items-center gap-2 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 px-4 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
       >
         <MagnifyingGlassIcon size={16} className="text-neutral-500" />
         <span className="text-sm text-neutral-500">Search...</span>

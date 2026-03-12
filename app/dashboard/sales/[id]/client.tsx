@@ -158,7 +158,7 @@ function StageDropdown({
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full px-4 py-3 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+        className="flex items-center justify-between w-full px-4 py-3 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
       >
         {stageLabels[currentStage] || currentStage}
         <CaretDownIcon
@@ -173,7 +173,7 @@ function StageDropdown({
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 right-0 mt-1 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-lg z-20 py-1">
+          <div className="absolute top-full left-0 right-0 mt-1 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-lg z-20 py-1">
             {pipelineStages.map((stage) => (
               <button
                 key={stage.id}
@@ -535,7 +535,7 @@ export function DealDetailClient({
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setShowMeetingModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="flex flex-col items-center gap-2 p-4 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
                 <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
                   <CalendarBlankIcon size={18} className="text-neutral-600 dark:text-neutral-400" />
@@ -546,7 +546,7 @@ export function DealDetailClient({
               </button>
               <button
                 onClick={() => setShowTaskModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="flex flex-col items-center gap-2 p-4 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
                 <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
                   <CheckCircleIcon size={18} className="text-neutral-600 dark:text-neutral-400" />

@@ -40,6 +40,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { createLead, updateLead, deleteLead } from "@/lib/actions/leads";
 import { recalculateAllScores } from "@/lib/actions/scoring";
 import { aiScoreLead, aiScoreLeadsBatch } from "@/lib/actions/ai-scoring";
+import { exportLeadsToCSV } from "@/lib/actions/export";
 import { useClickOutside } from "@/hooks";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -399,7 +400,19 @@ export function LeadsPageClient({
               <button className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
                 Email
               </button>
-              <button className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
+              <button
+                onClick={async () => {
+                  const result = await exportLeadsToCSV();
+                  if (result.error) { toast.error(result.error); return; }
+                  const blob = new Blob([result.csv], { type: "text/csv" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url; a.download = `leads-export-${new Date().toISOString().slice(0, 10)}.csv`;
+                  a.click(); URL.revokeObjectURL(url);
+                  toast.success("Leads exported successfully");
+                }}
+                className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+              >
                 Export
               </button>
               <button className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors">

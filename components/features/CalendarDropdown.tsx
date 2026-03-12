@@ -135,7 +135,7 @@ export function CalendarDropdown() {
           <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-800">
             <button
               onClick={prevMonth}
-              className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               <CaretLeftIcon
                 size={16}
@@ -152,7 +152,7 @@ export function CalendarDropdown() {
 
             <button
               onClick={nextMonth}
-              className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               <CaretRightIcon
                 size={16}
@@ -185,7 +185,7 @@ export function CalendarDropdown() {
                   <button
                     key={index}
                     className={cn(
-                      "relative flex flex-col items-center justify-center h-9 rounded-lg text-sm transition-colors",
+                      "relative flex flex-col items-center justify-center h-9 rounded text-sm transition-colors",
                       isCurrentMonth
                         ? "text-neutral-950 dark:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800"
                         : "text-neutral-300 dark:text-neutral-600",

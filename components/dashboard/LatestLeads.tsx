@@ -175,7 +175,7 @@ export function LatestLeads({
         <div className="flex items-center gap-2">
           <button
             className={cn(
-              "rounded-lg bg-neutral-100 dark:bg-neutral-800 px-2.5 py-2 text-xs font-medium text-neutral-950 dark:text-neutral-50",
+              "rounded bg-neutral-100 dark:bg-neutral-800 px-2.5 py-2 text-xs font-medium text-neutral-950 dark:text-neutral-50",
               currentPage === 1 && "opacity-50 cursor-not-allowed",
             )}
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -185,7 +185,7 @@ export function LatestLeads({
           </button>
           <button
             className={cn(
-              "rounded-lg bg-neutral-100 dark:bg-neutral-800 px-2.5 py-2 text-xs font-medium text-neutral-950 dark:text-neutral-50",
+              "rounded bg-neutral-100 dark:bg-neutral-800 px-2.5 py-2 text-xs font-medium text-neutral-950 dark:text-neutral-50",
               endIndex >= totalLeads && "opacity-50 cursor-not-allowed",
             )}
             onClick={() => setCurrentPage((p) => p + 1)}

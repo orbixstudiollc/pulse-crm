@@ -41,7 +41,7 @@ export function AIActionButton({
       onClick={onClick}
       disabled={loading || disabled}
       title={label || "AI Action"}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
     >
       {loading ? (
         <CircleNotchIcon className="w-3.5 h-3.5 animate-spin" />

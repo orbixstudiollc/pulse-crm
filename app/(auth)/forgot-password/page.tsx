@@ -73,14 +73,14 @@ export default function ForgotPasswordPage() {
 
             {/* Error */}
             {error && (
-              <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+              <div className="mb-4 rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
                 {error}
               </div>
             )}
 
             {/* Success */}
             {sent && (
-              <div className="mb-4 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-4 py-3 text-sm text-green-700 dark:text-green-400">
+              <div className="mb-4 rounded bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-4 py-3 text-sm text-green-700 dark:text-green-400">
                 Check your email for a password reset link.
               </div>
             )}

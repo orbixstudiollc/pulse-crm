@@ -41,7 +41,7 @@ export default function DashboardError({
 
         <button
           onClick={reset}
-          className="mt-6 inline-flex items-center rounded-lg bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+          className="mt-6 inline-flex items-center rounded bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
         >
           Try Again
         </button>

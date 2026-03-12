@@ -397,7 +397,7 @@ export function ProposalsPageClient({
               setCurrentPage(1);
             }}
             className={cn(
-              "px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors",
+              "px-4 py-2 text-sm font-medium rounded whitespace-nowrap transition-colors",
               activeTab === tab.value
                 ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
                 : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800"
@@ -596,7 +596,7 @@ export function ProposalsPageClient({
             </h2>
             <button
               onClick={closeModal}
-              className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               <XIcon
                 size={20}
@@ -787,7 +787,7 @@ export function ProposalsPageClient({
                 <button
                   key={deal.id}
                   onClick={() => setSelectedDealIdForAI(deal.id)}
-                  className="w-full text-left px-4 py-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                  className="w-full text-left px-4 py-3 rounded border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                 >
                   <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                     {deal.name}
@@ -804,7 +804,7 @@ export function ProposalsPageClient({
                   setAIProposalOpen(false);
                   setSelectedDealIdForAI(null);
                 }}
-                className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded transition-colors"
               >
                 Cancel
               </button>

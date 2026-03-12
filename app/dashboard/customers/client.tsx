@@ -24,6 +24,8 @@ import {
   UploadIcon,
 } from "@/components/ui";
 import type { Customer } from "@/lib/data/customers";
+import { exportCustomersToCSV } from "@/lib/actions/export";
+import { toast } from "sonner";
 
 interface CustomerRecord {
   id: string;
@@ -117,7 +119,20 @@ export function CustomersPageClient({
   return (
     <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
       <PageHeader title="Customers">
-        <Button variant="outline" leftIcon={<ExportIcon size={20} />}>
+        <Button
+          variant="outline"
+          leftIcon={<ExportIcon size={20} />}
+          onClick={async () => {
+            const result = await exportCustomersToCSV();
+            if (result.error) { toast.error(result.error); return; }
+            const blob = new Blob([result.csv], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = `customers-export-${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click(); URL.revokeObjectURL(url);
+            toast.success("Customers exported successfully");
+          }}
+        >
           Export
         </Button>
         <Link href="/dashboard/customers/add">

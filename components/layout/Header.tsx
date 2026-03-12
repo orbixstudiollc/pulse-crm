@@ -5,8 +5,9 @@ import Link from "next/link";
 import { SearchBar } from "./SearchBar";
 import { CalendarDropdown, NotificationsDropdown } from "../features";
 import { useHeader } from "./HeaderContext";
-import { CaretLeftIcon, ListIcon } from "../ui";
+import { CaretLeftIcon, GearIcon, ListIcon } from "../ui";
 import { useSidebar } from "./SidebarContext";
+import { HeaderUserMenu } from "./HeaderUserMenu";
 
 export function Header() {
   const pathname = usePathname();
@@ -24,7 +25,7 @@ export function Header() {
         {/* Mobile hamburger */}
         <button
           onClick={openMobile}
-          className="flex lg:hidden h-10 w-10 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+          className="hidden max-lg:flex h-10 w-10 items-center justify-center rounded border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
           aria-label="Open menu"
         >
           <ListIcon
@@ -36,7 +37,7 @@ export function Header() {
         {config.backHref && (
           <Link
             href={config.backHref}
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+            className="flex h-10 w-10 items-center justify-center rounded border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
           >
             <CaretLeftIcon
               size={16}
@@ -83,6 +84,14 @@ export function Header() {
             <NotificationsDropdown />
           </>
         )}
+        <Link
+          href="/dashboard/settings"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+          aria-label="Settings"
+        >
+          <GearIcon size={18} className="text-neutral-600 dark:text-neutral-400" />
+        </Link>
+        <HeaderUserMenu />
       </div>
     </header>
   );

@@ -15,7 +15,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "flex items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800",
+          "flex items-center justify-center rounded border border-neutral-200 dark:border-neutral-800 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800",
           {
             "h-8 w-8": size === "sm",
             "h-11 w-11": size === "md",

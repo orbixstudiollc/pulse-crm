@@ -282,7 +282,7 @@ export function ContactsPageClient({
               setSearchValue("");
             }}
             className={cn(
-              "rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
+              "rounded px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
               activeTab === tab.value
                 ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
                 : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300",
@@ -504,7 +504,7 @@ export function ContactsPageClient({
             <button
               type="button"
               onClick={closeModal}
-              className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               <XIcon size={20} className="text-neutral-500" />
             </button>

@@ -257,7 +257,7 @@ export function TemplatesPageClient({
               setCurrentPage(1);
             }}
             className={cn(
-              "px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors",
+              "px-4 py-2 text-sm font-medium rounded whitespace-nowrap transition-colors",
               activeTab === tab.value
                 ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
                 : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800"
@@ -421,7 +421,7 @@ export function TemplatesPageClient({
             </h2>
             <button
               onClick={() => setShowModal(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               <XIcon size={20} className="text-neutral-500" />
             </button>
@@ -466,7 +466,7 @@ export function TemplatesPageClient({
                     key={field}
                     type="button"
                     onClick={() => insertMergeField(field)}
-                    className="inline-flex px-2 py-1 text-[11px] font-mono rounded-md border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                    className="inline-flex px-2 py-1 text-[11px] font-mono rounded border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
                   >
                     {field}
                   </button>
@@ -511,7 +511,7 @@ export function TemplatesPageClient({
               </h2>
               <button
                 onClick={() => setPreviewTemplate(null)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
                 <XIcon size={20} className="text-neutral-500" />
               </button>
@@ -530,7 +530,7 @@ export function TemplatesPageClient({
                 <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
                   Body
                 </label>
-                <div className="mt-1 p-4 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-800">
+                <div className="mt-1 p-4 rounded bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-800">
                   <pre className="text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap font-sans">
                     {previewTemplate.body}
                   </pre>
@@ -546,7 +546,7 @@ export function TemplatesPageClient({
                       {previewTemplate.merge_fields.map((field) => (
                         <span
                           key={field}
-                          className="inline-flex px-2 py-1 text-[11px] font-mono rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
+                          className="inline-flex px-2 py-1 text-[11px] font-mono rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
                         >
                           {field}
                         </span>

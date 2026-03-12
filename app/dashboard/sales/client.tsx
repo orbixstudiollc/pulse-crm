@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo, useCallback } from "react";
 import Image from "next/image";
 import { Button, Badge, Progress, PlusIcon, FadersIcon } from "@/components/ui";
 import { PageHeader } from "@/components/dashboard";
@@ -20,8 +20,28 @@ import {
   type PipelineStage,
 } from "@/lib/data/sales";
 import { cn } from "@/lib/utils";
-import { createDeal } from "@/lib/actions/deals";
+import { createDeal, updateDealStage } from "@/lib/actions/deals";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  useDraggable,
+  type DragStartEvent,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  ChartBarIcon,
+  CurrencyDollarIcon,
+  TrendUpIcon,
+  CrosshairIcon,
+  TrophyIcon,
+  MagnifyingGlassIcon,
+} from "@/components/ui/Icons";
 
 interface DealRecord {
   id: string;
@@ -34,11 +54,41 @@ interface DealRecord {
   close_date?: string | null;
   owner_avatar?: string | null;
   created_at: string;
+  days_in_stage?: number | null;
+  stage_changed_at?: string | null;
   [key: string]: unknown;
 }
 
+type MappedDeal = {
+  id: string;
+  name: string;
+  company: string;
+  contactName: string;
+  value: number;
+  stage: PipelineStage;
+  probability: number;
+  closeDate: string;
+  ownerAvatar: string;
+  createdAt: string;
+  daysInStage: number;
+};
+
 // Map DB deal to display shape
-function mapDeal(d: DealRecord) {
+function mapDeal(d: DealRecord): MappedDeal {
+  // Compute days in current stage
+  let daysInStage = 0;
+  if (d.days_in_stage != null) {
+    daysInStage = d.days_in_stage;
+  } else if (d.stage_changed_at) {
+    daysInStage = Math.floor(
+      (Date.now() - new Date(d.stage_changed_at).getTime()) / (1000 * 60 * 60 * 24),
+    );
+  } else {
+    daysInStage = Math.floor(
+      (Date.now() - new Date(d.created_at).getTime()) / (1000 * 60 * 60 * 24),
+    );
+  }
+
   return {
     id: d.id,
     name: d.name || "",
@@ -52,6 +102,7 @@ function mapDeal(d: DealRecord) {
       : "",
     ownerAvatar: d.owner_avatar || "/images/avatars/user.jpg",
     createdAt: d.created_at,
+    daysInStage,
   };
 }
 
@@ -73,6 +124,154 @@ function getProbabilityColor(probability: number): "green" | "amber" | "neutral"
   return "neutral";
 }
 
+// ─── Pipeline Stats ──────────────────────────────────────────────────────────
+
+function PipelineStats({ deals }: { deals: MappedDeal[] }) {
+  const activeDeals = deals.filter(
+    (d) => d.stage !== "closed_won" && d.stage !== "closed_lost",
+  );
+  const closedWon = deals.filter((d) => d.stage === "closed_won");
+  const closedLost = deals.filter((d) => d.stage === "closed_lost");
+
+  const totalValue = activeDeals.reduce((sum, d) => sum + d.value, 0);
+  const weightedValue = activeDeals.reduce(
+    (sum, d) => sum + d.value * (d.probability / 100),
+    0,
+  );
+  const avgDealSize = activeDeals.length > 0 ? totalValue / activeDeals.length : 0;
+  const closedTotal = closedWon.length + closedLost.length;
+  const winRate = closedTotal > 0 ? Math.round((closedWon.length / closedTotal) * 100) : 0;
+
+  const stats = [
+    { label: "Pipeline Value", value: formatDealCurrency(totalValue), icon: CurrencyDollarIcon },
+    { label: "Weighted Value", value: formatDealCurrency(weightedValue), icon: TrendUpIcon },
+    { label: "Active Deals", value: activeDeals.length.toString(), icon: ChartBarIcon },
+    { label: "Avg Deal Size", value: formatDealCurrency(avgDealSize), icon: CrosshairIcon },
+    { label: "Win Rate", value: `${winRate}%`, icon: TrophyIcon },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      {stats.map((stat) => (
+        <div
+          key={stat.label}
+          className="flex items-center gap-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 py-3"
+        >
+          <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
+            <stat.icon size={16} className="text-neutral-500 dark:text-neutral-400" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+              {stat.label}
+            </p>
+            <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+              {stat.value}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Droppable Column ────────────────────────────────────────────────────────
+
+function DroppableColumn({
+  stageId,
+  children,
+  label,
+  count,
+  totalValue,
+  onAddDeal,
+}: {
+  stageId: PipelineStage;
+  children: React.ReactNode;
+  label: string;
+  count: number;
+  totalValue: number;
+  onAddDeal: () => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: stageId });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "flex flex-col min-w-72 sm:min-w-85 flex-1 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 transition-colors",
+        isOver && "border-neutral-400 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800/50",
+      )}
+    >
+      {/* Column Header */}
+      <div className="flex items-center justify-between p-4">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+            {label}
+          </h3>
+          <span
+            className={cn(
+              "flex h-5 min-w-5 items-center justify-center rounded px-1.5 text-xs font-semibold text-white",
+              stageColors[stageId],
+            )}
+          >
+            {count}
+          </span>
+        </div>
+        <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+          {formatDealCurrency(totalValue)}
+        </span>
+      </div>
+
+      {/* Add Deal Button */}
+      <div className="px-4 mb-3">
+        <button
+          onClick={onAddDeal}
+          className="flex w-full items-center justify-center gap-2 rounded border border-dashed border-neutral-300 dark:border-neutral-700 py-2.5 text-sm text-neutral-400 dark:text-neutral-500 hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-600 dark:hover:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800 transition-colors"
+        >
+          <PlusIcon size={16} />
+        </button>
+      </div>
+
+      {/* Deal Cards */}
+      <div className="flex-1 px-4 pb-4 space-y-3 overflow-y-auto min-h-[100px]">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─── Draggable Deal Card ─────────────────────────────────────────────────────
+
+function DraggableDealCard({
+  deal,
+  onClick,
+}: {
+  deal: MappedDeal;
+  onClick: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: deal.id,
+    data: { deal },
+  });
+
+  const style = transform
+    ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
+    : undefined;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className={cn(isDragging && "opacity-30")}
+    >
+      <DealCard deal={deal} onClick={onClick} />
+    </div>
+  );
+}
+
+// ─── Main Component ──────────────────────────────────────────────────────────
+
 export function SalesPageClient({
   initialDeals,
 }: {
@@ -82,27 +281,146 @@ export function SalesPageClient({
   const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState<"active" | "closed">("active");
   const [showAddDeal, setShowAddDeal] = useState(false);
-  const [selectedDeal, setSelectedDeal] = useState<ReturnType<typeof mapDeal> | null>(null);
+  const [selectedDeal, setSelectedDeal] = useState<MappedDeal | null>(null);
   const [showDrawer, setShowDrawer] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<DealFilters>(defaultFilters);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [localStageOverrides, setLocalStageOverrides] = useState<Record<string, PipelineStage>>({});
 
   const activeFilterCount = getActiveFilterCount(filters);
-  const allDeals = initialDeals.map(mapDeal);
+  const allDeals = useMemo(() => {
+    const mapped = initialDeals.map(mapDeal);
+    // Apply optimistic stage overrides
+    const withOverrides = mapped.map((d) =>
+      localStageOverrides[d.id] ? { ...d, stage: localStageOverrides[d.id] } : d,
+    );
+
+    // Apply filters
+    return withOverrides.filter((deal) => {
+      // Search filter
+      if (filters.search?.trim()) {
+        const q = filters.search.toLowerCase();
+        if (
+          !deal.name.toLowerCase().includes(q) &&
+          !deal.company.toLowerCase().includes(q) &&
+          !deal.contactName.toLowerCase().includes(q)
+        ) {
+          return false;
+        }
+      }
+
+      // Deal value filter
+      if (filters.dealValue && filters.dealValue !== "any") {
+        const minValues: Record<string, number> = { "10k": 10000, "25k": 25000, "50k": 50000 };
+        const minVal = minValues[filters.dealValue] || 0;
+        if (deal.value < minVal) return false;
+      }
+
+      // Probability filter
+      if (filters.probability?.length > 0) {
+        const p = deal.probability;
+        const matches = filters.probability.some((band) => {
+          if (band === "low") return p <= 30;
+          if (band === "medium") return p > 30 && p <= 60;
+          if (band === "high") return p > 60;
+          return false;
+        });
+        if (!matches) return false;
+      }
+
+      // Close date filter
+      if (filters.closeDate && filters.closeDate !== "any" && deal.closeDate) {
+        const now = new Date();
+        const rawDeal = initialDeals.find((r) => r.id === deal.id);
+        if (rawDeal?.close_date) {
+          const closeDate = new Date(rawDeal.close_date);
+          if (filters.closeDate === "this_week") {
+            const weekEnd = new Date(now);
+            weekEnd.setDate(now.getDate() + (7 - now.getDay()));
+            if (closeDate > weekEnd) return false;
+          } else if (filters.closeDate === "this_month") {
+            if (
+              closeDate.getMonth() !== now.getMonth() ||
+              closeDate.getFullYear() !== now.getFullYear()
+            ) {
+              return false;
+            }
+          } else if (filters.closeDate === "this_quarter") {
+            const quarter = Math.floor(now.getMonth() / 3);
+            const dealQuarter = Math.floor(closeDate.getMonth() / 3);
+            if (dealQuarter !== quarter || closeDate.getFullYear() !== now.getFullYear()) {
+              return false;
+            }
+          }
+        }
+      }
+
+      return true;
+    });
+  }, [initialDeals, localStageOverrides, filters]);
 
   const activeDeals = allDeals.filter((d) => activeStageIds.includes(d.stage));
   const closedDeals = allDeals.filter((d) => closedStageIds.includes(d.stage));
 
   const visibleStages = activeTab === "active" ? activeStageIds : closedStageIds;
 
-  const getDealsByStage = (stage: PipelineStage) =>
-    allDeals.filter((d) => d.stage === stage);
+  const getDealsByStage = useCallback(
+    (stage: PipelineStage) => allDeals.filter((d) => d.stage === stage),
+    [allDeals],
+  );
 
-  const getStageTotalValue = (stage: PipelineStage) =>
-    getDealsByStage(stage).reduce((sum, d) => sum + d.value, 0);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
 
-  const getStageCount = (stage: PipelineStage) =>
-    getDealsByStage(stage).length;
+  const activeDeal = useMemo(
+    () => (activeDragId ? allDeals.find((d) => d.id === activeDragId) ?? null : null),
+    [activeDragId, allDeals],
+  );
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveDragId(event.active.id as string);
+  }, []);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setActiveDragId(null);
+      const { active, over } = event;
+      if (!over) return;
+
+      const dealId = active.id as string;
+      const newStage = over.id as PipelineStage;
+      const deal = allDeals.find((d) => d.id === dealId);
+      if (!deal || deal.stage === newStage) return;
+
+      // Optimistic update
+      setLocalStageOverrides((prev) => ({ ...prev, [dealId]: newStage }));
+
+      startTransition(async () => {
+        const result = await updateDealStage(dealId, newStage);
+        if (result.error) {
+          // Revert on error
+          setLocalStageOverrides((prev) => {
+            const next = { ...prev };
+            delete next[dealId];
+            return next;
+          });
+          toast.error("Failed to move deal");
+        } else {
+          // Clear override and refresh server data
+          setLocalStageOverrides((prev) => {
+            const next = { ...prev };
+            delete next[dealId];
+            return next;
+          });
+          toast.success(`Moved to ${pipelineStages.find((s) => s.id === newStage)?.label}`);
+          router.refresh();
+        }
+      });
+    },
+    [allDeals, router, startTransition],
+  );
 
   const handleAddDeal = async (data: Record<string, unknown>) => {
     startTransition(async () => {
@@ -146,12 +464,27 @@ export function SalesPageClient({
         </Button>
       </PageHeader>
 
+      {/* Search Bar */}
+      <div className="relative">
+        <MagnifyingGlassIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+        <input
+          type="text"
+          placeholder="Search deals..."
+          value={filters.search}
+          onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
+          className="w-full sm:w-72 pl-9 pr-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-500/50"
+        />
+      </div>
+
+      {/* Pipeline Stats */}
+      <PipelineStats deals={allDeals} />
+
       {/* Tabs */}
-      <div className="flex items-center rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-1 w-fit">
+      <div className="flex items-center rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-1 w-fit">
         <button
           onClick={() => setActiveTab("active")}
           className={cn(
-            "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors",
+            "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded transition-colors",
             activeTab === "active"
               ? "bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50 shadow-sm"
               : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50",
@@ -172,7 +505,7 @@ export function SalesPageClient({
         <button
           onClick={() => setActiveTab("closed")}
           className={cn(
-            "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors",
+            "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded transition-colors",
             activeTab === "closed"
               ? "bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50 shadow-sm"
               : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50",
@@ -192,53 +525,29 @@ export function SalesPageClient({
         </button>
       </div>
 
-      {/* Kanban Board */}
-      <div className="flex gap-4 overflow-x-auto pb-4 flex-1">
-        {visibleStages.map((stageId) => {
-          const stage = pipelineStages.find((s) => s.id === stageId)!;
-          const deals = getDealsByStage(stageId);
-          const totalValue = getStageTotalValue(stageId);
-          const count = getStageCount(stageId);
+      {/* Kanban Board with DnD */}
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex gap-4 overflow-x-auto pb-4 flex-1">
+          {visibleStages.map((stageId) => {
+            const stage = pipelineStages.find((s) => s.id === stageId)!;
+            const deals = getDealsByStage(stageId);
+            const totalValue = deals.reduce((sum, d) => sum + d.value, 0);
 
-          return (
-            <div
-              key={stageId}
-              className="flex flex-col min-w-72 sm:min-w-85 flex-1 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900"
-            >
-              {/* Column Header */}
-              <div className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
-                    {stage?.label ?? stageId}
-                  </h3>
-                  <span
-                    className={cn(
-                      "flex h-5 min-w-5 items-center justify-center rounded-md px-1.5 text-xs font-semibold text-white",
-                      stageColors[stageId],
-                    )}
-                  >
-                    {count}
-                  </span>
-                </div>
-                <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                  {formatDealCurrency(totalValue)}
-                </span>
-              </div>
-
-              {/* Add Deal Button */}
-              <div className="px-4 mb-3">
-                <button
-                  onClick={() => setShowAddDeal(true)}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-neutral-300 dark:border-neutral-700 py-2.5 text-sm text-neutral-400 dark:text-neutral-500 hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-600 dark:hover:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800 transition-colors"
-                >
-                  <PlusIcon size={16} />
-                </button>
-              </div>
-
-              {/* Deal Cards */}
-              <div className="flex-1 px-4 pb-4 space-y-3 overflow-y-auto">
+            return (
+              <DroppableColumn
+                key={stageId}
+                stageId={stageId}
+                label={stage?.label ?? stageId}
+                count={deals.length}
+                totalValue={totalValue}
+                onAddDeal={() => setShowAddDeal(true)}
+              >
                 {deals.map((deal) => (
-                  <DealCard
+                  <DraggableDealCard
                     key={deal.id}
                     deal={deal}
                     onClick={() => {
@@ -247,11 +556,19 @@ export function SalesPageClient({
                     }}
                   />
                 ))}
-              </div>
+              </DroppableColumn>
+            );
+          })}
+        </div>
+
+        <DragOverlay dropAnimation={null}>
+          {activeDeal && (
+            <div className="rotate-2 scale-105">
+              <DealCard deal={activeDeal} onClick={() => {}} />
             </div>
-          );
-        })}
-      </div>
+          )}
+        </DragOverlay>
+      </DndContext>
 
       {/* Create Deal Modal */}
       <AddDealModal
@@ -287,7 +604,7 @@ function DealCard({
   deal,
   onClick,
 }: {
-  deal: ReturnType<typeof mapDeal>;
+  deal: MappedDeal;
   onClick: () => void;
 }) {
   const isClosed = deal.stage === "closed_won" || deal.stage === "closed_lost";
@@ -307,6 +624,11 @@ function DealCard({
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
             {deal.company}
           </p>
+          {deal.contactName && (
+            <p className="text-xs text-neutral-400 dark:text-neutral-500 truncate">
+              {deal.contactName}
+            </p>
+          )}
         </div>
         <p className="text-2xl font-serif font-medium text-neutral-950 dark:text-neutral-50 shrink-0">
           {formatDealCurrency(deal.value)}
@@ -336,6 +658,20 @@ function DealCard({
         </div>
 
         <div className="flex items-center gap-3">
+          {deal.daysInStage > 0 && (
+            <span
+              className={cn(
+                "text-xs font-medium px-1.5 py-0.5 rounded",
+                deal.daysInStage > 30
+                  ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                  : deal.daysInStage > 14
+                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
+                    : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400",
+              )}
+            >
+              {deal.daysInStage}d
+            </span>
+          )}
           <span className="text-sm text-neutral-500 dark:text-neutral-400">
             {deal.closeDate}
           </span>

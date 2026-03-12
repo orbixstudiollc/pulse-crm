@@ -131,6 +131,10 @@ export async function createLead(leadData: Record<string, unknown>) {
   if (data?.id) {
     calculateLeadScore(data.id).catch(() => {});
     calculateICPMatch(data.id).catch(() => {});
+    // Fire automation rules
+    import("@/lib/actions/automation").then(({ evaluateLeadAgainstRules }) =>
+      evaluateLeadAgainstRules(data.id, "lead_created", {}).catch(() => {}),
+    );
   }
 
   revalidatePath("/dashboard/leads");
@@ -156,6 +160,12 @@ export async function updateLead(
   // Recalculate score + ICP match after update
   calculateLeadScore(id).catch(() => {});
   calculateICPMatch(id).catch(() => {});
+  // Fire automation rules
+  import("@/lib/actions/automation").then(({ evaluateLeadAgainstRules }) =>
+    evaluateLeadAgainstRules(id, "lead_updated", {
+      changed_fields: Object.keys(updates),
+    }).catch(() => {}),
+  );
 
   revalidatePath("/dashboard/leads");
   revalidatePath(`/dashboard/leads/${id}`);
@@ -243,4 +253,18 @@ export async function convertLeadToCustomer(leadId: string) {
   revalidatePath("/dashboard/leads");
   revalidatePath("/dashboard/customers");
   return { data: customer };
+}
+
+// ── Lead Count (for sidebar usage widget) ─────────────────────────────────
+
+export async function getLeadCount() {
+  const supabase = await createClient();
+  const orgId = await getOrgId();
+
+  const { count } = await supabase
+    .from("leads")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", orgId);
+
+  return { count: count ?? 0 };
 }

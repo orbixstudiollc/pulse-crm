@@ -1,7 +1,7 @@
 function Skeleton({ className }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded-lg bg-neutral-200 dark:bg-neutral-800 ${className ?? ""}`}
+      className={`animate-pulse rounded bg-neutral-200 dark:bg-neutral-800 ${className ?? ""}`}
     />
   );
 }
@@ -16,8 +16,8 @@ export default function CalendarLoading() {
       <div className="flex items-center justify-between">
         <Skeleton className="h-8 w-40" />
         <div className="flex gap-2">
-          <Skeleton className="h-9 w-9 rounded-md" />
-          <Skeleton className="h-9 w-9 rounded-md" />
+          <Skeleton className="h-9 w-9 rounded" />
+          <Skeleton className="h-9 w-9 rounded" />
         </div>
       </div>
 

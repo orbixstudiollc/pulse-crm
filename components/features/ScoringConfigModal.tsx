@@ -238,7 +238,7 @@ export function ScoringConfigModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 p-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800">
+            <div className="flex h-9 w-9 items-center justify-center rounded bg-neutral-100 dark:bg-neutral-800">
               <Faders size={18} className="text-neutral-600 dark:text-neutral-400" />
             </div>
             <div>
@@ -252,7 +252,7 @@ export function ScoringConfigModal({
           </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           >
             <XIcon size={20} className="text-neutral-500" />
           </button>
@@ -297,7 +297,7 @@ export function ScoringConfigModal({
             {/* Weight sum indicator */}
             <div
               className={cn(
-                "mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm",
+                "mt-3 flex items-center gap-2 rounded px-3 py-2 text-sm",
                 isWeightValid
                   ? "bg-green-50 dark:bg-green-400/10 text-green-700 dark:text-green-400"
                   : "bg-red-50 dark:bg-red-400/10 text-red-700 dark:text-red-400",
@@ -339,7 +339,7 @@ export function ScoringConfigModal({
                   type="button"
                   onClick={() => toggleCompanySize(size)}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-sm text-left transition-colors",
+                    "flex items-center gap-2.5 rounded border px-3 py-2.5 text-sm text-left transition-colors",
                     targetCompanySizes.includes(size)
                       ? "border-neutral-950 dark:border-neutral-50 bg-neutral-50 dark:bg-neutral-800"
                       : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700",

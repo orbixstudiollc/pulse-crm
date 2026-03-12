@@ -244,7 +244,7 @@ export function ImportLeadsModal({
           </div>
           <button
             onClick={handleClose}
-            className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           >
             <XIcon size={20} className="text-neutral-400" />
           </button>
@@ -338,7 +338,7 @@ export function ImportLeadsModal({
             </div>
 
             {/* Template Download */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-800">
+            <div className="flex items-center justify-between p-3 rounded bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-800">
               <div className="flex items-center gap-2">
                 <FileTextIcon
                   size={18}
@@ -366,7 +366,7 @@ export function ImportLeadsModal({
         {step === "mapping" && (
           <div className="space-y-4">
             {/* File info */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-800">
+            <div className="flex items-center justify-between p-3 rounded bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-800">
               <div className="flex items-center gap-2">
                 <FileTextIcon size={18} className="text-neutral-500" />
                 <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
@@ -381,7 +381,7 @@ export function ImportLeadsModal({
               {headers.map((header) => (
                 <div
                   key={header}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800"
+                  className="flex items-center gap-3 p-3 rounded bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
@@ -427,7 +427,7 @@ export function ImportLeadsModal({
                 <p className="text-xs font-medium text-neutral-500 mb-2">
                   Preview (first {preview.length} rows)
                 </p>
-                <div className="overflow-x-auto rounded-lg border border-neutral-100 dark:border-neutral-800">
+                <div className="overflow-x-auto rounded border border-neutral-100 dark:border-neutral-800">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
@@ -556,7 +556,7 @@ export function ImportLeadsModal({
 
             {/* Errors list */}
             {importResult.errors.length > 0 && (
-              <div className="max-h-[160px] overflow-y-auto rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/20 p-3 space-y-1">
+              <div className="max-h-[160px] overflow-y-auto rounded border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/20 p-3 space-y-1">
                 {importResult.errors.map((err, i) => (
                   <p
                     key={i}

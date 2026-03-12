@@ -67,7 +67,7 @@ export function Dropdown({
                   setOpen(false);
                 }}
                 className={cn(
-                  "flex w-full items-center px-4 py-2.5 text-sm text-left transition-colors rounded-lg",
+                  "flex w-full items-center px-4 py-2.5 text-sm text-left transition-colors rounded",
                   option.value === value
                     ? "bg-neutral-100 dark:bg-neutral-800 font-medium text-neutral-950 dark:text-neutral-50"
                     : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/50",

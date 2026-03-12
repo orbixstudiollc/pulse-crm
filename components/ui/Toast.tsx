@@ -37,7 +37,7 @@ export function Toast({
           exit={{ opacity: 0, y: 20 }}
           transition={{ duration: 0.2 }}
           className={cn(
-            "flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg",
+            "flex items-center gap-3 px-4 py-3 rounded shadow-lg",
             "bg-neutral-900 dark:bg-neutral-50 text-white dark:text-neutral-900",
           )}
         >

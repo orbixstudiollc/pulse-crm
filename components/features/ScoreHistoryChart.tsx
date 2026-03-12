@@ -41,7 +41,7 @@ function SparklineTooltip({ active, payload }: CustomTooltipProps) {
   const { score, scored_at } = payload[0].payload;
 
   return (
-    <div className="rounded-lg bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-3 py-2 shadow-lg">
+    <div className="rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-3 py-2 shadow-lg">
       <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
         {score}
       </p>

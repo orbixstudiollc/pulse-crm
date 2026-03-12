@@ -421,7 +421,7 @@ export function CustomerDetailClient({
                             key={deal.id}
                             href={`/dashboard/sales/${deal.id}`}
                             className={cn(
-                              "block rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 overflow-hidden transition-all hover:border-neutral-300 dark:hover:border-neutral-700 hover:shadow-sm",
+                              "block rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 overflow-hidden transition-all hover:border-neutral-300 dark:hover:border-neutral-700 hover:shadow-sm",
                               isClosed && "opacity-70 hover:opacity-100",
                             )}
                           >
@@ -649,7 +649,7 @@ export function CustomerDetailClient({
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setShowMeetingModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="flex flex-col items-center gap-2 p-4 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
                 <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
                   <CalendarBlankIcon
@@ -663,7 +663,7 @@ export function CustomerDetailClient({
               </button>
               <button
                 onClick={() => setShowTaskModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="flex flex-col items-center gap-2 p-4 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
                 <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
                   <CheckCircleIcon
@@ -677,7 +677,7 @@ export function CustomerDetailClient({
               </button>
               <button
                 onClick={() => setShowDealModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="flex flex-col items-center gap-2 p-4 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
                 <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
                   <CurrencyDollarIcon
@@ -691,7 +691,7 @@ export function CustomerDetailClient({
               </button>
               <button
                 onClick={() => setShowInvoiceModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="flex flex-col items-center gap-2 p-4 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
                 <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
                   <FileTextIcon
@@ -769,7 +769,7 @@ export function CustomerDetailClient({
                 {customer.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-2.5 py-1 text-xs rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
+                    className="px-2.5 py-1 text-xs rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
                   >
                     {tag}
                   </span>

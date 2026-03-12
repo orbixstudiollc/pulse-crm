@@ -109,7 +109,7 @@ function ProfileSetup({
       <Stepper currentStep={1} totalSteps={4} />
 
       {error && (
-        <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+        <div className="mt-4 rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
           {error}
         </div>
       )}
@@ -246,13 +246,13 @@ function InviteTeam({
                 onChange={(e) =>
                   updateMember(member.id, "email", e.target.value)
                 }
-                className="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-600 focus:shadow-focus transition-shadow"
+                className="w-full rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-600 focus:shadow-focus transition-shadow"
               />
             </div>
             <select
               value={member.role}
               onChange={(e) => updateMember(member.id, "role", e.target.value)}
-              className="appearance-none rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2.5 pr-8 text-sm text-neutral-950 dark:text-neutral-50 cursor-pointer focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-600 focus:shadow-focus transition-shadow"
+              className="appearance-none rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2.5 pr-8 text-sm text-neutral-950 dark:text-neutral-50 cursor-pointer focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-600 focus:shadow-focus transition-shadow"
             >
               <option value="sales-rep">Sales Rep</option>
               <option value="sales-manager">Sales Manager</option>
@@ -261,7 +261,7 @@ function InviteTeam({
             <button
               type="button"
               onClick={() => removeMember(member.id)}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+              className="flex h-10 w-10 items-center justify-center rounded border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
             >
               <XIcon size={16} />
             </button>
@@ -346,7 +346,7 @@ function ImportData({
           }`}
         >
           <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800">
+            <div className="flex h-10 w-10 items-center justify-center rounded bg-neutral-100 dark:bg-neutral-800">
               <ClockIcon
                 size={20}
                 className="text-neutral-600 dark:text-neutral-400"
@@ -384,7 +384,7 @@ function ImportData({
           }`}
         >
           <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800">
+            <div className="flex h-10 w-10 items-center justify-center rounded bg-neutral-100 dark:bg-neutral-800">
               <FileTextIcon
                 size={20}
                 className="text-neutral-600 dark:text-neutral-400"
@@ -516,7 +516,7 @@ function Complete() {
             href={action.href}
             className="rounded-xl border border-neutral-200 dark:border-neutral-700 p-5 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors group"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 mb-4 group-hover:bg-neutral-200 dark:group-hover:bg-neutral-700 transition-colors">
+            <div className="flex h-10 w-10 items-center justify-center rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 mb-4 group-hover:bg-neutral-200 dark:group-hover:bg-neutral-700 transition-colors">
               {action.icon}
             </div>
             <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">

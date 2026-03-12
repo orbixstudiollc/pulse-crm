@@ -8,10 +8,15 @@ import {
   getSequencePerformance,
   getICPPerformance,
 } from "@/lib/actions/analytics";
+import {
+  getEmailOverviewStats,
+  getAccountHealth,
+  getDailyEmailVolume,
+} from "@/lib/actions/email-analytics";
 import { AnalyticsPageClient } from "./client";
 
 export default async function AnalyticsPage() {
-  const [pipeline, sources, forecast, winLoss, activities, funnel, sequences, icp] =
+  const [pipeline, sources, forecast, winLoss, activities, funnel, sequences, icp, emailOverview, emailAccounts, emailVolume] =
     await Promise.all([
       getPipelineVelocity(),
       getLeadSourcePerformance(),
@@ -21,6 +26,9 @@ export default async function AnalyticsPage() {
       getConversionFunnel(),
       getSequencePerformance(),
       getICPPerformance(),
+      getEmailOverviewStats(),
+      getAccountHealth(),
+      getDailyEmailVolume(),
     ]);
 
   return (
@@ -33,6 +41,11 @@ export default async function AnalyticsPage() {
       funnel={funnel.data}
       sequences={sequences.data}
       icp={icp.data}
+      email={{
+        overview: emailOverview.data,
+        accounts: emailAccounts.data,
+        dailyVolume: emailVolume.data,
+      }}
     />
   );
 }

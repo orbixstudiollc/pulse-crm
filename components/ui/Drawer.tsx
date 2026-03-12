@@ -78,7 +78,7 @@ export function Drawer({
                 </h2>
                 <button
                   onClick={onClose}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                  className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
                 >
                   <XIcon size={20} className="text-neutral-500" />
                 </button>

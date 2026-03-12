@@ -23,11 +23,13 @@ import {
   CrosshairIcon,
   GlobeIcon,
   SparkleIcon,
+  EnvelopeIcon,
 } from "@/components/ui";
 import { PageHeader } from "@/components/dashboard";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils";
 import { aiGenerateInsightsSummary, aiAnalyzePipeline, aiIdentifyRisks, aiPredictForecast } from "@/lib/actions/ai-analytics";
+import type { EmailOverviewStats, AccountHealth, DailyEmailVolume } from "@/lib/actions/email-analytics";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -93,6 +95,12 @@ interface ICPData {
   avgMatchScore: number;
 }
 
+interface EmailAnalyticsData {
+  overview: EmailOverviewStats;
+  accounts: AccountHealth[];
+  dailyVolume: DailyEmailVolume[];
+}
+
 interface AnalyticsPageClientProps {
   pipeline: PipelineData;
   sources: SourceData[];
@@ -102,6 +110,7 @@ interface AnalyticsPageClientProps {
   funnel: FunnelData;
   sequences: SequenceData[];
   icp: ICPData[];
+  email?: EmailAnalyticsData;
 }
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -114,6 +123,7 @@ const TABS = [
   { id: "activity", label: "Activity", icon: ActivityIcon },
   { id: "sequences", label: "Sequences", icon: PulseIcon },
   { id: "icp", label: "ICP", icon: CrosshairIcon },
+  { id: "email", label: "Email", icon: EnvelopeIcon },
   { id: "ai-insights", label: "AI Insights", icon: SparkleIcon },
 ] as const;
 
@@ -223,7 +233,7 @@ function ChartTooltip({
   const fmt = valueFormatter || ((v: number) => v.toLocaleString());
 
   return (
-    <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 shadow-lg">
+    <div className="rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 shadow-lg">
       <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
         {label}
       </p>
@@ -678,7 +688,7 @@ function WinLossTab({ data }: { data: WinLossData }) {
 
         {/* Value comparison */}
         <div className="mt-8 grid grid-cols-2 gap-4">
-          <div className="rounded-lg p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900">
+          <div className="rounded p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900">
             <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-1">
               Avg Won Deal
             </p>
@@ -686,7 +696,7 @@ function WinLossTab({ data }: { data: WinLossData }) {
               {formatCurrency(data.avgWonValue)}
             </p>
           </div>
-          <div className="rounded-lg p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900">
+          <div className="rounded p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900">
             <p className="text-xs font-medium text-red-600 dark:text-red-400 mb-1">
               Avg Lost Deal
             </p>
@@ -912,6 +922,203 @@ function ICPTab({ data }: { data: ICPData[] }) {
   );
 }
 
+// ── Email Tab ─────────────────────────────────────────────────────────────────
+
+function EmailTab({ data }: { data?: EmailAnalyticsData }) {
+  if (!data) {
+    return (
+      <div className="text-center py-16">
+        <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mx-auto mb-6">
+          <EnvelopeIcon size={32} className="text-indigo-600 dark:text-indigo-400" />
+        </div>
+        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+          No Email Data Yet
+        </h3>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-md mx-auto">
+          Connect an email account and start sending to see analytics here.
+        </p>
+      </div>
+    );
+  }
+
+  const { overview, accounts, dailyVolume } = data;
+
+  return (
+    <div className="space-y-6">
+      {/* KPI row */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <StatBox label="Total Sent" value={overview.totalSent.toLocaleString()} />
+        <StatBox label="Delivered" value={overview.totalDelivered.toLocaleString()} />
+        <StatBox
+          label="Open Rate"
+          value={`${overview.openRate}%`}
+          subValue={`${overview.totalOpened} opened`}
+        />
+        <StatBox
+          label="Click Rate"
+          value={`${overview.clickRate}%`}
+          subValue={`${overview.totalClicked} clicked`}
+        />
+        <StatBox
+          label="Reply Rate"
+          value={`${overview.replyRate}%`}
+          subValue={`${overview.totalReplied} replies`}
+        />
+        <StatBox
+          label="Bounce Rate"
+          value={`${overview.bounceRate}%`}
+          subValue={`${overview.totalBounced} bounced`}
+        />
+      </div>
+
+      {/* Daily volume chart */}
+      {dailyVolume.length > 0 && (
+        <Card>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+            Daily Email Volume (Last 30 Days)
+          </h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dailyVolume}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="currentColor"
+                  className="text-neutral-200 dark:text-neutral-800"
+                />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(v: string) => {
+                    const d = new Date(v);
+                    return `${d.getMonth() + 1}/${d.getDate()}`;
+                  }}
+                  className="text-neutral-500"
+                />
+                <YAxis tick={{ fontSize: 11 }} className="text-neutral-500" />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 8,
+                    border: "1px solid #e5e7eb",
+                    fontSize: 12,
+                  }}
+                />
+                <Bar dataKey="sent" fill={CHART_COLORS.indigo} name="Sent" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="opened" fill={CHART_COLORS.green} name="Opened" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="clicked" fill={CHART_COLORS.amber} name="Clicked" radius={[2, 2, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      )}
+
+      {/* Account health */}
+      {accounts.length > 0 && (
+        <Card>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+            Account Health
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-neutral-200 dark:border-neutral-800">
+                  <th className="text-left py-2 font-medium text-neutral-500 dark:text-neutral-400">
+                    Account
+                  </th>
+                  <th className="text-left py-2 font-medium text-neutral-500 dark:text-neutral-400">
+                    Provider
+                  </th>
+                  <th className="text-right py-2 font-medium text-neutral-500 dark:text-neutral-400">
+                    Sent Today
+                  </th>
+                  <th className="text-right py-2 font-medium text-neutral-500 dark:text-neutral-400">
+                    Total Sent
+                  </th>
+                  <th className="text-right py-2 font-medium text-neutral-500 dark:text-neutral-400">
+                    Open Rate
+                  </th>
+                  <th className="text-right py-2 font-medium text-neutral-500 dark:text-neutral-400">
+                    Bounce Rate
+                  </th>
+                  <th className="text-right py-2 font-medium text-neutral-500 dark:text-neutral-400">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {accounts.map((acc) => (
+                  <tr
+                    key={acc.id}
+                    className="border-b border-neutral-100 dark:border-neutral-800/50"
+                  >
+                    <td className="py-3 text-neutral-900 dark:text-neutral-100 font-medium">
+                      {acc.email}
+                    </td>
+                    <td className="py-3 text-neutral-500 dark:text-neutral-400 capitalize">
+                      {acc.provider}
+                    </td>
+                    <td className="py-3 text-right text-neutral-900 dark:text-neutral-100">
+                      {acc.dailySent}/{acc.dailySendLimit}
+                    </td>
+                    <td className="py-3 text-right text-neutral-900 dark:text-neutral-100">
+                      {acc.totalSent}
+                    </td>
+                    <td className="py-3 text-right">
+                      <span
+                        className={cn(
+                          "font-medium",
+                          acc.openRate >= 30
+                            ? "text-emerald-600"
+                            : acc.openRate >= 15
+                              ? "text-amber-600"
+                              : "text-red-600",
+                        )}
+                      >
+                        {acc.openRate}%
+                      </span>
+                    </td>
+                    <td className="py-3 text-right">
+                      <span
+                        className={cn(
+                          "font-medium",
+                          acc.bounceRate <= 2
+                            ? "text-emerald-600"
+                            : acc.bounceRate <= 5
+                              ? "text-amber-600"
+                              : "text-red-600",
+                        )}
+                      >
+                        {acc.bounceRate}%
+                      </span>
+                    </td>
+                    <td className="py-3 text-right">
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full",
+                          acc.status === "active"
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                            : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "w-1.5 h-1.5 rounded-full",
+                            acc.status === "active" ? "bg-emerald-500" : "bg-neutral-400",
+                          )}
+                        />
+                        {acc.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export function AnalyticsPageClient({
@@ -923,6 +1130,7 @@ export function AnalyticsPageClient({
   funnel,
   sequences,
   icp,
+  email,
 }: AnalyticsPageClientProps) {
   const [activeTab, setActiveTab] = useState<TabId>("pipeline");
   const [aiInsights, setAIInsights] = useState<any>(null);
@@ -960,6 +1168,8 @@ export function AnalyticsPageClient({
         return <SequencesTab data={sequences} />;
       case "icp":
         return <ICPTab data={icp} />;
+      case "email":
+        return <EmailTab data={email} />;
       case "ai-insights":
         return (
           <div className="space-y-6">
@@ -1027,7 +1237,7 @@ export function AnalyticsPageClient({
                   <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Key Metrics</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {aiInsights.key_metrics?.map((m: any, i: number) => (
-                      <div key={i} className="p-4 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
+                      <div key={i} className="p-4 rounded bg-neutral-50 dark:bg-neutral-800/50">
                         <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">{m.metric}</p>
                         <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{m.value}</p>
                         <p className={`text-xs mt-1 ${m.trend === "up" ? "text-green-600 dark:text-green-400" : m.trend === "down" ? "text-red-600 dark:text-red-400" : "text-neutral-500"}`}>
@@ -1043,7 +1253,7 @@ export function AnalyticsPageClient({
                   <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Action Items</h3>
                   <div className="space-y-3">
                     {aiInsights.action_items?.map((item: any, i: number) => (
-                      <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
+                      <div key={i} className="flex items-start gap-3 p-3 rounded bg-neutral-50 dark:bg-neutral-800/50">
                         <span className={`shrink-0 mt-0.5 w-2 h-2 rounded-full ${item.priority === "high" ? "bg-red-500" : item.priority === "medium" ? "bg-amber-500" : "bg-green-500"}`} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-neutral-900 dark:text-neutral-100">{item.action}</p>
@@ -1111,7 +1321,7 @@ export function AnalyticsPageClient({
       </PageHeader>
 
       {/* Tab navigation */}
-      <div className="flex items-center gap-1 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-1 overflow-x-auto">
+      <div className="flex items-center gap-1 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-1 overflow-x-auto">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -1121,7 +1331,7 @@ export function AnalyticsPageClient({
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap",
+                "relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded transition-colors whitespace-nowrap",
                 isActive
                   ? "bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50 shadow-sm"
                   : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50",

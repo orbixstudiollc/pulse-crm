@@ -79,7 +79,7 @@ function DescriptionBlock({ label, text }: { label: string; text: string }) {
   return (
     <div className="mb-6">
       <SectionHeader>{label}</SectionHeader>
-      <div className="rounded-lg bg-neutral-50 dark:bg-neutral-800/50 p-4">
+      <div className="rounded bg-neutral-50 dark:bg-neutral-800/50 p-4">
         <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
           {text}
         </p>
@@ -129,11 +129,11 @@ function MeetingDetails({
         <div>
           <SectionHeader>Add to Calendar</SectionHeader>
           <div className="flex flex-wrap gap-3">
-            <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+            <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
               <CalendarBlankIcon size={16} />
               Google Calendar
             </button>
-            <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+            <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
               <CalendarBlankIcon size={16} />
               Apple Calendar
             </button>

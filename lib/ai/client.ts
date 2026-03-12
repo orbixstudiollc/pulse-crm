@@ -48,6 +48,7 @@ export async function getAIClient(): Promise<AIClientResult> {
     id: "",
     organization_id: profile.organization_id,
     api_key: null,
+    apify_api_key: null,
     default_model: "sonnet",
     feature_lead_scoring: true,
     feature_icp_matching: true,

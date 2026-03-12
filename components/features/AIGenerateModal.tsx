@@ -95,7 +95,7 @@ export function AIGenerateModal({
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                <div className="w-8 h-8 rounded bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
                   <SparkleIcon className="w-4 h-4 text-violet-600 dark:text-violet-400" />
                 </div>
                 <div>
@@ -111,7 +111,7 @@ export function AIGenerateModal({
               </div>
               <button
                 onClick={handleClose}
-                className="w-8 h-8 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-center transition-colors"
               >
                 <XIcon className="w-4 h-4 text-neutral-500" />
               </button>
@@ -129,7 +129,7 @@ export function AIGenerateModal({
                   </p>
                   <button
                     onClick={generate}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded transition-colors"
                   >
                     <SparkleIcon className="w-4 h-4" />
                     Generate
@@ -153,14 +153,14 @@ export function AIGenerateModal({
 
               {error && (
                 <div className="text-center py-8">
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-4 mb-4">
                     <p className="text-sm text-red-600 dark:text-red-400">
                       {error}
                     </p>
                   </div>
                   <button
                     onClick={generate}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded transition-colors"
                   >
                     <ArrowPathIcon className="w-4 h-4" />
                     Retry
@@ -177,10 +177,10 @@ export function AIGenerateModal({
                         setContent(e.target.value);
                         setIsApplied(false);
                       }}
-                      className="w-full min-h-[200px] bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 text-sm text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-violet-500/50 resize-y"
+                      className="w-full min-h-[200px] bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded p-4 text-sm text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-violet-500/50 resize-y"
                     />
                   ) : (
-                    <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                    <div className="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded p-4">
                       <div className="text-sm text-neutral-900 dark:text-neutral-100 whitespace-pre-wrap">
                         {content}
                       </div>
@@ -196,14 +196,14 @@ export function AIGenerateModal({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={generate}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
                   >
                     <ArrowPathIcon className="w-3.5 h-3.5" />
                     Regenerate
                   </button>
                   <button
                     onClick={handleCopy}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
                   >
                     <CopyIcon className="w-3.5 h-3.5" />
                     {copied ? "Copied!" : "Copy"}
@@ -212,7 +212,7 @@ export function AIGenerateModal({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleClose}
-                    className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded transition-colors"
                   >
                     Cancel
                   </button>
@@ -220,7 +220,7 @@ export function AIGenerateModal({
                     <button
                       onClick={handleApply}
                       disabled={isApplied}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:bg-green-600 text-white text-sm font-medium rounded transition-colors"
                     >
                       {isApplied ? (
                         <>

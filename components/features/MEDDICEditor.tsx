@@ -63,9 +63,9 @@ export function MEDDICEditor({ leadId, data }: MEDDICEditorProps) {
     }));
   };
 
-  const inputCls = "w-full h-8 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 text-xs text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-400";
+  const inputCls = "w-full h-8 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 text-xs text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-400";
   const labelCls = "text-xs text-neutral-500 dark:text-neutral-400 mb-1.5 block";
-  const sectionCls = "rounded-lg border border-neutral-200 dark:border-neutral-800 p-4";
+  const sectionCls = "rounded border border-neutral-200 dark:border-neutral-800 p-4";
 
   return (
     <div>
@@ -89,7 +89,7 @@ export function MEDDICEditor({ leadId, data }: MEDDICEditorProps) {
                     key={level}
                     onClick={() => setFormData(prev => ({ ...prev, metrics: { ...prev.metrics, confidence: prev.metrics.confidence === level ? "" : level } }))}
                     className={cn(
-                      "px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors",
+                      "px-3 py-1.5 rounded border text-xs font-medium transition-colors",
                       formData.metrics.confidence === level
                         ? level === "high" ? "border-green-500 bg-green-100 text-green-700 dark:bg-green-400/15 dark:text-green-400 dark:border-green-400/30"
                         : level === "medium" ? "border-amber-500 bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-400 dark:border-amber-400/30"
@@ -163,7 +163,7 @@ export function MEDDICEditor({ leadId, data }: MEDDICEditorProps) {
           </div>
           <div className="flex gap-2">
             <input type="text" value={criteriaInput} onChange={(e) => setCriteriaInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCriteria(); } }} className={cn(inputCls, "flex-1")} placeholder="Add criteria..." />
-            <button onClick={addCriteria} className="h-8 px-3 rounded-lg border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">Add</button>
+            <button onClick={addCriteria} className="h-8 px-3 rounded border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">Add</button>
           </div>
         </div>
 
@@ -179,7 +179,7 @@ export function MEDDICEditor({ leadId, data }: MEDDICEditorProps) {
                     key={type}
                     onClick={() => setFormData(prev => ({ ...prev, decision_process: { ...prev.decision_process, type: prev.decision_process.type === type ? "" : type } }))}
                     className={cn(
-                      "px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors",
+                      "px-3 py-1.5 rounded border text-xs font-medium transition-colors",
                       formData.decision_process.type === type
                         ? "border-neutral-950 dark:border-neutral-50 bg-neutral-950 dark:bg-neutral-50 text-white dark:text-neutral-950"
                         : "border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800",
@@ -210,7 +210,7 @@ export function MEDDICEditor({ leadId, data }: MEDDICEditorProps) {
           </div>
           <div className="flex gap-2 mb-2">
             <input type="text" value={painInput} onChange={(e) => setPainInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addPain(); } }} className={cn(inputCls, "flex-1")} placeholder="Add pain point..." />
-            <button onClick={addPain} className="h-8 px-3 rounded-lg border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">Add</button>
+            <button onClick={addPain} className="h-8 px-3 rounded border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">Add</button>
           </div>
           <div>
             <label className={labelCls}>Severity</label>

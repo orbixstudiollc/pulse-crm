@@ -273,13 +273,13 @@ export function CompetitorsPageClient({
       </div>
 
       {/* Category Tabs */}
-      <div className="flex items-center gap-1 p-1 rounded-lg bg-neutral-100 dark:bg-neutral-900 w-fit">
+      <div className="flex items-center gap-1 p-1 rounded bg-neutral-100 dark:bg-neutral-900 w-fit">
         {categoryTabs.map((tab) => (
           <button
             key={tab.value}
             onClick={() => setActiveTab(tab.value)}
             className={cn(
-              "px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors",
+              "px-4 py-2 text-sm font-medium rounded whitespace-nowrap transition-colors",
               activeTab === tab.value
                 ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
                 : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800"
@@ -452,7 +452,7 @@ export function CompetitorsPageClient({
             </h2>
             <button
               onClick={closeModal}
-              className="p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               <XIcon
                 size={20}

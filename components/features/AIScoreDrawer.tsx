@@ -246,7 +246,7 @@ export function AIScoreDrawer({
               </div>
               <button
                 onClick={onClose}
-                className="rounded-lg p-1.5 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+                className="rounded p-1.5 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
               >
                 <XIcon size={18} />
               </button>
@@ -278,7 +278,7 @@ export function AIScoreDrawer({
                   </div>
                   <button
                     onClick={runScoring}
-                    className="mt-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-700"
+                    className="mt-2 rounded bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-700"
                   >
                     Retry
                   </button>

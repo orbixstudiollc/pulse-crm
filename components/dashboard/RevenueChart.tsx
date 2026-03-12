@@ -62,7 +62,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="flex items-center gap-4 rounded-lg bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-3 py-1 shadow-lg">
+    <div className="flex items-center gap-4 rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-3 py-1 shadow-lg">
       <div className="flex items-center gap-2">
         <div className="h-2 w-2 rounded-xs bg-blue-500" />
         <span className="text-sm text-neutral-500 dark:text-neutral-400">

@@ -1,7 +1,7 @@
 function Skeleton({ className }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded-lg bg-neutral-200 dark:bg-neutral-800 ${className ?? ""}`}
+      className={`animate-pulse rounded bg-neutral-200 dark:bg-neutral-800 ${className ?? ""}`}
     />
   );
 }
@@ -13,7 +13,7 @@ export default function ActivityLoading() {
       <Skeleton className="h-8 w-36" />
 
       {/* Filter bar */}
-      <Skeleton className="h-10 w-48 rounded-md" />
+      <Skeleton className="h-10 w-48 rounded" />
 
       {/* Activity feed items */}
       <div className="space-y-3">

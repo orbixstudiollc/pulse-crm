@@ -12,6 +12,7 @@ export type Owner = "me" | "team";
 export type DealValue = "any" | "10k" | "25k" | "50k";
 
 export interface DealFilters {
+  search: string;
   closeDate: CloseDate;
   probability: Probability[];
   owner: Owner[];
@@ -19,6 +20,7 @@ export interface DealFilters {
 }
 
 export const defaultFilters: DealFilters = {
+  search: "",
   closeDate: "any",
   probability: [],
   owner: [],
@@ -27,10 +29,11 @@ export const defaultFilters: DealFilters = {
 
 export function getActiveFilterCount(filters: DealFilters): number {
   let count = 0;
-  if (filters.closeDate !== "any") count++;
-  if (filters.probability.length > 0) count++;
-  if (filters.owner.length > 0) count++;
-  if (filters.dealValue !== "any") count++;
+  if (filters.search?.trim()) count++;
+  if (filters.closeDate && filters.closeDate !== "any") count++;
+  if (filters.probability?.length > 0) count++;
+  if (filters.owner?.length > 0) count++;
+  if (filters.dealValue && filters.dealValue !== "any") count++;
   return count;
 }
 
@@ -50,7 +53,7 @@ function RadioOption({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 w-full rounded-lg border px-4 py-3 text-sm text-left transition-colors",
+        "flex items-center gap-3 w-full rounded border px-4 py-3 text-sm text-left transition-colors",
         selected
           ? "border-neutral-950 dark:border-neutral-50 bg-neutral-50 dark:bg-neutral-800"
           : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700",
@@ -89,7 +92,7 @@ function CheckboxOption({
       type="button"
       onClick={onChange}
       className={cn(
-        "flex items-center gap-3 w-full rounded-lg border px-4 py-3 text-sm text-left transition-colors",
+        "flex items-center gap-3 w-full rounded border px-4 py-3 text-sm text-left transition-colors",
         checked
           ? "border-neutral-950 dark:border-neutral-50 bg-neutral-50 dark:bg-neutral-800"
           : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700",
@@ -156,7 +159,7 @@ export function FilterDealsModal({
           </h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           >
             <XIcon size={20} className="text-neutral-500" />
           </button>

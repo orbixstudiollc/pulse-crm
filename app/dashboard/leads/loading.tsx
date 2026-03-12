@@ -1,7 +1,7 @@
 function Skeleton({ className }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded-lg bg-neutral-200 dark:bg-neutral-800 ${className ?? ""}`}
+      className={`animate-pulse rounded bg-neutral-200 dark:bg-neutral-800 ${className ?? ""}`}
     />
   );
 }
@@ -12,15 +12,15 @@ export default function LeadsLoading() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <Skeleton className="h-8 w-32" />
-        <Skeleton className="h-10 w-32 rounded-md" />
+        <Skeleton className="h-10 w-32 rounded" />
       </div>
 
       {/* Search bar */}
-      <Skeleton className="h-10 w-full max-w-sm rounded-md" />
+      <Skeleton className="h-10 w-full max-w-sm rounded" />
 
       {/* Table skeleton */}
       <div className="space-y-2">
-        <Skeleton className="h-10 w-full rounded-md" />
+        <Skeleton className="h-10 w-full rounded" />
         {Array.from({ length: 8 }).map((_, i) => (
           <Skeleton key={i} className="h-14 w-full" />
         ))}

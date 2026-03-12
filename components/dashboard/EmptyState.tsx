@@ -30,7 +30,7 @@ export function EmptyState({
       className={cn("py-16 flex flex-col items-center text-center", className)}
     >
       {/* Icon Container */}
-      <div className="w-12 h-12 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center mb-5">
+      <div className="w-12 h-12 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center mb-5">
         <div className="text-neutral-950 dark:text-neutral-50">{icon}</div>
       </div>
 

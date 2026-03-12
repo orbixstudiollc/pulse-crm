@@ -9,7 +9,8 @@ export type AIFeature =
   | "analytics"
   | "competitors"
   | "objections"
-  | "chat";
+  | "chat"
+  | "lead_validation";
 
 export type AutonomyLevel = "suggest" | "auto_act" | "full_auto";
 
@@ -37,6 +38,8 @@ export interface AISettings {
   autonomy_analytics: string;
   autonomy_competitors: string;
   autonomy_objections: string;
+  // Integrations
+  apify_api_key: string | null;
   // Token usage
   tokens_used_today: number;
   tokens_used_month: number;

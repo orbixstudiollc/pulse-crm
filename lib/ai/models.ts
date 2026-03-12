@@ -17,6 +17,7 @@ export const FEATURE_COMPLEXITY: Record<AIFeature, Complexity> = {
   competitors: "complex",
   objections: "complex",
   chat: "complex",
+  lead_validation: "simple",
 };
 
 export function getModelForFeature(

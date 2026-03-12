@@ -124,7 +124,7 @@ export function NotificationsDropdown() {
           <div className="max-h-96 overflow-y-auto">
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 mb-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 mb-3">
                   <BellIcon
                     size={20}
                     className="text-neutral-400 dark:text-neutral-500"

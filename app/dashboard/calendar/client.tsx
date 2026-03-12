@@ -16,7 +16,9 @@ import {
   createCalendarEvent,
   updateCalendarEvent,
 } from "@/lib/actions/calendar";
+import { exportCalendarEventsToCSV } from "@/lib/actions/export";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -308,7 +310,20 @@ export function CalendarPageClient({
     <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <PageHeader title="Calendar">
-        <Button variant="outline" leftIcon={<ExportIcon size={18} />}>
+        <Button
+          variant="outline"
+          leftIcon={<ExportIcon size={18} />}
+          onClick={async () => {
+            const result = await exportCalendarEventsToCSV(currentMonth, currentYear);
+            if (result.error) { toast.error(result.error); return; }
+            const blob = new Blob([result.csv], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = `calendar-export-${currentYear}-${String(currentMonth + 1).padStart(2, "0")}.csv`;
+            a.click(); URL.revokeObjectURL(url);
+            toast.success("Calendar events exported successfully");
+          }}
+        >
           Export
         </Button>
         <Button
@@ -326,21 +341,21 @@ export function CalendarPageClient({
       <div className="flex items-center gap-2 mb-4">
         <button
           onClick={goToPreviousMonth}
-          className="p-2 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+          className="p-2 rounded border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
         >
           <CaretLeftIcon
             size={16}
             className="text-neutral-600 dark:text-neutral-400"
           />
         </button>
-        <div className="px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 min-w-[140px] text-center">
+        <div className="px-4 py-2 rounded border border-neutral-200 dark:border-neutral-800 min-w-[140px] text-center">
           <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
             {MONTHS[month]} {year}
           </span>
         </div>
         <button
           onClick={goToNextMonth}
-          className="p-2 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+          className="p-2 rounded border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
         >
           <CaretRightIcon
             size={16}
@@ -349,7 +364,7 @@ export function CalendarPageClient({
         </button>
         <button
           onClick={goToToday}
-          className="px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+          className="px-4 py-2 rounded border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
         >
           <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
             Today
@@ -455,7 +470,7 @@ export function CalendarPageClient({
                         <button
                           key={event.id}
                           onClick={() => handleEventClick(event)}
-                          className="w-full p-3 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors text-left"
+                          className="w-full p-3 rounded border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors text-left"
                         >
                           <div className="flex items-start gap-3">
                             <span className="text-sm text-neutral-500 dark:text-neutral-400 w-11 shrink-0">

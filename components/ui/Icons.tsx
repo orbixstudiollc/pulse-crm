@@ -77,6 +77,7 @@ export {
   ShieldIcon,
   // Analytics
   ChartBarIcon,
+  TrendUpIcon,
   // Proposals
   ScrollIcon,
   // Contacts
@@ -86,6 +87,22 @@ export {
   BrainIcon,
   ChatCircleIcon,
   PaperPlaneTiltIcon,
+  CursorClickIcon,
   CopyIcon,
+  FireIcon,
+  MapPinIcon,
   ArrowClockwiseIcon as ArrowPathIcon,
+  // Email
+  TrayIcon,
+  PlugsConnectedIcon,
+  GoogleLogoIcon,
+  MicrosoftOutlookLogoIcon,
+  HardDrivesIcon,
+  CircleIcon,
+  ArrowsClockwiseIcon,
+  DotsSixVerticalIcon,
+  WarningCircleIcon,
+  FunnelSimpleIcon,
+  ArrowSquareOutIcon,
+  TrophyIcon as TrophyFilledIcon,
 } from "@phosphor-icons/react";

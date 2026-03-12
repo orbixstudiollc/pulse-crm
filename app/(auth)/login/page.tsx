@@ -90,7 +90,7 @@ export default function LoginPage() {
 
             {/* Error message */}
             {error && (
-              <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+              <div className="mb-4 rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
                 {error}
               </div>
             )}
@@ -176,7 +176,7 @@ export default function LoginPage() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={loading || googleLoading}
-              className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50"
+              className="flex h-11 w-full items-center justify-center gap-3 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50"
             >
               {googleLoading ? (
                 <CircleNotchIcon size={18} className="animate-spin text-neutral-500" />

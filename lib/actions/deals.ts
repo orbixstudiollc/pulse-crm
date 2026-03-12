@@ -174,6 +174,41 @@ export async function deleteDeal(id: string) {
   return { success: true };
 }
 
+export async function createDealActivity(
+  dealId: string,
+  data: {
+    type: string;
+    title: string;
+    description?: string;
+    badge_label?: string;
+    badge_variant?: string;
+    meta?: Record<string, unknown>;
+  },
+) {
+  const supabase = await createClient();
+  await getOrgId();
+
+  const { data: activity, error } = await supabase
+    .from("deal_activities")
+    .insert({
+      deal_id: dealId,
+      type: data.type,
+      title: data.title,
+      description: data.description || null,
+      badge_label: data.badge_label || null,
+      badge_variant: data.badge_variant || null,
+      meta: data.meta ? JSON.stringify(data.meta) : null,
+    })
+    .select()
+    .single();
+
+  if (error) return { error: error.message };
+
+  revalidatePath(`/dashboard/sales/${dealId}`);
+  revalidatePath("/dashboard/sales");
+  return { data: activity };
+}
+
 export async function addDealNote(dealId: string, content: string) {
   const supabase = await createClient();
   const { user, profile } = await getCurrentUserProfile();

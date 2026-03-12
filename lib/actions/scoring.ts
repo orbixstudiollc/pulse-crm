@@ -301,6 +301,14 @@ export async function calculateLeadScore(leadId: string) {
     breakdown: breakdown as unknown as Json,
   });
 
+  // Fire automation rules for score change
+  import("@/lib/actions/automation").then(({ evaluateLeadAgainstRules }) =>
+    evaluateLeadAgainstRules(leadId, "score_changed", {
+      old_score: lead.score,
+      new_score: total,
+    }).catch(() => {}),
+  );
+
   return { data: breakdown };
 }
 

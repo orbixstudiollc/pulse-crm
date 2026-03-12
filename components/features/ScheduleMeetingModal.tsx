@@ -47,7 +47,7 @@ export function ScheduleMeetingModal({
         </h2>
         <button
           onClick={onClose}
-          className="p-1 rounded-lg text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+          className="p-1 rounded text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
         >
           <XIcon size={20} />
         </button>

@@ -123,10 +123,10 @@ export function AIChatPanel() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={toggleChat}
-            className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-violet-600 hover:bg-violet-700 shadow-lg shadow-violet-600/25 flex items-center justify-center transition-colors"
+            className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-neutral-950 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 shadow-lg shadow-neutral-950/25 flex items-center justify-center transition-colors"
             title="Open Pulse AI (Ctrl+J)"
           >
-            <SparkleIcon className="w-5 h-5 text-white" weight="fill" />
+            <SparkleIcon className="w-5 h-5 text-white dark:text-neutral-950" weight="fill" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -148,16 +148,17 @@ export function AIChatPanel() {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                  <SparkleIcon className="w-4 h-4 text-violet-600 dark:text-violet-400" weight="fill" />
+                <div className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
+                  <SparkleIcon className="w-4 h-4 text-neutral-950 dark:text-neutral-50" weight="fill" />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                     Pulse AI
                   </h3>
                   <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                    {pageContext.page}
-                    {pageContext.entityName ? ` • ${pageContext.entityName}` : ""}
+                    {pageContext.entityName
+                      ? `${pageContext.entityType ? pageContext.entityType.charAt(0).toUpperCase() + pageContext.entityType.slice(1) : ''}: ${pageContext.entityName}`
+                      : pageContext.page} &bull; Ready
                   </p>
                 </div>
               </div>
@@ -165,7 +166,7 @@ export function AIChatPanel() {
                 {messages.length > 0 && (
                   <button
                     onClick={() => setMessages([])}
-                    className="w-7 h-7 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 flex items-center justify-center transition-colors"
+                    className="w-7 h-7 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 flex items-center justify-center transition-colors"
                     title="Clear chat"
                   >
                     <span className="text-xs text-neutral-500">Clear</span>
@@ -173,7 +174,7 @@ export function AIChatPanel() {
                 )}
                 <button
                   onClick={isExpanded ? collapseChat : expandChat}
-                  className="w-7 h-7 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 flex items-center justify-center transition-colors"
+                  className="w-7 h-7 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 flex items-center justify-center transition-colors"
                   title={isExpanded ? "Collapse" : "Expand"}
                 >
                   {isExpanded ? (
@@ -184,7 +185,7 @@ export function AIChatPanel() {
                 </button>
                 <button
                   onClick={closeChat}
-                  className="w-7 h-7 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 flex items-center justify-center transition-colors"
+                  className="w-7 h-7 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 flex items-center justify-center transition-colors"
                   title="Close (Esc)"
                 >
                   <XIcon className="w-3.5 h-3.5 text-neutral-500" />
@@ -193,7 +194,12 @@ export function AIChatPanel() {
             </div>
 
             {/* Messages */}
-            <AIChatMessages messages={messages} isLoading={isLoading} />
+            <AIChatMessages
+              messages={messages}
+              isLoading={isLoading}
+              pageContext={pageContext}
+              onSuggestionClick={handleSend}
+            />
 
             {/* Input */}
             <AIChatInput

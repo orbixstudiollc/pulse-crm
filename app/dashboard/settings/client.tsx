@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { useTheme } from "next-themes";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import {
@@ -33,6 +33,15 @@ import {
   LightningIcon,
   SparkleIcon,
   Progress,
+  EnvelopeIcon,
+  PlugsConnectedIcon,
+  GoogleLogoIcon,
+  MicrosoftOutlookLogoIcon,
+  HardDrivesIcon,
+  CircleIcon,
+  ArrowsClockwiseIcon,
+  PlusIcon,
+  WarningIcon,
 } from "@/components/ui";
 import { DeleteConfirmModal } from "@/components/ui";
 import type { IconWeight } from "@phosphor-icons/react";
@@ -48,12 +57,21 @@ import { toggleIntegration } from "@/lib/actions/integrations";
 import { exportLeadsToCSV } from "@/lib/actions/export";
 import { seedAllData, clearAllSeedData } from "@/lib/actions/seed-data";
 import {
+  getEmailAccounts,
+  addCustomEmailAccount,
+  updateEmailAccount,
+  setDefaultAccount,
+  deleteEmailAccount,
+  testEmailAccount,
+} from "@/lib/actions/email-accounts";
+import {
   updateAISettings,
   getAIUsageStats,
   getAIUsageDailyChart,
   getAIUsageLog,
 } from "@/lib/actions/ai-settings";
 import type { AISettings, AIUsageStats, AIUsageDailyPoint, AIUsageLogEntry } from "@/lib/ai/types";
+import { AutomationSection } from "@/components/automation/AutomationSection";
 import {
   AreaChart,
   Area,
@@ -108,8 +126,10 @@ type SettingsTab =
   | "preferences"
   | "notifications"
   | "integrations"
+  | "email-accounts"
   | "billing"
-  | "ai";
+  | "ai"
+  | "automation";
 
 const settingsTabs: {
   id: SettingsTab;
@@ -125,8 +145,10 @@ const settingsTabs: {
   { id: "preferences", label: "Preferences", icon: GearSixIcon },
   { id: "notifications", label: "Notifications", icon: BellIcon },
   { id: "integrations", label: "Integrations", icon: PuzzlePieceIcon },
+  { id: "email-accounts", label: "Email Accounts", icon: EnvelopeIcon },
   { id: "billing", label: "Billing", icon: CreditCardIcon },
   { id: "ai", label: "AI Assistant", icon: SparkleIcon },
+  { id: "automation", label: "Automation", icon: LightningIcon },
 ];
 
 // ── Profile Section ─────────────────────────────────────────────────────────
@@ -711,7 +733,7 @@ function SecuritySection() {
             )}
           >
             <div className="flex items-center gap-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-900">
+              <div className="flex h-10 w-10 items-center justify-center rounded bg-neutral-100 dark:bg-neutral-900">
                 <session.icon
                   size={20}
                   className="text-neutral-600 dark:text-neutral-400"
@@ -764,7 +786,7 @@ const themeImages: Record<ThemeOption, string> = {
 
 function ThemePreview({ theme }: { theme: ThemeOption }) {
   return (
-    <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 pt-5 pl-5 pb-0 pr-0 flex items-end justify-end overflow-hidden">
+    <div className="rounded border border-neutral-200 dark:border-neutral-800 pt-5 pl-5 pb-0 pr-0 flex items-end justify-end overflow-hidden">
       <Image
         src={themeImages[theme]}
         alt={`${theme} theme preview`}
@@ -1175,7 +1197,7 @@ function IntegrationsSection({
               className="flex items-center justify-between rounded-xl border border-neutral-200 dark:border-neutral-800 px-5 py-4"
             >
               <div className="flex items-center gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden">
+                <div className="flex h-10 w-10 items-center justify-center rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden">
                   <Image
                     src={item.icon}
                     alt={item.name}
@@ -1365,7 +1387,7 @@ function BillingSection() {
       {/* Upgrade banner */}
       <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 px-6 py-5">
         <div className="flex items-center gap-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/30">
+          <div className="flex h-10 w-10 items-center justify-center rounded bg-purple-100 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/30">
             <LightningIcon
               size={20}
               weight="fill"
@@ -1419,6 +1441,8 @@ function AISettingsSection({
 }) {
   const [apiKey, setApiKey] = useState(settings?.api_key ?? "");
   const [showKey, setShowKey] = useState(false);
+  const [apifyKey, setApifyKey] = useState(settings?.apify_api_key ?? "");
+  const [showApifyKey, setShowApifyKey] = useState(false);
   const [defaultModel, setDefaultModel] = useState(
     settings?.default_model ?? "sonnet"
   );
@@ -1467,6 +1491,7 @@ function AISettingsSection({
     startTransition(async () => {
       const updates: Record<string, unknown> = {
         api_key: apiKey || null,
+        apify_api_key: apifyKey || null,
         default_model: defaultModel,
       };
 
@@ -1542,7 +1567,7 @@ function AISettingsSection({
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="sk-ant-..."
-              className="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-950/10 dark:focus:ring-neutral-50/10"
+              className="w-full rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-950/10 dark:focus:ring-neutral-50/10"
             />
             <button
               type="button"
@@ -1550,6 +1575,39 @@ function AISettingsSection({
               className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
             >
               {showKey ? (
+                <EyeSlashIcon size={16} />
+              ) : (
+                <EyeIcon size={16} />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Apify API Key */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+          Apify Integration
+        </h3>
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          Enter your Apify API token to enable lead scraping from Google Maps,
+          LinkedIn, Instagram, and more.
+        </p>
+        <div className="flex gap-2">
+          <div className="flex-1 relative">
+            <input
+              type={showApifyKey ? "text" : "password"}
+              value={apifyKey}
+              onChange={(e) => setApifyKey(e.target.value)}
+              placeholder="apify_api_..."
+              className="w-full rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-950/10 dark:focus:ring-neutral-50/10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowApifyKey(!showApifyKey)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+            >
+              {showApifyKey ? (
                 <EyeSlashIcon size={16} />
               ) : (
                 <EyeIcon size={16} />
@@ -1590,7 +1648,7 @@ function AISettingsSection({
           {Object.entries(featureLabels).map(([key, label]) => (
             <div
               key={key}
-              className="flex items-center justify-between rounded-lg border border-neutral-200 dark:border-neutral-800 p-3"
+              className="flex items-center justify-between rounded border border-neutral-200 dark:border-neutral-800 p-3"
             >
               <div className="flex items-center gap-3">
                 <Toggle
@@ -1609,7 +1667,7 @@ function AISettingsSection({
                   onChange={(e) =>
                     setAutonomy((prev) => ({ ...prev, [key]: e.target.value }))
                   }
-                  className="rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1 text-xs text-neutral-700 dark:text-neutral-300 focus:outline-none"
+                  className="rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1 text-xs text-neutral-700 dark:text-neutral-300 focus:outline-none"
                 >
                   {autonomyOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -1629,7 +1687,7 @@ function AISettingsSection({
           Token Usage
         </h3>
         <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4">
+          <div className="rounded border border-neutral-200 dark:border-neutral-800 p-4">
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
               Today
             </p>
@@ -1644,7 +1702,7 @@ function AISettingsSection({
               className="mt-2"
             />
           </div>
-          <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4">
+          <div className="rounded border border-neutral-200 dark:border-neutral-800 p-4">
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
               This Month
             </p>
@@ -1664,7 +1722,7 @@ function AISettingsSection({
         </div>
 
         {usageStats.length > 0 && (
-          <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+          <div className="rounded border border-neutral-200 dark:border-neutral-800 overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-neutral-50 dark:bg-neutral-800/50">
@@ -1714,7 +1772,7 @@ function AISettingsSection({
           <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
             Token Usage (Last 14 Days)
           </h3>
-          <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4">
+          <div className="rounded border border-neutral-200 dark:border-neutral-800 p-4">
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={dailyChart}>
                 <defs>
@@ -1777,7 +1835,7 @@ function AISettingsSection({
           <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
             Recent Activity
           </h3>
-          <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 overflow-hidden max-h-[320px] overflow-y-auto">
+          <div className="rounded border border-neutral-200 dark:border-neutral-800 overflow-hidden max-h-[320px] overflow-y-auto">
             <table className="w-full text-sm">
               <thead className="sticky top-0">
                 <tr className="bg-neutral-50 dark:bg-neutral-800/50">
@@ -1864,13 +1922,455 @@ function AISettingsSection({
   );
 }
 
+// ── Email Accounts Section ─────────────────────────────────────────────────
+
+interface EmailAccount {
+  id: string;
+  provider: "gmail" | "microsoft" | "custom_imap";
+  email_address: string;
+  display_name: string | null;
+  status: "active" | "disconnected" | "error" | "warming_up";
+  is_default: boolean;
+  daily_send_limit: number;
+  daily_sent_count: number;
+  last_error: string | null;
+  created_at: string;
+}
+
+function EmailAccountsSection() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [accounts, setAccounts] = useState<EmailAccount[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastVariant, setToastVariant] = useState<"success" | "error">("success");
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+
+  // IMAP/SMTP form state
+  const [customForm, setCustomForm] = useState({
+    email_address: "",
+    display_name: "",
+    imap_host: "",
+    imap_port: 993,
+    imap_secure: true,
+    imap_username: "",
+    imap_password: "",
+    smtp_host: "",
+    smtp_port: 587,
+    smtp_secure: true,
+    smtp_username: "",
+    smtp_password: "",
+    daily_send_limit: 50,
+  });
+
+  const fetchAccounts = async () => {
+    const result = await getEmailAccounts();
+    if (result.data) setAccounts(result.data as EmailAccount[]);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchAccounts();
+    // Show success toast on OAuth callback
+    const connected = searchParams.get("connected");
+    if (connected) {
+      setToastMessage(`${connected === "gmail" ? "Gmail" : "Microsoft"} account connected successfully`);
+      setToastVariant("success");
+      setShowToast(true);
+    }
+  }, [searchParams]);
+
+  const toast = (msg: string, variant: "success" | "error" = "success") => {
+    setToastMessage(msg);
+    setToastVariant(variant);
+    setShowToast(true);
+  };
+
+  const handleConnectGmail = () => {
+    window.location.href = "/api/email/oauth/google";
+  };
+
+  const handleConnectMicrosoft = () => {
+    window.location.href = "/api/email/oauth/microsoft";
+  };
+
+  const handleAddCustom = () => {
+    startTransition(async () => {
+      const result = await addCustomEmailAccount(customForm);
+      if (result.error) {
+        toast(result.error, "error");
+      } else {
+        toast("Custom email account added");
+        setShowAddForm(false);
+        setCustomForm({
+          email_address: "", display_name: "",
+          imap_host: "", imap_port: 993, imap_secure: true, imap_username: "", imap_password: "",
+          smtp_host: "", smtp_port: 587, smtp_secure: true, smtp_username: "", smtp_password: "",
+          daily_send_limit: 50,
+        });
+        fetchAccounts();
+      }
+    });
+  };
+
+  const handleTest = async (id: string) => {
+    setTestingId(id);
+    const result = await testEmailAccount(id);
+    setTestingId(null);
+    if (result.error) {
+      toast(result.error, "error");
+    } else {
+      toast(result.message || "Connection verified");
+    }
+    fetchAccounts();
+  };
+
+  const handleSetDefault = (id: string) => {
+    startTransition(async () => {
+      const result = await setDefaultAccount(id);
+      if (result.error) toast(result.error, "error");
+      else {
+        toast("Default account updated");
+        fetchAccounts();
+      }
+    });
+  };
+
+  const handleDelete = () => {
+    if (!deleteTargetId) return;
+    startTransition(async () => {
+      setDeletingId(deleteTargetId);
+      const result = await deleteEmailAccount(deleteTargetId);
+      setDeletingId(null);
+      setShowDeleteModal(false);
+      setDeleteTargetId(null);
+      if (result.error) toast(result.error, "error");
+      else {
+        toast("Account disconnected");
+        fetchAccounts();
+      }
+    });
+  };
+
+  const statusColor = (s: string) => {
+    switch (s) {
+      case "active": return "text-emerald-600 dark:text-emerald-400";
+      case "error": return "text-red-600 dark:text-red-400";
+      case "warming_up": return "text-amber-600 dark:text-amber-400";
+      default: return "text-neutral-400";
+    }
+  };
+
+  const statusDot = (s: string) => {
+    switch (s) {
+      case "active": return "bg-emerald-500";
+      case "error": return "bg-red-500";
+      case "warming_up": return "bg-amber-500";
+      default: return "bg-neutral-400";
+    }
+  };
+
+  const providerLabel = (p: string) => {
+    switch (p) {
+      case "gmail": return "Gmail";
+      case "microsoft": return "Microsoft";
+      case "custom_imap": return "Custom IMAP/SMTP";
+      default: return p;
+    }
+  };
+
+  const ProviderIcon = ({ provider }: { provider: string }) => {
+    switch (provider) {
+      case "gmail": return <GoogleLogoIcon size={18} className="text-neutral-600 dark:text-neutral-400" />;
+      case "microsoft": return <MicrosoftOutlookLogoIcon size={18} className="text-neutral-600 dark:text-neutral-400" />;
+      default: return <HardDrivesIcon size={18} className="text-neutral-600 dark:text-neutral-400" />;
+    }
+  };
+
+  return (
+    <div className="space-y-8 max-w-2xl">
+      {/* Header */}
+      <div>
+        <h2 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">Email Accounts</h2>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+          Connect your email accounts to send emails from sequences and manage your unified inbox.
+        </p>
+      </div>
+
+      {/* Connect Buttons */}
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Connect an Account</p>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={handleConnectGmail}
+            className="flex items-center gap-2.5 px-4 py-2.5 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-sm font-medium text-neutral-700 dark:text-neutral-300"
+          >
+            <GoogleLogoIcon size={18} weight="bold" />
+            Connect Gmail
+          </button>
+          <button
+            onClick={handleConnectMicrosoft}
+            className="flex items-center gap-2.5 px-4 py-2.5 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-sm font-medium text-neutral-700 dark:text-neutral-300"
+          >
+            <MicrosoftOutlookLogoIcon size={18} weight="bold" />
+            Connect Microsoft
+          </button>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="flex items-center gap-2.5 px-4 py-2.5 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-sm font-medium text-neutral-700 dark:text-neutral-300"
+          >
+            <HardDrivesIcon size={18} />
+            {showAddForm ? "Cancel" : "Add Custom IMAP/SMTP"}
+          </button>
+        </div>
+      </div>
+
+      {/* Custom IMAP/SMTP Form */}
+      {showAddForm && (
+        <div className="border border-neutral-200 dark:border-neutral-700 rounded p-5 space-y-5 bg-neutral-50 dark:bg-neutral-900/50">
+          <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Custom IMAP/SMTP Configuration</h3>
+
+          <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
+            <Input
+              label="Email Address"
+              value={customForm.email_address}
+              onChange={(e) => setCustomForm({ ...customForm, email_address: e.target.value })}
+              placeholder="you@company.com"
+            />
+            <Input
+              label="Display Name"
+              value={customForm.display_name}
+              onChange={(e) => setCustomForm({ ...customForm, display_name: e.target.value })}
+              placeholder="Your Name"
+            />
+          </div>
+
+          {/* IMAP Settings */}
+          <div>
+            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-3">Incoming (IMAP)</p>
+            <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
+              <Input
+                label="IMAP Host"
+                value={customForm.imap_host}
+                onChange={(e) => setCustomForm({ ...customForm, imap_host: e.target.value })}
+                placeholder="imap.gmail.com"
+              />
+              <Input
+                label="Port"
+                type="number"
+                value={String(customForm.imap_port)}
+                onChange={(e) => setCustomForm({ ...customForm, imap_port: Number(e.target.value) })}
+              />
+              <Input
+                label="Username"
+                value={customForm.imap_username}
+                onChange={(e) => setCustomForm({ ...customForm, imap_username: e.target.value })}
+                placeholder="you@company.com"
+              />
+              <Input
+                label="Password"
+                type="password"
+                value={customForm.imap_password}
+                onChange={(e) => setCustomForm({ ...customForm, imap_password: e.target.value })}
+              />
+            </div>
+            <label className="flex items-center gap-2 mt-3 text-sm text-neutral-600 dark:text-neutral-400">
+              <input
+                type="checkbox"
+                checked={customForm.imap_secure}
+                onChange={(e) => setCustomForm({ ...customForm, imap_secure: e.target.checked })}
+                className="rounded border-neutral-300"
+              />
+              Use SSL/TLS
+            </label>
+          </div>
+
+          {/* SMTP Settings */}
+          <div>
+            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-3">Outgoing (SMTP)</p>
+            <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
+              <Input
+                label="SMTP Host"
+                value={customForm.smtp_host}
+                onChange={(e) => setCustomForm({ ...customForm, smtp_host: e.target.value })}
+                placeholder="smtp.gmail.com"
+              />
+              <Input
+                label="Port"
+                type="number"
+                value={String(customForm.smtp_port)}
+                onChange={(e) => setCustomForm({ ...customForm, smtp_port: Number(e.target.value) })}
+              />
+              <Input
+                label="Username"
+                value={customForm.smtp_username}
+                onChange={(e) => setCustomForm({ ...customForm, smtp_username: e.target.value })}
+                placeholder="you@company.com"
+              />
+              <Input
+                label="Password"
+                type="password"
+                value={customForm.smtp_password}
+                onChange={(e) => setCustomForm({ ...customForm, smtp_password: e.target.value })}
+              />
+            </div>
+            <label className="flex items-center gap-2 mt-3 text-sm text-neutral-600 dark:text-neutral-400">
+              <input
+                type="checkbox"
+                checked={customForm.smtp_secure}
+                onChange={(e) => setCustomForm({ ...customForm, smtp_secure: e.target.checked })}
+                className="rounded border-neutral-300"
+              />
+              Use SSL/TLS
+            </label>
+          </div>
+
+          {/* Daily Limit */}
+          <Input
+            label="Daily Send Limit"
+            type="number"
+            value={String(customForm.daily_send_limit)}
+            onChange={(e) => setCustomForm({ ...customForm, daily_send_limit: Number(e.target.value) })}
+          />
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={() => setShowAddForm(false)}>Cancel</Button>
+            <Button onClick={handleAddCustom} disabled={isPending || !customForm.email_address || !customForm.smtp_host}>
+              {isPending ? <CircleNotchIcon size={16} className="animate-spin mr-2" /> : null}
+              Add Account
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Connected Accounts List */}
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Connected Accounts</p>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12 text-neutral-400">
+            <CircleNotchIcon size={24} className="animate-spin" />
+          </div>
+        ) : accounts.length === 0 ? (
+          <div className="text-center py-12 border border-dashed border-neutral-200 dark:border-neutral-700 rounded">
+            <EnvelopeIcon size={32} className="mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">No email accounts connected yet.</p>
+            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Connect a Gmail, Microsoft, or custom IMAP/SMTP account above.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {accounts.map((acct) => (
+              <div
+                key={acct.id}
+                className="flex items-center gap-4 max-sm:flex-col max-sm:items-start border border-neutral-200 dark:border-neutral-700 rounded p-4 bg-white dark:bg-neutral-900"
+              >
+                {/* Provider icon + info */}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-9 h-9 rounded bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
+                    <ProviderIcon provider={acct.provider} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                        {acct.email_address}
+                      </span>
+                      {acct.is_default && (
+                        <Badge variant="neutral">Default</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                        {providerLabel(acct.provider)}
+                      </span>
+                      <span className="flex items-center gap-1 text-xs">
+                        <span className={cn("w-1.5 h-1.5 rounded-full", statusDot(acct.status))} />
+                        <span className={statusColor(acct.status)}>
+                          {acct.status === "warming_up" ? "Warming Up" : acct.status.charAt(0).toUpperCase() + acct.status.slice(1)}
+                        </span>
+                      </span>
+                      <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                        {acct.daily_sent_count}/{acct.daily_send_limit} sent today
+                      </span>
+                    </div>
+                    {acct.last_error && (
+                      <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                        <WarningIcon size={12} />
+                        {acct.last_error}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 shrink-0 max-sm:w-full max-sm:justify-end">
+                  <button
+                    onClick={() => handleTest(acct.id)}
+                    disabled={testingId === acct.id}
+                    className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                  >
+                    {testingId === acct.id ? (
+                      <CircleNotchIcon size={14} className="animate-spin" />
+                    ) : (
+                      "Test"
+                    )}
+                  </button>
+                  {!acct.is_default && (
+                    <button
+                      onClick={() => handleSetDefault(acct.id)}
+                      disabled={isPending}
+                      className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                    >
+                      Set Default
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setDeleteTargetId(acct.id); setShowDeleteModal(true); }}
+                    className="text-xs px-3 py-1.5 rounded border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        open={showDeleteModal}
+        onClose={() => { setShowDeleteModal(false); setDeleteTargetId(null); }}
+        onConfirm={handleDelete}
+        title="Disconnect Email Account"
+        description="Are you sure you want to disconnect this email account? Any active sequences using this account will be paused."
+        loading={!!deletingId}
+      />
+
+      <Toast
+        open={showToast}
+        onClose={() => setShowToast(false)}
+        message={toastMessage}
+        variant={toastVariant}
+      />
+    </div>
+  );
+}
+
 // ── Main Settings Page ──────────────────────────────────────────────────────
 export function SettingsPageClient({
   initialProfile,
   initialIntegrations,
   initialAISettings,
 }: SettingsPageClientProps) {
-  const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get("tab") as SettingsTab) || "profile";
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -1894,26 +2394,30 @@ export function SettingsPageClient({
         );
       case "integrations":
         return <IntegrationsSection integrations={initialIntegrations} />;
+      case "email-accounts":
+        return <EmailAccountsSection />;
       case "billing":
         return <BillingSection />;
       case "ai":
         return <AISettingsSection settings={initialAISettings} />;
+      case "automation":
+        return <AutomationSection />;
       default:
         return <ProfileSection profile={initialProfile} />;
     }
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-full bg-white dark:bg-neutral-950">
+    <div className="flex flex-row max-md:flex-col h-full bg-white dark:bg-neutral-950">
       {/* Settings sidebar — horizontal scroll on mobile, vertical on desktop */}
-      <div className="md:w-60 md:shrink-0 border-b md:border-b-0 md:border-r border-neutral-200 dark:border-neutral-800">
-        <div className="px-5 pt-6 pb-0 md:pb-6">
+      <div className="w-60 shrink-0 max-md:w-full max-md:shrink border-r max-md:border-r-0 max-md:border-b border-neutral-200 dark:border-neutral-800">
+        <div className="px-5 pt-6 pb-6 max-md:pb-0">
           <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4">
             Settings
           </p>
         </div>
-        <nav className="overflow-x-auto md:overflow-x-visible px-5 pb-4 md:pb-0">
-          <ul className="flex md:flex-col gap-1.5 min-w-max md:min-w-0">
+        <nav className="overflow-x-visible max-md:overflow-x-auto px-5 pb-0 max-md:pb-4">
+          <ul className="flex flex-col max-md:flex-row gap-1.5 min-w-0 max-md:min-w-max">
             {settingsTabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -1921,7 +2425,7 @@ export function SettingsPageClient({
                   <button
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      "flex items-center whitespace-nowrap rounded-lg text-sm font-medium border px-3 py-2.5",
+                      "flex items-center whitespace-nowrap rounded text-sm font-medium border px-3 py-2.5",
                       "transition-[background-color,color,box-shadow,border-color] duration-200 ease-in-out",
                       isActive
                         ? "bg-white dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 border-neutral-200 dark:border-neutral-700 shadow-focus"

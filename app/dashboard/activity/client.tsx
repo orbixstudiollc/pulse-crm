@@ -436,7 +436,7 @@ export function ActivityPageClient({
                 key={page}
                 onClick={() => setCurrentPage(page)}
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition-colors",
+                  "flex h-8 w-8 items-center justify-center rounded text-sm font-medium transition-colors",
                   page === currentPage
                     ? "bg-neutral-950 dark:bg-neutral-50 text-white dark:text-neutral-950"
                     : "text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800",
@@ -583,7 +583,7 @@ function ActivityRow({
       {/* Type Icon */}
       <div
         className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded",
           colorClass,
         )}
       >
@@ -638,14 +638,14 @@ function ActivityRow({
             e.stopPropagation();
             onToggleMenu();
           }}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
         >
           <DotsThreeIcon size={20} weight="bold" />
         </button>
 
         {actionMenuOpen && (
           <div
-            className="absolute right-0 top-full mt-1 w-40 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg z-20"
+            className="absolute right-0 top-full mt-1 w-40 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg z-20"
             onClick={(e) => e.stopPropagation()}
           >
             <button

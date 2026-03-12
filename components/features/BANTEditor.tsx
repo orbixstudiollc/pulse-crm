@@ -84,7 +84,7 @@ export function BANTEditor({ leadId, data }: BANTEditorProps) {
           const textValue = (sectionData as any)[section.textField] as string;
 
           return (
-            <div key={section.key} className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-4">
+            <div key={section.key} className="rounded border border-neutral-200 dark:border-neutral-800 p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <div className={cn("h-2.5 w-2.5 rounded-full", section.color)} />
@@ -121,11 +121,11 @@ export function BANTEditor({ leadId, data }: BANTEditorProps) {
                     onChange={(e) => setTagInputs(prev => ({ ...prev, [`${section.key}-${section.tagsField}`]: e.target.value }))}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTag(section.key, section.tagsField); } }}
                     placeholder={`Add ${section.tagsLabel.toLowerCase()}...`}
-                    className="flex-1 h-8 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 text-xs text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+                    className="flex-1 h-8 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 text-xs text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-400"
                   />
                   <button
                     onClick={() => handleAddTag(section.key, section.tagsField)}
-                    className="h-8 px-3 rounded-lg border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                    className="h-8 px-3 rounded border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                   >
                     Add
                   </button>
@@ -139,7 +139,7 @@ export function BANTEditor({ leadId, data }: BANTEditorProps) {
                   value={textValue}
                   onChange={(e) => handleTextChange(section.key, section.textField, e.target.value)}
                   rows={2}
-                  className="w-full rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 py-2 text-xs text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none"
+                  className="w-full rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 py-2 text-xs text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-400 resize-none"
                   placeholder={`Enter ${section.textLabel.toLowerCase()}...`}
                 />
               </div>

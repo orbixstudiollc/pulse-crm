@@ -38,7 +38,7 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
 
   const itemClassName = (variant?: "default" | "danger") =>
     cn(
-      "flex w-full items-center gap-3 px-3 py-2.5 text-sm text-left rounded-lg transition-colors",
+      "flex w-full items-center gap-3 px-3 py-2.5 text-sm text-left rounded transition-colors",
       variant === "danger"
         ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
         : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800",
@@ -67,7 +67,7 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
         ref={buttonRef}
         onClick={() => (open ? setOpen(false) : handleOpen())}
         className={cn(
-          "flex h-8 w-8 items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors",
+          "flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors",
           className,
         )}
       >

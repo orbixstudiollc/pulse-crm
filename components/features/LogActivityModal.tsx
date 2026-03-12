@@ -192,7 +192,7 @@ export function LogActivityModal({
         </h2>
         <button
           onClick={onClose}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+          className="flex h-9 w-9 items-center justify-center rounded text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
         >
           <XIcon size={20} />
         </button>
@@ -215,7 +215,7 @@ export function LogActivityModal({
                   type="button"
                   onClick={() => setActivityType(type.id)}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors",
+                    "flex items-center gap-2 px-4 py-2.5 rounded border text-sm font-medium transition-colors",
                     isSelected
                       ? "border-neutral-950 dark:border-neutral-50 bg-neutral-950 dark:bg-neutral-50 text-white dark:text-neutral-950"
                       : "border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600",
@@ -246,7 +246,7 @@ export function LogActivityModal({
 
           {relatedTo ? (
             // Selected entity chip
-            <div className="flex items-center gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900">
+            <div className="flex items-center gap-3 p-3 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900">
               <div className="w-9 h-9 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
                 <UsersThreeIcon size={18} className="text-neutral-500" />
               </div>
@@ -281,7 +281,7 @@ export function LogActivityModal({
 
               {/* Search Results Dropdown */}
               {showResults && searchQuery && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded shadow-lg z-10 max-h-60 overflow-y-auto">
                   {filteredEntities.length > 0 ? (
                     filteredEntities.map((entity) => (
                       <button

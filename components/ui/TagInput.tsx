@@ -46,13 +46,13 @@ export function TagInput({
       )}
       <div
         className={cn(
-          "flex flex-wrap items-center gap-2 px-3 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 focus-within:border-neutral-200 dark:focus-within:border-neutral-700 focus-within:shadow-focus transition-shadow",
+          "flex flex-wrap items-center gap-2 px-3 py-2.5 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 focus-within:border-neutral-200 dark:focus-within:border-neutral-700 focus-within:shadow-focus transition-shadow",
         )}
       >
         {tags.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50"
           >
             {tag}
             <button

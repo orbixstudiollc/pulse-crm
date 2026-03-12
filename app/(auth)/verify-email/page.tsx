@@ -58,7 +58,7 @@ function VerifyEmailContent() {
 
       {/* Error */}
       {error && (
-        <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+        <div className="mt-4 rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
           {error}
         </div>
       )}

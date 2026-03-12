@@ -481,7 +481,7 @@ export default function AddCustomerPage() {
                 <button
                   type="button"
                   onClick={() => removeCustomField(field.id)}
-                  className="flex h-10.5 w-10.5 items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-300 dark:hover:border-red-500/30 transition-colors group"
+                  className="flex h-10.5 w-10.5 items-center justify-center rounded border border-neutral-200 dark:border-neutral-800 hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-300 dark:hover:border-red-500/30 transition-colors group"
                 >
                   <XIcon
                     size={18}
@@ -495,7 +495,7 @@ export default function AddCustomerPage() {
           <button
             type="button"
             onClick={addCustomField}
-            className="flex items-center gap-2 mt-4 px-4 py-2.5 text-sm font-medium text-neutral-600 dark:text-neutral-400 border border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            className="flex items-center gap-2 mt-4 px-4 py-2.5 text-sm font-medium text-neutral-600 dark:text-neutral-400 border border-dashed border-neutral-300 dark:border-neutral-700 rounded hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
           >
             <PlusIcon size={18} />
             Add Custom Field
