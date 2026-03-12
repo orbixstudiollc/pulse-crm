@@ -86,13 +86,13 @@ export function SlashCommandMenu({
                 key={cmd.id}
                 onClick={() => onSelect(cmd)}
                 onMouseEnter={() => setSelectedIndex(i)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded text-left transition-colors ${
                   i === selectedIndex
                     ? "bg-neutral-100 dark:bg-neutral-800"
                     : "hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
                 }`}
               >
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-neutral-100 dark:bg-neutral-800">
                   <IconComp
                     size={14}
                     className="text-neutral-500 dark:text-neutral-400"

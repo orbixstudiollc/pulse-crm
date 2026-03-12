@@ -1241,7 +1241,7 @@ export function SequenceDetailClient({
                     const types = activityFilter === "all" ? undefined : [activityFilter === "sent" ? "email_sent" : activityFilter === "opened" ? "email_opened" : activityFilter === "clicked" ? "link_clicked" : activityFilter === "replied" ? "email_replied" : "email_bounced"];
                     loadActivity(types, e.target.value);
                   }}
-                  className="w-44 pl-8 pr-3 py-1.5 text-xs rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400"
+                  className="w-44 pl-8 pr-3 py-1.5 text-xs rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400"
                 />
               </div>
             </div>
@@ -1514,10 +1514,10 @@ export function SequenceDetailClient({
               <h3 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-4">A/B Test Results</h3>
               <div className="space-y-4">
                 {abComparison.map((s) => (
-                  <div key={s.stepOrder} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+                  <div key={s.stepOrder} className="border border-neutral-200 dark:border-neutral-700 rounded p-4">
                     <p className="text-xs font-medium text-neutral-500 mb-3">Step {s.stepOrder}</p>
                     <div className="grid grid-cols-2 gap-3">
-                      <div className={cn("p-3 rounded-lg border", s.winner === "A" ? "border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20" : "border-neutral-200 dark:border-neutral-700")}>
+                      <div className={cn("p-3 rounded border", s.winner === "A" ? "border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20" : "border-neutral-200 dark:border-neutral-700")}>
                         <div className="flex items-center gap-2 mb-2">
                           <Badge variant="blue">A</Badge>
                           {s.winner === "A" && <span className="text-xs text-green-600 dark:text-green-400 font-medium">Winner</span>}
@@ -1530,7 +1530,7 @@ export function SequenceDetailClient({
                           <span className="text-neutral-400">Replies: <span className="text-emerald-600 font-medium">{s.variantA.replyRate}%</span></span>
                         </div>
                       </div>
-                      <div className={cn("p-3 rounded-lg border", s.winner === "B" ? "border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20" : "border-neutral-200 dark:border-neutral-700")}>
+                      <div className={cn("p-3 rounded border", s.winner === "B" ? "border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20" : "border-neutral-200 dark:border-neutral-700")}>
                         <div className="flex items-center gap-2 mb-2">
                           <Badge variant="violet">B</Badge>
                           {s.winner === "B" && <span className="text-xs text-green-600 dark:text-green-400 font-medium">Winner</span>}
@@ -1641,7 +1641,7 @@ export function SequenceDetailClient({
                   <label
                     key={acc.id}
                     className={cn(
-                      "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                      "flex items-center gap-3 p-3 rounded border cursor-pointer transition-colors",
                       settAccountIds.includes(acc.id)
                         ? "border-neutral-950 dark:border-white bg-neutral-50 dark:bg-neutral-800"
                         : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-400"
@@ -1845,7 +1845,7 @@ export function SequenceDetailClient({
               )}
               {/* Email Preview Pane */}
               {showPreview && (stepType === "email" || stepType === "linkedin") && (
-                <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 p-4 space-y-2">
+                <div className="rounded border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 p-4 space-y-2">
                   <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Preview with sample data:</p>
                   <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
                     {stepSubject
@@ -1878,7 +1878,7 @@ export function SequenceDetailClient({
                     Add Variant B (A/B Test)
                   </button>
                 ) : (
-                  <div className="border border-dashed border-neutral-300 dark:border-neutral-700 rounded-lg p-4 space-y-4">
+                  <div className="border border-dashed border-neutral-300 dark:border-neutral-700 rounded p-4 space-y-4">
                     <div className="flex items-center justify-between">
                       <Badge variant="violet">Variant B ({100 - variantAWeight}%)</Badge>
                       <button
@@ -1986,7 +1986,7 @@ export function SequenceDetailClient({
                     setShowTemplatePicker(false);
                     toast.success(`Template "${tpl.name}" applied`);
                   }}
-                  className="w-full text-left p-3 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors"
+                  className="w-full text-left p-3 rounded border border-neutral-200 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{tpl.name}</p>
@@ -2032,7 +2032,7 @@ export function SequenceDetailClient({
               placeholder="Search leads by name, email, or company..."
               value={enrollSearchQuery}
               onChange={(e) => handleEnrollSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400"
+              className="w-full pl-9 pr-3 py-2 text-sm rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400"
             />
           </div>
 
@@ -2056,7 +2056,7 @@ export function SequenceDetailClient({
           {enrollLoading ? (
             <div className="space-y-2">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-14 rounded-lg bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
+                <div key={i} className="h-14 rounded bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
               ))}
             </div>
           ) : enrollLeadsList.length > 0 ? (
@@ -2065,7 +2065,7 @@ export function SequenceDetailClient({
                 <label
                   key={lead.id}
                   className={cn(
-                    "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                    "flex items-center gap-3 p-3 rounded border cursor-pointer transition-colors",
                     enrollSelectedIds.has(lead.id)
                       ? "border-neutral-950 dark:border-white bg-neutral-50 dark:bg-neutral-800"
                       : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-400",

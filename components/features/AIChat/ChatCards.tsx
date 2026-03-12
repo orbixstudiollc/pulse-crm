@@ -23,7 +23,7 @@ interface ChatDealCardProps {
 
 export function ChatDealCard({ name, value, stage, probability, contactName, closeDate }: ChatDealCardProps) {
   return (
-    <div className="my-1 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-3 text-xs">
+    <div className="my-1 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-3 text-xs">
       <div className="flex items-center gap-2 mb-2">
         <div className="w-6 h-6 rounded bg-neutral-100 dark:bg-neutral-700 flex items-center justify-center">
           <CurrencyDollarIcon size={14} className="text-neutral-600 dark:text-neutral-400" />
@@ -69,7 +69,7 @@ export function ChatLeadCard({ name, company, score, status, email }: ChatLeadCa
     : "text-neutral-400";
 
   return (
-    <div className="my-1 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-3 text-xs">
+    <div className="my-1 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-3 text-xs">
       <div className="flex items-center gap-2 mb-2">
         <div className="w-6 h-6 rounded bg-neutral-100 dark:bg-neutral-700 flex items-center justify-center">
           <CrosshairIcon size={14} className="text-neutral-600 dark:text-neutral-400" />
@@ -99,7 +99,7 @@ interface ChatContactCardProps {
 
 export function ChatContactCard({ firstName, lastName, email, phone, company, jobTitle }: ChatContactCardProps) {
   return (
-    <div className="my-1 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-3 text-xs">
+    <div className="my-1 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-3 text-xs">
       <div className="flex items-center gap-2 mb-2">
         <div className="w-6 h-6 rounded bg-neutral-100 dark:bg-neutral-700 flex items-center justify-center">
           <UserIcon size={14} className="text-neutral-600 dark:text-neutral-400" />
@@ -127,7 +127,7 @@ interface ChatPipelineCardProps {
 
 export function ChatPipelineCard({ totalDeals, totalValue, weightedValue, stages }: ChatPipelineCardProps) {
   return (
-    <div className="my-1 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-3 text-xs">
+    <div className="my-1 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-3 text-xs">
       <div className="flex items-center gap-2 mb-2">
         <div className="w-6 h-6 rounded bg-neutral-100 dark:bg-neutral-700 flex items-center justify-center">
           <FunnelIcon size={14} className="text-neutral-600 dark:text-neutral-400" />
@@ -173,7 +173,7 @@ interface ChatAnalyticsCardProps {
 
 export function ChatAnalyticsCard({ period, newLeads, dealsWon, wonValue, pipelineValue, activities }: ChatAnalyticsCardProps) {
   return (
-    <div className="my-1 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-3 text-xs">
+    <div className="my-1 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-3 text-xs">
       <div className="flex items-center gap-2 mb-2">
         <div className="w-6 h-6 rounded bg-neutral-100 dark:bg-neutral-700 flex items-center justify-center">
           <ChartBarIcon size={14} className="text-neutral-600 dark:text-neutral-400" />
@@ -224,7 +224,7 @@ export function ChatActionPreview({
   error,
 }: ChatActionPreviewProps) {
   return (
-    <div className="my-1 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-3 text-xs">
+    <div className="my-1 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-3 text-xs">
       <div className="flex items-center gap-2 mb-2">
         <div className={`w-6 h-6 rounded flex items-center justify-center ${isCompleted ? "bg-green-100 dark:bg-green-900/30" : error ? "bg-red-100 dark:bg-red-900/30" : "bg-neutral-100 dark:bg-neutral-700"}`}>
           {isCompleted ? (
@@ -253,14 +253,14 @@ export function ChatActionPreview({
           <button
             onClick={onConfirm}
             disabled={isPending}
-            className="flex-1 py-1.5 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-900 font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
+            className="flex-1 py-1.5 rounded bg-neutral-950 dark:bg-white text-white dark:text-neutral-900 font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50"
           >
             {isPending ? "Executing..." : "Confirm"}
           </button>
           <button
             onClick={onCancel}
             disabled={isPending}
-            className="flex-1 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+            className="flex-1 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>

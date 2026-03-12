@@ -137,7 +137,7 @@ export function CopilotClient({ initialConversations, initialMemory, initialTask
                 }
               }}
               className={cn(
-                "flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                "flex items-center gap-2.5 w-full px-3 py-2 rounded text-sm font-medium transition-colors",
                 view === item.id && !activeConversationId
                   ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-sm border border-neutral-200 dark:border-neutral-700"
                   : "text-neutral-600 dark:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
@@ -170,7 +170,7 @@ export function CopilotClient({ initialConversations, initialMemory, initialTask
                     }}
                     onKeyDown={e => { if (e.key === "Enter") { setActiveConversationId(conv.id); setView("chat"); } }}
                     className={cn(
-                      "flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm transition-colors group cursor-pointer",
+                      "flex items-center justify-between w-full px-3 py-2 rounded text-sm transition-colors group cursor-pointer",
                       activeConversationId === conv.id
                         ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-sm border border-neutral-200 dark:border-neutral-700"
                         : "text-neutral-600 dark:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800"
@@ -673,10 +673,10 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                         <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2">{item.content}</p>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-3">
-                        <button onClick={() => handleEdit(item)} className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
+                        <button onClick={() => handleEdit(item)} className="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
                           <PencilSimpleIcon size={14} className="text-neutral-400" />
                         </button>
-                        <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                        <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
                           <TrashIcon size={14} className="text-red-400" />
                         </button>
                       </div>
@@ -699,7 +699,7 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                 <select
                   value={formData.type}
                   onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as MemoryItem["type"] }))}
-                  className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100"
+                  className="w-full px-3 py-2 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100"
                 >
                   {memoryTypes.map(t => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -714,7 +714,7 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                   value={formData.title}
                   onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="e.g. Company Overview"
-                  className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400"
+                  className="w-full px-3 py-2 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400"
                 />
               </div>
 
@@ -725,17 +725,17 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                   onChange={e => setFormData(prev => ({ ...prev, content: e.target.value }))}
                   placeholder="Describe your business, products, target audience, etc..."
                   rows={6}
-                  className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 resize-none"
+                  className="w-full px-3 py-2 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 resize-none"
                 />
               </div>
 
               <div className="flex items-center gap-2 pt-2">
-                <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors">
+                <button onClick={handleSave} className="px-4 py-2 rounded bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors">
                   {editingId ? "Update" : "Save"}
                 </button>
                 <button
                   onClick={() => { setShowForm(false); setEditingId(null); setFormData({ type: "business_details", title: "", content: "" }); }}
-                  className="px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                  className="px-4 py-2 rounded border border-neutral-200 dark:border-neutral-700 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                 >
                   Cancel
                 </button>
@@ -858,7 +858,7 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-3">
                         <button
                           onClick={() => handleToggle(task)}
-                          className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                          className="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
                           title={task.is_active ? "Pause" : "Activate"}
                         >
                           {task.is_active ? (
@@ -873,11 +873,11 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
                             setEditingId(task.id);
                             setShowForm(true);
                           }}
-                          className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                          className="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
                         >
                           <PencilSimpleIcon size={14} className="text-neutral-400" />
                         </button>
-                        <button onClick={() => handleDelete(task.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                        <button onClick={() => handleDelete(task.id)} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
                           <TrashIcon size={14} className="text-red-400" />
                         </button>
                       </div>
@@ -902,7 +902,7 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
                   value={formData.title}
                   onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="e.g. Daily Pipeline Summary"
-                  className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400"
+                  className="w-full px-3 py-2 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400"
                 />
               </div>
 
@@ -913,7 +913,7 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
                   onChange={e => setFormData(prev => ({ ...prev, prompt: e.target.value }))}
                   placeholder="What should Copilot do? e.g. Summarize my pipeline and highlight deals at risk..."
                   rows={4}
-                  className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 resize-none"
+                  className="w-full px-3 py-2 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 resize-none"
                 />
               </div>
 
@@ -922,7 +922,7 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
                 <select
                   value={formData.schedule}
                   onChange={e => setFormData(prev => ({ ...prev, schedule: e.target.value as CopilotTask["schedule"] }))}
-                  className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100"
+                  className="w-full px-3 py-2 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100"
                 >
                   <option value="daily">Daily</option>
                   <option value="weekly">Weekly</option>
@@ -932,12 +932,12 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
               </div>
 
               <div className="flex items-center gap-2 pt-2">
-                <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors">
+                <button onClick={handleSave} className="px-4 py-2 rounded bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors">
                   {editingId ? "Update" : "Create"}
                 </button>
                 <button
                   onClick={() => { setShowForm(false); setEditingId(null); setFormData({ title: "", prompt: "", schedule: "daily" }); }}
-                  className="px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                  className="px-4 py-2 rounded border border-neutral-200 dark:border-neutral-700 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                 >
                   Cancel
                 </button>
@@ -978,7 +978,7 @@ function SettingsView() {
               <button
                 onClick={() => setAnalyticsEnabled(false)}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                  "px-3 py-1.5 rounded text-xs font-medium transition-colors",
                   !analyticsEnabled
                     ? "bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
                     : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
@@ -989,7 +989,7 @@ function SettingsView() {
               <button
                 onClick={() => setAnalyticsEnabled(true)}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                  "px-3 py-1.5 rounded text-xs font-medium transition-colors",
                   analyticsEnabled
                     ? "bg-emerald-500 text-white"
                     : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
@@ -1008,7 +1008,7 @@ function SettingsView() {
                 Choose the AI model for Copilot responses.
               </p>
             </div>
-            <select className="pl-3 pr-8 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22%236b7280%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M5.23%207.21a.75.75%200%20011.06.02L10%2011.168l3.71-3.938a.75.75%200%20111.08%201.04l-4.25%204.5a.75.75%200%2001-1.08%200l-4.25-4.5a.75.75%200%2001.02-1.06z%22%20clip-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.5rem_center] bg-[length:1.25rem_1.25rem]">
+            <select className="pl-3 pr-8 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22%236b7280%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M5.23%207.21a.75.75%200%20011.06.02L10%2011.168l3.71-3.938a.75.75%200%20111.08%201.04l-4.25%204.5a.75.75%200%2001-1.08%200l-4.25-4.5a.75.75%200%2001.02-1.06z%22%20clip-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.5rem_center] bg-[length:1.25rem_1.25rem]">
               <option>Claude Sonnet 4</option>
               <option>Claude Haiku 3.5</option>
             </select>
@@ -1023,10 +1023,10 @@ function SettingsView() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
+              <button className="text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-1.5 rounded text-xs font-medium transition-colors">
                 Disable
               </button>
-              <button className="bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
+              <button className="bg-emerald-500 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors">
                 Enable
               </button>
             </div>
@@ -1036,7 +1036,7 @@ function SettingsView() {
           <div className="flex justify-end pt-4">
             <button
               onClick={() => toast.success("Settings saved")}
-              className="px-4 py-2 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors"
+              className="px-4 py-2 rounded bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors"
             >
               Save
             </button>

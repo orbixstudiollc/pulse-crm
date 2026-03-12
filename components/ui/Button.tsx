@@ -39,7 +39,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               variant === "outline",
           },
           {
-            "h-[34px] px-2.5 py-2 text-[13px] gap-2": size === "sm",
+            "h-9 px-2.5 py-2 text-[13px] gap-2": size === "sm",
             "h-10 px-3 py-2.5 text-sm gap-2": size === "md",
             "h-11 px-3 py-3 text-sm gap-2": size === "lg",
             "h-12 px-3 py-3 text-base gap-2": size === "xl",

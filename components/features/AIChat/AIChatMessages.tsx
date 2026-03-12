@@ -154,7 +154,7 @@ function ToolResultCard({ toolName, result }: { toolName: string; result: string
   const title = lines[0]?.replace(/^\*\*|\*\*$/g, "") || toolName;
 
   return (
-    <div className="my-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-2.5 text-xs">
+    <div className="my-1.5 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-2.5 text-xs">
       <div className="font-semibold text-neutral-900 dark:text-neutral-100 mb-1.5 text-[11px]">
         {title}
       </div>
@@ -239,7 +239,7 @@ export function AIChatMessages({
             <button
               key={suggestion}
               onClick={() => onSuggestionClick?.(suggestion)}
-              className="w-full flex items-center gap-2.5 text-left text-xs px-3.5 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600 transition-all"
+              className="w-full flex items-center gap-2.5 text-left text-xs px-3.5 py-2.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600 transition-all"
             >
               <SparkleIcon className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
               <span>{suggestion}</span>

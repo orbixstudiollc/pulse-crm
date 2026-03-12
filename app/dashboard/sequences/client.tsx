@@ -870,7 +870,7 @@ export function SequencesPageClient({
               <h4 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-3">
                 14-Day Activity
               </h4>
-              <div className="h-32 rounded-lg border border-neutral-200 dark:border-neutral-800 p-2">
+              <div className="h-32 rounded border border-neutral-200 dark:border-neutral-800 p-2">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={perfDrawer.data.sparkline}>
                     <defs>
@@ -917,7 +917,7 @@ export function SequencesPageClient({
                 <h4 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-2">
                   Top Performing Step
                 </h4>
-                <div className="p-3 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+                <div className="p-3 rounded border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-green-700 dark:text-green-400 font-medium">

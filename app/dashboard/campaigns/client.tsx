@@ -102,7 +102,7 @@ function DeleteConfirmModal({
       <div className="fixed inset-0 bg-black/40 dark:bg-black/60 dark:bg-black/60" onClick={onClose} />
       <div className="relative bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-md w-full mx-4">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-red-100 dark:bg-red-400/15 rounded-lg">
+          <div className="p-2 bg-red-100 dark:bg-red-400/15 rounded">
             <WarningIcon className="w-5 h-5 text-red-400" />
           </div>
           <h3 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">{title}</h3>
@@ -115,7 +115,7 @@ function DeleteConfirmModal({
           <button
             onClick={onConfirm}
             disabled={isPending}
-            className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded transition-colors disabled:opacity-50"
           >
             {isPending ? "Deleting..." : "Delete"}
           </button>
@@ -160,7 +160,7 @@ function TagManagerModal({
             value={newTagName}
             onChange={(e) => setNewTagName(e.target.value)}
             placeholder="Tag name..."
-            className="flex-1 px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+            className="flex-1 px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
           />
           <button
             onClick={() => {
@@ -172,7 +172,7 @@ function TagManagerModal({
               });
             }}
             disabled={isPending}
-            className="px-3 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm rounded-lg"
+            className="px-3 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm rounded"
           >
             Add
           </button>
@@ -191,7 +191,7 @@ function TagManagerModal({
 
         <div className="space-y-2 max-h-60 overflow-y-auto">
           {tags.map((tag) => (
-            <div key={tag.id} className="flex items-center justify-between py-2 px-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+            <div key={tag.id} className="flex items-center justify-between py-2 px-3 bg-neutral-100 dark:bg-neutral-800 rounded">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: tag.color }} />
                 <span className="text-sm text-neutral-950 dark:text-neutral-50">{tag.name}</span>
@@ -251,17 +251,17 @@ function AddAccountModal({
           <div>
             <label className="block text-sm text-neutral-500 dark:text-neutral-400 mb-1">Email Address</label>
             <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com"
-              className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600" />
+              className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600" />
           </div>
           <div>
             <label className="block text-sm text-neutral-500 dark:text-neutral-400 mb-1">Display Name</label>
             <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="John Doe"
-              className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600" />
+              className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600" />
           </div>
           <div>
             <label className="block text-sm text-neutral-500 dark:text-neutral-400 mb-1">Provider</label>
             <select value={provider} onChange={(e) => setProvider(e.target.value as "gmail" | "microsoft" | "custom_imap")}
-              className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600">
+              className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600">
               <option value="gmail">Google Workspace</option>
               <option value="microsoft">Microsoft Outlook</option>
               <option value="custom_imap">Custom SMTP/IMAP</option>
@@ -272,12 +272,12 @@ function AddAccountModal({
               <div>
                 <label className="block text-sm text-neutral-500 dark:text-neutral-400 mb-1">SMTP Host</label>
                 <input value={smtpHost} onChange={(e) => setSmtpHost(e.target.value)} placeholder="smtp.example.com"
-                  className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600" />
+                  className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600" />
               </div>
               <div>
                 <label className="block text-sm text-neutral-500 dark:text-neutral-400 mb-1">Port</label>
                 <input value={smtpPort} onChange={(e) => setSmtpPort(e.target.value)} placeholder="587"
-                  className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600" />
+                  className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600" />
               </div>
             </div>
           )}
@@ -285,7 +285,7 @@ function AddAccountModal({
             <div>
               <label className="block text-sm text-neutral-500 dark:text-neutral-400 mb-1">Daily Send Limit</label>
               <input value={dailyLimit} onChange={(e) => setDailyLimit(e.target.value)} type="number"
-                className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600" />
+                className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600" />
             </div>
             <div className="flex items-end pb-1">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -318,7 +318,7 @@ function AddAccountModal({
               });
             }}
             disabled={isPending}
-            className="px-4 py-2 text-sm bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 rounded-lg disabled:opacity-50"
+            className="px-4 py-2 text-sm bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 rounded disabled:opacity-50"
           >
             {isPending ? "Adding..." : "Add Account"}
           </button>
@@ -381,7 +381,7 @@ function PerformanceDrawer({
           {/* Metrics */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             {metrics.map((m) => (
-              <div key={m.label} className="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-3">
+              <div key={m.label} className="bg-neutral-100 dark:bg-neutral-800 rounded p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <m.icon className={`w-4 h-4 ${m.color}`} />
                   <span className="text-xs text-neutral-500 dark:text-neutral-400">{m.label}</span>
@@ -389,7 +389,7 @@ function PerformanceDrawer({
                 <span className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">{m.value.toLocaleString()}</span>
               </div>
             ))}
-            <div className="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-3">
+            <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-3">
               <div className="flex items-center gap-2 mb-1">
                 <UsersIcon className="w-4 h-4 text-cyan-400" />
                 <span className="text-xs text-neutral-500 dark:text-neutral-400">Enrolled</span>
@@ -418,7 +418,7 @@ function PerformanceDrawer({
           </div>
 
           {/* Quick Info */}
-          <div className="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-4 mb-6 space-y-2">
+          <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-4 mb-6 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-neutral-500 dark:text-neutral-400">Steps</span>
               <span className="text-neutral-950 dark:text-neutral-50">{campaign.total_steps}</span>
@@ -440,7 +440,7 @@ function PerformanceDrawer({
           {/* Actions */}
           <button
             onClick={() => router.push(`/dashboard/sequences/${campaign.id}`)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded-lg transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded transition-colors"
           >
             Edit Campaign <ArrowRightIcon className="w-4 h-4" />
           </button>
@@ -623,11 +623,11 @@ export function CampaignsPageClient({
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Manage your outreach campaigns, email accounts, and send schedules</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => setShowTagManager(true)} className="px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 border border-neutral-200 dark:border-neutral-800 rounded-lg hover:bg-neutral-100 dark:bg-neutral-800 transition-colors">
+          <button onClick={() => setShowTagManager(true)} className="px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 border border-neutral-200 dark:border-neutral-800 rounded hover:bg-neutral-100 dark:bg-neutral-800 transition-colors">
             Tags
           </button>
           <button onClick={handleNewCampaign} disabled={isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded-lg transition-colors disabled:opacity-50">
+            className="flex items-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded transition-colors disabled:opacity-50">
             <PlusIcon className="w-4 h-4" /> New Campaign
           </button>
         </div>
@@ -652,7 +652,7 @@ export function CampaignsPageClient({
 
       {/* Tabs + Search */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 rounded p-1">
           {tabs.map((tab) => (
             <button
               key={tab.key}
@@ -672,7 +672,7 @@ export function CampaignsPageClient({
               <select
                 value={selectedTag ?? ""}
                 onChange={(e) => setSelectedTag(e.target.value || null)}
-                className="px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none"
+                className="px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none"
               >
                 <option value="">All Tags</option>
                 {tags.map((t) => (
@@ -686,7 +686,7 @@ export function CampaignsPageClient({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search campaigns..."
-                className="pl-9 pr-3 py-1.5 w-64 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+                className="pl-9 pr-3 py-1.5 w-64 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
               />
             </div>
           </div>
@@ -712,7 +712,7 @@ export function CampaignsPageClient({
                   </div>
                 </div>
                 <button onClick={() => setShowAddAccount(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm rounded-lg">
+                  className="flex items-center gap-2 px-3 py-1.5 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm rounded">
                   <PlusIcon className="w-4 h-4" /> Add Account
                 </button>
               </div>
@@ -722,7 +722,7 @@ export function CampaignsPageClient({
                   <PlugsConnectedIcon className="w-10 h-10 text-neutral-400 dark:text-neutral-500 mx-auto mb-3" />
                   <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">No email accounts connected yet</p>
                   <button onClick={() => setShowAddAccount(true)}
-                    className="px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm rounded-lg">
+                    className="px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm rounded">
                     Add Your First Account
                   </button>
                 </div>
@@ -804,7 +804,7 @@ export function CampaignsPageClient({
           <motion.div key="campaigns" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.15 }}>
             {/* Bulk actions */}
             {selectedRows.size > 0 && (
-              <div className="flex items-center gap-3 mb-3 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg">
+              <div className="flex items-center gap-3 mb-3 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded">
                 <span className="text-sm text-neutral-700 dark:text-neutral-300">{selectedRows.size} selected</span>
                 <button onClick={() => setSelectedRows(new Set())} className="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50">Clear</button>
               </div>
@@ -819,7 +819,7 @@ export function CampaignsPageClient({
                     {searchQuery || selectedTag ? "No campaigns match your filters" : "No campaigns yet"}
                   </p>
                   {!searchQuery && !selectedTag && (
-                    <button onClick={handleNewCampaign} className="px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm rounded-lg">
+                    <button onClick={handleNewCampaign} className="px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm rounded">
                       Create Your First Campaign
                     </button>
                   )}
@@ -899,7 +899,7 @@ export function CampaignsPageClient({
                               <DotsThreeVerticalIcon className="w-4 h-4" />
                             </button>
                             {actionMenuId === campaign.id && (
-                              <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-xl z-30 py-1">
+                              <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded shadow-xl z-30 py-1">
                                 <button onClick={() => { router.push(`/dashboard/sequences/${campaign.id}`); setActionMenuId(null); }}
                                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:bg-neutral-800">
                                   <PencilSimpleIcon className="w-4 h-4" /> Edit

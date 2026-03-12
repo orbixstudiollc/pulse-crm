@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/server";
+import { resetDailyCounters, resetWeeklyCounters } from "@/lib/linkedin/rate-limiter";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -10,16 +11,55 @@ export async function GET(request: Request) {
   }
 
   const supabase = createAdminClient();
+  const results: Record<string, string> = {};
 
-  // Reset all daily sent counts
-  const { error } = await supabase
+  // 1. Reset email daily sent counts
+  const { error: emailError } = await supabase
     .from("email_accounts")
     .update({ daily_sent_count: 0 })
     .neq("daily_sent_count", 0);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  results.email = emailError ? emailError.message : "ok";
+
+  // 2. Reset WhatsApp daily sent counts
+  const { error: waError } = await supabase
+    .from("whatsapp_accounts")
+    .update({ daily_sent_count: 0 })
+    .neq("daily_sent_count", 0);
+
+  results.whatsapp = waError ? waError.message : "ok";
+
+  // 3. Reset LinkedIn daily counters
+  try {
+    await resetDailyCounters();
+    results.linkedin_daily = "ok";
+  } catch (err) {
+    results.linkedin_daily = err instanceof Error ? err.message : "error";
   }
 
-  return NextResponse.json({ success: true, timestamp: new Date().toISOString() });
+  // 4. Reset LinkedIn weekly counters on Mondays
+  const dayOfWeek = new Date().getDay(); // 0=Sun, 1=Mon
+  if (dayOfWeek === 1) {
+    try {
+      await resetWeeklyCounters();
+      results.linkedin_weekly = "ok";
+    } catch (err) {
+      results.linkedin_weekly = err instanceof Error ? err.message : "error";
+    }
+  }
+
+  // 5. Re-activate rate-limited LinkedIn accounts
+  const { error: reactivateError } = await supabase
+    .from("linkedin_accounts")
+    .update({ status: "active" as const, last_error: null })
+    .eq("status", "rate_limited");
+
+  results.linkedin_reactivate = reactivateError ? reactivateError.message : "ok";
+
+  const hasErrors = Object.values(results).some(v => v !== "ok");
+
+  return NextResponse.json(
+    { success: !hasErrors, results, timestamp: new Date().toISOString() },
+    { status: hasErrors ? 207 : 200 }
+  );
 }

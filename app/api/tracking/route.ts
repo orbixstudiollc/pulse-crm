@@ -15,7 +15,7 @@ export async function OPTIONS() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { script_key, session_id, page_url, page_title, referrer, duration } = body;
+    const { script_key, session_id, page_url, page_title, referrer, duration, scroll_depth } = body;
 
     if (!script_key || !page_url) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400, headers: corsHeaders });
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
           visit_count: existingVisitor.visit_count + 1,
           page_count: existingVisitor.page_count + 1,
           total_duration: existingVisitor.total_duration + (duration || 0),
-          status: existingVisitor.visit_count >= 3 ? "hot" : "returning",
+          status: existingVisitor.visit_count >= 3 || (scroll_depth && scroll_depth > 75) ? "hot" : "returning",
         })
         .eq("id", existingVisitor.id);
     } else {

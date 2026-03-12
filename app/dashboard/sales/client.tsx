@@ -157,7 +157,7 @@ function PipelineStats({ deals }: { deals: MappedDeal[] }) {
           key={stat.label}
           className="flex items-center gap-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 py-3"
         >
-          <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
+          <div className="p-2 rounded bg-neutral-100 dark:bg-neutral-800">
             <stat.icon size={16} className="text-neutral-500 dark:text-neutral-400" />
           </div>
           <div className="min-w-0">
@@ -472,7 +472,7 @@ export function SalesPageClient({
           placeholder="Search deals..."
           value={filters.search}
           onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
-          className="w-full sm:w-72 pl-9 pr-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-500/50"
+          className="w-full sm:w-72 pl-9 pr-3 py-2 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-500/50"
         />
       </div>
 

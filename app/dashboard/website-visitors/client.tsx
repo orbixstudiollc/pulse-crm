@@ -150,14 +150,51 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
     }
   };
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://pulse-crm-rosy.vercel.app";
+
   const copyScript = (scriptKey: string) => {
-    const snippet = `<script>
-(function(){var s='${typeof window !== 'undefined' ? window.location.origin : ''}/api/tracking';var k='${scriptKey}';
-var sid=sessionStorage.getItem('_pv_sid')||((Math.random()*1e16).toString(36));sessionStorage.setItem('_pv_sid',sid);
-var d={script_key:k,session_id:sid,page_url:location.href,page_title:document.title,referrer:document.referrer};
-fetch(s,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d),keepalive:true});
-})();
-</script>`;
+    const snippet = `<!-- Pulse CRM Tracking Pixel -->
+<script>
+!function(d,k,s){
+  var e='${appUrl}/api/tracking',
+      sid=sessionStorage.getItem('_pv_sid')||((Math.random()*1e16).toString(36));
+  sessionStorage.setItem('_pv_sid',sid);
+  var t0=Date.now(),maxScroll=0,sent=false;
+
+  function track(extra){
+    var data={script_key:k,session_id:sid,page_url:location.href,page_title:d.title,referrer:d.referrer};
+    if(extra)for(var p in extra)data[p]=extra[p];
+    try{navigator.sendBeacon?navigator.sendBeacon(e,JSON.stringify(data)):
+    fetch(e,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data),keepalive:true})}catch(x){}
+  }
+
+  // Initial pageview
+  track();
+
+  // Track time on page + scroll depth on exit
+  window.addEventListener('scroll',function(){
+    var h=d.documentElement,b=d.body,
+        st=h.scrollTop||b.scrollTop,sh=h.scrollHeight||b.scrollHeight,
+        ch=h.clientHeight||window.innerHeight,
+        pct=Math.round(st/(sh-ch)*100);
+    if(pct>maxScroll)maxScroll=pct;
+  });
+
+  window.addEventListener('beforeunload',function(){
+    if(!sent){sent=true;track({duration:Math.round((Date.now()-t0)/1000),scroll_depth:maxScroll})}
+  });
+
+  // SPA support: track client-side navigation
+  var push=history.pushState;
+  history.pushState=function(){push.apply(history,arguments);setTimeout(function(){track()},100)};
+  window.addEventListener('popstate',function(){setTimeout(function(){track()},100)});
+
+  // GTM dataLayer integration
+  window.dataLayer=window.dataLayer||[];
+  window.dataLayer.push({'event':'pulse_crm_loaded','pulse_script_key':k});
+}(document,'${scriptKey}');
+</script>
+<!-- End Pulse CRM Tracking Pixel -->`;
     navigator.clipboard.writeText(snippet);
     setCopiedKey(scriptKey);
     setTimeout(() => setCopiedKey(null), 2000);
@@ -416,9 +453,9 @@ fetch(s,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.str
 
                   {/* Script Snippet */}
                   <div className="relative">
-                    <pre className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-600 dark:text-neutral-400 overflow-x-auto">
+                    <pre className="p-3 rounded bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-600 dark:text-neutral-400 overflow-x-auto">
 {`<script>
-(function(){var s='${typeof window !== "undefined" ? window.location.origin : "https://pulse-crm-rosy.vercel.app"}/api/tracking';
+(function(){var s='${appUrl}/api/tracking';
 var k='${script.script_key}';
 var sid=sessionStorage.getItem('_pv_sid')||((Math.random()*1e16).toString(36));
 sessionStorage.setItem('_pv_sid',sid);
@@ -481,19 +518,19 @@ body:JSON.stringify(d),keepalive:true});
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900">
+                  <div className="p-3 rounded bg-neutral-50 dark:bg-neutral-900">
                     <div className="text-xs text-neutral-500 mb-1">Status</div>
                     <Badge variant={statusVariant(selectedVisitor.status)}>{selectedVisitor.status}</Badge>
                   </div>
-                  <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900">
+                  <div className="p-3 rounded bg-neutral-50 dark:bg-neutral-900">
                     <div className="text-xs text-neutral-500 mb-1">Visits</div>
                     <div className="font-semibold text-neutral-900 dark:text-neutral-100">{selectedVisitor.visit_count}</div>
                   </div>
-                  <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900">
+                  <div className="p-3 rounded bg-neutral-50 dark:bg-neutral-900">
                     <div className="text-xs text-neutral-500 mb-1">Pages Viewed</div>
                     <div className="font-semibold text-neutral-900 dark:text-neutral-100">{selectedVisitor.page_count}</div>
                   </div>
-                  <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900">
+                  <div className="p-3 rounded bg-neutral-50 dark:bg-neutral-900">
                     <div className="text-xs text-neutral-500 mb-1">Total Duration</div>
                     <div className="font-semibold text-neutral-900 dark:text-neutral-100">
                       {selectedVisitor.total_duration > 0 ? `${Math.round(selectedVisitor.total_duration / 60)}m` : "—"}
@@ -537,7 +574,7 @@ body:JSON.stringify(d),keepalive:true});
                     {visitorVisits.map((visit) => (
                       <div
                         key={visit.id}
-                        className="p-3 rounded-lg border border-neutral-100 dark:border-neutral-800"
+                        className="p-3 rounded border border-neutral-100 dark:border-neutral-800"
                       >
                         <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
                           {visit.page_title || visit.page_url}

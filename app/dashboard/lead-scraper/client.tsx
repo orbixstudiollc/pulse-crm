@@ -206,14 +206,14 @@ function CSVUploadModal({
                 <div key={field.key} className="flex items-center gap-3">
                   <span className="text-sm text-neutral-700 dark:text-neutral-300 w-32">{field.label}</span>
                   <select value={mapping[field.key] ?? ""} onChange={(e) => setMapping((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                    className="flex-1 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none">
+                    className="flex-1 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none">
                     <option value="">— Skip —</option>
                     {csvHeaders.map((h) => <option key={h} value={h}>{h}</option>)}
                   </select>
                 </div>
               ))}
             </div>
-            <div className="bg-neutral-100 dark:bg-neutral-800 rounded-lg p-4 mb-4">
+            <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-4 mb-4">
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">Preview (first 3 rows):</p>
               <div className="space-y-2">
                 {csvRows.slice(0, 3).map((row, i) => {
@@ -229,7 +229,7 @@ function CSVUploadModal({
             <div className="flex gap-3 justify-end">
               <button onClick={() => setStep("upload")} className="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50">Back</button>
               <button onClick={handleImport} disabled={isPending || Object.values(mapping).filter(Boolean).length === 0}
-                className="px-4 py-2 text-sm bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 rounded-lg disabled:opacity-50">
+                className="px-4 py-2 text-sm bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 rounded disabled:opacity-50">
                 {isPending ? "Importing..." : `Import ${csvRows.length} Rows`}
               </button>
             </div>
@@ -256,11 +256,11 @@ function SaveSearchModal({
       <div className="relative bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-md w-full mx-4">
         <h3 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50 mb-4">Save Search</h3>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Search name..."
-          className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600 mb-4" />
+          className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600 mb-4" />
         <div className="flex gap-3 justify-end">
           <button onClick={onClose} className="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50">Cancel</button>
           <button onClick={() => { if (!name.trim()) return; startTransition(async () => { await saveSearch(name.trim(), filters, resultCount); toast.success("Search saved"); setName(""); onClose(); onSaved(); }); }} disabled={isPending}
-            className="px-4 py-2 text-sm bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 rounded-lg disabled:opacity-50">
+            className="px-4 py-2 text-sm bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 rounded disabled:opacity-50">
             {isPending ? "Saving..." : "Save"}
           </button>
         </div>
@@ -271,7 +271,7 @@ function SaveSearchModal({
 
 // ── Source-specific Filter Panels ────────────────────────────────────────────
 
-const inputClass = "w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600";
+const inputClass = "w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600";
 
 function GoogleMapsPanel({
   onScrape, isPending, icpLoading, onAlignICP,
@@ -308,13 +308,13 @@ function GoogleMapsPanel({
         <input value={maxResults} onChange={(e) => setMaxResults(e.target.value)} type="number" placeholder="20" className={inputClass} />
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={handleAlignICP} disabled={icpLoading} className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50">
+        <button onClick={handleAlignICP} disabled={icpLoading} className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-neutral-200 dark:border-neutral-800 rounded text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50">
           {icpLoading ? <CircleNotchIcon className="w-3 h-3 animate-spin" /> : <SparkleIcon className="w-3 h-3" />} Align with ICP
         </button>
         {icpAligned && <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-400/15 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-400/30">ICP Aligned</span>}
       </div>
       <button onClick={() => onScrape({ searchTerms, location, maxResults: parseInt(maxResults) || 20 })} disabled={isPending || !searchTerms}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded-lg disabled:opacity-50">
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded disabled:opacity-50">
         {isPending ? <><CircleNotchIcon className="w-4 h-4 animate-spin" /> Starting...</> : <><GlobeIcon className="w-4 h-4" /> Start Scrape</>}
       </button>
     </div>
@@ -341,7 +341,7 @@ function InstagramPanel({
       </div>
       <button onClick={() => onScrape({ usernames: usernames.split("\n").map((u) => u.trim()).filter(Boolean), resultsLimit: parseInt(resultsLimit) || 10 })}
         disabled={isPending || !usernames.trim()}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded-lg disabled:opacity-50">
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded disabled:opacity-50">
         {isPending ? <><CircleNotchIcon className="w-4 h-4 animate-spin" /> Starting...</> : <><GlobeIcon className="w-4 h-4" /> Start Scrape</>}
       </button>
     </div>
@@ -372,7 +372,7 @@ function LinkedInPanel({
       </div>
       <button onClick={() => onScrape({ profileUrls: profileUrls.split("\n").map((u) => u.trim()).filter(Boolean), mode })}
         disabled={isPending || !profileUrls.trim()}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded-lg disabled:opacity-50">
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded disabled:opacity-50">
         {isPending ? <><CircleNotchIcon className="w-4 h-4 animate-spin" /> Starting...</> : <><GlobeIcon className="w-4 h-4" /> Start Scrape</>}
       </button>
     </div>
@@ -420,13 +420,13 @@ function LeadsFinderPanel({
         <input value={numLeads} onChange={(e) => setNumLeads(e.target.value)} type="number" placeholder="25" className={inputClass} />
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={handleAlignICP} disabled={icpLoading} className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50">
+        <button onClick={handleAlignICP} disabled={icpLoading} className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-neutral-200 dark:border-neutral-800 rounded text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50">
           {icpLoading ? <CircleNotchIcon className="w-3 h-3 animate-spin" /> : <SparkleIcon className="w-3 h-3" />} Align with ICP
         </button>
         {icpAligned && <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-400/15 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-400/30">ICP Aligned</span>}
       </div>
       <button onClick={() => onScrape({ jobTitle, location, industry, numLeads: parseInt(numLeads) || 25 })} disabled={isPending || !jobTitle}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded-lg disabled:opacity-50">
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded disabled:opacity-50">
         {isPending ? <><CircleNotchIcon className="w-4 h-4 animate-spin" /> Starting...</> : <><GlobeIcon className="w-4 h-4" /> Start Scrape</>}
       </button>
     </div>
@@ -713,10 +713,10 @@ export function LeadScraperPageClient({
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Search, scrape, and import leads into your CRM</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={handleExport} className="flex items-center gap-2 px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 border border-neutral-200 dark:border-neutral-800 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800">
+          <button onClick={handleExport} className="flex items-center gap-2 px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 border border-neutral-200 dark:border-neutral-800 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800">
             <ExportIcon className="w-4 h-4" /> Export CSV
           </button>
-          <button onClick={() => setShowCSVUpload(true)} className="flex items-center gap-2 px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 border border-neutral-200 dark:border-neutral-800 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800">
+          <button onClick={() => setShowCSVUpload(true)} className="flex items-center gap-2 px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 border border-neutral-200 dark:border-neutral-800 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800">
             <UploadIcon className="w-4 h-4" /> Upload CSV
           </button>
         </div>
@@ -740,7 +740,7 @@ export function LeadScraperPageClient({
       </div>
 
       {/* Source Tabs */}
-      <div className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-900 p-1 rounded-lg w-fit">
+      <div className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-900 p-1 rounded w-fit">
         {SOURCE_TABS.map((tab) => (
           <button key={tab.id} onClick={() => handleTabChange(tab.id)}
             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
@@ -755,7 +755,7 @@ export function LeadScraperPageClient({
 
       {/* Active Runs Status Bar */}
       {activeRuns.length > 0 && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-400/10 border border-blue-200 dark:border-blue-400/20 rounded-lg">
+        <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-400/10 border border-blue-200 dark:border-blue-400/20 rounded">
           <CircleNotchIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin" />
           <span className="text-sm text-blue-700 dark:text-blue-300">
             {activeRuns.length} scrape{activeRuns.length > 1 ? "s" : ""} running...
@@ -825,11 +825,11 @@ export function LeadScraperPageClient({
                   </div>
                   <div className="flex gap-2 pt-2">
                     <button onClick={handleSearch} disabled={isPending}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded-lg disabled:opacity-50">
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded disabled:opacity-50">
                       <MagnifyingGlassIcon className="w-4 h-4" /> Search
                     </button>
                     <button onClick={() => setShowSaveSearch(true)}
-                      className="px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 border border-neutral-200 dark:border-neutral-800 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800">
+                      className="px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 border border-neutral-200 dark:border-neutral-800 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800">
                       <StarIcon className="w-4 h-4" />
                     </button>
                   </div>
@@ -841,7 +841,7 @@ export function LeadScraperPageClient({
                     <h4 className="text-xs text-neutral-500 dark:text-neutral-400 font-medium mb-3">Saved Searches</h4>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {searches.map((s) => (
-                        <div key={s.id} className="flex items-center justify-between py-2 px-3 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 cursor-pointer transition-colors"
+                        <div key={s.id} className="flex items-center justify-between py-2 px-3 bg-neutral-100 dark:bg-neutral-800 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 cursor-pointer transition-colors"
                           onClick={() => handleLoadSearch(s)}>
                           <div>
                             <span className="text-sm text-neutral-950 dark:text-neutral-50 block">{s.name}</span>
@@ -869,17 +869,17 @@ export function LeadScraperPageClient({
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm text-indigo-600 dark:text-indigo-400">{selectedRows.size} selected</span>
                   <button onClick={handleImportSelected} disabled={isPending}
-                    className="px-3 py-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg disabled:opacity-50">Import to CRM</button>
+                    className="px-3 py-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded disabled:opacity-50">Import to CRM</button>
                   <button onClick={handleVerifySelected} disabled={isPending}
-                    className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50">Verify</button>
+                    className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50">Verify</button>
                   <button onClick={handleScoreICP} disabled={isPending}
-                    className="px-3 py-1 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg disabled:opacity-50">Score ICP</button>
+                    className="px-3 py-1 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded disabled:opacity-50">Score ICP</button>
                   <button onClick={handleAIValidate} disabled={isPending}
-                    className="px-3 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded-lg disabled:opacity-50">
+                    className="px-3 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded disabled:opacity-50">
                     <span className="flex items-center gap-1"><SparkleIcon className="w-3 h-3" /> AI Validate</span>
                   </button>
                   <button onClick={handleDeleteSelected} disabled={isPending}
-                    className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50">Delete</button>
+                    className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded disabled:opacity-50">Delete</button>
                 </div>
               )}
             </div>
