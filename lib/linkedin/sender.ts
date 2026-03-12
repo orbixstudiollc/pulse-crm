@@ -4,8 +4,6 @@
  * increments counters, and records actions in linkedin_actions table.
  */
 
-"use server";
-
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   sendConnectionRequest,

@@ -105,4 +105,9 @@ export {
   FunnelSimpleIcon,
   ArrowSquareOutIcon,
   TrophyIcon as TrophyFilledIcon,
+  // WhatsApp & LinkedIn
+  WhatsappLogoIcon,
+  LinkedinLogoIcon,
+  SlidersHorizontalIcon,
+  SignOutIcon,
 } from "@phosphor-icons/react";

@@ -130,6 +130,7 @@ export async function addSequenceStep(stepData: {
   subject?: string;
   body?: string;
   channel?: string;
+  channel_config?: Record<string, unknown>;
   variants?: unknown;
 }) {
   const supabase = await createClient();
@@ -144,6 +145,7 @@ export async function addSequenceStep(stepData: {
       subject: stepData.subject ?? null,
       body: stepData.body ?? null,
       channel: stepData.channel ?? "email",
+      ...(stepData.channel_config ? { channel_config: stepData.channel_config } : {}),
       ...(stepData.variants !== undefined ? { variants: stepData.variants } : {}),
     } as StepInsert)
     .select()
@@ -175,6 +177,7 @@ export async function updateSequenceStep(
     subject: string | null;
     body: string | null;
     channel: string | null;
+    channel_config: Record<string, unknown>;
     variants: unknown;
   }>,
 ) {

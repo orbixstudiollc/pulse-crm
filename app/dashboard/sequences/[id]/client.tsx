@@ -116,6 +116,7 @@ interface StepRecord {
   subject: string | null;
   body: string | null;
   channel: string | null;
+  channel_config: unknown;
   created_at: string;
   [key: string]: unknown;
 }
@@ -201,22 +202,66 @@ const stepTypeConfig: Record<
     bgColor: "bg-violet-100 dark:bg-violet-400/15",
     borderColor: "border-violet-200 dark:border-violet-400/30",
   },
+  whatsapp: {
+    label: "WhatsApp",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bgColor: "bg-emerald-100 dark:bg-emerald-400/15",
+    borderColor: "border-emerald-200 dark:border-emerald-400/30",
+  },
+  linkedin_connect: {
+    label: "LinkedIn Connect",
+    color: "text-blue-600 dark:text-blue-400",
+    bgColor: "bg-blue-100 dark:bg-blue-400/15",
+    borderColor: "border-blue-200 dark:border-blue-400/30",
+  },
+  linkedin_message: {
+    label: "LinkedIn Message",
+    color: "text-blue-600 dark:text-blue-400",
+    bgColor: "bg-blue-100 dark:bg-blue-400/15",
+    borderColor: "border-blue-200 dark:border-blue-400/30",
+  },
+  linkedin_view: {
+    label: "Profile View",
+    color: "text-sky-600 dark:text-sky-400",
+    bgColor: "bg-sky-100 dark:bg-sky-400/15",
+    borderColor: "border-sky-200 dark:border-sky-400/30",
+  },
+  linkedin_endorse: {
+    label: "Endorse",
+    color: "text-indigo-600 dark:text-indigo-400",
+    bgColor: "bg-indigo-100 dark:bg-indigo-400/15",
+    borderColor: "border-indigo-200 dark:border-indigo-400/30",
+  },
 };
 
 const stepTypeOptions = [
-  { label: "Email", value: "email" },
-  { label: "Wait", value: "wait" },
-  { label: "Task", value: "task" },
-  { label: "Call", value: "call" },
-  { label: "LinkedIn", value: "linkedin" },
+  { label: "📧 Email", value: "email" },
+  { label: "⏳ Wait", value: "wait" },
+  { label: "📋 Task", value: "task" },
+  { label: "📞 Call", value: "call" },
+  { label: "💬 WhatsApp Message", value: "whatsapp" },
+  { label: "🔗 LinkedIn Connect", value: "linkedin_connect" },
+  { label: "💼 LinkedIn Message", value: "linkedin_message" },
+  { label: "👁 LinkedIn Profile View", value: "linkedin_view" },
+  { label: "👍 LinkedIn Endorse", value: "linkedin_endorse" },
 ];
 
 const channelOptions = [
   { label: "Email", value: "email" },
   { label: "Phone", value: "phone" },
   { label: "LinkedIn", value: "linkedin" },
+  { label: "WhatsApp", value: "whatsapp" },
   { label: "SMS", value: "sms" },
 ];
+
+// Auto-resolve channel from step type
+const getChannelForStepType = (st: string): string => {
+  if (st === "whatsapp") return "whatsapp";
+  if (st.startsWith("linkedin")) return "linkedin";
+  if (st === "email") return "email";
+  if (st === "call") return "phone";
+  return "email";
+};
 
 const enrollmentStatusConfig: Record<
   string,
@@ -431,6 +476,7 @@ export function SequenceDetailClient({
   const [stepSubject, setStepSubject] = useState("");
   const [stepBody, setStepBody] = useState("");
   const [stepChannel, setStepChannel] = useState("email");
+  const [channelConfig, setChannelConfig] = useState<Record<string, unknown>>({});
 
   // AI Write state
   const [aiWriteOpen, setAIWriteOpen] = useState(false);
@@ -582,6 +628,7 @@ export function SequenceDetailClient({
     setStepSubject("");
     setStepBody("");
     setStepChannel("email");
+    setChannelConfig({});
     setShowVariantB(false);
     setVariantBSubject("");
     setVariantBBody("");
@@ -597,7 +644,8 @@ export function SequenceDetailClient({
     setStepDelayDays(String(step.delay_days || 0));
     setStepSubject(step.subject || "");
     setStepBody(step.body || "");
-    setStepChannel(step.channel || "email");
+    setStepChannel(step.channel || getChannelForStepType(step.step_type || "email"));
+    setChannelConfig((step.channel_config as Record<string, unknown>) || {});
 
     // Load existing variants
     const variants = (step.variants as StepVariant[] | null) ?? [];
@@ -620,7 +668,7 @@ export function SequenceDetailClient({
     startTransition(async () => {
       // Build variants array if variant B is active
       let variants: StepVariant[] | undefined;
-      if (showVariantB && variantBSubject && variantBBody && (stepType === "email" || stepType === "linkedin")) {
+      if (showVariantB && variantBSubject && variantBBody && (stepType === "email" || stepType === "linkedin_message")) {
         const existingB = existingVariants[0];
         variants = [{
           id: existingB?.id || crypto.randomUUID(),
@@ -634,13 +682,17 @@ export function SequenceDetailClient({
         }];
       }
 
+      const resolvedChannel = getChannelForStepType(stepType);
+      const hasConfig = Object.keys(channelConfig).length > 0;
+
       if (editingStep) {
         const result = await updateSequenceStep(editingStep.id, {
           step_type: stepType,
           delay_days: parseInt(stepDelayDays) || 0,
           subject: stepSubject || null,
           body: stepBody || null,
-          channel: stepChannel || null,
+          channel: resolvedChannel,
+          ...(hasConfig ? { channel_config: channelConfig } : {}),
           ...(variants !== undefined ? { variants: JSON.parse(JSON.stringify(variants)) } : {}),
           ...(!showVariantB && existingVariants.length > 0 ? { variants: [] } : {}),
         });
@@ -654,7 +706,8 @@ export function SequenceDetailClient({
           delay_days: parseInt(stepDelayDays) || 0,
           subject: stepSubject || undefined,
           body: stepBody || undefined,
-          channel: stepChannel || undefined,
+          channel: resolvedChannel,
+          ...(hasConfig ? { channel_config: channelConfig } : {}),
           ...(variants ? { variants: JSON.parse(JSON.stringify(variants)) } : {}),
         });
         if (result.error) toast.error(result.error);
@@ -1020,7 +1073,7 @@ export function SequenceDetailClient({
                           )}
 
                           {/* Per-step metrics inline */}
-                          {metrics && (step.step_type === "email" || step.step_type === "linkedin") && (
+                          {metrics && (step.step_type === "email" || step.step_type === "linkedin_message" || step.step_type === "whatsapp") && (
                             <div className="flex items-center gap-3 mt-2 flex-wrap">
                               <span className="text-xs text-neutral-400 dark:text-neutral-500">
                                 Sent: <span className="text-neutral-950 dark:text-neutral-50 font-medium">{metrics.sent}</span>
@@ -1756,11 +1809,19 @@ export function SequenceDetailClient({
           </div>
 
           <div className="space-y-4">
-            <Select label="Step Type" required options={stepTypeOptions} value={stepType} onChange={(e) => setStepType(e.target.value)} />
+            <Select label="Step Type" required options={stepTypeOptions} value={stepType} onChange={(e) => { setStepType(e.target.value); setStepChannel(getChannelForStepType(e.target.value)); }} />
             <Input label="Delay (days)" type="number" min="0" placeholder="0" value={stepDelayDays} onChange={(e) => setStepDelayDays(e.target.value)} />
 
-            {/* Variant A (primary) */}
-            {(stepType === "email" || stepType === "linkedin") && (
+            {/* Channel badge */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">Channel:</span>
+              <Badge variant={stepType === "whatsapp" ? "green" : stepType.startsWith("linkedin") ? "blue" : stepType === "email" ? "neutral" : "amber"}>
+                {getChannelForStepType(stepType).charAt(0).toUpperCase() + getChannelForStepType(stepType).slice(1)}
+              </Badge>
+            </div>
+
+            {/* ─── Email Step Fields ─── */}
+            {stepType === "email" && (
               <>
                 {showVariantB && (
                   <div className="flex items-center gap-2">
@@ -1768,124 +1829,61 @@ export function SequenceDetailClient({
                   </div>
                 )}
                 <Input label="Subject" placeholder="e.g. Quick question about {{company}}" value={stepSubject} onChange={(e) => setStepSubject(e.target.value)} />
-                {/* Subject char count */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1 flex-wrap">
                     {mergeFields.map((mf) => (
-                      <button
-                        key={mf.value}
-                        type="button"
-                        onClick={() => insertMergeField(mf.value, "subject")}
-                        className="px-2 py-0.5 text-[11px] rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-                      >
+                      <button key={mf.value} type="button" onClick={() => insertMergeField(mf.value, "subject")} className="px-2 py-0.5 text-[11px] rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
                         {mf.label}
                       </button>
                     ))}
                   </div>
-                  <span className={cn(
-                    "text-xs tabular-nums",
-                    stepSubject.length > 60 ? "text-red-500" : stepSubject.length > 50 ? "text-amber-500" : "text-neutral-400",
-                  )}>
+                  <span className={cn("text-xs tabular-nums", stepSubject.length > 60 ? "text-red-500" : stepSubject.length > 50 ? "text-amber-500" : "text-neutral-400")}>
                     {stepSubject.length}/60
                   </span>
                 </div>
-              </>
-            )}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
-                  {stepType === "wait" ? "Notes" : stepType === "task" ? "Task Description" : "Body"}
-                </label>
-                {(stepType === "email" || stepType === "linkedin") && (
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => { setTemplateTarget("a"); loadTemplates(); setShowTemplatePicker(true); }}>
-                      Use Template
-                    </Button>
-                    <Button variant="outline" size="sm" leftIcon={<SparkleIcon size={16} />} onClick={() => setAIWriteOpen(true)}>
-                      AI Write
-                    </Button>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">Body</label>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => { setTemplateTarget("a"); loadTemplates(); setShowTemplatePicker(true); }}>Use Template</Button>
+                      <Button variant="outline" size="sm" leftIcon={<SparkleIcon size={16} />} onClick={() => setAIWriteOpen(true)}>AI Write</Button>
+                    </div>
                   </div>
-                )}
-              </div>
-              <Textarea
-                placeholder={
-                  stepType === "email" ? "Write your email content..."
-                    : stepType === "call" ? "Call script or talking points..."
-                      : stepType === "task" ? "Describe the task..."
-                        : stepType === "linkedin" ? "Write your LinkedIn message..."
-                          : "Add notes for this wait step..."
-                }
-                value={stepBody}
-                onChange={(e) => setStepBody(e.target.value)}
-              />
-              {/* Merge fields for body + preview toggle */}
-              {(stepType === "email" || stepType === "linkedin") && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1 flex-wrap">
-                    {mergeFields.map((mf) => (
-                      <button
-                        key={mf.value}
-                        type="button"
-                        onClick={() => insertMergeField(mf.value, "body")}
-                        className="px-2 py-0.5 text-[11px] rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-                      >
-                        {mf.label}
-                      </button>
-                    ))}
+                  <Textarea placeholder="Write your email content..." value={stepBody} onChange={(e) => setStepBody(e.target.value)} />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {mergeFields.map((mf) => (
+                        <button key={mf.value} type="button" onClick={() => insertMergeField(mf.value, "body")} className="px-2 py-0.5 text-[11px] rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
+                          {mf.label}
+                        </button>
+                      ))}
+                    </div>
+                    <button type="button" onClick={() => setShowPreview(!showPreview)} className="text-xs text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors flex items-center gap-1">
+                      <EyeIcon size={14} /> {showPreview ? "Hide Preview" : "Preview"}
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowPreview(!showPreview)}
-                    className="text-xs text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors flex items-center gap-1"
-                  >
-                    <EyeIcon size={14} />
-                    {showPreview ? "Hide Preview" : "Preview"}
-                  </button>
+                  {showPreview && (
+                    <div className="rounded border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 p-4 space-y-2">
+                      <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Preview with sample data:</p>
+                      <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                        {stepSubject.replace(/\{\{first_name\}\}/gi, "John").replace(/\{\{name\}\}/gi, "John Smith").replace(/\{\{company\}\}/gi, "Acme Corp").replace(/\{\{email\}\}/gi, "john@acme.com")}
+                      </p>
+                      <div className="text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap">
+                        {stepBody.replace(/\{\{first_name\}\}/gi, "John").replace(/\{\{name\}\}/gi, "John Smith").replace(/\{\{company\}\}/gi, "Acme Corp").replace(/\{\{email\}\}/gi, "john@acme.com")}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-              {/* Email Preview Pane */}
-              {showPreview && (stepType === "email" || stepType === "linkedin") && (
-                <div className="rounded border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 p-4 space-y-2">
-                  <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Preview with sample data:</p>
-                  <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
-                    {stepSubject
-                      .replace(/\{\{first_name\}\}/gi, "John")
-                      .replace(/\{\{name\}\}/gi, "John Smith")
-                      .replace(/\{\{company\}\}/gi, "Acme Corp")
-                      .replace(/\{\{email\}\}/gi, "john@acme.com")}
-                  </p>
-                  <div className="text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap">
-                    {stepBody
-                      .replace(/\{\{first_name\}\}/gi, "John")
-                      .replace(/\{\{name\}\}/gi, "John Smith")
-                      .replace(/\{\{company\}\}/gi, "Acme Corp")
-                      .replace(/\{\{email\}\}/gi, "john@acme.com")}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* A/B Variant B */}
-            {(stepType === "email" || stepType === "linkedin") && (
-              <>
+                {/* A/B Variant B */}
                 {!showVariantB ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowVariantB(true)}
-                    className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
-                  >
-                    <PlusIcon size={16} weight="bold" />
-                    Add Variant B (A/B Test)
+                  <button type="button" onClick={() => setShowVariantB(true)} className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
+                    <PlusIcon size={16} weight="bold" /> Add Variant B (A/B Test)
                   </button>
                 ) : (
                   <div className="border border-dashed border-neutral-300 dark:border-neutral-700 rounded p-4 space-y-4">
                     <div className="flex items-center justify-between">
                       <Badge variant="violet">Variant B ({100 - variantAWeight}%)</Badge>
-                      <button
-                        type="button"
-                        onClick={() => { setShowVariantB(false); setVariantBSubject(""); setVariantBBody(""); }}
-                        className="flex h-6 w-6 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-                      >
+                      <button type="button" onClick={() => { setShowVariantB(false); setVariantBSubject(""); setVariantBBody(""); }} className="flex h-6 w-6 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
                         <XIcon size={14} className="text-neutral-500" />
                       </button>
                     </div>
@@ -1893,31 +1891,138 @@ export function SequenceDetailClient({
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">Body B</label>
-                        <Button variant="outline" size="sm" onClick={() => { setTemplateTarget("b"); loadTemplates(); setShowTemplatePicker(true); }}>
-                          Use Template
-                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => { setTemplateTarget("b"); loadTemplates(); setShowTemplatePicker(true); }}>Use Template</Button>
                       </div>
                       <Textarea placeholder="Alternative email body..." value={variantBBody} onChange={(e) => setVariantBBody(e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                      <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400">
-                        Split: A {variantAWeight}% / B {100 - variantAWeight}%
-                      </label>
-                      <input
-                        type="range"
-                        min={10}
-                        max={90}
-                        value={variantAWeight}
-                        onChange={(e) => setVariantAWeight(parseInt(e.target.value))}
-                        className="w-full accent-neutral-950 dark:accent-white"
-                      />
+                      <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400">Split: A {variantAWeight}% / B {100 - variantAWeight}%</label>
+                      <input type="range" min={10} max={90} value={variantAWeight} onChange={(e) => setVariantAWeight(parseInt(e.target.value))} className="w-full accent-neutral-950 dark:accent-white" />
                     </div>
                   </div>
                 )}
               </>
             )}
 
-            <Select label="Channel" options={channelOptions} value={stepChannel} onChange={(e) => setStepChannel(e.target.value)} />
+            {/* ─── WhatsApp Step Fields ─── */}
+            {stepType === "whatsapp" && (
+              <div className="space-y-4 border border-emerald-200 dark:border-emerald-900/50 rounded p-4 bg-emerald-50/50 dark:bg-emerald-900/10">
+                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">WhatsApp Message</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Business-initiated messages require pre-approved Meta templates. Free-text is only available within 24h of a customer reply.
+                </p>
+                <Input
+                  label="Template Name (from Meta)"
+                  placeholder="e.g. welcome_message"
+                  value={(channelConfig.template_name as string) || ""}
+                  onChange={(e) => setChannelConfig({ ...channelConfig, template_name: e.target.value })}
+                />
+                <Textarea
+                  placeholder="Message body (for template preview/fallback)... Use {{1}}, {{2}} for template variables"
+                  value={stepBody}
+                  onChange={(e) => setStepBody(e.target.value)}
+                />
+                <div className="flex items-center gap-1 flex-wrap">
+                  {mergeFields.map((mf) => (
+                    <button key={mf.value} type="button" onClick={() => insertMergeField(mf.value, "body")} className="px-2 py-0.5 text-[11px] rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-800 transition-colors">
+                      {mf.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ─── LinkedIn Connect Step ─── */}
+            {stepType === "linkedin_connect" && (
+              <div className="space-y-4 border border-blue-200 dark:border-blue-900/50 rounded p-4 bg-blue-50/50 dark:bg-blue-900/10">
+                <p className="text-xs font-medium text-blue-700 dark:text-blue-400 uppercase tracking-wider">Connection Request</p>
+                <div className="space-y-2">
+                  <Input
+                    label="Connection Note (optional, 300 char max)"
+                    placeholder="Hi {{first_name}}, I noticed we both..."
+                    value={(channelConfig.connection_note as string) || ""}
+                    onChange={(e) => setChannelConfig({ ...channelConfig, connection_note: e.target.value.slice(0, 300) })}
+                  />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {mergeFields.map((mf) => (
+                        <button key={mf.value} type="button" onClick={() => setChannelConfig({ ...channelConfig, connection_note: ((channelConfig.connection_note as string) || "") + ` ${mf.value}` })} className="px-2 py-0.5 text-[11px] rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
+                          {mf.label}
+                        </button>
+                      ))}
+                    </div>
+                    <span className={cn("text-xs tabular-nums", ((channelConfig.connection_note as string) || "").length > 280 ? "text-red-500" : "text-neutral-400")}>
+                      {((channelConfig.connection_note as string) || "").length}/300
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ─── LinkedIn Message Step ─── */}
+            {stepType === "linkedin_message" && (
+              <div className="space-y-4 border border-blue-200 dark:border-blue-900/50 rounded p-4 bg-blue-50/50 dark:bg-blue-900/10">
+                <p className="text-xs font-medium text-blue-700 dark:text-blue-400 uppercase tracking-wider">LinkedIn Message</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Lead must be a 1st-degree connection. If not connected, a connection request will be sent first.
+                </p>
+                <Input label="Subject" placeholder="Quick question about {{company}}" value={stepSubject} onChange={(e) => setStepSubject(e.target.value)} />
+                <Textarea placeholder="Write your LinkedIn message..." value={stepBody} onChange={(e) => setStepBody(e.target.value)} />
+                <div className="flex items-center gap-1 flex-wrap">
+                  {mergeFields.map((mf) => (
+                    <button key={mf.value} type="button" onClick={() => insertMergeField(mf.value, "body")} className="px-2 py-0.5 text-[11px] rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
+                      {mf.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ─── LinkedIn Profile View ─── */}
+            {stepType === "linkedin_view" && (
+              <div className="space-y-3 border border-blue-200 dark:border-blue-900/50 rounded p-4 bg-blue-50/50 dark:bg-blue-900/10">
+                <p className="text-xs font-medium text-blue-700 dark:text-blue-400 uppercase tracking-wider">Profile View</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Views the lead&apos;s LinkedIn profile to warm them up before a connection request. The lead will see your profile in their &quot;Who viewed your profile&quot; section.
+                </p>
+                <Textarea placeholder="Optional notes for this step..." value={stepBody} onChange={(e) => setStepBody(e.target.value)} />
+              </div>
+            )}
+
+            {/* ─── LinkedIn Endorse ─── */}
+            {stepType === "linkedin_endorse" && (
+              <div className="space-y-4 border border-blue-200 dark:border-blue-900/50 rounded p-4 bg-blue-50/50 dark:bg-blue-900/10">
+                <p className="text-xs font-medium text-blue-700 dark:text-blue-400 uppercase tracking-wider">Skill Endorsement</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Endorses a skill on the lead&apos;s profile to increase visibility and build rapport.
+                </p>
+                <Input
+                  label="Skill to Endorse"
+                  placeholder="e.g. Project Management, Python, Sales..."
+                  value={(channelConfig.skill_name as string) || ""}
+                  onChange={(e) => setChannelConfig({ ...channelConfig, skill_name: e.target.value })}
+                />
+                <Textarea placeholder="Optional notes for this step..." value={stepBody} onChange={(e) => setStepBody(e.target.value)} />
+              </div>
+            )}
+
+            {/* ─── Call / Task / Wait Steps ─── */}
+            {(stepType === "call" || stepType === "task" || stepType === "wait") && (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                  {stepType === "wait" ? "Notes" : stepType === "task" ? "Task Description" : "Call Script"}
+                </label>
+                <Textarea
+                  placeholder={
+                    stepType === "call" ? "Call script or talking points..."
+                      : stepType === "task" ? "Describe the task..."
+                        : "Add notes for this wait step..."
+                  }
+                  value={stepBody}
+                  onChange={(e) => setStepBody(e.target.value)}
+                />
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3">

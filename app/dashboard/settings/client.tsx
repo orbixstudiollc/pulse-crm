@@ -42,6 +42,10 @@ import {
   ArrowsClockwiseIcon,
   PlusIcon,
   WarningIcon,
+  WhatsappLogoIcon,
+  LinkedinLogoIcon,
+  SlidersHorizontalIcon,
+  SignOutIcon,
 } from "@/components/ui";
 import { DeleteConfirmModal } from "@/components/ui";
 import type { IconWeight } from "@phosphor-icons/react";
@@ -64,6 +68,24 @@ import {
   deleteEmailAccount,
   testEmailAccount,
 } from "@/lib/actions/email-accounts";
+import {
+  getWhatsAppAccounts,
+  connectWhatsAppAccount,
+  disconnectWhatsAppAccount,
+  deleteWhatsAppAccount,
+  setDefaultWhatsAppAccount,
+  syncWhatsAppTemplates,
+  getWhatsAppTemplates,
+  testWhatsAppConnection,
+} from "@/lib/actions/whatsapp-accounts";
+import {
+  getLinkedInAccounts,
+  disconnectLinkedInAccount,
+  deleteLinkedInAccount,
+  setDefaultLinkedInAccount,
+  updateLinkedInLimits,
+  testLinkedInConnection,
+} from "@/lib/actions/linkedin-accounts";
 import {
   updateAISettings,
   getAIUsageStats,
@@ -127,6 +149,8 @@ type SettingsTab =
   | "notifications"
   | "integrations"
   | "email-accounts"
+  | "whatsapp"
+  | "linkedin"
   | "billing"
   | "ai"
   | "automation";
@@ -146,6 +170,8 @@ const settingsTabs: {
   { id: "notifications", label: "Notifications", icon: BellIcon },
   { id: "integrations", label: "Integrations", icon: PuzzlePieceIcon },
   { id: "email-accounts", label: "Email Accounts", icon: EnvelopeIcon },
+  { id: "whatsapp", label: "WhatsApp", icon: WhatsappLogoIcon },
+  { id: "linkedin", label: "LinkedIn", icon: LinkedinLogoIcon },
   { id: "billing", label: "Billing", icon: CreditCardIcon },
   { id: "ai", label: "AI Assistant", icon: SparkleIcon },
   { id: "automation", label: "Automation", icon: LightningIcon },
@@ -1922,6 +1948,701 @@ function AISettingsSection({
   );
 }
 
+// ── WhatsApp Section ────────────────────────────────────────────────────────
+
+interface WAAccount {
+  id: string;
+  phone_number_id: string;
+  waba_id: string;
+  display_phone_number: string;
+  verified_name: string | null;
+  status: string;
+  is_default: boolean;
+  quality_rating: string | null;
+  messaging_limit: string | null;
+  daily_send_limit: number;
+  daily_sent_count: number;
+  last_error: string | null;
+}
+
+interface WATemplate {
+  id: string;
+  name: string;
+  language: string;
+  category: string;
+  status: string;
+  body_text: string | null;
+}
+
+function WhatsAppSection() {
+  const [accounts, setAccounts] = useState<WAAccount[]>([]);
+  const [templates, setTemplates] = useState<WATemplate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastVariant, setToastVariant] = useState<"success" | "error">("success");
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const [form, setForm] = useState({
+    phoneNumberId: "",
+    wabaId: "",
+    accessToken: "",
+  });
+
+  const webhookUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/api/whatsapp/webhook`
+    : "";
+
+  const fetchData = async () => {
+    const [acctRes, tplRes] = await Promise.all([
+      getWhatsAppAccounts(),
+      getWhatsAppTemplates(),
+    ]);
+    setAccounts((acctRes.accounts || []) as WAAccount[]);
+    setTemplates((tplRes.templates || []) as WATemplate[]);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  const toast = (msg: string, variant: "success" | "error" = "success") => {
+    setToastMessage(msg);
+    setToastVariant(variant);
+    setShowToast(true);
+  };
+
+  const handleConnect = () => {
+    startTransition(async () => {
+      const result = await connectWhatsAppAccount(form);
+      if (result.success) {
+        toast("WhatsApp account connected");
+        setShowAddForm(false);
+        setForm({ phoneNumberId: "", wabaId: "", accessToken: "" });
+        fetchData();
+      } else {
+        toast(result.error || "Failed to connect", "error");
+      }
+    });
+  };
+
+  const handleTest = async (id: string) => {
+    setTestingId(id);
+    const result = await testWhatsAppConnection(id);
+    setTestingId(null);
+    if (result.success) toast("Connection verified");
+    else toast(result.error || "Test failed", "error");
+    fetchData();
+  };
+
+  const handleSync = async (id: string) => {
+    setSyncingId(id);
+    const result = await syncWhatsAppTemplates(id);
+    setSyncingId(null);
+    if (result.success) toast(`${result.count} templates synced`);
+    else toast(result.error || "Sync failed", "error");
+    fetchData();
+  };
+
+  const handleSetDefault = (id: string) => {
+    startTransition(async () => {
+      const result = await setDefaultWhatsAppAccount(id);
+      if (result.success) { toast("Default updated"); fetchData(); }
+      else toast(result.error || "Failed", "error");
+    });
+  };
+
+  const handleDelete = () => {
+    if (!deleteTargetId) return;
+    startTransition(async () => {
+      setDeletingId(deleteTargetId);
+      const result = await deleteWhatsAppAccount(deleteTargetId);
+      setDeletingId(null);
+      setShowDeleteModal(false);
+      setDeleteTargetId(null);
+      if (result.success) { toast("Account removed"); fetchData(); }
+      else toast(result.error || "Failed", "error");
+    });
+  };
+
+  const qualityBadge = (q: string | null) => {
+    if (!q) return null;
+    const colors: Record<string, string> = {
+      GREEN: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+      YELLOW: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+      RED: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    };
+    return (
+      <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase", colors[q] || "bg-neutral-100 text-neutral-600")}>
+        {q}
+      </span>
+    );
+  };
+
+  const statusDot = (s: string) => {
+    switch (s) {
+      case "active": return "bg-emerald-500";
+      case "error": return "bg-red-500";
+      default: return "bg-neutral-400";
+    }
+  };
+
+  const tplStatusBadge = (s: string) => {
+    const colors: Record<string, string> = {
+      APPROVED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+      PENDING: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+      REJECTED: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    };
+    return (
+      <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase", colors[s] || "bg-neutral-100 text-neutral-600")}>
+        {s}
+      </span>
+    );
+  };
+
+  return (
+    <div className="space-y-8 max-w-2xl">
+      <div>
+        <h2 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">WhatsApp Business</h2>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+          Connect your WhatsApp Business API account to send messages from sequences.
+        </p>
+      </div>
+
+      {/* Connect Button */}
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Connect Account</p>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="flex items-center gap-2.5 px-4 py-2.5 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-sm font-medium text-neutral-700 dark:text-neutral-300"
+        >
+          <WhatsappLogoIcon size={18} weight="bold" />
+          {showAddForm ? "Cancel" : "Connect WhatsApp Business"}
+        </button>
+      </div>
+
+      {/* Connect Form */}
+      {showAddForm && (
+        <div className="border border-neutral-200 dark:border-neutral-700 rounded p-5 space-y-5 bg-neutral-50 dark:bg-neutral-900/50">
+          <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Meta Cloud API Credentials</h3>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            Find these in your Meta Business Suite → WhatsApp → API Setup.
+          </p>
+          <div className="grid grid-cols-1 gap-4">
+            <Input
+              label="Phone Number ID"
+              value={form.phoneNumberId}
+              onChange={(e) => setForm({ ...form, phoneNumberId: e.target.value })}
+              placeholder="e.g. 123456789012345"
+            />
+            <Input
+              label="WhatsApp Business Account ID (WABA)"
+              value={form.wabaId}
+              onChange={(e) => setForm({ ...form, wabaId: e.target.value })}
+              placeholder="e.g. 987654321098765"
+            />
+            <Input
+              label="Permanent Access Token"
+              type="password"
+              value={form.accessToken}
+              onChange={(e) => setForm({ ...form, accessToken: e.target.value })}
+              placeholder="EAAx..."
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="secondary" onClick={() => setShowAddForm(false)}>Cancel</Button>
+            <Button onClick={handleConnect} disabled={isPending || !form.phoneNumberId || !form.wabaId || !form.accessToken}>
+              {isPending ? <CircleNotchIcon size={16} className="animate-spin mr-2" /> : null}
+              Connect Account
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Connected Accounts */}
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Connected Accounts</p>
+        {loading ? (
+          <div className="flex items-center justify-center py-12 text-neutral-400">
+            <CircleNotchIcon size={24} className="animate-spin" />
+          </div>
+        ) : accounts.length === 0 ? (
+          <div className="text-center py-12 border border-dashed border-neutral-200 dark:border-neutral-700 rounded">
+            <WhatsappLogoIcon size={32} className="mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">No WhatsApp accounts connected yet.</p>
+            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Connect your Meta Cloud API credentials above.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {accounts.map((acct) => (
+              <div key={acct.id} className="flex items-center gap-4 max-sm:flex-col max-sm:items-start border border-neutral-200 dark:border-neutral-700 rounded p-4 bg-white dark:bg-neutral-900">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-9 h-9 rounded bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+                    <WhatsappLogoIcon size={18} className="text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                        {acct.display_phone_number}
+                      </span>
+                      {acct.is_default && <Badge variant="neutral">Default</Badge>}
+                      {qualityBadge(acct.quality_rating)}
+                    </div>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      {acct.verified_name && (
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400">{acct.verified_name}</span>
+                      )}
+                      <span className="flex items-center gap-1 text-xs">
+                        <span className={cn("w-1.5 h-1.5 rounded-full", statusDot(acct.status))} />
+                        <span className={acct.status === "active" ? "text-emerald-600 dark:text-emerald-400" : "text-neutral-400"}>
+                          {acct.status.charAt(0).toUpperCase() + acct.status.slice(1)}
+                        </span>
+                      </span>
+                      <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                        {acct.daily_sent_count}/{acct.daily_send_limit} sent today
+                      </span>
+                    </div>
+                    {acct.last_error && (
+                      <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                        <WarningIcon size={12} /> {acct.last_error}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 max-sm:w-full max-sm:justify-end flex-wrap">
+                  <button
+                    onClick={() => handleSync(acct.id)}
+                    disabled={syncingId === acct.id}
+                    className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                  >
+                    {syncingId === acct.id ? <CircleNotchIcon size={14} className="animate-spin" /> : "Sync Templates"}
+                  </button>
+                  <button
+                    onClick={() => handleTest(acct.id)}
+                    disabled={testingId === acct.id}
+                    className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                  >
+                    {testingId === acct.id ? <CircleNotchIcon size={14} className="animate-spin" /> : "Test"}
+                  </button>
+                  {!acct.is_default && (
+                    <button
+                      onClick={() => handleSetDefault(acct.id)}
+                      disabled={isPending}
+                      className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                    >
+                      Set Default
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setDeleteTargetId(acct.id); setShowDeleteModal(true); }}
+                    className="text-xs px-3 py-1.5 rounded border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Templates */}
+      {templates.length > 0 && (
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Message Templates</p>
+          <div className="space-y-2">
+            {templates.map((tpl) => (
+              <div key={tpl.id} className="border border-neutral-200 dark:border-neutral-700 rounded p-3 bg-white dark:bg-neutral-900">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{tpl.name}</span>
+                  {tplStatusBadge(tpl.status)}
+                  <span className="text-[10px] text-neutral-400 uppercase">{tpl.language}</span>
+                  <span className="text-[10px] text-neutral-400 uppercase">{tpl.category}</span>
+                </div>
+                {tpl.body_text && (
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">{tpl.body_text}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Webhook URL */}
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Webhook Configuration</p>
+        <div className="border border-neutral-200 dark:border-neutral-700 rounded p-4 bg-neutral-50 dark:bg-neutral-900/50">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
+            Set this URL in your Meta App Dashboard → WhatsApp → Configuration → Callback URL:
+          </p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 text-xs bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-3 py-2 text-neutral-700 dark:text-neutral-300 font-mono break-all">
+              {webhookUrl}
+            </code>
+            <button
+              onClick={() => { navigator.clipboard.writeText(webhookUrl); toast("Copied to clipboard"); }}
+              className="text-xs px-3 py-2 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors shrink-0"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <DeleteConfirmModal
+        open={showDeleteModal}
+        onClose={() => { setShowDeleteModal(false); setDeleteTargetId(null); }}
+        onConfirm={handleDelete}
+        title="Remove WhatsApp Account"
+        description="Are you sure? Active sequences using this account will be paused."
+        loading={!!deletingId}
+      />
+
+      <Toast open={showToast} onClose={() => setShowToast(false)} message={toastMessage} variant={toastVariant} />
+    </div>
+  );
+}
+
+// ── LinkedIn Section ────────────────────────────────────────────────────────
+
+interface LIAccount {
+  id: string;
+  linkedin_id: string | null;
+  display_name: string | null;
+  profile_url: string | null;
+  status: string;
+  is_default: boolean;
+  daily_connection_requests: number;
+  daily_messages_sent: number;
+  weekly_connection_requests: number;
+  daily_profile_views: number;
+  daily_endorsements: number;
+  daily_connection_limit: number;
+  daily_message_limit: number;
+  weekly_connection_limit: number;
+  daily_profile_view_limit: number;
+  daily_endorsement_limit: number;
+  last_error: string | null;
+  token_expires_at: string | null;
+}
+
+function LinkedInSection() {
+  const [accounts, setAccounts] = useState<LIAccount[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isPending, startTransition] = useTransition();
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastVariant, setToastVariant] = useState<"success" | "error">("success");
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingLimitsId, setEditingLimitsId] = useState<string | null>(null);
+  const [limitsForm, setLimitsForm] = useState({
+    daily_connection_limit: 20,
+    daily_message_limit: 50,
+    weekly_connection_limit: 100,
+    daily_profile_view_limit: 80,
+    daily_endorsement_limit: 10,
+  });
+
+  const fetchData = async () => {
+    const result = await getLinkedInAccounts();
+    setAccounts((result.accounts || []) as LIAccount[]);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  const toast = (msg: string, variant: "success" | "error" = "success") => {
+    setToastMessage(msg);
+    setToastVariant(variant);
+    setShowToast(true);
+  };
+
+  const handleConnectLinkedIn = () => {
+    window.location.href = "/api/linkedin/oauth";
+  };
+
+  const handleTest = async (id: string) => {
+    setTestingId(id);
+    const result = await testLinkedInConnection(id);
+    setTestingId(null);
+    if (result.success) toast("Connection verified");
+    else toast(result.error || "Test failed", "error");
+    fetchData();
+  };
+
+  const handleSetDefault = (id: string) => {
+    startTransition(async () => {
+      const result = await setDefaultLinkedInAccount(id);
+      if (result.success) { toast("Default updated"); fetchData(); }
+      else toast(result.error || "Failed", "error");
+    });
+  };
+
+  const handleDelete = () => {
+    if (!deleteTargetId) return;
+    startTransition(async () => {
+      setDeletingId(deleteTargetId);
+      const result = await deleteLinkedInAccount(deleteTargetId);
+      setDeletingId(null);
+      setShowDeleteModal(false);
+      setDeleteTargetId(null);
+      if (result.success) { toast("Account removed"); fetchData(); }
+      else toast(result.error || "Failed", "error");
+    });
+  };
+
+  const openLimitsEditor = (acct: LIAccount) => {
+    setEditingLimitsId(acct.id);
+    setLimitsForm({
+      daily_connection_limit: acct.daily_connection_limit,
+      daily_message_limit: acct.daily_message_limit,
+      weekly_connection_limit: acct.weekly_connection_limit,
+      daily_profile_view_limit: acct.daily_profile_view_limit,
+      daily_endorsement_limit: acct.daily_endorsement_limit,
+    });
+  };
+
+  const saveLimits = () => {
+    if (!editingLimitsId) return;
+    startTransition(async () => {
+      const result = await updateLinkedInLimits(editingLimitsId, limitsForm);
+      if (result.success) { toast("Rate limits updated"); setEditingLimitsId(null); fetchData(); }
+      else toast(result.error || "Failed", "error");
+    });
+  };
+
+  const statusDot = (s: string) => {
+    switch (s) {
+      case "active": return "bg-emerald-500";
+      case "rate_limited": return "bg-amber-500";
+      case "error": return "bg-red-500";
+      default: return "bg-neutral-400";
+    }
+  };
+
+  const statusLabel = (s: string) => {
+    switch (s) {
+      case "active": return "Active";
+      case "rate_limited": return "Rate Limited";
+      case "error": return "Error";
+      case "disconnected": return "Disconnected";
+      default: return s;
+    }
+  };
+
+  const LimitBar = ({ label, used, limit }: { label: string; used: number; limit: number }) => {
+    const pct = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
+    const color = pct > 85 ? "bg-red-500" : pct > 60 ? "bg-amber-500" : "bg-emerald-500";
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-neutral-600 dark:text-neutral-400">{label}</span>
+          <span className="text-neutral-500 dark:text-neutral-400 font-mono">{used}/{limit}</span>
+        </div>
+        <div className="h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-700 overflow-hidden">
+          <div className={cn("h-full rounded-full transition-all", color)} style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-8 max-w-2xl">
+      <div>
+        <h2 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">LinkedIn</h2>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+          Connect your LinkedIn account for automated outreach — connections, messages, profile views, and endorsements.
+        </p>
+      </div>
+
+      {/* Connect Button */}
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Connect Account</p>
+        <button
+          onClick={handleConnectLinkedIn}
+          className="flex items-center gap-2.5 px-4 py-2.5 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-sm font-medium text-neutral-700 dark:text-neutral-300"
+        >
+          <LinkedinLogoIcon size={18} weight="bold" />
+          Connect with LinkedIn
+        </button>
+      </div>
+
+      {/* Connected Accounts */}
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Connected Accounts</p>
+        {loading ? (
+          <div className="flex items-center justify-center py-12 text-neutral-400">
+            <CircleNotchIcon size={24} className="animate-spin" />
+          </div>
+        ) : accounts.length === 0 ? (
+          <div className="text-center py-12 border border-dashed border-neutral-200 dark:border-neutral-700 rounded">
+            <LinkedinLogoIcon size={32} className="mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">No LinkedIn accounts connected yet.</p>
+            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Connect via OAuth to start LinkedIn outreach.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {accounts.map((acct) => (
+              <div key={acct.id} className="border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900">
+                {/* Account Header */}
+                <div className="flex items-center gap-4 max-sm:flex-col max-sm:items-start p-4">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-9 h-9 rounded bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                      <LinkedinLogoIcon size={18} className="text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                          {acct.display_name || "LinkedIn Account"}
+                        </span>
+                        {acct.is_default && <Badge variant="neutral">Default</Badge>}
+                      </div>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <span className="flex items-center gap-1 text-xs">
+                          <span className={cn("w-1.5 h-1.5 rounded-full", statusDot(acct.status))} />
+                          <span className={acct.status === "active" ? "text-emerald-600 dark:text-emerald-400" : acct.status === "rate_limited" ? "text-amber-600 dark:text-amber-400" : "text-neutral-400"}>
+                            {statusLabel(acct.status)}
+                          </span>
+                        </span>
+                        {acct.token_expires_at && (
+                          <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                            Token expires {new Date(acct.token_expires_at).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                      {acct.last_error && (
+                        <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                          <WarningIcon size={12} /> {acct.last_error}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 max-sm:w-full max-sm:justify-end flex-wrap">
+                    <button
+                      onClick={() => openLimitsEditor(acct)}
+                      className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                    >
+                      Rate Limits
+                    </button>
+                    <button
+                      onClick={() => handleTest(acct.id)}
+                      disabled={testingId === acct.id}
+                      className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                    >
+                      {testingId === acct.id ? <CircleNotchIcon size={14} className="animate-spin" /> : "Test"}
+                    </button>
+                    {!acct.is_default && (
+                      <button
+                        onClick={() => handleSetDefault(acct.id)}
+                        disabled={isPending}
+                        className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                      >
+                        Set Default
+                      </button>
+                    )}
+                    <button
+                      onClick={() => { setDeleteTargetId(acct.id); setShowDeleteModal(true); }}
+                      className="text-xs px-3 py-1.5 rounded border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    >
+                      Disconnect
+                    </button>
+                  </div>
+                </div>
+
+                {/* Rate Limit Counters */}
+                <div className="px-4 pb-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <LimitBar label="Connections (Daily)" used={acct.daily_connection_requests} limit={acct.daily_connection_limit} />
+                  <LimitBar label="Messages (Daily)" used={acct.daily_messages_sent} limit={acct.daily_message_limit} />
+                  <LimitBar label="Connections (Weekly)" used={acct.weekly_connection_requests} limit={acct.weekly_connection_limit} />
+                  <LimitBar label="Profile Views" used={acct.daily_profile_views} limit={acct.daily_profile_view_limit} />
+                  <LimitBar label="Endorsements" used={acct.daily_endorsements} limit={acct.daily_endorsement_limit} />
+                </div>
+
+                {/* Rate Limits Editor */}
+                {editingLimitsId === acct.id && (
+                  <div className="border-t border-neutral-200 dark:border-neutral-700 p-4 bg-neutral-50 dark:bg-neutral-900/50 space-y-4">
+                    <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Configure Rate Limits</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      <Input
+                        label="Daily Connections"
+                        type="number"
+                        value={String(limitsForm.daily_connection_limit)}
+                        onChange={(e) => setLimitsForm({ ...limitsForm, daily_connection_limit: Number(e.target.value) })}
+                      />
+                      <Input
+                        label="Daily Messages"
+                        type="number"
+                        value={String(limitsForm.daily_message_limit)}
+                        onChange={(e) => setLimitsForm({ ...limitsForm, daily_message_limit: Number(e.target.value) })}
+                      />
+                      <Input
+                        label="Weekly Connections"
+                        type="number"
+                        value={String(limitsForm.weekly_connection_limit)}
+                        onChange={(e) => setLimitsForm({ ...limitsForm, weekly_connection_limit: Number(e.target.value) })}
+                      />
+                      <Input
+                        label="Daily Profile Views"
+                        type="number"
+                        value={String(limitsForm.daily_profile_view_limit)}
+                        onChange={(e) => setLimitsForm({ ...limitsForm, daily_profile_view_limit: Number(e.target.value) })}
+                      />
+                      <Input
+                        label="Daily Endorsements"
+                        type="number"
+                        value={String(limitsForm.daily_endorsement_limit)}
+                        onChange={(e) => setLimitsForm({ ...limitsForm, daily_endorsement_limit: Number(e.target.value) })}
+                      />
+                    </div>
+                    <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                      <WarningIcon size={12} />
+                      LinkedIn aggressively bans accounts exceeding limits. Keep defaults unless you know what you&apos;re doing.
+                    </p>
+                    <div className="flex justify-end gap-3">
+                      <Button variant="secondary" size="sm" onClick={() => setEditingLimitsId(null)}>Cancel</Button>
+                      <Button size="sm" onClick={saveLimits} disabled={isPending}>
+                        {isPending ? <CircleNotchIcon size={14} className="animate-spin mr-1" /> : null}
+                        Save Limits
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Safety Notice */}
+      <div className="border border-amber-200 dark:border-amber-900/50 rounded p-4 bg-amber-50 dark:bg-amber-900/10">
+        <p className="text-xs font-medium text-amber-800 dark:text-amber-300 mb-1">Safety Notice</p>
+        <p className="text-xs text-amber-700 dark:text-amber-400">
+          LinkedIn automation carries account risk. Pulse CRM enforces conservative rate limits and random delays (2-5 min) between actions to mimic human behavior. Counters reset daily at midnight UTC.
+        </p>
+      </div>
+
+      <DeleteConfirmModal
+        open={showDeleteModal}
+        onClose={() => { setShowDeleteModal(false); setDeleteTargetId(null); }}
+        onConfirm={handleDelete}
+        title="Remove LinkedIn Account"
+        description="Are you sure? Active sequences using this account will be paused."
+        loading={!!deletingId}
+      />
+
+      <Toast open={showToast} onClose={() => setShowToast(false)} message={toastMessage} variant={toastVariant} />
+    </div>
+  );
+}
+
 // ── Email Accounts Section ─────────────────────────────────────────────────
 
 interface EmailAccount {
@@ -2396,6 +3117,10 @@ export function SettingsPageClient({
         return <IntegrationsSection integrations={initialIntegrations} />;
       case "email-accounts":
         return <EmailAccountsSection />;
+      case "whatsapp":
+        return <WhatsAppSection />;
+      case "linkedin":
+        return <LinkedInSection />;
       case "billing":
         return <BillingSection />;
       case "ai":

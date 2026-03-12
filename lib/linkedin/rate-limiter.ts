@@ -4,8 +4,6 @@
  * LinkedIn is aggressive with rate limiting — these defaults are conservative.
  */
 
-"use server";
-
 import { createAdminClient } from "@/lib/supabase/server";
 
 export type LinkedInActionType =

@@ -5,8 +5,6 @@
  * records the message in the whatsapp_messages table.
  */
 
-"use server";
-
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   sendTemplateMessage,
