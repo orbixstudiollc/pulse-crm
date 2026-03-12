@@ -43,7 +43,7 @@ export function HeaderUserMenu() {
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          "flex items-center gap-2.5 rounded-md border border-neutral-200 dark:border-neutral-800 px-2.5 py-1.5 transition-colors",
+          "flex items-center gap-2.5 rounded border border-neutral-200 dark:border-neutral-800 px-2.5 py-1.5 transition-colors",
           "hover:bg-neutral-50 dark:hover:bg-neutral-900",
           open && "bg-neutral-50 dark:bg-neutral-900",
         )}
