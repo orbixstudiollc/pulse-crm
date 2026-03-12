@@ -86,13 +86,13 @@ export function RevenueChart({
   return (
     <div
       className={cn(
-        "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden",
+        "rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden",
         className,
       )}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-800">
-        <h3 className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
+        <h3 className="text-xl font-serif tracking-[-0.2px] text-neutral-950 dark:text-neutral-50">
           Revenue Trend
         </h3>
 

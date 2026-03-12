@@ -46,7 +46,7 @@ export function TagInput({
       )}
       <div
         className={cn(
-          "flex flex-wrap items-center gap-2 px-3 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 focus-within:border-neutral-200 dark:focus-within:border-neutral-700 focus-within:shadow-[0_0_0_2px_#ffffff,0_0_0_4px_#0a0a0a] dark:focus-within:shadow-[0_0_0_2px_#171717,0_0_0_4px_#fafafa] transition-shadow",
+          "flex flex-wrap items-center gap-2 px-3 py-2.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 focus-within:border-neutral-200 dark:focus-within:border-neutral-700 focus-within:shadow-focus transition-shadow",
         )}
       >
         {tags.map((tag) => (

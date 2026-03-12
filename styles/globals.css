@@ -1,26 +1,387 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   PULSE CRM — Design System Tokens
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 :root {
+    /* ── Base ─────────────────────────────────────────────────────────────── */
     --background: #ffffff;
     --foreground: #0a0a0a;
-}
 
-@theme inline {
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --font-sans: var(--font-figtree);
-    --font-serif: var(--font-serif);
-    --font-onest: var(--font-onest);
+    /* ── Primary (Blue) ───────────────────────────────────────────────────── */
+    --color-primary-50: #EFF6FF;
+    --color-primary-100: #DBEAFE;
+    --color-primary-200: #BEDBFF;
+    --color-primary-300: #8EC5FF;
+    --color-primary-400: #51A2FF;
+    --color-primary-500: #2B7FFF;
+    --color-primary-600: #155DFC;
+    --color-primary-700: #1447E6;
+    --color-primary-800: #193CB8;
+    --color-primary-900: #1C398E;
+    --color-primary-950: #162456;
+
+    /* ── Violet ────────────────────────────────────────────────────────────── */
+    --color-violet-50: #F5F3FF;
+    --color-violet-100: #EDE9FE;
+    --color-violet-200: #DDD6FE;
+    --color-violet-300: #C4B5FD;
+    --color-violet-400: #A78BFA;
+    --color-violet-500: #8E51FF;
+    --color-violet-600: #7C3AED;
+    --color-violet-700: #6D28D9;
+    --color-violet-800: #5B21B6;
+    --color-violet-900: #4C1D95;
+    --color-violet-950: #2F0D68;
+
+    /* ── Lime ──────────────────────────────────────────────────────────────── */
+    --color-lime-50: #F7FEE7;
+    --color-lime-100: #ECFCCB;
+    --color-lime-200: #D9F99D;
+    --color-lime-300: #BEF264;
+    --color-lime-400: #A3E635;
+    --color-lime-500: #7CCF00;
+    --color-lime-600: #65A30D;
+    --color-lime-700: #4D7C0F;
+    --color-lime-800: #3F6212;
+    --color-lime-900: #365314;
+    --color-lime-950: #192E03;
+
+    /* ── Success (Green) ──────────────────────────────────────────────────── */
+    --color-success-50: #F0FDF4;
+    --color-success-100: #DCFCE7;
+    --color-success-200: #BBF7D0;
+    --color-success-300: #86EFAC;
+    --color-success-400: #4ADE80;
+    --color-success-500: #00C950;
+    --color-success-600: #00A63E;
+    --color-success-700: #15803D;
+    --color-success-800: #166534;
+    --color-success-900: #14532D;
+    --color-success-950: #032E15;
+
+    /* ── Warning (Amber) ──────────────────────────────────────────────────── */
+    --color-warning-50: #FEFCE8;
+    --color-warning-100: #FEF9C3;
+    --color-warning-200: #FEF08A;
+    --color-warning-300: #FDE047;
+    --color-warning-400: #FACC15;
+    --color-warning-500: #F0B100;
+    --color-warning-600: #CA8A04;
+    --color-warning-700: #A16207;
+    --color-warning-800: #854D0E;
+    --color-warning-900: #713F12;
+    --color-warning-950: #432004;
+
+    /* ── Danger (Red) ─────────────────────────────────────────────────────── */
+    --color-danger-50: #FEF2F2;
+    --color-danger-100: #FEE2E2;
+    --color-danger-200: #FFC9C9;
+    --color-danger-300: #FCA5A5;
+    --color-danger-400: #F87171;
+    --color-danger-500: #FB2C36;
+    --color-danger-600: #E7000B;
+    --color-danger-700: #C10007;
+    --color-danger-800: #9F0712;
+    --color-danger-900: #7F1D1D;
+    --color-danger-950: #460809;
+
+    /* ── Focus Ring ────────────────────────────────────────────────────────── */
+    --ring-offset: #ffffff;
+    --ring-color: #0a0a0a;
+    --ring-danger: #FF6467;
+
+    /* ── Shadows ───────────────────────────────────────────────────────────── */
+    --shadow-focus: 0 0 0 2px var(--ring-offset), 0 0 0 4px var(--ring-color);
+    --shadow-focus-danger: 0 0 0 2px var(--ring-offset), 0 0 0 4px var(--ring-danger);
+    --shadow-dropdown: 0 8px 24px 0 rgba(0, 0, 0, 0.12);
 }
 
 .dark {
     --background: #0a0a0a;
     --foreground: #fafafa;
+    --ring-offset: #171717;
+    --ring-color: #fafafa;
+    --ring-danger: #FF6467;
+    --shadow-dropdown: 0 8px 24px 0 rgba(0, 0, 0, 0.4);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Tailwind v4 Theme Registration
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@theme inline {
+    /* ── Base ──────────────────────────────────────────────────────────────── */
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    /* ── Fonts ─────────────────────────────────────────────────────────────── */
+    --font-sans: var(--font-figtree);
+    --font-serif: var(--font-serif);
+    --font-onest: var(--font-onest);
+
+    /* ── Primary ───────────────────────────────────────────────────────────── */
+    --color-primary-50: var(--color-primary-50);
+    --color-primary-100: var(--color-primary-100);
+    --color-primary-200: var(--color-primary-200);
+    --color-primary-300: var(--color-primary-300);
+    --color-primary-400: var(--color-primary-400);
+    --color-primary-500: var(--color-primary-500);
+    --color-primary-600: var(--color-primary-600);
+    --color-primary-700: var(--color-primary-700);
+    --color-primary-800: var(--color-primary-800);
+    --color-primary-900: var(--color-primary-900);
+    --color-primary-950: var(--color-primary-950);
+
+    /* ── Violet ─────────────────────────────────────────────────────────────── */
+    --color-violet-50: var(--color-violet-50);
+    --color-violet-100: var(--color-violet-100);
+    --color-violet-200: var(--color-violet-200);
+    --color-violet-300: var(--color-violet-300);
+    --color-violet-400: var(--color-violet-400);
+    --color-violet-500: var(--color-violet-500);
+    --color-violet-600: var(--color-violet-600);
+    --color-violet-700: var(--color-violet-700);
+    --color-violet-800: var(--color-violet-800);
+    --color-violet-900: var(--color-violet-900);
+    --color-violet-950: var(--color-violet-950);
+
+    /* ── Lime ───────────────────────────────────────────────────────────────── */
+    --color-lime-50: var(--color-lime-50);
+    --color-lime-100: var(--color-lime-100);
+    --color-lime-200: var(--color-lime-200);
+    --color-lime-300: var(--color-lime-300);
+    --color-lime-400: var(--color-lime-400);
+    --color-lime-500: var(--color-lime-500);
+    --color-lime-600: var(--color-lime-600);
+    --color-lime-700: var(--color-lime-700);
+    --color-lime-800: var(--color-lime-800);
+    --color-lime-900: var(--color-lime-900);
+    --color-lime-950: var(--color-lime-950);
+
+    /* ── Success ────────────────────────────────────────────────────────────── */
+    --color-success-50: var(--color-success-50);
+    --color-success-100: var(--color-success-100);
+    --color-success-200: var(--color-success-200);
+    --color-success-300: var(--color-success-300);
+    --color-success-400: var(--color-success-400);
+    --color-success-500: var(--color-success-500);
+    --color-success-600: var(--color-success-600);
+    --color-success-700: var(--color-success-700);
+    --color-success-800: var(--color-success-800);
+    --color-success-900: var(--color-success-900);
+    --color-success-950: var(--color-success-950);
+
+    /* ── Warning ────────────────────────────────────────────────────────────── */
+    --color-warning-50: var(--color-warning-50);
+    --color-warning-100: var(--color-warning-100);
+    --color-warning-200: var(--color-warning-200);
+    --color-warning-300: var(--color-warning-300);
+    --color-warning-400: var(--color-warning-400);
+    --color-warning-500: var(--color-warning-500);
+    --color-warning-600: var(--color-warning-600);
+    --color-warning-700: var(--color-warning-700);
+    --color-warning-800: var(--color-warning-800);
+    --color-warning-900: var(--color-warning-900);
+    --color-warning-950: var(--color-warning-950);
+
+    /* ── Danger ──────────────────────────────────────────────────────────────── */
+    --color-danger-50: var(--color-danger-50);
+    --color-danger-100: var(--color-danger-100);
+    --color-danger-200: var(--color-danger-200);
+    --color-danger-300: var(--color-danger-300);
+    --color-danger-400: var(--color-danger-400);
+    --color-danger-500: var(--color-danger-500);
+    --color-danger-600: var(--color-danger-600);
+    --color-danger-700: var(--color-danger-700);
+    --color-danger-800: var(--color-danger-800);
+    --color-danger-900: var(--color-danger-900);
+    --color-danger-950: var(--color-danger-950);
+
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Dark Mode Variant
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Base Styles
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 body {
     background: var(--background);
     color: var(--foreground);
 }
 
-@custom-variant dark (&:where(.dark, .dark *));
+/* ═══════════════════════════════════════════════════════════════════════════
+   Shadow Utilities (registered via @utility for variant support)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer utilities {
+    .shadow-focus,
+    .focus\:shadow-focus:focus,
+    .focus-visible\:shadow-focus:focus-visible,
+    .peer-focus-visible\:shadow-focus:is(:where(.peer):focus-visible ~ *),
+    .focus-within\:shadow-focus:focus-within {
+        --tw-shadow: 0 0 0 2px var(--ring-offset), 0 0 0 4px var(--ring-color);
+        box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    }
+
+    .shadow-focus-danger,
+    .focus\:shadow-focus-danger:focus,
+    .focus-visible\:shadow-focus-danger:focus-visible {
+        --tw-shadow: 0 0 0 2px var(--ring-offset), 0 0 0 4px var(--ring-danger);
+        box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    }
+
+    .shadow-dropdown {
+        --tw-shadow: var(--shadow-dropdown);
+        box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Typography — Design System Utility Classes
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Display (Onest Medium) ────────────────────────────────────────────────── */
+
+.text-display-2xl {
+    font-family: var(--font-onest);
+    font-weight: 500;
+    font-size: 72px;
+    line-height: 80px;
+    letter-spacing: -1.44px;
+}
+
+.text-display-xl {
+    font-family: var(--font-onest);
+    font-weight: 500;
+    font-size: 64px;
+    line-height: 72px;
+    letter-spacing: -1.28px;
+}
+
+/* ── Heading 1–5 (Onest Medium) ────────────────────────────────────────────── */
+
+.text-h1 {
+    font-family: var(--font-onest);
+    font-weight: 500;
+    font-size: 56px;
+    line-height: 64px;
+    letter-spacing: -1.12px;
+}
+
+.text-h2 {
+    font-family: var(--font-onest);
+    font-weight: 500;
+    font-size: 48px;
+    line-height: 56px;
+    letter-spacing: -0.96px;
+}
+
+.text-h3 {
+    font-family: var(--font-onest);
+    font-weight: 500;
+    font-size: 40px;
+    line-height: 48px;
+    letter-spacing: -0.80px;
+}
+
+.text-h4 {
+    font-family: var(--font-onest);
+    font-weight: 500;
+    font-size: 32px;
+    line-height: 40px;
+    letter-spacing: -0.64px;
+}
+
+.text-h5 {
+    font-family: var(--font-onest);
+    font-weight: 500;
+    font-size: 28px;
+    line-height: 36px;
+    letter-spacing: -0.56px;
+}
+
+/* ── Heading Large/Medium/Small (Instrument Serif) ─────────────────────────── */
+
+.text-heading-lg {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 32px;
+    letter-spacing: -0.24px;
+}
+
+.text-heading-md {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 28px;
+    letter-spacing: -0.20px;
+}
+
+.text-heading-sm {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: -0.16px;
+}
+
+/* ── Label (Figtree Medium) ────────────────────────────────────────────────── */
+
+.text-label-lg {
+    font-family: var(--font-figtree);
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 24px;
+}
+
+.text-label-md {
+    font-family: var(--font-figtree);
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.text-label-sm {
+    font-family: var(--font-figtree);
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 20px;
+}
+
+.text-label-xs {
+    font-family: var(--font-figtree);
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 18px;
+}
+
+/* ── Body (Figtree Regular) ────────────────────────────────────────────────── */
+
+.text-body-lg {
+    font-family: var(--font-figtree);
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 24px;
+}
+
+.text-body-md {
+    font-family: var(--font-figtree);
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 22px;
+}
+
+.text-body-sm {
+    font-family: var(--font-figtree);
+    font-weight: 400;
+    font-size: 12px;
+    line-height: 20px;
+}

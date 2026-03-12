@@ -2,16 +2,23 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
+  AddressBookIcon,
   CaretDownIcon,
+  ChartBarIcon,
+  CrosshairIcon,
   CurrencyDollarIcon,
+  EnvelopeIcon,
+  FileTextIcon,
   FunnelIcon,
   GaugeIcon,
   GearIcon,
   PulseIcon,
+  ScrollIcon,
+  ShieldIcon,
   SidebarSimpleIcon,
   UsersIcon,
   XIcon,
@@ -19,13 +26,22 @@ import {
 import Image from "next/image";
 import { UpgradeCard } from "../features";
 import { useSidebar } from "./SidebarContext";
+import { useAuth } from "@/components/providers/AuthProvider";
+import { signOut } from "@/lib/actions/auth";
 
 const navigation = [
   { name: "Overview", href: "/dashboard/overview", icon: GaugeIcon },
   { name: "Customers", href: "/dashboard/customers", icon: UsersIcon },
   { name: "Leads", href: "/dashboard/leads", icon: FunnelIcon },
+  { name: "ICP", href: "/dashboard/icp", icon: CrosshairIcon },
+  { name: "Sequences", href: "/dashboard/sequences", icon: EnvelopeIcon },
+  { name: "Contacts", href: "/dashboard/contacts", icon: AddressBookIcon },
   { name: "Sales", href: "/dashboard/sales", icon: CurrencyDollarIcon },
   { name: "Activity", href: "/dashboard/activity", icon: PulseIcon },
+  { name: "Analytics", href: "/dashboard/analytics", icon: ChartBarIcon },
+  { name: "Proposals", href: "/dashboard/proposals", icon: ScrollIcon },
+  { name: "Playbook", href: "/dashboard/playbook", icon: FileTextIcon },
+  { name: "Competitors", href: "/dashboard/competitors", icon: ShieldIcon },
   { name: "Settings", href: "/dashboard/settings", icon: GearIcon },
 ];
 
@@ -43,6 +59,19 @@ function SidebarContent({
   onNavClick?: () => void;
 }) {
   const pathname = usePathname();
+  const { profile } = useAuth();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const displayName = profile
+    ? `${profile.first_name || ""} ${profile.last_name || ""}`.trim() ||
+      profile.email
+    : "User";
+
+  const avatarUrl = profile?.avatar_url || "/images/avatars/user.jpg";
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <>
@@ -117,7 +146,7 @@ function SidebarContent({
                     "transition-[background-color,color,box-shadow,border-color] duration-200 ease-in-out",
                     collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5",
                     isActive
-                      ? "bg-white dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 border-neutral-200 dark:border-neutral-700 shadow-[0_0_0_2px_#ffffff,0_0_0_4px_#0a0a0a] dark:shadow-[0_0_0_2px_#171717,0_0_0_4px_#fafafa]"
+                      ? "bg-white dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 border-neutral-200 dark:border-neutral-700 shadow-focus"
                       : "border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50",
                   )}
                   title={collapsed ? item.name : undefined}
@@ -164,46 +193,105 @@ function SidebarContent({
       {/* User */}
       <div
         className={cn(
-          "border-t border-neutral-200 dark:border-neutral-800",
+          "border-t border-neutral-200 dark:border-neutral-800 relative",
           collapsed ? "py-5 px-3" : "py-6 px-5",
         )}
       >
-        <div className="relative flex items-center gap-3">
-          {/* Avatar */}
-          <Image
-            src="/images/avatars/user.jpg"
-            alt="Angel Uriostegui"
-            width={40}
-            height={40}
-            className={cn(
-              "h-10 w-10 shrink-0 rounded-full object-cover transition-transform duration-200 ease-in-out",
-              collapsed ? "mx-auto" : "",
-            )}
-          />
-
-          {/* User info */}
+        <button
+          onClick={() => setShowUserMenu(!showUserMenu)}
+          className="relative flex w-full items-center gap-2"
+        >
+          {/* Avatar + Info group */}
           <div
             className={cn(
-              "flex-1 overflow-hidden space-y-1 transition-all duration-200 ease-in-out",
-              collapsed
-                ? "w-0 opacity-0 translate-x-2 pointer-events-none"
-                : "w-auto opacity-100 translate-x-0",
+              "flex flex-1 items-center gap-3",
+              collapsed && "justify-center",
             )}
           >
-            <div className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
-              Angel Uriostegui
+            {/* Avatar */}
+            <Image
+              src={avatarUrl}
+              alt={displayName}
+              width={40}
+              height={40}
+              quality={100}
+              className="h-10 w-10 shrink-0 rounded-full object-cover transition-transform duration-200 ease-in-out"
+            />
+
+            {/* User info */}
+            <div
+              className={cn(
+                "flex flex-1 flex-col overflow-hidden leading-5 transition-all duration-200 ease-in-out text-left",
+                collapsed
+                  ? "w-0 opacity-0 translate-x-2 pointer-events-none"
+                  : "w-auto opacity-100 translate-x-0",
+              )}
+            >
+              <div className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                {displayName}
+              </div>
+              <div className="text-xs text-neutral-500 truncate">Pro Plan</div>
             </div>
-            <div className="text-xs text-neutral-500">Pro Plan</div>
           </div>
 
           {/* Caret */}
           <CaretDownIcon
             className={cn(
-              "h-4 w-4 text-neutral-500 transition-opacity duration-150",
+              "h-4 w-4 shrink-0 text-neutral-500 transition-all duration-150",
               collapsed ? "opacity-0" : "opacity-100",
+              showUserMenu ? "rotate-180" : "rotate-0",
             )}
           />
-        </div>
+        </button>
+
+        {/* User dropdown menu */}
+        <AnimatePresence>
+          {showUserMenu && !collapsed && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.15 }}
+              className="absolute bottom-full left-3 right-3 mb-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-lg overflow-hidden z-50"
+            >
+              <div className="p-1">
+                <Link
+                  href="/dashboard/settings"
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    onNavClick?.();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                >
+                  <GearIcon size={16} />
+                  Settings
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="shrink-0"
+                  >
+                    <path
+                      d="M6 14H3.333A1.333 1.333 0 0 1 2 12.667V3.333A1.333 1.333 0 0 1 3.333 2H6M10.667 11.333 14 8l-3.333-3.333M14 8H6"
+                      stroke="currentColor"
+                      strokeWidth="1.33"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  Sign out
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </>
   );

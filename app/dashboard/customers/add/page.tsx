@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useTransition } from "react";
 import Link from "next/link";
 import {
   Button,
@@ -14,13 +14,13 @@ import {
   UploadSimpleIcon,
   PlusIcon,
   XIcon,
-  CheckIcon,
   CircleNotchIcon,
-  Toast,
 } from "@/components/ui";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { usePageHeader } from "@/hooks";
+import { createCustomer } from "@/lib/actions/customers";
+import { toast } from "sonner";
 
 const industryOptions = [
   { label: "Technology", value: "technology" },
@@ -72,14 +72,31 @@ interface CustomField {
 
 export default function AddCustomerPage() {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [company, setCompany] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [companySize, setCompanySize] = useState("");
+  const [website, setWebsite] = useState("");
+  const [streetAddress, setStreetAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [country, setCountry] = useState("");
   const [status, setStatus] = useState("active");
-  const [tags, setTags] = useState<string[]>(["VIP", "Enterprise"]);
+  const [plan, setPlan] = useState("");
+  const [monthlyRevenue, setMonthlyRevenue] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [notes, setNotes] = useState("");
   const [customFields, setCustomFields] = useState<CustomField[]>([
     { id: "1", name: "", value: "" },
   ]);
-  const [saving, setSaving] = useState(false);
-  const [showToast, setShowToast] = useState(false);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -120,34 +137,67 @@ export default function AddCustomerPage() {
   };
 
   const handleSave = useCallback(async () => {
-    setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setSaving(false);
-    setShowToast(true);
+    if (!firstName.trim() || !email.trim()) {
+      toast.error("First name and email are required");
+      return;
+    }
 
-    setTimeout(() => {
-      router.push("/dashboard/customers");
-    }, 1500);
-  }, [router]);
+    const rawRevenue = monthlyRevenue.replace(/[$,]/g, "");
+    const parsedRevenue = parseFloat(rawRevenue) || 0;
+
+    startTransition(async () => {
+      const res = await createCustomer({
+        first_name: firstName,
+        last_name: lastName || null,
+        email,
+        phone: phone || null,
+        company: company || null,
+        job_title: jobTitle || null,
+        industry: industry || null,
+        company_size: companySize || null,
+        website: website || null,
+        street_address: streetAddress || null,
+        city: city || null,
+        state: state || null,
+        postal_code: postalCode || null,
+        country: country || null,
+        status,
+        plan: plan || "free",
+        monthly_revenue: parsedRevenue,
+        tags,
+        notes: notes || null,
+      });
+
+      if (res.error) {
+        toast.error(res.error);
+      } else {
+        toast.success("Customer created successfully");
+        router.push("/dashboard/customers");
+      }
+    });
+  }, [
+    firstName, lastName, email, phone, company, jobTitle, industry,
+    companySize, website, streetAddress, city, state, postalCode, country,
+    status, plan, monthlyRevenue, tags, notes, router, startTransition,
+  ]);
 
   const headerActions = useMemo(
     () => (
       <>
-        <Button variant="outline">Save as Draft</Button>
         <Button
           leftIcon={
-            saving ? (
+            isPending ? (
               <CircleNotchIcon size={16} className="animate-spin" />
             ) : undefined
           }
           onClick={handleSave}
-          disabled={saving}
+          disabled={isPending}
         >
-          {saving ? "Saving..." : "Save Customer"}
+          {isPending ? "Saving..." : "Save Customer"}
         </Button>
       </>
     ),
-    [saving, handleSave],
+    [isPending, handleSave],
   );
 
   usePageHeader({
@@ -168,8 +218,6 @@ export default function AddCustomerPage() {
           title="Basic information"
           description="Customer's personal and contact details"
         >
-          {/* Photo Upload */}
-          {/* Photo Upload */}
           <div className="flex items-center gap-5 mb-6">
             <div className="relative w-24 h-24 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center border border-neutral-200 dark:border-neutral-700 overflow-hidden">
               {avatar ? (
@@ -225,23 +273,35 @@ export default function AddCustomerPage() {
             </div>
           </div>
 
-          {/* Name Fields */}
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <Input label="First Name" placeholder="Enter first name" />
-            <Input label="Last Name" placeholder="Enter last name" />
+            <Input
+              label="First Name"
+              placeholder="Enter first name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+            />
+            <Input
+              label="Last Name"
+              placeholder="Enter last name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+            />
           </div>
 
-          {/* Contact Fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Email Address"
               type="email"
               placeholder="email@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
             <Input
               label="Phone Number"
               placeholder="+1 (555) 000-0000"
               optional
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
             />
           </div>
         </FormSection>
@@ -252,11 +312,18 @@ export default function AddCustomerPage() {
           description="Details about the customer's organization"
         >
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <Input label="Company Name" placeholder="Enter company name" />
+            <Input
+              label="Company Name"
+              placeholder="Enter company name"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+            />
             <Input
               label="Job Title"
               placeholder="e.g. Marketing Manager"
               optional
+              value={jobTitle}
+              onChange={(e) => setJobTitle(e.target.value)}
             />
           </div>
 
@@ -265,15 +332,25 @@ export default function AddCustomerPage() {
               label="Industry"
               placeholder="Select industry"
               options={industryOptions}
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
             />
             <Select
               label="Company Size"
               placeholder="Select size"
               options={companySizeOptions}
+              value={companySize}
+              onChange={(e) => setCompanySize(e.target.value)}
             />
           </div>
 
-          <Input label="Website" placeholder="https://example.com" optional />
+          <Input
+            label="Website"
+            placeholder="https://example.com"
+            optional
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+          />
         </FormSection>
 
         {/* Address */}
@@ -286,20 +363,39 @@ export default function AddCustomerPage() {
               label="Street Address"
               placeholder="123 Main Street"
               optional
+              value={streetAddress}
+              onChange={(e) => setStreetAddress(e.target.value)}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <Input label="City" placeholder="City" />
-            <Input label="State / Region" placeholder="State" />
+            <Input
+              label="City"
+              placeholder="City"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            />
+            <Input
+              label="State / Region"
+              placeholder="State"
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input label="Postal Code" placeholder="12345" />
+            <Input
+              label="Postal Code"
+              placeholder="12345"
+              value={postalCode}
+              onChange={(e) => setPostalCode(e.target.value)}
+            />
             <Select
               label="Country"
               placeholder="Select country"
               options={countryOptions}
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
             />
           </div>
         </FormSection>
@@ -323,8 +419,16 @@ export default function AddCustomerPage() {
               label="Plan"
               placeholder="Select plan"
               options={planOptions}
+              value={plan}
+              onChange={(e) => setPlan(e.target.value)}
             />
-            <Input label="Monthly Revenue" placeholder="$0.00" optional />
+            <Input
+              label="Monthly Revenue"
+              placeholder="$0.00"
+              optional
+              value={monthlyRevenue}
+              onChange={(e) => setMonthlyRevenue(e.target.value)}
+            />
           </div>
         </FormSection>
 
@@ -341,7 +445,12 @@ export default function AddCustomerPage() {
           title="Notes"
           description="Add any additional information about this customer"
         >
-          <Textarea placeholder="Add notes about this customer..." rows={4} />
+          <Textarea
+            placeholder="Add notes about this customer..."
+            rows={4}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
         </FormSection>
 
         {/* Custom Fields */}
@@ -399,29 +508,20 @@ export default function AddCustomerPage() {
             <Button variant="ghost">Cancel</Button>
           </Link>
           <div className="flex items-center gap-3">
-            <Button variant="outline">Save as Draft</Button>
             <Button
               leftIcon={
-                saving ? (
+                isPending ? (
                   <CircleNotchIcon size={18} className="animate-spin" />
                 ) : undefined
               }
               onClick={handleSave}
-              disabled={saving}
+              disabled={isPending}
             >
-              {saving ? "Saving Customer" : "Save Customer"}
+              {isPending ? "Saving Customer" : "Save Customer"}
             </Button>
           </div>
         </div>
       </div>
-
-      {/* Toast */}
-      <Toast
-        open={showToast}
-        onClose={() => setShowToast(false)}
-        message="Customer saved successfully"
-        variant="success"
-      />
     </div>
   );
 }

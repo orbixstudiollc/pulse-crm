@@ -32,12 +32,12 @@ export function StatCard({
       <div className="flex items-start justify-between p-5">
         <div className="space-y-2">
           {/* Label */}
-          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+          <p className="text-xs font-normal uppercase leading-5 text-neutral-500 dark:text-neutral-400">
             {label}
           </p>
 
           {/* Value */}
-          <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
+          <p className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif text-neutral-950 dark:text-neutral-50">
             {value}
           </p>
         </div>
@@ -55,7 +55,7 @@ export function StatCard({
             <span
               className={cn(
                 "font-medium",
-                change.trend === "up" && "text-green-600 dark:text-green-400",
+                change.trend === "up" && "text-[#00a63e] dark:text-green-400",
                 change.trend === "down" && "text-red-600 dark:text-red-400",
                 change.trend === "neutral" &&
                   "text-neutral-500 dark:text-neutral-400",

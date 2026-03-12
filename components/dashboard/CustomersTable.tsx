@@ -15,7 +15,7 @@ import { CustomerDrawer } from "./CustomerDrawer";
 import { TableHeader } from "./TableHeader";
 import { TableFooter } from "./TableFooter";
 import { cn } from "@/lib/utils";
-import { customers as defaultCustomers, Customer } from "@/lib/data/customers";
+import { Customer } from "@/lib/data/customers";
 
 type CustomerStatus = "active" | "pending" | "inactive";
 
@@ -46,8 +46,8 @@ function formatMRR(value: number) {
 }
 
 export function CustomersTable({
-  customers = defaultCustomers,
-  totalCustomers = 284,
+  customers = [],
+  totalCustomers = 0,
   className,
 }: CustomersTableProps) {
   const [currentPage, setCurrentPage] = useState(1);

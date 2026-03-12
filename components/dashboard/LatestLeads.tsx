@@ -10,9 +10,9 @@ import {
   dateRangeOptions,
   Avatar,
 } from "@/components/ui";
+import { DotsThreeVertical } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import {
-  leads as allLeads,
   leadStatusConfig,
   getLeadScoreStyle,
   type Lead,
@@ -25,8 +25,8 @@ interface LatestLeadsProps {
 }
 
 export function LatestLeads({
-  leads = allLeads.slice(0, 6),
-  totalLeads = allLeads.length,
+  leads = [],
+  totalLeads = 0,
   className,
 }: LatestLeadsProps) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -38,13 +38,13 @@ export function LatestLeads({
   return (
     <div
       className={cn(
-        "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden",
+        "rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden",
         className,
       )}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-800">
-        <h3 className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
+        <h3 className="text-xl font-serif tracking-[-0.2px] text-neutral-950 dark:text-neutral-50">
           Latest Leads
         </h3>
 
@@ -71,21 +71,24 @@ export function LatestLeads({
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3">
+            <tr className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-800/50">
+              <th className="text-left text-sm font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 w-[200px]">
                 Lead
               </th>
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+              <th className="text-left text-sm font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                 Status
               </th>
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+              <th className="text-left text-sm font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                 Source
               </th>
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+              <th className="text-left text-sm font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                 Score
               </th>
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+              <th className="text-left text-sm font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                 Contacted
+              </th>
+              <th className="text-left text-sm font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 w-[88px]">
+                Actions
               </th>
             </tr>
           </thead>
@@ -119,7 +122,7 @@ export function LatestLeads({
 
                 {/* Source */}
                 <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                  <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
                     {lead.source}
                   </span>
                 </td>
@@ -128,7 +131,7 @@ export function LatestLeads({
                 <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
                   <div
                     className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-full border-[0.5px] text-sm font-semibold",
+                      "flex h-8 w-8 items-center justify-center rounded-full border-[0.5px] text-xs font-medium",
                       getLeadScoreStyle(lead.score),
                     )}
                   >
@@ -138,9 +141,16 @@ export function LatestLeads({
 
                 {/* Contacted */}
                 <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                  <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
                     {lead.createdDate}
                   </span>
+                </td>
+
+                {/* Actions */}
+                <td className="px-5 py-4 text-center w-[88px]">
+                  <button className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
+                    <DotsThreeVertical size={20} weight="bold" />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -149,11 +159,11 @@ export function LatestLeads({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-5 py-4 border-t border-neutral-200 dark:border-neutral-800">
+      <div className="flex items-center justify-between px-5 py-5">
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           Showing{" "}
           <span className="font-medium text-neutral-950 dark:text-neutral-50">
-            {startIndex}-{endIndex}
+            {startIndex}&ndash;{endIndex}
           </span>{" "}
           of{" "}
           <span className="font-medium text-neutral-950 dark:text-neutral-50">
@@ -163,22 +173,26 @@ export function LatestLeads({
         </p>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
+          <button
+            className={cn(
+              "rounded-lg bg-neutral-100 dark:bg-neutral-800 px-2.5 py-2 text-xs font-medium text-neutral-950 dark:text-neutral-50",
+              currentPage === 1 && "opacity-50 cursor-not-allowed",
+            )}
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
           >
             Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
+          </button>
+          <button
+            className={cn(
+              "rounded-lg bg-neutral-100 dark:bg-neutral-800 px-2.5 py-2 text-xs font-medium text-neutral-950 dark:text-neutral-50",
+              endIndex >= totalLeads && "opacity-50 cursor-not-allowed",
+            )}
             onClick={() => setCurrentPage((p) => p + 1)}
             disabled={endIndex >= totalLeads}
           >
             Next
-          </Button>
+          </button>
         </div>
       </div>
     </div>

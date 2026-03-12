@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -20,6 +21,7 @@ import {
   ClockIcon,
   FileTextIcon,
 } from "@/components/ui";
+import { completeOnboardingStep1 } from "@/lib/actions/auth";
 
 // ── Stepper ─────────────────────────────────────────────────────────────────
 
@@ -39,7 +41,6 @@ function Stepper({
 
         return (
           <div key={step} className="flex items-center flex-1 last:flex-none">
-            {/* Step circle */}
             <div
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors ${
                 isCompleted
@@ -51,8 +52,6 @@ function Stepper({
             >
               {isCompleted ? <CheckCircleIcon size={20} weight="fill" /> : step}
             </div>
-
-            {/* Connector line */}
             {step < totalSteps && (
               <div
                 className={`flex-1 border-t-2 border-dashed mx-4 ${
@@ -71,13 +70,35 @@ function Stepper({
 
 // ── Step 1: Profile Setup ───────────────────────────────────────────────────
 
-function ProfileSetup({ onNext }: { onNext: () => void }) {
-  const [companyName, setCompanyName] = useState("");
-
+function ProfileSetup({
+  onNext,
+  companyName,
+  setCompanyName,
+  companySize,
+  setCompanySize,
+  userRole,
+  setUserRole,
+  goal,
+  setGoal,
+  error,
+  saving,
+}: {
+  onNext: () => void;
+  companyName: string;
+  setCompanyName: (v: string) => void;
+  companySize: string;
+  setCompanySize: (v: string) => void;
+  userRole: string;
+  setUserRole: (v: string) => void;
+  goal: string;
+  setGoal: (v: string) => void;
+  error: string | null;
+  saving: boolean;
+}) {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-2">
+        <h1 className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">
           Welcome to <span className="italic">Pulse</span>
         </h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -86,6 +107,12 @@ function ProfileSetup({ onNext }: { onNext: () => void }) {
       </div>
 
       <Stepper currentStep={1} totalSteps={4} />
+
+      {error && (
+        <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+          {error}
+        </div>
+      )}
 
       <div className="mt-8 space-y-5">
         <Input
@@ -99,6 +126,8 @@ function ProfileSetup({ onNext }: { onNext: () => void }) {
         <Select
           label="Company Size"
           placeholder="Select size"
+          value={companySize}
+          onChange={(e) => setCompanySize(e.target.value)}
           className="dark:bg-neutral-800 dark:border-neutral-700"
           options={[
             { label: "1-10", value: "1-10" },
@@ -112,6 +141,8 @@ function ProfileSetup({ onNext }: { onNext: () => void }) {
         <Select
           label="Your Role"
           placeholder="Select role"
+          value={userRole}
+          onChange={(e) => setUserRole(e.target.value)}
           className="dark:bg-neutral-800 dark:border-neutral-700"
           options={[
             { label: "Sales Rep", value: "sales-rep" },
@@ -125,6 +156,8 @@ function ProfileSetup({ onNext }: { onNext: () => void }) {
         <Select
           label="What's your main goal with Pulse?"
           placeholder="Select goal"
+          value={goal}
+          onChange={(e) => setGoal(e.target.value)}
           className="dark:bg-neutral-800 dark:border-neutral-700"
           options={[
             { label: "Manage leads", value: "leads" },
@@ -139,8 +172,9 @@ function ProfileSetup({ onNext }: { onNext: () => void }) {
           className="w-full"
           rightIcon={<ArrowRightIcon size={18} />}
           onClick={onNext}
+          disabled={saving}
         >
-          Continue
+          {saving ? "Setting up..." : "Continue"}
         </Button>
       </div>
     </div>
@@ -191,7 +225,7 @@ function InviteTeam({
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-2">
+        <h1 className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">
           Invite your team
         </h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -212,13 +246,13 @@ function InviteTeam({
                 onChange={(e) =>
                   updateMember(member.id, "email", e.target.value)
                 }
-                className="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-600 focus:shadow-[0_0_0_2px_#ffffff,0_0_0_4px_#0a0a0a] dark:focus:shadow-[0_0_0_2px_#171717,0_0_0_4px_#fafafa] transition-shadow"
+                className="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-600 focus:shadow-focus transition-shadow"
               />
             </div>
             <select
               value={member.role}
               onChange={(e) => updateMember(member.id, "role", e.target.value)}
-              className="appearance-none rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2.5 pr-8 text-sm text-neutral-950 dark:text-neutral-50 cursor-pointer focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-600 focus:shadow-[0_0_0_2px_#ffffff,0_0_0_4px_#0a0a0a] dark:focus:shadow-[0_0_0_2px_#171717,0_0_0_4px_#fafafa] transition-shadow"
+              className="appearance-none rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2.5 pr-8 text-sm text-neutral-950 dark:text-neutral-50 cursor-pointer focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-600 focus:shadow-focus transition-shadow"
             >
               <option value="sales-rep">Sales Rep</option>
               <option value="sales-manager">Sales Manager</option>
@@ -291,7 +325,7 @@ function ImportData({
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-2">
+        <h1 className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">
           Import your data
         </h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -302,7 +336,6 @@ function ImportData({
       <Stepper currentStep={3} totalSteps={4} />
 
       <div className="mt-8 space-y-3">
-        {/* HubSpot option */}
         <button
           type="button"
           onClick={() => setImportSource("hubspot")}
@@ -341,7 +374,6 @@ function ImportData({
           </div>
         </button>
 
-        {/* CSV option */}
         <button
           type="button"
           onClick={() => setImportSource("csv")}
@@ -380,7 +412,6 @@ function ImportData({
           </div>
         </button>
 
-        {/* File upload dropzone */}
         {importSource === "csv" && (
           <div className="rounded-xl border-2 border-dashed border-neutral-300 dark:border-neutral-600 p-8 text-center">
             <UploadIcon
@@ -394,7 +425,7 @@ function ImportData({
               or{" "}
               <button
                 type="button"
-                className="text-blue-600 dark:text-blue-400 underline underline-offset-4 hover:no-underline"
+                className="text-blue-600 dark:text-blue-400 hover:underline"
               >
                 browse
               </button>{" "}
@@ -468,7 +499,7 @@ function Complete() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-2">
+        <h1 className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">
           You&apos;re all set!
         </h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -512,12 +543,68 @@ function Complete() {
 // ── Onboarding Page ─────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
+  const [companyName, setCompanyName] = useState("");
+  const [companySize, setCompanySize] = useState("");
+  const [userRole, setUserRole] = useState("");
+  const [goal, setGoal] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const handleStep1Next = async () => {
+    if (!companyName.trim()) {
+      setError("Company name is required.");
+      return;
+    }
+
+    setError(null);
+    setSaving(true);
+
+    try {
+      const result = await completeOnboardingStep1({
+        companyName,
+        companySize,
+        userRole,
+        goal,
+      });
+
+      if (result.error) {
+        if (result.error === "Not authenticated") {
+          router.push("/login");
+          return;
+        }
+        setError(result.error);
+        setSaving(false);
+        return;
+      }
+
+      setSaving(false);
+      setStep(2);
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+      setSaving(false);
+    }
+  };
 
   const renderStep = () => {
     switch (step) {
       case 1:
-        return <ProfileSetup onNext={() => setStep(2)} />;
+        return (
+          <ProfileSetup
+            onNext={handleStep1Next}
+            companyName={companyName}
+            setCompanyName={setCompanyName}
+            companySize={companySize}
+            setCompanySize={setCompanySize}
+            userRole={userRole}
+            setUserRole={setUserRole}
+            goal={goal}
+            setGoal={setGoal}
+            error={error}
+            saving={saving}
+          />
+        );
       case 2:
         return (
           <InviteTeam
@@ -545,28 +632,25 @@ export default function OnboardingPage() {
     <div className="flex min-h-screen bg-neutral-100 dark:bg-neutral-900">
       {/* ── Left column ────────────────────────────────────────────── */}
       <div className="relative flex w-full flex-col lg:w-1/2">
-        {/* Header */}
-        <header className="flex items-center justify-between px-8 py-6">
+        <header className="flex items-center justify-between px-8 pt-8">
           <Link
             href="/"
-            className="text-3xl font-serif italic text-neutral-950 dark:text-neutral-50"
+            className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif italic text-neutral-950 dark:text-neutral-50"
           >
             Pulse
           </Link>
           <Link
             href="#"
-            className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+            className="text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
           >
             Need Help?
           </Link>
         </header>
 
-        {/* Step content — centered vertically */}
         <div className="flex flex-1 items-center justify-center px-8">
-          <div className="w-full max-w-135">{renderStep()}</div>
+          <div className="w-full max-w-[480px]">{renderStep()}</div>
         </div>
 
-        {/* Footer */}
         <footer className="px-8 py-6">
           <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center">
             © 2025 Pulse CRM. All rights reserved.
@@ -575,37 +659,32 @@ export default function OnboardingPage() {
       </div>
 
       {/* ── Right column: hero panel ──────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-neutral-950 dark:bg-neutral-50 p-24 overflow-hidden">
-        {/* Testimonial */}
-        <div className="max-w-lg pt-8">
-          <blockquote className="text-3xl font-onest font-medium text-white dark:text-neutral-950 leading-snug mb-6">
+      <div className="hidden lg:flex lg:w-1/2 flex-col bg-gradient-to-b from-[#171717] to-neutral-950 dark:from-neutral-100 dark:to-neutral-50 overflow-hidden relative">
+        <div className="relative z-10 w-[544px] pt-[88px] pl-[88px]">
+          <blockquote className="text-[28px] font-onest font-medium text-neutral-50 dark:text-neutral-950 leading-[36px] tracking-[-0.56px] mb-4">
             Pulse transformed how we manage our sales pipeline. We closed 40%
             more deals in the first quarter.
           </blockquote>
-          <p className="text-sm text-neutral-400 dark:text-neutral-600">
+          <p className="text-sm leading-[22px] text-neutral-400 dark:text-neutral-500">
             — Sarah Chen, Sales Director at TechCorp
           </p>
         </div>
-
-        {/* Dashboard preview */}
-        <div className="relative mt-12 flex-1 min-h-0 -mr-24 -mb-24 -ml-20">
-          <div className="absolute inset-0">
-            <div className="relative h-full w-full overflow-hidden rounded-tl-xl">
-              <Image
-                src="/images/auth/sales-preview-light.png"
-                alt="Pulse CRM Sales Pipeline"
-                fill
-                className="object-cover object-top dark:hidden"
-                unoptimized
-              />
-              <Image
-                src="/images/auth/sales-preview-dark.png"
-                alt="Pulse CRM Sales Pipeline"
-                fill
-                className="object-cover object-top hidden dark:block"
-                unoptimized
-              />
-            </div>
+        <div className="absolute bottom-0 right-0 left-0 top-[32%]">
+          <div className="relative h-full w-full overflow-hidden">
+            <Image
+              src="/images/auth/sales-preview-light.png"
+              alt="Pulse CRM Sales Pipeline"
+              fill
+              className="object-cover object-top dark:hidden"
+              unoptimized
+            />
+            <Image
+              src="/images/auth/sales-preview-dark.png"
+              alt="Pulse CRM Sales Pipeline"
+              fill
+              className="object-cover object-top hidden dark:block"
+              unoptimized
+            />
           </div>
         </div>
       </div>

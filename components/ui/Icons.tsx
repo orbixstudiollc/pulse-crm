@@ -70,4 +70,22 @@ export {
   // Billing
   StarIcon,
   LightningIcon,
+  // ICP
+  CrosshairIcon,
+  // Competitors
+  GlobeIcon,
+  ShieldIcon,
+  // Analytics
+  ChartBarIcon,
+  // Proposals
+  ScrollIcon,
+  // Contacts
+  AddressBookIcon,
+  // AI
+  RobotIcon,
+  BrainIcon,
+  ChatCircleIcon,
+  PaperPlaneTiltIcon,
+  CopyIcon,
+  ArrowClockwiseIcon as ArrowPathIcon,
 } from "@phosphor-icons/react";

@@ -8,11 +8,15 @@ import {
   PencilSimpleIcon,
 } from "@/components/ui";
 import { EyeIcon } from "@/components/ui";
+import { ScoreBreakdown } from "@/components/features/ScoreBreakdown";
+import { QualificationScorecard } from "@/components/features/QualificationScorecard";
+import type { QualificationData } from "@/lib/actions/qualification";
 import {
   type Lead,
   leadQualificationConfig,
   leadStatusConfig,
 } from "@/lib/data/leads";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 
 interface LeadDrawerProps {
@@ -81,7 +85,14 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
               <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-1">
                 Health Score
               </p>
-              <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
+              <p className={cn(
+                "text-3xl font-serif",
+                lead.score >= 75
+                  ? "text-green-600 dark:text-green-400"
+                  : lead.score >= 50
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-red-600 dark:text-red-400",
+              )}>
                 {lead.score}
               </p>
             </div>
@@ -102,6 +113,46 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
               </p>
             </div>
           </div>
+
+          {/* Score Breakdown */}
+          {lead.scoreBreakdown && (
+            <div className="mb-6">
+              <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-3">
+                Score Breakdown
+              </h4>
+              <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+                <ScoreBreakdown
+                  breakdown={
+                    typeof lead.scoreBreakdown === "string"
+                      ? JSON.parse(lead.scoreBreakdown as string)
+                      : (lead.scoreBreakdown as any)
+                  }
+                  compact
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Qualification Scorecard */}
+          {lead.qualificationData && (
+            <div className="mb-6">
+              <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-3">
+                Qualification
+              </h4>
+              <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+                <QualificationScorecard
+                  data={
+                    typeof lead.qualificationData === "string"
+                      ? JSON.parse(lead.qualificationData)
+                      : (lead.qualificationData as QualificationData)
+                  }
+                  grade={lead.qualificationGrade ?? null}
+                  score={lead.qualificationScore ?? null}
+                  compact
+                />
+              </div>
+            </div>
+          )}
 
           {/* Lead Information */}
           <div className="mb-6">

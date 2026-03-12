@@ -57,7 +57,7 @@ export function Dropdown({
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 min-w-40 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-lg overflow-hidden z-50 p-2">
+        <div className="absolute right-0 top-full mt-2 min-w-40 rounded-[12px] border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-dropdown overflow-hidden z-50 p-2">
           <div className="space-y-1">
             {options.map((option) => (
               <button
