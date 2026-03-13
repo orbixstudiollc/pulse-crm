@@ -1,18 +1,29 @@
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return new Response("Unauthorized", { status: 401 });
+  if (!user) {
+    return NextResponse.json(
+      { error: "Unauthorized. Please log in first." },
+      { status: 401 },
+    );
+  }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const redirectUri = process.env.GOOGLE_REDIRECT_URI;
 
   if (!clientId || !redirectUri) {
-    return new Response("Google OAuth not configured", { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          "Gmail OAuth is not configured. Please add GOOGLE_CLIENT_ID and GOOGLE_REDIRECT_URI to your environment variables.",
+      },
+      { status: 500 },
+    );
   }
 
   const scopes = [
@@ -32,7 +43,7 @@ export async function GET() {
     state: user.id, // CSRF protection
   });
 
-  redirect(
-    `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`,
-  );
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+
+  return NextResponse.json({ url: authUrl });
 }

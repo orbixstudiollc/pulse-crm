@@ -3,7 +3,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getAIClient, logTokenUsage } from "@/lib/ai/client";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
-import { MODEL_MAP } from "@/lib/ai/models";
+import { getModelId } from "@/lib/ai/models";
 import { AIScoreResult } from "@/lib/ai/types";
 import { revalidatePath } from "next/cache";
 
@@ -95,7 +95,7 @@ export async function aiScoreLead(
 
     // Call Claude Haiku for scoring
     const response = await client.messages.create({
-      model: MODEL_MAP.haiku,
+      model: getModelId("haiku", settings?.ai_provider),
       max_tokens: 1024,
       system: SYSTEM_PROMPTS.lead_scoring,
       messages: [{ role: "user", content: prompt }],
@@ -201,7 +201,7 @@ export async function aiScoreLead(
       orgId,
       userId,
       feature: "lead_scoring",
-      model: MODEL_MAP.haiku,
+      model: getModelId("haiku", settings?.ai_provider),
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
       durationMs,
@@ -221,12 +221,12 @@ export async function aiScoreLead(
 
     // Attempt to log the failed usage
     try {
-      const { orgId, userId } = await getAIClient();
+      const { settings: errSettings, orgId, userId } = await getAIClient();
       await logTokenUsage({
         orgId,
         userId,
         feature: "lead_scoring",
-        model: MODEL_MAP.haiku,
+        model: getModelId("haiku", errSettings?.ai_provider),
         inputTokens: 0,
         outputTokens: 0,
         durationMs,

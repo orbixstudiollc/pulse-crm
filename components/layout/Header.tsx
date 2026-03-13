@@ -50,10 +50,15 @@ export function Header() {
           {segments.map((segment, index) => {
             // Replace ID-like segments (numeric or long hashes) with breadcrumbLabel
             const isIdSegment = /^[0-9]+$/.test(segment) || segment.length > 20;
+            // Friendly names for hyphenated route segments
+            const segmentLabels: Record<string, string> = {
+              "lead-scraper": "Lead Finder",
+              "email-accounts": "Email Accounts",
+            };
             const displayText =
               isIdSegment && config.breadcrumbLabel
                 ? config.breadcrumbLabel
-                : decodeURIComponent(segment);
+                : segmentLabels[segment] ?? decodeURIComponent(segment);
 
             return (
               <span key={index} className="flex items-center gap-2">

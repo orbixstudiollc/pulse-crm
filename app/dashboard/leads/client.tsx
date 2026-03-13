@@ -408,6 +408,22 @@ export function LeadsPageClient({
           Import
         </Button>
         <Button
+          variant="outline"
+          leftIcon={<ExportIcon size={18} />}
+          onClick={async () => {
+            const result = await exportLeadsToCSV();
+            if (result.error) { toast.error(result.error); return; }
+            const blob = new Blob([result.csv], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = `leads-export-${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click(); URL.revokeObjectURL(url);
+            toast.success("Leads exported successfully");
+          }}
+        >
+          Export
+        </Button>
+        <Button
           leftIcon={<PlusIcon size={20} weight="bold" />}
           onClick={() => setShowAddLead(true)}
         >

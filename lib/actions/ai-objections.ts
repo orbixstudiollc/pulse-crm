@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAIClient, logTokenUsage } from "@/lib/ai/client";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
-import { MODEL_MAP } from "@/lib/ai/models";
+import { getModelId } from "@/lib/ai/models";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -117,7 +117,7 @@ Return ONLY valid JSON.`);
     const prompt = sections.join("\n\n");
 
     const response = await client.messages.create({
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       max_tokens: 1536,
       system: SYSTEM_PROMPTS.objection_response,
       messages: [{ role: "user", content: prompt }],
@@ -141,7 +141,7 @@ Return ONLY valid JSON.`);
       orgId,
       userId,
       feature: "objections",
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
       durationMs,
@@ -158,12 +158,12 @@ Return ONLY valid JSON.`);
         : "AI objection response generation failed";
 
     try {
-      const { orgId, userId } = await getAIClient();
+      const { settings: errSettings, orgId, userId } = await getAIClient();
       await logTokenUsage({
         orgId,
         userId,
         feature: "objections",
-        model: MODEL_MAP.sonnet,
+        model: getModelId("sonnet", errSettings?.ai_provider),
         inputTokens: 0,
         outputTokens: 0,
         durationMs,
@@ -296,7 +296,7 @@ Return ONLY valid JSON.`);
     const prompt = sections.join("\n\n");
 
     const response = await client.messages.create({
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       max_tokens: 2048,
       system:
         "You are a sales objection prediction expert. Analyze lead data, qualification gaps, activity patterns, and competitive context to predict the most likely objections a lead will raise during the sales process. Be specific and actionable. Return ONLY valid JSON.",
@@ -321,7 +321,7 @@ Return ONLY valid JSON.`);
       orgId,
       userId,
       feature: "objections",
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
       durationMs,
@@ -338,12 +338,12 @@ Return ONLY valid JSON.`);
         : "AI objection prediction failed";
 
     try {
-      const { orgId, userId } = await getAIClient();
+      const { settings: errSettings, orgId, userId } = await getAIClient();
       await logTokenUsage({
         orgId,
         userId,
         feature: "objections",
-        model: MODEL_MAP.sonnet,
+        model: getModelId("sonnet", errSettings?.ai_provider),
         inputTokens: 0,
         outputTokens: 0,
         durationMs,

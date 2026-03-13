@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ import {
   CircleNotchIcon,
   EyeIcon,
   SparkleIcon,
+  CaretDownIcon,
 } from "@/components/ui";
 import { PageHeader, StatCard, EmptyState } from "@/components/dashboard";
 import {
@@ -656,6 +657,76 @@ const salesCycleOptions = [
   { value: "6+ months", label: "6+ months" },
 ];
 
+function SalesCycleDropdown({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClick);
+      return () => document.removeEventListener("mousedown", handleClick);
+    }
+  }, [open]);
+
+  const selected = salesCycleOptions.find((o) => o.value === value);
+
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+        Typical sales cycle length
+      </label>
+      <div ref={ref} className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="flex w-full items-center justify-between rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-neutral-50"
+        >
+          <span className={selected?.value ? "text-neutral-950 dark:text-neutral-50" : "text-neutral-400 dark:text-neutral-500"}>
+            {selected?.label || "Select..."}
+          </span>
+          <CaretDownIcon
+            size={14}
+            className={`text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </button>
+        {open && (
+          <ul className="absolute z-50 mt-1 w-full overflow-auto rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 py-1 shadow-lg max-h-60">
+            {salesCycleOptions
+              .filter((o) => o.value !== "")
+              .map((opt) => (
+                <li
+                  key={opt.value}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                  }}
+                  className={`cursor-pointer px-3 py-2 text-sm transition-colors ${
+                    opt.value === value
+                      ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 font-medium"
+                      : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-900"
+                  }`}
+                >
+                  {opt.label}
+                </li>
+              ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function ICPWizardModal({
   open,
   onClose,
@@ -911,22 +982,7 @@ function ICPWizardModal({
                 placeholder="e.g. Superior integrations, faster onboarding, better support..."
                 rows={2}
               />
-              <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
-                  Typical sales cycle length
-                </label>
-                <select
-                  value={salesCycle}
-                  onChange={(e) => setSalesCycle(e.target.value)}
-                  className="w-full rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 py-2 text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-neutral-50"
-                >
-                  {salesCycleOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <SalesCycleDropdown value={salesCycle} onChange={setSalesCycle} />
             </>
           )}
 

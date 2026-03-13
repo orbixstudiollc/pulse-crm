@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAIClient, logTokenUsage } from "@/lib/ai/client";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
-import { MODEL_MAP } from "@/lib/ai/models";
+import { getModelId } from "@/lib/ai/models";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -154,7 +154,7 @@ Return ONLY valid JSON.`);
 
     // Call Claude Sonnet
     const response = await client.messages.create({
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       max_tokens: 2048,
       system: SYSTEM_PROMPTS.outreach_email,
       messages: [{ role: "user", content: prompt }],
@@ -178,7 +178,7 @@ Return ONLY valid JSON.`);
       orgId,
       userId,
       feature: "outreach",
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
       durationMs,
@@ -193,12 +193,12 @@ Return ONLY valid JSON.`);
       error instanceof Error ? error.message : "AI email generation failed";
 
     try {
-      const { orgId, userId } = await getAIClient();
+      const { settings: errSettings, orgId, userId } = await getAIClient();
       await logTokenUsage({
         orgId,
         userId,
         feature: "outreach",
-        model: MODEL_MAP.sonnet,
+        model: getModelId("sonnet", errSettings?.ai_provider),
         inputTokens: 0,
         outputTokens: 0,
         durationMs,
@@ -298,7 +298,7 @@ Return ONLY valid JSON.`);
 
     // Call Claude Sonnet
     const response = await client.messages.create({
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       max_tokens: 2048,
       system: SYSTEM_PROMPTS.outreach_sequence,
       messages: [{ role: "user", content: prompt }],
@@ -322,7 +322,7 @@ Return ONLY valid JSON.`);
       orgId,
       userId,
       feature: "outreach",
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
       durationMs,
@@ -337,12 +337,12 @@ Return ONLY valid JSON.`);
       error instanceof Error ? error.message : "AI sequence generation failed";
 
     try {
-      const { orgId, userId } = await getAIClient();
+      const { settings: errSettings, orgId, userId } = await getAIClient();
       await logTokenUsage({
         orgId,
         userId,
         feature: "outreach",
-        model: MODEL_MAP.sonnet,
+        model: getModelId("sonnet", errSettings?.ai_provider),
         inputTokens: 0,
         outputTokens: 0,
         durationMs,
@@ -421,7 +421,7 @@ Return ONLY valid JSON.`);
 
     // Call Claude Haiku (simpler task)
     const response = await client.messages.create({
-      model: MODEL_MAP.haiku,
+      model: getModelId("haiku", settings?.ai_provider),
       max_tokens: 2048,
       system: SYSTEM_PROMPTS.subject_line,
       messages: [{ role: "user", content: prompt }],
@@ -445,7 +445,7 @@ Return ONLY valid JSON.`);
       orgId,
       userId,
       feature: "outreach",
-      model: MODEL_MAP.haiku,
+      model: getModelId("haiku", settings?.ai_provider),
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
       durationMs,
@@ -460,12 +460,12 @@ Return ONLY valid JSON.`);
       error instanceof Error ? error.message : "AI subject line optimization failed";
 
     try {
-      const { orgId, userId } = await getAIClient();
+      const { settings: errSettings, orgId, userId } = await getAIClient();
       await logTokenUsage({
         orgId,
         userId,
         feature: "outreach",
-        model: MODEL_MAP.haiku,
+        model: getModelId("haiku", errSettings?.ai_provider),
         inputTokens: 0,
         outputTokens: 0,
         durationMs,

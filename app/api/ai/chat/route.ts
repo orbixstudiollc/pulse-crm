@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     // Get AI settings for API key
     const { data: settings } = await supabase
       .from("ai_settings")
-      .select("api_key, feature_chat")
+      .select("api_key, feature_chat, ai_provider, openrouter_api_key")
       .eq("organization_id", profile.organization_id)
       .single();
 
@@ -41,7 +41,10 @@ export async function POST(req: Request) {
       return new Response("AI Chat is disabled in settings", { status: 403 });
     }
 
-    const apiKey = settings?.api_key || process.env.ANTHROPIC_API_KEY;
+    const provider = settings?.ai_provider || "anthropic";
+    const apiKey = provider === "openrouter"
+      ? settings?.openrouter_api_key || process.env.OPENROUTER_API_KEY
+      : settings?.api_key || process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return new Response(
         "No AI API key configured. Add one in Settings > AI or set ANTHROPIC_API_KEY.",
@@ -49,8 +52,19 @@ export async function POST(req: Request) {
       );
     }
 
-    const { messages, data } = await req.json();
+    const { messages: rawMessages, data } = await req.json();
     const pageContext: PageContext | undefined = data?.pageContext;
+
+    // Convert UIMessage format (parts) to ModelMessage format (content) if needed
+    const messages = (rawMessages || []).map((msg: { role: string; content?: string; parts?: Array<{ type: string; text?: string }> }) => {
+      if (msg.content) return msg;
+      // Extract text from parts array (UIMessage format from useChat)
+      const text = msg.parts
+        ?.filter((p: { type: string; text?: string }) => p.type === "text" && p.text)
+        .map((p: { type: string; text?: string }) => p.text)
+        .join("") || "";
+      return { role: msg.role, content: text };
+    });
 
     // Build context from current page
     let contextStr = "";
@@ -65,11 +79,26 @@ ${contextStr ? `\n---\nCurrent CRM Context:\n${contextStr}` : ""}
 Current date: ${new Date().toLocaleDateString()}
 User: ${user.email}`;
 
-    const anthropic = createAnthropic({ apiKey });
+    const anthropic = createAnthropic(
+      provider === "openrouter"
+        ? {
+            apiKey,
+            baseURL: "https://openrouter.ai/api/v1",
+            headers: {
+              "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "https://pulse-crm-rosy.vercel.app",
+              "X-Title": "Pulse CRM",
+            },
+          }
+        : { apiKey }
+    );
     const startTime = Date.now();
 
+    const modelId = provider === "openrouter"
+      ? "anthropic/claude-sonnet-4-6"
+      : "claude-sonnet-4-6";
+
     const result = streamText({
-      model: anthropic("claude-sonnet-4-20250514"),
+      model: anthropic(modelId),
       system: systemMessage,
       messages,
       tools: {
@@ -462,7 +491,7 @@ ${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByTy
           orgId: profile.organization_id!,
           userId: user.id,
           feature: "chat",
-          model: "claude-sonnet-4-20250514",
+          model: modelId,
           inputTokens: totalUsage?.inputTokens || 0,
           outputTokens: totalUsage?.outputTokens || 0,
           durationMs,

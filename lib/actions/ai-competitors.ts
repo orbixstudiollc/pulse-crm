@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAIClient, logTokenUsage } from "@/lib/ai/client";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
-import { MODEL_MAP } from "@/lib/ai/models";
+import { getModelId } from "@/lib/ai/models";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -147,7 +147,7 @@ Return ONLY valid JSON.`);
     const prompt = sections.join("\n\n");
 
     const response = await client.messages.create({
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       max_tokens: 2048,
       system: SYSTEM_PROMPTS.competitive_analysis,
       messages: [{ role: "user", content: prompt }],
@@ -171,7 +171,7 @@ Return ONLY valid JSON.`);
       orgId,
       userId,
       feature: "competitors",
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
       durationMs,
@@ -188,12 +188,12 @@ Return ONLY valid JSON.`);
         : "AI battle card generation failed";
 
     try {
-      const { orgId, userId } = await getAIClient();
+      const { settings: errSettings, orgId, userId } = await getAIClient();
       await logTokenUsage({
         orgId,
         userId,
         feature: "competitors",
-        model: MODEL_MAP.sonnet,
+        model: getModelId("sonnet", errSettings?.ai_provider),
         inputTokens: 0,
         outputTokens: 0,
         durationMs,
@@ -286,7 +286,7 @@ Return ONLY valid JSON.`);
     const prompt = sections.join("\n\n");
 
     const response = await client.messages.create({
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       max_tokens: 1536,
       system: SYSTEM_PROMPTS.competitive_analysis,
       messages: [{ role: "user", content: prompt }],
@@ -310,7 +310,7 @@ Return ONLY valid JSON.`);
       orgId,
       userId,
       feature: "competitors",
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
       durationMs,
@@ -327,12 +327,12 @@ Return ONLY valid JSON.`);
         : "AI competitor analysis failed";
 
     try {
-      const { orgId, userId } = await getAIClient();
+      const { settings: errSettings, orgId, userId } = await getAIClient();
       await logTokenUsage({
         orgId,
         userId,
         feature: "competitors",
-        model: MODEL_MAP.sonnet,
+        model: getModelId("sonnet", errSettings?.ai_provider),
         inputTokens: 0,
         outputTokens: 0,
         durationMs,

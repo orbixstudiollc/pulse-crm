@@ -1,19 +1,38 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { getAIClient, checkAIAccess, logTokenUsage } from "@/lib/ai/client";
+import { getAIClient, checkAIAccess, logTokenUsage, callAIWithFallback } from "@/lib/ai/client";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
-import { MODEL_MAP } from "@/lib/ai/models";
+import { getModelId, getModelForFeature } from "@/lib/ai/models";
 import { revalidatePath } from "next/cache";
 import type { ICPCriteria, ICPWeights, BuyerPersona } from "./icp";
 
 // ── JSON Parser ──────────────────────────────────────────────────────────────
 
 function parseJSON<T>(text: string): T {
-  // Try to extract from markdown code blocks
+  // 1. Try markdown code blocks first
   const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const jsonStr = codeBlockMatch ? codeBlockMatch[1].trim() : text.trim();
-  return JSON.parse(jsonStr);
+  if (codeBlockMatch) {
+    return JSON.parse(codeBlockMatch[1].trim());
+  }
+
+  // 2. Try parsing the raw text as-is
+  const trimmed = text.trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    // 3. Try extracting the outermost JSON object { ... }
+    const objMatch = trimmed.match(/\{[\s\S]*\}/);
+    if (objMatch) {
+      return JSON.parse(objMatch[0]);
+    }
+    // 4. Try extracting a JSON array [ ... ]
+    const arrMatch = trimmed.match(/\[[\s\S]*\]/);
+    if (arrMatch) {
+      return JSON.parse(arrMatch[0]);
+    }
+    throw new Error("No valid JSON found in AI response");
+  }
 }
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -117,7 +136,7 @@ Return ONLY valid JSON.`;
 
     // Call Claude Haiku
     const response = await client.messages.create({
-      model: MODEL_MAP.haiku,
+      model: getModelId("haiku", settings?.ai_provider),
       max_tokens: 1024,
       system: SYSTEM_PROMPTS.icp_matching,
       messages: [{ role: "user", content: prompt }],
@@ -185,7 +204,7 @@ Return ONLY valid JSON.`;
       orgId,
       userId,
       feature: "icp_matching",
-      model: MODEL_MAP.haiku,
+      model: getModelId("haiku", settings?.ai_provider),
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
       durationMs,
@@ -205,12 +224,12 @@ Return ONLY valid JSON.`;
       error instanceof Error ? error.message : "AI ICP matching failed";
 
     try {
-      const { orgId, userId } = await getAIClient();
+      const { settings: errSettings, orgId, userId } = await getAIClient();
       await logTokenUsage({
         orgId,
         userId,
         feature: "icp_matching",
-        model: MODEL_MAP.haiku,
+        model: getModelId("haiku", errSettings?.ai_provider),
         inputTokens: 0,
         outputTokens: 0,
         durationMs,
@@ -333,7 +352,7 @@ Return ONLY valid JSON.`;
 
     // Call Claude Sonnet (more complex analytical task)
     const response = await client.messages.create({
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       max_tokens: 2048,
       system: `You are an expert B2B sales strategist specializing in Ideal Customer Profile (ICP) development. Analyze patterns in won deals and customer data to identify the characteristics of the most successful customers. Be data-driven and specific in your analysis.`,
       messages: [{ role: "user", content: prompt }],
@@ -372,7 +391,7 @@ Return ONLY valid JSON.`;
       orgId,
       userId,
       feature: "icp_matching",
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
       durationMs,
@@ -390,12 +409,12 @@ Return ONLY valid JSON.`;
       error instanceof Error ? error.message : "AI ICP profile generation failed";
 
     try {
-      const { orgId, userId } = await getAIClient();
+      const { settings: errSettings, orgId, userId } = await getAIClient();
       await logTokenUsage({
         orgId,
         userId,
         feature: "icp_matching",
-        model: MODEL_MAP.sonnet,
+        model: getModelId("sonnet", errSettings?.ai_provider),
         inputTokens: 0,
         outputTokens: 0,
         durationMs,
@@ -452,7 +471,7 @@ export async function aiGenerateICPWizard(
       return { error: access.reason || "AI ICP matching is disabled" };
     }
 
-    const { client, orgId, userId } = await getAIClient();
+    const { client, settings, orgId, userId } = await getAIClient();
     const supabase = await createClient();
 
     // Fetch won deals for data-driven insights
@@ -573,11 +592,19 @@ Generate a complete Ideal Customer Profile based on the business context above${
 
 Weights should sum to 100. Return ONLY valid JSON.`;
 
-    const response = await client.messages.create({
-      model: MODEL_MAP.sonnet,
-      max_tokens: 2048,
-      system: `You are an expert B2B sales strategist specializing in Ideal Customer Profile (ICP) development. Generate precise, actionable ICP profiles by combining user business knowledge with data-driven patterns from historical deals. Be specific — avoid generic advice.`,
-      messages: [{ role: "user", content: prompt }],
+    const systemPrompt = `You are an expert B2B sales strategist specializing in Ideal Customer Profile (ICP) development. Generate precise, actionable ICP profiles by combining user business knowledge with data-driven patterns from historical deals. Be specific — avoid generic advice. IMPORTANT: Return ONLY valid JSON — no markdown code fences, no explanatory text before or after. The response must start with { and end with }.`;
+
+    const { response } = await callAIWithFallback({
+      settings,
+      feature: "icp_matching",
+      orgId,
+      userId,
+      createParams: (modelId) => ({
+        model: modelId,
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages: [{ role: "user" as const, content: prompt }],
+      }),
     });
 
     const text = response.content
@@ -596,8 +623,11 @@ Weights should sum to 100. Return ONLY valid JSON.`;
 
     try {
       parsed = parseJSON(text);
-    } catch {
-      return { error: "Failed to parse AI response. Please try again." };
+    } catch (parseErr) {
+      console.error("[ICP Wizard] Failed to parse AI response. Raw text:", text.substring(0, 800));
+      console.error("[ICP Wizard] Parse error:", parseErr);
+      // Last resort: try to manually extract fields from the text
+      return { error: `Failed to parse AI response. Raw start: ${text.substring(0, 200)}` };
     }
 
     // Normalize weights to sum to 100
@@ -651,45 +681,13 @@ Weights should sum to 100. Return ONLY valid JSON.`;
       reasoning: parsed.reasoning || "",
     };
 
-    const durationMs = Date.now() - startTime;
-
-    await logTokenUsage({
-      orgId,
-      userId,
-      feature: "icp_matching",
-      model: MODEL_MAP.sonnet,
-      inputTokens: response.usage.input_tokens,
-      outputTokens: response.usage.output_tokens,
-      durationMs,
-      success: true,
-      metadata: { wizard: true, wonDealsCount: wonDeals?.length || 0 },
-    });
-
     revalidatePath("/dashboard/icp");
 
     return { data: result };
   } catch (error) {
-    const durationMs = Date.now() - startTime;
     const errorMessage =
       error instanceof Error ? error.message : "AI ICP wizard generation failed";
-
-    try {
-      const { orgId, userId } = await getAIClient();
-      await logTokenUsage({
-        orgId,
-        userId,
-        feature: "icp_matching",
-        model: MODEL_MAP.sonnet,
-        inputTokens: 0,
-        outputTokens: 0,
-        durationMs,
-        success: false,
-        errorMessage,
-      });
-    } catch {
-      // Silently fail
-    }
-
+    console.error("[ICP Wizard] Error:", errorMessage);
     return { error: errorMessage };
   }
 }

@@ -37,6 +37,7 @@ import {
   createMemoryItem,
   updateMemoryItem,
   deleteMemoryItem,
+  scrapeWebsiteForMemory,
   createCopilotTask,
   updateCopilotTask,
   deleteCopilotTask,
@@ -195,7 +196,7 @@ export function CopilotClient({ initialConversations, initialMemory, initialTask
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {activeConversationId ? (
           <ChatView
             conversationId={activeConversationId}
@@ -398,13 +399,25 @@ function ChatView({
   };
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col min-h-0">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-6">
+      <div className="flex-1 overflow-y-auto px-6 py-6 min-h-0">
         {messages.length === 0 && loaded ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <h3 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">How can I help you today?</h3>
-            <p className="text-sm text-neutral-400 dark:text-neutral-500">Ask about your pipeline, leads, deals, or anything CRM-related.</p>
+            <h3 className="text-[28px] leading-[36px] tracking-[-0.56px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">How can I help you today?</h3>
+            <p className="text-sm text-neutral-400 dark:text-neutral-500 mb-8">Ask about your pipeline, leads, deals, or anything CRM-related.</p>
+            <div className="flex flex-wrap justify-center gap-2.5 max-w-2xl">
+              {SUGGESTION_CHIPS.map(chip => (
+                <button
+                  key={chip.label}
+                  onClick={() => handleSend(chip.prompt)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600 transition-all shadow-sm"
+                >
+                  <chip.icon size={16} className={chip.color} weight="fill" />
+                  {chip.label}
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           <div className="max-w-3xl mx-auto space-y-6">
@@ -567,6 +580,14 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
     content: "",
   });
 
+  // Scrape state
+  const [scrapeMode, setScrapeMode] = useState(false);
+  const [scrapeUrl, setScrapeUrl] = useState("");
+  const [scraping, setScraping] = useState(false);
+  const [scrapeResults, setScrapeResults] = useState<Array<{ type: MemoryItem["type"]; title: string; content: string; selected: boolean }> | null>(null);
+  const [scrapeSiteName, setScrapeSiteName] = useState("");
+  const [savingScrape, setSavingScrape] = useState(false);
+
   const memoryTypes = [
     { value: "business_details", label: "Business Details", desc: "Company info, industry, size" },
     { value: "product_info", label: "Product / Service", desc: "What you sell, pricing, features" },
@@ -611,82 +632,78 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
     setShowForm(true);
   };
 
+  const handleScrape = async () => {
+    if (!scrapeUrl.trim()) {
+      toast.error("Please enter a website URL");
+      return;
+    }
+    setScraping(true);
+    const result = await scrapeWebsiteForMemory(scrapeUrl.trim());
+    setScraping(false);
+
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+
+    if (result.data) {
+      setScrapeResults(result.data.map(item => ({ ...item, selected: true })));
+      setScrapeSiteName(result.siteName || "website");
+    }
+  };
+
+  const handleSaveScrapeResults = async () => {
+    const selected = scrapeResults?.filter(r => r.selected) || [];
+    if (selected.length === 0) {
+      toast.error("Select at least one item to save");
+      return;
+    }
+
+    setSavingScrape(true);
+    let saved = 0;
+    for (const item of selected) {
+      const result = await createMemoryItem({
+        type: item.type,
+        title: item.title,
+        content: item.content,
+        source: "website",
+        source_url: scrapeUrl.trim(),
+      });
+      if (result.data) {
+        setItems(prev => [result.data!, ...prev]);
+        saved++;
+      }
+    }
+    setSavingScrape(false);
+
+    if (saved > 0) {
+      toast.success(`Saved ${saved} item${saved > 1 ? "s" : ""} from ${scrapeSiteName}`);
+      setScrapeMode(false);
+      setScrapeUrl("");
+      setScrapeResults(null);
+      setScrapeSiteName("");
+    }
+  };
+
+  const exitScrapeMode = () => {
+    setScrapeMode(false);
+    setScrapeUrl("");
+    setScrapeResults(null);
+    setScrapeSiteName("");
+    setScraping(false);
+  };
+
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="max-w-2xl mx-auto p-8">
+    <div className="flex-1 overflow-y-auto flex items-center justify-center">
+      <div className="max-w-2xl w-full mx-auto p-8">
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 mb-2">Memory</h2>
+          <h2 className="text-[28px] leading-[36px] tracking-[-0.56px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">Memory</h2>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
             Pulse Copilot uses your business details to provide context-aware responses.
           </p>
         </div>
 
-        {!showForm ? (
-          <>
-            {/* Quick Add Cards */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
-              <button
-                onClick={() => {
-                  setFormData({ type: "business_details", title: "Business Overview", content: "" });
-                  setShowForm(true);
-                }}
-                className="flex flex-col items-center gap-3 p-6 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 hover:shadow-sm transition-all bg-white dark:bg-neutral-800/50"
-              >
-                <GlobeIcon size={28} className="text-neutral-400" />
-                <div>
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Add business details</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Company info, products, audience</p>
-                </div>
-              </button>
-              <button
-                onClick={() => {
-                  setFormData({ type: "custom", title: "", content: "" });
-                  setShowForm(true);
-                }}
-                className="flex flex-col items-center gap-3 p-6 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 hover:shadow-sm transition-all bg-white dark:bg-neutral-800/50"
-              >
-                <PencilSimpleIcon size={28} className="text-neutral-400" />
-                <div>
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Edit manually</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Add any custom business context</p>
-                </div>
-              </button>
-            </div>
-
-            {/* Existing Memory Items */}
-            {items.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-3">Saved Context</h3>
-                {items.map(item => (
-                  <div key={item.id} className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 group">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 font-medium">
-                            {memoryTypes.find(t => t.value === item.type)?.label || item.type}
-                          </span>
-                          {!item.is_active && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">Disabled</span>
-                          )}
-                        </div>
-                        <h4 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{item.title}</h4>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2">{item.content}</p>
-                      </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-3">
-                        <button onClick={() => handleEdit(item)} className="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
-                          <PencilSimpleIcon size={14} className="text-neutral-400" />
-                        </button>
-                        <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
-                          <TrashIcon size={14} className="text-red-400" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
+        {showForm ? (
           /* Memory Form */
           <div className="bg-white dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
             <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
@@ -742,6 +759,229 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
               </div>
             </div>
           </div>
+        ) : scrapeMode ? (
+          /* Scrape Flow */
+          <div className="space-y-6">
+            {scrapeResults === null ? (
+              /* Phase A: URL Input */
+              <div className="bg-white dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <SparkleIcon size={18} className="text-neutral-400" />
+                  <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Scan a website</h3>
+                </div>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
+                  Enter your website URL and AI will automatically extract business details, products, audience, and brand voice.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={scrapeUrl}
+                    onChange={e => setScrapeUrl(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && !scraping && handleScrape()}
+                    placeholder="https://yourcompany.com"
+                    disabled={scraping}
+                    className="flex-1 px-3 py-2 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 disabled:opacity-50"
+                  />
+                  <button
+                    onClick={handleScrape}
+                    disabled={scraping || !scrapeUrl.trim()}
+                    className="px-4 py-2 rounded bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {scraping ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Analyzing...
+                      </>
+                    ) : (
+                      "Scan"
+                    )}
+                  </button>
+                </div>
+                <div className="flex justify-end mt-3">
+                  <button
+                    onClick={exitScrapeMode}
+                    disabled={scraping}
+                    className="text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Phase B: Results Review */
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <SparkleIcon size={16} className="text-neutral-400" />
+                    <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                      Found {scrapeResults.length} item{scrapeResults.length > 1 ? "s" : ""} from {scrapeSiteName}
+                    </h3>
+                  </div>
+                  <span className="text-xs text-neutral-400">{scrapeResults.filter(r => r.selected).length} selected</span>
+                </div>
+
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {scrapeResults.map((result, idx) => (
+                    <div
+                      key={idx}
+                      className={cn(
+                        "p-4 rounded-xl border transition-all",
+                        result.selected
+                          ? "border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800/50"
+                          : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 opacity-60"
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        <button
+                          onClick={() => setScrapeResults(prev => prev!.map((r, i) => i === idx ? { ...r, selected: !r.selected } : r))}
+                          className={cn(
+                            "mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors",
+                            result.selected
+                              ? "bg-neutral-900 dark:bg-white border-neutral-900 dark:border-white text-white dark:text-neutral-900"
+                              : "border-neutral-300 dark:border-neutral-600"
+                          )}
+                        >
+                          {result.selected && <CheckIcon size={12} />}
+                        </button>
+                        <div className="flex-1 min-w-0 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 font-medium">
+                              {memoryTypes.find(t => t.value === result.type)?.label || result.type}
+                            </span>
+                          </div>
+                          <input
+                            type="text"
+                            value={result.title}
+                            onChange={e => setScrapeResults(prev => prev!.map((r, i) => i === idx ? { ...r, title: e.target.value } : r))}
+                            className="w-full text-sm font-medium text-neutral-900 dark:text-neutral-100 bg-transparent border-0 p-0 focus:outline-none focus:ring-0"
+                          />
+                          <textarea
+                            value={result.content}
+                            onChange={e => setScrapeResults(prev => prev!.map((r, i) => i === idx ? { ...r, content: e.target.value } : r))}
+                            rows={2}
+                            className="w-full text-xs text-neutral-600 dark:text-neutral-400 bg-transparent border-0 p-0 focus:outline-none focus:ring-0 resize-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2 pt-2">
+                  <button
+                    onClick={handleSaveScrapeResults}
+                    disabled={savingScrape || scrapeResults.filter(r => r.selected).length === 0}
+                    className="px-4 py-2 rounded bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {savingScrape ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Saving...
+                      </>
+                    ) : (
+                      `Save ${scrapeResults.filter(r => r.selected).length} selected`
+                    )}
+                  </button>
+                  <button
+                    onClick={() => { setScrapeResults(null); setScrapeUrl(""); }}
+                    className="px-4 py-2 rounded border border-neutral-200 dark:border-neutral-700 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={exitScrapeMode}
+                    className="px-4 py-2 rounded text-sm font-medium text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Quick Add Cards */}
+            <div className="grid grid-cols-3 gap-4 mb-8">
+              <button
+                onClick={() => {
+                  setFormData({ type: "business_details", title: "Business Overview", content: "" });
+                  setShowForm(true);
+                }}
+                className="flex flex-col items-center gap-3 p-6 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 hover:shadow-sm transition-all bg-white dark:bg-neutral-800/50"
+              >
+                <GlobeIcon size={28} className="text-neutral-400" />
+                <div>
+                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Add business details</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Company info, products</p>
+                </div>
+              </button>
+              <button
+                onClick={() => setScrapeMode(true)}
+                className="flex flex-col items-center gap-3 p-6 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 hover:shadow-sm transition-all bg-white dark:bg-neutral-800/50"
+              >
+                <SparkleIcon size={28} className="text-neutral-400" />
+                <div>
+                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Scan a website</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Auto-extract with AI</p>
+                </div>
+              </button>
+              <button
+                onClick={() => {
+                  setFormData({ type: "custom", title: "", content: "" });
+                  setShowForm(true);
+                }}
+                className="flex flex-col items-center gap-3 p-6 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 hover:shadow-sm transition-all bg-white dark:bg-neutral-800/50"
+              >
+                <PencilSimpleIcon size={28} className="text-neutral-400" />
+                <div>
+                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Edit manually</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Custom business context</p>
+                </div>
+              </button>
+            </div>
+
+            {/* Existing Memory Items */}
+            {items.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-3">Saved Context</h3>
+                {items.map(item => (
+                  <div key={item.id} className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 group">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 font-medium">
+                            {memoryTypes.find(t => t.value === item.type)?.label || item.type}
+                          </span>
+                          {item.source === "website" && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">Website</span>
+                          )}
+                          {!item.is_active && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">Disabled</span>
+                          )}
+                        </div>
+                        <h4 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{item.title}</h4>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2">{item.content}</p>
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-3">
+                        <button onClick={() => handleEdit(item)} className="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
+                          <PencilSimpleIcon size={14} className="text-neutral-400" />
+                        </button>
+                        <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                          <TrashIcon size={14} className="text-red-400" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -804,10 +1044,10 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
   };
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="max-w-2xl mx-auto p-8">
+    <div className="flex-1 overflow-y-auto flex items-center justify-center">
+      <div className="max-w-2xl w-full mx-auto p-8">
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 mb-2">Tasks</h2>
+          <h2 className="text-[28px] leading-[36px] tracking-[-0.56px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">Tasks</h2>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
             Manage recurring prompts that Copilot can execute on a schedule.
           </p>
@@ -956,10 +1196,10 @@ function SettingsView() {
   const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="max-w-2xl mx-auto p-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 mb-2">Copilot Settings</h2>
+    <div className="flex-1 overflow-y-auto flex items-center justify-center">
+      <div className="max-w-2xl w-full mx-auto p-8">
+        <div className="text-center mb-8">
+          <h2 className="text-[28px] leading-[36px] tracking-[-0.56px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">Copilot Settings</h2>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
             Configure your Pulse Copilot settings.
           </p>
@@ -1009,8 +1249,8 @@ function SettingsView() {
               </p>
             </div>
             <select className="pl-3 pr-8 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22%236b7280%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M5.23%207.21a.75.75%200%20011.06.02L10%2011.168l3.71-3.938a.75.75%200%20111.08%201.04l-4.25%204.5a.75.75%200%2001-1.08%200l-4.25-4.5a.75.75%200%2001.02-1.06z%22%20clip-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.5rem_center] bg-[length:1.25rem_1.25rem]">
-              <option>Claude Sonnet 4</option>
-              <option>Claude Haiku 3.5</option>
+              <option>Claude Sonnet 4.6</option>
+              <option>Claude Haiku 4.5</option>
             </select>
           </div>
 

@@ -11,7 +11,8 @@ export type AIFeature =
   | "objections"
   | "chat"
   | "lead_validation"
-  | "import_enrichment";
+  | "import_enrichment"
+  | "memory_scrape";
 
 export type AutonomyLevel = "suggest" | "auto_act" | "full_auto";
 

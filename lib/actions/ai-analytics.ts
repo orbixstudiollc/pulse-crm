@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAIClient, logTokenUsage } from "@/lib/ai/client";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
-import { MODEL_MAP } from "@/lib/ai/models";
+import { getModelId } from "@/lib/ai/models";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -142,7 +142,7 @@ Return ONLY valid JSON.`);
     const prompt = sections.join("\n\n");
 
     const response = await client.messages.create({
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       max_tokens: 2048,
       system: SYSTEM_PROMPTS.analytics_insights,
       messages: [{ role: "user", content: prompt }],
@@ -166,7 +166,7 @@ Return ONLY valid JSON.`);
       orgId,
       userId,
       feature: "analytics",
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
       durationMs,
@@ -183,12 +183,12 @@ Return ONLY valid JSON.`);
         : "AI pipeline analysis failed";
 
     try {
-      const { orgId, userId } = await getAIClient();
+      const { settings: errSettings, orgId, userId } = await getAIClient();
       await logTokenUsage({
         orgId,
         userId,
         feature: "analytics",
-        model: MODEL_MAP.sonnet,
+        model: getModelId("sonnet", errSettings?.ai_provider),
         inputTokens: 0,
         outputTokens: 0,
         durationMs,
@@ -308,7 +308,7 @@ Return ONLY valid JSON.`);
     const prompt = sections.join("\n\n");
 
     const response = await client.messages.create({
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       max_tokens: 1536,
       system: SYSTEM_PROMPTS.forecast,
       messages: [{ role: "user", content: prompt }],
@@ -341,7 +341,7 @@ Return ONLY valid JSON.`);
       orgId,
       userId,
       feature: "analytics",
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
       durationMs,
@@ -356,12 +356,12 @@ Return ONLY valid JSON.`);
       error instanceof Error ? error.message : "AI forecast prediction failed";
 
     try {
-      const { orgId, userId } = await getAIClient();
+      const { settings: errSettings, orgId, userId } = await getAIClient();
       await logTokenUsage({
         orgId,
         userId,
         feature: "analytics",
-        model: MODEL_MAP.sonnet,
+        model: getModelId("sonnet", errSettings?.ai_provider),
         inputTokens: 0,
         outputTokens: 0,
         durationMs,
@@ -464,7 +464,7 @@ Return ONLY valid JSON.`);
     const prompt = sections.join("\n\n");
 
     const response = await client.messages.create({
-      model: MODEL_MAP.haiku,
+      model: getModelId("haiku", settings?.ai_provider),
       max_tokens: 1536,
       system:
         "You are a sales risk analyst. Identify deals at risk based on pipeline data, activity patterns, and stage progression. Be specific about risk factors and provide actionable recommendations. Return ONLY valid JSON.",
@@ -489,7 +489,7 @@ Return ONLY valid JSON.`);
       orgId,
       userId,
       feature: "analytics",
-      model: MODEL_MAP.haiku,
+      model: getModelId("haiku", settings?.ai_provider),
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
       durationMs,
@@ -504,12 +504,12 @@ Return ONLY valid JSON.`);
       error instanceof Error ? error.message : "AI risk identification failed";
 
     try {
-      const { orgId, userId } = await getAIClient();
+      const { settings: errSettings, orgId, userId } = await getAIClient();
       await logTokenUsage({
         orgId,
         userId,
         feature: "analytics",
-        model: MODEL_MAP.haiku,
+        model: getModelId("haiku", errSettings?.ai_provider),
         inputTokens: 0,
         outputTokens: 0,
         durationMs,
@@ -675,7 +675,7 @@ Return ONLY valid JSON.`);
     const prompt = sections.join("\n\n");
 
     const response = await client.messages.create({
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       max_tokens: 2048,
       system: SYSTEM_PROMPTS.analytics_insights,
       messages: [{ role: "user", content: prompt }],
@@ -705,7 +705,7 @@ Return ONLY valid JSON.`);
       orgId,
       userId,
       feature: "analytics",
-      model: MODEL_MAP.sonnet,
+      model: getModelId("sonnet", settings?.ai_provider),
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
       durationMs,
@@ -727,12 +727,12 @@ Return ONLY valid JSON.`);
         : "AI insights summary generation failed";
 
     try {
-      const { orgId, userId } = await getAIClient();
+      const { settings: errSettings, orgId, userId } = await getAIClient();
       await logTokenUsage({
         orgId,
         userId,
         feature: "analytics",
-        model: MODEL_MAP.sonnet,
+        model: getModelId("sonnet", errSettings?.ai_provider),
         inputTokens: 0,
         outputTokens: 0,
         durationMs,
