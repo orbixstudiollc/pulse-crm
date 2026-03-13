@@ -24,6 +24,9 @@ import {
   GlobeIcon,
   SparkleIcon,
   EnvelopeIcon,
+  ChatCircleIcon,
+  WhatsappLogoIcon,
+  LinkedinLogoIcon,
 } from "@/components/ui";
 import { PageHeader } from "@/components/dashboard";
 import { cn } from "@/lib/utils";
@@ -101,6 +104,54 @@ interface EmailAnalyticsData {
   dailyVolume: DailyEmailVolume[];
 }
 
+interface ChannelAnalyticsData {
+  email: {
+    total: number;
+    sent: number;
+    opened: number;
+    clicked: number;
+    replied: number;
+    bounced: number;
+    openRate: number;
+    clickRate: number;
+    replyRate: number;
+  };
+  whatsapp: {
+    total: number;
+    sent: number;
+    delivered: number;
+    read: number;
+    replied: number;
+    failed: number;
+    deliveryRate: number;
+    readRate: number;
+    replyRate: number;
+  };
+  linkedin: {
+    total: number;
+    connections: number;
+    messages: number;
+    profileViews: number;
+    endorsements: number;
+    accepted: number;
+    replied: number;
+    acceptRate: number;
+    replyRate: number;
+  };
+  dailyVolume: {
+    date: string;
+    email: number;
+    whatsapp: number;
+    linkedin: number;
+  }[];
+  summary: {
+    totalOutreach: number;
+    totalReplies: number;
+    overallReplyRate: number;
+    bestChannel: string;
+  };
+}
+
 interface AnalyticsPageClientProps {
   pipeline: PipelineData;
   sources: SourceData[];
@@ -111,6 +162,7 @@ interface AnalyticsPageClientProps {
   sequences: SequenceData[];
   icp: ICPData[];
   email?: EmailAnalyticsData;
+  channels?: ChannelAnalyticsData;
 }
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -124,6 +176,7 @@ const TABS = [
   { id: "sequences", label: "Sequences", icon: PulseIcon },
   { id: "icp", label: "ICP", icon: CrosshairIcon },
   { id: "email", label: "Email", icon: EnvelopeIcon },
+  { id: "channels", label: "Channels", icon: ChatCircleIcon },
   { id: "ai-insights", label: "AI Insights", icon: SparkleIcon },
 ] as const;
 
@@ -1119,6 +1172,365 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
   );
 }
 
+// ── Channels Tab ─────────────────────────────────────────────────────────────
+
+const CHANNEL_COLORS = {
+  email: "#3b82f6",
+  whatsapp: "#10b981",
+  linkedin: "#0ea5e9",
+};
+
+function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
+  if (!data) {
+    return (
+      <div className="text-center py-16">
+        <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-6">
+          <ChatCircleIcon size={32} className="text-neutral-400" />
+        </div>
+        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+          No Channel Data
+        </h3>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          Channel analytics will appear here once you start sending messages across Email, WhatsApp, and LinkedIn.
+        </p>
+      </div>
+    );
+  }
+
+  const channelComparison = [
+    {
+      channel: "Email",
+      sent: data.email.sent,
+      replies: data.email.replied,
+      replyRate: data.email.replyRate,
+    },
+    {
+      channel: "WhatsApp",
+      sent: data.whatsapp.sent,
+      replies: data.whatsapp.replied,
+      replyRate: data.whatsapp.replyRate,
+    },
+    {
+      channel: "LinkedIn",
+      sent: data.linkedin.messages + data.linkedin.connections,
+      replies: data.linkedin.replied,
+      replyRate: data.linkedin.replyRate,
+    },
+  ];
+
+  const channelDistribution = [
+    { name: "Email", value: data.email.total, color: CHANNEL_COLORS.email },
+    { name: "WhatsApp", value: data.whatsapp.total, color: CHANNEL_COLORS.whatsapp },
+    { name: "LinkedIn", value: data.linkedin.total, color: CHANNEL_COLORS.linkedin },
+  ];
+
+  const totalMessages = channelDistribution.reduce((s, c) => s + c.value, 0);
+
+  return (
+    <div className="space-y-6">
+      {/* Summary stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
+            Total Outreach
+          </p>
+          <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+            {data.summary.totalOutreach.toLocaleString()}
+          </p>
+          <p className="text-xs text-neutral-400 mt-1">Last 30 days</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
+            Total Replies
+          </p>
+          <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+            {data.summary.totalReplies.toLocaleString()}
+          </p>
+          <p className="text-xs text-neutral-400 mt-1">Across all channels</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
+            Overall Reply Rate
+          </p>
+          <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+            {data.summary.overallReplyRate}%
+          </p>
+          <p className="text-xs text-neutral-400 mt-1">Combined average</p>
+        </Card>
+        <Card>
+          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
+            Best Channel
+          </p>
+          <div className="flex items-center gap-2">
+            {data.summary.bestChannel === "email" && (
+              <EnvelopeIcon size={20} className="text-blue-500" />
+            )}
+            {data.summary.bestChannel === "whatsapp" && (
+              <WhatsappLogoIcon size={20} className="text-emerald-500" />
+            )}
+            {data.summary.bestChannel === "linkedin" && (
+              <LinkedinLogoIcon size={20} className="text-sky-500" />
+            )}
+            <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 capitalize">
+              {data.summary.bestChannel}
+            </p>
+          </div>
+          <p className="text-xs text-neutral-400 mt-1">Highest reply rate</p>
+        </Card>
+      </div>
+
+      {/* Channel distribution bar */}
+      <Card>
+        <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+          Channel Distribution
+        </h3>
+        {totalMessages > 0 ? (
+          <>
+            <div className="flex h-4 rounded-full overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+              {channelDistribution.map((ch) => (
+                <div
+                  key={ch.name}
+                  className="h-full transition-all duration-500"
+                  style={{
+                    width: `${(ch.value / totalMessages) * 100}%`,
+                    backgroundColor: ch.color,
+                  }}
+                />
+              ))}
+            </div>
+            <div className="flex items-center gap-6 mt-3">
+              {channelDistribution.map((ch) => (
+                <div key={ch.name} className="flex items-center gap-2">
+                  <span
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: ch.color }}
+                  />
+                  <span className="text-xs text-neutral-600 dark:text-neutral-400">
+                    {ch.name}{" "}
+                    <strong className="text-neutral-900 dark:text-neutral-100">
+                      {ch.value}
+                    </strong>{" "}
+                    ({totalMessages > 0 ? Math.round((ch.value / totalMessages) * 100) : 0}%)
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-neutral-400">No messages sent yet.</p>
+        )}
+      </Card>
+
+      {/* Daily Volume Chart */}
+      {data.dailyVolume.length > 0 && (
+        <Card>
+          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+            Daily Volume by Channel
+          </h3>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={data.dailyVolume} barCategoryGap="20%">
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="currentColor"
+                className="text-neutral-200 dark:text-neutral-800"
+              />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 11, fill: "#9ca3af" }}
+                tickFormatter={(v: string) => {
+                  const d = new Date(v + "T00:00:00");
+                  return `${d.getMonth() + 1}/${d.getDate()}`;
+                }}
+              />
+              <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} allowDecimals={false} />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: 8,
+                  border: "1px solid #e5e7eb",
+                  fontSize: 12,
+                }}
+              />
+              <Bar dataKey="email" name="Email" fill={CHANNEL_COLORS.email} radius={[2, 2, 0, 0]} />
+              <Bar dataKey="whatsapp" name="WhatsApp" fill={CHANNEL_COLORS.whatsapp} radius={[2, 2, 0, 0]} />
+              <Bar dataKey="linkedin" name="LinkedIn" fill={CHANNEL_COLORS.linkedin} radius={[2, 2, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      )}
+
+      {/* Channel Comparison */}
+      <Card>
+        <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+          Channel Comparison — Reply Rates
+        </h3>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={channelComparison} layout="vertical" barCategoryGap="30%">
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="currentColor"
+              className="text-neutral-200 dark:text-neutral-800"
+            />
+            <XAxis type="number" tick={{ fontSize: 11, fill: "#9ca3af" }} unit="%" />
+            <YAxis
+              type="category"
+              dataKey="channel"
+              tick={{ fontSize: 12, fill: "#9ca3af" }}
+              width={80}
+            />
+            <Tooltip
+              contentStyle={{
+                borderRadius: 8,
+                border: "1px solid #e5e7eb",
+                fontSize: 12,
+              }}
+              formatter={(value: unknown) => [`${value}%`, "Reply Rate"]}
+            />
+            <Bar dataKey="replyRate" name="Reply Rate" radius={[0, 4, 4, 0]}>
+              {channelComparison.map((entry, idx) => (
+                <Cell
+                  key={idx}
+                  fill={
+                    entry.channel === "Email"
+                      ? CHANNEL_COLORS.email
+                      : entry.channel === "WhatsApp"
+                        ? CHANNEL_COLORS.whatsapp
+                        : CHANNEL_COLORS.linkedin
+                  }
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </Card>
+
+      {/* Per-channel detail cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Email detail */}
+        <Card>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <EnvelopeIcon size={16} className="text-blue-600 dark:text-blue-400" />
+            </div>
+            <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+              Email
+            </h4>
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="text-neutral-500">Sent</span>
+              <span className="font-medium text-neutral-900 dark:text-neutral-100">{data.email.sent}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-neutral-500">Opened</span>
+              <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                {data.email.opened} ({data.email.openRate}%)
+              </span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-neutral-500">Clicked</span>
+              <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                {data.email.clicked} ({data.email.clickRate}%)
+              </span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-neutral-500">Replied</span>
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                {data.email.replied} ({data.email.replyRate}%)
+              </span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-neutral-500">Bounced</span>
+              <span className="font-medium text-red-600 dark:text-red-400">{data.email.bounced}</span>
+            </div>
+          </div>
+        </Card>
+
+        {/* WhatsApp detail */}
+        <Card>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+              <WhatsappLogoIcon size={16} className="text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+              WhatsApp
+            </h4>
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="text-neutral-500">Sent</span>
+              <span className="font-medium text-neutral-900 dark:text-neutral-100">{data.whatsapp.sent}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-neutral-500">Delivered</span>
+              <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                {data.whatsapp.delivered} ({data.whatsapp.deliveryRate}%)
+              </span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-neutral-500">Read</span>
+              <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                {data.whatsapp.read} ({data.whatsapp.readRate}%)
+              </span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-neutral-500">Replied</span>
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                {data.whatsapp.replied} ({data.whatsapp.replyRate}%)
+              </span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-neutral-500">Failed</span>
+              <span className="font-medium text-red-600 dark:text-red-400">{data.whatsapp.failed}</span>
+            </div>
+          </div>
+        </Card>
+
+        {/* LinkedIn detail */}
+        <Card>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center">
+              <LinkedinLogoIcon size={16} className="text-sky-600 dark:text-sky-400" />
+            </div>
+            <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+              LinkedIn
+            </h4>
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span className="text-neutral-500">Connections Sent</span>
+              <span className="font-medium text-neutral-900 dark:text-neutral-100">{data.linkedin.connections}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-neutral-500">Accepted</span>
+              <span className="font-medium text-neutral-900 dark:text-neutral-100">
+                {data.linkedin.accepted} ({data.linkedin.acceptRate}%)
+              </span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-neutral-500">Messages Sent</span>
+              <span className="font-medium text-neutral-900 dark:text-neutral-100">{data.linkedin.messages}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-neutral-500">Replied</span>
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                {data.linkedin.replied} ({data.linkedin.replyRate}%)
+              </span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-neutral-500">Profile Views</span>
+              <span className="font-medium text-neutral-900 dark:text-neutral-100">{data.linkedin.profileViews}</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-neutral-500">Endorsements</span>
+              <span className="font-medium text-neutral-900 dark:text-neutral-100">{data.linkedin.endorsements}</span>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export function AnalyticsPageClient({
@@ -1131,6 +1543,7 @@ export function AnalyticsPageClient({
   sequences,
   icp,
   email,
+  channels,
 }: AnalyticsPageClientProps) {
   const [activeTab, setActiveTab] = useState<TabId>("pipeline");
   const [aiInsights, setAIInsights] = useState<any>(null);
@@ -1170,6 +1583,8 @@ export function AnalyticsPageClient({
         return <ICPTab data={icp} />;
       case "email":
         return <EmailTab data={email} />;
+      case "channels":
+        return <ChannelsTab data={channels} />;
       case "ai-insights":
         return (
           <div className="space-y-6">

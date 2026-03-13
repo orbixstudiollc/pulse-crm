@@ -288,3 +288,194 @@ export async function getICPPerformance() {
 
   return { data: result };
 }
+
+// ── Channel Analytics (Multi-Channel Performance) ────────────────────────────
+
+export async function getChannelAnalytics(days: number = 30) {
+  const supabase = await createClient();
+  const orgId = await getOrgId();
+
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const sinceISO = since.toISOString();
+
+  // Fetch all three channel data in parallel
+  const [emailRes, waRes, liRes, emailDailyRes, waDailyRes, liDailyRes] =
+    await Promise.all([
+      // Email totals from sequence_events
+      supabase
+        .from("sequence_events")
+        .select(
+          "id, event_type, created_at, sequence_enrollments!inner(leads!inner(organization_id))"
+        )
+        .eq("sequence_enrollments.leads.organization_id", orgId)
+        .in("event_type", [
+          "email_sent",
+          "email_opened",
+          "email_clicked",
+          "email_replied",
+          "email_bounced",
+        ])
+        .gte("created_at", sinceISO),
+
+      // WhatsApp message totals
+      supabase
+        .from("whatsapp_messages")
+        .select("id, status, direction, message_type, created_at")
+        .eq("organization_id", orgId)
+        .gte("created_at", sinceISO),
+
+      // LinkedIn action totals
+      supabase
+        .from("linkedin_actions")
+        .select("id, action_type, status, created_at")
+        .eq("organization_id", orgId)
+        .gte("created_at", sinceISO),
+
+      // Email daily volume (last N days)
+      supabase
+        .from("sequence_events")
+        .select(
+          "created_at, event_type, sequence_enrollments!inner(leads!inner(organization_id))"
+        )
+        .eq("sequence_enrollments.leads.organization_id", orgId)
+        .eq("event_type", "email_sent")
+        .gte("created_at", sinceISO),
+
+      // WhatsApp daily volume
+      supabase
+        .from("whatsapp_messages")
+        .select("created_at")
+        .eq("organization_id", orgId)
+        .gte("created_at", sinceISO),
+
+      // LinkedIn daily volume
+      supabase
+        .from("linkedin_actions")
+        .select("created_at")
+        .eq("organization_id", orgId)
+        .gte("created_at", sinceISO),
+    ]);
+
+  // --- Email breakdown ---
+  const emails = (emailRes.data || []) as { id: string; event_type: string; created_at: string }[];
+  const emailSent = emails.filter((e) => e.event_type === "email_sent").length;
+  const emailOpened = emails.filter((e) => e.event_type === "email_opened").length;
+  const emailClicked = emails.filter((e) => e.event_type === "email_clicked").length;
+  const emailReplied = emails.filter((e) => e.event_type === "email_replied").length;
+  const emailBounced = emails.filter((e) => e.event_type === "email_bounced").length;
+
+  // --- WhatsApp breakdown ---
+  const waMessages = (waRes.data || []) as {
+    id: string;
+    status: string;
+    direction: string;
+    message_type: string;
+    created_at: string;
+  }[];
+  const waSent = waMessages.filter((m) => m.direction === "outbound").length;
+  const waDelivered = waMessages.filter((m) => m.status === "delivered").length;
+  const waRead = waMessages.filter((m) => m.status === "read").length;
+  const waReplied = waMessages.filter((m) => m.direction === "inbound").length;
+  const waFailed = waMessages.filter((m) => m.status === "failed").length;
+
+  // --- LinkedIn breakdown ---
+  const liActions = (liRes.data || []) as {
+    id: string;
+    action_type: string;
+    status: string;
+    created_at: string;
+  }[];
+  const liConnect = liActions.filter((a) => a.action_type === "connect").length;
+  const liMessage = liActions.filter((a) => a.action_type === "message").length;
+  const liViews = liActions.filter((a) => a.action_type === "view_profile").length;
+  const liEndorse = liActions.filter((a) => a.action_type === "endorse").length;
+  const liAccepted = liActions.filter((a) => a.status === "accepted").length;
+  const liReplied = liActions.filter((a) => a.status === "replied").length;
+
+  // --- Daily volume per channel ---
+  function groupByDay(items: { created_at: string }[]): Record<string, number> {
+    const map: Record<string, number> = {};
+    for (const item of items) {
+      const day = item.created_at.slice(0, 10); // YYYY-MM-DD
+      map[day] = (map[day] || 0) + 1;
+    }
+    return map;
+  }
+
+  const emailDaily = groupByDay((emailDailyRes.data || []) as { created_at: string }[]);
+  const waDaily = groupByDay((waDailyRes.data || []) as { created_at: string }[]);
+  const liDaily = groupByDay((liDailyRes.data || []) as { created_at: string }[]);
+
+  // Merge all days
+  const allDays = new Set([
+    ...Object.keys(emailDaily),
+    ...Object.keys(waDaily),
+    ...Object.keys(liDaily),
+  ]);
+  const dailyVolume = Array.from(allDays)
+    .sort()
+    .map((day) => ({
+      date: day,
+      email: emailDaily[day] || 0,
+      whatsapp: waDaily[day] || 0,
+      linkedin: liDaily[day] || 0,
+    }));
+
+  return {
+    data: {
+      email: {
+        total: emails.length,
+        sent: emailSent,
+        opened: emailOpened,
+        clicked: emailClicked,
+        replied: emailReplied,
+        bounced: emailBounced,
+        openRate: emailSent > 0 ? Math.round((emailOpened / emailSent) * 100) : 0,
+        clickRate: emailSent > 0 ? Math.round((emailClicked / emailSent) * 100) : 0,
+        replyRate: emailSent > 0 ? Math.round((emailReplied / emailSent) * 100) : 0,
+      },
+      whatsapp: {
+        total: waMessages.length,
+        sent: waSent,
+        delivered: waDelivered,
+        read: waRead,
+        replied: waReplied,
+        failed: waFailed,
+        deliveryRate: waSent > 0 ? Math.round((waDelivered / waSent) * 100) : 0,
+        readRate: waSent > 0 ? Math.round((waRead / waSent) * 100) : 0,
+        replyRate: waSent > 0 ? Math.round((waReplied / waSent) * 100) : 0,
+      },
+      linkedin: {
+        total: liActions.length,
+        connections: liConnect,
+        messages: liMessage,
+        profileViews: liViews,
+        endorsements: liEndorse,
+        accepted: liAccepted,
+        replied: liReplied,
+        acceptRate: liConnect > 0 ? Math.round((liAccepted / liConnect) * 100) : 0,
+        replyRate: liMessage > 0 ? Math.round((liReplied / liMessage) * 100) : 0,
+      },
+      dailyVolume,
+      summary: {
+        totalOutreach: emailSent + waSent + liActions.length,
+        totalReplies: emailReplied + waReplied + liReplied,
+        overallReplyRate:
+          emailSent + waSent + liMessage > 0
+            ? Math.round(
+                ((emailReplied + waReplied + liReplied) /
+                  (emailSent + waSent + liMessage)) *
+                  100
+              )
+            : 0,
+        bestChannel:
+          emailReplied >= waReplied && emailReplied >= liReplied
+            ? "email"
+            : waReplied >= liReplied
+              ? "whatsapp"
+              : "linkedin",
+      },
+    },
+  };
+}

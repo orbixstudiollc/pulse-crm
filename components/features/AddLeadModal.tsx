@@ -26,7 +26,11 @@ export interface LeadFormData {
   lastName: string;
   email: string;
   company: string;
+  title: string;
   phone: string;
+  website: string;
+  linkedin: string;
+  twitter: string;
   source: string;
   value: string;
   notes: string;
@@ -47,7 +51,11 @@ const emptyFormData: LeadFormData = {
   lastName: "",
   email: "",
   company: "",
+  title: "",
   phone: "",
+  website: "",
+  linkedin: "",
+  twitter: "",
   source: "",
   value: "",
   notes: "",
@@ -158,6 +166,42 @@ export function AddLeadModal({
             value={formData.phone}
             onChange={handleChange}
             placeholder="+1 (555) 000-0000"
+          />
+        </div>
+
+        {/* Title & Website Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            label="Job Title"
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            placeholder="VP of Sales"
+          />
+          <Input
+            label="Website"
+            name="website"
+            value={formData.website}
+            onChange={handleChange}
+            placeholder="https://company.com"
+          />
+        </div>
+
+        {/* Social Profiles Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            label="LinkedIn"
+            name="linkedin"
+            value={formData.linkedin}
+            onChange={handleChange}
+            placeholder="linkedin.com/in/username"
+          />
+          <Input
+            label="X / Twitter"
+            name="twitter"
+            value={formData.twitter}
+            onChange={handleChange}
+            placeholder="@username"
           />
         </div>
 

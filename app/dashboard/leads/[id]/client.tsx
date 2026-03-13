@@ -63,6 +63,10 @@ interface LeadRow {
   score_breakdown: unknown;
   days_in_pipeline: number | null;
   linkedin: string | null;
+  twitter: string | null;
+  facebook: string | null;
+  instagram: string | null;
+  title: string | null;
   location: string | null;
   employees: string | null;
   website: string | null;
@@ -158,6 +162,10 @@ export function LeadDetailClient({
     email: lead.email,
     company: lead.company || "",
     phone: lead.phone || "",
+    title: lead.title || "",
+    website: lead.website || "",
+    linkedin: lead.linkedin || "",
+    twitter: lead.twitter || "",
     source: (lead.source || "").toLowerCase().replace(" ", "-"),
     value: (lead.estimated_value || 0).toString(),
     notes: "",

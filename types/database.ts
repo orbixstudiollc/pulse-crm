@@ -306,6 +306,10 @@ export type Database = {
           qualification_data: Json | null;
           qualification_grade: string | null;
           qualification_score: number | null;
+          twitter: string | null;
+          facebook: string | null;
+          instagram: string | null;
+          title: string | null;
           next_followup: string | null;
           followup_note: string | null;
           created_at: string;
@@ -339,6 +343,10 @@ export type Database = {
           qualification_data?: Json | null;
           qualification_grade?: string | null;
           qualification_score?: number | null;
+          twitter?: string | null;
+          facebook?: string | null;
+          instagram?: string | null;
+          title?: string | null;
           next_followup?: string | null;
           followup_note?: string | null;
           created_at?: string;
@@ -369,6 +377,10 @@ export type Database = {
           qualification_data?: Json | null;
           qualification_grade?: string | null;
           qualification_score?: number | null;
+          twitter?: string | null;
+          facebook?: string | null;
+          instagram?: string | null;
+          title?: string | null;
           next_followup?: string | null;
           followup_note?: string | null;
           updated_at?: string;

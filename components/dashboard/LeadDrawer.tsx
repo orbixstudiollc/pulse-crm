@@ -65,6 +65,11 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
               <h3 className="text-2xl font-serif text-neutral-950 dark:text-neutral-50">
                 {lead.name}
               </h3>
+              {lead.title && (
+                <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                  {lead.title}
+                </p>
+              )}
               <p className="text-sm text-neutral-500 dark:text-neutral-400">
                 {lead.company}
               </p>
@@ -188,7 +193,7 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
           </div>
 
           {/* Contact Details */}
-          <div>
+          <div className="mb-6">
             <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
               Contact Details
             </h4>
@@ -197,20 +202,108 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
                 <span className="text-sm text-neutral-600 dark:text-neutral-400">
                   Email
                 </span>
-                <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <a href={`mailto:${lead.email}`} className="text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:underline">
                   {lead.email}
-                </span>
+                </a>
               </div>
-              <div className="flex items-center justify-between py-3 last:pb-0">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Phone
-                </span>
-                <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
-                  {lead.phone}
-                </span>
-              </div>
+              {lead.phone && (
+                <div className="flex items-center justify-between py-3 last:pb-0">
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Phone
+                  </span>
+                  <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                    {lead.phone}
+                  </span>
+                </div>
+              )}
+              {lead.website && (
+                <div className="flex items-center justify-between py-3 last:pb-0">
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Website
+                  </span>
+                  <a
+                    href={lead.website.startsWith("http") ? lead.website : `https://${lead.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[200px]"
+                  >
+                    {lead.website.replace(/^https?:\/\//, "")}
+                  </a>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Social Profiles */}
+          {(lead.linkedin || lead.twitter || lead.instagram || lead.facebook) && (
+            <div>
+              <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+                Social Profiles
+              </h4>
+              <div className="divide-y-[0.5px] divide-neutral-200 dark:divide-neutral-800">
+                {lead.linkedin && (
+                  <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                      LinkedIn
+                    </span>
+                    <a
+                      href={lead.linkedin.startsWith("http") ? lead.linkedin : `https://linkedin.com/in/${lead.linkedin}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[200px]"
+                    >
+                      {lead.linkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, "")}
+                    </a>
+                  </div>
+                )}
+                {lead.twitter && (
+                  <div className="flex items-center justify-between py-3 last:pb-0">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                      X / Twitter
+                    </span>
+                    <a
+                      href={lead.twitter.startsWith("http") ? lead.twitter : `https://x.com/${lead.twitter.replace("@", "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[200px]"
+                    >
+                      {lead.twitter.startsWith("@") ? lead.twitter : `@${lead.twitter.replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//, "")}`}
+                    </a>
+                  </div>
+                )}
+                {lead.instagram && (
+                  <div className="flex items-center justify-between py-3 last:pb-0">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Instagram
+                    </span>
+                    <a
+                      href={lead.instagram.startsWith("http") ? lead.instagram : `https://instagram.com/${lead.instagram.replace("@", "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[200px]"
+                    >
+                      {lead.instagram.startsWith("@") ? lead.instagram : `@${lead.instagram.replace(/^https?:\/\/(www\.)?instagram\.com\//, "")}`}
+                    </a>
+                  </div>
+                )}
+                {lead.facebook && (
+                  <div className="flex items-center justify-between py-3 last:pb-0">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Facebook
+                    </span>
+                    <a
+                      href={lead.facebook.startsWith("http") ? lead.facebook : `https://facebook.com/${lead.facebook}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[200px]"
+                    >
+                      {lead.facebook.replace(/^https?:\/\/(www\.)?facebook\.com\//, "")}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </>
       ) : null}
     </Drawer>

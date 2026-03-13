@@ -13,7 +13,11 @@ export interface Lead {
   email: string;
   company: string;
   phone: string;
+  title: string;
   linkedin: string;
+  twitter: string;
+  facebook: string;
+  instagram: string;
   location: string;
   employees: string;
   website: string;
