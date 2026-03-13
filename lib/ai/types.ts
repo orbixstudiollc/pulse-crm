@@ -10,7 +10,8 @@ export type AIFeature =
   | "competitors"
   | "objections"
   | "chat"
-  | "lead_validation";
+  | "lead_validation"
+  | "import_enrichment";
 
 export type AutonomyLevel = "suggest" | "auto_act" | "full_auto";
 
@@ -18,6 +19,8 @@ export interface AISettings {
   id: string;
   organization_id: string;
   api_key: string | null;
+  ai_provider: string | null;
+  openrouter_api_key: string | null;
   default_model: string;
   // Feature toggles
   feature_lead_scoring: boolean;

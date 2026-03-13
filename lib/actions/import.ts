@@ -22,7 +22,31 @@ const VALID_LEAD_FIELDS = [
   "estimated_value",
   "location",
   "linkedin",
+  "twitter",
+  "facebook",
+  "instagram",
+  "title",
+  "pain_points",
+  "trigger_event",
+  "timezone",
+  "preferred_language",
+  "tags",
+  "revenue_range",
+  "tech_stack",
+  "funding_stage",
+  "decision_role",
+  "current_solution",
+  "referred_by",
+  "personal_note",
+  "birthday",
+  "content_interests",
+  "meeting_preference",
+  "assistant_name",
+  "assistant_email",
 ] as const;
+
+// Fields that should be parsed as arrays from comma-separated strings
+const ARRAY_FIELDS = ["tags", "content_interests"] as const;
 
 function parseCSVRow(row: string): string[] {
   const fields: string[] = [];
@@ -148,13 +172,15 @@ export async function importLeads(
           const value = row[columnIndex]?.trim();
           if (!value) continue;
 
-          // Type coercion for numeric fields
+          // Type coercion for specific fields
           if (leadField === "estimated_value") {
             const num = parseFloat(value.replace(/[^0-9.-]/g, ""));
             lead[leadField] = isNaN(num) ? 0 : num;
           } else if (leadField === "employees") {
             const num = parseInt(value.replace(/[^0-9]/g, ""), 10);
             lead[leadField] = isNaN(num) ? null : num;
+          } else if ((ARRAY_FIELDS as readonly string[]).includes(leadField)) {
+            lead[leadField] = value.split(",").map((s: string) => s.trim()).filter(Boolean);
           } else {
             lead[leadField] = value;
           }
@@ -190,11 +216,14 @@ export async function importLeads(
     if (insertError) {
       // If batch insert fails, try inserting one by one to save valid rows
       let importedCount = 0;
+      const importedIds: string[] = [];
 
       for (let i = 0; i < validLeads.length; i++) {
-        const { error: singleError } = await supabase
+        const { data: singleInserted, error: singleError } = await supabase
           .from("leads")
-          .insert(validLeads[i]);
+          .insert(validLeads[i])
+          .select("id")
+          .single();
 
         if (singleError) {
           errors.push(
@@ -202,17 +231,19 @@ export async function importLeads(
           );
         } else {
           importedCount++;
+          if (singleInserted) importedIds.push(singleInserted.id);
         }
       }
 
       revalidatePath("/dashboard/leads");
-      return { data: { imported: importedCount, errors } };
+      return { data: { imported: importedCount, importedIds, errors } };
     }
 
     revalidatePath("/dashboard/leads");
     return {
       data: {
         imported: inserted?.length ?? validLeads.length,
+        importedIds: inserted?.map((r) => r.id) ?? [],
         errors,
       },
     };

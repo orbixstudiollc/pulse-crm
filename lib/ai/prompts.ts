@@ -163,6 +163,10 @@ Return a JSON object with:
 
 Return ONLY valid JSON.`,
 
+  import_enrichment: `You are a B2B lead data enrichment expert. Given partial lead data, infer missing fields based on available context (company name, job title, email domain, industry, etc.). Only fill fields where you have reasonable confidence. Never fabricate contact information.
+
+Return ONLY valid JSON.`,
+
   forecast: `You are a revenue forecasting expert. Analyze the deals pipeline and generate a forecast.
 
 Return a JSON object with:

@@ -1465,8 +1465,11 @@ function AISettingsSection({
 }: {
   settings: AISettingsData | null | undefined;
 }) {
+  const [aiProvider, setAiProvider] = useState(settings?.ai_provider ?? "anthropic");
   const [apiKey, setApiKey] = useState(settings?.api_key ?? "");
   const [showKey, setShowKey] = useState(false);
+  const [openrouterKey, setOpenrouterKey] = useState(settings?.openrouter_api_key ?? "");
+  const [showOpenrouterKey, setShowOpenrouterKey] = useState(false);
   const [apifyKey, setApifyKey] = useState(settings?.apify_api_key ?? "");
   const [showApifyKey, setShowApifyKey] = useState(false);
   const [defaultModel, setDefaultModel] = useState(
@@ -1516,7 +1519,9 @@ function AISettingsSection({
   const handleSave = () => {
     startTransition(async () => {
       const updates: Record<string, unknown> = {
+        ai_provider: aiProvider || "anthropic",
         api_key: apiKey || null,
+        openrouter_api_key: openrouterKey || null,
         apify_api_key: apifyKey || null,
         default_model: defaultModel,
       };
@@ -1577,38 +1582,114 @@ function AISettingsSection({
         </p>
       </div>
 
-      {/* API Key */}
+      {/* AI Provider */}
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
-          API Key
+          AI Provider
         </h3>
         <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          Enter your Anthropic API key for AI features. If not set, the app-level
-          key will be used.
+          Choose your AI provider. Anthropic (direct) or OpenRouter for access to
+          multiple models.
         </p>
         <div className="flex gap-2">
-          <div className="flex-1 relative">
-            <input
-              type={showKey ? "text" : "password"}
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk-ant-..."
-              className="w-full rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-950/10 dark:focus:ring-neutral-50/10"
-            />
-            <button
-              type="button"
-              onClick={() => setShowKey(!showKey)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
-            >
-              {showKey ? (
-                <EyeSlashIcon size={16} />
-              ) : (
-                <EyeIcon size={16} />
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setAiProvider("anthropic")}
+            className={`flex-1 rounded border px-4 py-2.5 text-sm font-medium transition-colors ${
+              aiProvider === "anthropic"
+                ? "border-neutral-950 dark:border-neutral-50 bg-neutral-950 dark:bg-neutral-50 text-white dark:text-neutral-950"
+                : "border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-500"
+            }`}
+          >
+            Anthropic (Direct)
+          </button>
+          <button
+            type="button"
+            onClick={() => setAiProvider("openrouter")}
+            className={`flex-1 rounded border px-4 py-2.5 text-sm font-medium transition-colors ${
+              aiProvider === "openrouter"
+                ? "border-neutral-950 dark:border-neutral-50 bg-neutral-950 dark:bg-neutral-50 text-white dark:text-neutral-950"
+                : "border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-500"
+            }`}
+          >
+            OpenRouter
+          </button>
         </div>
       </div>
+
+      {/* API Key — conditional on provider */}
+      {aiProvider === "anthropic" ? (
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+            Anthropic API Key
+          </h3>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            Enter your Anthropic API key for AI features. If not set, the app-level
+            key will be used.
+          </p>
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <input
+                type={showKey ? "text" : "password"}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="sk-ant-..."
+                className="w-full rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-950/10 dark:focus:ring-neutral-50/10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowKey(!showKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+              >
+                {showKey ? (
+                  <EyeSlashIcon size={16} />
+                ) : (
+                  <EyeIcon size={16} />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+            OpenRouter API Key
+          </h3>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            Enter your OpenRouter API key. Get one at{" "}
+            <a
+              href="https://openrouter.ai/keys"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-neutral-950 dark:text-neutral-50 underline"
+            >
+              openrouter.ai/keys
+            </a>
+          </p>
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <input
+                type={showOpenrouterKey ? "text" : "password"}
+                value={openrouterKey}
+                onChange={(e) => setOpenrouterKey(e.target.value)}
+                placeholder="sk-or-v1-..."
+                className="w-full rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-950/10 dark:focus:ring-neutral-50/10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowOpenrouterKey(!showOpenrouterKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+              >
+                {showOpenrouterKey ? (
+                  <EyeSlashIcon size={16} />
+                ) : (
+                  <EyeIcon size={16} />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Apify API Key */}
       <div className="space-y-4">

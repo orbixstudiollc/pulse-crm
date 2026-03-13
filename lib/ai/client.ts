@@ -33,15 +33,37 @@ export async function getAIClient(): Promise<AIClientResult> {
     .eq("organization_id", profile.organization_id)
     .single();
 
-  // Resolve API key: org key overrides env key
-  const apiKey = settings?.api_key || process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    throw new Error(
-      "No AI API key configured. Add one in Settings > AI or set ANTHROPIC_API_KEY in environment."
-    );
+  // Determine provider and resolve API key
+  const provider = settings?.ai_provider || "anthropic";
+  let apiKey: string;
+  let clientOptions: ConstructorParameters<typeof Anthropic>[0];
+
+  if (provider === "openrouter") {
+    apiKey = settings?.openrouter_api_key || "";
+    if (!apiKey) {
+      throw new Error(
+        "No OpenRouter API key configured. Add one in Settings > AI."
+      );
+    }
+    clientOptions = {
+      apiKey,
+      baseURL: "https://openrouter.ai/api/v1",
+      defaultHeaders: {
+        "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "https://pulse-crm-rosy.vercel.app",
+        "X-Title": "Pulse CRM",
+      },
+    };
+  } else {
+    apiKey = settings?.api_key || process.env.ANTHROPIC_API_KEY || "";
+    if (!apiKey) {
+      throw new Error(
+        "No AI API key configured. Add one in Settings > AI or set ANTHROPIC_API_KEY in environment."
+      );
+    }
+    clientOptions = { apiKey };
   }
 
-  const client = new Anthropic({ apiKey });
+  const client = new Anthropic(clientOptions);
 
   // Return settings with defaults if no settings row exists
   const resolvedSettings: AISettings = settings || {
@@ -49,6 +71,8 @@ export async function getAIClient(): Promise<AIClientResult> {
     organization_id: profile.organization_id,
     api_key: null,
     apify_api_key: null,
+    ai_provider: "anthropic",
+    openrouter_api_key: null,
     default_model: "sonnet",
     feature_lead_scoring: true,
     feature_icp_matching: true,

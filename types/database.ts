@@ -1344,6 +1344,8 @@ export type Database = {
           organization_id: string;
           api_key: string | null;
           apify_api_key: string | null;
+          ai_provider: string | null;
+          openrouter_api_key: string | null;
           default_model: string;
           feature_lead_scoring: boolean;
           feature_icp_matching: boolean;
@@ -1376,6 +1378,8 @@ export type Database = {
           organization_id: string;
           api_key?: string | null;
           apify_api_key?: string | null;
+          ai_provider?: string | null;
+          openrouter_api_key?: string | null;
           default_model?: string;
           feature_lead_scoring?: boolean;
           feature_icp_matching?: boolean;
@@ -1406,6 +1410,8 @@ export type Database = {
         Update: {
           api_key?: string | null;
           apify_api_key?: string | null;
+          ai_provider?: string | null;
+          openrouter_api_key?: string | null;
           default_model?: string;
           feature_lead_scoring?: boolean;
           feature_icp_matching?: boolean;
