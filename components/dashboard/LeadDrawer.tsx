@@ -304,6 +304,96 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
               </div>
             </div>
           )}
+
+          {/* Personalization */}
+          {(lead.painPoints || lead.triggerEvent || lead.personalNote || lead.referredBy) && (
+            <div className="mb-6">
+              <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+                Personalization
+              </h4>
+              <div className="divide-y-[0.5px] divide-neutral-200 dark:divide-neutral-800">
+                {lead.painPoints && (
+                  <div className="py-3 first:pt-0 last:pb-0">
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">Pain Points</span>
+                    <p className="text-sm text-neutral-950 dark:text-neutral-50 mt-1">{lead.painPoints}</p>
+                  </div>
+                )}
+                {lead.triggerEvent && (
+                  <div className="flex items-center justify-between py-3 last:pb-0">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Trigger Event</span>
+                    <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50 text-right max-w-[200px]">{lead.triggerEvent}</span>
+                  </div>
+                )}
+                {lead.referredBy && (
+                  <div className="flex items-center justify-between py-3 last:pb-0">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Referred By</span>
+                    <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{lead.referredBy}</span>
+                  </div>
+                )}
+                {lead.personalNote && (
+                  <div className="py-3 last:pb-0">
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">Personal Note</span>
+                    <p className="text-sm text-neutral-950 dark:text-neutral-50 mt-1">{lead.personalNote}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Company Details */}
+          {(lead.revenueRange || lead.techStack || lead.fundingStage || lead.currentSolution || lead.decisionRole) && (
+            <div className="mb-6">
+              <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+                Company Details
+              </h4>
+              <div className="divide-y-[0.5px] divide-neutral-200 dark:divide-neutral-800">
+                {lead.revenueRange && (
+                  <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Revenue</span>
+                    <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{lead.revenueRange}</span>
+                  </div>
+                )}
+                {lead.fundingStage && (
+                  <div className="flex items-center justify-between py-3 last:pb-0">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Funding</span>
+                    <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{lead.fundingStage}</span>
+                  </div>
+                )}
+                {lead.techStack && (
+                  <div className="flex items-center justify-between py-3 last:pb-0">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Tech Stack</span>
+                    <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50 text-right max-w-[200px]">{lead.techStack}</span>
+                  </div>
+                )}
+                {lead.currentSolution && (
+                  <div className="flex items-center justify-between py-3 last:pb-0">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Current Solution</span>
+                    <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{lead.currentSolution}</span>
+                  </div>
+                )}
+                {lead.decisionRole && (
+                  <div className="flex items-center justify-between py-3 last:pb-0">
+                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Decision Role</span>
+                    <Badge variant="neutral">{lead.decisionRole}</Badge>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Tags */}
+          {lead.tags && lead.tags.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-3">
+                Tags
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {lead.tags.map((tag) => (
+                  <Badge key={tag} variant="neutral">{tag}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       ) : null}
     </Drawer>

@@ -33,6 +33,25 @@ export interface Lead {
   qualificationData?: unknown;
   qualificationGrade?: string | null;
   qualificationScore?: number | null;
+  // Personalization fields
+  painPoints: string;
+  triggerEvent: string;
+  timezone: string;
+  preferredLanguage: string;
+  lastContactedAt: string;
+  tags: string[];
+  revenueRange: string;
+  techStack: string;
+  fundingStage: string;
+  decisionRole: string;
+  currentSolution: string;
+  referredBy: string;
+  personalNote: string;
+  birthday: string;
+  contentInterests: string[];
+  meetingPreference: string;
+  assistantName: string;
+  assistantEmail: string;
 }
 
 export const leadStatusConfig: Record<

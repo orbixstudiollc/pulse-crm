@@ -72,6 +72,24 @@ interface LeadRow {
   website: string | null;
   industry: string | null;
   created_at: string;
+  pain_points: string | null;
+  trigger_event: string | null;
+  timezone: string | null;
+  preferred_language: string | null;
+  last_contacted_at: string | null;
+  tags: string[] | null;
+  revenue_range: string | null;
+  tech_stack: string | null;
+  funding_stage: string | null;
+  decision_role: string | null;
+  current_solution: string | null;
+  referred_by: string | null;
+  personal_note: string | null;
+  birthday: string | null;
+  content_interests: string[] | null;
+  meeting_preference: string | null;
+  assistant_name: string | null;
+  assistant_email: string | null;
 }
 
 interface NoteRow {
@@ -169,6 +187,23 @@ export function LeadDetailClient({
     source: (lead.source || "").toLowerCase().replace(" ", "-"),
     value: (lead.estimated_value || 0).toString(),
     notes: "",
+    painPoints: lead.pain_points || "",
+    triggerEvent: lead.trigger_event || "",
+    personalNote: lead.personal_note || "",
+    referredBy: lead.referred_by || "",
+    revenueRange: lead.revenue_range || "",
+    techStack: lead.tech_stack || "",
+    fundingStage: lead.funding_stage || "",
+    currentSolution: lead.current_solution || "",
+    decisionRole: lead.decision_role || "",
+    timezone: lead.timezone || "",
+    preferredLanguage: lead.preferred_language || "",
+    meetingPreference: lead.meeting_preference || "",
+    tags: Array.isArray(lead.tags) ? lead.tags.join(", ") : "",
+    birthday: lead.birthday || "",
+    contentInterests: Array.isArray(lead.content_interests) ? lead.content_interests.join(", ") : "",
+    assistantName: lead.assistant_name || "",
+    assistantEmail: lead.assistant_email || "",
   };
 
   const formatCurrency = (value: number) => {
@@ -235,8 +270,29 @@ export function LeadDetailClient({
         email: data.email,
         company: data.company || null,
         phone: data.phone || null,
+        title: data.title || null,
+        website: data.website || null,
+        linkedin: data.linkedin || null,
+        twitter: data.twitter || null,
         source: data.source || null,
         estimated_value: parseFloat(data.value) || 0,
+        pain_points: data.painPoints || null,
+        trigger_event: data.triggerEvent || null,
+        personal_note: data.personalNote || null,
+        referred_by: data.referredBy || null,
+        revenue_range: data.revenueRange || null,
+        tech_stack: data.techStack || null,
+        funding_stage: data.fundingStage || null,
+        current_solution: data.currentSolution || null,
+        decision_role: data.decisionRole || null,
+        timezone: data.timezone || null,
+        preferred_language: data.preferredLanguage || null,
+        meeting_preference: data.meetingPreference || null,
+        tags: data.tags ? data.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
+        birthday: data.birthday || null,
+        content_interests: data.contentInterests ? data.contentInterests.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
+        assistant_name: data.assistantName || null,
+        assistant_email: data.assistantEmail || null,
       });
       if (res.error) {
         toast.error(res.error);

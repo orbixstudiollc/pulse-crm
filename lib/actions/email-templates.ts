@@ -139,6 +139,19 @@ export async function renderTemplate(
     "{{email}}": lead.email || "",
     "{{phone}}": lead.phone || "",
     "{{website}}": lead.website || "",
+    "{{title}}": lead.title || "",
+    "{{location}}": lead.location || "",
+    "{{painPoints}}": lead.pain_points || "",
+    "{{triggerEvent}}": lead.trigger_event || "",
+    "{{techStack}}": lead.tech_stack || "",
+    "{{currentSolution}}": lead.current_solution || "",
+    "{{referredBy}}": lead.referred_by || "",
+    "{{personalNote}}": lead.personal_note || "",
+    "{{fundingStage}}": lead.funding_stage || "",
+    "{{revenueRange}}": lead.revenue_range || "",
+    "{{decisionRole}}": lead.decision_role || "",
+    "{{timezone}}": lead.timezone || "",
+    "{{tags}}": Array.isArray(lead.tags) ? lead.tags.join(", ") : "",
   };
 
   let subject = template.subject;

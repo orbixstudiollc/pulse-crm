@@ -11,7 +11,7 @@ import {
   CheckIcon,
 } from "@/components/ui";
 
-import { X } from "@phosphor-icons/react";
+import { X, CaretDown, CaretUp } from "@phosphor-icons/react";
 
 interface AddLeadModalProps {
   open: boolean;
@@ -34,6 +34,27 @@ export interface LeadFormData {
   source: string;
   value: string;
   notes: string;
+  // Personalization
+  painPoints: string;
+  triggerEvent: string;
+  personalNote: string;
+  referredBy: string;
+  // Company Details
+  revenueRange: string;
+  techStack: string;
+  fundingStage: string;
+  currentSolution: string;
+  decisionRole: string;
+  // Preferences
+  timezone: string;
+  preferredLanguage: string;
+  meetingPreference: string;
+  tags: string;
+  // Additional
+  birthday: string;
+  contentInterests: string;
+  assistantName: string;
+  assistantEmail: string;
 }
 
 const sourceOptions = [
@@ -44,6 +65,41 @@ const sourceOptions = [
   { label: "Event", value: "event" },
   { label: "Google Ads", value: "google-ads" },
   { label: "Cold Call", value: "cold-call" },
+];
+
+const fundingStageOptions = [
+  { label: "Pre-Seed", value: "pre-seed" },
+  { label: "Seed", value: "seed" },
+  { label: "Series A", value: "series-a" },
+  { label: "Series B", value: "series-b" },
+  { label: "Series C+", value: "series-c-plus" },
+  { label: "Public", value: "public" },
+  { label: "Bootstrapped", value: "bootstrapped" },
+];
+
+const decisionRoleOptions = [
+  { label: "Decision Maker", value: "decision-maker" },
+  { label: "Champion", value: "champion" },
+  { label: "Influencer", value: "influencer" },
+  { label: "Gatekeeper", value: "gatekeeper" },
+  { label: "End User", value: "end-user" },
+];
+
+const meetingPrefOptions = [
+  { label: "Zoom", value: "zoom" },
+  { label: "Google Meet", value: "google-meet" },
+  { label: "Phone Call", value: "phone" },
+  { label: "In Person", value: "in-person" },
+  { label: "Microsoft Teams", value: "teams" },
+];
+
+const revenueRangeOptions = [
+  { label: "< $1M", value: "under-1m" },
+  { label: "$1M - $10M", value: "1m-10m" },
+  { label: "$10M - $50M", value: "10m-50m" },
+  { label: "$50M - $100M", value: "50m-100m" },
+  { label: "$100M - $500M", value: "100m-500m" },
+  { label: "$500M+", value: "500m-plus" },
 ];
 
 const emptyFormData: LeadFormData = {
@@ -59,7 +115,50 @@ const emptyFormData: LeadFormData = {
   source: "",
   value: "",
   notes: "",
+  painPoints: "",
+  triggerEvent: "",
+  personalNote: "",
+  referredBy: "",
+  revenueRange: "",
+  techStack: "",
+  fundingStage: "",
+  currentSolution: "",
+  decisionRole: "",
+  timezone: "",
+  preferredLanguage: "",
+  meetingPreference: "",
+  tags: "",
+  birthday: "",
+  contentInterests: "",
+  assistantName: "",
+  assistantEmail: "",
 };
+
+function SectionToggle({
+  label,
+  open,
+  onToggle,
+  children,
+}: {
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="border border-neutral-200 dark:border-neutral-800 rounded-lg overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+      >
+        {label}
+        {open ? <CaretUp size={16} /> : <CaretDown size={16} />}
+      </button>
+      {open && <div className="px-4 pb-4 space-y-4">{children}</div>}
+    </div>
+  );
+}
 
 export function AddLeadModal({
   open,
@@ -71,8 +170,13 @@ export function AddLeadModal({
   const [formData, setFormData] = useState<LeadFormData>(
     initialData || emptyFormData,
   );
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
   const isEdit = mode === "edit";
+
+  const toggleSection = (key: string) => {
+    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -119,7 +223,7 @@ export function AddLeadModal({
 
       {/* Body */}
       <div className="p-5 space-y-5 max-h-[60vh] overflow-y-auto">
-        {/* Name Row */}
+        {/* === Basic Info (always visible) === */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="First Name"
@@ -139,7 +243,6 @@ export function AddLeadModal({
           />
         </div>
 
-        {/* Email */}
         <Input
           label="Email"
           required
@@ -150,7 +253,6 @@ export function AddLeadModal({
           placeholder="john@company.com"
         />
 
-        {/* Company & Phone Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Company"
@@ -169,7 +271,6 @@ export function AddLeadModal({
           />
         </div>
 
-        {/* Title & Website Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Job Title"
@@ -187,7 +288,6 @@ export function AddLeadModal({
           />
         </div>
 
-        {/* Social Profiles Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="LinkedIn"
@@ -205,7 +305,6 @@ export function AddLeadModal({
           />
         </div>
 
-        {/* Source & Value Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
             label="Source"
@@ -225,6 +324,174 @@ export function AddLeadModal({
             prefix="$"
           />
         </div>
+
+        {/* === Personalization Section === */}
+        <SectionToggle
+          label="Personalization"
+          open={!!expandedSections.personalization}
+          onToggle={() => toggleSection("personalization")}
+        >
+          <Textarea
+            label="Pain Points"
+            name="painPoints"
+            value={formData.painPoints}
+            onChange={handleChange}
+            placeholder="What challenges are they facing?"
+          />
+          <Input
+            label="Trigger Event"
+            name="triggerEvent"
+            value={formData.triggerEvent}
+            onChange={handleChange}
+            placeholder="e.g., Just raised Series A, New CTO hired"
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Referred By"
+              name="referredBy"
+              value={formData.referredBy}
+              onChange={handleChange}
+              placeholder="Who referred this lead?"
+            />
+            <Input
+              label="Tags"
+              name="tags"
+              value={formData.tags}
+              onChange={handleChange}
+              placeholder="SaaS, Enterprise (comma-separated)"
+            />
+          </div>
+          <Textarea
+            label="Personal Note"
+            name="personalNote"
+            value={formData.personalNote}
+            onChange={handleChange}
+            placeholder="Custom snippet for email personalization..."
+          />
+        </SectionToggle>
+
+        {/* === Company Details Section === */}
+        <SectionToggle
+          label="Company Details"
+          open={!!expandedSections.company}
+          onToggle={() => toggleSection("company")}
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Select
+              label="Revenue Range"
+              name="revenueRange"
+              value={formData.revenueRange}
+              onChange={handleChange}
+              options={revenueRangeOptions}
+              placeholder="Select range..."
+            />
+            <Select
+              label="Funding Stage"
+              name="fundingStage"
+              value={formData.fundingStage}
+              onChange={handleChange}
+              options={fundingStageOptions}
+              placeholder="Select stage..."
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Tech Stack"
+              name="techStack"
+              value={formData.techStack}
+              onChange={handleChange}
+              placeholder="e.g., Salesforce, HubSpot, React"
+            />
+            <Input
+              label="Current Solution"
+              name="currentSolution"
+              value={formData.currentSolution}
+              onChange={handleChange}
+              placeholder="What are they using now?"
+            />
+          </div>
+          <Select
+            label="Decision Role"
+            name="decisionRole"
+            value={formData.decisionRole}
+            onChange={handleChange}
+            options={decisionRoleOptions}
+            placeholder="Select role..."
+          />
+        </SectionToggle>
+
+        {/* === Preferences Section === */}
+        <SectionToggle
+          label="Preferences"
+          open={!!expandedSections.preferences}
+          onToggle={() => toggleSection("preferences")}
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Timezone"
+              name="timezone"
+              value={formData.timezone}
+              onChange={handleChange}
+              placeholder="e.g., America/New_York"
+            />
+            <Input
+              label="Preferred Language"
+              name="preferredLanguage"
+              value={formData.preferredLanguage}
+              onChange={handleChange}
+              placeholder="e.g., English, Spanish"
+            />
+          </div>
+          <Select
+            label="Meeting Preference"
+            name="meetingPreference"
+            value={formData.meetingPreference}
+            onChange={handleChange}
+            options={meetingPrefOptions}
+            placeholder="Select preference..."
+          />
+        </SectionToggle>
+
+        {/* === Additional Info Section === */}
+        <SectionToggle
+          label="Additional Info"
+          open={!!expandedSections.additional}
+          onToggle={() => toggleSection("additional")}
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Birthday"
+              type="date"
+              name="birthday"
+              value={formData.birthday}
+              onChange={handleChange}
+            />
+            <Input
+              label="Content Interests"
+              name="contentInterests"
+              value={formData.contentInterests}
+              onChange={handleChange}
+              placeholder="Topics (comma-separated)"
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Assistant Name"
+              name="assistantName"
+              value={formData.assistantName}
+              onChange={handleChange}
+              placeholder="Executive assistant name"
+            />
+            <Input
+              label="Assistant Email"
+              type="email"
+              name="assistantEmail"
+              value={formData.assistantEmail}
+              onChange={handleChange}
+              placeholder="assistant@company.com"
+            />
+          </div>
+        </SectionToggle>
 
         {/* Notes */}
         <Textarea
