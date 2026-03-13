@@ -1285,7 +1285,7 @@ const PLAN_COLORS: Record<string, { bg: string; text: string; border: string }> 
   enterprise: { bg: "bg-purple-50 dark:bg-purple-500/10", text: "text-purple-600 dark:text-purple-400", border: "border-purple-200 dark:border-purple-500/30" },
 };
 
-const USAGE_COLORS: ("green" | "blue" | "yellow" | "purple")[] = ["green", "blue", "yellow", "purple"];
+const USAGE_COLORS: ("green" | "blue" | "yellow" | "amber")[] = ["green", "blue", "yellow", "amber"];
 
 function BillingSection({ billingData }: { billingData: BillingData | null }) {
   const [showToast, setShowToast] = useState(false);
