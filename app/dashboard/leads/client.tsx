@@ -261,9 +261,15 @@ export function LeadsPageClient({
   };
 
   const handleDeleteLead = async (id: string) => {
+    if (!confirm("Delete this lead? This cannot be undone.")) return;
     startTransition(async () => {
-      await deleteLead(id);
-      router.refresh();
+      const result = await deleteLead(id);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Lead deleted");
+        router.refresh();
+      }
     });
   };
 
@@ -413,7 +419,18 @@ export function LeadsPageClient({
               selected
             </span>
             <div className="flex items-center gap-4">
-              <button className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
+              <button
+                onClick={() => {
+                  const selected = filteredLeads.filter((l) => selectedRows.includes(l.id));
+                  const emails = selected.map((l) => l.email).filter(Boolean).join(",");
+                  if (emails) {
+                    window.location.href = `mailto:${emails}`;
+                  } else {
+                    toast.error("No email addresses found for selected leads");
+                  }
+                }}
+                className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+              >
                 Email
               </button>
               <button
@@ -431,7 +448,20 @@ export function LeadsPageClient({
               >
                 Export
               </button>
-              <button className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors">
+              <button
+                onClick={async () => {
+                  if (!confirm(`Delete ${selectedRows.length} lead${selectedRows.length > 1 ? "s" : ""}? This cannot be undone.`)) return;
+                  let deleted = 0;
+                  for (const id of selectedRows) {
+                    const result = await deleteLead(id);
+                    if (!result.error) deleted++;
+                  }
+                  setSelectedRows([]);
+                  router.refresh();
+                  toast.success(`Deleted ${deleted} lead${deleted !== 1 ? "s" : ""}`);
+                }}
+                className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
+              >
                 Delete
               </button>
               <button
