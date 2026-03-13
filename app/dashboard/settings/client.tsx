@@ -36,7 +36,7 @@ import {
   EnvelopeIcon,
   PlugsConnectedIcon,
   GoogleLogoIcon,
-  MicrosoftOutlookLogoIcon,
+
   HardDrivesIcon,
   CircleIcon,
   ArrowsClockwiseIcon,
@@ -93,6 +93,7 @@ import {
   getAIUsageLog,
 } from "@/lib/actions/ai-settings";
 import type { AISettings, AIUsageStats, AIUsageDailyPoint, AIUsageLogEntry } from "@/lib/ai/types";
+import type { BillingData } from "@/lib/actions/billing";
 import { AutomationSection } from "@/components/automation/AutomationSection";
 import {
   AreaChart,
@@ -139,6 +140,7 @@ interface SettingsPageClientProps {
   initialProfile: ProfileData | null;
   initialIntegrations: IntegrationData[] | undefined;
   initialAISettings?: AISettingsData | null;
+  initialBillingData?: BillingData | null;
 }
 
 // ── Settings navigation tabs ────────────────────────────────────────────────
@@ -1276,33 +1278,47 @@ function IntegrationsSection({
 
 // ── Billing Section ──────────────────────────────────────────────────────────
 
-const usageData = [
-  {
-    label: "Leads",
-    used: 847,
-    total: 2000,
-    unit: "",
-    color: "green" as const,
-  },
-  {
-    label: "Team seats",
-    used: 2,
-    total: 10,
-    unit: "",
-    color: "blue" as const,
-  },
-  {
-    label: "Storage",
-    used: 6.8,
-    total: 10,
-    unit: " GB",
-    color: "yellow" as const,
-  },
-];
+const PLAN_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  free:       { bg: "bg-neutral-100 dark:bg-neutral-500/10", text: "text-neutral-600 dark:text-neutral-400", border: "border-neutral-200 dark:border-neutral-500/30" },
+  starter:    { bg: "bg-green-50 dark:bg-green-500/10", text: "text-green-600 dark:text-green-400", border: "border-green-200 dark:border-green-500/30" },
+  pro:        { bg: "bg-blue-50 dark:bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-200 dark:border-blue-500/30" },
+  enterprise: { bg: "bg-purple-50 dark:bg-purple-500/10", text: "text-purple-600 dark:text-purple-400", border: "border-purple-200 dark:border-purple-500/30" },
+};
 
-function BillingSection() {
+const USAGE_COLORS: ("green" | "blue" | "yellow" | "purple")[] = ["green", "blue", "yellow", "purple"];
+
+function BillingSection({ billingData }: { billingData: BillingData | null }) {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+
+  if (!billingData) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">Unable to load billing data.</p>
+      </div>
+    );
+  }
+
+  const { plan, usage, nextBillingDate } = billingData;
+  const planColor = PLAN_COLORS[plan.id] ?? PLAN_COLORS.pro;
+
+  const usageItems = [
+    { label: "Leads", used: usage.leads.used, total: usage.leads.limit, unit: "" },
+    { label: "Team members", used: usage.members.used, total: usage.members.limit, unit: "" },
+    { label: "Sequences", used: usage.sequences.used, total: usage.sequences.limit, unit: "" },
+    { label: "Customers", used: usage.customers.used, total: usage.customers.limit, unit: "" },
+  ];
+
+  const formattedBillingDate = nextBillingDate
+    ? new Date(nextBillingDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : "—";
+
+  // Determine upgrade plan
+  const upgradeOrder = ["free", "starter", "pro", "enterprise"];
+  const currentIdx = upgradeOrder.indexOf(plan.id);
+  const upgradePlanId = currentIdx < upgradeOrder.length - 1 ? upgradeOrder[currentIdx + 1] : null;
+  const UPGRADE_PRICES: Record<string, number> = { starter: 19, pro: 49, enterprise: 149 };
+  const UPGRADE_NAMES: Record<string, string> = { starter: "Starter", pro: "Professional", enterprise: "Enterprise" };
 
   return (
     <>
@@ -1321,27 +1337,25 @@ function BillingSection() {
         {/* Plan header */}
         <div className="flex items-start justify-between px-6 pt-6 pb-5">
           <div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border-[0.5px] border-blue-200 dark:border-blue-500/30 px-3 py-1 mb-3">
-              <StarIcon
-                size={14}
-                weight="fill"
-                className="text-blue-600 dark:text-blue-400"
-              />
-              <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide">
-                Pro Plan
+            <div className={cn("inline-flex items-center gap-1.5 rounded-full border-[0.5px] px-3 py-1 mb-3", planColor.bg, planColor.border)}>
+              <StarIcon size={14} weight="fill" className={planColor.text} />
+              <span className={cn("text-xs font-semibold uppercase tracking-wide", planColor.text)}>
+                {plan.label}
               </span>
             </div>
             <h3 className="text-2xl font-serif text-neutral-950 dark:text-neutral-50">
-              Professional
+              {plan.name}
             </h3>
           </div>
           <div className="text-right">
             <p className="text-3xl font-semibold text-neutral-950 dark:text-neutral-50">
-              $49
+              {plan.price === 0 ? "Free" : `$${plan.price}`}
             </p>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              Per month
-            </p>
+            {plan.price > 0 && (
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                Per month
+              </p>
+            )}
           </div>
         </div>
 
@@ -1351,26 +1365,30 @@ function BillingSection() {
         {/* Usage section */}
         <div className="px-6 py-5">
           <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-5">
-            Usage This Month
+            Current Usage
           </p>
           <div className="space-y-5">
-            {usageData.map((item) => (
-              <div key={item.label} className="flex items-center gap-4">
-                <span className="text-sm text-neutral-950 dark:text-neutral-50 w-24 shrink-0">
-                  {item.label}
-                </span>
-                <Progress
-                  value={item.used}
-                  max={item.total}
-                  color={item.color}
-                  className="flex-1"
-                />
-                <span className="text-sm text-neutral-500 dark:text-neutral-400 w-28 text-right shrink-0">
-                  {item.used} / {item.total}
-                  {item.unit}
-                </span>
-              </div>
-            ))}
+            {usageItems.map((item, i) => {
+              const isUnlimited = item.total === -1;
+              return (
+                <div key={item.label} className="flex items-center gap-4">
+                  <span className="text-sm text-neutral-950 dark:text-neutral-50 w-28 shrink-0">
+                    {item.label}
+                  </span>
+                  <Progress
+                    value={isUnlimited ? 1 : item.used}
+                    max={isUnlimited ? 100 : item.total}
+                    color={USAGE_COLORS[i % USAGE_COLORS.length]}
+                    className="flex-1"
+                  />
+                  <span className="text-sm text-neutral-500 dark:text-neutral-400 w-28 text-right shrink-0">
+                    {item.used.toLocaleString("en-IN")}{isUnlimited ? "" : ` / ${item.total.toLocaleString("en-IN")}`}
+                    {isUnlimited && <span className="text-xs ml-1 text-neutral-400">(unlimited)</span>}
+                    {item.unit}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -1380,10 +1398,16 @@ function BillingSection() {
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-b-xl">
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            Next billing:{" "}
-            <span className="font-medium text-neutral-950 dark:text-neutral-50">
-              Feb 15, 2026
-            </span>
+            {plan.price > 0 ? (
+              <>
+                Next billing:{" "}
+                <span className="font-medium text-neutral-950 dark:text-neutral-50">
+                  {formattedBillingDate}
+                </span>
+              </>
+            ) : (
+              "Free plan — no billing"
+            )}
           </p>
           <div className="flex gap-2">
             <Button
@@ -1411,43 +1435,47 @@ function BillingSection() {
       </div>
 
       {/* Upgrade banner */}
-      <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 px-6 py-5">
-        <div className="flex items-center gap-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded bg-purple-100 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/30">
-            <LightningIcon
-              size={20}
-              weight="fill"
-              className="text-purple-600 dark:text-purple-400"
-            />
+      {upgradePlanId && (
+        <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 px-6 py-5">
+          <div className="flex items-center gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded bg-purple-100 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/30">
+              <LightningIcon
+                size={20}
+                weight="fill"
+                className="text-purple-600 dark:text-purple-400"
+              />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                Upgrade to {UPGRADE_NAMES[upgradePlanId] ?? upgradePlanId}
+              </p>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
+                {upgradePlanId === "enterprise"
+                  ? "Unlimited leads, team members, and custom integrations"
+                  : "More leads, team seats, and advanced features"}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
-              Upgrade to Enterprise
-            </p>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
-              Unlimited leads, team members, and custom integrations
-            </p>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <span className="text-2xl font-semibold text-neutral-950 dark:text-neutral-50">
+                ${UPGRADE_PRICES[upgradePlanId] ?? 0}
+              </span>
+              <span className="text-sm text-neutral-500 dark:text-neutral-400 ml-1">
+                / month
+              </span>
+            </div>
+            <Button
+              onClick={() => {
+                setToastMessage("Redirecting to upgrade...");
+                setShowToast(true);
+              }}
+            >
+              Upgrade Now
+            </Button>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <span className="text-2xl font-semibold text-neutral-950 dark:text-neutral-50">
-              $149
-            </span>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400 ml-1">
-              / Per month
-            </span>
-          </div>
-          <Button
-            onClick={() => {
-              setToastMessage("Redirecting to upgrade...");
-              setShowToast(true);
-            }}
-          >
-            Upgrade Now
-          </Button>
-        </div>
-      </div>
+      )}
 
       {/* Toast */}
       <Toast
@@ -2728,7 +2756,7 @@ function LinkedInSection() {
 
 interface EmailAccount {
   id: string;
-  provider: "gmail" | "microsoft" | "custom_imap";
+  provider: "gmail" | "custom_imap";
   email_address: string;
   display_name: string | null;
   status: "active" | "disconnected" | "error" | "warming_up";
@@ -2782,7 +2810,7 @@ function EmailAccountsSection() {
     // Show success toast on OAuth callback
     const connected = searchParams.get("connected");
     if (connected) {
-      setToastMessage(`${connected === "gmail" ? "Gmail" : "Microsoft"} account connected successfully`);
+      setToastMessage(`${connected === "gmail" ? "Gmail" : "Email"} account connected successfully`);
       setToastVariant("success");
       setShowToast(true);
     }
@@ -2794,13 +2822,20 @@ function EmailAccountsSection() {
     setShowToast(true);
   };
 
-  const handleConnectGmail = () => {
-    window.location.href = "/api/email/oauth/google";
+  const handleConnectGmail = async () => {
+    try {
+      const res = await fetch("/api/email/oauth/google");
+      const data = await res.json();
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        toast(data.error || "Gmail OAuth is not configured. Please add GOOGLE_CLIENT_ID and GOOGLE_REDIRECT_URI to your environment variables.", "error");
+      }
+    } catch {
+      toast("Failed to connect to Gmail. Please check your OAuth configuration.", "error");
+    }
   };
 
-  const handleConnectMicrosoft = () => {
-    window.location.href = "/api/email/oauth/microsoft";
-  };
 
   const handleAddCustom = () => {
     startTransition(async () => {
@@ -2881,7 +2916,6 @@ function EmailAccountsSection() {
   const providerLabel = (p: string) => {
     switch (p) {
       case "gmail": return "Gmail";
-      case "microsoft": return "Microsoft";
       case "custom_imap": return "Custom IMAP/SMTP";
       default: return p;
     }
@@ -2890,7 +2924,6 @@ function EmailAccountsSection() {
   const ProviderIcon = ({ provider }: { provider: string }) => {
     switch (provider) {
       case "gmail": return <GoogleLogoIcon size={18} className="text-neutral-600 dark:text-neutral-400" />;
-      case "microsoft": return <MicrosoftOutlookLogoIcon size={18} className="text-neutral-600 dark:text-neutral-400" />;
       default: return <HardDrivesIcon size={18} className="text-neutral-600 dark:text-neutral-400" />;
     }
   };
@@ -2909,27 +2942,20 @@ function EmailAccountsSection() {
       <div className="space-y-3">
         <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Connect an Account</p>
         <div className="flex flex-wrap gap-3">
-          <button
+          <Button
+            variant="outline"
+            leftIcon={<GoogleLogoIcon size={18} />}
             onClick={handleConnectGmail}
-            className="flex items-center gap-2.5 px-4 py-2.5 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-sm font-medium text-neutral-700 dark:text-neutral-300"
           >
-            <GoogleLogoIcon size={18} weight="bold" />
             Connect Gmail
-          </button>
-          <button
-            onClick={handleConnectMicrosoft}
-            className="flex items-center gap-2.5 px-4 py-2.5 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-sm font-medium text-neutral-700 dark:text-neutral-300"
-          >
-            <MicrosoftOutlookLogoIcon size={18} weight="bold" />
-            Connect Microsoft
-          </button>
-          <button
+          </Button>
+<Button
+            variant="outline"
+            leftIcon={<HardDrivesIcon size={18} />}
             onClick={() => setShowAddForm(!showAddForm)}
-            className="flex items-center gap-2.5 px-4 py-2.5 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-sm font-medium text-neutral-700 dark:text-neutral-300"
           >
-            <HardDrivesIcon size={18} />
             {showAddForm ? "Cancel" : "Add Custom IMAP/SMTP"}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -3063,7 +3089,7 @@ function EmailAccountsSection() {
           <div className="text-center py-12 border border-dashed border-neutral-200 dark:border-neutral-700 rounded">
             <EnvelopeIcon size={32} className="mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
             <p className="text-sm text-neutral-500 dark:text-neutral-400">No email accounts connected yet.</p>
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Connect a Gmail, Microsoft, or custom IMAP/SMTP account above.</p>
+            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Connect a Gmail or custom IMAP/SMTP account above.</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -3111,32 +3137,36 @@ function EmailAccountsSection() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 shrink-0 max-sm:w-full max-sm:justify-end">
-                  <button
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleTest(acct.id)}
                     disabled={testingId === acct.id}
-                    className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
                   >
                     {testingId === acct.id ? (
                       <CircleNotchIcon size={14} className="animate-spin" />
                     ) : (
                       "Test"
                     )}
-                  </button>
+                  </Button>
                   {!acct.is_default && (
-                    <button
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleSetDefault(acct.id)}
                       disabled={isPending}
-                      className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
                     >
                       Set Default
-                    </button>
+                    </Button>
                   )}
-                  <button
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="!border-red-200 dark:!border-red-900/50 !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20"
                     onClick={() => { setDeleteTargetId(acct.id); setShowDeleteModal(true); }}
-                    className="text-xs px-3 py-1.5 rounded border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   >
                     Disconnect
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
@@ -3169,6 +3199,7 @@ export function SettingsPageClient({
   initialProfile,
   initialIntegrations,
   initialAISettings,
+  initialBillingData,
 }: SettingsPageClientProps) {
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get("tab") as SettingsTab) || "profile";
@@ -3203,7 +3234,7 @@ export function SettingsPageClient({
       case "linkedin":
         return <LinkedInSection />;
       case "billing":
-        return <BillingSection />;
+        return <BillingSection billingData={initialBillingData ?? null} />;
       case "ai":
         return <AISettingsSection settings={initialAISettings} />;
       case "automation":
