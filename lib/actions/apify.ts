@@ -12,11 +12,60 @@ type ScrapedLeadInsert = Database["public"]["Tables"]["scraped_leads"]["Insert"]
 // ── Actor ID Mapping ──────────────────────────────────────────────────────────
 
 const ACTOR_MAP: Record<string, string> = {
-  google_places: "compass/crawler-google-places",
+  google_places: "nwua9Gu5YrADL7ZDj",
   instagram: "apify/instagram-scraper",
   linkedin: "dev_fusion/linkedin-profile-scraper",
   leads_finder: "code_crafter/leads-finder",
 };
+
+// ── Input Transformers ────────────────────────────────────────────────────────
+// Map our UI input to the format each Apify actor expects
+
+function transformInputForActor(
+  source: string,
+  input: Record<string, unknown>
+): Record<string, unknown> {
+  switch (source) {
+    case "google_places":
+      return {
+        searchStringsArray: input.searchTerms
+          ? [input.searchTerms as string]
+          : [],
+        locationQuery: (input.location as string) || "",
+        maxCrawledPlacesPerSearch:
+          (input.maxResults as number) || 20,
+        language: "en",
+        searchMatching: "all",
+        placeMinimumStars: "",
+        website: "allPlaces",
+        skipClosedPlaces: false,
+        scrapePlaceDetailPage: false,
+        scrapeTableReservationProvider: false,
+        includeWebResults: false,
+        scrapeDirectories: false,
+        maxQuestions: 0,
+        scrapeContacts: false,
+        scrapeSocialMediaProfiles: {
+          facebooks: false,
+          instagrams: false,
+          youtubes: false,
+          tiktoks: false,
+          twitters: false,
+        },
+        maximumLeadsEnrichmentRecords: 0,
+        maxReviews: 0,
+        reviewsSort: "newest",
+        reviewsFilterString: "",
+        reviewsOrigin: "all",
+        scrapeReviewsPersonalData: true,
+        maxImages: 0,
+        scrapeImageAuthors: false,
+        allPlacesNoSearchAction: "",
+      };
+    default:
+      return input;
+  }
+}
 
 const SOURCE_LABELS: Record<string, string> = {
   google_places: "Google Maps",
@@ -93,13 +142,16 @@ export async function startApifyScrape(params: {
 
     if (runErr) return { data: null, error: runErr.message };
 
+    // Transform input to match what the Apify actor expects
+    const actorInput = transformInputForActor(params.source, params.input);
+
     // Call Apify API to start actor run
     const apifyRes = await fetch(
       `https://api.apify.com/v2/acts/${actorId}/runs?token=${token}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(params.input),
+        body: JSON.stringify(actorInput),
       }
     );
 
