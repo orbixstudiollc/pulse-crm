@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { getAIClient, logTokenUsage } from "@/lib/ai/client";
+import { getAIClient, callAIWithFallback } from "@/lib/ai/client";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
 import { getModelId } from "@/lib/ai/models";
 import { revalidatePath } from "next/cache";
@@ -64,10 +64,8 @@ interface AssessmentResult {
 export async function aiQualifyLead(
   leadId: string
 ): Promise<QualificationResult | { error: string }> {
-  const startTime = Date.now();
-
   try {
-    const { client, settings, orgId, userId } = await getAIClient();
+    const { settings, orgId, userId } = await getAIClient();
 
     if (!settings.feature_lead_scoring) {
       return { error: "AI qualification features are disabled in settings" };
@@ -121,15 +119,22 @@ export async function aiQualifyLead(
       notes || []
     );
 
-    // Call Claude Haiku
-    const response = await client.messages.create({
-      model: getModelId("haiku", settings?.ai_provider),
-      max_tokens: 1024,
-      system: SYSTEM_PROMPTS.qualification,
-      messages: [{ role: "user", content: prompt }],
+    // Call AI with automatic provider fallback
+    const aiResult = await callAIWithFallback({
+      settings,
+      createParams: (modelId) => ({
+        model: modelId,
+        max_tokens: 1024,
+        system: SYSTEM_PROMPTS.qualification,
+        messages: [{ role: "user", content: prompt }],
+      }),
+      feature: "lead_scoring",
+      orgId,
+      userId,
+      modelOverride: getModelId("haiku", settings?.ai_provider),
     });
 
-    const text = response.content
+    const text = aiResult.response.content
       .filter((b) => b.type === "text")
       .map((b) => b.text)
       .join("");
@@ -221,49 +226,15 @@ export async function aiQualifyLead(
       next_steps: nextSteps,
     };
 
-    const durationMs = Date.now() - startTime;
-
-    // Log token usage
-    await logTokenUsage({
-      orgId,
-      userId,
-      feature: "lead_scoring",
-      model: getModelId("haiku", settings?.ai_provider),
-      inputTokens: response.usage.input_tokens,
-      outputTokens: response.usage.output_tokens,
-      durationMs,
-      success: true,
-      metadata: { leadId, confidence: overallConfidence, gapCount: gaps.length },
-    });
-
     // Revalidate pages (data isn't saved but UI may refresh context)
     revalidatePath("/dashboard/leads");
     revalidatePath(`/dashboard/leads/${leadId}`);
 
     return result;
   } catch (error) {
-    const durationMs = Date.now() - startTime;
+    console.error("[AI Qualification] Failed:", error);
     const errorMessage =
       error instanceof Error ? error.message : "AI qualification failed";
-
-    try {
-      const { settings: errSettings, orgId, userId } = await getAIClient();
-      await logTokenUsage({
-        orgId,
-        userId,
-        feature: "lead_scoring",
-        model: getModelId("haiku", errSettings?.ai_provider),
-        inputTokens: 0,
-        outputTokens: 0,
-        durationMs,
-        success: false,
-        errorMessage,
-        metadata: { leadId },
-      });
-    } catch {
-      // Silently fail if we can't log the error usage
-    }
-
     return { error: errorMessage };
   }
 }
@@ -278,10 +249,8 @@ export async function aiQualifyLead(
 export async function aiAssessQualification(
   leadId: string
 ): Promise<AssessmentResult | { error: string }> {
-  const startTime = Date.now();
-
   try {
-    const { client, settings, orgId, userId } = await getAIClient();
+    const { settings, orgId, userId } = await getAIClient();
 
     if (!settings.feature_lead_scoring) {
       return { error: "AI qualification features are disabled in settings" };
@@ -337,15 +306,22 @@ Return a JSON object with:
 
 Return ONLY valid JSON.`;
 
-    // Call Claude Haiku
-    const response = await client.messages.create({
-      model: getModelId("haiku", settings?.ai_provider),
-      max_tokens: 1024,
-      system: SYSTEM_PROMPTS.qualification,
-      messages: [{ role: "user", content: prompt }],
+    // Call AI with automatic provider fallback
+    const aiResult = await callAIWithFallback({
+      settings,
+      createParams: (modelId) => ({
+        model: modelId,
+        max_tokens: 1024,
+        system: SYSTEM_PROMPTS.qualification,
+        messages: [{ role: "user", content: prompt }],
+      }),
+      feature: "lead_scoring",
+      orgId,
+      userId,
+      modelOverride: getModelId("haiku", settings?.ai_provider),
     });
 
-    const text = response.content
+    const text = aiResult.response.content
       .filter((b) => b.type === "text")
       .map((b) => b.text)
       .join("");
@@ -383,49 +359,15 @@ Return ONLY valid JSON.`;
       discovery_questions: parsed.discovery_questions || [],
     };
 
-    const durationMs = Date.now() - startTime;
-
-    // Log token usage
-    await logTokenUsage({
-      orgId,
-      userId,
-      feature: "lead_scoring",
-      model: getModelId("haiku", settings?.ai_provider),
-      inputTokens: response.usage.input_tokens,
-      outputTokens: response.usage.output_tokens,
-      durationMs,
-      success: true,
-      metadata: { leadId, grade, score },
-    });
-
     // Revalidate relevant pages
     revalidatePath("/dashboard/leads");
     revalidatePath(`/dashboard/leads/${leadId}`);
 
     return result;
   } catch (error) {
-    const durationMs = Date.now() - startTime;
+    console.error("[AI Assessment] Failed:", error);
     const errorMessage =
       error instanceof Error ? error.message : "AI qualification assessment failed";
-
-    try {
-      const { settings: errSettings, orgId, userId } = await getAIClient();
-      await logTokenUsage({
-        orgId,
-        userId,
-        feature: "lead_scoring",
-        model: getModelId("haiku", errSettings?.ai_provider),
-        inputTokens: 0,
-        outputTokens: 0,
-        durationMs,
-        success: false,
-        errorMessage,
-        metadata: { leadId },
-      });
-    } catch {
-      // Silently fail if we can't log the error usage
-    }
-
     return { error: errorMessage };
   }
 }

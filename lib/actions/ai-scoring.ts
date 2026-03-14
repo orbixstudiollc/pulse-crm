@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { getAIClient, logTokenUsage } from "@/lib/ai/client";
+import { getAIClient, callAIWithFallback } from "@/lib/ai/client";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
 import { getModelId } from "@/lib/ai/models";
 import { AIScoreResult } from "@/lib/ai/types";
@@ -25,11 +25,9 @@ function parseAIJson<T>(text: string): T {
 export async function aiScoreLead(
   leadId: string
 ): Promise<AIScoreResult | { error: string }> {
-  const startTime = Date.now();
-
   try {
     // Get AI client and auth context
-    const { client, settings, orgId, userId } = await getAIClient();
+    const { settings, orgId, userId } = await getAIClient();
 
     // Check if lead scoring feature is enabled
     if (!settings.feature_lead_scoring) {
@@ -93,16 +91,23 @@ export async function aiScoreLead(
       scoreHistory || []
     );
 
-    // Call Claude Haiku for scoring
-    const response = await client.messages.create({
-      model: getModelId("haiku", settings?.ai_provider),
-      max_tokens: 1024,
-      system: SYSTEM_PROMPTS.lead_scoring,
-      messages: [{ role: "user", content: prompt }],
+    // Call AI with automatic provider fallback
+    const aiResult = await callAIWithFallback({
+      settings,
+      createParams: (modelId) => ({
+        model: modelId,
+        max_tokens: 1024,
+        system: SYSTEM_PROMPTS.lead_scoring,
+        messages: [{ role: "user", content: prompt }],
+      }),
+      feature: "lead_scoring",
+      orgId,
+      userId,
+      modelOverride: getModelId("haiku", settings?.ai_provider),
     });
 
     // Extract text from response
-    const text = response.content
+    const text = aiResult.response.content
       .filter((b) => b.type === "text")
       .map((b) => b.text)
       .join("");
@@ -194,50 +199,15 @@ export async function aiScoreLead(
       console.error("Failed to insert score history:", historyError);
     }
 
-    const durationMs = Date.now() - startTime;
-
-    // Log token usage
-    await logTokenUsage({
-      orgId,
-      userId,
-      feature: "lead_scoring",
-      model: getModelId("haiku", settings?.ai_provider),
-      inputTokens: response.usage.input_tokens,
-      outputTokens: response.usage.output_tokens,
-      durationMs,
-      success: true,
-      metadata: { leadId, score: result.score },
-    });
-
     // Revalidate relevant pages
     revalidatePath("/dashboard/leads");
     revalidatePath(`/dashboard/leads/${leadId}`);
 
     return result;
   } catch (error) {
-    const durationMs = Date.now() - startTime;
+    console.error("[AI Scoring] Failed:", error);
     const errorMessage =
       error instanceof Error ? error.message : "AI scoring failed";
-
-    // Attempt to log the failed usage
-    try {
-      const { settings: errSettings, orgId, userId } = await getAIClient();
-      await logTokenUsage({
-        orgId,
-        userId,
-        feature: "lead_scoring",
-        model: getModelId("haiku", errSettings?.ai_provider),
-        inputTokens: 0,
-        outputTokens: 0,
-        durationMs,
-        success: false,
-        errorMessage,
-        metadata: { leadId },
-      });
-    } catch {
-      // Silently fail if we can't log the error usage
-    }
-
     return { error: errorMessage };
   }
 }

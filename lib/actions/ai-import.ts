@@ -1,9 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { getAIClient, logTokenUsage } from "@/lib/ai/client";
+import { getAIClient, callAIWithFallback } from "@/lib/ai/client";
 import { getModelForFeature } from "@/lib/ai/models";
-import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
 import { aiScoreLead } from "./ai-scoring";
 import { aiQualifyLead } from "./ai-qualification";
 import { aiMatchLead } from "./ai-icp";
@@ -60,10 +59,8 @@ export async function aiMapCSVFields(
   headers: string[],
   sampleRows: string[][]
 ): Promise<{ mapping: Record<string, string> } | { error: string }> {
-  const startTime = Date.now();
-
   try {
-    const { client, settings, orgId, userId } = await getAIClient();
+    const { settings, orgId, userId } = await getAIClient();
 
     const model = getModelForFeature("import_enrichment", undefined, settings.ai_provider);
 
@@ -91,29 +88,25 @@ For each CSV header, return the best matching CRM field name, or "__skip__" if n
 Return ONLY a JSON object like: { "CSV Header 1": "crm_field", "CSV Header 2": "__skip__", ... }
 Include every CSV header in the result.`;
 
-    const response = await client.messages.create({
-      model,
-      max_tokens: 1024,
-      messages: [{ role: "user", content: prompt }],
-    });
-
-    const text = response.content[0].type === "text" ? response.content[0].text : "";
-    const mapping = parseAIJson<Record<string, string>>(text);
-
-    await logTokenUsage({
+    const result = await callAIWithFallback({
+      settings,
+      createParams: (modelId) => ({
+        model: modelId,
+        max_tokens: 1024,
+        messages: [{ role: "user", content: prompt }],
+      }),
+      feature: "import_enrichment",
       orgId,
       userId,
-      feature: "import_enrichment",
-      model,
-      inputTokens: response.usage.input_tokens,
-      outputTokens: response.usage.output_tokens,
-      durationMs: Date.now() - startTime,
-      success: true,
-      metadata: { action: "field_mapping", headerCount: headers.length },
+      modelOverride: model,
     });
+
+    const text = result.response.content[0].type === "text" ? result.response.content[0].text : "";
+    const mapping = parseAIJson<Record<string, string>>(text);
 
     return { mapping };
   } catch (error) {
+    console.error("[AI Import] Field mapping failed:", error);
     return { error: `AI field mapping failed: ${error instanceof Error ? error.message : "Unknown error"}` };
   }
 }
@@ -123,10 +116,8 @@ Include every CSV header in the result.`;
 export async function aiEnrichLead(
   leadId: string
 ): Promise<{ enriched: boolean } | { error: string }> {
-  const startTime = Date.now();
-
   try {
-    const { client, settings, orgId, userId } = await getAIClient();
+    const { settings, orgId, userId } = await getAIClient();
     const supabase = await createClient();
 
     const model = getModelForFeature("import_enrichment", undefined, settings.ai_provider);
@@ -180,26 +171,21 @@ Rules:
 
 Return ONLY a JSON object with the fields you can fill and their values. Empty object {} if nothing can be inferred.`;
 
-    const response = await client.messages.create({
-      model,
-      max_tokens: 1024,
-      messages: [{ role: "user", content: prompt }],
-    });
-
-    const text = response.content[0].type === "text" ? response.content[0].text : "";
-    const enrichedData = parseAIJson<Record<string, unknown>>(text);
-
-    await logTokenUsage({
+    const result = await callAIWithFallback({
+      settings,
+      createParams: (modelId) => ({
+        model: modelId,
+        max_tokens: 1024,
+        messages: [{ role: "user", content: prompt }],
+      }),
+      feature: "import_enrichment",
       orgId,
       userId,
-      feature: "import_enrichment",
-      model,
-      inputTokens: response.usage.input_tokens,
-      outputTokens: response.usage.output_tokens,
-      durationMs: Date.now() - startTime,
-      success: true,
-      metadata: { action: "enrichment", leadId, fieldsEnriched: Object.keys(enrichedData).length },
+      modelOverride: model,
     });
+
+    const text = result.response.content[0].type === "text" ? result.response.content[0].text : "";
+    const enrichedData = parseAIJson<Record<string, unknown>>(text);
 
     // Update lead with enriched data (only valid fields)
     const validUpdates: Record<string, unknown> = {};
@@ -226,6 +212,7 @@ Return ONLY a JSON object with the fields you can fill and their values. Empty o
 
     return { enriched: Object.keys(validUpdates).length > 0 };
   } catch (error) {
+    console.error("[AI Import] Enrichment failed:", error);
     return { error: `Enrichment failed: ${error instanceof Error ? error.message : "Unknown error"}` };
   }
 }

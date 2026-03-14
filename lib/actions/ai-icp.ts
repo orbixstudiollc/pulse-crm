@@ -1,9 +1,9 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { getAIClient, checkAIAccess, logTokenUsage, callAIWithFallback } from "@/lib/ai/client";
+import { getAIClient, checkAIAccess, callAIWithFallback } from "@/lib/ai/client";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
-import { getModelId, getModelForFeature } from "@/lib/ai/models";
+import { getModelId } from "@/lib/ai/models";
 import { revalidatePath } from "next/cache";
 import type { ICPCriteria, ICPWeights, BuyerPersona } from "./icp";
 
@@ -64,10 +64,8 @@ interface SuggestedICPProfile {
 export async function aiMatchLead(
   leadId: string
 ): Promise<ICPMatchResult | { error: string }> {
-  const startTime = Date.now();
-
   try {
-    const { client, settings, orgId, userId } = await getAIClient();
+    const { settings, orgId, userId } = await getAIClient();
 
     if (!settings.feature_icp_matching) {
       return { error: "AI ICP matching is disabled in settings" };
@@ -134,15 +132,22 @@ Please analyze how well this lead matches the ICP profile. Return a JSON object 
 
 Return ONLY valid JSON.`;
 
-    // Call Claude Haiku
-    const response = await client.messages.create({
-      model: getModelId("haiku", settings?.ai_provider),
-      max_tokens: 1024,
-      system: SYSTEM_PROMPTS.icp_matching,
-      messages: [{ role: "user", content: prompt }],
+    // Call AI with automatic provider fallback
+    const aiResult = await callAIWithFallback({
+      settings,
+      createParams: (modelId) => ({
+        model: modelId,
+        max_tokens: 1024,
+        system: SYSTEM_PROMPTS.icp_matching,
+        messages: [{ role: "user", content: prompt }],
+      }),
+      feature: "icp_matching",
+      orgId,
+      userId,
+      modelOverride: getModelId("haiku", settings?.ai_provider),
     });
 
-    const text = response.content
+    const text = aiResult.response.content
       .filter((b) => b.type === "text")
       .map((b) => b.text)
       .join("");
@@ -197,21 +202,6 @@ Return ONLY valid JSON.`;
       recommendations: parsed.recommendations || [],
     };
 
-    const durationMs = Date.now() - startTime;
-
-    // Log token usage
-    await logTokenUsage({
-      orgId,
-      userId,
-      feature: "icp_matching",
-      model: getModelId("haiku", settings?.ai_provider),
-      inputTokens: response.usage.input_tokens,
-      outputTokens: response.usage.output_tokens,
-      durationMs,
-      success: true,
-      metadata: { leadId, match_score: matchScore },
-    });
-
     // Revalidate relevant pages
     revalidatePath("/dashboard/leads");
     revalidatePath(`/dashboard/leads/${leadId}`);
@@ -219,28 +209,9 @@ Return ONLY valid JSON.`;
 
     return result;
   } catch (error) {
-    const durationMs = Date.now() - startTime;
+    console.error("[AI ICP Match] Failed:", error);
     const errorMessage =
       error instanceof Error ? error.message : "AI ICP matching failed";
-
-    try {
-      const { settings: errSettings, orgId, userId } = await getAIClient();
-      await logTokenUsage({
-        orgId,
-        userId,
-        feature: "icp_matching",
-        model: getModelId("haiku", errSettings?.ai_provider),
-        inputTokens: 0,
-        outputTokens: 0,
-        durationMs,
-        success: false,
-        errorMessage,
-        metadata: { leadId },
-      });
-    } catch {
-      // Silently fail if we can't log the error usage
-    }
-
     return { error: errorMessage };
   }
 }
@@ -255,10 +226,8 @@ Return ONLY valid JSON.`;
 export async function aiGenerateICPProfile(): Promise<
   SuggestedICPProfile | { error: string }
 > {
-  const startTime = Date.now();
-
   try {
-    const { client, settings, orgId, userId } = await getAIClient();
+    const { settings, orgId, userId } = await getAIClient();
 
     if (!settings.feature_icp_matching) {
       return { error: "AI ICP matching is disabled in settings" };
@@ -350,15 +319,22 @@ Return a JSON object with:
 
 Return ONLY valid JSON.`;
 
-    // Call Claude Sonnet (more complex analytical task)
-    const response = await client.messages.create({
-      model: getModelId("sonnet", settings?.ai_provider),
-      max_tokens: 2048,
-      system: `You are an expert B2B sales strategist specializing in Ideal Customer Profile (ICP) development. Analyze patterns in won deals and customer data to identify the characteristics of the most successful customers. Be data-driven and specific in your analysis.`,
-      messages: [{ role: "user", content: prompt }],
+    // Call AI with automatic provider fallback (sonnet for complex analysis)
+    const aiResult = await callAIWithFallback({
+      settings,
+      createParams: (modelId) => ({
+        model: modelId,
+        max_tokens: 2048,
+        system: `You are an expert B2B sales strategist specializing in Ideal Customer Profile (ICP) development. Analyze patterns in won deals and customer data to identify the characteristics of the most successful customers. Be data-driven and specific in your analysis.`,
+        messages: [{ role: "user", content: prompt }],
+      }),
+      feature: "icp_matching",
+      orgId,
+      userId,
+      modelOverride: getModelId("sonnet", settings?.ai_provider),
     });
 
-    const text = response.content
+    const text = aiResult.response.content
       .filter((b) => b.type === "text")
       .map((b) => b.text)
       .join("");
@@ -384,47 +360,14 @@ Return ONLY valid JSON.`;
       reasoning: parsed.reasoning || "",
     };
 
-    const durationMs = Date.now() - startTime;
-
-    // Log token usage
-    await logTokenUsage({
-      orgId,
-      userId,
-      feature: "icp_matching",
-      model: getModelId("sonnet", settings?.ai_provider),
-      inputTokens: response.usage.input_tokens,
-      outputTokens: response.usage.output_tokens,
-      durationMs,
-      success: true,
-      metadata: { wonDealsCount: wonDeals.length, customersCount: customers.length },
-    });
-
     // Revalidate ICP page
     revalidatePath("/dashboard/icp");
 
     return result;
   } catch (error) {
-    const durationMs = Date.now() - startTime;
+    console.error("[AI ICP Generate] Failed:", error);
     const errorMessage =
       error instanceof Error ? error.message : "AI ICP profile generation failed";
-
-    try {
-      const { settings: errSettings, orgId, userId } = await getAIClient();
-      await logTokenUsage({
-        orgId,
-        userId,
-        feature: "icp_matching",
-        model: getModelId("sonnet", errSettings?.ai_provider),
-        inputTokens: 0,
-        outputTokens: 0,
-        durationMs,
-        success: false,
-        errorMessage,
-      });
-    } catch {
-      // Silently fail if we can't log the error usage
-    }
-
     return { error: errorMessage };
   }
 }
@@ -463,8 +406,6 @@ export interface GeneratedICPProfile {
 export async function aiGenerateICPWizard(
   answers: WizardAnswers
 ): Promise<{ data: GeneratedICPProfile } | { error: string }> {
-  const startTime = Date.now();
-
   try {
     const access = await checkAIAccess("icp_matching");
     if (!access.allowed) {
