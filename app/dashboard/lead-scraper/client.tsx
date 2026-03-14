@@ -977,6 +977,8 @@ export function LeadScraperPageClient({
                       <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Company</th>
                       <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Location</th>
                       <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Email</th>
+                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Phone</th>
+                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Website</th>
                       <th className="text-center text-xs text-neutral-400 dark:text-neutral-500 font-medium px-3 py-3">Source</th>
                       <th className="text-center text-xs text-neutral-400 dark:text-neutral-500 font-medium px-3 py-3">ICP</th>
                       <th className="text-center text-xs text-neutral-400 dark:text-neutral-500 font-medium px-3 py-3">Quality</th>
@@ -1002,6 +1004,12 @@ export function LeadScraperPageClient({
                         </td>
                         <td className="px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400 max-w-[120px] truncate">{lead.location || "—"}</td>
                         <td className="px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400 max-w-[160px] truncate">{lead.email || "—"}</td>
+                        <td className="px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400 max-w-[120px] truncate">{lead.phone || "—"}</td>
+                        <td className="px-4 py-3 text-sm max-w-[140px] truncate">
+                          {lead.company_website ? (
+                            <a href={lead.company_website.startsWith("http") ? lead.company_website : `https://${lead.company_website}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-400 hover:underline">{lead.company_website.replace(/^https?:\/\/(www\.)?/, "")}</a>
+                          ) : "—"}
+                        </td>
                         <td className="px-3 py-3 text-center">
                           {lead.source ? (
                             <span className={`inline-block px-1.5 py-0.5 border-[0.5px] rounded text-[10px] whitespace-nowrap ${SOURCE_BADGE_STYLES[lead.source] || SOURCE_BADGE_STYLES.search}`}>
