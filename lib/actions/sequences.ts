@@ -978,7 +978,7 @@ export async function getLeadsForEnrollment(
   }
 
   if (filters.source && filters.source !== "all") {
-    query = query.eq("source", filters.source);
+    query = query.eq("source", filters.source as "Website" | "Referral" | "LinkedIn" | "Event" | "Google Ads" | "Cold Call");
   }
 
   const { data, error } = await query;
@@ -1024,7 +1024,7 @@ export async function getLeadsForEnrollmentCount(
   }
 
   if (filters.source && filters.source !== "all") {
-    query = query.eq("source", filters.source);
+    query = query.eq("source", filters.source as "Website" | "Referral" | "LinkedIn" | "Event" | "Google Ads" | "Cold Call");
   }
 
   if (enrolledIds.length > 0) {
@@ -1074,7 +1074,7 @@ export async function enrollAllMatchingLeads(
   }
 
   if (filters.source && filters.source !== "all") {
-    query = query.eq("source", filters.source);
+    query = query.eq("source", filters.source as "Website" | "Referral" | "LinkedIn" | "Event" | "Google Ads" | "Cold Call");
   }
 
   const { data, error } = await query;

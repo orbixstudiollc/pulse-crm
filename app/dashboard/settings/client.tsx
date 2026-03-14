@@ -64,6 +64,7 @@ import {
   getEmailAccounts,
   addCustomEmailAccount,
   updateEmailAccount,
+  updateTrackingDomain,
   setDefaultAccount,
   deleteEmailAccount,
   testEmailAccount,
@@ -2764,6 +2765,7 @@ interface EmailAccount {
   daily_send_limit: number;
   daily_sent_count: number;
   last_error: string | null;
+  tracking_domain: string | null;
   created_at: string;
 }
 
@@ -2781,6 +2783,9 @@ function EmailAccountsSection() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [editingTrackingId, setEditingTrackingId] = useState<string | null>(null);
+  const [trackingDomainInput, setTrackingDomainInput] = useState("");
+  const [savingTracking, setSavingTracking] = useState(false);
 
   // IMAP/SMTP form state
   const [customForm, setCustomForm] = useState({
@@ -2801,7 +2806,7 @@ function EmailAccountsSection() {
 
   const fetchAccounts = async () => {
     const result = await getEmailAccounts();
-    if (result.data) setAccounts(result.data as EmailAccount[]);
+    if (result.data) setAccounts(result.data as unknown as EmailAccount[]);
     setLoading(false);
   };
 
@@ -2893,6 +2898,20 @@ function EmailAccountsSection() {
         fetchAccounts();
       }
     });
+  };
+
+  const handleSaveTrackingDomain = async (accountId: string) => {
+    setSavingTracking(true);
+    const domain = trackingDomainInput.trim() || null;
+    const result = await updateTrackingDomain(accountId, domain);
+    setSavingTracking(false);
+    if (result.error) {
+      toast(result.error, "error");
+    } else {
+      toast(domain ? "Tracking domain saved" : "Tracking domain removed");
+      setEditingTrackingId(null);
+      fetchAccounts();
+    }
   };
 
   const statusColor = (s: string) => {
@@ -3096,77 +3115,160 @@ function EmailAccountsSection() {
             {accounts.map((acct) => (
               <div
                 key={acct.id}
-                className="flex items-center gap-4 max-sm:flex-col max-sm:items-start border border-neutral-200 dark:border-neutral-700 rounded p-4 bg-white dark:bg-neutral-900"
+                className="border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900"
               >
-                {/* Provider icon + info */}
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="w-9 h-9 rounded bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
-                    <ProviderIcon provider={acct.provider} />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
-                        {acct.email_address}
-                      </span>
-                      {acct.is_default && (
-                        <Badge variant="neutral">Default</Badge>
+                <div className="flex items-center gap-4 max-sm:flex-col max-sm:items-start p-4">
+                  {/* Provider icon + info */}
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-9 h-9 rounded bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
+                      <ProviderIcon provider={acct.provider} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                          {acct.email_address}
+                        </span>
+                        {acct.is_default && (
+                          <Badge variant="neutral">Default</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                          {providerLabel(acct.provider)}
+                        </span>
+                        <span className="flex items-center gap-1 text-xs">
+                          <span className={cn("w-1.5 h-1.5 rounded-full", statusDot(acct.status))} />
+                          <span className={statusColor(acct.status)}>
+                            {acct.status === "warming_up" ? "Warming Up" : acct.status.charAt(0).toUpperCase() + acct.status.slice(1)}
+                          </span>
+                        </span>
+                        <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                          {acct.daily_sent_count}/{acct.daily_send_limit} sent today
+                        </span>
+                      </div>
+                      {acct.last_error && (
+                        <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                          <WarningIcon size={12} />
+                          {acct.last_error}
+                        </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {providerLabel(acct.provider)}
-                      </span>
-                      <span className="flex items-center gap-1 text-xs">
-                        <span className={cn("w-1.5 h-1.5 rounded-full", statusDot(acct.status))} />
-                        <span className={statusColor(acct.status)}>
-                          {acct.status === "warming_up" ? "Warming Up" : acct.status.charAt(0).toUpperCase() + acct.status.slice(1)}
-                        </span>
-                      </span>
-                      <span className="text-xs text-neutral-400 dark:text-neutral-500">
-                        {acct.daily_sent_count}/{acct.daily_send_limit} sent today
-                      </span>
-                    </div>
-                    {acct.last_error && (
-                      <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                        <WarningIcon size={12} />
-                        {acct.last_error}
-                      </p>
-                    )}
                   </div>
-                </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 shrink-0 max-sm:w-full max-sm:justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleTest(acct.id)}
-                    disabled={testingId === acct.id}
-                  >
-                    {testingId === acct.id ? (
-                      <CircleNotchIcon size={14} className="animate-spin" />
-                    ) : (
-                      "Test"
-                    )}
-                  </Button>
-                  {!acct.is_default && (
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 shrink-0 max-sm:w-full max-sm:justify-end">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleSetDefault(acct.id)}
-                      disabled={isPending}
+                      onClick={() => handleTest(acct.id)}
+                      disabled={testingId === acct.id}
                     >
-                      Set Default
+                      {testingId === acct.id ? (
+                        <CircleNotchIcon size={14} className="animate-spin" />
+                      ) : (
+                        "Test"
+                      )}
                     </Button>
+                    {!acct.is_default && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSetDefault(acct.id)}
+                        disabled={isPending}
+                      >
+                        Set Default
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="!border-red-200 dark:!border-red-900/50 !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20"
+                      onClick={() => { setDeleteTargetId(acct.id); setShowDeleteModal(true); }}
+                    >
+                      Disconnect
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Tracking Domain */}
+                <div className="border-t border-neutral-100 dark:border-neutral-800 px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Tracking Domain:</span>
+                      {acct.tracking_domain ? (
+                        <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400">{acct.tracking_domain}</span>
+                      ) : (
+                        <span className="text-xs text-amber-500 dark:text-amber-400">Not set — tracking disabled to prevent spam</span>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (editingTrackingId === acct.id) {
+                          setEditingTrackingId(null);
+                        } else {
+                          setEditingTrackingId(acct.id);
+                          setTrackingDomainInput(acct.tracking_domain || "");
+                        }
+                      }}
+                    >
+                      {editingTrackingId === acct.id ? "Cancel" : acct.tracking_domain ? "Edit" : "Setup"}
+                    </Button>
+                  </div>
+
+                  {editingTrackingId === acct.id && (
+                    <div className="mt-3 space-y-3">
+                      <div className="flex items-end gap-2">
+                        <div className="flex-1">
+                          <Input
+                            label="Custom Tracking Domain"
+                            value={trackingDomainInput}
+                            onChange={(e) => setTrackingDomainInput(e.target.value)}
+                            placeholder="track.yourdomain.com"
+                          />
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => handleSaveTrackingDomain(acct.id)}
+                          disabled={savingTracking}
+                        >
+                          {savingTracking ? <CircleNotchIcon size={14} className="animate-spin" /> : "Save"}
+                        </Button>
+                        {acct.tracking_domain && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="!text-red-500"
+                            onClick={() => {
+                              setTrackingDomainInput("");
+                              handleSaveTrackingDomain(acct.id);
+                            }}
+                            disabled={savingTracking}
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                      <div className="bg-neutral-50 dark:bg-neutral-800/50 rounded p-3 space-y-2">
+                        <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300">Setup Instructions:</p>
+                        <ol className="text-xs text-neutral-500 dark:text-neutral-400 space-y-1.5 list-decimal list-inside">
+                          <li>Go to your DNS provider (GoDaddy, Cloudflare, Namecheap, etc.)</li>
+                          <li>Add a <strong>CNAME</strong> record:<br />
+                            <code className="text-[11px] bg-neutral-100 dark:bg-neutral-700 px-1.5 py-0.5 rounded font-mono">
+                              {trackingDomainInput || "track.yourdomain.com"} → pulse-crm-rosy.vercel.app
+                            </code>
+                          </li>
+                          <li>In <strong>Vercel</strong> → Project Settings → Domains → Add <code className="text-[11px] bg-neutral-100 dark:bg-neutral-700 px-1.5 py-0.5 rounded font-mono">{trackingDomainInput || "track.yourdomain.com"}</code></li>
+                          <li>Wait for DNS propagation (usually 5-30 minutes)</li>
+                          <li>Enter the domain above and click Save</li>
+                        </ol>
+                        <p className="text-[11px] text-neutral-400 dark:text-neutral-500 pt-1">
+                          This ensures tracking URLs match your sender domain, so Gmail/Outlook won&apos;t flag them as spam.
+                        </p>
+                      </div>
+                    </div>
                   )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="!border-red-200 dark:!border-red-900/50 !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20"
-                    onClick={() => { setDeleteTargetId(acct.id); setShowDeleteModal(true); }}
-                  >
-                    Disconnect
-                  </Button>
                 </div>
               </div>
             ))}

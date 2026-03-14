@@ -3,11 +3,11 @@ import { randomUUID } from "crypto";
 
 // ── Tracking Pixel ─────────────────────────────────────────────────────────
 
-export function injectTrackingPixel(html: string, messageId: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "https://pulse-crm-rosy.vercel.app");
+export function injectTrackingPixel(html: string, messageId: string, trackingDomain?: string | null): string {
+  // If no custom tracking domain, skip tracking to avoid spam
+  if (!trackingDomain) return html;
 
+  const baseUrl = `https://${trackingDomain}`;
   const pixelUrl = `${baseUrl}/api/email/track/open/${messageId}`;
   const pixel = `<img src="${pixelUrl}" width="1" height="1" style="display:none;width:1px;height:1px;border:0;" alt="" />`;
 
@@ -22,10 +22,12 @@ export function injectTrackingPixel(html: string, messageId: string): string {
 export async function wrapLinksForTracking(
   html: string,
   messageId: string,
+  trackingDomain?: string | null,
 ): Promise<{ html: string; links: { id: string; original_url: string }[] }> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "https://pulse-crm-rosy.vercel.app");
+  // If no custom tracking domain, skip link wrapping to avoid spam
+  if (!trackingDomain) return { html, links: [] };
+
+  const baseUrl = `https://${trackingDomain}`;
 
   const linkRegex = /<a\s+([^>]*?)href=["']([^"']+)["']([^>]*?)>/gi;
   const links: { id: string; original_url: string }[] = [];

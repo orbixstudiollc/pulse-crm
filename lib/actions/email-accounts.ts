@@ -150,6 +150,31 @@ export async function setDefaultAccount(id: string) {
   return { data };
 }
 
+// ── Update Tracking Domain ───────────────────────────────────────────────────
+
+export async function updateTrackingDomain(accountId: string, trackingDomain: string | null) {
+  const supabase = await createClient();
+  const orgId = await getOrgId();
+
+  // Validate domain format if provided
+  if (trackingDomain) {
+    const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!domainRegex.test(trackingDomain)) {
+      return { error: "Invalid domain format. Example: track.yourdomain.com" };
+    }
+  }
+
+  const { error } = await supabase
+    .from("email_accounts")
+    .update({ tracking_domain: trackingDomain || null } as Record<string, unknown>)
+    .eq("id", accountId)
+    .eq("organization_id", orgId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard/settings");
+  return { success: true };
+}
+
 // ── Delete ──────────────────────────────────────────────────────────────────
 
 export async function deleteEmailAccount(id: string) {

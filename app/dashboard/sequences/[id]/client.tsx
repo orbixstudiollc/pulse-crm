@@ -834,8 +834,8 @@ export function SequenceDetailClient({
       if (enrollSourceFilter !== "all") filters.source = enrollSourceFilter;
       const toastId = toast.loading(`Enrolling ${enrollTotalCount} matching leads...`);
       const result = await enrollAllMatchingLeads(sequence.id, filters);
-      if (result.error) {
-        toast.error(result.error, { id: toastId });
+      if (result.errors > 0 && result.enrolled === 0) {
+        toast.error(`Failed to enroll leads (${result.errors} errors)`, { id: toastId });
       } else if (result.errors > 0 && result.enrolled > 0) {
         toast.warning(`${result.enrolled} enrolled, ${result.errors} already in sequence`, { id: toastId });
       } else if (result.enrolled === 0) {

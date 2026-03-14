@@ -100,9 +100,17 @@ export async function GET(request: Request) {
           .update({ status: "sending" as const })
           .eq("id", msg.id);
 
+        // Fetch tracking domain for this account
+        const { data: acctTracking } = await supabase
+          .from("email_accounts")
+          .select("*")
+          .eq("id", msg.email_account_id)
+          .single();
+        const trackingDomain = (acctTracking as Record<string, unknown>)?.tracking_domain as string | null;
+
         let html = msg.body_html;
-        html = injectTrackingPixel(html, msg.id);
-        const tracked = await wrapLinksForTracking(html, msg.id);
+        html = injectTrackingPixel(html, msg.id, trackingDomain);
+        const tracked = await wrapLinksForTracking(html, msg.id, trackingDomain);
         html = tracked.html;
 
         const result = await sendEmail({
@@ -749,9 +757,17 @@ async function processEmailStep(
     } catch { /* skip */ }
   }
 
+  // Fetch tracking domain for this account
+  const { data: seqAcctTracking } = await supabase
+    .from("email_accounts")
+    .select("*")
+    .eq("id", accountId)
+    .single();
+  const seqTrackingDomain = (seqAcctTracking as Record<string, unknown>)?.tracking_domain as string | null;
+
   // Tracking
-  let trackedHtml = injectTrackingPixel(html, message.id);
-  const linkResult = await wrapLinksForTracking(trackedHtml, message.id);
+  let trackedHtml = injectTrackingPixel(html, message.id, seqTrackingDomain);
+  const linkResult = await wrapLinksForTracking(trackedHtml, message.id, seqTrackingDomain);
   trackedHtml = linkResult.html;
 
   // Send

@@ -94,13 +94,21 @@ export async function composeAndSendEmail(opts: ComposeEmailOptions) {
     return { data: { messageId: message.id, status: "queued" } };
   }
 
-  // Apply tracking
+  // Fetch tracking domain from account
+  const { data: acctForTracking } = await supabase
+    .from("email_accounts")
+    .select("*")
+    .eq("id", opts.accountId)
+    .single();
+  const trackingDomain = (acctForTracking as Record<string, unknown>)?.tracking_domain as string | null;
+
+  // Apply tracking (only if custom tracking domain is configured)
   let finalHtml = opts.html;
   if (opts.trackOpens !== false) {
-    finalHtml = injectTrackingPixel(finalHtml, message.id);
+    finalHtml = injectTrackingPixel(finalHtml, message.id, trackingDomain);
   }
   if (opts.trackClicks !== false) {
-    const result = await wrapLinksForTracking(finalHtml, message.id);
+    const result = await wrapLinksForTracking(finalHtml, message.id, trackingDomain);
     finalHtml = result.html;
   }
 
