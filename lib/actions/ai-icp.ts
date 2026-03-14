@@ -203,7 +203,6 @@ Return ONLY valid JSON.`;
     };
 
     // Revalidate relevant pages
-    revalidatePath("/dashboard/leads");
     revalidatePath(`/dashboard/leads/${leadId}`);
     revalidatePath("/dashboard/icp");
 

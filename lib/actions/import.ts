@@ -2,7 +2,6 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "./helpers";
-import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
 
 type LeadInsert = Database["public"]["Tables"]["leads"]["Insert"];
@@ -235,11 +234,9 @@ export async function importLeads(
         }
       }
 
-      revalidatePath("/dashboard/leads");
       return { data: { imported: importedCount, importedIds, errors } };
     }
 
-    revalidatePath("/dashboard/leads");
     return {
       data: {
         imported: inserted?.length ?? validLeads.length,

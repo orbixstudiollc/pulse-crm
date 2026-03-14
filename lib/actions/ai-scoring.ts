@@ -200,7 +200,6 @@ export async function aiScoreLead(
     }
 
     // Revalidate relevant pages
-    revalidatePath("/dashboard/leads");
     revalidatePath(`/dashboard/leads/${leadId}`);
 
     return result;

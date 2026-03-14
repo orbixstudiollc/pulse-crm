@@ -227,7 +227,6 @@ export async function aiQualifyLead(
     };
 
     // Revalidate pages (data isn't saved but UI may refresh context)
-    revalidatePath("/dashboard/leads");
     revalidatePath(`/dashboard/leads/${leadId}`);
 
     return result;
@@ -360,7 +359,6 @@ Return ONLY valid JSON.`;
     };
 
     // Revalidate relevant pages
-    revalidatePath("/dashboard/leads");
     revalidatePath(`/dashboard/leads/${leadId}`);
 
     return result;
