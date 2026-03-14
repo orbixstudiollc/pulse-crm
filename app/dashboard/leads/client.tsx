@@ -97,11 +97,7 @@ function mapLead(l: LeadRecord) {
     createdDate: l.created_at
       ? new Date(l.created_at).toLocaleDateString()
       : "",
-    qualificationData: l.qualification_data
-      ? typeof l.qualification_data === "string"
-        ? JSON.parse(l.qualification_data)
-        : l.qualification_data
-      : null,
+    qualificationData: l.qualification_data ?? null,
     qualificationGrade: (l.qualification_grade as string) ?? null,
     qualificationScore: (l.qualification_score as number) ?? null,
     // Personalization fields
@@ -110,7 +106,7 @@ function mapLead(l: LeadRecord) {
     timezone: (l.timezone as string) || "",
     preferredLanguage: (l.preferred_language as string) || "",
     lastContactedAt: (l.last_contacted_at as string) || "",
-    tags: Array.isArray(l.tags) ? l.tags as string[] : typeof l.tags === "string" ? JSON.parse(l.tags) as string[] : [],
+    tags: Array.isArray(l.tags) ? l.tags as string[] : [],
     revenueRange: (l.revenue_range as string) || "",
     techStack: (l.tech_stack as string) || "",
     fundingStage: (l.funding_stage as string) || "",
@@ -119,7 +115,7 @@ function mapLead(l: LeadRecord) {
     referredBy: (l.referred_by as string) || "",
     personalNote: (l.personal_note as string) || "",
     birthday: (l.birthday as string) || "",
-    contentInterests: Array.isArray(l.content_interests) ? l.content_interests as string[] : typeof l.content_interests === "string" ? JSON.parse(l.content_interests) as string[] : [],
+    contentInterests: Array.isArray(l.content_interests) ? l.content_interests as string[] : [],
     meetingPreference: (l.meeting_preference as string) || "",
     assistantName: (l.assistant_name as string) || "",
     assistantEmail: (l.assistant_email as string) || "",
@@ -127,12 +123,13 @@ function mapLead(l: LeadRecord) {
 }
 
 export function LeadsPageClient({
-  initialLeads,
+  initialLeadsJson,
   initialCount,
 }: {
-  initialLeads: LeadRecord[];
+  initialLeadsJson: string;
   initialCount: number;
 }) {
+  const initialLeads: LeadRecord[] = JSON.parse(initialLeadsJson);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showAddLead, setShowAddLead] = useState(false);
