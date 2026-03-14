@@ -175,6 +175,30 @@ export async function unarchiveThread(threadId: string) {
   return { success: true };
 }
 
+// ── Delete Thread ─────────────────────────────────────────────────────────
+
+export async function deleteEmailThread(threadId: string) {
+  const supabase = await createClient();
+  const orgId = await getOrgId();
+
+  // Delete messages first (child records)
+  await supabase
+    .from("email_messages")
+    .delete()
+    .eq("thread_id", threadId)
+    .eq("organization_id", orgId);
+
+  // Delete the thread
+  await supabase
+    .from("email_threads")
+    .delete()
+    .eq("id", threadId)
+    .eq("organization_id", orgId);
+
+  revalidatePath("/dashboard/inbox");
+  return { success: true };
+}
+
 // ── Get Email Accounts (for compose account picker) ────────────────────────
 
 export async function getActiveEmailAccounts() {

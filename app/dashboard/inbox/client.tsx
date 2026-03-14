@@ -20,6 +20,7 @@ import {
   EyeIcon,
   WhatsappLogoIcon,
   LinkedinLogoIcon,
+  TrashIcon,
 } from "@/components/ui";
 import {
   getEmailThreads,
@@ -27,11 +28,12 @@ import {
   markThreadRead,
   toggleThreadStar,
   archiveThread,
+  deleteEmailThread,
   getActiveEmailAccounts,
   getInboxStats,
 } from "@/lib/actions/email-inbox";
 import { composeAndSendEmail, sendReply } from "@/lib/actions/email-send";
-import { getUnifiedInbox } from "@/lib/actions/unified-inbox";
+import { getUnifiedInbox, deleteUnifiedItem } from "@/lib/actions/unified-inbox";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -626,6 +628,19 @@ export function InboxClient() {
                 >
                   Archive
                 </button>
+                <button
+                  onClick={async () => {
+                    await deleteEmailThread(selectedThread.id);
+                    toast("Thread deleted");
+                    setSelectedThread(null);
+                    fetchThreads();
+                    fetchStats();
+                  }}
+                  className="p-2 rounded hover:bg-red-50 dark:hover:bg-red-950/30 text-neutral-400 hover:text-red-500 transition-colors"
+                  title="Delete"
+                >
+                  <TrashIcon size={16} />
+                </button>
                 <Button size="sm" onClick={() => setShowReply(!showReply)}>
                   Reply
                 </Button>
@@ -715,6 +730,16 @@ export function InboxClient() {
           <UnifiedItemDetail
             item={selectedUnifiedItem}
             onBack={() => setSelectedUnifiedItem(null)}
+            onDelete={async () => {
+              const result = await deleteUnifiedItem(selectedUnifiedItem.id, selectedUnifiedItem.channel, selectedUnifiedItem.type);
+              if (result.error) {
+                toast(result.error, "error");
+              } else {
+                toast("Item deleted");
+                setSelectedUnifiedItem(null);
+                fetchUnifiedItems();
+              }
+            }}
             formatDate={formatDate}
             statusBadge={statusBadge}
             channelBadge={channelBadge}
@@ -766,16 +791,19 @@ export function InboxClient() {
 function UnifiedItemDetail({
   item,
   onBack,
+  onDelete,
   formatDate,
   statusBadge,
   channelBadge,
 }: {
   item: UnifiedItem;
   onBack: () => void;
+  onDelete: () => void;
   formatDate: (d: string) => string;
   statusBadge: (s: string) => React.ReactNode;
   channelBadge: (c: "email" | "whatsapp" | "linkedin") => React.ReactNode;
 }) {
+  const [deleting, setDeleting] = useState(false);
   const channelColors = {
     email: { bg: "bg-blue-50 dark:bg-blue-950/20", border: "border-blue-200 dark:border-blue-800", accent: "text-blue-600 dark:text-blue-400", icon: <EnvelopeIcon size={20} className="text-blue-500" /> },
     whatsapp: { bg: "bg-emerald-50 dark:bg-emerald-950/20", border: "border-emerald-200 dark:border-emerald-800", accent: "text-emerald-600 dark:text-emerald-400", icon: <WhatsappLogoIcon size={20} className="text-emerald-500" /> },
@@ -804,6 +832,22 @@ function UnifiedItemDetail({
             </span>
           </div>
         </div>
+        <button
+          onClick={async () => {
+            setDeleting(true);
+            await onDelete();
+            setDeleting(false);
+          }}
+          disabled={deleting}
+          className="p-2 rounded hover:bg-red-50 dark:hover:bg-red-950/30 text-neutral-400 hover:text-red-500 transition-colors"
+          title="Delete"
+        >
+          {deleting ? (
+            <CircleNotchIcon size={16} className="animate-spin" />
+          ) : (
+            <TrashIcon size={16} />
+          )}
+        </button>
       </div>
 
       {/* Content */}

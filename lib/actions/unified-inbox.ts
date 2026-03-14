@@ -306,6 +306,60 @@ export async function getUnifiedInbox(filters?: {
 }
 
 // ============================================================
+// Delete Unified Inbox Item
+// ============================================================
+
+export async function deleteUnifiedItem(id: string, channel: "email" | "whatsapp" | "linkedin", type?: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("organization_id")
+    .eq("id", user.id)
+    .single();
+  if (!profile?.organization_id) return { error: "No organization" };
+
+  const orgId = profile.organization_id;
+
+  if (channel === "email") {
+    if (type && type.startsWith("email_") && type !== "email_sent" && type !== "email_received") {
+      // Sequence event
+      await supabase.from("sequence_events").delete().eq("id", id);
+    } else {
+      // Direct email message — delete message, then thread if empty
+      const { data: msg } = await supabase
+        .from("email_messages")
+        .select("thread_id")
+        .eq("id", id)
+        .eq("organization_id", orgId)
+        .single();
+
+      await supabase.from("email_messages").delete().eq("id", id).eq("organization_id", orgId);
+
+      if (msg?.thread_id) {
+        const { count } = await supabase
+          .from("email_messages")
+          .select("id", { count: "exact", head: true })
+          .eq("thread_id", msg.thread_id);
+        if (count === 0) {
+          await supabase.from("email_threads").delete().eq("id", msg.thread_id).eq("organization_id", orgId);
+        }
+      }
+    }
+  } else if (channel === "whatsapp") {
+    await supabase.from("whatsapp_messages").delete().eq("id", id).eq("organization_id", orgId);
+  } else if (channel === "linkedin") {
+    await supabase.from("linkedin_actions").delete().eq("id", id).eq("organization_id", orgId);
+  }
+
+  return { success: true };
+}
+
+// ============================================================
 // Get Inbox Stats (counts per channel)
 // ============================================================
 
