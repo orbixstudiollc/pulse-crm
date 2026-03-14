@@ -17,9 +17,11 @@ import {
   DownloadIcon,
   SparkleIcon,
   BrainIcon,
+  PaperPlaneTiltIcon,
 } from "@/components/ui";
 import { parseCSVPreview, importLeads } from "@/lib/actions/import";
 import { aiMapCSVFields, processImportedLeadsStep } from "@/lib/actions/ai-import";
+import { getSequences, enrollLeadsBulk } from "@/lib/actions/sequences";
 import { toast } from "sonner";
 
 interface ImportLeadsModalProps {
@@ -190,6 +192,10 @@ export function ImportLeadsModal({
   const [isAiMapping, setIsAiMapping] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [aiProcessing, setAiProcessing] = useState<AIProcessingState | null>(null);
+  const [showSequenceEnroll, setShowSequenceEnroll] = useState(false);
+  const [sequences, setSequences] = useState<Array<{ id: string; name: string; status: string }>>([]);
+  const [selectedSequenceId, setSelectedSequenceId] = useState<string | null>(null);
+  const [enrolling, setEnrolling] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetState = () => {
@@ -205,8 +211,24 @@ export function ImportLeadsModal({
     setAiProcessing(null);
   };
 
+  const handleSequenceEnroll = async () => {
+    if (!selectedSequenceId || !importResult?.importedIds.length) return;
+    setEnrolling(true);
+    const result = await enrollLeadsBulk(selectedSequenceId, importResult.importedIds);
+    if (result.enrolled > 0) {
+      toast.success(`${result.enrolled} leads enrolled in sequence`);
+    } else {
+      toast.info("All leads are already enrolled in this sequence");
+    }
+    setEnrolling(false);
+    setShowSequenceEnroll(false);
+  };
+
   const handleClose = () => {
     resetState();
+    setShowSequenceEnroll(false);
+    setSelectedSequenceId(null);
+    setSequences([]);
     onClose();
   };
 
@@ -877,6 +899,52 @@ export function ImportLeadsModal({
                   <div className="text-xs text-violet-700 dark:text-violet-300">
                     ICP Matched: <span className="font-semibold">{aiProcessing.matched}</span> leads
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Add to Sequence */}
+            {importResult.importedIds.length > 0 && !showSequenceEnroll && (
+              <button
+                onClick={async () => {
+                  setShowSequenceEnroll(true);
+                  const res = await getSequences();
+                  setSequences((res.data ?? []).map((s) => ({ id: s.id, name: s.name, status: s.status })));
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+              >
+                <PaperPlaneTiltIcon size={16} />
+                Add to Sequence
+              </button>
+            )}
+
+            {showSequenceEnroll && (
+              <div className="rounded border border-neutral-200 dark:border-neutral-700 p-3 space-y-3">
+                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">Enroll in Sequence</p>
+                <select
+                  value={selectedSequenceId ?? ""}
+                  onChange={(e) => setSelectedSequenceId(e.target.value || null)}
+                  className="w-full px-3 py-2 text-sm rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50"
+                >
+                  <option value="">Select a sequence...</option>
+                  {sequences.filter((s) => s.status === "active").map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowSequenceEnroll(false)}
+                    className="flex-1 px-3 py-1.5 text-xs text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSequenceEnroll}
+                    disabled={!selectedSequenceId || enrolling}
+                    className="flex-1 px-3 py-1.5 text-xs font-medium bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 rounded hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50"
+                  >
+                    {enrolling ? "Enrolling..." : `Enroll ${importResult.importedIds.length} Leads`}
+                  </button>
                 </div>
               </div>
             )}

@@ -56,7 +56,9 @@ import {
   updateSequenceSettings,
   reorderSequenceSteps,
   getLeadsForEnrollment,
+  getLeadsForEnrollmentCount,
   enrollLeadsBulk,
+  enrollAllMatchingLeads,
   getSequenceHeatmapData,
   getSequenceABComparison,
   getTimeToFirstReply,
@@ -68,6 +70,7 @@ import type {
   DailySequenceMetrics,
   SequenceActivity,
   ABComparison,
+  EnrollmentFilters,
 } from "@/lib/actions/sequences";
 import { aiGenerateEmail } from "@/lib/actions/ai-outreach";
 import { getEmailTemplates } from "@/lib/actions/email-templates";
@@ -515,6 +518,10 @@ export function SequenceDetailClient({
   const [enrollSelectedIds, setEnrollSelectedIds] = useState<Set<string>>(new Set());
   const [enrollLoading, setEnrollLoading] = useState(false);
   const enrollSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [enrollStatusFilter, setEnrollStatusFilter] = useState<string>("all");
+  const [enrollScoreFilter, setEnrollScoreFilter] = useState<string>("all");
+  const [enrollSourceFilter, setEnrollSourceFilter] = useState<string>("all");
+  const [enrollTotalCount, setEnrollTotalCount] = useState<number>(0);
 
   // Activity filter state
   const [activityFilter, setActivityFilter] = useState("all");
@@ -785,18 +792,62 @@ export function SequenceDetailClient({
   }, []);
 
   // ── Phase C: Bulk enrollment handlers ─────────────────────────────────────
-  const loadEnrollLeads = useCallback(async (search = "") => {
+  const loadEnrollLeads = useCallback(async (search = "", status = enrollStatusFilter, score = enrollScoreFilter, source = enrollSourceFilter) => {
     setEnrollLoading(true);
-    const result = await getLeadsForEnrollment(sequence.id, { search: search || undefined });
+    const filters: { search?: string; status?: string; minScore?: number; source?: string } = {};
+    if (search) filters.search = search;
+    if (status !== "all") filters.status = status;
+    if (score !== "all") filters.minScore = parseInt(score);
+    if (source !== "all") filters.source = source;
+    const [result, countResult] = await Promise.all([
+      getLeadsForEnrollment(sequence.id, filters),
+      getLeadsForEnrollmentCount(sequence.id, filters),
+    ]);
     setEnrollLeadsList(result.data);
+    setEnrollTotalCount(countResult.count);
     setEnrollLoading(false);
-  }, [sequence.id]);
+  }, [sequence.id, enrollStatusFilter, enrollScoreFilter, enrollSourceFilter]);
 
   const handleEnrollSearch = useCallback((value: string) => {
     setEnrollSearchQuery(value);
     if (enrollSearchTimer.current) clearTimeout(enrollSearchTimer.current);
     enrollSearchTimer.current = setTimeout(() => loadEnrollLeads(value), 300);
   }, [loadEnrollLeads]);
+
+  const handleEnrollFilterChange = useCallback((type: "status" | "score" | "source", value: string) => {
+    if (type === "status") setEnrollStatusFilter(value);
+    if (type === "score") setEnrollScoreFilter(value);
+    if (type === "source") setEnrollSourceFilter(value);
+    // Reload with updated filter
+    const status = type === "status" ? value : enrollStatusFilter;
+    const score = type === "score" ? value : enrollScoreFilter;
+    const source = type === "source" ? value : enrollSourceFilter;
+    loadEnrollLeads(enrollSearchQuery, status, score, source);
+  }, [loadEnrollLeads, enrollSearchQuery, enrollStatusFilter, enrollScoreFilter, enrollSourceFilter]);
+
+  const handleEnrollAllMatching = useCallback(() => {
+    startTransition(async () => {
+      const filters: { search?: string; status?: string; minScore?: number; source?: string } = {};
+      if (enrollSearchQuery) filters.search = enrollSearchQuery;
+      if (enrollStatusFilter !== "all") filters.status = enrollStatusFilter;
+      if (enrollScoreFilter !== "all") filters.minScore = parseInt(enrollScoreFilter);
+      if (enrollSourceFilter !== "all") filters.source = enrollSourceFilter;
+      const toastId = toast.loading(`Enrolling ${enrollTotalCount} matching leads...`);
+      const result = await enrollAllMatchingLeads(sequence.id, filters);
+      if (result.error) {
+        toast.error(result.error, { id: toastId });
+      } else if (result.errors > 0 && result.enrolled > 0) {
+        toast.warning(`${result.enrolled} enrolled, ${result.errors} already in sequence`, { id: toastId });
+      } else if (result.enrolled === 0) {
+        toast.info("All matching leads are already enrolled", { id: toastId });
+      } else {
+        toast.success(`${result.enrolled} leads enrolled!`, { id: toastId });
+      }
+      setShowEnrollDrawer(false);
+      setEnrollSelectedIds(new Set());
+      router.refresh();
+    });
+  }, [sequence.id, enrollSearchQuery, enrollStatusFilter, enrollScoreFilter, enrollSourceFilter, enrollTotalCount, router]);
 
   const handleBulkEnroll = useCallback(() => {
     if (enrollSelectedIds.size === 0) return;
@@ -905,7 +956,7 @@ export function SequenceDetailClient({
             <Button
               variant="outline"
               leftIcon={<CheckCircleIcon size={18} />}
-              onClick={() => { setShowEnrollDrawer(true); loadEnrollLeads(); }}
+              onClick={() => { setShowEnrollDrawer(true); setEnrollStatusFilter("all"); setEnrollScoreFilter("all"); setEnrollSourceFilter("all"); loadEnrollLeads("", "all", "all", "all"); }}
             >
               Enroll Leads
             </Button>
@@ -2115,16 +2166,27 @@ export function SequenceDetailClient({
         onClose={() => setShowEnrollDrawer(false)}
         title="Enroll Leads"
         footer={
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              {enrollSelectedIds.size} selected
+              {enrollSelectedIds.size} selected · {enrollTotalCount} total matching
             </span>
-            <Button
-              onClick={handleBulkEnroll}
-              disabled={isPending || enrollSelectedIds.size === 0}
-            >
-              {isPending ? "Enrolling..." : `Enroll ${enrollSelectedIds.size} Lead${enrollSelectedIds.size !== 1 ? "s" : ""}`}
-            </Button>
+            <div className="flex gap-2">
+              {enrollTotalCount > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={handleEnrollAllMatching}
+                  disabled={isPending || enrollTotalCount === 0}
+                >
+                  {isPending ? "Enrolling..." : `Enroll All ${enrollTotalCount}`}
+                </Button>
+              )}
+              <Button
+                onClick={handleBulkEnroll}
+                disabled={isPending || enrollSelectedIds.size === 0}
+              >
+                {isPending ? "Enrolling..." : `Enroll ${enrollSelectedIds.size} Selected`}
+              </Button>
+            </div>
           </div>
         }
       >
@@ -2139,6 +2201,45 @@ export function SequenceDetailClient({
               onChange={(e) => handleEnrollSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-sm rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400"
             />
+          </div>
+
+          {/* Filters */}
+          <div className="flex gap-2">
+            <select
+              value={enrollStatusFilter}
+              onChange={(e) => handleEnrollFilterChange("status", e.target.value)}
+              className="flex-1 px-2 py-1.5 text-xs rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50"
+            >
+              <option value="all">All Status</option>
+              <option value="hot">Hot</option>
+              <option value="warm">Warm</option>
+              <option value="cold">Cold</option>
+              <option value="new">New</option>
+            </select>
+            <select
+              value={enrollScoreFilter}
+              onChange={(e) => handleEnrollFilterChange("score", e.target.value)}
+              className="flex-1 px-2 py-1.5 text-xs rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50"
+            >
+              <option value="all">Any Score</option>
+              <option value="90">90+</option>
+              <option value="70">70+</option>
+              <option value="50">50+</option>
+              <option value="30">30+</option>
+            </select>
+            <select
+              value={enrollSourceFilter}
+              onChange={(e) => handleEnrollFilterChange("source", e.target.value)}
+              className="flex-1 px-2 py-1.5 text-xs rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50"
+            >
+              <option value="all">All Sources</option>
+              <option value="Website">Website</option>
+              <option value="LinkedIn">LinkedIn</option>
+              <option value="Referral">Referral</option>
+              <option value="Cold Outreach">Cold Outreach</option>
+              <option value="Event">Event</option>
+              <option value="Other">Other</option>
+            </select>
           </div>
 
           {/* Select All */}

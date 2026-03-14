@@ -287,17 +287,51 @@ export async function enrollLead(sequenceId: string, leadId: string) {
 export async function enrollLeadsBulk(sequenceId: string, leadIds: string[]) {
   const supabase = await createClient();
   let enrolled = 0;
-  let errors = 0;
+  let duplicates = 0;
 
-  for (const leadId of leadIds) {
-    const result = await enrollLead(sequenceId, leadId);
-    if (result.error) errors++;
-    else enrolled++;
+  // Batch upsert in chunks of 500 (PostgREST limit)
+  const chunkSize = 500;
+  for (let i = 0; i < leadIds.length; i += chunkSize) {
+    const chunk = leadIds.slice(i, i + chunkSize);
+    const rows = chunk.map((leadId) => ({
+      sequence_id: sequenceId,
+      lead_id: leadId,
+      current_step: 1,
+      status: "active" as const,
+    }));
+
+    const { data, error } = await supabase
+      .from("sequence_enrollments")
+      .upsert(rows, { onConflict: "sequence_id,lead_id", ignoreDuplicates: true })
+      .select("id");
+
+    if (error) {
+      // Fallback: insert one-by-one if batch fails
+      for (const leadId of chunk) {
+        const result = await enrollLead(sequenceId, leadId);
+        if (result.error) duplicates++;
+        else enrolled++;
+      }
+    } else {
+      enrolled += data?.length ?? 0;
+      duplicates += chunk.length - (data?.length ?? 0);
+    }
   }
+
+  // Update enrollment count on the sequence
+  const { count } = await supabase
+    .from("sequence_enrollments")
+    .select("id", { count: "exact" })
+    .eq("sequence_id", sequenceId);
+
+  await supabase
+    .from("sequences")
+    .update({ total_enrolled: count ?? 0 })
+    .eq("id", sequenceId);
 
   revalidatePath(`/dashboard/sequences/${sequenceId}`);
   revalidatePath("/dashboard/leads");
-  return { enrolled, errors, total: leadIds.length };
+  return { enrolled, errors: duplicates, total: leadIds.length };
 }
 
 export async function updateEnrollmentStatus(
@@ -899,9 +933,16 @@ export async function reorderSequenceSteps(
 
 // ── Phase C: Leads for Enrollment ─────────────────────────────────────────
 
+export type EnrollmentFilters = {
+  search?: string;
+  status?: string;
+  minScore?: number;
+  source?: string;
+};
+
 export async function getLeadsForEnrollment(
   sequenceId: string,
-  filters: { search?: string; status?: string; minScore?: number },
+  filters: EnrollmentFilters,
 ): Promise<{ data: Array<{ id: string; name: string; email: string; company: string | null; score: number | null; status: string }> }> {
   const supabase = await createClient();
   const orgId = await getOrgId();
@@ -913,14 +954,14 @@ export async function getLeadsForEnrollment(
     .eq("sequence_id", sequenceId)
     .in("status", ["active", "paused"]);
 
-  const enrolledIds = (enrolled || []).map((e) => e.lead_id);
+  const enrolledIds = new Set((enrolled || []).map((e) => e.lead_id));
 
   let query = supabase
     .from("leads")
     .select("id, name, email, company, score, status")
     .eq("organization_id", orgId)
     .order("score", { ascending: false, nullsFirst: false })
-    .limit(50);
+    .limit(200);
 
   if (filters.search) {
     query = query.or(
@@ -936,11 +977,113 @@ export async function getLeadsForEnrollment(
     query = query.gte("score", filters.minScore);
   }
 
+  if (filters.source && filters.source !== "all") {
+    query = query.eq("source", filters.source);
+  }
+
   const { data, error } = await query;
   if (error) return { data: [] };
 
-  const filtered = (data || []).filter((l) => !enrolledIds.includes(l.id));
+  const filtered = (data || []).filter((l) => !enrolledIds.has(l.id));
   return { data: filtered };
+}
+
+export async function getLeadsForEnrollmentCount(
+  sequenceId: string,
+  filters: EnrollmentFilters,
+): Promise<{ count: number }> {
+  const supabase = await createClient();
+  const orgId = await getOrgId();
+
+  // Get already-enrolled lead IDs
+  const { data: enrolled } = await supabase
+    .from("sequence_enrollments")
+    .select("lead_id")
+    .eq("sequence_id", sequenceId)
+    .in("status", ["active", "paused"]);
+
+  const enrolledIds = (enrolled || []).map((e) => e.lead_id);
+
+  let query = supabase
+    .from("leads")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", orgId);
+
+  if (filters.search) {
+    query = query.or(
+      `name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,company.ilike.%${filters.search}%`,
+    );
+  }
+
+  if (filters.status && filters.status !== "all") {
+    query = query.eq("status", filters.status as "hot" | "warm" | "cold");
+  }
+
+  if (filters.minScore) {
+    query = query.gte("score", filters.minScore);
+  }
+
+  if (filters.source && filters.source !== "all") {
+    query = query.eq("source", filters.source);
+  }
+
+  if (enrolledIds.length > 0) {
+    query = query.not("id", "in", `(${enrolledIds.join(",")})`);
+  }
+
+  const { count, error } = await query;
+  if (error) return { count: 0 };
+  return { count: count ?? 0 };
+}
+
+export async function enrollAllMatchingLeads(
+  sequenceId: string,
+  filters: EnrollmentFilters,
+): Promise<{ enrolled: number; errors: number; total: number }> {
+  const supabase = await createClient();
+  const orgId = await getOrgId();
+
+  // Get already-enrolled lead IDs
+  const { data: enrolled } = await supabase
+    .from("sequence_enrollments")
+    .select("lead_id")
+    .eq("sequence_id", sequenceId)
+    .in("status", ["active", "paused"]);
+
+  const enrolledIds = new Set((enrolled || []).map((e) => e.lead_id));
+
+  let query = supabase
+    .from("leads")
+    .select("id")
+    .eq("organization_id", orgId)
+    .order("score", { ascending: false, nullsFirst: false })
+    .limit(5000);
+
+  if (filters.search) {
+    query = query.or(
+      `name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,company.ilike.%${filters.search}%`,
+    );
+  }
+
+  if (filters.status && filters.status !== "all") {
+    query = query.eq("status", filters.status as "hot" | "warm" | "cold");
+  }
+
+  if (filters.minScore) {
+    query = query.gte("score", filters.minScore);
+  }
+
+  if (filters.source && filters.source !== "all") {
+    query = query.eq("source", filters.source);
+  }
+
+  const { data, error } = await query;
+  if (error) return { enrolled: 0, errors: 0, total: 0 };
+
+  const leadIds = (data || []).map((l) => l.id).filter((id) => !enrolledIds.has(id));
+  if (leadIds.length === 0) return { enrolled: 0, errors: 0, total: 0 };
+
+  return enrollLeadsBulk(sequenceId, leadIds);
 }
 
 // ── Phase D: Analytics ────────────────────────────────────────────────────

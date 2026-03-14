@@ -30,8 +30,8 @@ export async function getUnifiedInbox(filters?: {
   const limit = filters?.limit || 50;
   const offset = filters?.offset || 0;
 
-  // Fetch from all three channels in parallel
-  const [emailRes, waRes, liRes] = await Promise.all([
+  // Fetch from all channels in parallel
+  const [emailRes, directEmailRes, waRes, liRes] = await Promise.all([
     // Email events from sequence_events
     filters?.channel && filters.channel !== "email"
       ? Promise.resolve({ data: [] })
@@ -39,12 +39,11 @@ export async function getUnifiedInbox(filters?: {
           .from("sequence_events")
           .select(
             `id, event_type, created_at, metadata,
-             sequence_enrollments!inner(
+             sequence_enrollments(
                id, lead_id,
-               leads!inner(id, name, email, company, avatar_url)
+               leads(id, name, email, company, organization_id)
              )`
           )
-          .eq("sequence_enrollments.leads.organization_id", orgId)
           .in("event_type", [
             "email_sent",
             "email_opened",
@@ -55,6 +54,22 @@ export async function getUnifiedInbox(filters?: {
           .order("created_at", { ascending: false })
           .range(offset, offset + limit - 1),
 
+    // Direct email messages (composed from inbox)
+    filters?.channel && filters.channel !== "email"
+      ? Promise.resolve({ data: [] })
+      : supabase
+          .from("email_messages")
+          .select(
+            `id, direction, subject, body_text, status, from_address, to_addresses, sent_at, created_at,
+             email_threads(
+               id, subject, lead_id,
+               leads(id, name, email, company)
+             )`
+          )
+          .eq("organization_id", orgId)
+          .order("created_at", { ascending: false })
+          .range(offset, offset + limit - 1),
+
     // WhatsApp messages
     filters?.channel && filters.channel !== "whatsapp"
       ? Promise.resolve({ data: [] })
@@ -62,7 +77,7 @@ export async function getUnifiedInbox(filters?: {
           .from("whatsapp_messages")
           .select(
             `id, direction, message_type, body_text, status, created_at,
-             leads!inner(id, name, email, company, avatar_url, phone)`
+             leads(id, name, email, company, phone)`
           )
           .eq("organization_id", orgId)
           .order("created_at", { ascending: false })
@@ -75,12 +90,18 @@ export async function getUnifiedInbox(filters?: {
           .from("linkedin_actions")
           .select(
             `id, action_type, status, connection_note, message_body, created_at,
-             leads!inner(id, name, email, company, avatar_url, linkedin)`
+             leads(id, name, email, company, linkedin)`
           )
           .eq("organization_id", orgId)
           .order("created_at", { ascending: false })
           .range(offset, offset + limit - 1),
   ]);
+
+  // Safely extract data, log errors
+  const emailData = (emailRes as { data: unknown[] | null; error?: { message: string } | null }).data || [];
+  const directEmailData = (directEmailRes as { data: unknown[] | null; error?: { message: string } | null }).data || [];
+  const waData = (waRes as { data: unknown[] | null; error?: { message: string } | null }).data || [];
+  const liData = (liRes as { data: unknown[] | null; error?: { message: string } | null }).data || [];
 
   // Normalize all into a unified thread format
   type UnifiedItem = {
@@ -102,9 +123,9 @@ export async function getUnifiedInbox(filters?: {
 
   const items: UnifiedItem[] = [];
 
-  // Email events
-  if (emailRes.data) {
-    for (const ev of emailRes.data as unknown[]) {
+  // Email events (from sequences)
+  if (emailData.length > 0) {
+    for (const ev of emailData as unknown[]) {
       const e = ev as {
         id: string;
         event_type: string;
@@ -119,9 +140,13 @@ export async function getUnifiedInbox(filters?: {
             email: string | null;
             company: string | null;
             avatar_url: string | null;
-          };
-        };
+            organization_id: string;
+          } | null;
+        } | null;
       };
+      // Filter by org since we removed the nested .eq filter
+      const lead = e.sequence_enrollments?.leads;
+      if (lead && lead.organization_id !== orgId) continue;
       items.push({
         id: e.id,
         channel: "email",
@@ -132,7 +157,7 @@ export async function getUnifiedInbox(filters?: {
         status: e.event_type.replace("email_", ""),
         direction: e.event_type === "email_replied" ? "inbound" : "outbound",
         created_at: e.created_at,
-        lead: e.sequence_enrollments?.leads || {
+        lead: lead || {
           id: "",
           name: null,
           email: null,
@@ -143,9 +168,56 @@ export async function getUnifiedInbox(filters?: {
     }
   }
 
+  // Direct email messages (composed from inbox)
+  if (directEmailData.length > 0) {
+    for (const dm of directEmailData as unknown[]) {
+      const msg = dm as {
+        id: string;
+        direction: string;
+        subject: string | null;
+        body_text: string | null;
+        status: string;
+        from_address: string | null;
+        to_addresses: string[] | null;
+        sent_at: string | null;
+        created_at: string;
+        email_threads: {
+          id: string;
+          subject: string | null;
+          lead_id: string | null;
+          leads: {
+            id: string;
+            name: string | null;
+            email: string | null;
+            company: string | null;
+            avatar_url: string | null;
+          } | null;
+        };
+      };
+      // Skip if already represented by a sequence event (avoid duplicates)
+      const toAddr = msg.to_addresses?.[0] || "";
+      items.push({
+        id: msg.id,
+        channel: "email",
+        type: msg.direction === "inbound" ? "email_received" : "email_sent",
+        preview: msg.subject || msg.body_text?.slice(0, 80) || "No subject",
+        status: msg.status,
+        direction: msg.direction === "inbound" ? "inbound" : "outbound",
+        created_at: msg.sent_at || msg.created_at,
+        lead: msg.email_threads?.leads || {
+          id: "",
+          name: toAddr || msg.from_address,
+          email: msg.direction === "inbound" ? msg.from_address : toAddr,
+          company: null,
+          avatar_url: null,
+        },
+      });
+    }
+  }
+
   // WhatsApp messages
-  if (waRes.data) {
-    for (const m of waRes.data as unknown[]) {
+  if (waData.length > 0) {
+    for (const m of waData as unknown[]) {
       const msg = m as {
         id: string;
         direction: string;
@@ -176,8 +248,8 @@ export async function getUnifiedInbox(filters?: {
   }
 
   // LinkedIn actions
-  if (liRes.data) {
-    for (const a of liRes.data as unknown[]) {
+  if (liData.length > 0) {
+    for (const a of liData as unknown[]) {
       const act = a as {
         id: string;
         action_type: string;

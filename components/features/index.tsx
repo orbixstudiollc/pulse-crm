@@ -30,3 +30,5 @@ export { AIActionButton } from "./AIActionButton";
 export { AIChatProvider, useAIChat, AIChatPanel, usePageContext } from "./AIChat";
 // Import/Export
 export { ImportLeadsModal } from "./ImportLeadsModal";
+// Sequences
+export { SequencePickerModal } from "./SequencePickerModal";

@@ -34,15 +34,13 @@ export async function getEmailThreads(filters: ThreadFilters = {}) {
       ),
       leads (
         id,
-        first_name,
-        last_name,
+        name,
         email,
         company
       ),
       contacts (
         id,
-        first_name,
-        last_name,
+        name,
         email
       )
     `)

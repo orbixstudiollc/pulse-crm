@@ -42,7 +42,7 @@ export async function composeAndSendEmail(opts: ComposeEmailOptions) {
   // Create or get thread
   let threadId = opts.threadId;
   if (!threadId) {
-    const { data: thread } = await supabase
+    const { data: thread, error: threadError } = await supabase
       .from("email_threads")
       .insert({
         organization_id: orgId,
@@ -56,8 +56,8 @@ export async function composeAndSendEmail(opts: ComposeEmailOptions) {
       .select("id")
       .single();
 
-    if (!thread) {
-      return { error: "Failed to create email thread" };
+    if (threadError || !thread) {
+      return { error: threadError?.message || "Failed to create email thread" };
     }
     threadId = thread.id;
   }

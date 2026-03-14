@@ -39,6 +39,7 @@ import {
 } from "@/lib/actions/apify";
 import { validateScrapedLeads } from "@/lib/actions/ai-lead-validation";
 import { ConfirmModal } from "@/components/dashboard";
+import { SequencePickerModal } from "@/components/features";
 import type { Database } from "@/types/database";
 
 type ScrapedLead = Database["public"]["Tables"]["scraped_leads"]["Row"];
@@ -516,6 +517,8 @@ export function LeadScraperPageClient({
   const [icpLoading, setIcpLoading] = useState(false);
   const [scrapeStarting, setScrapeStarting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showSequencePicker, setShowSequencePicker] = useState(false);
+  const [lastImportedIds, setLastImportedIds] = useState<string[]>([]);
 
   // Animated stats
   const animTotal = useCountUp(stats.totalLeads);
@@ -640,6 +643,10 @@ export function LeadScraperPageClient({
       const res = await importScrapedLeads(Array.from(selectedRows));
       if (res.error) { toast.error(res.error); return; }
       toast.success(`Imported ${res.imported} leads to CRM`);
+      if (res.importedIds && res.importedIds.length > 0) {
+        setLastImportedIds(res.importedIds);
+        setShowSequencePicker(true);
+      }
       setSelectedRows(new Set()); refresh();
     });
   };
@@ -1070,6 +1077,14 @@ export function LeadScraperPageClient({
         variant="danger"
         onConfirm={executeDelete}
         onCancel={() => setConfirmDelete(false)}
+      />
+      <SequencePickerModal
+        open={showSequencePicker}
+        onClose={() => setShowSequencePicker(false)}
+        leadIds={lastImportedIds}
+        onComplete={() => {
+          setLastImportedIds([]);
+        }}
       />
     </div>
   );

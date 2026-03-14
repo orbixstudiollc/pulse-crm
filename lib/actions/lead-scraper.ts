@@ -199,11 +199,12 @@ export async function importScrapedLeads(scrapedLeadIds: string[]) {
     .eq("imported", false);
 
   if (fetchErr || !scraped?.length) {
-    return { error: fetchErr?.message ?? "No leads to import", imported: 0 };
+    return { error: fetchErr?.message ?? "No leads to import", imported: 0, importedIds: [] as string[] };
   }
 
   // Insert into leads table
   let imported = 0;
+  const importedIds: string[] = [];
   for (const sl of scraped) {
     const leadName = [sl.first_name, sl.last_name].filter(Boolean).join(" ") || sl.email || "Unknown";
     const { data: newLead, error: insertErr } = await supabase
@@ -234,12 +235,13 @@ export async function importScrapedLeads(scrapedLeadIds: string[]) {
         .update({ imported: true, imported_lead_id: newLead.id })
         .eq("id", sl.id);
       imported++;
+      importedIds.push(newLead.id);
     }
   }
 
   revalidatePath("/dashboard/lead-scraper");
   revalidatePath("/dashboard/leads");
-  return { imported };
+  return { imported, importedIds };
 }
 
 // ── CSV Import ──────────────────────────────────────────────────────────────

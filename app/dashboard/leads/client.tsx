@@ -18,6 +18,7 @@ import {
   FunnelIcon,
   UploadIcon,
   LightningIcon,
+  PaperPlaneTiltIcon,
 } from "@/components/ui";
 import {
   PageHeader,
@@ -29,7 +30,7 @@ import {
   EmptyState,
   ConfirmModal,
 } from "@/components/dashboard";
-import { AddLeadModal, ScoreBreakdown, AIScoreDrawer, ImportLeadsModal, type LeadFormData } from "@/components/features";
+import { AddLeadModal, ScoreBreakdown, AIScoreDrawer, ImportLeadsModal, SequencePickerModal, type LeadFormData } from "@/components/features";
 import {
   leadStatusConfig,
   leadStatusOptions,
@@ -148,6 +149,7 @@ export function LeadsPageClient({
   const [aiScoreData, setAIScoreData] = useState<any>(null);
   const [aiScoringLeadId, setAIScoringLeadId] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
+  const [showSequencePicker, setShowSequencePicker] = useState(false);
   const scorePopoverRef = useRef<HTMLDivElement>(null);
 
   useClickOutside(scorePopoverRef, () => setScorePopoverId(null), !!scorePopoverId);
@@ -558,6 +560,12 @@ export function LeadsPageClient({
                 Export
               </button>
               <button
+                onClick={() => setShowSequencePicker(true)}
+                className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+              >
+                Add to Sequence
+              </button>
+              <button
                 onClick={() => setConfirmDelete({ type: "bulk" })}
                 className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
               >
@@ -893,6 +901,14 @@ export function LeadsPageClient({
         open={showImport}
         onClose={() => setShowImport(false)}
         onImportComplete={() => router.refresh()}
+      />
+      <SequencePickerModal
+        open={showSequencePicker}
+        onClose={() => setShowSequencePicker(false)}
+        leadIds={selectedRows}
+        onComplete={() => {
+          setSelectedRows([]);
+        }}
       />
       <ConfirmModal
         open={!!confirmDelete}

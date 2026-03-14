@@ -1,18 +1,29 @@
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return new Response("Unauthorized", { status: 401 });
+  if (!user) {
+    return NextResponse.json(
+      { error: "Unauthorized. Please log in first." },
+      { status: 401 },
+    );
+  }
 
   const clientId = process.env.MICROSOFT_CLIENT_ID;
   const redirectUri = process.env.MICROSOFT_REDIRECT_URI;
 
   if (!clientId || !redirectUri) {
-    return new Response("Microsoft OAuth not configured", { status: 500 });
+    return NextResponse.json(
+      {
+        error:
+          "Microsoft OAuth is not configured. Please add MICROSOFT_CLIENT_ID and MICROSOFT_REDIRECT_URI to your environment variables.",
+      },
+      { status: 500 },
+    );
   }
 
   const scopes = [
@@ -30,7 +41,7 @@ export async function GET() {
     state: user.id,
   });
 
-  redirect(
-    `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`,
-  );
+  const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`;
+
+  return NextResponse.json({ url: authUrl });
 }

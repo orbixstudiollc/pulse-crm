@@ -72,15 +72,13 @@ interface EmailThread {
   };
   leads: {
     id: string;
-    first_name: string | null;
-    last_name: string | null;
+    name: string | null;
     email: string;
     company: string | null;
   } | null;
   contacts: {
     id: string;
-    first_name: string | null;
-    last_name: string | null;
+    name: string | null;
     email: string;
   } | null;
 }
@@ -261,10 +259,10 @@ export function InboxClient() {
 
   const getThreadName = (thread: EmailThread) => {
     if (thread.leads) {
-      return `${thread.leads.first_name || ""} ${thread.leads.last_name || ""}`.trim() || thread.leads.email;
+      return thread.leads.name || thread.leads.email;
     }
     if (thread.contacts) {
-      return `${thread.contacts.first_name || ""} ${thread.contacts.last_name || ""}`.trim() || thread.contacts.email;
+      return thread.contacts.name || thread.contacts.email;
     }
     return thread.subject || "No subject";
   };
