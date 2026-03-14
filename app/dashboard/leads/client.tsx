@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef, useTransition, useEffect } from "react";
 import {
   Button,
   Badge,
@@ -39,12 +39,12 @@ import {
   type LeadSource,
 } from "@/lib/data/leads";
 import { cn, formatCurrency } from "@/lib/utils";
-import { createLead, updateLead, deleteLead } from "@/lib/actions/leads";
+import { createLead, updateLead, deleteLead, getLeadsAsJson } from "@/lib/actions/leads";
 import { recalculateAllScores } from "@/lib/actions/scoring";
 import { aiScoreLead, aiScoreLeadsBatch } from "@/lib/actions/ai-scoring";
 import { exportLeadsToCSV } from "@/lib/actions/export";
 import { useClickOutside } from "@/hooks";
-import { useRouter } from "next/navigation";
+// useRouter removed — data refresh via fetchLeads()
 import { toast } from "sonner";
 
 interface LeadRecord {
@@ -122,15 +122,26 @@ function mapLead(l: LeadRecord) {
   };
 }
 
-export function LeadsPageClient({
-  initialLeadsJson,
-  initialCount,
-}: {
-  initialLeadsJson: string;
-  initialCount: number;
-}) {
-  const initialLeads: LeadRecord[] = JSON.parse(initialLeadsJson);
-  const router = useRouter();
+export function LeadsPageClient() {
+  const [leadsData, setLeadsData] = useState<LeadRecord[]>([]);
+  const [leadsCount, setLeadsCount] = useState(0);
+  const [leadsLoading, setLeadsLoading] = useState(true);
+
+  const fetchLeads = async () => {
+    try {
+      const { json, count } = await getLeadsAsJson({ perPage: 100 });
+      setLeadsData(JSON.parse(json) ?? []);
+      setLeadsCount(count);
+    } catch (e) {
+      console.error("Failed to fetch leads:", e);
+    } finally {
+      setLeadsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeads();
+  }, []);
   const [isPending, startTransition] = useTransition();
   const [showAddLead, setShowAddLead] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -155,7 +166,7 @@ export function LeadsPageClient({
 
   useClickOutside(scorePopoverRef, () => setScorePopoverId(null), !!scorePopoverId);
 
-  const allLeads = initialLeads.map(mapLead);
+  const allLeads = leadsData.map(mapLead);
 
   const editLeadFormData = editLead
     ? {
@@ -291,7 +302,7 @@ export function LeadsPageClient({
       });
       if (!result.error) {
         setShowAddLead(false);
-        router.refresh();
+        fetchLeads();
       }
     });
   };
@@ -330,7 +341,7 @@ export function LeadsPageClient({
       });
       if (!result.error) {
         setShowEditModal(false);
-        router.refresh();
+        fetchLeads();
       }
     });
   };
@@ -350,7 +361,7 @@ export function LeadsPageClient({
           toast.error(result.error);
         } else {
           toast.success("Lead deleted");
-          router.refresh();
+          fetchLeads();
         }
       });
     } else if (confirmDelete.type === "bulk") {
@@ -363,7 +374,7 @@ export function LeadsPageClient({
           if (!result.error) deleted++;
         }
         setSelectedRows([]);
-        router.refresh();
+        fetchLeads();
         toast.success(`Deleted ${deleted} lead${deleted !== 1 ? "s" : ""}`);
       });
     }
@@ -376,7 +387,7 @@ export function LeadsPageClient({
         toast.error(result.error);
       } else {
         toast.success(`Recalculated scores for ${(result as { scored: number }).scored} leads`);
-        router.refresh();
+        fetchLeads();
       }
     });
   };
@@ -391,7 +402,7 @@ export function LeadsPageClient({
       setAIScoreData(result);
       setAIScoreDrawerOpen(true);
       setAIScoringLeadId(null);
-      router.refresh();
+      fetchLeads();
     }
   };
 
@@ -407,7 +418,7 @@ export function LeadsPageClient({
     } else {
       toast.success(`AI scored ${successes} leads successfully`);
     }
-    router.refresh();
+    fetchLeads();
   };
 
   return (
@@ -894,14 +905,14 @@ export function LeadsPageClient({
         }}
         leadId={aiScoringLeadId || ""}
         leadName={allLeads.find((l) => l.id === aiScoringLeadId)?.name || "Lead"}
-        onScoreApplied={() => router.refresh()}
+        onScoreApplied={() => fetchLeads()}
       />
 
       {/* Import Leads Modal */}
       <ImportLeadsModal
         open={showImport}
         onClose={() => setShowImport(false)}
-        onImportComplete={() => router.refresh()}
+        onImportComplete={() => fetchLeads()}
       />
       <SequencePickerModal
         open={showSequencePicker}

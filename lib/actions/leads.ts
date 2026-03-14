@@ -24,6 +24,15 @@ export type LeadFilters = {
 
 // ── Read ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Returns leads as a JSON string to avoid RSC serialization depth limits
+ * on deeply nested JSONB columns (qualification_data, score_breakdown, etc.).
+ */
+export async function getLeadsAsJson(filters: LeadFilters = {}): Promise<{ json: string; count: number }> {
+  const result = await getLeads(filters);
+  return { json: JSON.stringify(result.data), count: result.count };
+}
+
 export async function getLeads(filters: LeadFilters = {}) {
   const supabase = await createClient();
   const orgId = await getOrgId();
