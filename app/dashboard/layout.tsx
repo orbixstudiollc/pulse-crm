@@ -3,6 +3,7 @@ import { HeaderProvider } from "@/components/layout/HeaderContext";
 import { SidebarProvider } from "@/components/layout/SidebarContext";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { AIChatProvider, AIChatPanel } from "@/components/features/AIChat";
+import { Toaster } from "sonner";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -42,6 +43,7 @@ export default async function DashboardLayout({
               </div>
             </div>
             <AIChatPanel />
+            <Toaster position="top-right" theme="dark" richColors closeButton />
           </AIChatProvider>
         </HeaderProvider>
       </SidebarProvider>
