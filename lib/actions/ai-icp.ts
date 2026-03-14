@@ -202,8 +202,6 @@ Return ONLY valid JSON.`;
       recommendations: parsed.recommendations || [],
     };
 
-    // Revalidate relevant pages
-    revalidatePath(`/dashboard/leads/${leadId}`);
     revalidatePath("/dashboard/icp");
 
     return result;

@@ -5,7 +5,7 @@ import { getAIClient, callAIWithFallback } from "@/lib/ai/client";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
 import { getModelId } from "@/lib/ai/models";
 import { AIScoreResult } from "@/lib/ai/types";
-import { revalidatePath } from "next/cache";
+
 
 /**
  * Parse a JSON response from the AI, handling markdown code block wrappers.
@@ -198,9 +198,6 @@ export async function aiScoreLead(
     if (historyError) {
       console.error("Failed to insert score history:", historyError);
     }
-
-    // Revalidate relevant pages
-    revalidatePath(`/dashboard/leads/${leadId}`);
 
     return result;
   } catch (error) {

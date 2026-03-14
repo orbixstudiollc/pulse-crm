@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAIClient, callAIWithFallback } from "@/lib/ai/client";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
 import { getModelId } from "@/lib/ai/models";
-import { revalidatePath } from "next/cache";
+
 
 // ── JSON Parser ──────────────────────────────────────────────────────────────
 
@@ -226,9 +226,6 @@ export async function aiQualifyLead(
       next_steps: nextSteps,
     };
 
-    // Revalidate pages (data isn't saved but UI may refresh context)
-    revalidatePath(`/dashboard/leads/${leadId}`);
-
     return result;
   } catch (error) {
     console.error("[AI Qualification] Failed:", error);
@@ -357,9 +354,6 @@ Return ONLY valid JSON.`;
       assessment: parsed.assessment || "",
       discovery_questions: parsed.discovery_questions || [],
     };
-
-    // Revalidate relevant pages
-    revalidatePath(`/dashboard/leads/${leadId}`);
 
     return result;
   } catch (error) {
