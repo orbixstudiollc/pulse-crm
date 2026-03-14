@@ -38,6 +38,7 @@ import {
   scoreScrapedLeadsAgainstICP,
 } from "@/lib/actions/apify";
 import { validateScrapedLeads } from "@/lib/actions/ai-lead-validation";
+import { ConfirmModal } from "@/components/dashboard";
 import type { Database } from "@/types/database";
 
 type ScrapedLead = Database["public"]["Tables"]["scraped_leads"]["Row"];
@@ -326,21 +327,58 @@ function InstagramPanel({
 }: {
   onScrape: (input: Record<string, unknown>) => void; isPending: boolean;
 }) {
+  const [mode, setMode] = useState<"usernames" | "search">("usernames");
   const [usernames, setUsernames] = useState("");
-  const [resultsLimit, setResultsLimit] = useState("10");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchType, setSearchType] = useState("user");
+  const [resultsLimit, setResultsLimit] = useState("20");
+
+  const canStart = mode === "usernames" ? usernames.trim() : searchQuery.trim();
+
   return (
     <div className="space-y-3">
-      <div>
-        <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Usernames (one per line)</label>
-        <textarea value={usernames} onChange={(e) => setUsernames(e.target.value)} placeholder={"username1\nusername2"} rows={4}
-          className={inputClass + " resize-none"} />
+      <div className="flex gap-1 p-0.5 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+        <button onClick={() => setMode("usernames")} className={`flex-1 text-xs py-1.5 rounded-md font-medium transition-colors ${mode === "usernames" ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-sm" : "text-neutral-500 dark:text-neutral-400"}`}>
+          By Username
+        </button>
+        <button onClick={() => setMode("search")} className={`flex-1 text-xs py-1.5 rounded-md font-medium transition-colors ${mode === "search" ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-sm" : "text-neutral-500 dark:text-neutral-400"}`}>
+          Search
+        </button>
       </div>
+      {mode === "usernames" ? (
+        <div>
+          <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Usernames or URLs (one per line)</label>
+          <textarea value={usernames} onChange={(e) => setUsernames(e.target.value)} placeholder={"@username1\nhttps://instagram.com/username2"} rows={4}
+            className={inputClass + " resize-none"} />
+        </div>
+      ) : (
+        <>
+          <div>
+            <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Search Query</label>
+            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="e.g. fitness coach, bakery" className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Search Type</label>
+            <select value={searchType} onChange={(e) => setSearchType(e.target.value)} className={inputClass}>
+              <option value="user">Users / Profiles</option>
+              <option value="hashtag">Hashtags</option>
+              <option value="place">Places</option>
+            </select>
+          </div>
+        </>
+      )}
       <div>
         <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Results Limit</label>
-        <input value={resultsLimit} onChange={(e) => setResultsLimit(e.target.value)} type="number" placeholder="10" className={inputClass} />
+        <input value={resultsLimit} onChange={(e) => setResultsLimit(e.target.value)} type="number" placeholder="20" className={inputClass} />
       </div>
-      <button onClick={() => onScrape({ usernames: usernames.split("\n").map((u) => u.trim()).filter(Boolean), resultsLimit: parseInt(resultsLimit) || 10 })}
-        disabled={isPending || !usernames.trim()}
+      <button onClick={() => {
+        if (mode === "usernames") {
+          onScrape({ usernames: usernames.split("\n").map((u) => u.trim()).filter(Boolean), resultsLimit: parseInt(resultsLimit) || 20 });
+        } else {
+          onScrape({ search: searchQuery.trim(), searchType, resultsLimit: parseInt(resultsLimit) || 20 });
+        }
+      }}
+        disabled={isPending || !canStart}
         className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded disabled:opacity-50">
         {isPending ? <><CircleNotchIcon className="w-4 h-4 animate-spin" /> Starting...</> : <><GlobeIcon className="w-4 h-4" /> Start Scrape</>}
       </button>
@@ -477,6 +515,7 @@ export function LeadScraperPageClient({
   const [showSaveSearch, setShowSaveSearch] = useState(false);
   const [icpLoading, setIcpLoading] = useState(false);
   const [scrapeStarting, setScrapeStarting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Animated stats
   const animTotal = useCountUp(stats.totalLeads);
@@ -607,6 +646,11 @@ export function LeadScraperPageClient({
 
   const handleDeleteSelected = () => {
     if (selectedRows.size === 0) return;
+    setConfirmDelete(true);
+  };
+
+  const executeDelete = () => {
+    setConfirmDelete(false);
     startTransition(async () => {
       await deleteScrapedLeads(Array.from(selectedRows));
       toast.success("Leads deleted");
@@ -863,25 +907,8 @@ export function LeadScraperPageClient({
         <div className="flex-1 min-w-0">
           {/* Results header */}
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
               <span className="text-sm text-neutral-500 dark:text-neutral-400">{totalCount.toLocaleString()} leads found</span>
-              {selectedRows.size > 0 && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm text-indigo-600 dark:text-indigo-400">{selectedRows.size} selected</span>
-                  <button onClick={handleImportSelected} disabled={isPending}
-                    className="px-3 py-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded disabled:opacity-50">Import to CRM</button>
-                  <button onClick={handleVerifySelected} disabled={isPending}
-                    className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50">Verify</button>
-                  <button onClick={handleScoreICP} disabled={isPending}
-                    className="px-3 py-1 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded disabled:opacity-50">Score ICP</button>
-                  <button onClick={handleAIValidate} disabled={isPending}
-                    className="px-3 py-1 text-xs bg-purple-600 hover:bg-purple-700 text-white rounded disabled:opacity-50">
-                    <span className="flex items-center gap-1"><SparkleIcon className="w-3 h-3" /> AI Validate</span>
-                  </button>
-                  <button onClick={handleDeleteSelected} disabled={isPending}
-                    className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded disabled:opacity-50">Delete</button>
-                </div>
-              )}
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-neutral-400 dark:text-neutral-500">Per page:</span>
@@ -896,6 +923,40 @@ export function LeadScraperPageClient({
 
           {/* Results table */}
           <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
+            {/* Bulk Actions Bar */}
+            {selectedRows.size > 0 && (
+              <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
+                <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                  {selectedRows.size} item{selectedRows.size !== 1 ? "s" : ""} selected
+                </span>
+                <div className="flex items-center gap-4">
+                  <button onClick={handleImportSelected} disabled={isPending}
+                    className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors disabled:opacity-50">
+                    Import to CRM
+                  </button>
+                  <button onClick={handleVerifySelected} disabled={isPending}
+                    className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors disabled:opacity-50">
+                    Verify
+                  </button>
+                  <button onClick={handleScoreICP} disabled={isPending}
+                    className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors disabled:opacity-50">
+                    Score ICP
+                  </button>
+                  <button onClick={handleAIValidate} disabled={isPending}
+                    className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors disabled:opacity-50">
+                    AI Validate
+                  </button>
+                  <button onClick={handleDeleteSelected} disabled={isPending}
+                    className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors disabled:opacity-50">
+                    Delete
+                  </button>
+                  <button onClick={() => setSelectedRows(new Set())}
+                    className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
+                    Clear selection
+                  </button>
+                </div>
+              </div>
+            )}
             {leads.length === 0 ? (
               <div className="p-12 text-center">
                 <MagnifyingGlassIcon className="w-10 h-10 text-neutral-400 dark:text-neutral-500 mx-auto mb-3" />
@@ -993,6 +1054,15 @@ export function LeadScraperPageClient({
       {/* Modals */}
       <CSVUploadModal open={showCSVUpload} onClose={() => setShowCSVUpload(false)} onImported={refresh} />
       <SaveSearchModal open={showSaveSearch} onClose={() => setShowSaveSearch(false)} filters={currentFilters} resultCount={totalCount} onSaved={refresh} />
+      <ConfirmModal
+        open={confirmDelete}
+        title="Delete Leads"
+        message={`Delete ${selectedRows.size} lead${selectedRows.size !== 1 ? "s" : ""}? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={executeDelete}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </div>
   );
 }

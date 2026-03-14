@@ -27,6 +27,7 @@ import {
   TableFooter,
   LeadDrawer,
   EmptyState,
+  ConfirmModal,
 } from "@/components/dashboard";
 import { AddLeadModal, ScoreBreakdown, AIScoreDrawer, ImportLeadsModal, type LeadFormData } from "@/components/features";
 import {
@@ -133,6 +134,7 @@ export function LeadsPageClient({
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState("5");
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState<{ type: "single" | "bulk"; id?: string } | null>(null);
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
@@ -331,16 +333,37 @@ export function LeadsPageClient({
   };
 
   const handleDeleteLead = async (id: string) => {
-    if (!confirm("Delete this lead? This cannot be undone.")) return;
-    startTransition(async () => {
-      const result = await deleteLead(id);
-      if (result.error) {
-        toast.error(result.error);
-      } else {
-        toast.success("Lead deleted");
+    setConfirmDelete({ type: "single", id });
+  };
+
+  const executeDeleteConfirmed = () => {
+    if (!confirmDelete) return;
+    if (confirmDelete.type === "single" && confirmDelete.id) {
+      const id = confirmDelete.id;
+      setConfirmDelete(null);
+      startTransition(async () => {
+        const result = await deleteLead(id);
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.success("Lead deleted");
+          router.refresh();
+        }
+      });
+    } else if (confirmDelete.type === "bulk") {
+      const ids = [...selectedRows];
+      setConfirmDelete(null);
+      startTransition(async () => {
+        let deleted = 0;
+        for (const id of ids) {
+          const result = await deleteLead(id);
+          if (!result.error) deleted++;
+        }
+        setSelectedRows([]);
         router.refresh();
-      }
-    });
+        toast.success(`Deleted ${deleted} lead${deleted !== 1 ? "s" : ""}`);
+      });
+    }
   };
 
   const handleRecalculateAll = () => {
@@ -535,17 +558,7 @@ export function LeadsPageClient({
                 Export
               </button>
               <button
-                onClick={async () => {
-                  if (!confirm(`Delete ${selectedRows.length} lead${selectedRows.length > 1 ? "s" : ""}? This cannot be undone.`)) return;
-                  let deleted = 0;
-                  for (const id of selectedRows) {
-                    const result = await deleteLead(id);
-                    if (!result.error) deleted++;
-                  }
-                  setSelectedRows([]);
-                  router.refresh();
-                  toast.success(`Deleted ${deleted} lead${deleted !== 1 ? "s" : ""}`);
-                }}
+                onClick={() => setConfirmDelete({ type: "bulk" })}
                 className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
               >
                 Delete
@@ -880,6 +893,19 @@ export function LeadsPageClient({
         open={showImport}
         onClose={() => setShowImport(false)}
         onImportComplete={() => router.refresh()}
+      />
+      <ConfirmModal
+        open={!!confirmDelete}
+        title="Delete Lead"
+        message={
+          confirmDelete?.type === "bulk"
+            ? `Delete ${selectedRows.length} lead${selectedRows.length !== 1 ? "s" : ""}? This cannot be undone.`
+            : "Delete this lead? This cannot be undone."
+        }
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={executeDeleteConfirmed}
+        onCancel={() => setConfirmDelete(null)}
       />
     </div>
   );

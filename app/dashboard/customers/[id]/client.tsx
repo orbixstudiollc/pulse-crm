@@ -19,7 +19,7 @@ import {
   TrashIcon,
   PencilSimpleIcon,
 } from "@/components/ui";
-import { ActivityRow, type ActivityRowType } from "@/components/dashboard";
+import { ActivityRow, type ActivityRowType, ConfirmModal } from "@/components/dashboard";
 import { cn } from "@/lib/utils";
 import {
   CompleteMeetingModal,
@@ -131,6 +131,7 @@ export function CustomerDetailClient({
 }: CustomerDetailClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const customerName = [customer.first_name, customer.last_name]
     .filter(Boolean)
@@ -182,7 +183,11 @@ export function CustomerDetailClient({
   };
 
   const handleDelete = () => {
-    if (!confirm("Are you sure you want to delete this customer? This action cannot be undone.")) return;
+    setShowDeleteConfirm(true);
+  };
+
+  const executeDelete = () => {
+    setShowDeleteConfirm(false);
     startTransition(async () => {
       const res = await deleteCustomer(customer.id);
       if (res.error) {
@@ -875,6 +880,15 @@ export function CustomerDetailClient({
         onClose={() => setShowInvoiceModal(false)}
         customerPlan={customer.plan}
         customerMrr={mrr}
+      />
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title="Delete Customer"
+        message="Are you sure you want to delete this customer? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={executeDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
       />
     </div>
   );

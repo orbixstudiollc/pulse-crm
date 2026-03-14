@@ -18,7 +18,7 @@ import {
   PencilSimpleIcon,
   LightningIcon,
 } from "@/components/ui";
-import { ActivityRow, type ActivityRowType } from "@/components/dashboard";
+import { ActivityRow, type ActivityRowType, ConfirmModal } from "@/components/dashboard";
 import {
   ScheduleMeetingModal,
   CreateTaskModal,
@@ -150,6 +150,7 @@ export function LeadDetailClient({
 }: LeadDetailClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const leadNotes = notes || [];
   const activityItems = activities || [];
@@ -238,7 +239,11 @@ export function LeadDetailClient({
   };
 
   const handleDelete = () => {
-    if (!confirm("Are you sure you want to delete this lead?")) return;
+    setShowDeleteConfirm(true);
+  };
+
+  const executeDelete = () => {
+    setShowDeleteConfirm(false);
     startTransition(async () => {
       const res = await deleteLead(lead.id);
       if (res.error) {
@@ -828,6 +833,15 @@ export function LeadDetailClient({
           return typeof result === "string" ? result : JSON.stringify(result, null, 2);
         }}
         editable={false}
+      />
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title="Delete Lead"
+        message="Are you sure you want to delete this lead? This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={executeDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
       />
     </div>
   );

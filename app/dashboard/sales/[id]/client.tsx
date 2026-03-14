@@ -16,7 +16,7 @@ import {
   CaretDownIcon,
   Avatar,
 } from "@/components/ui";
-import { ActivityRow, type ActivityRowType } from "@/components/dashboard";
+import { ActivityRow, type ActivityRowType, ConfirmModal } from "@/components/dashboard";
 import { cn } from "@/lib/utils";
 import {
   ScheduleMeetingModal,
@@ -207,6 +207,7 @@ export function DealDetailClient({
 }: DealDetailClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const dealNotes = notes || [];
   const activityItems = activities || [];
@@ -255,7 +256,11 @@ export function DealDetailClient({
   };
 
   const handleDelete = () => {
-    if (!confirm("Are you sure you want to delete this deal?")) return;
+    setShowDeleteConfirm(true);
+  };
+
+  const executeDelete = () => {
+    setShowDeleteConfirm(false);
     startTransition(async () => {
       const res = await deleteDeal(deal.id);
       if (res.error) {
@@ -655,6 +660,15 @@ export function DealDetailClient({
           notes: deal.notes || "",
         }}
         onSubmit={handleEditSubmit}
+      />
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title="Delete Deal"
+        message="Are you sure you want to delete this deal? This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={executeDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
       />
     </div>
   );

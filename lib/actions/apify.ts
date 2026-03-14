@@ -9,14 +9,26 @@ type ApifyRunInsert = Database["public"]["Tables"]["apify_scraper_runs"]["Insert
 type ApifyRunRow = Database["public"]["Tables"]["apify_scraper_runs"]["Row"];
 type ScrapedLeadInsert = Database["public"]["Tables"]["scraped_leads"]["Insert"];
 
+// Default user agent for Sales Navigator scraper
+const navigator_default_ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+
 // ── Actor ID Mapping ──────────────────────────────────────────────────────────
 
 const ACTOR_MAP: Record<string, string> = {
   google_places: "nwua9Gu5YrADL7ZDj",
   instagram: "apify/instagram-scraper",
   linkedin: "dev_fusion/linkedin-profile-scraper",
+  linkedin_sales_nav: "curious_coder/linkedin-sales-navigator-search-scraper",
   leads_finder: "code_crafter/leads-finder",
 };
+
+// Resolve actor ID — LinkedIn uses dynamic selection based on mode
+function resolveActorId(source: string, input: Record<string, unknown>): string | undefined {
+  if (source === "linkedin" && input.linkedinMode === "sales_nav") {
+    return ACTOR_MAP.linkedin_sales_nav;
+  }
+  return ACTOR_MAP[source];
+}
 
 // ── Input Transformers ────────────────────────────────────────────────────────
 // Map our UI input to the format each Apify actor expects
@@ -39,20 +51,20 @@ function transformInputForActor(
         placeMinimumStars: "",
         website: "allPlaces",
         skipClosedPlaces: false,
-        scrapePlaceDetailPage: false,
+        scrapePlaceDetailPage: true,
         scrapeTableReservationProvider: false,
         includeWebResults: false,
         scrapeDirectories: false,
         maxQuestions: 0,
-        scrapeContacts: false,
+        scrapeContacts: true,
         scrapeSocialMediaProfiles: {
-          facebooks: false,
-          instagrams: false,
-          youtubes: false,
-          tiktoks: false,
-          twitters: false,
+          facebooks: true,
+          instagrams: true,
+          youtubes: true,
+          tiktoks: true,
+          twitters: true,
         },
-        maximumLeadsEnrichmentRecords: 0,
+        maximumLeadsEnrichmentRecords: 50,
         maxReviews: 0,
         reviewsSort: "newest",
         reviewsFilterString: "",
@@ -62,6 +74,51 @@ function transformInputForActor(
         scrapeImageAuthors: false,
         allPlacesNoSearchAction: "",
       };
+    case "instagram": {
+      const usernames = (input.usernames as string[]) || [];
+      const searchQuery = (input.search as string) || "";
+      const result: Record<string, unknown> = {
+        resultsType: "details",  // Get full profile details (email, phone, business info)
+        resultsLimit: (input.resultsLimit as number) || 20,
+        addParentData: false,
+      };
+
+      if (usernames.length > 0) {
+        // Mode: by username — convert to Instagram profile URLs
+        result.directUrls = usernames.map((u) => {
+          const clean = u.replace(/^@/, "").trim();
+          return clean.startsWith("http") ? clean : `https://www.instagram.com/${clean}/`;
+        });
+      } else if (searchQuery) {
+        // Mode: search by keyword/hashtag/place
+        result.search = searchQuery;
+        result.searchType = (input.searchType as string) || "user";
+        result.searchLimit = (input.resultsLimit as number) || 20;
+      }
+
+      return result;
+    }
+    case "linkedin": {
+      if (input.linkedinMode === "sales_nav") {
+        // Sales Navigator search mode
+        return {
+          searchUrl: (input.searchUrl as string) || "",
+          cookie: input.cookie || [{}],
+          userAgent: (input.userAgent as string) || navigator_default_ua,
+          deepScrape: input.deepScrape !== false,  // Default to true for full data
+          count: (input.maxResults as number) || 50,
+          minDelay: 5,
+          maxDelay: 30,
+          stopOnRateLimit: true,
+        };
+      }
+      // Profile URL scraper mode
+      const profileUrls = (input.profileUrls as string[]) || [];
+      return {
+        profileUrls,
+        mode: (input.mode as string) || "full",
+      };
+    }
     default:
       return input;
   }
@@ -106,7 +163,7 @@ export async function startApifyScrape(params: {
     const { user } = await getCurrentUserProfile();
     const token = await getApifyToken();
 
-    const actorId = ACTOR_MAP[params.source];
+    const actorId = resolveActorId(params.source, params.input);
     if (!actorId) return { data: null, error: "Invalid source type" };
 
     // Create saved search record
@@ -338,13 +395,36 @@ function transformGooglePlaces(
   const title = (item.title || item.name || "") as string;
   if (!title) return null;
 
+  // Extract email from various possible fields
+  const email = (item.email || item.contactEmail || "") as string;
+
+  // Extract phone - detail page provides more formats
+  const phone = (item.phone || item.phoneUnformatted || item.internationalPhone || "") as string;
+
+  // Extract website
+  const website = (item.website || item.webUrl || "") as string;
+
+  // Extract social media profiles
+  const socialProfiles = item.socialMediaProfiles as Record<string, string> | undefined;
+  const facebookUrl = socialProfiles?.facebook || (item.facebookUrl as string) || "";
+  const instagramUrl = socialProfiles?.instagram || (item.instagramUrl as string) || "";
+  const twitterUrl = socialProfiles?.twitter || (item.twitterUrl as string) || "";
+
+  // Build full address from components
+  const address = (item.address || item.street || "") as string;
+  const city = (item.city || "") as string;
+  const state = (item.state || "") as string;
+  const postalCode = (item.postalCode || item.zipCode || "") as string;
+  const fullLocation = [address, city, state, postalCode].filter(Boolean).join(", ") || address;
+
   return {
     organization_id: orgId,
     search_id: searchId,
     company: title,
-    location: (item.address || item.street || "") as string,
-    phone: (item.phone || item.phoneUnformatted || "") as string,
-    company_website: (item.website || item.url || "") as string,
+    email: email || null,
+    location: fullLocation,
+    phone: phone,
+    company_website: website,
     industry: Array.isArray(item.categories) ? (item.categories[0] as string) || null : (item.categoryName as string) || null,
     source: "google_places",
     metadata: {
@@ -354,6 +434,14 @@ function transformGooglePlaces(
       coordinates: item.location,
       google_url: item.url,
       categories: item.categories,
+      opening_hours: item.openingHours,
+      description: item.description || item.additionalInfo,
+      price_range: item.price || item.priceLevel,
+      facebook: facebookUrl || undefined,
+      instagram: instagramUrl || undefined,
+      twitter: twitterUrl || undefined,
+      claimed: item.claimed,
+      temporarily_closed: item.temporarilyClosed,
     } as unknown as Json,
   };
 }
@@ -369,14 +457,31 @@ function transformInstagram(
 
   const { first, last } = fullName ? splitName(fullName) : { first: username, last: "" };
 
+  // Instagram business profiles expose email & phone
+  const email = (item.businessEmail || item.publicEmail || item.email || "") as string;
+  const phone = (item.businessPhoneNumber || item.contactPhoneNumber || item.publicPhoneNumber || item.phone || "") as string;
+  const website = (item.externalUrl || item.external_url || item.website || "") as string;
+
+  // Business category / industry
+  const category = (item.businessCategoryName || item.category_name || item.categoryName || "") as string;
+
+  // Business address
+  const businessAddress = item.businessAddress || item.address || item.contactAddress;
+  const city = (item.businessCity || item.cityName || "") as string;
+
   return {
     organization_id: orgId,
     search_id: searchId,
     first_name: first,
     last_name: last,
+    email: email || null,
+    phone: phone,
     title: (item.biography || item.bio || "") as string,
+    company: category || null,
     linkedin_url: `https://instagram.com/${username}`,
-    company_website: (item.externalUrl || item.external_url || "") as string,
+    company_website: website,
+    location: city || (typeof businessAddress === "string" ? businessAddress : "") || null,
+    industry: category || null,
     source: "instagram",
     metadata: {
       username,
@@ -386,6 +491,8 @@ function transformInstagram(
       is_business: item.isBusinessAccount || item.is_business,
       profile_pic: item.profilePicUrl || item.profile_pic_url,
       is_verified: item.verified || item.isVerified,
+      business_address: businessAddress,
+      category: category || undefined,
     } as unknown as Json,
   };
 }
@@ -408,6 +515,11 @@ function transformLinkedIn(
   }
   if (!first && !last) return null;
 
+  // Extract phone and website from LinkedIn data
+  const phone = (item.phoneNumber || item.phone || item.phones || "") as string;
+  const companyWebsite = (item.companyUrl || item.companyWebsite || item.website || "") as string;
+  const companySize = (item.companySize || item.employeeCount || item.company_size || "") as string;
+
   return {
     organization_id: orgId,
     search_id: searchId,
@@ -418,6 +530,9 @@ function transformLinkedIn(
     location: (item.location || item.city || "") as string,
     linkedin_url: (item.profileUrl || item.linkedInUrl || item.url || "") as string,
     email: (item.email || "") as string,
+    phone: typeof phone === "string" ? phone : Array.isArray(phone) ? (phone as string[])[0] || "" : "",
+    company_website: companyWebsite,
+    company_size: typeof companySize === "string" ? companySize : String(companySize || ""),
     industry: (item.industry || "") as string,
     source: "linkedin",
     metadata: {
@@ -426,6 +541,8 @@ function transformLinkedIn(
       education: item.education,
       connections: item.connectionCount || item.connections,
       summary: item.summary || item.about,
+      company_description: item.companyDescription,
+      company_industry: item.companyIndustry,
     } as unknown as Json,
   };
 }
