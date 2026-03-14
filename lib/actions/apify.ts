@@ -16,10 +16,10 @@ const navigator_default_ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWeb
 
 const ACTOR_MAP: Record<string, string> = {
   google_places: "nwua9Gu5YrADL7ZDj",
-  instagram: "apify/instagram-scraper",
-  linkedin: "dev_fusion/linkedin-profile-scraper",
-  linkedin_sales_nav: "curious_coder/linkedin-sales-navigator-search-scraper",
-  leads_finder: "code_crafter/leads-finder",
+  instagram: "apify~instagram-scraper",
+  linkedin: "dev_fusion~Linkedin-Profile-Scraper",
+  linkedin_sales_nav: "curious_coder~linkedin-sales-navigator-search-scraper",
+  leads_finder: "code_crafter~leads-finder",
 };
 
 // Resolve actor ID — LinkedIn uses dynamic selection based on mode
