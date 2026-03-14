@@ -899,7 +899,7 @@ export function CampaignsPageClient({
                               <DotsThreeVerticalIcon className="w-4 h-4" />
                             </button>
                             {actionMenuId === campaign.id && (
-                              <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded shadow-xl z-30 py-1">
+                              <div className="absolute right-0 bottom-full mb-1 w-44 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded shadow-xl z-30 py-1">
                                 <button onClick={() => { router.push(`/dashboard/sequences/${campaign.id}`); setActionMenuId(null); }}
                                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:bg-neutral-800">
                                   <PencilSimpleIcon className="w-4 h-4" /> Edit
