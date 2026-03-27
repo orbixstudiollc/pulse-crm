@@ -154,64 +154,65 @@ export function NewAuditClient() {
         </div>
       ) : (
         /* Form */
-        <form onSubmit={handleSubmit} className="mx-auto w-full max-w-lg space-y-6">
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 space-y-5">
-            {/* URL */}
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-                Website URL *
-              </label>
-              <div className="relative">
-                <GlobeIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" weight="regular" />
-                <input
-                  type="text"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="example.com"
-                  className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 pl-10 pr-4 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Business Name */}
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
-                Business Name <span className="text-neutral-400">(optional)</span>
-              </label>
+        <form onSubmit={handleSubmit} className="mx-auto w-full max-w-lg space-y-5">
+          {/* URL */}
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              Website URL <span className="text-red-500 ml-0.5">*</span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500">
+                <GlobeIcon className="h-4 w-4" weight="regular" />
+              </span>
               <input
                 type="text"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                placeholder="Acme Inc."
-                className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-4 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="example.com"
+                className="w-full rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 pl-10 pr-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 transition-shadow focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
+                required
               />
             </div>
+          </div>
 
-            {/* Audit Type */}
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                Audit Type
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {AUDIT_TYPES.map((type) => (
-                  <button
-                    key={type.id}
-                    type="button"
-                    onClick={() => setAuditType(type.id)}
-                    className={cn(
-                      "rounded-lg border p-3 text-left transition-colors",
-                      auditType === type.id
-                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 ring-1 ring-indigo-500"
-                        : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600",
-                    )}
-                  >
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{type.label}</p>
-                    <p className="mt-0.5 text-xs text-neutral-500">{type.description}</p>
-                    <p className="mt-1 text-xs text-indigo-500">{type.time}</p>
-                  </button>
-                ))}
-              </div>
+          {/* Business Name */}
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              Business Name
+              <span className="text-neutral-400 dark:text-neutral-500 font-normal ml-1">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
+              placeholder="Acme Inc."
+              className="w-full rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 transition-shadow focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
+            />
+          </div>
+
+          {/* Audit Type */}
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              Audit Type
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {AUDIT_TYPES.map((type) => (
+                <button
+                  key={type.id}
+                  type="button"
+                  onClick={() => setAuditType(type.id)}
+                  className={cn(
+                    "rounded border p-3 text-left transition-all",
+                    auditType === type.id
+                      ? "border-neutral-950 dark:border-neutral-50 bg-neutral-50 dark:bg-neutral-900 shadow-focus"
+                      : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700",
+                  )}
+                >
+                  <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{type.label}</p>
+                  <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">{type.description}</p>
+                  <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">{type.time}</p>
+                </button>
+              ))}
             </div>
           </div>
 
