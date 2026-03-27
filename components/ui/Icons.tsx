@@ -110,4 +110,6 @@ export {
   LinkedinLogoIcon,
   SlidersHorizontalIcon,
   SignOutIcon,
+  // Marketing
+  MegaphoneSimpleIcon,
 } from "@phosphor-icons/react";

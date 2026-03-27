@@ -17,6 +17,7 @@ import {
   FunnelIcon,
   GaugeIcon,
   MagnifyingGlassIcon,
+  MegaphoneSimpleIcon,
   PaperPlaneTiltIcon,
   PulseIcon,
   RobotIcon,
@@ -45,6 +46,7 @@ const navigation = [
   { name: "Proposals", href: "/dashboard/proposals", icon: ScrollIcon },
   { name: "Playbook", href: "/dashboard/playbook", icon: FileTextIcon },
   { name: "Competitors", href: "/dashboard/competitors", icon: ShieldIcon },
+  { name: "Marketing", href: "/dashboard/marketing", icon: MegaphoneSimpleIcon },
 ];
 
 // ── Shared sidebar content ──────────────────────────────────────────────────

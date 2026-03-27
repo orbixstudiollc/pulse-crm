@@ -1514,6 +1514,7 @@ function AISettingsSection({
     competitors: settings?.feature_competitors ?? true,
     objections: settings?.feature_objections ?? true,
     chat: settings?.feature_chat ?? true,
+    marketing: settings?.feature_marketing ?? true,
   });
   const [autonomy, setAutonomy] = useState<Record<string, string>>({
     lead_scoring: settings?.autonomy_lead_scoring ?? "suggest",
@@ -1585,6 +1586,7 @@ function AISettingsSection({
     competitors: "Competitive Intel",
     objections: "Objection Handling",
     chat: "Chat Assistant",
+    marketing: "Marketing Suite",
   };
 
   const autonomyOptions = [

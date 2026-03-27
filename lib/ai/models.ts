@@ -27,6 +27,7 @@ export const FEATURE_COMPLEXITY: Record<AIFeature, Complexity> = {
   lead_validation: "simple",
   import_enrichment: "simple",
   memory_scrape: "simple",
+  marketing: "complex",
 };
 
 /**

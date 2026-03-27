@@ -89,7 +89,7 @@ export async function getAIClient(): Promise<AIClientResult> {
     .single();
 
   // Return settings with defaults if no settings row exists
-  const resolvedSettings: AISettings = settings || {
+  const resolvedSettings: AISettings = (settings as AISettings | null) || {
     id: "",
     organization_id: profile.organization_id,
     api_key: null,
@@ -106,6 +106,7 @@ export async function getAIClient(): Promise<AIClientResult> {
     feature_competitors: true,
     feature_objections: true,
     feature_chat: true,
+    feature_marketing: true,
     autonomy_lead_scoring: "suggest",
     autonomy_icp_matching: "suggest",
     autonomy_outreach: "suggest",

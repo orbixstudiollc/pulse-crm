@@ -12,7 +12,8 @@ export type AIFeature =
   | "chat"
   | "lead_validation"
   | "import_enrichment"
-  | "memory_scrape";
+  | "memory_scrape"
+  | "marketing";
 
 export type AutonomyLevel = "suggest" | "auto_act" | "full_auto";
 
@@ -33,6 +34,7 @@ export interface AISettings {
   feature_competitors: boolean;
   feature_objections: boolean;
   feature_chat: boolean;
+  feature_marketing: boolean;
   // Autonomy levels
   autonomy_lead_scoring: string;
   autonomy_icp_matching: string;
