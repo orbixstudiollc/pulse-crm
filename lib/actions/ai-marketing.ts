@@ -8,11 +8,16 @@ import type { Json } from "@/types/database";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
+function cleanJSON(str: string): string {
+  // Remove trailing commas before } or ]
+  return str.replace(/,\s*([\]}])/g, "$1");
+}
+
 function parseJSON<T>(text: string): T {
   // Try markdown code block first
   const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (codeBlockMatch) {
-    return JSON.parse(codeBlockMatch[1].trim()) as T;
+    return JSON.parse(cleanJSON(codeBlockMatch[1].trim())) as T;
   }
 
   // Try to find JSON object/array in the text
@@ -21,22 +26,20 @@ function parseJSON<T>(text: string): T {
   const start = jsonStart >= 0 && (jsonArrayStart < 0 || jsonStart < jsonArrayStart) ? jsonStart : jsonArrayStart;
 
   if (start >= 0) {
-    const isArray = text[start] === "[";
-    const closeChar = isArray ? "]" : "}";
-
     // Find the matching closing bracket
     let depth = 0;
     for (let i = start; i < text.length; i++) {
       if (text[i] === "{" || text[i] === "[") depth++;
       if (text[i] === "}" || text[i] === "]") depth--;
       if (depth === 0) {
-        return JSON.parse(text.substring(start, i + 1)) as T;
+        const extracted = text.substring(start, i + 1);
+        return JSON.parse(cleanJSON(extracted)) as T;
       }
     }
   }
 
   // Last resort: try parsing as-is
-  return JSON.parse(text.trim()) as T;
+  return JSON.parse(cleanJSON(text.trim())) as T;
 }
 
 function gradeFromScore(score: number): string {
