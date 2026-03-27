@@ -339,7 +339,10 @@ export async function runDimensionAnalysis(
 
     return parseJSON<AuditDimensionResult>(text);
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Dimension analysis failed" };
+    const msg = error instanceof Error ? error.message : "Dimension analysis failed";
+    console.error(`[AI-Marketing] Dimension "${dimension}" parse error:`, msg);
+    console.error(`[AI-Marketing] Raw text (first 500 chars):`, text?.substring(0, 500));
+    return { error: `${msg} | Raw preview: ${text?.substring(0, 200)}` };
   }
 }
 
