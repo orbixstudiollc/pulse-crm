@@ -269,12 +269,12 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Score + Radar */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 flex flex-col items-center">
+          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 flex flex-col items-center">
             <LargeScoreGauge score={audit.overall_score} grade={audit.grade} />
             <p className="mt-4 text-sm text-center text-neutral-500">{audit.summary}</p>
           </div>
 
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
+          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4">
             <ResponsiveContainer width="100%" height={250}>
               <RadarChart data={radarData}>
                 <PolarGrid stroke="#374151" strokeOpacity={0.2} />
@@ -287,7 +287,7 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
         </div>
 
         {/* Dimension Scores */}
-        <div className="lg:col-span-2 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 space-y-4">
+        <div className="lg:col-span-2 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 space-y-4">
           <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">Score Breakdown</h3>
           <ScoreBar label="Content & Messaging" score={audit.content_score} weight="25%" />
           <ScoreBar label="Conversion Optimization" score={audit.conversion_score} weight="20%" />
@@ -318,7 +318,7 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
     return (
       <div className="space-y-3">
         {sorted.map((f, i) => (
-          <div key={i} className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
+          <div key={i} className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4">
             <div className="flex items-center gap-2 mb-2">
               <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", severityColor(f.severity))}>
                 {f.severity}
@@ -370,7 +370,7 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
                       "flex items-start gap-3 rounded-lg border p-3",
                       item.status === "completed"
                         ? "border-green-200 dark:border-green-800/30 bg-green-50/50 dark:bg-green-900/10"
-                        : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900",
+                        : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950",
                     )}
                   >
                     <button
@@ -413,7 +413,7 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
     return (
       <div className="space-y-4">
         {reports.map((r) => (
-          <div key={r.id} className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
+          <div key={r.id} className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4">
             <div className="flex items-center gap-3">
               <FileTextIcon className="h-6 w-6 text-indigo-500" weight="regular" />
               <div>
@@ -432,7 +432,7 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
           </div>
         ))}
         {content.map((c) => (
-          <div key={c.id} className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
+          <div key={c.id} className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4">
             <div className="flex items-center gap-3">
               <SparkleIcon className="h-6 w-6 text-amber-500" weight="regular" />
               <div>
@@ -469,7 +469,7 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
             onClick={() => handleGenerate(gen.id)}
             disabled={generating !== null}
             className={cn(
-              "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 text-left hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors",
+              "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 text-left hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors",
               generating === gen.id && "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/10",
             )}
           >
@@ -521,21 +521,24 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-lg bg-neutral-100 dark:bg-neutral-800/50 p-1 overflow-x-auto">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              "rounded-md px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors",
-              activeTab === tab.id
-                ? "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 shadow-sm"
-                : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300",
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex items-center gap-1 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-1 overflow-x-auto">
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded transition-colors whitespace-nowrap",
+                isActive
+                  ? "bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50 shadow-sm"
+                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50",
+              )}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {renderTabContent()}

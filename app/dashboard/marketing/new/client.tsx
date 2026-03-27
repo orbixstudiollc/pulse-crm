@@ -155,7 +155,7 @@ export function NewAuditClient() {
       ) : (
         /* Form */
         <form onSubmit={handleSubmit} className="mx-auto w-full max-w-lg space-y-6">
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 space-y-5">
+          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 space-y-5">
             {/* URL */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
@@ -168,7 +168,7 @@ export function NewAuditClient() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="example.com"
-                  className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 pl-10 pr-4 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors"
+                  className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 pl-10 pr-4 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors"
                   required
                 />
               </div>
@@ -184,7 +184,7 @@ export function NewAuditClient() {
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
                 placeholder="Acme Inc."
-                className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors"
+                className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-4 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors"
               />
             </div>
 

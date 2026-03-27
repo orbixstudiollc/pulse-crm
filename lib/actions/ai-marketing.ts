@@ -215,12 +215,67 @@ Compile all audit data into a well-structured markdown report with:
 Return the full markdown content as a string.`,
 };
 
+// ── Website Content Fetcher ──────────────────────────────────────────────────
+
+async function fetchWebsiteContent(url: string): Promise<string> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; PulseCRM/1.0; Marketing Audit)",
+        "Accept": "text/html,application/xhtml+xml",
+      },
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) return `[Failed to fetch: HTTP ${res.status}]`;
+
+    const html = await res.text();
+
+    // Extract useful content from HTML (strip scripts, styles, keep text)
+    const cleaned = html
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<nav[\s\S]*?<\/nav>/gi, "[NAV]")
+      .replace(/<footer[\s\S]*?<\/footer>/gi, "[FOOTER]")
+      .replace(/<header[\s\S]*?<\/header>/gi, "[HEADER]")
+      .replace(/<!--[\s\S]*?-->/g, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // Extract meta tags separately
+    const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    const metaDescMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i);
+    const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/gi);
+    const ogTitleMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']*)["']/i);
+
+    const meta = [
+      `Title: ${titleMatch?.[1]?.trim() || "N/A"}`,
+      `Meta Description: ${metaDescMatch?.[1]?.trim() || "N/A"}`,
+      `OG Title: ${ogTitleMatch?.[1]?.trim() || "N/A"}`,
+      `H1 Tags: ${h1Match ? h1Match.map(h => h.replace(/<[^>]+>/g, "").trim()).join(" | ") : "N/A"}`,
+    ].join("\n");
+
+    // Truncate content to fit in context
+    const contentPreview = cleaned.substring(0, 3000);
+
+    return `## Website Metadata\n${meta}\n\n## Page Content (first 3000 chars)\n${contentPreview}`;
+  } catch (error) {
+    return `[Failed to fetch website: ${error instanceof Error ? error.message : "Unknown error"}]`;
+  }
+}
+
 // ── Core Audit Functions ────────────────────────────────────────────────────
 
 async function runDimensionAnalysis(
   auditId: string,
   dimension: string,
   websiteUrl: string,
+  websiteContent: string,
   dimensionPrompt: string,
 ): Promise<AuditDimensionResult | { error: string }> {
   try {
@@ -240,7 +295,7 @@ async function runDimensionAnalysis(
         system: MARKETING_PROMPTS.audit_dimension,
         messages: [{
           role: "user",
-          content: `Analyze this website for the "${dimension}" dimension of a marketing audit.\n\nWebsite URL: ${websiteUrl}\n\n${dimensionPrompt}\n\nProvide specific, actionable findings. Score 0-100. Return ONLY valid JSON.`,
+          content: `Analyze this website for the "${dimension}" dimension of a marketing audit.\n\nWebsite URL: ${websiteUrl}\n\n${websiteContent}\n\n${dimensionPrompt}\n\nBased on the website content above, provide specific, actionable findings with real evidence from the content. Score 0-100. Return ONLY valid JSON.`,
         }],
       }),
       feature: "marketing",
@@ -281,6 +336,10 @@ export async function aiRunFullAudit(auditId: string): Promise<{ success: boolea
 
   try {
     const url = audit.website_url;
+
+    // Fetch website content once, reuse for all dimensions
+    const websiteContent = await fetchWebsiteContent(url);
+
     const dimensions = [
       { key: "content", label: "Content & Messaging", prompt: "Evaluate headline clarity, value propositions, CTAs, content quality, persuasion techniques, and overall messaging effectiveness." },
       { key: "conversion", label: "Conversion Optimization", prompt: "Evaluate CTA placement, form design, friction points, social proof, urgency elements, and conversion path clarity." },
@@ -299,7 +358,7 @@ export async function aiRunFullAudit(auditId: string): Promise<{ success: boolea
       const dim = dimensions[i];
       const progress = Math.round(((i + 1) / dimensions.length) * 85);
 
-      const result = await runDimensionAnalysis(auditId, dim.label, url, dim.prompt);
+      const result = await runDimensionAnalysis(auditId, dim.label, url, websiteContent, dim.prompt);
 
       if ("error" in result) {
         results[dim.key] = { score: 0, findings: [], action_items: [], summary: `Analysis failed: ${result.error}` };
@@ -417,15 +476,17 @@ export async function aiRunQuickSnapshot(auditId: string): Promise<{ success: bo
     const { settings, orgId, userId } = await getAIClient();
     const modelId = getModelForFeature("marketing", undefined, settings.ai_provider);
 
+    const websiteContent = await fetchWebsiteContent(audit.website_url);
+
     const { response } = await callAIWithFallback({
       settings,
       createParams: (model) => ({
         model,
         max_tokens: 1500,
-        system: "You are an expert marketing analyst. Perform a quick marketing snapshot. Return ONLY valid JSON.",
+        system: "You are an expert marketing analyst. Perform a quick marketing snapshot based on the website content provided. Return ONLY valid JSON.",
         messages: [{
           role: "user",
-          content: `Quick marketing analysis of: ${audit.website_url}\n\nProvide a JSON with:\n- overall_score: 0-100\n- headline_score: 0-100\n- cta_score: 0-100\n- value_prop_score: 0-100\n- trust_score: 0-100\n- mobile_score: 0-100\n- top_3_issues: string[]\n- top_3_wins: string[]\n- business_type: string\n- executive_summary: string (2-3 sentences)`,
+          content: `Quick marketing analysis of: ${audit.website_url}\n\n${websiteContent}\n\nBased on the website content above, provide a JSON with:\n- overall_score: 0-100\n- headline_score: 0-100\n- cta_score: 0-100\n- value_prop_score: 0-100\n- trust_score: 0-100\n- mobile_score: 0-100\n- top_3_issues: string[]\n- top_3_wins: string[]\n- business_type: string\n- executive_summary: string (2-3 sentences)`,
         }],
       }),
       feature: "marketing",

@@ -241,7 +241,7 @@ export function MarketingPageClient({
         {initialAudits.map((audit) => (
           <div
             key={audit.id}
-            className="flex items-center gap-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors cursor-pointer"
+            className="flex items-center gap-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors cursor-pointer"
             onClick={() => router.push(`/dashboard/marketing/${audit.id}`)}
           >
             <ScoreGauge score={audit.overall_score} />
@@ -305,7 +305,7 @@ export function MarketingPageClient({
         {initialContent.map((item) => (
           <div
             key={item.id}
-            className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+            className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
           >
             <div className="flex items-center justify-between mb-2">
               {contentTypeBadge(item.content_type)}
@@ -332,7 +332,7 @@ export function MarketingPageClient({
     return (
       <div className="space-y-3">
         {initialReports.map((report) => (
-          <div key={report.id} className="flex items-center gap-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
+          <div key={report.id} className="flex items-center gap-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4">
             <FileTextIcon className="h-8 w-8 text-indigo-500" weight="regular" />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-neutral-900 dark:text-neutral-100">{report.title}</p>
@@ -376,7 +376,7 @@ export function MarketingPageClient({
                       "flex items-start gap-3 rounded-lg border p-3 transition-colors",
                       item.status === "completed"
                         ? "border-green-200 dark:border-green-800/30 bg-green-50/50 dark:bg-green-900/10"
-                        : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900",
+                        : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950",
                     )}
                   >
                     <button
@@ -435,27 +435,30 @@ export function MarketingPageClient({
       </PageHeader>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-lg bg-neutral-100 dark:bg-neutral-800/50 p-1">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              "flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors",
-              activeTab === tab.id
-                ? "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 shadow-sm"
-                : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300",
-            )}
-          >
-            <tab.icon className="h-4 w-4" weight="regular" />
-            {tab.label}
-            {tab.id === "audits" && initialAudits.length > 0 && (
-              <span className="ml-1 rounded-full bg-neutral-200 dark:bg-neutral-700 px-1.5 py-0.5 text-xs">
-                {initialAudits.length}
-              </span>
-            )}
-          </button>
-        ))}
+      <div className="flex items-center gap-1 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-1 overflow-x-auto">
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded transition-colors whitespace-nowrap",
+                isActive
+                  ? "bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50 shadow-sm"
+                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50",
+              )}
+            >
+              <tab.icon className="h-4 w-4" weight="regular" />
+              {tab.label}
+              {tab.id === "audits" && initialAudits.length > 0 && (
+                <span className="ml-1 rounded-full bg-neutral-200 dark:bg-neutral-700 px-1.5 py-0.5 text-xs">
+                  {initialAudits.length}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Tab Content */}
