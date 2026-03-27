@@ -9,9 +9,34 @@ import type { Json } from "@/types/database";
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function parseJSON<T>(text: string): T {
+  // Try markdown code block first
   const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const jsonStr = codeBlockMatch ? codeBlockMatch[1].trim() : text.trim();
-  return JSON.parse(jsonStr) as T;
+  if (codeBlockMatch) {
+    return JSON.parse(codeBlockMatch[1].trim()) as T;
+  }
+
+  // Try to find JSON object/array in the text
+  const jsonStart = text.indexOf("{");
+  const jsonArrayStart = text.indexOf("[");
+  const start = jsonStart >= 0 && (jsonArrayStart < 0 || jsonStart < jsonArrayStart) ? jsonStart : jsonArrayStart;
+
+  if (start >= 0) {
+    const isArray = text[start] === "[";
+    const closeChar = isArray ? "]" : "}";
+
+    // Find the matching closing bracket
+    let depth = 0;
+    for (let i = start; i < text.length; i++) {
+      if (text[i] === "{" || text[i] === "[") depth++;
+      if (text[i] === "}" || text[i] === "]") depth--;
+      if (depth === 0) {
+        return JSON.parse(text.substring(start, i + 1)) as T;
+      }
+    }
+  }
+
+  // Last resort: try parsing as-is
+  return JSON.parse(text.trim()) as T;
 }
 
 function gradeFromScore(score: number): string {
