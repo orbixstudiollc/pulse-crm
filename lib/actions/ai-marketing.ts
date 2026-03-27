@@ -14,32 +14,36 @@ function cleanJSON(str: string): string {
 }
 
 function parseJSON<T>(text: string): T {
-  // Try markdown code block first
+  // Try markdown code block first (with closing ```)
   const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (codeBlockMatch) {
     return JSON.parse(cleanJSON(codeBlockMatch[1].trim())) as T;
   }
 
+  // Strip unclosed code block markers (AI response truncated before closing ```)
+  let cleaned = text.replace(/^[\s\S]*?```(?:json)?\s*/m, "");
+  if (cleaned === text) cleaned = text; // no change if no code block found
+
   // Try to find JSON object/array in the text
-  const jsonStart = text.indexOf("{");
-  const jsonArrayStart = text.indexOf("[");
+  const jsonStart = cleaned.indexOf("{");
+  const jsonArrayStart = cleaned.indexOf("[");
   const start = jsonStart >= 0 && (jsonArrayStart < 0 || jsonStart < jsonArrayStart) ? jsonStart : jsonArrayStart;
 
   if (start >= 0) {
     // Find the matching closing bracket
     let depth = 0;
-    for (let i = start; i < text.length; i++) {
-      if (text[i] === "{" || text[i] === "[") depth++;
-      if (text[i] === "}" || text[i] === "]") depth--;
+    for (let i = start; i < cleaned.length; i++) {
+      if (cleaned[i] === "{" || cleaned[i] === "[") depth++;
+      if (cleaned[i] === "}" || cleaned[i] === "]") depth--;
       if (depth === 0) {
-        const extracted = text.substring(start, i + 1);
+        const extracted = cleaned.substring(start, i + 1);
         return JSON.parse(cleanJSON(extracted)) as T;
       }
     }
   }
 
   // Last resort: try parsing as-is
-  return JSON.parse(cleanJSON(text.trim())) as T;
+  return JSON.parse(cleanJSON(cleaned.trim())) as T;
 }
 
 function gradeFromScore(score: number): string {
@@ -320,7 +324,7 @@ export async function runDimensionAnalysis(
       settings,
       createParams: (model) => ({
         model,
-        max_tokens: 2048,
+        max_tokens: 4096,
         system: MARKETING_PROMPTS.audit_dimension,
         messages: [{
           role: "user",
