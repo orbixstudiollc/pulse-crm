@@ -12,8 +12,8 @@ import {
 } from "@/components/ui";
 import { PageHeader } from "@/components/dashboard";
 import { cn } from "@/lib/utils";
-import { createMarketingAudit, getMarketingAuditById } from "@/lib/actions/marketing";
-import { aiRunFullAudit, aiRunQuickSnapshot } from "@/lib/actions/ai-marketing";
+import { createMarketingAudit, getMarketingAuditById, updateMarketingAudit } from "@/lib/actions/marketing";
+import { aiRunQuickSnapshot, fetchWebsiteContent, aiRunSingleDimension, finalizeFullAudit } from "@/lib/actions/ai-marketing";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -77,29 +77,71 @@ export function NewAuditClient() {
       const id = (result.data as any).id;
       setAuditId(id);
 
-      // Start polling for progress
-      pollRef.current = setInterval(async () => {
-        const { data } = await getMarketingAuditById(id);
-        if (data) {
-          const d = data as any;
-          setProgress(d.progress ?? 0);
-          if (d.status === "completed") {
-            if (pollRef.current) clearInterval(pollRef.current);
-            toast.success(`Audit complete! Score: ${d.overall_score}/100`);
-            router.push(`/dashboard/marketing/${id}`);
-          } else if (d.status === "failed") {
-            if (pollRef.current) clearInterval(pollRef.current);
-            toast.error(d.error_message || "Audit failed");
-            setIsRunning(false);
+      if (auditType === "quick") {
+        // Quick snapshot — single server action
+        pollRef.current = setInterval(async () => {
+          const { data } = await getMarketingAuditById(id);
+          if (data) {
+            const d = data as any;
+            setProgress(d.progress ?? 0);
+            if (d.status === "completed") {
+              if (pollRef.current) clearInterval(pollRef.current);
+              toast.success(`Audit complete! Score: ${d.overall_score}/100`);
+              router.push(`/dashboard/marketing/${id}`);
+            } else if (d.status === "failed") {
+              if (pollRef.current) clearInterval(pollRef.current);
+              toast.error(d.error_message || "Audit failed");
+              setIsRunning(false);
+            }
           }
-        }
-      }, 2000);
-
-      // Kick off the AI analysis
-      if (auditType === "full") {
-        aiRunFullAudit(id);
-      } else {
+        }, 2000);
         aiRunQuickSnapshot(id);
+      } else {
+        // Full audit — orchestrate dimensions from client (avoids serverless timeout)
+        await updateMarketingAudit(id, { status: "running", progress: 0 });
+
+        // Step 1: Fetch website content once
+        const websiteContent = await fetchWebsiteContent(normalizedUrl);
+        setProgress(5);
+
+        // Step 2: Run each dimension sequentially
+        const dimensions = [
+          { key: "content", label: "Content & Messaging", prompt: "Evaluate headline clarity, value propositions, CTAs, content quality, persuasion techniques, and overall messaging effectiveness." },
+          { key: "conversion", label: "Conversion Optimization", prompt: "Evaluate CTA placement, form design, friction points, social proof, urgency elements, and conversion path clarity." },
+          { key: "seo", label: "SEO & Discoverability", prompt: "Evaluate title tags, meta descriptions, heading hierarchy, content depth, keyword targeting, technical SEO signals, and schema markup." },
+          { key: "competitive", label: "Competitive Positioning", prompt: "Evaluate differentiation, positioning clarity, unique value proposition, competitive awareness, and market positioning." },
+          { key: "brand", label: "Brand & Trust", prompt: "Evaluate visual consistency, trust signals, social proof, authority markers, professional quality, and brand coherence." },
+          { key: "growth", label: "Growth & Strategy", prompt: "Evaluate pricing strategy, acquisition channels, retention mechanisms, growth loops, and strategic scalability." },
+        ];
+
+        const dimensionResults: Record<string, any> = {};
+
+        for (let i = 0; i < dimensions.length; i++) {
+          const dim = dimensions[i];
+          const dimProgress = Math.round(((i + 1) / dimensions.length) * 90) + 5;
+
+          try {
+            const res = await aiRunSingleDimension(
+              id, dim.key, dim.label, dim.prompt, websiteContent, normalizedUrl, dimProgress,
+            );
+            dimensionResults[dim.key] = res.data || { score: 0, findings: [], action_items: [], summary: "Failed" };
+          } catch {
+            dimensionResults[dim.key] = { score: 0, findings: [], action_items: [], summary: "Failed" };
+          }
+
+          setProgress(dimProgress);
+        }
+
+        // Step 3: Finalize — calculate weighted score and save
+        const finalResult = await finalizeFullAudit(id, dimensionResults);
+
+        if (finalResult.success) {
+          toast.success("Full audit complete!");
+          router.push(`/dashboard/marketing/${id}`);
+        } else {
+          toast.error(finalResult.error || "Audit failed");
+          setIsRunning(false);
+        }
       }
     });
   };

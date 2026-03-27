@@ -217,7 +217,7 @@ Return the full markdown content as a string.`,
 
 // ── Website Content Fetcher ──────────────────────────────────────────────────
 
-async function fetchWebsiteContent(url: string): Promise<string> {
+export async function fetchWebsiteContent(url: string): Promise<string> {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
@@ -271,7 +271,7 @@ async function fetchWebsiteContent(url: string): Promise<string> {
 
 // ── Core Audit Functions ────────────────────────────────────────────────────
 
-async function runDimensionAnalysis(
+export async function runDimensionAnalysis(
   auditId: string,
   dimension: string,
   websiteUrl: string,
@@ -452,6 +452,127 @@ export async function aiRunFullAudit(auditId: string): Promise<{ success: boolea
       .update({ status: "failed", error_message: errorMessage })
       .eq("id", auditId);
 
+    return { success: false, error: errorMessage };
+  }
+}
+
+// ── Client-Orchestrated Full Audit (one dimension at a time) ────────────────
+
+export async function aiRunSingleDimension(
+  auditId: string,
+  dimensionKey: string,
+  dimensionLabel: string,
+  dimensionPrompt: string,
+  websiteContent: string,
+  websiteUrl: string,
+  progress: number,
+): Promise<{ data?: AuditDimensionResult; error?: string }> {
+  const supabase = await createClient();
+
+  const result = await runDimensionAnalysis(auditId, dimensionLabel, websiteUrl, websiteContent, dimensionPrompt);
+
+  // Update progress
+  await supabase
+    .from("marketing_audits" as any)
+    .update({ progress })
+    .eq("id", auditId);
+
+  if ("error" in result) {
+    return { data: { score: 0, findings: [], action_items: [], summary: `Analysis failed: ${result.error}` } };
+  }
+
+  return { data: result };
+}
+
+export async function finalizeFullAudit(
+  auditId: string,
+  dimensionResults: Record<string, AuditDimensionResult>,
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+
+  try {
+    const { data: auditRaw } = await supabase
+      .from("marketing_audits" as any)
+      .select("website_url, organization_id")
+      .eq("id", auditId)
+      .single();
+
+    if (!auditRaw) return { success: false, error: "Audit not found" };
+    const audit = auditRaw as any;
+
+    const weights = { content: 0.25, conversion: 0.20, seo: 0.20, competitive: 0.15, brand: 0.10, growth: 0.10 };
+    const overallScore = Math.round(
+      Object.entries(weights).reduce((sum, [key, weight]) => {
+        return sum + (dimensionResults[key]?.score ?? 0) * weight;
+      }, 0)
+    );
+
+    const topDim = Object.entries(dimensionResults).sort((a, b) => b[1].score - a[1].score)[0];
+    const bottomDim = Object.entries(dimensionResults).sort((a, b) => a[1].score - b[1].score)[0];
+    const criticalCount = Object.values(dimensionResults)
+      .flatMap(d => d.findings)
+      .filter(f => f.severity === "Critical" || f.severity === "High").length;
+
+    const executiveSummary = `Marketing audit of ${audit.website_url} scored ${overallScore}/100 (${gradeFromScore(overallScore)}). Strongest area: ${topDim[0]} (${topDim[1].score}/100). Biggest opportunity: ${bottomDim[0]} (${bottomDim[1].score}/100). Found ${criticalCount} critical/high-priority issues.`;
+
+    const fullResult = {
+      overall_score: overallScore,
+      ...dimensionResults,
+      business_type: "saas",
+      executive_summary: executiveSummary,
+    };
+
+    await supabase
+      .from("marketing_audits" as any)
+      .update({
+        status: "completed",
+        progress: 100,
+        overall_score: overallScore,
+        content_score: dimensionResults.content?.score ?? 0,
+        conversion_score: dimensionResults.conversion?.score ?? 0,
+        seo_score: dimensionResults.seo?.score ?? 0,
+        competitive_score: dimensionResults.competitive?.score ?? 0,
+        brand_score: dimensionResults.brand?.score ?? 0,
+        growth_score: dimensionResults.growth?.score ?? 0,
+        grade: gradeFromScore(overallScore),
+        result: fullResult as unknown as Json,
+        summary: executiveSummary,
+      })
+      .eq("id", auditId);
+
+    // Save action items
+    const allActionItems = Object.entries(dimensionResults).flatMap(([key, dim]) =>
+      dim.action_items.map(a => ({ ...a, category: key }))
+    );
+
+    if (allActionItems.length > 0) {
+      await supabase
+        .from("marketing_action_items" as any)
+        .insert(
+          allActionItems.map((item) => ({
+            organization_id: audit.organization_id,
+            audit_id: auditId,
+            title: item.title,
+            description: item.description,
+            category: (item as any).category ?? null,
+            tier: item.tier,
+            priority: item.priority,
+            impact_estimate: item.impact_estimate,
+            effort: item.effort,
+            status: "pending",
+          }))
+        );
+    }
+
+    revalidatePath("/dashboard/marketing");
+    revalidatePath(`/dashboard/marketing/${auditId}`);
+    return { success: true };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Finalize failed";
+    await supabase
+      .from("marketing_audits" as any)
+      .update({ status: "failed", error_message: errorMessage })
+      .eq("id", auditId);
     return { success: false, error: errorMessage };
   }
 }
