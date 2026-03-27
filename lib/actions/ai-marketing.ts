@@ -306,6 +306,7 @@ export async function runDimensionAnalysis(
   websiteContent: string,
   dimensionPrompt: string,
 ): Promise<AuditDimensionResult | { error: string }> {
+  let rawText = "";
   try {
     const { settings, orgId, userId } = await getAIClient();
 
@@ -332,17 +333,15 @@ export async function runDimensionAnalysis(
       modelOverride: modelId,
     });
 
-    const text = response.content
+    rawText = response.content
       .filter((b) => b.type === "text")
       .map((b) => b.text)
       .join("");
 
-    return parseJSON<AuditDimensionResult>(text);
+    return parseJSON<AuditDimensionResult>(rawText);
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Dimension analysis failed";
-    console.error(`[AI-Marketing] Dimension "${dimension}" parse error:`, msg);
-    console.error(`[AI-Marketing] Raw text (first 500 chars):`, text?.substring(0, 500));
-    return { error: `${msg} | Raw preview: ${text?.substring(0, 200)}` };
+    return { error: `${msg} | Raw(200): ${rawText?.substring(0, 200)}` };
   }
 }
 
