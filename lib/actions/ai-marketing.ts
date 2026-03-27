@@ -281,7 +281,7 @@ export async function runDimensionAnalysis(
   try {
     const { settings, orgId, userId } = await getAIClient();
 
-    if (!settings.feature_marketing) {
+    if (settings.feature_marketing === false) {
       return { error: "Marketing AI is disabled in settings" };
     }
 
@@ -651,7 +651,7 @@ export async function aiGenerateEmailSequence(params: {
 }): Promise<{ data?: Record<string, unknown>; error?: string }> {
   try {
     const { settings, orgId, userId } = await getAIClient();
-    if (!settings.feature_marketing) return { error: "Marketing AI is disabled" };
+    if (settings.feature_marketing === false) return { error: "Marketing AI is disabled" };
 
     const modelId = getModelForFeature("marketing", undefined, settings.ai_provider);
 
@@ -707,7 +707,7 @@ export async function aiGenerateSocialCalendar(params: {
 }): Promise<{ data?: Record<string, unknown>; error?: string }> {
   try {
     const { settings, orgId, userId } = await getAIClient();
-    if (!settings.feature_marketing) return { error: "Marketing AI is disabled" };
+    if (settings.feature_marketing === false) return { error: "Marketing AI is disabled" };
 
     const modelId = getModelForFeature("marketing", undefined, settings.ai_provider);
 
@@ -761,7 +761,7 @@ export async function aiGenerateAdCampaign(params: {
 }): Promise<{ data?: Record<string, unknown>; error?: string }> {
   try {
     const { settings, orgId, userId } = await getAIClient();
-    if (!settings.feature_marketing) return { error: "Marketing AI is disabled" };
+    if (settings.feature_marketing === false) return { error: "Marketing AI is disabled" };
 
     const modelId = getModelForFeature("marketing", undefined, settings.ai_provider);
 
@@ -816,7 +816,7 @@ export async function aiGenerateLaunchPlaybook(params: {
 }): Promise<{ data?: Record<string, unknown>; error?: string }> {
   try {
     const { settings, orgId, userId } = await getAIClient();
-    if (!settings.feature_marketing) return { error: "Marketing AI is disabled" };
+    if (settings.feature_marketing === false) return { error: "Marketing AI is disabled" };
 
     const modelId = getModelForFeature("marketing", undefined, settings.ai_provider);
 
@@ -869,7 +869,7 @@ export async function aiGenerateClientProposal(params: {
 }): Promise<{ data?: Record<string, unknown>; error?: string }> {
   try {
     const { settings, orgId, userId } = await getAIClient();
-    if (!settings.feature_marketing) return { error: "Marketing AI is disabled" };
+    if (settings.feature_marketing === false) return { error: "Marketing AI is disabled" };
 
     const supabase = await createClient();
     const { data: auditRaw } = await supabase
@@ -927,7 +927,7 @@ export async function aiGenerateClientProposal(params: {
 export async function aiGenerateMarketingReport(auditId: string): Promise<{ data?: string; error?: string }> {
   try {
     const { settings, orgId, userId } = await getAIClient();
-    if (!settings.feature_marketing) return { error: "Marketing AI is disabled" };
+    if (settings.feature_marketing === false) return { error: "Marketing AI is disabled" };
 
     const supabase = await createClient();
     const { data: auditRaw } = await supabase.from("marketing_audits" as any).select("*").eq("id", auditId).single();
