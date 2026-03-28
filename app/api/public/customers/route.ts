@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createAdminClient()
 
-    let query = supabase
+    const query = supabase
       .from('customers')
       .select(
         'id, first_name, last_name, email, company, status, health_score, mrr, lifetime_value, plan, created_at',
@@ -26,11 +26,9 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
-    if (status) {
-      query = query.eq('status', status)
-    }
-
-    const { data, count, error } = await query
+    const { data, count, error } = status
+      ? await query.eq('status', status as 'active' | 'pending' | 'inactive')
+      : await query
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders })

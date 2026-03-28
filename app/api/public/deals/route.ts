@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createAdminClient()
 
-    let query = supabase
+    const query = supabase
       .from('deals')
       .select(
         'id, name, value, stage, probability, contact_name, contact_email, close_date, created_at',
@@ -26,11 +26,10 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
-    if (stage) {
-      query = query.eq('stage', stage)
-    }
-
-    const { data, count, error } = await query
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, count, error } = stage
+      ? await query.eq('stage', stage as any)
+      : await query
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders })

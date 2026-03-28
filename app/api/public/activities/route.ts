@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createAdminClient()
 
-    let query = supabase
+    const query = supabase
       .from('activities')
       .select(
         'id, type, title, description, related_type, related_id, created_at',
@@ -26,11 +26,9 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
-    if (type) {
-      query = query.eq('type', type)
-    }
-
-    const { data, count, error } = await query
+    const { data, count, error } = type
+      ? await query.eq('type', type as 'call' | 'meeting' | 'task' | 'email' | 'note')
+      : await query
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500, headers: corsHeaders })
