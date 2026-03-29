@@ -307,7 +307,7 @@ export default function LeadFinderOverviewPage() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(v: number) => [v, "Leads"]}
+                      formatter={(v: number | undefined) => [v ?? 0, "Leads"]}
                       contentStyle={{
                         background: "#1a1a1f",
                         border: "1px solid #232329",
