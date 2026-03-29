@@ -215,6 +215,13 @@ function LeadActionMenu({
 
 // ── Settings panel ─────────────────────────────────────────────────────────
 
+interface ActorDef {
+  id: string;
+  name: string;
+  phase: string;
+  category: string;
+}
+
 function SettingsPanel({
   campaign,
   onClose,
@@ -226,19 +233,37 @@ function SettingsPanel({
 }) {
   const [autoEnrich, setAutoEnrich] = useState(campaign.auto_enrich);
   const [schedule, setSchedule] = useState(campaign.schedule_frequency);
+  const [selectedActors, setSelectedActors] = useState<string[]>(campaign.apify_actors);
+  const [availableActors, setAvailableActors] = useState<ActorDef[]>([]);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/lead-finder/actors")
+      .then((r) => r.json())
+      .then((j) => setAvailableActors(j.data ?? []))
+      .catch(() => {});
+  }, []);
+
+  const toggleActor = (actorId: string) => {
+    setSelectedActors((prev) =>
+      prev.includes(actorId) ? prev.filter((a) => a !== actorId) : [...prev, actorId]
+    );
+  };
 
   const handleSave = async () => {
     setSaving(true);
-    await onUpdate({ auto_enrich: autoEnrich, schedule_frequency: schedule });
+    await onUpdate({ auto_enrich: autoEnrich, schedule_frequency: schedule, apify_actors: selectedActors });
     setSaving(false);
     onClose();
   };
 
+  const findActors = availableActors.filter((a) => a.phase === "find");
+  const enrichActors = availableActors.filter((a) => a.phase === "enrich");
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-md w-full mx-4">
+      <div className="relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">Campaign Settings</h3>
           <button onClick={onClose} className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50">
@@ -264,13 +289,14 @@ function SettingsPanel({
             <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1.5">Auto-Enrich</label>
             <button
               onClick={() => setAutoEnrich(!autoEnrich)}
-              className={`w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
+              className={`inline-flex items-center gap-2 h-9 px-3 rounded border text-sm font-medium transition-colors ${
                 autoEnrich
-                  ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
-                  : "bg-neutral-50 dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800"
+                  ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/50"
+                  : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700"
               }`}
             >
-              {autoEnrich ? "Enabled" : "Disabled"}
+              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${autoEnrich ? "bg-green-500" : "bg-neutral-400"}`} />
+              {autoEnrich ? "Auto-enrich on" : "Auto-enrich off"}
             </button>
           </div>
           <div>
@@ -278,17 +304,55 @@ function SettingsPanel({
             <p className="text-sm text-neutral-950 dark:text-neutral-50 capitalize">{campaign.ai_provider}</p>
           </div>
           <div>
-            <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1.5">Actors ({campaign.apify_actors.length})</label>
-            <div className="flex flex-wrap gap-1">
-              {campaign.apify_actors.map((a) => (
-                <span key={a} className="px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-xs text-neutral-950 dark:text-neutral-50">
-                  {a}
-                </span>
-              ))}
-              {campaign.apify_actors.length === 0 && (
-                <span className="text-xs text-neutral-500 dark:text-neutral-400">No actors configured</span>
-              )}
-            </div>
+            <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-2">
+              Actors ({selectedActors.length} selected)
+            </label>
+            {availableActors.length === 0 ? (
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">Loading actors...</p>
+            ) : (
+              <div className="space-y-3">
+                {findActors.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1.5">Find</p>
+                    <div className="space-y-1">
+                      {findActors.map((actor) => (
+                        <label key={actor.id} className="flex items-center gap-2.5 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={selectedActors.includes(actor.id)}
+                            onChange={() => toggleActor(actor.id)}
+                            className="w-4 h-4 rounded accent-neutral-950 dark:accent-white"
+                          />
+                          <span className="text-sm text-neutral-950 dark:text-neutral-50 group-hover:text-neutral-700 dark:group-hover:text-neutral-300">
+                            {actor.name}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {enrichActors.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 mb-1.5">Enrich</p>
+                    <div className="space-y-1">
+                      {enrichActors.map((actor) => (
+                        <label key={actor.id} className="flex items-center gap-2.5 cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={selectedActors.includes(actor.id)}
+                            onChange={() => toggleActor(actor.id)}
+                            className="w-4 h-4 rounded accent-neutral-950 dark:accent-white"
+                          />
+                          <span className="text-sm text-neutral-950 dark:text-neutral-50 group-hover:text-neutral-700 dark:group-hover:text-neutral-300">
+                            {actor.name}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-6">
