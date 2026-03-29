@@ -285,7 +285,7 @@ export default function CostsPage() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(v: number) => [`$${v.toFixed(4)}`, "Cost"]}
+                      formatter={(v: number | undefined) => [`$${(v ?? 0).toFixed(4)}`, "Cost"]}
                       contentStyle={{ background: "#1a1a1f", border: "1px solid #232329", borderRadius: 8, fontSize: 12 }}
                     />
                     <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, color: "#a0a0a8" }} />
