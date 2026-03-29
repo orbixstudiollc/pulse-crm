@@ -83,15 +83,32 @@ export async function PUT(req: NextRequest) {
 
     if (section === "keys") {
       const aiUpdates: Record<string, string> = {};
-      if (body.apifyKey && !String(body.apifyKey).includes("•"))     aiUpdates.apify_api_key = body.apifyKey;
+      if (body.apifyKey && !String(body.apifyKey).includes("•"))         aiUpdates.apify_api_key = body.apifyKey;
       if (body.anthropicKey && !String(body.anthropicKey).includes("•")) aiUpdates.api_key = body.anthropicKey;
       if (body.openrouterKey && !String(body.openrouterKey).includes("•")) aiUpdates.openrouter_api_key = body.openrouterKey;
-      if (body.openaiKey && !String(body.openaiKey).includes("•"))   aiUpdates.openai_api_key = body.openaiKey;
+      if (body.openaiKey && !String(body.openaiKey).includes("•"))       aiUpdates.openai_api_key = body.openaiKey;
 
-      const { error } = await admin
+      // Check if row exists — use update if it does, insert if it doesn't
+      const { data: existing } = await admin
         .from("ai_settings")
-        .upsert({ organization_id: profile.organization_id, ...aiUpdates }, { onConflict: "organization_id" });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        .select("id")
+        .eq("organization_id", profile.organization_id)
+        .single();
+
+      if (existing) {
+        if (Object.keys(aiUpdates).length > 0) {
+          const { error } = await admin
+            .from("ai_settings")
+            .update(aiUpdates)
+            .eq("organization_id", profile.organization_id);
+          if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        }
+      } else {
+        const { error } = await admin
+          .from("ai_settings")
+          .insert({ organization_id: profile.organization_id, ...aiUpdates });
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      }
     }
 
     if (section === "enrichment") {
