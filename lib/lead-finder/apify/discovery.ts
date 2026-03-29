@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { runActorAndCollect } from "./runner";
 import { normalizeSingleItem } from "./normalizer";
 import { coerceActorInput } from "./coerce-input";
@@ -111,7 +111,7 @@ export async function runCampaignDiscovery(
   campaignId: string,
   orgId: string
 ): Promise<DiscoveryResult> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   // Load campaign
   const { data: campRows } = await supabase
