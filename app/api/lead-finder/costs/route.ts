@@ -48,6 +48,7 @@ export async function GET(req: NextRequest) {
       .eq("organization_id", orgId);
     const leadCountByCampaign: Record<string, number> = {};
     for (const l of leadRows ?? []) {
+      if (!l.campaign_id) continue;
       leadCountByCampaign[l.campaign_id] =
         (leadCountByCampaign[l.campaign_id] || 0) + 1;
     }
