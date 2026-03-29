@@ -547,10 +547,10 @@ export default function LeadFinderSettingsPage() {
                     <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">{actor.name}</p>
                     <p className="text-xs text-neutral-400 truncate">{actor.id}</p>
                   </div>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
+                  <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full flex-shrink-0 ${
                     actor.phase === "find"
-                      ? "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400"
-                      : "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
+                      ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
+                      : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
                   }`}>
                     {actor.phase === "find" ? "Find" : "Enrich"}
                   </span>
