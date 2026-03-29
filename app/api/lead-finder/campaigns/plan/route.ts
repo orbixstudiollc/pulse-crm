@@ -41,16 +41,16 @@ export async function POST(req: NextRequest) {
       suggested_search_terms: [] as string[],
       schedule_frequency: "once",
       kpi_definitions: plan.kpiDefinitions.map((k) => ({
-        key: k.id,
+        id: k.id,
         label: k.label,
         description: k.description ?? "",
         type: k.type,
       })),
       lead_field_definitions: plan.leadFieldDefinitions.map((f) => ({
-        key: f.id,
+        id: f.id,
         label: f.label,
         description: f.description ?? "",
-        source: "mapped",
+        type: f.type,
       })),
     };
 

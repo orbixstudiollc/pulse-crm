@@ -370,9 +370,15 @@ async function analyzeEnrichmentData(
   orgId: string,
   campaignId: string
 ): Promise<EnrichmentAIResult> {
+  // Normalize definitions: old campaigns store `key`, new ones store `id`
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const kpis = kpiDefinitions.map((k) => ({ ...k, id: k.id ?? (k as any).key }));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fields = leadFieldDefinitions.map((f) => ({ ...f, id: f.id ?? (f as any).key }));
+
   const kpiInstructions =
-    kpiDefinitions.length > 0
-      ? `\nEvaluate these KPIs:\n${kpiDefinitions
+    kpis.length > 0
+      ? `\nEvaluate these KPIs:\n${kpis
           .map(
             (k) =>
               `- ${k.id} (${k.type}): ${k.label}${k.description ? ` – ${k.description}` : ""}`
@@ -381,8 +387,8 @@ async function analyzeEnrichmentData(
       : "";
 
   const fieldInstructions =
-    leadFieldDefinitions.length > 0
-      ? `\nExtract these custom fields into "extractedFields":\n${leadFieldDefinitions
+    fields.length > 0
+      ? `\nExtract these custom fields into "extractedFields":\n${fields
           .map(
             (f) =>
               `- ${f.id} (${f.type}): ${f.label}${f.description ? ` – ${f.description}` : ""}`
@@ -391,8 +397,8 @@ async function analyzeEnrichmentData(
       : "";
 
   const extractedFieldsShape =
-    leadFieldDefinitions.length > 0
-      ? `{${leadFieldDefinitions.map((f) => `"${f.id}": ${f.type === "boolean" ? "true/false/null" : '"extracted value or null"'}`).join(", ")}}`
+    fields.length > 0
+      ? `{${fields.map((f) => `"${f.id}": ${f.type === "boolean" ? "true/false/null" : '"extracted value or null"'}`).join(", ")}}`
       : "{}";
 
   // Combine discovery raw_data with any enrichment actor data
@@ -427,7 +433,7 @@ Respond in JSON with this exact structure:
   "socialMediaPresence": {"platform": "url or follower count"},
   "painPoints": ["potential pain points for sales outreach"],
   "personalizationSummary": "2-3 sentence summary useful for personalized outreach",
-  "kpis": {${kpiDefinitions.map((k) => `"${k.id}": ${k.type === "boolean" ? "true/false" : '"text value"'}`).join(", ")}},
+  "kpis": {${kpis.map((k) => `"${k.id}": ${k.type === "boolean" ? "true/false" : '"text value"'}`).join(", ")}},
   "score": 0-100,
   "extractedFields": ${extractedFieldsShape}
 }`;

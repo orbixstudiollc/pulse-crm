@@ -38,10 +38,10 @@ export async function POST(req: NextRequest) {
       data: {
         kpi_definitions: [],
         lead_field_definitions: fields.map((f) => ({
-          key: f.id,
+          id: f.id,
           label: f.label,
           description: f.description ?? "",
-          source: "mapped",
+          type: f.type,
         })),
       },
     });

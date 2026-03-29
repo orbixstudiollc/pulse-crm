@@ -63,8 +63,8 @@ interface Campaign {
   auto_enrich: boolean;
   apify_actors: string[];
   actor_configs: Record<string, Record<string, unknown>>;
-  kpi_definitions: { id: string; label: string; type: string }[];
-  lead_field_definitions: { id: string; label: string; type: string; description?: string }[];
+  kpi_definitions: { id?: string; key?: string; label: string; type: string }[];
+  lead_field_definitions: { id?: string; key?: string; label: string; type: string; description?: string }[];
   leads: Lead[];
   runs: { id: string; actor_id: string; status: string; cost_usd: number; started_at: string }[];
   stats: {
@@ -1039,23 +1039,29 @@ export default function CampaignDetailPage() {
                   Source
                 </th>
                 {/* Dynamic field columns */}
-                {(campaign.lead_field_definitions || []).slice(0, 3).map((f) => (
-                  <th
-                    key={f.id}
-                    className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
-                  >
-                    {f.label}
-                  </th>
-                ))}
+                {(campaign.lead_field_definitions || []).slice(0, 3).map((f) => {
+                  const fid = f.id ?? f.key ?? "";
+                  return (
+                    <th
+                      key={fid}
+                      className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
+                    >
+                      {f.label}
+                    </th>
+                  );
+                })}
                 {/* KPI columns */}
-                {(campaign.kpi_definitions || []).slice(0, 3).map((k) => (
-                  <th
-                    key={k.id}
-                    className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
-                  >
-                    {k.label}
-                  </th>
-                ))}
+                {(campaign.kpi_definitions || []).slice(0, 3).map((k) => {
+                  const kid = k.id ?? k.key ?? "";
+                  return (
+                    <th
+                      key={kid}
+                      className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
+                    >
+                      {k.label}
+                    </th>
+                  );
+                })}
                 <th className="p-3 w-10" />
               </tr>
             </thead>
@@ -1130,20 +1136,24 @@ export default function CampaignDetailPage() {
                       </span>
                     </td>
                     {/* Dynamic field values */}
-                    {(campaign.lead_field_definitions || []).slice(0, 3).map((f) => (
-                      <td key={f.id} className="p-3">
-                        <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                          {(lead.mapped_data as Record<string, unknown>)?.[f.id]
-                            ? String((lead.mapped_data as Record<string, unknown>)[f.id])
-                            : "--"}
-                        </span>
-                      </td>
-                    ))}
+                    {(campaign.lead_field_definitions || []).slice(0, 3).map((f) => {
+                      const fid = f.id ?? f.key ?? "";
+                      return (
+                        <td key={fid} className="p-3">
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                            {(lead.mapped_data as Record<string, unknown>)?.[fid]
+                              ? String((lead.mapped_data as Record<string, unknown>)[fid])
+                              : "--"}
+                          </span>
+                        </td>
+                      );
+                    })}
                     {/* KPI values */}
                     {(campaign.kpi_definitions || []).slice(0, 3).map((k) => {
-                      const kpiVal = lead.personalization?.campaign_kpis?.[k.id];
+                      const kid = k.id ?? k.key ?? "";
+                      const kpiVal = lead.personalization?.campaign_kpis?.[kid];
                       return (
-                        <td key={k.id} className="p-3">
+                        <td key={kid} className="p-3">
                           {kpiVal === true ? (
                             <CheckCircleIcon size={14} className="text-green-700 dark:text-green-400" />
                           ) : kpiVal === false ? (
