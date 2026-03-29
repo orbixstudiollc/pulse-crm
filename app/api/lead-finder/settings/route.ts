@@ -21,7 +21,7 @@ export async function GET() {
     // Only select columns that are guaranteed to exist
     const { data: ai } = await admin
       .from("ai_settings")
-      .select("api_key, apify_api_key, openrouter_api_key, openai_api_key, ai_provider, default_model")
+      .select("api_key, apify_api_key, openrouter_api_key, openai_api_key, default_model")
       .eq("organization_id", profile.organization_id)
       .single();
 
@@ -44,7 +44,7 @@ export async function GET() {
         hasAnthropic: !!ai?.api_key,
         hasOpenRouter: !!ai?.openrouter_api_key,
         hasOpenAI: !!ai?.openai_api_key,
-        aiProvider: ai?.ai_provider ?? "openai",
+        aiProvider: "openai",
         defaultModel: ai?.default_model ?? "gpt-4o",
         // Migration 026 columns — default until migration is run
         parallelEnrichmentLimit: 1,
@@ -87,7 +87,6 @@ export async function PUT(req: NextRequest) {
       if (body.anthropicKey && !String(body.anthropicKey).includes("•")) aiUpdates.api_key = body.anthropicKey;
       if (body.openrouterKey && !String(body.openrouterKey).includes("•")) aiUpdates.openrouter_api_key = body.openrouterKey;
       if (body.openaiKey && !String(body.openaiKey).includes("•"))   aiUpdates.openai_api_key = body.openaiKey;
-      if (body.aiProvider) aiUpdates.ai_provider = body.aiProvider;
 
       const { error } = await admin
         .from("ai_settings")
