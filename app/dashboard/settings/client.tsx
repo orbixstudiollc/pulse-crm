@@ -46,6 +46,9 @@ import {
   LinkedinLogoIcon,
   SlidersHorizontalIcon,
   SignOutIcon,
+  CrosshairIcon,
+  MagnifyingGlassIcon,
+  FloppyDiskIcon,
 } from "@/components/ui";
 import { DeleteConfirmModal } from "@/components/ui";
 import type { IconWeight } from "@phosphor-icons/react";
@@ -156,7 +159,8 @@ type SettingsTab =
   | "linkedin"
   | "billing"
   | "ai"
-  | "automation";
+  | "automation"
+  | "lead-finder";
 
 const settingsTabs: {
   id: SettingsTab;
@@ -178,6 +182,7 @@ const settingsTabs: {
   { id: "billing", label: "Billing", icon: CreditCardIcon },
   { id: "ai", label: "AI Assistant", icon: SparkleIcon },
   { id: "automation", label: "Automation", icon: LightningIcon },
+  { id: "lead-finder", label: "Lead Finder", icon: CrosshairIcon },
 ];
 
 // ── Profile Section ─────────────────────────────────────────────────────────
@@ -3298,6 +3303,327 @@ function EmailAccountsSection() {
   );
 }
 
+// ── Lead Finder Settings Section ────────────────────────────────────────────
+
+interface LFSettingField {
+  key: string;
+  label: string;
+  type: "text" | "password" | "textarea" | "select";
+  placeholder?: string;
+  helpText?: string;
+  options?: { value: string; label: string }[];
+}
+
+function LeadFinderSettingsSection() {
+  const [settings, setSettings] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/lead-finder/settings")
+      .then((r) => r.json())
+      .then((res) => {
+        const data = res.data || res;
+        const map: Record<string, string> = {};
+        if (Array.isArray(data)) {
+          data.forEach((s: { key: string; value: string }) => {
+            map[s.key] = s.value;
+          });
+        } else if (typeof data === "object") {
+          Object.assign(map, data);
+        }
+        setSettings(map);
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, []);
+
+  const saveGroup = async (groupKey: string, fields: LFSettingField[]) => {
+    setSaving(groupKey);
+    try {
+      const payload: Record<string, string> = {};
+      for (const f of fields) {
+        if (settings[f.key] !== undefined) payload[f.key] = settings[f.key] || "";
+      }
+      await fetch("/api/lead-finder/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ section: groupKey, ...payload }),
+      });
+      // Use sonner toast for notifications
+      const { toast } = await import("sonner");
+      toast.success(`${groupKey} settings saved`);
+    } catch {
+      const { toast } = await import("sonner");
+      toast.error("Failed to save");
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const currentProvider = settings["ai_provider"] || "openrouter";
+
+  const providerSpecificFields: LFSettingField[] =
+    currentProvider === "ollama"
+      ? [
+          {
+            key: "ollama_base_url",
+            label: "Ollama URL",
+            type: "text",
+            placeholder: "http://localhost:11434",
+            helpText: "Base URL of your Ollama server",
+          },
+          {
+            key: "ollama_model",
+            label: "Ollama Model",
+            type: "select",
+            options: [
+              { value: "qwen2.5-coder", label: "Qwen 2.5 Coder (7B)" },
+              { value: "qwen2.5-coder:32b", label: "Qwen 2.5 Coder (32B)" },
+              { value: "llama3.1", label: "Llama 3.1 (8B)" },
+              { value: "deepseek-r1", label: "DeepSeek R1 (7B)" },
+              { value: "mistral", label: "Mistral (7B)" },
+              { value: "gemma3", label: "Gemma 3 (12B)" },
+            ],
+          },
+        ]
+      : currentProvider === "anthropic"
+        ? [
+            {
+              key: "anthropic_api_key",
+              label: "Anthropic API Key",
+              type: "password",
+              helpText: "Get your key at console.anthropic.com",
+            },
+            {
+              key: "anthropic_model",
+              label: "Claude Model",
+              type: "select",
+              options: [
+                { value: "claude-sonnet-4-20250514", label: "Claude Sonnet 4" },
+                { value: "claude-haiku-4-20250414", label: "Claude Haiku 4" },
+                { value: "claude-opus-4-20250514", label: "Claude Opus 4" },
+              ],
+            },
+          ]
+        : [
+            {
+              key: "openrouter_api_key",
+              label: "OpenRouter API Key",
+              type: "password",
+              helpText: "Get key at openrouter.ai/keys",
+            },
+            {
+              key: "ai_model",
+              label: "AI Model",
+              type: "select",
+              options: [
+                { value: "anthropic/claude-sonnet-4", label: "Claude Sonnet 4" },
+                { value: "openai/gpt-4o", label: "GPT-4o" },
+                { value: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+                { value: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro" },
+                { value: "meta-llama/llama-4-maverick", label: "Llama 4 Maverick" },
+                { value: "deepseek/deepseek-r1", label: "DeepSeek R1" },
+              ],
+            },
+          ];
+
+  const groups: {
+    key: string;
+    title: string;
+    description: string;
+    icon: React.ReactNode;
+    fields: LFSettingField[];
+  }[] = [
+    {
+      key: "keys",
+      title: "API Keys & Provider",
+      description:
+        currentProvider === "ollama"
+          ? "Using Ollama — models run locally, no API costs"
+          : currentProvider === "anthropic"
+            ? "Using Anthropic — direct Claude API access"
+            : "Using OpenRouter — cloud models via single API key",
+      icon: <LockIcon size={16} className="text-neutral-400" />,
+      fields: [
+        { key: "apify_token", label: "Apify Token", type: "password", helpText: "Required for lead discovery and enrichment" },
+        {
+          key: "ai_provider",
+          label: "AI Provider",
+          type: "select",
+          options: [
+            { value: "openrouter", label: "OpenRouter (Cloud)" },
+            { value: "anthropic", label: "Anthropic (Claude Direct)" },
+            { value: "ollama", label: "Ollama (Local)" },
+          ],
+        },
+        ...providerSpecificFields,
+      ],
+    },
+    {
+      key: "enrichment",
+      title: "Enrichment",
+      description: "Configure how leads are enriched",
+      icon: <SlidersHorizontalIcon size={16} className="text-neutral-400" />,
+      fields: [
+        {
+          key: "enrichment_concurrency",
+          label: "Parallel Enrichment Limit",
+          type: "text",
+          placeholder: "1",
+          helpText: "How many leads to enrich simultaneously. Default: 1",
+        },
+      ],
+    },
+    {
+      key: "agency",
+      title: "Agency Profile",
+      description: "Your agency info for AI-powered lead scoring",
+      icon: <HardDrivesIcon size={16} className="text-neutral-400" />,
+      fields: [
+        { key: "agency_name", label: "Agency Name", type: "text" },
+        {
+          key: "agency_type",
+          label: "Agency Type",
+          type: "select",
+          options: [
+            { value: "general", label: "General" },
+            { value: "voice_ai", label: "Voice AI" },
+            { value: "ai_automation", label: "AI Automation" },
+            { value: "marketing", label: "Marketing" },
+            { value: "web_dev", label: "Web Development" },
+          ],
+        },
+        {
+          key: "agency_description",
+          label: "Description",
+          type: "textarea",
+          placeholder: "What your agency does...",
+        },
+        {
+          key: "agency_services",
+          label: "Services",
+          type: "textarea",
+          placeholder: "Key services you offer...",
+        },
+        {
+          key: "agency_results",
+          label: "Results & Case Studies",
+          type: "textarea",
+          placeholder: "Case studies, social proof...",
+        },
+        {
+          key: "agency_target_industries",
+          label: "Target Industries",
+          type: "text",
+          placeholder: "e.g. dental, healthcare, real estate",
+        },
+        { key: "agency_website", label: "Website", type: "text", placeholder: "https://youragency.com" },
+      ],
+    },
+  ];
+
+  const renderField = (field: LFSettingField) => (
+    <div key={field.key} className="space-y-1.5">
+      <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+        {field.label}
+      </label>
+      {field.type === "textarea" ? (
+        <textarea
+          value={settings[field.key] || ""}
+          onChange={(e) => setSettings((s) => ({ ...s, [field.key]: e.target.value }))}
+          placeholder={field.placeholder}
+          rows={3}
+          className="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600 resize-none"
+        />
+      ) : field.type === "select" ? (
+        <select
+          value={settings[field.key] || ""}
+          onChange={(e) => setSettings((s) => ({ ...s, [field.key]: e.target.value }))}
+          className="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600"
+        >
+          {field.options?.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type={field.type}
+          value={settings[field.key] || ""}
+          onChange={(e) => setSettings((s) => ({ ...s, [field.key]: e.target.value }))}
+          placeholder={field.placeholder}
+          className="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600"
+        />
+      )}
+      {field.helpText && (
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">{field.helpText}</p>
+      )}
+    </div>
+  );
+
+  if (!loaded) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <CircleNotchIcon size={24} className="animate-spin text-neutral-400" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+          Lead Finder
+        </h2>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          Configure API keys, AI provider, and agency profile for lead discovery & enrichment
+        </p>
+      </div>
+
+      {groups.map((g) => (
+        <div
+          key={g.key}
+          className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 overflow-hidden"
+        >
+          <div className="px-5 py-4 border-b border-neutral-100 dark:border-neutral-800">
+            <div className="flex items-center gap-2">
+              {g.icon}
+              <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
+                {g.title}
+              </h3>
+            </div>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              {g.description}
+            </p>
+          </div>
+          <div className="px-5 py-4 space-y-4">
+            {g.fields.map(renderField)}
+            <button
+              onClick={() => saveGroup(g.key, g.fields)}
+              disabled={saving === g.key}
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 px-4 py-2.5 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 transition-colors"
+            >
+              {saving === g.key ? (
+                <>
+                  <CircleNotchIcon size={14} className="animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                <>
+                  <FloppyDiskIcon size={14} />
+                  Save {g.title}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Main Settings Page ──────────────────────────────────────────────────────
 export function SettingsPageClient({
   initialProfile,
@@ -3343,6 +3669,8 @@ export function SettingsPageClient({
         return <AISettingsSection settings={initialAISettings} />;
       case "automation":
         return <AutomationSection />;
+      case "lead-finder":
+        return <LeadFinderSettingsSection />;
       default:
         return <ProfileSection profile={initialProfile} />;
     }

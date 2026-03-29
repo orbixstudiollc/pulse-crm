@@ -16,6 +16,14 @@ import {
   TargetIcon,
   LightningIcon,
   ChartBarIcon,
+  PencilSimpleIcon,
+  MagnifyingGlassIcon,
+  HardDrivesIcon,
+  HashIcon,
+  LinkIcon,
+  TextTIcon,
+  ToggleLeftIcon,
+  ToggleRightIcon,
 } from "@/components/ui";
 import { useLeadFinderActors } from "@/hooks/use-lead-finder-actors";
 import type { ActorDefinition } from "@/lib/lead-finder/apify/registry";
@@ -41,7 +49,10 @@ interface AIPlan {
   target_niche: string;
   suggested_actors: string[];
   suggested_search_terms: string[];
+  suggested_actor_configs?: Record<string, Record<string, string>>;
   schedule_frequency: string;
+  reasoning?: string;
+  auto_enrich?: boolean;
   kpi_definitions: KpiDefinition[];
   lead_field_definitions: FieldDefinition[];
 }
@@ -50,8 +61,8 @@ interface AIPlan {
 
 const STEPS = [
   { id: 1, label: "Describe", icon: SparkleIcon },
-  { id: 2, label: "Configure", icon: GearIcon },
-  { id: 3, label: "KPIs & Fields", icon: ChartBarIcon },
+  { id: 2, label: "Actors", icon: LightningIcon },
+  { id: 3, label: "Fields & KPIs", icon: HardDrivesIcon },
   { id: 4, label: "Review", icon: CheckCircleIcon },
 ];
 
@@ -102,18 +113,31 @@ function ActorConfigField({
   onChange,
 }: {
   fieldKey: string;
-  desc: { label: string; placeholder: string; type: string; helpText?: string };
+  desc: { label: string; placeholder?: string; type: string; helpText?: string };
   value: string;
   onChange: (v: string) => void;
 }) {
   return (
     <div>
-      <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+      <label className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 mb-1">
         {desc.label}
+        <PencilSimpleIcon size={10} className="text-neutral-400 dark:text-neutral-500" />
       </label>
-      {desc.type === "string-array" ? (
+      {desc.type === "boolean" ? (
+        <button
+          onClick={() => onChange(value === "true" ? "false" : "true")}
+          className={`inline-flex items-center gap-2 h-8 px-3 rounded border text-xs font-medium transition-colors ${
+            value === "true"
+              ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
+              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800"
+          }`}
+        >
+          <span className={`w-1.5 h-1.5 rounded-full ${value === "true" ? "bg-green-500" : "bg-neutral-400"}`} />
+          {value === "true" ? "Yes" : "No"}
+        </button>
+      ) : desc.type === "string-array" ? (
         <textarea
-          rows={2}
+          rows={3}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={desc.placeholder}
@@ -143,7 +167,7 @@ function TypeToggle<T extends string>({
   onChange,
 }: {
   value: T;
-  options: { value: T; label: string }[];
+  options: { value: T; label: string; icon?: React.ReactNode }[];
   onChange: (v: T) => void;
 }) {
   return (
@@ -152,12 +176,13 @@ function TypeToggle<T extends string>({
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
-          className={`px-2 py-1 transition-colors ${
+          className={`flex items-center gap-1 px-2 py-1 transition-colors ${
             value === opt.value
               ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
               : "bg-white dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"
           }`}
         >
+          {opt.icon}
           {opt.label}
         </button>
       ))}
@@ -169,7 +194,7 @@ function TypeToggle<T extends string>({
 
 export default function NewCampaignPage() {
   const router = useRouter();
-  const { allActors } = useLeadFinderActors();
+  const { allActors, getActorById, getActorsByPhase } = useLeadFinderActors();
   const [step, setStep] = useState(1);
 
   // Step 1 state
@@ -180,13 +205,13 @@ export default function NewCampaignPage() {
   const [plan, setPlan] = useState<AIPlan | null>(null);
 
   // Step 2 state
-  const [selectedActors, setSelectedActors] = useState<string[]>([]);
-  const [actorConfigs, setActorConfigs] = useState<Record<string, Record<string, string>>>({});
-  const [targetNiche, setTargetNiche] = useState("");
+  const [selectedActors, setSelectedActors] = useState<Set<string>>(new Set());
+  const [editableActorConfigs, setEditableActorConfigs] = useState<Record<string, Record<string, string>>>({});
+  const [editableNiche, setEditableNiche] = useState("");
   const [searchTerms, setSearchTerms] = useState<string[]>([]);
   const [newSearchTerm, setNewSearchTerm] = useState("");
-  const [scheduleFrequency, setScheduleFrequency] = useState("once");
-  const [autoEnrich, setAutoEnrich] = useState(true);
+  const [editableSchedule, setEditableSchedule] = useState("once");
+  const [editableAutoEnrich, setEditableAutoEnrich] = useState(true);
 
   // Step 3 state
   const [kpiDefinitions, setKpiDefinitions] = useState<KpiDefinition[]>([]);
@@ -208,6 +233,11 @@ export default function NewCampaignPage() {
       .catch(() => {});
   }, []);
 
+  // ── Actor lists ───────────────────────────────────────────────────────
+
+  const findActors = getActorsByPhase("find");
+  const enrichActors = getActorsByPhase("enrich");
+
   // ── Build actor summaries for plan endpoint ───────────────────────────
 
   const buildActorSummaries = useCallback(() => {
@@ -216,11 +246,19 @@ export default function NewCampaignPage() {
       name: a.name,
       phase: a.phase,
       description: a.description,
-      inputFieldDescriptions: a.inputFieldDescriptions,
+      fields: Object.keys(a.inputFieldDescriptions || {}).map((key) => {
+        const desc = a.inputFieldDescriptions?.[key];
+        return {
+          key,
+          label: desc?.label || key,
+          type: desc?.type || "string",
+          helpText: desc?.helpText,
+        };
+      }),
     }));
   }, [allActors]);
 
-  // ── AI Planning ────────────────────────────────────────────────────────
+  // ── AI Planning (Step 1 → Step 2) ────────────────────────────────────
 
   const handlePlanWithAI = async () => {
     if (!description.trim()) {
@@ -238,43 +276,160 @@ export default function NewCampaignPage() {
           actors: buildActorSummaries(),
         }),
       });
-      if (!res.ok) throw new Error("Planning failed");
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Planning failed");
+      }
       const json = await res.json();
       const p = json.data as AIPlan;
       setPlan(p);
 
       // Pre-fill from plan
       if (!name && p.name) setName(p.name);
-      setTargetNiche(p.target_niche || "");
+      setEditableNiche(p.target_niche || "");
       setSearchTerms(p.suggested_search_terms || []);
-      setScheduleFrequency(p.schedule_frequency || "once");
+      setEditableSchedule(p.schedule_frequency || "once");
+      if (p.auto_enrich !== undefined) setEditableAutoEnrich(p.auto_enrich);
       if (p.kpi_definitions?.length) setKpiDefinitions(p.kpi_definitions);
       if (p.lead_field_definitions?.length) setFieldDefinitions(p.lead_field_definitions);
 
-      // Match actors from plan
-      if (p.suggested_actors?.length && allActors.length) {
-        const matched = allActors
-          .filter((a: ActorDefinition) =>
-            p.suggested_actors.includes(a.id)
-          )
-          .map((a: ActorDefinition) => a.id);
+      // Initialize actor configs from AI suggestions
+      const initConfigs: Record<string, Record<string, string>> = {};
+      if (p.suggested_actor_configs) {
+        for (const [actorId, fields] of Object.entries(p.suggested_actor_configs)) {
+          initConfigs[actorId] = {};
+          for (const [key, val] of Object.entries(fields)) {
+            initConfigs[actorId][key] = String(val);
+          }
+        }
+      }
+      // Ensure all actors have config entries
+      for (const actor of allActors) {
+        if (!initConfigs[actor.id]) {
+          initConfigs[actor.id] = {};
+        }
+      }
+      setEditableActorConfigs(initConfigs);
+
+      // Pre-select suggested actors
+      if (p.suggested_actors?.length) {
+        const matched = new Set(
+          allActors
+            .filter((a: ActorDefinition) => p.suggested_actors.includes(a.id))
+            .map((a: ActorDefinition) => a.id)
+        );
         setSelectedActors(matched);
       }
 
       toast.success("AI plan generated successfully");
       setStep(2);
-    } catch {
-      toast.error("Failed to generate AI plan");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate AI plan");
     } finally {
       setPlanning(false);
     }
   };
 
-  // ── Suggest fields ─────────────────────────────────────────────────────
+  // ── Toggle actor ───────────────────────────────────────────────────────
+
+  const toggleActor = (actorId: string) => {
+    setSelectedActors((prev) => {
+      const next = new Set(prev);
+      if (next.has(actorId)) {
+        next.delete(actorId);
+      } else {
+        next.add(actorId);
+      }
+      return next;
+    });
+  };
+
+  // ── Set actor field value ─────────────────────────────────────────────
+
+  const setActorFieldValue = (actorId: string, field: string, value: string) => {
+    setEditableActorConfigs((prev) => ({
+      ...prev,
+      [actorId]: { ...(prev[actorId] || {}), [field]: value },
+    }));
+  };
+
+  // ── Build final actor configs (coerced types) ─────────────────────────
+
+  const buildActorConfigs = (): Record<string, Record<string, unknown>> => {
+    const configs: Record<string, Record<string, unknown>> = {};
+    for (const actorId of selectedActors) {
+      const actorDef = getActorById(actorId);
+      if (!actorDef) continue;
+
+      const input: Record<string, unknown> = { ...(actorDef.defaultInput || {}) };
+      const editedFields = editableActorConfigs[actorId] || {};
+
+      for (const [fieldName, rawValue] of Object.entries(editedFields)) {
+        const desc = actorDef.inputFieldDescriptions?.[fieldName];
+        if (!rawValue.trim()) continue;
+
+        if (desc?.type === "boolean") {
+          input[fieldName] = rawValue === "true";
+        } else if (desc?.type === "string-array") {
+          input[fieldName] = rawValue.split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
+        } else if (desc?.type === "number") {
+          input[fieldName] = Number(rawValue) || 0;
+        } else {
+          input[fieldName] = rawValue;
+        }
+      }
+      configs[actorId] = input;
+    }
+    return configs;
+  };
+
+  // ── Go to Step 3: auto-suggest fields ─────────────────────────────────
+
+  const handleGoToStep3 = async () => {
+    const selectedFindActors = [...selectedActors].filter((id) => {
+      const a = getActorById(id);
+      return a && a.phase === "find";
+    });
+    if (selectedFindActors.length === 0) {
+      toast.error("Select at least one Find actor to discover leads");
+      return;
+    }
+    setStep(3);
+
+    // Auto-suggest fields if none exist yet
+    if (fieldDefinitions.length > 0 && kpiDefinitions.length > 0) return;
+
+    setSuggestingFields(true);
+    try {
+      const res = await fetch("/api/lead-finder/campaigns/suggest-fields", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetNiche: editableNiche || description,
+          aiProvider,
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data?.lead_field_definitions?.length && fieldDefinitions.length === 0) {
+          setFieldDefinitions(json.data.lead_field_definitions);
+        }
+        if (json.data?.kpi_definitions?.length && kpiDefinitions.length === 0) {
+          setKpiDefinitions(json.data.kpi_definitions);
+        }
+      }
+    } catch {
+      // non-blocking
+    } finally {
+      setSuggestingFields(false);
+    }
+  };
+
+  // ── Manual field suggestion ───────────────────────────────────────────
 
   const handleSuggestFields = async () => {
-    if (!targetNiche) {
-      toast.error("Target niche is required");
+    if (!editableNiche) {
+      toast.error("Target niche is required to suggest fields");
       return;
     }
     setSuggestingFields(true);
@@ -282,7 +437,7 @@ export default function NewCampaignPage() {
       const res = await fetch("/api/lead-finder/campaigns/suggest-fields", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetNiche, aiProvider }),
+        body: JSON.stringify({ targetNiche: editableNiche, aiProvider }),
       });
       if (!res.ok) throw new Error("Failed to suggest fields");
       const json = await res.json();
@@ -294,28 +449,6 @@ export default function NewCampaignPage() {
     } finally {
       setSuggestingFields(false);
     }
-  };
-
-  // ── Actor config handler ───────────────────────────────────────────────
-
-  const updateActorConfig = useCallback(
-    (actorId: string, fieldKey: string, value: string) => {
-      setActorConfigs((prev) => ({
-        ...prev,
-        [actorId]: { ...(prev[actorId] || {}), [fieldKey]: value },
-      }));
-    },
-    []
-  );
-
-  // ── Toggle actor ───────────────────────────────────────────────────────
-
-  const toggleActor = (actorId: string) => {
-    setSelectedActors((prev) =>
-      prev.includes(actorId)
-        ? prev.filter((id) => id !== actorId)
-        : [...prev, actorId]
-    );
   };
 
   // ── Add search term ────────────────────────────────────────────────────
@@ -373,45 +506,26 @@ export default function NewCampaignPage() {
       toast.error("Campaign name is required");
       return;
     }
-    if (!targetNiche.trim()) {
+    if (!editableNiche.trim()) {
       toast.error("Target niche is required");
       return;
     }
     setCreating(true);
     try {
-      // Coerce actor configs: string-array fields stored as comma/newline-separated strings
-      const coercedActorConfigs: Record<string, Record<string, unknown>> = {};
-      for (const actorId of selectedActors) {
-        const actorDef = allActors.find((a: ActorDefinition) => a.id === actorId);
-        const raw = actorConfigs[actorId] || {};
-        const coerced: Record<string, unknown> = { ...(actorDef?.defaultInput || {}) };
-        for (const [k, v] of Object.entries(raw)) {
-          const fieldDesc = actorDef?.inputFieldDescriptions?.[k];
-          if (fieldDesc?.type === "string-array") {
-            coerced[k] = v
-              .split(/[\n,]+/)
-              .map((s: string) => s.trim())
-              .filter(Boolean);
-          } else if (fieldDesc?.type === "number") {
-            coerced[k] = Number(v) || 0;
-          } else {
-            coerced[k] = v;
-          }
-        }
-        coercedActorConfigs[actorId] = coerced;
-      }
+      const actorConfigs = buildActorConfigs();
+      const allSelectedActors = [...selectedActors];
 
       const payload = {
         name: name.trim(),
         description: description.trim() || null,
-        target_niche: targetNiche.trim(),
-        apify_actors: selectedActors,
-        actor_configs: coercedActorConfigs,
+        target_niche: editableNiche.trim(),
+        apify_actors: allSelectedActors,
+        actor_configs: actorConfigs,
         kpi_definitions: kpiDefinitions.filter((k) => k.label.trim()),
         lead_field_definitions: fieldDefinitions.filter((f) => f.label.trim()),
-        schedule_frequency: scheduleFrequency,
+        schedule_frequency: editableSchedule,
         ai_provider: aiProvider,
-        auto_enrich: autoEnrich,
+        auto_enrich: editableAutoEnrich,
         status: "draft",
       };
 
@@ -434,25 +548,75 @@ export default function NewCampaignPage() {
     }
   };
 
-  // ── Navigation ─────────────────────────────────────────────────────────
+  // ── Actor card renderer ────────────────────────────────────────────────
 
-  const canGoNext = () => {
-    switch (step) {
-      case 1:
-        return description.trim().length > 0;
-      case 2:
-        return targetNiche.trim().length > 0;
-      case 3:
-        return true;
-      default:
-        return false;
-    }
+  const renderActorCard = (actor: ActorDefinition, isSelected: boolean) => {
+    const fields = editableActorConfigs[actor.id] || {};
+    const fieldDescriptions = Object.entries(actor.inputFieldDescriptions || {});
+
+    return (
+      <div
+        key={actor.id}
+        className={`rounded-lg border-2 transition-colors ${
+          isSelected
+            ? "border-neutral-400 dark:border-neutral-500 bg-neutral-50 dark:bg-neutral-800/50"
+            : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700"
+        }`}
+      >
+        <div
+          className="flex cursor-pointer items-center gap-3 p-4"
+          onClick={() => toggleActor(actor.id)}
+        >
+          <div
+            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+              isSelected
+                ? "border-neutral-950 dark:border-white bg-neutral-950 dark:bg-white"
+                : "border-neutral-300 dark:border-neutral-600"
+            }`}
+          >
+            {isSelected && (
+              <CheckCircleIcon size={12} weight="fill" className="text-white dark:text-neutral-950" />
+            )}
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              {actor.name}
+            </p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              {actor.description}
+            </p>
+          </div>
+          <span className="px-2 py-0.5 rounded text-[10px] font-medium border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 capitalize">
+            {actor.category}
+          </span>
+        </div>
+
+        {/* Show config fields when selected (only for find actors with input fields) */}
+        {isSelected && fieldDescriptions.length > 0 && (
+          <div className="border-t border-neutral-200 dark:border-neutral-800 px-4 pb-4 pt-3 space-y-3">
+            {fieldDescriptions.map(([fieldName, desc]) => (
+              <ActorConfigField
+                key={fieldName}
+                fieldKey={fieldName}
+                desc={desc}
+                value={fields[fieldName] || ""}
+                onChange={(v) => setActorFieldValue(actor.id, fieldName, v)}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* For enrichment actors, show auto-fill note */}
+        {isSelected && fieldDescriptions.length === 0 && (
+          <div className="border-t border-neutral-200 dark:border-neutral-800 px-4 py-2.5">
+            <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
+              Inputs filled automatically from lead data during enrichment
+            </p>
+          </div>
+        )}
+      </div>
+    );
   };
-
-  // ── Find phase actors ──────────────────────────────────────────────────
-
-  const findActors = allActors.filter((a: ActorDefinition) => a.phase === "find");
-  const enrichActors = allActors.filter((a: ActorDefinition) => a.phase === "enrich");
 
   // ── Render ─────────────────────────────────────────────────────────────
 
@@ -467,9 +631,17 @@ export default function NewCampaignPage() {
           <ArrowLeftIcon size={16} />
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-neutral-950 dark:text-neutral-50">New Campaign</h1>
+          <h1 className="text-xl font-bold text-neutral-950 dark:text-neutral-50">
+            New Campaign
+          </h1>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            Create a lead discovery campaign with AI assistance
+            {step === 1
+              ? "Describe what leads you want to find"
+              : step === 2
+                ? "Configure actors and campaign settings"
+                : step === 3
+                  ? "Configure lead data fields and KPIs"
+                  : "Review and create your campaign"}
           </p>
         </div>
       </div>
@@ -477,7 +649,7 @@ export default function NewCampaignPage() {
       {/* Step indicator */}
       <StepIndicator current={step} />
 
-      {/* ── Step 1: Describe ──────────────────────────────────────────── */}
+      {/* ── Step 1: Describe + AI Plan ───────────────────────────────────── */}
       {step === 1 && (
         <div className="max-w-2xl">
           <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 space-y-5">
@@ -489,23 +661,25 @@ export default function NewCampaignPage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., SaaS Founders Q1 2026"
+                placeholder="e.g., Miami Dentists Q1 2026"
                 className="w-full px-3 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-1.5">
-                Campaign Description
+                What leads do you want to find?
               </label>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
-                Describe what kind of leads you are looking for, your target market, ideal customer profile, and any specific criteria. The more detail you provide, the better the AI plan.
+                Describe in plain English what you are looking for. Be specific about the
+                business type, location, and what information you need. AI will generate
+                search terms, select actors, and configure the campaign for you.
               </p>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={6}
-                placeholder="I want to find SaaS founders in the B2B space who have between 10-50 employees, have recently raised a Series A, and are looking for CRM solutions..."
+                placeholder="Find dentists and orthodontists in Miami FL. I need their email addresses, phone numbers, and websites. Focus on practices with good ratings that might need help with their online presence."
                 className="w-full px-3 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 resize-none focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
               />
             </div>
@@ -518,12 +692,12 @@ export default function NewCampaignPage() {
               {planning ? (
                 <>
                   <CircleNotchIcon size={16} className="animate-spin" />
-                  Planning with AI...
+                  AI is analyzing your campaign...
                 </>
               ) : (
                 <>
                   <SparkleIcon size={16} />
-                  Plan with AI
+                  Plan Campaign with AI
                 </>
               )}
             </button>
@@ -538,25 +712,52 @@ export default function NewCampaignPage() {
         </div>
       )}
 
-      {/* ── Step 2: Configure ─────────────────────────────────────────── */}
+      {/* ── Step 2: Actors + Campaign Settings ───────────────────────────── */}
       {step === 2 && (
         <div className="max-w-3xl space-y-6">
-          {/* AI plan summary */}
+          {/* AI Reasoning / Plan summary */}
           {plan && (
             <div className="flex items-start gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
-              <CheckCircleIcon size={16} weight="fill" className="text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-              <div className="text-xs text-green-700 dark:text-green-400">
-                <p className="font-semibold mb-0.5">AI Plan Generated</p>
-                <p>Target niche: <strong>{plan.target_niche}</strong> · {plan.suggested_actors.length} actors suggested · {plan.suggested_search_terms.length} search terms</p>
+              <SparkleIcon size={16} className="text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+              <div className="text-xs">
+                <p className="font-semibold text-green-700 dark:text-green-400 mb-0.5">
+                  AI Recommendation
+                </p>
+                {plan.reasoning ? (
+                  <p className="text-green-700 dark:text-green-400 mb-2">{plan.reasoning}</p>
+                ) : (
+                  <p className="text-green-700 dark:text-green-400 mb-2">
+                    Target niche: <strong>{plan.target_niche}</strong> &middot;{" "}
+                    {plan.suggested_actors.length} actors suggested &middot;{" "}
+                    {plan.suggested_search_terms.length} search terms
+                  </p>
+                )}
+                {searchTerms.length > 0 && (
+                  <div>
+                    <p className="text-green-600 dark:text-green-500 font-medium mb-1.5">
+                      Suggested search terms (pre-filled in actors below):
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {searchTerms.map((term, i) => (
+                        <span
+                          key={i}
+                          className="px-2 py-0.5 rounded-md bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-300 text-[10px]"
+                        >
+                          {term}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* Target niche */}
+          {/* Campaign Settings */}
           <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
             <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 mb-4 flex items-center gap-2">
               <TargetIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
-              Target Configuration
+              Campaign Settings
             </h3>
             <div className="space-y-4">
               <div>
@@ -565,9 +766,9 @@ export default function NewCampaignPage() {
                 </label>
                 <input
                   type="text"
-                  value={targetNiche}
-                  onChange={(e) => setTargetNiche(e.target.value)}
-                  placeholder="e.g., B2B SaaS Founders, Real Estate Agencies"
+                  value={editableNiche}
+                  onChange={(e) => setEditableNiche(e.target.value)}
+                  placeholder="e.g., B2B SaaS Founders, Miami Dentists"
                   className="w-full px-3 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
                 />
               </div>
@@ -618,8 +819,8 @@ export default function NewCampaignPage() {
                     Schedule
                   </label>
                   <select
-                    value={scheduleFrequency}
-                    onChange={(e) => setScheduleFrequency(e.target.value)}
+                    value={editableSchedule}
+                    onChange={(e) => setEditableSchedule(e.target.value)}
                     className="w-full px-3 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
                   >
                     <option value="once">Run Once</option>
@@ -631,33 +832,42 @@ export default function NewCampaignPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5">
-                    Auto-enrich
+                    Auto-Enrich Leads
                   </label>
                   <button
-                    onClick={() => setAutoEnrich(!autoEnrich)}
-                    className={`inline-flex items-center gap-2 h-9 px-3 rounded border text-sm font-medium transition-colors ${
-                      autoEnrich
+                    onClick={() => setEditableAutoEnrich(!editableAutoEnrich)}
+                    className={`inline-flex items-center gap-2 h-[42px] px-3 rounded border text-sm font-medium transition-colors ${
+                      editableAutoEnrich
                         ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/50"
                         : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700"
                     }`}
                   >
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${autoEnrich ? "bg-green-500" : "bg-neutral-400"}`} />
-                    {autoEnrich ? "Auto-enrich on" : "Auto-enrich off"}
+                    <span
+                      className={`w-2 h-2 rounded-full flex-shrink-0 ${editableAutoEnrich ? "bg-green-500" : "bg-neutral-400"}`}
+                    />
+                    {editableAutoEnrich ? "Enabled" : "Disabled"}
                   </button>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Actor selection */}
+          {/* Find Leads - Discovery Actors */}
           <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
-            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 mb-4 flex items-center gap-2">
-              <LightningIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
-              Discovery Actors
+            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 mb-1 flex items-center gap-2">
+              <MagnifyingGlassIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
+              Step 1 -- Find Leads
               <span className="text-xs text-neutral-500 dark:text-neutral-400 font-normal">
-                ({selectedActors.length} selected)
+                ({[...selectedActors].filter((id) => {
+                  const a = getActorById(id);
+                  return a?.phase === "find";
+                }).length} selected)
               </span>
             </h3>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
+              Select which tools to use for discovering leads. These run first to find
+              businesses matching your criteria.
+            </p>
 
             {allActors.length === 0 ? (
               <div className="text-center py-8 text-neutral-500 dark:text-neutral-400 text-sm">
@@ -665,148 +875,59 @@ export default function NewCampaignPage() {
                 Loading actors...
               </div>
             ) : (
-              <div className="space-y-4">
-                {findActors.length > 0 && (
-                  <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
-                      Find Phase
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {findActors.map((actor: ActorDefinition) => {
-                        const isSelected = selectedActors.includes(actor.id);
-                        return (
-                          <button
-                            key={actor.id}
-                            onClick={() => toggleActor(actor.id)}
-                            className={`text-left p-3 rounded-lg border transition-colors ${
-                              isSelected
-                                ? "bg-neutral-100 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600 text-neutral-950 dark:text-neutral-50"
-                                : "bg-neutral-50 dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-500"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium">{actor.name}</span>
-                              <div
-                                className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                                  isSelected
-                                    ? "border-neutral-950 dark:border-white bg-neutral-950 dark:bg-white"
-                                    : "border-neutral-300 dark:border-neutral-600"
-                                }`}
-                              >
-                                {isSelected && (
-                                  <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-neutral-950" />
-                                )}
-                              </div>
-                            </div>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">
-                              {actor.description}
-                            </p>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {enrichActors.length > 0 && (
-                  <div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
-                      Enrich Phase
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {enrichActors.map((actor: ActorDefinition) => {
-                        const isSelected = selectedActors.includes(actor.id);
-                        return (
-                          <button
-                            key={actor.id}
-                            onClick={() => toggleActor(actor.id)}
-                            className={`text-left p-3 rounded-lg border transition-colors ${
-                              isSelected
-                                ? "bg-neutral-100 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600 text-neutral-950 dark:text-neutral-50"
-                                : "bg-neutral-50 dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-500"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium">{actor.name}</span>
-                              <div
-                                className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                                  isSelected
-                                    ? "border-neutral-950 dark:border-white bg-neutral-950 dark:bg-white"
-                                    : "border-neutral-300 dark:border-neutral-600"
-                                }`}
-                              >
-                                {isSelected && (
-                                  <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-neutral-950" />
-                                )}
-                              </div>
-                            </div>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">
-                              {actor.description}
-                            </p>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+              <div className="space-y-3">
+                {findActors.map((actor) =>
+                  renderActorCard(actor, selectedActors.has(actor.id))
                 )}
               </div>
             )}
           </div>
 
-          {/* Actor configs */}
-          {selectedActors.length > 0 && (
-            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
-              <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 mb-4 flex items-center gap-2">
-                <GearIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
-                Actor Configuration
-              </h3>
-              <div className="space-y-6">
-                {selectedActors.map((actorId) => {
-                  const actor = allActors.find((a: ActorDefinition) => a.id === actorId);
-                  if (!actor) return null;
-                  const fields = Object.entries(actor.inputFieldDescriptions || {});
-                  return (
-                    <div
-                      key={actorId}
-                      className="p-4 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
-                    >
-                      <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-3">
-                        {actor.name}
-                      </p>
-                      {fields.length > 0 ? (
-                        <div className="space-y-3">
-                          {fields.map(([fieldKey, desc]) => (
-                            <ActorConfigField
-                              key={fieldKey}
-                              fieldKey={fieldKey}
-                              desc={desc}
-                              value={actorConfigs[actorId]?.[fieldKey] ?? ""}
-                              onChange={(v) => updateActorConfig(actorId, fieldKey, v)}
-                            />
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                          No configuration required for this actor.
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+          {/* Enrich Leads - Enrichment Actors */}
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
+            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 mb-1 flex items-center gap-2">
+              <LightningIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
+              Step 2 -- Enrich Leads
+              <span className="text-xs text-neutral-500 dark:text-neutral-400 font-normal">
+                ({[...selectedActors].filter((id) => {
+                  const a = getActorById(id);
+                  return a?.phase === "enrich";
+                }).length} selected)
+              </span>
+            </h3>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
+              Select which tools to use for enriching leads with additional data.
+              {editableAutoEnrich
+                ? " Enrichment runs automatically after discovery."
+                : " Enrichment can be triggered manually from the campaign page."}
+            </p>
+
+            <div className="space-y-3">
+              {enrichActors.map((actor) =>
+                renderActorCard(actor, selectedActors.has(actor.id))
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Next button */}
+          <button
+            onClick={handleGoToStep3}
+            disabled={selectedActors.size === 0}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Next: Configure Fields & KPIs
+          </button>
         </div>
       )}
 
-      {/* ── Step 3: KPIs & Fields ─────────────────────────────────────── */}
+      {/* ── Step 3: Lead Fields + KPIs ───────────────────────────────────── */}
       {step === 3 && (
         <div className="max-w-3xl space-y-6">
           {/* AI suggest button */}
           <div className="flex justify-end">
             <button
               onClick={handleSuggestFields}
-              disabled={suggestingFields || !targetNiche}
+              disabled={suggestingFields || !editableNiche}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-sm transition-colors disabled:opacity-50"
             >
               {suggestingFields ? (
@@ -814,8 +935,81 @@ export default function NewCampaignPage() {
               ) : (
                 <SparkleIcon size={14} />
               )}
-              Suggest with AI
+              Re-suggest with AI
             </button>
+          </div>
+
+          {/* Lead Data Fields */}
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 flex items-center gap-2">
+                <HardDrivesIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
+                Lead Data Fields
+              </h3>
+              <button
+                onClick={addField}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-xs transition-colors"
+              >
+                <PlusIcon size={12} />
+                Add Field
+              </button>
+            </div>
+
+            {suggestingFields ? (
+              <div className="flex items-center justify-center py-8 gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+                <CircleNotchIcon size={16} className="animate-spin" />
+                AI is analyzing your actors to suggest relevant fields...
+              </div>
+            ) : fieldDefinitions.length === 0 ? (
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-6">
+                No additional lead fields configured. Click &quot;Add Field&quot; to track
+                extra data per lead.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {fieldDefinitions.map((field, i) => (
+                  <div
+                    key={field.id}
+                    className="flex gap-3 items-start p-3 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
+                  >
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={field.label}
+                          onChange={(e) => updateField(i, "label", e.target.value)}
+                          placeholder="Field label, e.g. Instagram Handle"
+                          className="flex-1 px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs font-medium focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+                        />
+                        <TypeToggle
+                          value={field.type}
+                          options={[
+                            { value: "text", label: "Text", icon: <TextTIcon size={10} /> },
+                            { value: "number", label: "Num", icon: <HashIcon size={10} /> },
+                            { value: "boolean", label: "Bool", icon: <ToggleRightIcon size={10} /> },
+                            { value: "url", label: "URL", icon: <LinkIcon size={10} /> },
+                          ]}
+                          onChange={(v) => updateField(i, "type", v)}
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        value={field.description}
+                        onChange={(e) => updateField(i, "description", e.target.value)}
+                        placeholder="Description (helps AI understand what to extract)"
+                        className="w-full px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+                      />
+                    </div>
+                    <button
+                      onClick={() => removeField(i)}
+                      className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 transition-colors mt-0.5"
+                    >
+                      <TrashIcon size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* KPI Definitions */}
@@ -823,7 +1017,7 @@ export default function NewCampaignPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 flex items-center gap-2">
                 <ChartBarIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
-                KPI Definitions
+                Lead KPIs to Track
               </h3>
               <button
                 onClick={addKpi}
@@ -834,15 +1028,21 @@ export default function NewCampaignPage() {
               </button>
             </div>
 
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
+              These KPIs will be automatically filled by AI during lead enrichment. You
+              can edit them per-lead later.
+            </p>
+
             {kpiDefinitions.length === 0 ? (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-4">
-                No KPIs defined. Add KPIs to score and qualify leads.
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-6">
+                No KPIs configured. Click &quot;Add KPI&quot; to track custom metrics for
+                your leads.
               </p>
             ) : (
               <div className="space-y-3">
                 {kpiDefinitions.map((kpi, i) => (
                   <div
-                    key={i}
+                    key={kpi.id}
                     className="flex gap-3 items-start p-3 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
                   >
                     <div className="flex-1 space-y-2">
@@ -851,14 +1051,14 @@ export default function NewCampaignPage() {
                           type="text"
                           value={kpi.label}
                           onChange={(e) => updateKpi(i, "label", e.target.value)}
-                          placeholder="KPI Label"
-                          className="flex-1 px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+                          placeholder="KPI label, e.g. Has online booking"
+                          className="flex-1 px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs font-medium focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
                         />
                         <TypeToggle
                           value={kpi.type}
                           options={[
-                            { value: "boolean", label: "Yes/No" },
-                            { value: "text", label: "Text" },
+                            { value: "boolean", label: "Yes/No", icon: <ToggleLeftIcon size={10} /> },
+                            { value: "text", label: "Text", icon: <TextTIcon size={10} /> },
                           ]}
                           onChange={(v) => updateKpi(i, "type", v)}
                         />
@@ -883,112 +1083,79 @@ export default function NewCampaignPage() {
             )}
           </div>
 
-          {/* Lead Field Definitions */}
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 flex items-center gap-2">
-                <TargetIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
-                Custom Lead Fields
-              </h3>
-              <button
-                onClick={addField}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-xs transition-colors"
-              >
-                <PlusIcon size={12} />
-                Add Field
-              </button>
-            </div>
-
-            {fieldDefinitions.length === 0 ? (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-4">
-                No custom fields defined. Add fields to capture lead-specific data.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {fieldDefinitions.map((field, i) => (
-                  <div
-                    key={i}
-                    className="flex gap-3 items-start p-3 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
-                  >
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={field.label}
-                          onChange={(e) => updateField(i, "label", e.target.value)}
-                          placeholder="Field Label"
-                          className="flex-1 px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
-                        />
-                        <TypeToggle
-                          value={field.type}
-                          options={[
-                            { value: "text", label: "Text" },
-                            { value: "number", label: "Num" },
-                            { value: "boolean", label: "Bool" },
-                            { value: "url", label: "URL" },
-                          ]}
-                          onChange={(v) => updateField(i, "type", v)}
-                        />
-                      </div>
-                      <input
-                        type="text"
-                        value={field.description}
-                        onChange={(e) => updateField(i, "description", e.target.value)}
-                        placeholder="Description (helps AI understand what to extract)"
-                        className="w-full px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
-                      />
-                    </div>
-                    <button
-                      onClick={() => removeField(i)}
-                      className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 transition-colors mt-0.5"
-                    >
-                      <TrashIcon size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Next button */}
+          <button
+            onClick={() => setStep(4)}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors"
+          >
+            Next: Review & Create
+          </button>
         </div>
       )}
 
-      {/* ── Step 4: Review ────────────────────────────────────────────── */}
+      {/* ── Step 4: Review & Create ──────────────────────────────────────── */}
       {step === 4 && (
         <div className="max-w-3xl space-y-6">
           <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 space-y-5">
-            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Campaign Summary</h3>
+            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+              Campaign Summary
+            </h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Name</p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">{name || "Untitled"}</p>
+                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">
+                  {name || "Untitled"}
+                </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Target Niche</p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">{targetNiche || "Not set"}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                  Target Niche
+                </p>
+                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">
+                  {editableNiche || "Not set"}
+                </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">AI Provider</p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium capitalize">{aiProvider}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                  AI Provider
+                </p>
+                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium capitalize">
+                  {aiProvider}
+                </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Schedule</p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium capitalize">{scheduleFrequency}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                  Schedule
+                </p>
+                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium capitalize">
+                  {editableSchedule}
+                </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Auto-Enrich</p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">{autoEnrich ? "Yes" : "No"}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                  Auto-Enrich
+                </p>
+                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">
+                  {editableAutoEnrich ? "Yes" : "No"}
+                </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Actors</p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">{selectedActors.length} selected</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                  Actors
+                </p>
+                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">
+                  {selectedActors.size} selected
+                </p>
               </div>
             </div>
 
             {/* Search terms */}
             {searchTerms.length > 0 && (
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">Search Terms</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
+                  Search Terms
+                </p>
                 <div className="flex flex-wrap gap-1.5">
                   {searchTerms.map((term, i) => (
                     <span
@@ -1003,18 +1170,23 @@ export default function NewCampaignPage() {
             )}
 
             {/* Actors list */}
-            {selectedActors.length > 0 && (
+            {selectedActors.size > 0 && (
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">Selected Actors</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
+                  Selected Actors
+                </p>
                 <div className="space-y-1.5">
-                  {selectedActors.map((id) => {
-                    const actor = allActors.find((a: ActorDefinition) => a.id === id);
+                  {[...selectedActors].map((id) => {
+                    const actor = getActorById(id);
                     return (
                       <div
                         key={id}
                         className="flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
                       >
-                        <LightningIcon size={12} className="text-neutral-500 dark:text-neutral-400" />
+                        <LightningIcon
+                          size={12}
+                          className="text-neutral-500 dark:text-neutral-400"
+                        />
                         <span className="text-xs text-neutral-950 dark:text-neutral-50">
                           {actor?.name || id}
                         </span>
@@ -1042,7 +1214,9 @@ export default function NewCampaignPage() {
                         key={i}
                         className="flex items-center justify-between px-3 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
                       >
-                        <span className="text-xs text-neutral-950 dark:text-neutral-50">{kpi.label}</span>
+                        <span className="text-xs text-neutral-950 dark:text-neutral-50">
+                          {kpi.label}
+                        </span>
                         <span className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase">
                           {kpi.type}
                         </span>
@@ -1066,7 +1240,9 @@ export default function NewCampaignPage() {
                         key={i}
                         className="flex items-center justify-between px-3 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
                       >
-                        <span className="text-xs text-neutral-950 dark:text-neutral-50">{field.label}</span>
+                        <span className="text-xs text-neutral-950 dark:text-neutral-50">
+                          {field.label}
+                        </span>
                         <span className="text-[10px] text-neutral-500 dark:text-neutral-400 capitalize">
                           {field.type}
                         </span>
@@ -1080,7 +1256,7 @@ export default function NewCampaignPage() {
           {/* Create button */}
           <button
             onClick={handleCreate}
-            disabled={creating || !name.trim() || !targetNiche.trim()}
+            disabled={creating || !name.trim() || !editableNiche.trim()}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {creating ? (
@@ -1092,6 +1268,8 @@ export default function NewCampaignPage() {
               <>
                 <CheckCircleIcon size={16} />
                 Create Campaign
+                {kpiDefinitions.filter((k) => k.label).length > 0 &&
+                  ` with ${kpiDefinitions.filter((k) => k.label).length} KPI${kpiDefinitions.filter((k) => k.label).length > 1 ? "s" : ""}`}
               </>
             )}
           </button>
@@ -1108,16 +1286,6 @@ export default function NewCampaignPage() {
             <ArrowLeftIcon size={14} />
             Back
           </button>
-
-          {step < 4 && (
-            <button
-              onClick={() => setStep((s) => s + 1)}
-              disabled={!canGoNext()}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Next
-            </button>
-          )}
         </div>
       )}
     </div>

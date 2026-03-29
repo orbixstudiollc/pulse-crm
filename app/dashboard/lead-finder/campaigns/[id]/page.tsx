@@ -46,6 +46,7 @@ import {
   InfoIcon,
 } from "@/components/ui";
 import { ScoreBadge } from "@/components/lead-finder/ScoreBadge";
+import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 import { useLeadEvents } from "@/hooks/use-lead-events";
 import { useLeadFinderActors } from "@/hooks/use-lead-finder-actors";
 
@@ -654,6 +655,7 @@ export default function CampaignDetailPage() {
 
   return (
     <div className="p-6 lg:p-8 space-y-5">
+      <LeadFinderSubNav />
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
