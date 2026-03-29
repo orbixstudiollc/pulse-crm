@@ -7,6 +7,7 @@ const tabs = [
   { name: "Campaigns", href: "/dashboard/lead-finder/campaigns" },
   { name: "All Leads", href: "/dashboard/lead-finder/leads" },
   { name: "Costs", href: "/dashboard/lead-finder/costs" },
+  { name: "Settings", href: "/dashboard/lead-finder/settings" },
 ];
 
 export function LeadFinderSubNav() {
