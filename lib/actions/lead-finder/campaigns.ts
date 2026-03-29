@@ -212,12 +212,29 @@ export async function updateLFCampaign(
   updates: Record<string, unknown>
 ) {
   const supabase = await createClient();
-  await getOrgId();
+  const orgId = await getOrgId();
+
+  // Only allow known columns to avoid Supabase errors
+  const allowed = [
+    "name", "description", "target_niche", "apify_actors", "actor_configs",
+    "kpi_definitions", "lead_field_definitions", "schedule_frequency",
+    "ai_provider", "auto_enrich", "max_leads_per_run", "max_pages_per_search",
+    "enrichment_concurrency", "status",
+  ];
+  const safeUpdates: Record<string, unknown> = {};
+  for (const key of allowed) {
+    if (key in updates) safeUpdates[key] = updates[key];
+  }
+
+  if (Object.keys(safeUpdates).length === 0) {
+    return { error: "No valid fields to update", data: null };
+  }
 
   const { data: rows, error } = await supabase
     .from("lf_campaigns")
-    .update(updates as never)
+    .update(safeUpdates as never)
     .eq("id", id)
+    .eq("organization_id", orgId)
     .select();
   const data = rows?.[0] ?? null;
 

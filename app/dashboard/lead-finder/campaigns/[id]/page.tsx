@@ -574,7 +574,7 @@ export default function CampaignDetailPage() {
         actorConfigs[actorId] = input;
       }
 
-      await fetch(`/api/lead-finder/campaigns/${id}`, {
+      const res = await fetch(`/api/lead-finder/campaigns/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -589,6 +589,11 @@ export default function CampaignDetailPage() {
           kpi_definitions: editKpis.filter((k) => k.label.trim()),
         }),
       });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to save settings");
+      }
 
       if (!editSettings.autoEnrich && isEnrichmentActive) {
         enrichAbortRef.current?.abort();
