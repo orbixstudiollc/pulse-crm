@@ -1126,7 +1126,7 @@ export default function CampaignDetailPage() {
                   <div className="space-y-4">
                     <Input label="Target Niche" value={editSettings.targetNiche} onChange={(e) => setEditSettings({ ...editSettings, targetNiche: e.target.value })} />
                     <div className="grid grid-cols-2 gap-3">
-                      <Select label="AI Provider" value={editSettings.aiProvider} onChange={(e) => setEditSettings({ ...editSettings, aiProvider: e.target.value })} options={[{ label: "OpenRouter", value: "openrouter" }, { label: "Anthropic (Claude)", value: "anthropic" }, { label: "OpenAI", value: "openai" }]} />
+                      <Select label="AI Provider" value={editSettings.aiProvider} onChange={(e) => setEditSettings({ ...editSettings, aiProvider: e.target.value })} options={[{ label: "OpenRouter", value: "openrouter" }, { label: "Anthropic (Claude)", value: "anthropic" }, { label: "Ollama (Local)", value: "ollama" }]} />
                       <Select label="Schedule" value={editSettings.scheduleFrequency} onChange={(e) => setEditSettings({ ...editSettings, scheduleFrequency: e.target.value })} options={[{ label: "Run Once", value: "once" }, { label: "Daily", value: "daily" }, { label: "Weekly", value: "weekly" }]} />
                     </div>
                     <div className="grid grid-cols-2 gap-3">

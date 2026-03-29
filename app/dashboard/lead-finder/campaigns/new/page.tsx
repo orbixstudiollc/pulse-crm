@@ -207,7 +207,7 @@ export default function NewCampaignPage() {
   // Step 1 state
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [aiProvider, setAiProvider] = useState<"openrouter" | "anthropic" | "openai">("anthropic");
+  const [aiProvider, setAiProvider] = useState<"openrouter" | "anthropic" | "ollama">("anthropic");
   const [planning, setPlanning] = useState(false);
   const [plan, setPlan] = useState<AIPlan | null>(null);
 
