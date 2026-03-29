@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         key: k.id,
         label: k.label,
         description: k.description ?? "",
-        type: (k.type === "number" ? "text" : k.type) as "boolean" | "text",
+        type: k.type,
       })),
       lead_field_definitions: plan.leadFieldDefinitions.map((f) => ({
         key: f.id,
