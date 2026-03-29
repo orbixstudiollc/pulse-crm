@@ -75,7 +75,7 @@ function StepIndicator({ current }: { current: number }) {
           <div key={step.id} className="flex items-center gap-2">
             {i > 0 && (
               <div
-                className={`w-8 h-px ${isCompleted || isActive ? "bg-white/40" : "bg-[#232329]"}`}
+                className={`w-8 h-px ${isCompleted || isActive ? "bg-white/40" : "bg-neutral-100 dark:bg-neutral-800"}`}
               />
             )}
             <div
@@ -83,8 +83,8 @@ function StepIndicator({ current }: { current: number }) {
                 isActive
                   ? "bg-white text-black"
                   : isCompleted
-                    ? "bg-emerald-400/10 text-emerald-400"
-                    : "bg-[#232329] text-[#a0a0a8]"
+                    ? "bg-emerald-400/10 text-green-600 dark:text-green-600 dark:text-green-400"
+                    : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
               }`}
             >
               {isCompleted ? (
@@ -346,18 +346,18 @@ export default function NewCampaignPage() {
   // ── Render ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] p-6 lg:p-8">
+    <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Link
           href="/dashboard/lead-finder/campaigns"
-          className="p-2 rounded-lg bg-[#141417] border border-[#232329] text-[#a0a0a8] hover:text-white transition-colors"
+          className="p-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-white transition-colors"
         >
           <ArrowLeftIcon size={16} />
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-white">New Campaign</h1>
-          <p className="text-sm text-[#a0a0a8]">
+          <h1 className="text-xl font-bold text-neutral-950 dark:text-neutral-50">New Campaign</h1>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
             Create a lead discovery campaign with AI assistance
           </p>
         </div>
@@ -369,9 +369,9 @@ export default function NewCampaignPage() {
       {/* ── Step 1: Describe ──────────────────────────────────────────── */}
       {step === 1 && (
         <div className="max-w-2xl">
-          <div className="bg-[#141417] border border-[#232329] rounded-xl p-6 space-y-5">
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-white mb-1.5">
+              <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-1.5">
                 Campaign Name
               </label>
               <input
@@ -379,15 +379,15 @@ export default function NewCampaignPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., SaaS Founders Q1 2026"
-                className="w-full px-3 py-2.5 bg-[#0a0a0c] border border-[#232329] rounded-lg text-white text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444]"
+                className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444]"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white mb-1.5">
+              <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-1.5">
                 Campaign Description
               </label>
-              <p className="text-xs text-[#a0a0a8] mb-2">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
                 Describe what kind of leads you are looking for, your target
                 market, ideal customer profile, and any specific criteria. The
                 more detail you provide, the better the AI plan.
@@ -397,12 +397,12 @@ export default function NewCampaignPage() {
                 onChange={(e) => setDescription(e.target.value)}
                 rows={6}
                 placeholder="I want to find SaaS founders in the B2B space who have between 10-50 employees, have recently raised a Series A, and are looking for CRM solutions..."
-                className="w-full px-3 py-2.5 bg-[#0a0a0c] border border-[#232329] rounded-lg text-white text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444] resize-none"
+                className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444] resize-none"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white mb-1.5">
+              <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-1.5">
                 AI Provider
               </label>
               <div className="flex gap-3">
@@ -413,7 +413,7 @@ export default function NewCampaignPage() {
                     className={`flex-1 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
                       aiProvider === provider
                         ? "bg-white text-black border-white"
-                        : "bg-[#0a0a0c] text-[#a0a0a8] border-[#232329] hover:border-[#444] hover:text-white"
+                        : "bg-neutral-50 dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:border-[#444] hover:text-white"
                     }`}
                   >
                     {provider === "anthropic" ? "Claude (Anthropic)" : "GPT (OpenAI)"}
@@ -443,7 +443,7 @@ export default function NewCampaignPage() {
             {/* Skip planning option */}
             <button
               onClick={() => setStep(2)}
-              className="w-full text-center text-xs text-[#a0a0a8] hover:text-white transition-colors"
+              className="w-full text-center text-xs text-neutral-500 dark:text-neutral-400 hover:text-white transition-colors"
             >
               Skip AI planning and configure manually
             </button>
@@ -455,14 +455,14 @@ export default function NewCampaignPage() {
       {step === 2 && (
         <div className="max-w-3xl space-y-6">
           {/* Target niche */}
-          <div className="bg-[#141417] border border-[#232329] rounded-xl p-6">
-            <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <TargetIcon size={16} className="text-[#a0a0a8]" />
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
+            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 mb-4 flex items-center gap-2">
+              <TargetIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
               Target Configuration
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-[#a0a0a8] mb-1.5">
+                <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5">
                   Target Niche
                 </label>
                 <input
@@ -470,26 +470,26 @@ export default function NewCampaignPage() {
                   value={targetNiche}
                   onChange={(e) => setTargetNiche(e.target.value)}
                   placeholder="e.g., B2B SaaS Founders, Real Estate Agencies"
-                  className="w-full px-3 py-2.5 bg-[#0a0a0c] border border-[#232329] rounded-lg text-white text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444]"
+                  className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-[#a0a0a8] mb-1.5">
+                <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5">
                   Search Terms
                 </label>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {searchTerms.map((term, i) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#232329] text-white text-xs"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 text-xs"
                     >
                       {term}
                       <button
                         onClick={() =>
                           setSearchTerms((prev) => prev.filter((_, j) => j !== i))
                         }
-                        className="text-[#a0a0a8] hover:text-red-400"
+                        className="text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:text-red-400"
                       >
                         <XIcon size={10} />
                       </button>
@@ -503,11 +503,11 @@ export default function NewCampaignPage() {
                     onChange={(e) => setNewSearchTerm(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addSearchTerm()}
                     placeholder="Add search term..."
-                    className="flex-1 px-3 py-2 bg-[#0a0a0c] border border-[#232329] rounded-lg text-white text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444]"
+                    className="flex-1 px-3 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444]"
                   />
                   <button
                     onClick={addSearchTerm}
-                    className="px-3 py-2 rounded-lg bg-[#232329] text-[#a0a0a8] hover:text-white text-sm transition-colors"
+                    className="px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-white text-sm transition-colors"
                   >
                     <PlusIcon size={14} />
                   </button>
@@ -516,13 +516,13 @@ export default function NewCampaignPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-[#a0a0a8] mb-1.5">
+                  <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5">
                     Schedule
                   </label>
                   <select
                     value={scheduleFrequency}
                     onChange={(e) => setScheduleFrequency(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-[#0a0a0c] border border-[#232329] rounded-lg text-white text-sm focus:outline-none focus:border-[#444]"
+                    className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-[#444]"
                   >
                     <option value="once">Run Once</option>
                     <option value="daily">Daily</option>
@@ -532,15 +532,15 @@ export default function NewCampaignPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#a0a0a8] mb-1.5">
+                  <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5">
                     Auto-enrich
                   </label>
                   <button
                     onClick={() => setAutoEnrich(!autoEnrich)}
                     className={`w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
                       autoEnrich
-                        ? "bg-emerald-400/10 text-emerald-400 border-emerald-400/20"
-                        : "bg-[#0a0a0c] text-[#a0a0a8] border-[#232329]"
+                        ? "bg-emerald-400/10 text-green-600 dark:text-green-600 dark:text-green-400 border-emerald-400/20"
+                        : "bg-neutral-50 dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800"
                     }`}
                   >
                     {autoEnrich ? "Enabled" : "Disabled"}
@@ -551,17 +551,17 @@ export default function NewCampaignPage() {
           </div>
 
           {/* Actors selection */}
-          <div className="bg-[#141417] border border-[#232329] rounded-xl p-6">
-            <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <LightningIcon size={16} className="text-[#a0a0a8]" />
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
+            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 mb-4 flex items-center gap-2">
+              <LightningIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
               Discovery Actors
-              <span className="text-xs text-[#a0a0a8] font-normal">
+              <span className="text-xs text-neutral-500 dark:text-neutral-400 font-normal">
                 ({selectedActors.length} selected)
               </span>
             </h3>
 
             {allActors.length === 0 ? (
-              <div className="text-center py-8 text-[#a0a0a8] text-sm">
+              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400 text-sm">
                 <CircleNotchIcon size={20} className="animate-spin mx-auto mb-2" />
                 Loading actors...
               </div>
@@ -573,7 +573,7 @@ export default function NewCampaignPage() {
                   if (phaseActors.length === 0) return null;
                   return (
                     <div key={phase}>
-                      <p className="text-xs text-[#a0a0a8] uppercase tracking-wider mb-2 capitalize">
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2 capitalize">
                         {phase} Phase
                       </p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -585,8 +585,8 @@ export default function NewCampaignPage() {
                               onClick={() => toggleActor(actor.id)}
                               className={`text-left p-3 rounded-lg border transition-colors ${
                                 isSelected
-                                  ? "bg-white/5 border-white/20 text-white"
-                                  : "bg-[#0a0a0c] border-[#232329] text-[#a0a0a8] hover:border-[#444]"
+                                  ? "bg-white/5 border-white/20 text-neutral-950 dark:text-neutral-50"
+                                  : "bg-neutral-50 dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:border-[#444]"
                               }`}
                             >
                               <div className="flex items-center justify-between mb-1">
@@ -609,7 +609,7 @@ export default function NewCampaignPage() {
                                   )}
                                 </div>
                               </div>
-                              <p className="text-xs text-[#a0a0a8] line-clamp-2">
+                              <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">
                                 {actor.description}
                               </p>
                             </button>
@@ -625,9 +625,9 @@ export default function NewCampaignPage() {
 
           {/* Actor configs */}
           {selectedActors.length > 0 && (
-            <div className="bg-[#141417] border border-[#232329] rounded-xl p-6">
-              <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-                <GearIcon size={16} className="text-[#a0a0a8]" />
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
+              <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 mb-4 flex items-center gap-2">
+                <GearIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
                 Actor Configuration
               </h3>
               <div className="space-y-6">
@@ -637,19 +637,19 @@ export default function NewCampaignPage() {
                   return (
                     <div
                       key={actorId}
-                      className="p-4 rounded-lg bg-[#0a0a0c] border border-[#232329]"
+                      className="p-4 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
                     >
-                      <p className="text-sm font-medium text-white mb-3">
+                      <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-3">
                         {actor.name}
                       </p>
                       {actor.requiredInputFields?.length > 0 ? (
                         <div className="space-y-3">
                           {actor.requiredInputFields.map((field) => (
                             <div key={field.key}>
-                              <label className="block text-xs text-[#a0a0a8] mb-1">
+                              <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">
                                 {field.label}
                                 {field.required && (
-                                  <span className="text-red-400 ml-0.5">*</span>
+                                  <span className="text-red-600 dark:text-red-400 ml-0.5">*</span>
                                 )}
                               </label>
                               <input
@@ -659,13 +659,13 @@ export default function NewCampaignPage() {
                                   updateActorConfig(actorId, field.key, e.target.value)
                                 }
                                 placeholder={field.placeholder || ""}
-                                className="w-full px-3 py-2 bg-[#141417] border border-[#232329] rounded-lg text-white text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444]"
+                                className="w-full px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444]"
                               />
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-[#a0a0a8]">
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
                           No configuration required for this actor.
                         </p>
                       )}
@@ -686,7 +686,7 @@ export default function NewCampaignPage() {
             <button
               onClick={handleSuggestFields}
               disabled={suggestingFields || !targetNiche}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#232329] text-[#a0a0a8] hover:text-white text-sm transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-white text-sm transition-colors disabled:opacity-50"
             >
               {suggestingFields ? (
                 <CircleNotchIcon size={14} className="animate-spin" />
@@ -698,15 +698,15 @@ export default function NewCampaignPage() {
           </div>
 
           {/* KPI Definitions */}
-          <div className="bg-[#141417] border border-[#232329] rounded-xl p-6">
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <ChartBarIcon size={16} className="text-[#a0a0a8]" />
+              <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 flex items-center gap-2">
+                <ChartBarIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
                 KPI Definitions
               </h3>
               <button
                 onClick={addKpi}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#232329] text-[#a0a0a8] hover:text-white text-xs transition-colors"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-white text-xs transition-colors"
               >
                 <PlusIcon size={12} />
                 Add KPI
@@ -714,7 +714,7 @@ export default function NewCampaignPage() {
             </div>
 
             {kpiDefinitions.length === 0 ? (
-              <p className="text-sm text-[#a0a0a8] text-center py-4">
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-4">
                 No KPIs defined. Add KPIs to score and qualify leads.
               </p>
             ) : (
@@ -722,7 +722,7 @@ export default function NewCampaignPage() {
                 {kpiDefinitions.map((kpi, i) => (
                   <div
                     key={i}
-                    className="flex gap-3 items-start p-3 rounded-lg bg-[#0a0a0c] border border-[#232329]"
+                    className="flex gap-3 items-start p-3 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
                   >
                     <div className="flex-1 grid grid-cols-3 gap-2">
                       <input
@@ -730,19 +730,19 @@ export default function NewCampaignPage() {
                         value={kpi.label}
                         onChange={(e) => updateKpi(i, "label", e.target.value)}
                         placeholder="KPI Label"
-                        className="px-2 py-1.5 bg-[#141417] border border-[#232329] rounded text-white text-xs focus:outline-none focus:border-[#444]"
+                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-[#444]"
                       />
                       <input
                         type="text"
                         value={kpi.description}
                         onChange={(e) => updateKpi(i, "description", e.target.value)}
                         placeholder="Description"
-                        className="px-2 py-1.5 bg-[#141417] border border-[#232329] rounded text-white text-xs focus:outline-none focus:border-[#444]"
+                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-[#444]"
                       />
                       <select
                         value={kpi.type}
                         onChange={(e) => updateKpi(i, "type", e.target.value)}
-                        className="px-2 py-1.5 bg-[#141417] border border-[#232329] rounded text-white text-xs focus:outline-none focus:border-[#444]"
+                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-[#444]"
                       >
                         <option value="boolean">Boolean (Yes/No)</option>
                         <option value="text">Text</option>
@@ -750,7 +750,7 @@ export default function NewCampaignPage() {
                     </div>
                     <button
                       onClick={() => removeKpi(i)}
-                      className="p-1 text-[#a0a0a8] hover:text-red-400 transition-colors"
+                      className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:text-red-400 transition-colors"
                     >
                       <TrashIcon size={14} />
                     </button>
@@ -761,15 +761,15 @@ export default function NewCampaignPage() {
           </div>
 
           {/* Lead Field Definitions */}
-          <div className="bg-[#141417] border border-[#232329] rounded-xl p-6">
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <TargetIcon size={16} className="text-[#a0a0a8]" />
+              <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 flex items-center gap-2">
+                <TargetIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
                 Custom Lead Fields
               </h3>
               <button
                 onClick={addField}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#232329] text-[#a0a0a8] hover:text-white text-xs transition-colors"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-white text-xs transition-colors"
               >
                 <PlusIcon size={12} />
                 Add Field
@@ -777,7 +777,7 @@ export default function NewCampaignPage() {
             </div>
 
             {fieldDefinitions.length === 0 ? (
-              <p className="text-sm text-[#a0a0a8] text-center py-4">
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-4">
                 No custom fields defined. Add fields to capture lead-specific data.
               </p>
             ) : (
@@ -785,7 +785,7 @@ export default function NewCampaignPage() {
                 {fieldDefinitions.map((field, i) => (
                   <div
                     key={i}
-                    className="flex gap-3 items-start p-3 rounded-lg bg-[#0a0a0c] border border-[#232329]"
+                    className="flex gap-3 items-start p-3 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
                   >
                     <div className="flex-1 grid grid-cols-3 gap-2">
                       <input
@@ -793,19 +793,19 @@ export default function NewCampaignPage() {
                         value={field.label}
                         onChange={(e) => updateField(i, "label", e.target.value)}
                         placeholder="Field Label"
-                        className="px-2 py-1.5 bg-[#141417] border border-[#232329] rounded text-white text-xs focus:outline-none focus:border-[#444]"
+                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-[#444]"
                       />
                       <input
                         type="text"
                         value={field.description}
                         onChange={(e) => updateField(i, "description", e.target.value)}
                         placeholder="Description"
-                        className="px-2 py-1.5 bg-[#141417] border border-[#232329] rounded text-white text-xs focus:outline-none focus:border-[#444]"
+                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-[#444]"
                       />
                       <select
                         value={field.source}
                         onChange={(e) => updateField(i, "source", e.target.value)}
-                        className="px-2 py-1.5 bg-[#141417] border border-[#232329] rounded text-white text-xs focus:outline-none focus:border-[#444]"
+                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-[#444]"
                       >
                         <option value="mapped">Mapped Data</option>
                         <option value="enrichment">Enrichment</option>
@@ -814,7 +814,7 @@ export default function NewCampaignPage() {
                     </div>
                     <button
                       onClick={() => removeField(i)}
-                      className="p-1 text-[#a0a0a8] hover:text-red-400 transition-colors"
+                      className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:text-red-400 transition-colors"
                     >
                       <TrashIcon size={14} />
                     </button>
@@ -829,45 +829,45 @@ export default function NewCampaignPage() {
       {/* ── Step 4: Review ────────────────────────────────────────────── */}
       {step === 4 && (
         <div className="max-w-3xl space-y-6">
-          <div className="bg-[#141417] border border-[#232329] rounded-xl p-6 space-y-5">
-            <h3 className="text-sm font-semibold text-white">Campaign Summary</h3>
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 space-y-5">
+            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Campaign Summary</h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-[#a0a0a8] mb-1">Name</p>
-                <p className="text-sm text-white font-medium">{name || "Untitled"}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Name</p>
+                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">{name || "Untitled"}</p>
               </div>
               <div>
-                <p className="text-xs text-[#a0a0a8] mb-1">Target Niche</p>
-                <p className="text-sm text-white font-medium">{targetNiche || "Not set"}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Target Niche</p>
+                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">{targetNiche || "Not set"}</p>
               </div>
               <div>
-                <p className="text-xs text-[#a0a0a8] mb-1">AI Provider</p>
-                <p className="text-sm text-white font-medium capitalize">{aiProvider}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">AI Provider</p>
+                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium capitalize">{aiProvider}</p>
               </div>
               <div>
-                <p className="text-xs text-[#a0a0a8] mb-1">Schedule</p>
-                <p className="text-sm text-white font-medium capitalize">{scheduleFrequency}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Schedule</p>
+                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium capitalize">{scheduleFrequency}</p>
               </div>
               <div>
-                <p className="text-xs text-[#a0a0a8] mb-1">Auto-Enrich</p>
-                <p className="text-sm text-white font-medium">{autoEnrich ? "Yes" : "No"}</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Auto-Enrich</p>
+                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">{autoEnrich ? "Yes" : "No"}</p>
               </div>
               <div>
-                <p className="text-xs text-[#a0a0a8] mb-1">Actors</p>
-                <p className="text-sm text-white font-medium">{selectedActors.length} selected</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Actors</p>
+                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">{selectedActors.length} selected</p>
               </div>
             </div>
 
             {/* Search terms */}
             {searchTerms.length > 0 && (
               <div>
-                <p className="text-xs text-[#a0a0a8] mb-2">Search Terms</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">Search Terms</p>
                 <div className="flex flex-wrap gap-1.5">
                   {searchTerms.map((term, i) => (
                     <span
                       key={i}
-                      className="px-2 py-0.5 rounded-md bg-[#232329] text-white text-xs"
+                      className="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 text-xs"
                     >
                       {term}
                     </span>
@@ -879,20 +879,20 @@ export default function NewCampaignPage() {
             {/* Actors list */}
             {selectedActors.length > 0 && (
               <div>
-                <p className="text-xs text-[#a0a0a8] mb-2">Selected Actors</p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">Selected Actors</p>
                 <div className="space-y-1.5">
                   {selectedActors.map((id) => {
                     const actor = allActors.find((a) => a.id === id);
                     return (
                       <div
                         key={id}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#0a0a0c] border border-[#232329]"
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
                       >
-                        <LightningIcon size={12} className="text-[#a0a0a8]" />
-                        <span className="text-xs text-white">
+                        <LightningIcon size={12} className="text-neutral-500 dark:text-neutral-400" />
+                        <span className="text-xs text-neutral-950 dark:text-neutral-50">
                           {actor?.name || id}
                         </span>
-                        <span className="text-[10px] text-[#a0a0a8] capitalize">
+                        <span className="text-[10px] text-neutral-500 dark:text-neutral-400 capitalize">
                           ({actor?.phase})
                         </span>
                       </div>
@@ -905,7 +905,7 @@ export default function NewCampaignPage() {
             {/* KPIs */}
             {kpiDefinitions.filter((k) => k.label).length > 0 && (
               <div>
-                <p className="text-xs text-[#a0a0a8] mb-2">
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
                   KPIs ({kpiDefinitions.filter((k) => k.label).length})
                 </p>
                 <div className="space-y-1">
@@ -914,10 +914,10 @@ export default function NewCampaignPage() {
                     .map((kpi, i) => (
                       <div
                         key={i}
-                        className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#0a0a0c] border border-[#232329]"
+                        className="flex items-center justify-between px-3 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
                       >
-                        <span className="text-xs text-white">{kpi.label}</span>
-                        <span className="text-[10px] text-[#a0a0a8] uppercase">
+                        <span className="text-xs text-neutral-950 dark:text-neutral-50">{kpi.label}</span>
+                        <span className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase">
                           {kpi.type}
                         </span>
                       </div>
@@ -929,7 +929,7 @@ export default function NewCampaignPage() {
             {/* Fields */}
             {fieldDefinitions.filter((f) => f.label).length > 0 && (
               <div>
-                <p className="text-xs text-[#a0a0a8] mb-2">
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
                   Custom Fields ({fieldDefinitions.filter((f) => f.label).length})
                 </p>
                 <div className="space-y-1">
@@ -938,10 +938,10 @@ export default function NewCampaignPage() {
                     .map((field, i) => (
                       <div
                         key={i}
-                        className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#0a0a0c] border border-[#232329]"
+                        className="flex items-center justify-between px-3 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
                       >
-                        <span className="text-xs text-white">{field.label}</span>
-                        <span className="text-[10px] text-[#a0a0a8] capitalize">
+                        <span className="text-xs text-neutral-950 dark:text-neutral-50">{field.label}</span>
+                        <span className="text-[10px] text-neutral-500 dark:text-neutral-400 capitalize">
                           {field.source}
                         </span>
                       </div>
@@ -978,7 +978,7 @@ export default function NewCampaignPage() {
           <button
             onClick={() => setStep(Math.max(1, step - 1))}
             disabled={step === 1}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#232329] text-[#a0a0a8] text-sm font-medium hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm font-medium hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <ArrowLeftIcon size={14} />
             Back

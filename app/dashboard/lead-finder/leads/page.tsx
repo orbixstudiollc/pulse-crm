@@ -40,13 +40,13 @@ interface Campaign {
 // ── Status styles ──────────────────────────────────────────────────────────
 
 const LEAD_STATUS_STYLES: Record<string, string> = {
-  new: "text-blue-400 bg-blue-400/10",
-  enriching: "text-amber-400 bg-amber-400/10",
-  enriched: "text-green-400 bg-green-400/10",
-  qualified: "text-emerald-400 bg-emerald-400/10",
-  disqualified: "text-red-400 bg-red-400/10",
-  converted: "text-purple-400 bg-purple-400/10",
-  error: "text-red-400 bg-red-400/10",
+  new: "text-blue-700 dark:text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30",
+  enriching: "text-amber-700 dark:text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30",
+  enriched: "text-green-700 dark:text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
+  qualified: "text-green-700 dark:text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
+  disqualified: "text-red-700 dark:text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30",
+  converted: "text-violet-700 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/30",
+  error: "text-red-700 dark:text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30",
 };
 
 // ── Page sizes ─────────────────────────────────────────────────────────────
@@ -250,12 +250,12 @@ export default function AllLeadsPage() {
   // ── Render ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] p-6 lg:p-8">
+    <div className="p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Lead Finder</h1>
-          <p className="text-sm text-[#a0a0a8] mt-1">
+          <h1 className="text-2xl font-bold text-neutral-950 dark:text-neutral-50">Lead Finder</h1>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
             All leads across campaigns
           </p>
         </div>
@@ -270,14 +270,14 @@ export default function AllLeadsPage() {
         <div className="relative flex-1 min-w-[200px] max-w-xs">
           <MagnifyingGlassIcon
             size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a0a0a8]"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400"
           />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search leads..."
-            className="w-full pl-8 pr-3 py-2 bg-[#141417] border border-[#232329] rounded-lg text-white text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444]"
+            className="w-full pl-8 pr-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444]"
           />
         </div>
 
@@ -288,7 +288,7 @@ export default function AllLeadsPage() {
             setCampaignFilter(e.target.value);
             setOffset(0);
           }}
-          className="px-3 py-2 bg-[#141417] border border-[#232329] rounded-lg text-white text-sm focus:outline-none focus:border-[#444]"
+          className="px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-[#444]"
         >
           <option value="">All Campaigns</option>
           {campaigns.map((c) => (
@@ -305,7 +305,7 @@ export default function AllLeadsPage() {
             setStatusFilter(e.target.value);
             setOffset(0);
           }}
-          className="px-3 py-2 bg-[#141417] border border-[#232329] rounded-lg text-white text-sm focus:outline-none focus:border-[#444]"
+          className="px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-[#444]"
         >
           <option value="">All Statuses</option>
           <option value="new">New</option>
@@ -321,8 +321,8 @@ export default function AllLeadsPage() {
           onClick={() => setShowAIFilter(!showAIFilter)}
           className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
             showAIFilter
-              ? "bg-white/5 text-white border-white/20"
-              : "bg-[#141417] text-[#a0a0a8] border-[#232329] hover:text-white"
+              ? "bg-white/5 text-neutral-950 dark:text-neutral-50 border-white/20"
+              : "bg-white dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:text-white"
           }`}
         >
           <SparkleIcon size={14} />
@@ -332,13 +332,13 @@ export default function AllLeadsPage() {
         {/* Bulk actions */}
         {selectedLeads.size > 0 && (
           <div className="flex items-center gap-2 ml-auto">
-            <span className="text-xs text-[#a0a0a8]">
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">
               {selectedLeads.size} selected
             </span>
             <button
               onClick={handleBulkImport}
               disabled={importing}
-              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-emerald-400/10 text-emerald-400 border border-emerald-400/20 text-xs font-medium hover:bg-emerald-400/20 transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-emerald-400/10 text-green-600 dark:text-green-600 dark:text-green-400 border border-emerald-400/20 text-xs font-medium hover:bg-emerald-400/20 transition-colors"
             >
               {importing ? (
                 <CircleNotchIcon size={12} className="animate-spin" />
@@ -350,7 +350,7 @@ export default function AllLeadsPage() {
             <button
               onClick={handleBulkDelete}
               disabled={deleting}
-              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-red-400/10 text-red-400 border border-red-400/20 text-xs font-medium hover:bg-red-400/20 transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-red-400/10 text-red-600 dark:text-red-400 border border-red-400/20 text-xs font-medium hover:bg-red-400/20 transition-colors"
             >
               {deleting ? (
                 <CircleNotchIcon size={12} className="animate-spin" />
@@ -365,8 +365,8 @@ export default function AllLeadsPage() {
 
       {/* AI Filter panel */}
       {showAIFilter && (
-        <div className="mb-4 p-4 bg-[#141417] border border-[#232329] rounded-xl">
-          <p className="text-xs text-[#a0a0a8] mb-2">
+        <div className="mb-4 p-4 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
             Describe the kind of leads you are looking for in natural language:
           </p>
           <div className="flex gap-2">
@@ -376,7 +376,7 @@ export default function AllLeadsPage() {
               onChange={(e) => setAiQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAIFilter()}
               placeholder='e.g., "SaaS companies with more than 20 employees that use React"'
-              className="flex-1 px-3 py-2 bg-[#0a0a0c] border border-[#232329] rounded-lg text-white text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444]"
+              className="flex-1 px-3 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444]"
             />
             <button
               onClick={handleAIFilter}
@@ -396,7 +396,7 @@ export default function AllLeadsPage() {
                 setAiQuery("");
                 fetchLeads();
               }}
-              className="px-3 py-2 rounded-lg bg-[#232329] text-[#a0a0a8] text-sm hover:text-white transition-colors"
+              className="px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm hover:text-white transition-colors"
             >
               Clear
             </button>
@@ -407,17 +407,17 @@ export default function AllLeadsPage() {
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-24">
-          <CircleNotchIcon size={32} className="animate-spin text-[#a0a0a8]" />
+          <CircleNotchIcon size={32} className="animate-spin text-neutral-500 dark:text-neutral-400" />
         </div>
       )}
 
       {/* Leads table */}
       {!loading && (
-        <div className="bg-[#141417] border border-[#232329] rounded-xl overflow-hidden">
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-[#232329]">
+                <tr className="border-b border-neutral-200 dark:border-neutral-800">
                   <th className="p-3 w-10">
                     <input
                       type="checkbox"
@@ -426,28 +426,28 @@ export default function AllLeadsPage() {
                         filteredLeads.length > 0
                       }
                       onChange={toggleSelectAll}
-                      className="rounded border-[#444] bg-[#0a0a0c]"
+                      className="rounded border-[#444] bg-neutral-50 dark:bg-neutral-950"
                     />
                   </th>
-                  <th className="p-3 text-xs font-medium text-[#a0a0a8] uppercase tracking-wider">
+                  <th className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                     Name
                   </th>
-                  <th className="p-3 text-xs font-medium text-[#a0a0a8] uppercase tracking-wider">
+                  <th className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                     Email
                   </th>
-                  <th className="p-3 text-xs font-medium text-[#a0a0a8] uppercase tracking-wider">
+                  <th className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                     Campaign
                   </th>
-                  <th className="p-3 text-xs font-medium text-[#a0a0a8] uppercase tracking-wider">
+                  <th className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                     Score
                   </th>
-                  <th className="p-3 text-xs font-medium text-[#a0a0a8] uppercase tracking-wider">
+                  <th className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="p-3 text-xs font-medium text-[#a0a0a8] uppercase tracking-wider">
+                  <th className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                     Source
                   </th>
-                  <th className="p-3 text-xs font-medium text-[#a0a0a8] uppercase tracking-wider">
+                  <th className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                     Created
                   </th>
                 </tr>
@@ -455,7 +455,7 @@ export default function AllLeadsPage() {
               <tbody>
                 {filteredLeads.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-12 text-center text-sm text-[#a0a0a8]">
+                    <td colSpan={8} className="p-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
                       No leads found.
                     </td>
                   </tr>
@@ -463,7 +463,7 @@ export default function AllLeadsPage() {
                   filteredLeads.map((lead) => (
                     <tr
                       key={lead.id}
-                      className="border-b border-[#232329]/50 hover:bg-[#1a1a1f] transition-colors cursor-pointer"
+                      className="border-b border-neutral-200 dark:border-neutral-800/50 hover:bg-white dark:bg-neutral-800 transition-colors cursor-pointer"
                       onClick={() =>
                         router.push(`/dashboard/lead-finder/leads/${lead.id}`)
                       }
@@ -476,17 +476,17 @@ export default function AllLeadsPage() {
                           type="checkbox"
                           checked={selectedLeads.has(lead.id)}
                           onChange={() => toggleSelect(lead.id)}
-                          className="rounded border-[#444] bg-[#0a0a0c]"
+                          className="rounded border-[#444] bg-neutral-50 dark:bg-neutral-950"
                         />
                       </td>
                       <td className="p-3">
-                        <span className="text-sm text-white font-medium">
+                        <span className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">
                           {lead.display_name || "Unknown"}
                         </span>
                       </td>
                       <td className="p-3">
                         {lead.email ? (
-                          <span className="text-sm text-[#a0a0a8] flex items-center gap-1">
+                          <span className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
                             <EnvelopeIcon size={12} />
                             {lead.email}
                           </span>
@@ -495,7 +495,7 @@ export default function AllLeadsPage() {
                         )}
                       </td>
                       <td className="p-3">
-                        <span className="text-xs text-[#a0a0a8]">
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400">
                           {campaignNameMap[lead.campaign_id] || "Unknown"}
                         </span>
                       </td>
@@ -505,19 +505,19 @@ export default function AllLeadsPage() {
                       <td className="p-3">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
-                            LEAD_STATUS_STYLES[lead.status] || "text-[#a0a0a8] bg-[#232329]"
+                            LEAD_STATUS_STYLES[lead.status] || "text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800"
                           }`}
                         >
                           {lead.status}
                         </span>
                       </td>
                       <td className="p-3">
-                        <span className="text-xs text-[#a0a0a8] capitalize">
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400 capitalize">
                           {lead.source?.replace(/_/g, " ") || "--"}
                         </span>
                       </td>
                       <td className="p-3">
-                        <span className="text-xs text-[#a0a0a8]">
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400">
                           {new Date(lead.created_at).toLocaleDateString()}
                         </span>
                       </td>
@@ -530,9 +530,9 @@ export default function AllLeadsPage() {
 
           {/* Pagination */}
           {total > 0 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-[#232329]">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-200 dark:border-neutral-800">
               <div className="flex items-center gap-4">
-                <span className="text-xs text-[#a0a0a8]">
+                <span className="text-xs text-neutral-500 dark:text-neutral-400">
                   Showing {offset + 1}-{Math.min(offset + pageSize, total)} of{" "}
                   {total}
                 </span>
@@ -542,7 +542,7 @@ export default function AllLeadsPage() {
                     setPageSize(Number(e.target.value));
                     setOffset(0);
                   }}
-                  className="px-2 py-1 bg-[#0a0a0c] border border-[#232329] rounded text-white text-xs focus:outline-none"
+                  className="px-2 py-1 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none"
                 >
                   {PAGE_SIZES.map((s) => (
                     <option key={s} value={s}>
@@ -555,7 +555,7 @@ export default function AllLeadsPage() {
                 <button
                   onClick={() => goToPage(currentPage - 1)}
                   disabled={currentPage <= 1}
-                  className="px-2 py-1 rounded text-xs text-[#a0a0a8] hover:text-white disabled:opacity-30 transition-colors"
+                  className="px-2 py-1 rounded text-xs text-neutral-500 dark:text-neutral-400 hover:text-white disabled:opacity-30 transition-colors"
                 >
                   Prev
                 </button>
@@ -577,7 +577,7 @@ export default function AllLeadsPage() {
                       className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
                         page === currentPage
                           ? "bg-white text-black"
-                          : "text-[#a0a0a8] hover:text-white"
+                          : "text-neutral-500 dark:text-neutral-400 hover:text-white"
                       }`}
                     >
                       {page}
@@ -587,7 +587,7 @@ export default function AllLeadsPage() {
                 <button
                   onClick={() => goToPage(currentPage + 1)}
                   disabled={currentPage >= totalPages}
-                  className="px-2 py-1 rounded text-xs text-[#a0a0a8] hover:text-white disabled:opacity-30 transition-colors"
+                  className="px-2 py-1 rounded text-xs text-neutral-500 dark:text-neutral-400 hover:text-white disabled:opacity-30 transition-colors"
                 >
                   Next
                 </button>
