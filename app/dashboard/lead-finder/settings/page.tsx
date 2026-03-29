@@ -24,12 +24,9 @@ interface SettingsData {
   apifyKey: string | null;
   anthropicKey: string | null;
   openrouterKey: string | null;
-  openaiKey: string | null;
   hasApify: boolean;
   hasAnthropic: boolean;
   hasOpenRouter: boolean;
-  hasOpenAI: boolean;
-  aiProvider: string;
   defaultModel: string;
   parallelEnrichmentLimit: number;
   agencyName: string;
@@ -139,8 +136,6 @@ export default function LeadFinderSettingsPage() {
   const [apifyKey, setApifyKey] = useState("");
   const [anthropicKey, setAnthropicKey] = useState("");
   const [openrouterKey, setOpenrouterKey] = useState("");
-  const [openaiKey, setOpenaiKey] = useState("");
-  const [aiProvider, setAiProvider] = useState("openai");
   const [savingKeys, setSavingKeys] = useState(false);
 
   // Enrichment state
@@ -164,7 +159,6 @@ export default function LeadFinderSettingsPage() {
         const d: SettingsData = j.data;
         setData(d);
         if (d) {
-          setAiProvider(d.aiProvider ?? "openai");
           setParallelLimit(d.parallelEnrichmentLimit ?? 1);
           setAgencyName(d.agencyName ?? "");
           setAgencyType(d.agencyType ?? "");
@@ -198,9 +192,8 @@ export default function LeadFinderSettingsPage() {
           hasApify: prev.hasApify || !!(payload.apifyKey && !String(payload.apifyKey).includes("•")),
           hasAnthropic: prev.hasAnthropic || !!(payload.anthropicKey && !String(payload.anthropicKey).includes("•")),
           hasOpenRouter: prev.hasOpenRouter || !!(payload.openrouterKey && !String(payload.openrouterKey).includes("•")),
-          hasOpenAI: prev.hasOpenAI || !!(payload.openaiKey && !String(payload.openaiKey).includes("•")),
         } : prev);
-        setApifyKey(""); setAnthropicKey(""); setOpenrouterKey(""); setOpenaiKey("");
+        setApifyKey(""); setAnthropicKey(""); setOpenrouterKey("");
       }
 
       // Refresh from server to get accurate state (no-store to skip cache)
@@ -210,7 +203,7 @@ export default function LeadFinderSettingsPage() {
     finally { setSaving(false); }
   }
 
-  const allRequired = data?.hasApify && (data?.hasAnthropic || data?.hasOpenRouter || data?.hasOpenAI);
+  const allRequired = data?.hasApify && (data?.hasAnthropic || data?.hasOpenRouter);
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -262,14 +255,6 @@ export default function LeadFinderSettingsPage() {
                     description="Required for running discovery campaigns"
                   />
                   <ApiKeyField
-                    label="OpenAI API Key"
-                    value={openaiKey}
-                    onChange={setOpenaiKey}
-                    hasValue={data?.hasOpenAI ?? false}
-                    placeholder="sk-..."
-                    description="platform.openai.com/api-keys"
-                  />
-                  <ApiKeyField
                     label="Anthropic API Key"
                     value={anthropicKey}
                     onChange={setAnthropicKey}
@@ -285,20 +270,9 @@ export default function LeadFinderSettingsPage() {
                     placeholder="sk-or-..."
                     description="openrouter.ai/keys — access GPT-4o and other models"
                   />
-                  <Field label="Default AI Provider">
-                    <select
-                      value={aiProvider}
-                      onChange={(e) => setAiProvider(e.target.value)}
-                      className={inputCls}
-                    >
-                      <option value="openai">OpenAI (GPT-4o)</option>
-                      <option value="anthropic">Anthropic (Claude)</option>
-                      <option value="openrouter">OpenRouter</option>
-                    </select>
-                  </Field>
                   <Button
                     className="w-full justify-center"
-                    onClick={() => save("keys", { apifyKey, anthropicKey, openrouterKey, openaiKey, aiProvider }, setSavingKeys)}
+                    onClick={() => save("keys", { apifyKey, anthropicKey, openrouterKey }, setSavingKeys)}
                     disabled={savingKeys}
                     leftIcon={savingKeys ? <CircleNotchIcon size={14} className="animate-spin" /> : <FloppyDiskIcon size={14} />}
                   >

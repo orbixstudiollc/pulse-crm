@@ -21,7 +21,7 @@ export async function GET() {
     // Use limit(1) — more robust than single() which errors on 0 rows
     const { data: aiRows } = await supabase
       .from("ai_settings")
-      .select("api_key, apify_api_key, openrouter_api_key, openai_api_key, default_model")
+      .select("api_key, apify_api_key, openrouter_api_key, default_model")
       .eq("organization_id", profile.organization_id)
       .limit(1);
     const ai = aiRows?.[0] ?? null;
@@ -40,13 +40,10 @@ export async function GET() {
         apifyKey: mask(ai?.apify_api_key),
         anthropicKey: mask(ai?.api_key),
         openrouterKey: mask(ai?.openrouter_api_key),
-        openaiKey: mask(ai?.openai_api_key),
         hasApify: !!ai?.apify_api_key,
         hasAnthropic: !!ai?.api_key,
         hasOpenRouter: !!ai?.openrouter_api_key,
-        hasOpenAI: !!ai?.openai_api_key,
-        aiProvider: "openai",
-        defaultModel: ai?.default_model ?? "gpt-4o",
+        defaultModel: ai?.default_model ?? "claude-3-5-sonnet-20241022",
         parallelEnrichmentLimit: 1,
         agencyName: org?.name ?? "",
         agencyType: "",
@@ -88,7 +85,6 @@ export async function PUT(req: NextRequest) {
       if (body.apifyKey && !String(body.apifyKey).includes("•"))         aiUpdates.apify_api_key = body.apifyKey;
       if (body.anthropicKey && !String(body.anthropicKey).includes("•")) aiUpdates.api_key = body.anthropicKey;
       if (body.openrouterKey && !String(body.openrouterKey).includes("•")) aiUpdates.openrouter_api_key = body.openrouterKey;
-      if (body.openaiKey && !String(body.openaiKey).includes("•"))       aiUpdates.openai_api_key = body.openaiKey;
 
       if (Object.keys(aiUpdates).length > 0) {
         // Try UPDATE first — if no rows affected, INSERT

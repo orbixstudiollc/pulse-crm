@@ -111,7 +111,7 @@ export default function NewCampaignPage() {
   // Step 1 state
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [aiProvider, setAiProvider] = useState<"anthropic" | "openai">("anthropic");
+  const aiProvider = "anthropic" as const;
   const [planning, setPlanning] = useState(false);
   const [plan, setPlan] = useState<AIPlan | null>(null);
 
@@ -399,27 +399,6 @@ export default function NewCampaignPage() {
                 placeholder="I want to find SaaS founders in the B2B space who have between 10-50 employees, have recently raised a Series A, and are looking for CRM solutions..."
                 className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus resize-none"
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-1.5">
-                AI Provider
-              </label>
-              <div className="flex gap-3">
-                {(["anthropic", "openai"] as const).map((provider) => (
-                  <button
-                    key={provider}
-                    onClick={() => setAiProvider(provider)}
-                    className={`flex-1 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
-                      aiProvider === provider
-                        ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 border-white"
-                        : "bg-neutral-50 dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50"
-                    }`}
-                  >
-                    {provider === "anthropic" ? "Claude (Anthropic)" : "GPT (OpenAI)"}
-                  </button>
-                ))}
-              </div>
             </div>
 
             <button
