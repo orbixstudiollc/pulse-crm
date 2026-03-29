@@ -397,6 +397,10 @@ export default function CampaignDetailPage() {
   const [discoveryProgress, setDiscoveryProgress] = useState<{ current: number; total: number } | null>(null);
   const [enrichmentProgress, setEnrichmentProgress] = useState<{ completed: number; total: number } | null>(null);
 
+  // Delete campaign
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   // Search & filters
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -610,6 +614,19 @@ export default function CampaignDetailPage() {
     }
   };
 
+  const handleDeleteCampaign = async () => {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/lead-finder/campaigns/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed");
+      toast.success("Campaign deleted");
+      router.push("/dashboard/lead-finder/campaigns");
+    } catch {
+      toast.error("Failed to delete campaign");
+      setDeleting(false);
+    }
+  };
+
   const handleImportToCRM = async () => {
     const ids = Array.from(selectedLeads);
     if (ids.length === 0) {
@@ -771,6 +788,13 @@ export default function CampaignDetailPage() {
 
         {/* Action buttons */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="inline-flex items-center justify-center h-9 w-9 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+            title="Delete Campaign"
+          >
+            <TrashIcon size={15} />
+          </button>
           <button
             onClick={() => setShowSettings(true)}
             className="inline-flex items-center justify-center h-9 w-9 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
@@ -1128,6 +1152,33 @@ export default function CampaignDetailPage() {
           onClose={() => setShowSettings(false)}
           onUpdate={handleUpdateCampaign}
         />
+      )}
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowDeleteConfirm(false)} />
+          <div className="relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-sm w-full mx-4">
+            <h3 className="text-base font-semibold text-neutral-950 dark:text-neutral-50 mb-2">Delete Campaign</h3>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-5">
+              This will permanently delete <span className="font-medium text-neutral-950 dark:text-neutral-50">{campaign.name}</span> and all its leads. This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm font-medium hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteCampaign}
+                disabled={deleting}
+                className="h-9 px-3 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50 transition-colors"
+              >
+                {deleting ? "Deleting..." : "Delete Campaign"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
