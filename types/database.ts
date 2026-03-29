@@ -20,6 +20,12 @@ export type Database = {
           slug: string;
           booking_url: string | null;
           booking_provider: string;
+          agency_type: string | null;
+          agency_description: string | null;
+          services: string | null;
+          results_case_studies: string | null;
+          target_industries: string | null;
+          agency_website: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -29,6 +35,12 @@ export type Database = {
           slug: string;
           booking_url?: string | null;
           booking_provider?: string;
+          agency_type?: string | null;
+          agency_description?: string | null;
+          services?: string | null;
+          results_case_studies?: string | null;
+          target_industries?: string | null;
+          agency_website?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -38,6 +50,12 @@ export type Database = {
           slug?: string;
           booking_url?: string | null;
           booking_provider?: string;
+          agency_type?: string | null;
+          agency_description?: string | null;
+          services?: string | null;
+          results_case_studies?: string | null;
+          target_industries?: string | null;
+          agency_website?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -1357,6 +1375,7 @@ export type Database = {
           feature_competitors: boolean;
           feature_objections: boolean;
           feature_chat: boolean;
+          feature_marketing: boolean;
           autonomy_lead_scoring: string;
           autonomy_icp_matching: string;
           autonomy_outreach: string;
@@ -1371,6 +1390,7 @@ export type Database = {
           monthly_token_limit: number;
           last_token_reset_daily: string;
           last_token_reset_monthly: string;
+          parallel_enrichment_limit: number;
           created_at: string;
           updated_at: string;
         };
@@ -1383,6 +1403,7 @@ export type Database = {
           openrouter_api_key?: string | null;
           openai_api_key?: string | null;
           default_model?: string;
+          parallel_enrichment_limit?: number;
           feature_lead_scoring?: boolean;
           feature_icp_matching?: boolean;
           feature_outreach?: boolean;
@@ -1392,6 +1413,7 @@ export type Database = {
           feature_competitors?: boolean;
           feature_objections?: boolean;
           feature_chat?: boolean;
+          feature_marketing?: boolean;
           autonomy_lead_scoring?: string;
           autonomy_icp_matching?: string;
           autonomy_outreach?: string;
@@ -1416,6 +1438,7 @@ export type Database = {
           openrouter_api_key?: string | null;
           openai_api_key?: string | null;
           default_model?: string;
+          parallel_enrichment_limit?: number;
           feature_lead_scoring?: boolean;
           feature_icp_matching?: boolean;
           feature_outreach?: boolean;
@@ -1425,6 +1448,7 @@ export type Database = {
           feature_competitors?: boolean;
           feature_objections?: boolean;
           feature_chat?: boolean;
+          feature_marketing?: boolean;
           autonomy_lead_scoring?: string;
           autonomy_icp_matching?: string;
           autonomy_outreach?: string;
