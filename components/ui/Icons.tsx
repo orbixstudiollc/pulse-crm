@@ -119,4 +119,17 @@ export {
   SignOutIcon,
   // Marketing
   MegaphoneSimpleIcon,
+  // Lead Finder Campaign
+  CaretUpIcon,
+  ArrowCounterClockwiseIcon,
+  PowerIcon,
+  ToggleLeftIcon,
+  ToggleRightIcon,
+  HashIcon,
+  LinkIcon,
+  TextTIcon,
+  TagIcon,
+  InfoIcon,
+  CaretDoubleRightIcon as ChevronsRightIcon,
+  ChartBarIcon as BarChartIcon,
 } from "@phosphor-icons/react";
