@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { generateCompletion, logLlmCost } from "../ai-provider";
 import type { AIProvider, LFLead, KpiDefinition } from "../types";
 
@@ -28,7 +28,7 @@ export async function scoreLead(
     targetNiche?: string;
   }
 ): Promise<ScoreResult> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
   const aiProvider = options?.aiProvider ?? "anthropic";
   const campaignId = options?.campaignId;
 
@@ -159,7 +159,7 @@ export async function scoreCampaignLeads(
   orgId: string,
   options?: { aiProvider?: AIProvider; limit?: number }
 ): Promise<{ scored: number; averageScore: number }> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
   const limit = options?.limit ?? 100;
 
   // Load campaign for context

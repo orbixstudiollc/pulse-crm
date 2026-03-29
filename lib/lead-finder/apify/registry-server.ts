@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import {
   ACTOR_REGISTRY,
   type ActorDefinition,
@@ -17,7 +17,7 @@ async function getCustomActorsFromDb(
   orgId: string
 ): Promise<ActorDefinition[]> {
   try {
-    const supabase = createAdminClient();
+    const supabase = await createClient();
     const { data } = await supabase
       .from("lf_custom_actors")
       .select("*")

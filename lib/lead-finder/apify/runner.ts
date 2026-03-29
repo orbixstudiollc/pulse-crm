@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { getApifyToken } from "../ai-provider";
 
 // =============================================================================
@@ -50,7 +50,7 @@ export async function startActorRun(
   campaignId?: string
 ): Promise<{ runId: string; dbId: string }> {
   const token = await getApifyToken(orgId);
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   // Insert DB record first
   const runInsert = {
@@ -118,7 +118,7 @@ export async function pollRunUntilDone(
   costUsd: number | null;
 }> {
   const token = await getApifyToken(orgId);
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
     const res = await fetch(
@@ -233,7 +233,7 @@ export async function runActorAndCollect(
     items = await fetchDatasetItems(result.datasetId, orgId, itemLimit);
 
     // Update result count
-    const supabase = createAdminClient();
+    const supabase = await createClient();
     await supabase
       .from("lf_apify_runs")
       .update({ result_count: items.length })

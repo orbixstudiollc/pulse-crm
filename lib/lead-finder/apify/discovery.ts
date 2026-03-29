@@ -27,7 +27,7 @@ export async function runSingleActorDiscovery(
   campaignId: string,
   orgId: string
 ): Promise<ActorRunResult> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   try {
     // Resolve actor definition for input coercion
@@ -196,7 +196,7 @@ async function insertWithDedup(
   campaignId: string,
   orgId: string
 ): Promise<{ inserted: number; deduplicated: number }> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   // Load existing emails + websites + display_names for dedup
   const { data: existingLeads } = await supabase

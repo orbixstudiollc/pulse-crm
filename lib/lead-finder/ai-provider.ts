@@ -171,7 +171,7 @@ export async function logLlmCost(
   orgId: string,
   campaignId?: string
 ): Promise<void> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
   const costData = {
     organization_id: orgId,
     campaign_id: campaignId ?? null,

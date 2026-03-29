@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { runActorAndCollect } from "../apify/runner";
 import { getActorById } from "../apify/registry-server";
 import { coerceActorInput } from "../apify/coerce-input";
@@ -46,7 +46,7 @@ export async function enrichSingleLead(
     kpiDefinitions?: KpiDefinition[];
   }
 ): Promise<void> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   // Load lead
   const { data: leadRows } = await supabase
@@ -212,7 +212,7 @@ export async function enrichCampaignLeads(
   orgId: string,
   options?: { limit?: number; concurrency?: number }
 ): Promise<{ enriched: number; failed: number; cancelled: boolean }> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
   clearCancellation(campaignId);
 
   // Load campaign for config
@@ -418,7 +418,7 @@ Respond in JSON with this exact structure:
     await logLlmCost(response, "enrichment", orgId, campaignId);
 
     // Update lead LLM costs
-    const supabase = createAdminClient();
+    const supabase = await createClient();
     await supabase
       .from("lf_leads")
       .update({

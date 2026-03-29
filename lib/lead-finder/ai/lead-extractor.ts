@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { generateCompletion, logLlmCost } from "../ai-provider";
 import type { AIProvider, LFLead, LeadFieldDefinition } from "../types";
 
@@ -18,7 +18,7 @@ export async function extractStaticFields(
   aiProvider: AIProvider = "anthropic",
   campaignId?: string
 ): Promise<Record<string, unknown>> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data: lead } = await supabase
     .from("lf_leads")
@@ -135,7 +135,7 @@ export async function extractAllFields(
   aiProvider: AIProvider = "anthropic",
   campaignId?: string
 ): Promise<Record<string, unknown>> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
 
   const { data: lead } = await supabase
     .from("lf_leads")
