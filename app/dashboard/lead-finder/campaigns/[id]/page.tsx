@@ -1081,7 +1081,7 @@ export default function CampaignDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {campaign.runs.map((run) => {
+                {campaign.runs.slice(0, 5).map((run) => {
                   const actor = getActorById(run.actor_id);
                   return (
                     <tr key={run.id} className="border-b border-neutral-100 dark:border-neutral-800/50">
