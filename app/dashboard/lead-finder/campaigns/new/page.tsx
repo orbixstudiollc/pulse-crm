@@ -528,13 +528,14 @@ export default function NewCampaignPage() {
                   </label>
                   <button
                     onClick={() => setAutoEnrich(!autoEnrich)}
-                    className={`w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
+                    className={`inline-flex items-center gap-2 h-9 px-3 rounded border text-sm font-medium transition-colors ${
                       autoEnrich
-                        ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
-                        : "bg-neutral-50 dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800"
+                        ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/50"
+                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700"
                     }`}
                   >
-                    {autoEnrich ? "Enabled" : "Disabled"}
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${autoEnrich ? "bg-green-500" : "bg-neutral-400"}`} />
+                    {autoEnrich ? "Auto-enrich on" : "Auto-enrich off"}
                   </button>
                 </div>
               </div>
