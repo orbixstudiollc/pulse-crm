@@ -2,7 +2,7 @@
 // Lead Finder – Shared Types
 // =============================================================================
 
-export type AIProvider = "openai" | "anthropic";
+export type AIProvider = "openai" | "anthropic" | "openrouter";
 export type CampaignStatus = "draft" | "active" | "paused" | "completed";
 export type LeadStatus =
   | "new"

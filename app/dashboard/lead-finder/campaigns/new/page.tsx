@@ -111,7 +111,7 @@ export default function NewCampaignPage() {
   // Step 1 state
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const aiProvider = "anthropic" as const;
+  const [aiProvider, setAiProvider] = useState<"openrouter" | "anthropic" | "openai">("anthropic");
   const [planning, setPlanning] = useState(false);
   const [plan, setPlan] = useState<AIPlan | null>(null);
 
@@ -132,6 +132,18 @@ export default function NewCampaignPage() {
 
   // Step 4 state
   const [creating, setCreating] = useState(false);
+
+  // ── Detect AI provider from settings ──────────────────────────────────
+
+  useEffect(() => {
+    fetch("/api/lead-finder/settings")
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.data?.hasOpenRouter) setAiProvider("openrouter");
+        else if (j.data?.hasAnthropic) setAiProvider("anthropic");
+      })
+      .catch(() => {});
+  }, []);
 
   // ── Fetch actors ───────────────────────────────────────────────────────
 
@@ -822,7 +834,7 @@ export default function NewCampaignPage() {
               </div>
               <div>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">AI Provider</p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium capitalize">{aiProvider}</p>
+                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">{aiProvider === "openrouter" ? "OpenRouter" : aiProvider === "openai" ? "OpenAI" : "Anthropic"}</p>
               </div>
               <div>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Schedule</p>
