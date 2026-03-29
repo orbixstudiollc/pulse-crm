@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     let leadsQuery = supabase
       .from("lf_leads")
       .select(
-        "id, status, score, created_at, llm_cost_usd, apify_cost_usd, discovery_apify_cost_usd, discovery_llm_cost_usd, source_actor, campaign_id",
+        "id, status, score, created_at, llm_cost_usd, apify_cost_usd, discovery_apify_cost_usd, discovery_llm_cost_usd, campaign_id",
         { count: "exact" }
       )
       .eq("organization_id", orgId);
@@ -70,11 +70,16 @@ export async function GET(req: NextRequest) {
     );
     const totalCost = totalLlmCost + totalApifyCost;
 
-    // Leads by source
+    // Leads by source (via apify runs)
+    const { data: runRows } = await supabase
+      .from("lf_apify_runs")
+      .select("actor_id, result_count")
+      .eq("organization_id", orgId)
+      .eq("status", "succeeded");
     const leadsBySource: Record<string, number> = {};
-    for (const lead of allLeads) {
-      const src = lead.source_actor || "unknown";
-      leadsBySource[src] = (leadsBySource[src] || 0) + 1;
+    for (const run of runRows ?? []) {
+      const src = run.actor_id || "unknown";
+      leadsBySource[src] = (leadsBySource[src] || 0) + (run.result_count ?? 0);
     }
 
     // Conversions
