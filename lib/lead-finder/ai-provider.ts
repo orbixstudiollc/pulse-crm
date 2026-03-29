@@ -88,8 +88,8 @@ export async function generateCompletion(
   const temperature = options?.temperature ?? 0.7;
   const maxTokens = options?.maxTokens ?? 2048;
 
-  // ── Auto-select: prefer Anthropic, fall back to OpenRouter ───────────────
-  const useOpenRouter = provider === "openai" || (!keys.anthropicKey && !!keys.openrouterKey);
+  // ── Always use OpenRouter if key is available (user preference) ──────────
+  const useOpenRouter = !!keys.openrouterKey;
 
   if (useOpenRouter) {
     const apiKey = keys.openrouterKey;
