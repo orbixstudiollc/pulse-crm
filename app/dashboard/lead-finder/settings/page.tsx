@@ -13,12 +13,23 @@ import {
   FloppyDiskIcon,
   BuildingsIcon,
   GearIcon,
+  LockIcon,
+  PlusIcon,
+  TrashIcon,
 } from "@/components/ui";
 import { PageHeader } from "@/components/dashboard";
 import { Button } from "@/components/ui";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 
 // ── Types ──────────────────────────────────────────────────────────────────
+
+interface ActorDef {
+  id: string;
+  name: string;
+  phase: "find" | "enrich";
+  isCustom?: boolean;
+  dbId?: string; // lf_custom_actors row id for delete
+}
 
 interface SettingsData {
   apifyKey: string | null;
@@ -152,6 +163,14 @@ export default function LeadFinderSettingsPage() {
   const [agencyWebsite, setAgencyWebsite] = useState("");
   const [savingAgency, setSavingAgency] = useState(false);
 
+  // Actors state
+  const [actors, setActors] = useState<ActorDef[]>([]);
+  const [showAddActor, setShowAddActor] = useState(false);
+  const [newActorId, setNewActorId] = useState("");
+  const [newActorName, setNewActorName] = useState("");
+  const [newActorPhase, setNewActorPhase] = useState<"find" | "enrich">("find");
+  const [savingActor, setSavingActor] = useState(false);
+
   useEffect(() => {
     fetch("/api/lead-finder/settings")
       .then((r) => r.json())
@@ -171,6 +190,13 @@ export default function LeadFinderSettingsPage() {
       })
       .catch(() => toast.error("Failed to load settings"))
       .finally(() => setLoading(false));
+
+    fetch("/api/lead-finder/actors")
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.data) setActors(j.data as ActorDef[]);
+      })
+      .catch(() => {});
   }, []);
 
   async function save(section: string, payload: Record<string, unknown>, setSaving: (v: boolean) => void) {
@@ -204,6 +230,36 @@ export default function LeadFinderSettingsPage() {
   }
 
   const allRequired = data?.hasApify && (data?.hasAnthropic || data?.hasOpenRouter);
+
+  async function addCustomActor() {
+    if (!newActorId.trim() || !newActorName.trim()) { toast.error("Actor ID and name are required"); return; }
+    setSavingActor(true);
+    try {
+      const res = await fetch("/api/lead-finder/actors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actorId: newActorId.trim(), name: newActorName.trim(), phase: newActorPhase }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) { toast.error(json.error || "Failed to add actor"); return; }
+      toast.success("Actor added");
+      setNewActorId(""); setNewActorName(""); setNewActorPhase("find"); setShowAddActor(false);
+      const updated = await fetch("/api/lead-finder/actors").then((r) => r.json()).catch(() => null);
+      if (updated?.data) setActors(updated.data as ActorDef[]);
+    } catch { toast.error("Failed to add actor"); }
+    finally { setSavingActor(false); }
+  }
+
+  async function deleteCustomActor(actor: ActorDef) {
+    if (!actor.dbId) return;
+    try {
+      const res = await fetch(`/api/lead-finder/actors/${actor.dbId}`, { method: "DELETE" });
+      const json = await res.json();
+      if (!res.ok || json.error) { toast.error(json.error || "Failed to delete"); return; }
+      toast.success("Actor removed");
+      setActors((prev) => prev.filter((a) => a.dbId !== actor.dbId));
+    } catch { toast.error("Failed to delete actor"); }
+  }
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
@@ -406,6 +462,111 @@ export default function LeadFinderSettingsPage() {
               </SectionCard>
             </div>
           </div>
+
+          {/* Apify Actors — full width */}
+          <SectionCard>
+            <div className="flex items-center justify-between mb-4">
+              <SectionHeader
+                icon={<LightningIcon size={15} className="text-orange-500" />}
+                title="Apify Actors"
+                subtitle="Manage scrapers and enrichment actors. Custom actors use AI to automatically map output data."
+              />
+              <button
+                onClick={() => setShowAddActor((v) => !v)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-950 dark:bg-neutral-50 text-neutral-50 dark:text-neutral-950 hover:opacity-90 transition-opacity flex-shrink-0"
+              >
+                <PlusIcon size={12} />
+                Add Custom Actor
+              </button>
+            </div>
+
+            {/* Add actor inline form */}
+            {showAddActor && (
+              <div className="mb-4 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 space-y-3">
+                <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300">New Custom Actor</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-1">
+                    <input
+                      type="text"
+                      value={newActorId}
+                      onChange={(e) => setNewActorId(e.target.value)}
+                      placeholder="e.g. apify/linkedin-scraper"
+                      className={inputCls}
+                    />
+                    <p className="text-xs text-neutral-400 mt-1">Apify actor path</p>
+                  </div>
+                  <div className="sm:col-span-1">
+                    <input
+                      type="text"
+                      value={newActorName}
+                      onChange={(e) => setNewActorName(e.target.value)}
+                      placeholder="Display name"
+                      className={inputCls}
+                    />
+                    <p className="text-xs text-neutral-400 mt-1">Name shown in UI</p>
+                  </div>
+                  <div className="sm:col-span-1">
+                    <select
+                      value={newActorPhase}
+                      onChange={(e) => setNewActorPhase(e.target.value as "find" | "enrich")}
+                      className={inputCls}
+                    >
+                      <option value="find">Find</option>
+                      <option value="enrich">Enrich</option>
+                    </select>
+                    <p className="text-xs text-neutral-400 mt-1">Phase</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={addCustomActor}
+                    disabled={savingActor}
+                    leftIcon={savingActor ? <CircleNotchIcon size={13} className="animate-spin" /> : <PlusIcon size={13} />}
+                  >
+                    Add Actor
+                  </Button>
+                  <button
+                    onClick={() => setShowAddActor(false)}
+                    className="px-3 py-1.5 text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Actor list */}
+            <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              {actors.length === 0 && (
+                <p className="text-sm text-neutral-400 py-4 text-center">No actors loaded.</p>
+              )}
+              {actors.map((actor) => (
+                <div key={actor.id} className="flex items-center gap-3 py-3">
+                  <LockIcon size={14} className="text-neutral-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">{actor.name}</p>
+                    <p className="text-xs text-neutral-400 truncate">{actor.id}</p>
+                  </div>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
+                    actor.phase === "find"
+                      ? "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400"
+                      : "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
+                  }`}>
+                    {actor.phase === "find" ? "Find" : "Enrich"}
+                  </span>
+                  {actor.isCustom && actor.dbId && (
+                    <button
+                      onClick={() => deleteCustomActor(actor)}
+                      className="p-1 text-neutral-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex-shrink-0"
+                      title="Remove actor"
+                    >
+                      <TrashIcon size={14} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </SectionCard>
         </>
       )}
     </div>
