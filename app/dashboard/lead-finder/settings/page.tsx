@@ -190,12 +190,22 @@ export default function LeadFinderSettingsPage() {
       const json = await res.json();
       if (!res.ok || json.error) { toast.error(json.error || "Failed to save"); return; }
       toast.success("Saved");
-      // Refresh flags
-      const refreshed = await fetch("/api/lead-finder/settings").then((r) => r.json());
-      if (refreshed.data) {
-        setData(refreshed.data);
-        if (section === "keys") { setApifyKey(""); setAnthropicKey(""); setOpenrouterKey(""); setOpenaiKey(""); }
+
+      if (section === "keys") {
+        // Immediately update hasXxx flags based on what was just saved
+        setData((prev) => prev ? {
+          ...prev,
+          hasApify: prev.hasApify || !!(payload.apifyKey && !String(payload.apifyKey).includes("•")),
+          hasAnthropic: prev.hasAnthropic || !!(payload.anthropicKey && !String(payload.anthropicKey).includes("•")),
+          hasOpenRouter: prev.hasOpenRouter || !!(payload.openrouterKey && !String(payload.openrouterKey).includes("•")),
+          hasOpenAI: prev.hasOpenAI || !!(payload.openaiKey && !String(payload.openaiKey).includes("•")),
+        } : prev);
+        setApifyKey(""); setAnthropicKey(""); setOpenrouterKey(""); setOpenaiKey("");
       }
+
+      // Refresh from server to get accurate state (no-store to skip cache)
+      const refreshed = await fetch("/api/lead-finder/settings", { cache: "no-store" }).then((r) => r.json()).catch(() => null);
+      if (refreshed?.data) setData(refreshed.data);
     } catch { toast.error("Failed to save"); }
     finally { setSaving(false); }
   }
