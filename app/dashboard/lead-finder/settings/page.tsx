@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import {
   CheckCircleIcon,
   XCircleIcon,
-  GearIcon,
   CircleNotchIcon,
   LightningIcon,
   SparkleIcon,
@@ -14,6 +13,8 @@ import {
   FloppyDiskIcon,
   BuildingsIcon,
 } from "@/components/ui";
+import { PageHeader } from "@/components/dashboard";
+import { Button } from "@/components/ui";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -48,19 +49,19 @@ function ApiKeyField({
   const [show, setShow] = useState(false);
 
   return (
-    <div className="py-4 border-b border-[#232329] last:border-0">
+    <div className="py-4 border-b border-neutral-200 dark:border-neutral-800 last:border-0">
       <div className="flex items-start justify-between gap-4 mb-2">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-white">{label}</span>
+            <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{label}</span>
             {hasValue && (
-              <span className="flex items-center gap-1 text-xs text-emerald-400">
-                <CheckCircleIcon size={12} weight="fill" />
+              <span className="inline-flex items-center gap-1 text-xs text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30 px-1.5 py-0.5 rounded-full">
+                <CheckCircleIcon size={11} weight="fill" />
                 Saved
               </span>
             )}
           </div>
-          <p className="text-xs text-[#a0a0a8] mt-0.5">{description}</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{description}</p>
         </div>
       </div>
       <div className="relative">
@@ -68,13 +69,13 @@ function ApiKeyField({
           type={show ? "text" : "password"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={hasValue ? "Leave blank to keep current" : placeholder}
-          className="w-full bg-[#0a0a0c] border border-[#232329] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#a0a0a8] focus:outline-none focus:border-[#3a3a42] pr-10"
+          placeholder={hasValue ? "Leave blank to keep current key" : placeholder}
+          className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white focus:ring-offset-0 pr-10"
         />
         <button
           type="button"
           onClick={() => setShow(!show)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a0a0a8] hover:text-white transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
         >
           {show ? <EyeSlashIcon size={14} /> : <EyeIcon size={14} />}
         </button>
@@ -90,7 +91,6 @@ export default function LeadFinderSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Form state
   const [apifyKey, setApifyKey] = useState("");
   const [anthropicKey, setAnthropicKey] = useState("");
   const [openrouterKey, setOpenrouterKey] = useState("");
@@ -102,7 +102,7 @@ export default function LeadFinderSettingsPage() {
       .then((j) => {
         const d: SettingsData = j.data;
         setData(d);
-        setAgencyName(d.agencyName ?? "");
+        setAgencyName(d?.agencyName ?? "");
       })
       .catch(() => toast.error("Failed to load settings"))
       .finally(() => setLoading(false));
@@ -122,97 +122,64 @@ export default function LeadFinderSettingsPage() {
         }),
       });
       const json = await res.json();
-      if (!res.ok || json.error) {
-        toast.error(json.error || "Failed to save settings");
-        return;
-      }
+      if (!res.ok || json.error) { toast.error(json.error || "Failed to save"); return; }
       toast.success("Settings saved");
-
-      // Reload to reflect new has* flags
-      const refreshed = await fetch("/api/lead-finder/settings").then((r) =>
-        r.json()
-      );
+      const refreshed = await fetch("/api/lead-finder/settings").then((r) => r.json());
       if (refreshed.data) {
         setData(refreshed.data);
-        // Clear key fields after save (they now show masked)
-        setApifyKey("");
-        setAnthropicKey("");
-        setOpenrouterKey("");
+        setApifyKey(""); setAnthropicKey(""); setOpenrouterKey("");
       }
-    } catch {
-      toast.error("Failed to save settings");
-    } finally {
-      setSaving(false);
-    }
+    } catch { toast.error("Failed to save settings"); }
+    finally { setSaving(false); }
   }
 
   const allRequired = data?.hasApify && (data?.hasAnthropic || data?.hasOpenRouter);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] p-6 lg:p-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Lead Finder</h1>
-          <p className="text-sm text-[#a0a0a8] mt-1">API keys and configuration</p>
-        </div>
-        <button
+    <div className="p-6 lg:p-8 space-y-6">
+      <PageHeader title="Lead Finder">
+        <Button
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white text-black text-sm font-medium hover:bg-white/90 transition-colors disabled:opacity-50"
+          leftIcon={saving ? <CircleNotchIcon size={14} className="animate-spin" /> : <FloppyDiskIcon size={14} />}
         >
-          {saving ? (
-            <CircleNotchIcon size={14} className="animate-spin" />
-          ) : (
-            <FloppyDiskIcon size={14} />
-          )}
           Save Changes
-        </button>
-      </div>
+        </Button>
+      </PageHeader>
 
       <LeadFinderSubNav />
 
       {loading && (
         <div className="flex items-center justify-center py-24">
-          <CircleNotchIcon size={32} className="animate-spin text-[#a0a0a8]" />
+          <CircleNotchIcon size={28} className="animate-spin text-neutral-400" />
         </div>
       )}
 
       {!loading && (
         <div className="max-w-2xl space-y-6">
           {/* Status banner */}
-          <div
-            className={`flex items-start gap-3 p-4 rounded-xl border ${
-              allRequired
-                ? "bg-emerald-400/5 border-emerald-400/20"
-                : "bg-amber-400/5 border-amber-400/20"
-            }`}
-          >
-            {allRequired ? (
-              <CheckCircleIcon size={18} weight="fill" className="text-emerald-400 flex-shrink-0 mt-0.5" />
-            ) : (
-              <XCircleIcon size={18} weight="fill" className="text-amber-400 flex-shrink-0 mt-0.5" />
-            )}
+          <div className={`flex items-start gap-3 p-4 rounded-xl border ${allRequired ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900" : "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900"}`}>
+            {allRequired
+              ? <CheckCircleIcon size={18} weight="fill" className="text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+              : <XCircleIcon size={18} weight="fill" className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />}
             <div>
-              <p className={`text-sm font-medium ${allRequired ? "text-emerald-400" : "text-amber-400"}`}>
+              <p className={`text-sm font-medium ${allRequired ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"}`}>
                 {allRequired ? "All required keys configured" : "Missing required API keys"}
               </p>
-              <p className="text-xs text-[#a0a0a8] mt-0.5">
-                {allRequired
-                  ? "Lead Finder is ready to discover and enrich leads."
-                  : "Add your Apify token and at least one AI provider key below."}
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                {allRequired ? "Lead Finder is ready to discover and enrich leads." : "Add your Apify token and at least one AI provider key below."}
               </p>
             </div>
           </div>
 
           {/* Apify */}
-          <div className="bg-[#141417] border border-[#232329] rounded-xl p-5">
+          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5">
             <div className="flex items-center gap-2 mb-1">
-              <LightningIcon size={16} className="text-amber-400" />
-              <h2 className="text-sm font-semibold text-white">Apify</h2>
-              <span className="text-xs text-[#a0a0a8]">— Lead discovery engine</span>
+              <LightningIcon size={15} className="text-orange-500" />
+              <h2 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Apify</h2>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">— Lead discovery engine</span>
             </div>
-            <p className="text-xs text-[#a0a0a8] mb-3">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
               Required for running discovery campaigns using Google Maps, LinkedIn, and other scrapers.
             </p>
             <ApiKeyField
@@ -226,13 +193,13 @@ export default function LeadFinderSettingsPage() {
           </div>
 
           {/* AI Provider */}
-          <div className="bg-[#141417] border border-[#232329] rounded-xl p-5">
+          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5">
             <div className="flex items-center gap-2 mb-1">
-              <SparkleIcon size={16} className="text-purple-400" />
-              <h2 className="text-sm font-semibold text-white">AI Provider</h2>
-              <span className="text-xs text-[#a0a0a8]">— Enrichment & scoring</span>
+              <SparkleIcon size={15} className="text-violet-500" />
+              <h2 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">AI Provider</h2>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">— Enrichment & scoring</span>
             </div>
-            <p className="text-xs text-[#a0a0a8] mb-3">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
               Used for AI-powered lead enrichment, scoring, and personalization. Configure at least one.
             </p>
             <ApiKeyField
@@ -254,40 +221,34 @@ export default function LeadFinderSettingsPage() {
           </div>
 
           {/* Agency Profile */}
-          <div className="bg-[#141417] border border-[#232329] rounded-xl p-5">
+          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5">
             <div className="flex items-center gap-2 mb-1">
-              <BuildingsIcon size={16} className="text-blue-400" />
-              <h2 className="text-sm font-semibold text-white">Agency Profile</h2>
+              <BuildingsIcon size={15} className="text-blue-500" />
+              <h2 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Agency Profile</h2>
             </div>
-            <p className="text-xs text-[#a0a0a8] mb-4">
-              Used to personalize AI-generated outreach and campaign plans for your agency.
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
+              Used to personalize AI-generated outreach and campaign plans.
             </p>
             <div>
-              <label className="text-xs text-[#a0a0a8] mb-1.5 block">Agency / Company Name</label>
+              <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5 block">Agency / Company Name</label>
               <input
                 type="text"
                 value={agencyName}
                 onChange={(e) => setAgencyName(e.target.value)}
                 placeholder="Your agency name"
-                className="w-full bg-[#0a0a0c] border border-[#232329] rounded-lg px-3 py-2.5 text-sm text-white placeholder-[#a0a0a8] focus:outline-none focus:border-[#3a3a42]"
+                className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
               />
             </div>
           </div>
 
-          {/* Save button (bottom) */}
           <div className="flex justify-end pt-2">
-            <button
+            <Button
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white text-black text-sm font-medium hover:bg-white/90 transition-colors disabled:opacity-50"
+              leftIcon={saving ? <CircleNotchIcon size={14} className="animate-spin" /> : <FloppyDiskIcon size={14} />}
             >
-              {saving ? (
-                <CircleNotchIcon size={14} className="animate-spin" />
-              ) : (
-                <FloppyDiskIcon size={14} />
-              )}
               Save Changes
-            </button>
+            </Button>
           </div>
         </div>
       )}

@@ -14,7 +14,9 @@ import {
   ChartBarIcon,
   ArrowRightIcon,
 } from "@/components/ui";
+import { PageHeader, StatCard } from "@/components/dashboard";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
+import { Button } from "@/components/ui";
 import {
   BarChart,
   Bar,
@@ -41,44 +43,23 @@ interface AnalyticsData {
   scoreDistribution: Record<string, number>;
   avgScore: number;
   leadsBySource: Record<string, number>;
-  costs: {
-    llm: number;
-    apify: number;
-    total: number;
-    avgPerLead: number;
-  };
+  costs: { llm: number; apify: number; total: number; avgPerLead: number };
   leadsOverTime: Record<string, number>;
-  recentActivity: {
-    id: string;
-    type: string;
-    description: string;
-    timestamp: string;
-  }[];
+  recentActivity: { id: string; type: string; description: string; timestamp: string }[];
 }
 
 // ── Colors ─────────────────────────────────────────────────────────────────
 
-const PIE_COLORS = [
-  "#818cf8",
-  "#34d399",
-  "#f97316",
-  "#f472b6",
-  "#60a5fa",
-  "#a78bfa",
-  "#fbbf24",
-  "#2dd4bf",
-];
+const PIE_COLORS = ["#818cf8", "#34d399", "#f97316", "#f472b6", "#60a5fa", "#a78bfa", "#fbbf24", "#2dd4bf"];
 
-const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  new: { bg: "bg-blue-400/10", text: "text-blue-400", label: "New" },
-  enriching: { bg: "bg-amber-400/10", text: "text-amber-400", label: "Enriching" },
-  qualified: { bg: "bg-purple-400/10", text: "text-purple-400", label: "Qualified" },
-  converted: { bg: "bg-emerald-400/10", text: "text-emerald-400", label: "Converted" },
-  declined: { bg: "bg-red-400/10", text: "text-red-400", label: "Declined" },
-  archived: { bg: "bg-[#232329]", text: "text-[#a0a0a8]", label: "Archived" },
+const STATUS_CONFIG: Record<string, { dot: string; label: string; bg: string; text: string }> = {
+  new: { dot: "bg-blue-500", label: "New", bg: "bg-blue-50 dark:bg-blue-950/30", text: "text-blue-700 dark:text-blue-400" },
+  enriching: { dot: "bg-amber-500", label: "Enriching", bg: "bg-amber-50 dark:bg-amber-950/30", text: "text-amber-700 dark:text-amber-400" },
+  qualified: { dot: "bg-violet-500", label: "Qualified", bg: "bg-violet-50 dark:bg-violet-950/30", text: "text-violet-700 dark:text-violet-400" },
+  converted: { dot: "bg-green-500", label: "Converted", bg: "bg-green-50 dark:bg-green-950/30", text: "text-green-700 dark:text-green-400" },
+  declined: { dot: "bg-red-500", label: "Declined", bg: "bg-red-50 dark:bg-red-950/30", text: "text-red-700 dark:text-red-400" },
+  archived: { dot: "bg-neutral-400", label: "Archived", bg: "bg-neutral-100 dark:bg-neutral-800", text: "text-neutral-600 dark:text-neutral-400" },
 };
-
-// ── Helpers ────────────────────────────────────────────────────────────────
 
 function timeAgo(ts: string) {
   const diff = Date.now() - new Date(ts).getTime();
@@ -91,50 +72,13 @@ function timeAgo(ts: string) {
   return `${days}d ago`;
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────
-
-function KpiCard({
-  label,
-  value,
-  sub,
-  icon: Icon,
-  iconColor,
-}: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  icon: React.ComponentType<{ size: number; className?: string }>;
-  iconColor?: string;
-}) {
-  return (
-    <div className="bg-[#141417] border border-[#232329] rounded-xl p-5">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs text-[#a0a0a8] uppercase tracking-wider">{label}</span>
-        <Icon size={16} className={iconColor || "text-[#a0a0a8]"} />
-      </div>
-      <p className="text-2xl font-bold text-white">{value}</p>
-      {sub && <p className="text-xs text-[#a0a0a8] mt-1">{sub}</p>}
-    </div>
-  );
-}
-
-function CustomTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: { name: string; value: number; color: string }[];
-  label?: string;
-}) {
+function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-[#1a1a1f] border border-[#232329] rounded-lg p-3 shadow-xl">
-      <p className="text-xs text-white font-medium mb-1">{label}</p>
-      {payload.map((entry, i) => (
-        <p key={i} className="text-xs" style={{ color: entry.color }}>
-          {entry.name}: {entry.value}
-        </p>
+    <div className="rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 shadow-lg">
+      <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">{label}</p>
+      {payload.map((e, i) => (
+        <p key={i} className="text-sm font-semibold text-neutral-950 dark:text-neutral-50" style={{ color: e.color }}>{e.name}: {e.value}</p>
       ))}
     </div>
   );
@@ -156,265 +100,175 @@ export default function LeadFinderOverviewPage() {
 
   const scoreChartData = useMemo(() => {
     if (!data?.scoreDistribution) return [];
-    return Object.entries(data.scoreDistribution).map(([range, count]) => ({
-      range,
-      count,
-    }));
+    return Object.entries(data.scoreDistribution).map(([range, count]) => ({ range, count }));
   }, [data]);
 
   const sourceChartData = useMemo(() => {
     if (!data?.leadsBySource) return [];
-    return Object.entries(data.leadsBySource)
-      .map(([name, value]) => ({ name: name.replace(/_/g, " "), value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 6);
+    return Object.entries(data.leadsBySource).map(([name, value]) => ({ name: name.replace(/_/g, " "), value })).sort((a, b) => b.value - a.value).slice(0, 6);
   }, [data]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] p-6 lg:p-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Lead Finder</h1>
-          <p className="text-sm text-[#a0a0a8] mt-1">Overview & analytics</p>
-        </div>
-        <Link
-          href="/dashboard/lead-finder/campaigns/new"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white text-black text-sm font-medium hover:bg-white/90 transition-colors"
-        >
-          <PlusIcon size={15} />
-          New Campaign
+    <div className="p-6 lg:p-8 space-y-6">
+      <PageHeader title="Lead Finder">
+        <Link href="/dashboard/lead-finder/campaigns/new">
+          <Button leftIcon={<PlusIcon size={15} />}>New Campaign</Button>
         </Link>
-      </div>
+      </PageHeader>
 
       <LeadFinderSubNav />
 
       {loading && (
         <div className="flex items-center justify-center py-24">
-          <CircleNotchIcon size={32} className="animate-spin text-[#a0a0a8]" />
+          <CircleNotchIcon size={28} className="animate-spin text-neutral-400" />
         </div>
       )}
 
       {!loading && data && (
-        <div className="space-y-6">
+        <>
           {/* KPI Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
               label="Total Leads"
               value={data.totalLeads.toLocaleString()}
-              sub={`${data.activeCampaigns} active campaign${data.activeCampaigns !== 1 ? "s" : ""}`}
-              icon={UsersIcon}
-              iconColor="text-blue-400"
+              icon={<UsersIcon size={20} className="text-neutral-500 dark:text-neutral-400" />}
+              change={{ value: `${data.activeCampaigns} active campaign${data.activeCampaigns !== 1 ? "s" : ""}`, trend: "neutral" }}
             />
-            <KpiCard
+            <StatCard
               label="Active Campaigns"
               value={data.activeCampaigns}
-              sub={`${data.totalCampaigns} total`}
-              icon={TargetIcon}
-              iconColor="text-purple-400"
+              icon={<TargetIcon size={20} className="text-neutral-500 dark:text-neutral-400" />}
+              change={{ value: `${data.totalCampaigns} total`, trend: "neutral" }}
             />
-            <KpiCard
+            <StatCard
               label="Conversions"
               value={data.conversions.toLocaleString()}
-              sub={`${data.conversionRate}% conversion rate`}
-              icon={CheckCircleIcon}
-              iconColor="text-emerald-400"
+              icon={<CheckCircleIcon size={20} className="text-neutral-500 dark:text-neutral-400" />}
+              change={{ value: `${data.conversionRate}% conversion rate`, trend: data.conversionRate > 0 ? "up" : "neutral" }}
             />
-            <KpiCard
+            <StatCard
               label="Total Cost"
               value={`$${data.costs.total.toFixed(4)}`}
-              sub={`$${data.costs.avgPerLead.toFixed(4)} avg/lead`}
-              icon={CurrencyDollarIcon}
-              iconColor="text-amber-400"
+              icon={<CurrencyDollarIcon size={20} className="text-neutral-500 dark:text-neutral-400" />}
+              change={{ value: `$${data.costs.avgPerLead.toFixed(4)} avg/lead`, trend: "neutral" }}
             />
           </div>
 
           {/* Pipeline Status */}
-          <div className="bg-[#141417] border border-[#232329] rounded-xl p-5">
-            <h2 className="text-sm font-semibold text-white mb-4">Pipeline Status</h2>
+          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5">
+            <h2 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 mb-4">Pipeline Status</h2>
             <div className="flex flex-wrap gap-3">
-              {Object.entries(STATUS_STYLES).map(([status, style]) => {
+              {Object.entries(STATUS_CONFIG).map(([status, cfg]) => {
                 const count = data.statusBreakdown[status] ?? 0;
                 return (
-                  <div
-                    key={status}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg ${style.bg}`}
-                  >
-                    <span className={`text-sm font-semibold ${style.text}`}>
-                      {count.toLocaleString()}
-                    </span>
-                    <span className={`text-xs ${style.text} opacity-80`}>
-                      {style.label}
-                    </span>
+                  <div key={status} className={`flex items-center gap-2 px-3 py-2 rounded-lg ${cfg.bg}`}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                    <span className={`text-sm font-semibold ${cfg.text}`}>{count.toLocaleString()}</span>
+                    <span className={`text-xs ${cfg.text} opacity-75`}>{cfg.label}</span>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Charts row */}
+          {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Score distribution */}
-            <div className="bg-[#141417] border border-[#232329] rounded-xl p-5">
+            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5">
               <div className="flex items-center gap-2 mb-4">
-                <ChartBarIcon size={15} className="text-[#a0a0a8]" />
-                <h2 className="text-sm font-semibold text-white">Score Distribution</h2>
+                <ChartBarIcon size={15} className="text-neutral-400 dark:text-neutral-500" />
+                <h2 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Score Distribution</h2>
               </div>
-              {scoreChartData.length === 0 || scoreChartData.every((d) => d.count === 0) ? (
-                <div className="flex items-center justify-center h-40 text-[#a0a0a8] text-sm">
-                  No scored leads yet
-                </div>
-              ) : (
+              {scoreChartData.some((d) => d.count > 0) ? (
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={scoreChartData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#232329" />
-                    <XAxis dataKey="range" tick={{ fill: "#a0a0a8", fontSize: 11 }} />
-                    <YAxis tick={{ fill: "#a0a0a8", fontSize: 11 }} allowDecimals={false} />
-                    <Tooltip content={<CustomTooltip />} />
+                    <CartesianGrid strokeDasharray="3 3" className="text-neutral-200 dark:text-neutral-800" stroke="currentColor" vertical={false} />
+                    <XAxis dataKey="range" tick={{ fill: "currentColor", fontSize: 11 }} className="text-neutral-500 dark:text-neutral-400" />
+                    <YAxis tick={{ fill: "currentColor", fontSize: 11 }} className="text-neutral-500 dark:text-neutral-400" allowDecimals={false} />
+                    <Tooltip content={<ChartTooltip />} />
                     <Bar dataKey="count" name="Leads" fill="#818cf8" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[200px] text-sm text-neutral-400 dark:text-neutral-500">No scored leads yet</div>
               )}
             </div>
 
-            {/* Leads by source */}
-            <div className="bg-[#141417] border border-[#232329] rounded-xl p-5">
+            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5">
               <div className="flex items-center gap-2 mb-4">
-                <LightningIcon size={15} className="text-[#a0a0a8]" />
-                <h2 className="text-sm font-semibold text-white">Leads by Source</h2>
+                <LightningIcon size={15} className="text-neutral-400 dark:text-neutral-500" />
+                <h2 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Leads by Source</h2>
               </div>
-              {sourceChartData.length === 0 ? (
-                <div className="flex items-center justify-center h-40 text-[#a0a0a8] text-sm">
-                  No leads yet
-                </div>
-              ) : (
+              {sourceChartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
-                    <Pie
-                      data={sourceChartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={3}
-                      dataKey="value"
-                    >
-                      {sourceChartData.map((_, i) => (
-                        <Cell
-                          key={i}
-                          fill={PIE_COLORS[i % PIE_COLORS.length]}
-                        />
-                      ))}
+                    <Pie data={sourceChartData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value">
+                      {sourceChartData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                     </Pie>
-                    <Tooltip
-                      formatter={(v: number | undefined) => [v ?? 0, "Leads"]}
-                      contentStyle={{
-                        background: "#1a1a1f",
-                        border: "1px solid #232329",
-                        borderRadius: 8,
-                        fontSize: 12,
-                      }}
-                    />
-                    <Legend
-                      iconType="circle"
-                      iconSize={8}
-                      wrapperStyle={{ fontSize: 11, color: "#a0a0a8" }}
-                    />
+                    <Tooltip formatter={(v: number | undefined) => [v ?? 0, "Leads"]} contentStyle={{ background: "var(--color-bg)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }} />
+                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
                   </PieChart>
                 </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[200px] text-sm text-neutral-400 dark:text-neutral-500">No leads yet</div>
               )}
             </div>
           </div>
 
           {/* Cost breakdown + Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Cost breakdown */}
-            <div className="bg-[#141417] border border-[#232329] rounded-xl p-5">
+            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5">
               <div className="flex items-center gap-2 mb-4">
-                <CurrencyDollarIcon size={15} className="text-[#a0a0a8]" />
-                <h2 className="text-sm font-semibold text-white">Cost Breakdown</h2>
+                <CurrencyDollarIcon size={15} className="text-neutral-400 dark:text-neutral-500" />
+                <h2 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Cost Breakdown</h2>
               </div>
               <div className="space-y-3">
                 {[
-                  { label: "Apify (scraping)", value: data.costs.apify, color: "bg-blue-400" },
-                  { label: "LLM (AI enrichment)", value: data.costs.llm, color: "bg-purple-400" },
+                  { label: "Apify (scraping)", value: data.costs.apify, color: "bg-blue-500" },
+                  { label: "LLM (AI enrichment)", value: data.costs.llm, color: "bg-violet-500" },
                 ].map((item) => {
-                  const pct =
-                    data.costs.total > 0
-                      ? Math.round((item.value / data.costs.total) * 100)
-                      : 0;
+                  const pct = data.costs.total > 0 ? Math.round((item.value / data.costs.total) * 100) : 0;
                   return (
                     <div key={item.label}>
                       <div className="flex items-center justify-between text-xs mb-1.5">
-                        <span className="text-[#a0a0a8]">{item.label}</span>
-                        <span className="text-white font-medium">
-                          ${item.value.toFixed(4)}
-                          <span className="text-[#a0a0a8] font-normal ml-1">
-                            ({pct}%)
-                          </span>
+                        <span className="text-neutral-500 dark:text-neutral-400">{item.label}</span>
+                        <span className="text-neutral-950 dark:text-neutral-50 font-medium">
+                          ${item.value.toFixed(4)} <span className="text-neutral-400 font-normal">({pct}%)</span>
                         </span>
                       </div>
-                      <div className="h-1.5 bg-[#232329] rounded-full overflow-hidden">
-                        <div
-                          className={`h-full ${item.color} rounded-full transition-all`}
-                          style={{ width: `${pct}%` }}
-                        />
+                      <div className="h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                        <div className={`h-full ${item.color} rounded-full`} style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   );
                 })}
-                <div className="pt-2 border-t border-[#232329] flex items-center justify-between text-xs">
-                  <span className="text-[#a0a0a8]">Total</span>
-                  <span className="text-white font-semibold">
-                    ${data.costs.total.toFixed(4)}
-                  </span>
+                <div className="pt-2 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-xs">
+                  <span className="text-neutral-500 dark:text-neutral-400">Total</span>
+                  <span className="text-neutral-950 dark:text-neutral-50 font-semibold">${data.costs.total.toFixed(4)}</span>
                 </div>
-                <Link
-                  href="/dashboard/lead-finder/costs"
-                  className="flex items-center gap-1.5 text-xs text-[#a0a0a8] hover:text-white transition-colors pt-1"
-                >
-                  View full cost report
-                  <ArrowRightIcon size={12} />
+                <Link href="/dashboard/lead-finder/costs" className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-neutral-50 transition-colors pt-1">
+                  View full cost report <ArrowRightIcon size={12} />
                 </Link>
               </div>
             </div>
 
-            {/* Recent activity */}
-            <div className="bg-[#141417] border border-[#232329] rounded-xl p-5">
+            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5">
               <div className="flex items-center gap-2 mb-4">
-                <SparkleIcon size={15} className="text-[#a0a0a8]" />
-                <h2 className="text-sm font-semibold text-white">Recent Activity</h2>
+                <SparkleIcon size={15} className="text-neutral-400 dark:text-neutral-500" />
+                <h2 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Recent Activity</h2>
               </div>
               {data.recentActivity.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center gap-3">
-                  <p className="text-sm text-[#a0a0a8]">No activity yet</p>
-                  <Link
-                    href="/dashboard/lead-finder/campaigns/new"
-                    className="text-xs text-white underline underline-offset-2 hover:no-underline"
-                  >
-                    Create your first campaign
-                  </Link>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">No activity yet</p>
+                  <Link href="/dashboard/lead-finder/campaigns/new" className="text-xs text-neutral-950 dark:text-neutral-50 underline underline-offset-2">Create your first campaign</Link>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {data.recentActivity.map((event) => (
                     <div key={event.id} className="flex items-start gap-3">
-                      <div
-                        className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
-                          event.type === "discovery_success"
-                            ? "bg-emerald-400"
-                            : event.type === "lead_added"
-                            ? "bg-blue-400"
-                            : "bg-[#a0a0a8]"
-                        }`}
-                      />
+                      <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${event.type === "discovery_success" ? "bg-green-500" : event.type === "lead_added" ? "bg-blue-500" : "bg-neutral-400"}`} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs text-white leading-snug truncate">
-                          {event.description}
-                        </p>
-                        <p className="text-xs text-[#a0a0a8] mt-0.5">
-                          {timeAgo(event.timestamp)}
-                        </p>
+                        <p className="text-xs text-neutral-950 dark:text-neutral-50 leading-snug truncate">{event.description}</p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{timeAgo(event.timestamp)}</p>
                       </div>
                     </div>
                   ))}
@@ -423,31 +277,20 @@ export default function LeadFinderOverviewPage() {
             </div>
           </div>
 
-          {/* Quick actions */}
           {data.totalLeads === 0 && data.totalCampaigns === 0 && (
-            <div className="bg-[#141417] border border-[#232329] rounded-xl p-6 text-center">
-              <h2 className="text-base font-semibold text-white mb-2">
-                Get started with Lead Finder
-              </h2>
-              <p className="text-sm text-[#a0a0a8] mb-4">
-                Create a campaign to start discovering and enriching leads automatically.
-              </p>
-              <Link
-                href="/dashboard/lead-finder/campaigns/new"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white text-black text-sm font-medium hover:bg-white/90 transition-colors"
-              >
-                <PlusIcon size={15} />
-                Create Campaign
+            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center">
+              <h2 className="text-base font-semibold text-neutral-950 dark:text-neutral-50 mb-2">Get started with Lead Finder</h2>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">Create a campaign to start discovering and enriching leads automatically.</p>
+              <Link href="/dashboard/lead-finder/campaigns/new">
+                <Button leftIcon={<PlusIcon size={15} />}>Create Campaign</Button>
               </Link>
             </div>
           )}
-        </div>
+        </>
       )}
 
       {!loading && !data && (
-        <div className="flex items-center justify-center py-24 text-[#a0a0a8] text-sm">
-          Failed to load analytics.
-        </div>
+        <div className="flex items-center justify-center py-24 text-sm text-neutral-400 dark:text-neutral-500">Failed to load analytics.</div>
       )}
     </div>
   );
