@@ -77,7 +77,7 @@ function ApiKeyField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={hasValue ? "Leave blank to keep current key" : placeholder}
-          className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white pr-10"
+          className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus pr-10"
         />
         <button
           type="button"
@@ -126,7 +126,7 @@ function Field({
   );
 }
 
-const inputCls = "w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white";
+const inputCls = "w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus";
 const textareaCls = `${inputCls} resize-none`;
 
 // ── Main ───────────────────────────────────────────────────────────────────

@@ -251,7 +251,7 @@ function SettingsPanel({
             <select
               value={schedule}
               onChange={(e) => setSchedule(e.target.value)}
-              className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
+              className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
             >
               <option value="once">Once</option>
               <option value="daily">Daily</option>
@@ -842,7 +842,7 @@ export default function CampaignDetailPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search leads..."
-              className="pl-8 pr-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white w-64"
+              className="pl-8 pr-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus w-64"
             />
           </div>
 
@@ -850,7 +850,7 @@ export default function CampaignDetailPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
+            className="px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
           >
             <option value="all">All Statuses</option>
             <option value="new">New</option>

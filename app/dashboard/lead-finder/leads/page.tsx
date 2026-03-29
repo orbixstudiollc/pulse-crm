@@ -277,7 +277,7 @@ export default function AllLeadsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search leads..."
-            className="w-full pl-8 pr-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
+            className="w-full pl-8 pr-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
           />
         </div>
 
@@ -288,7 +288,7 @@ export default function AllLeadsPage() {
             setCampaignFilter(e.target.value);
             setOffset(0);
           }}
-          className="px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
+          className="px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
         >
           <option value="">All Campaigns</option>
           {campaigns.map((c) => (
@@ -305,7 +305,7 @@ export default function AllLeadsPage() {
             setStatusFilter(e.target.value);
             setOffset(0);
           }}
-          className="px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
+          className="px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
         >
           <option value="">All Statuses</option>
           <option value="new">New</option>
@@ -376,7 +376,7 @@ export default function AllLeadsPage() {
               onChange={(e) => setAiQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAIFilter()}
               placeholder='e.g., "SaaS companies with more than 20 employees that use React"'
-              className="flex-1 px-3 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
+              className="flex-1 px-3 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
             />
             <button
               onClick={handleAIFilter}

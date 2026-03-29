@@ -260,7 +260,7 @@ export default function LeadDetailPage() {
           <select
             value={lead.status}
             onChange={(e) => handleStatusChange(e.target.value)}
-            className="px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
+            className="px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
           >
             <option value="new">New</option>
             <option value="enriched">Enriched</option>
