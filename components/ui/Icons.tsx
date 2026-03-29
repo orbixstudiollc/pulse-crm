@@ -72,6 +72,11 @@ export {
   LightningIcon,
   // ICP
   CrosshairIcon,
+  // Lead Finder
+  PlayIcon,
+  PauseIcon,
+  TargetIcon,
+  XCircleIcon,
   // Competitors
   GlobeIcon,
   ShieldIcon,
