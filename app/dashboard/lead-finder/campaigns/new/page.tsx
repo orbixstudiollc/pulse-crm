@@ -6,7 +6,6 @@ import Link from "next/link";
 import { toast } from "sonner";
 import {
   ArrowLeftIcon,
-  ArrowRightIcon,
   SparkleIcon,
   CheckCircleIcon,
   CircleNotchIcon,
@@ -18,31 +17,23 @@ import {
   LightningIcon,
   ChartBarIcon,
 } from "@/components/ui";
+import { useLeadFinderActors } from "@/hooks/use-lead-finder-actors";
+import type { ActorDefinition } from "@/lib/lead-finder/apify/registry";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-interface Actor {
-  id: string;
-  actorId: string;
-  name: string;
-  description: string;
-  phase: string;
-  requiredInputFields: { key: string; label: string; type: string; placeholder?: string; required?: boolean }[];
-  outputFields: string[];
-}
-
 interface KpiDefinition {
-  key: string;
+  id: string;
   label: string;
   description: string;
   type: "boolean" | "text";
 }
 
 interface FieldDefinition {
-  key: string;
+  id: string;
   label: string;
   description: string;
-  source: string;
+  type: "text" | "number" | "boolean" | "url";
 }
 
 interface AIPlan {
@@ -102,10 +93,83 @@ function StepIndicator({ current }: { current: number }) {
   );
 }
 
+// ── Actor config field ─────────────────────────────────────────────────────
+
+function ActorConfigField({
+  fieldKey,
+  desc,
+  value,
+  onChange,
+}: {
+  fieldKey: string;
+  desc: { label: string; placeholder: string; type: string; helpText?: string };
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+        {desc.label}
+      </label>
+      {desc.type === "string-array" ? (
+        <textarea
+          rows={2}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={desc.placeholder}
+          className="w-full px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs placeholder-neutral-400 dark:placeholder-neutral-500 resize-none focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+        />
+      ) : (
+        <input
+          type={desc.type === "number" ? "number" : "text"}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={desc.placeholder}
+          className="w-full px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+        />
+      )}
+      {desc.helpText && (
+        <p className="mt-1 text-[10px] text-neutral-500 dark:text-neutral-500">{desc.helpText}</p>
+      )}
+    </div>
+  );
+}
+
+// ── Type toggle ────────────────────────────────────────────────────────────
+
+function TypeToggle<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="inline-flex rounded border border-neutral-200 dark:border-neutral-700 overflow-hidden text-[10px]">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={`px-2 py-1 transition-colors ${
+            value === opt.value
+              ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
+              : "bg-white dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function NewCampaignPage() {
   const router = useRouter();
+  const { allActors } = useLeadFinderActors();
   const [step, setStep] = useState(1);
 
   // Step 1 state
@@ -116,7 +180,6 @@ export default function NewCampaignPage() {
   const [plan, setPlan] = useState<AIPlan | null>(null);
 
   // Step 2 state
-  const [allActors, setAllActors] = useState<Actor[]>([]);
   const [selectedActors, setSelectedActors] = useState<string[]>([]);
   const [actorConfigs, setActorConfigs] = useState<Record<string, Record<string, string>>>({});
   const [targetNiche, setTargetNiche] = useState("");
@@ -145,14 +208,17 @@ export default function NewCampaignPage() {
       .catch(() => {});
   }, []);
 
-  // ── Fetch actors ───────────────────────────────────────────────────────
+  // ── Build actor summaries for plan endpoint ───────────────────────────
 
-  useEffect(() => {
-    fetch("/api/lead-finder/actors")
-      .then((res) => res.json())
-      .then((json) => setAllActors(json.data ?? []))
-      .catch(() => toast.error("Failed to load actor registry"));
-  }, []);
+  const buildActorSummaries = useCallback(() => {
+    return allActors.map((a: ActorDefinition) => ({
+      id: a.id,
+      name: a.name,
+      phase: a.phase,
+      description: a.description,
+      inputFieldDescriptions: a.inputFieldDescriptions,
+    }));
+  }, [allActors]);
 
   // ── AI Planning ────────────────────────────────────────────────────────
 
@@ -166,7 +232,11 @@ export default function NewCampaignPage() {
       const res = await fetch("/api/lead-finder/campaigns/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description, aiProvider }),
+        body: JSON.stringify({
+          description,
+          aiProvider,
+          actors: buildActorSummaries(),
+        }),
       });
       if (!res.ok) throw new Error("Planning failed");
       const json = await res.json();
@@ -178,14 +248,16 @@ export default function NewCampaignPage() {
       setTargetNiche(p.target_niche || "");
       setSearchTerms(p.suggested_search_terms || []);
       setScheduleFrequency(p.schedule_frequency || "once");
-      setKpiDefinitions(p.kpi_definitions || []);
-      setFieldDefinitions(p.lead_field_definitions || []);
+      if (p.kpi_definitions?.length) setKpiDefinitions(p.kpi_definitions);
+      if (p.lead_field_definitions?.length) setFieldDefinitions(p.lead_field_definitions);
 
       // Match actors from plan
       if (p.suggested_actors?.length && allActors.length) {
         const matched = allActors
-          .filter((a) => p.suggested_actors.includes(a.actorId) || p.suggested_actors.includes(a.id))
-          .map((a) => a.id);
+          .filter((a: ActorDefinition) =>
+            p.suggested_actors.includes(a.id)
+          )
+          .map((a: ActorDefinition) => a.id);
         setSelectedActors(matched);
       }
 
@@ -214,8 +286,8 @@ export default function NewCampaignPage() {
       });
       if (!res.ok) throw new Error("Failed to suggest fields");
       const json = await res.json();
-      if (json.data?.kpi_definitions) setKpiDefinitions(json.data.kpi_definitions);
-      if (json.data?.lead_field_definitions) setFieldDefinitions(json.data.lead_field_definitions);
+      if (json.data?.kpi_definitions?.length) setKpiDefinitions(json.data.kpi_definitions);
+      if (json.data?.lead_field_definitions?.length) setFieldDefinitions(json.data.lead_field_definitions);
       toast.success("Field suggestions generated");
     } catch {
       toast.error("Failed to suggest fields");
@@ -227,10 +299,10 @@ export default function NewCampaignPage() {
   // ── Actor config handler ───────────────────────────────────────────────
 
   const updateActorConfig = useCallback(
-    (actorId: string, key: string, value: string) => {
+    (actorId: string, fieldKey: string, value: string) => {
       setActorConfigs((prev) => ({
         ...prev,
-        [actorId]: { ...(prev[actorId] || {}), [key]: value },
+        [actorId]: { ...(prev[actorId] || {}), [fieldKey]: value },
       }));
     },
     []
@@ -261,7 +333,7 @@ export default function NewCampaignPage() {
   const addKpi = () => {
     setKpiDefinitions((prev) => [
       ...prev,
-      { key: `kpi_${Date.now()}`, label: "", description: "", type: "boolean" },
+      { id: `kpi_${Date.now()}`, label: "", description: "", type: "boolean" },
     ]);
   };
 
@@ -280,7 +352,7 @@ export default function NewCampaignPage() {
   const addField = () => {
     setFieldDefinitions((prev) => [
       ...prev,
-      { key: `field_${Date.now()}`, label: "", description: "", source: "mapped" },
+      { id: `field_${Date.now()}`, label: "", description: "", type: "text" },
     ]);
   };
 
@@ -307,12 +379,34 @@ export default function NewCampaignPage() {
     }
     setCreating(true);
     try {
+      // Coerce actor configs: string-array fields stored as comma/newline-separated strings
+      const coercedActorConfigs: Record<string, Record<string, unknown>> = {};
+      for (const actorId of selectedActors) {
+        const actorDef = allActors.find((a: ActorDefinition) => a.id === actorId);
+        const raw = actorConfigs[actorId] || {};
+        const coerced: Record<string, unknown> = { ...(actorDef?.defaultInput || {}) };
+        for (const [k, v] of Object.entries(raw)) {
+          const fieldDesc = actorDef?.inputFieldDescriptions?.[k];
+          if (fieldDesc?.type === "string-array") {
+            coerced[k] = v
+              .split(/[\n,]+/)
+              .map((s: string) => s.trim())
+              .filter(Boolean);
+          } else if (fieldDesc?.type === "number") {
+            coerced[k] = Number(v) || 0;
+          } else {
+            coerced[k] = v;
+          }
+        }
+        coercedActorConfigs[actorId] = coerced;
+      }
+
       const payload = {
         name: name.trim(),
         description: description.trim() || null,
         target_niche: targetNiche.trim(),
         apify_actors: selectedActors,
-        actor_configs: actorConfigs,
+        actor_configs: coercedActorConfigs,
         kpi_definitions: kpiDefinitions.filter((k) => k.label.trim()),
         lead_field_definitions: fieldDefinitions.filter((f) => f.label.trim()),
         schedule_frequency: scheduleFrequency,
@@ -355,6 +449,11 @@ export default function NewCampaignPage() {
     }
   };
 
+  // ── Find phase actors ──────────────────────────────────────────────────
+
+  const findActors = allActors.filter((a: ActorDefinition) => a.phase === "find");
+  const enrichActors = allActors.filter((a: ActorDefinition) => a.phase === "enrich");
+
   // ── Render ─────────────────────────────────────────────────────────────
 
   return (
@@ -391,7 +490,7 @@ export default function NewCampaignPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., SaaS Founders Q1 2026"
-                className="w-full px-3 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 transition-shadow focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
+                className="w-full px-3 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
               />
             </div>
 
@@ -400,16 +499,14 @@ export default function NewCampaignPage() {
                 Campaign Description
               </label>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
-                Describe what kind of leads you are looking for, your target
-                market, ideal customer profile, and any specific criteria. The
-                more detail you provide, the better the AI plan.
+                Describe what kind of leads you are looking for, your target market, ideal customer profile, and any specific criteria. The more detail you provide, the better the AI plan.
               </p>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={6}
                 placeholder="I want to find SaaS founders in the B2B space who have between 10-50 employees, have recently raised a Series A, and are looking for CRM solutions..."
-                className="w-full px-3 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 transition-shadow focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus resize-none"
+                className="w-full px-3 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 resize-none focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
               />
             </div>
 
@@ -431,7 +528,6 @@ export default function NewCampaignPage() {
               )}
             </button>
 
-            {/* Skip planning option */}
             <button
               onClick={() => setStep(2)}
               className="w-full text-center text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
@@ -445,6 +541,17 @@ export default function NewCampaignPage() {
       {/* ── Step 2: Configure ─────────────────────────────────────────── */}
       {step === 2 && (
         <div className="max-w-3xl space-y-6">
+          {/* AI plan summary */}
+          {plan && (
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+              <CheckCircleIcon size={16} weight="fill" className="text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-green-700 dark:text-green-400">
+                <p className="font-semibold mb-0.5">AI Plan Generated</p>
+                <p>Target niche: <strong>{plan.target_niche}</strong> · {plan.suggested_actors.length} actors suggested · {plan.suggested_search_terms.length} search terms</p>
+              </div>
+            </div>
+          )}
+
           {/* Target niche */}
           <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
             <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 mb-4 flex items-center gap-2">
@@ -461,7 +568,7 @@ export default function NewCampaignPage() {
                   value={targetNiche}
                   onChange={(e) => setTargetNiche(e.target.value)}
                   placeholder="e.g., B2B SaaS Founders, Real Estate Agencies"
-                  className="w-full px-3 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 transition-shadow focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
+                  className="w-full px-3 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
                 />
               </div>
 
@@ -480,7 +587,7 @@ export default function NewCampaignPage() {
                         onClick={() =>
                           setSearchTerms((prev) => prev.filter((_, j) => j !== i))
                         }
-                        className="text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:text-red-400"
+                        className="text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400"
                       >
                         <XIcon size={10} />
                       </button>
@@ -494,7 +601,7 @@ export default function NewCampaignPage() {
                     onChange={(e) => setNewSearchTerm(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addSearchTerm()}
                     placeholder="Add search term..."
-                    className="flex-1 px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 transition-shadow focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
+                    className="flex-1 px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
                   />
                   <button
                     onClick={addSearchTerm}
@@ -513,7 +620,7 @@ export default function NewCampaignPage() {
                   <select
                     value={scheduleFrequency}
                     onChange={(e) => setScheduleFrequency(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm transition-shadow focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
+                    className="w-full px-3 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
                   >
                     <option value="once">Run Once</option>
                     <option value="daily">Daily</option>
@@ -542,7 +649,7 @@ export default function NewCampaignPage() {
             </div>
           </div>
 
-          {/* Actors selection */}
+          {/* Actor selection */}
           <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
             <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 mb-4 flex items-center gap-2">
               <LightningIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
@@ -558,59 +665,90 @@ export default function NewCampaignPage() {
                 Loading actors...
               </div>
             ) : (
-              <div className="space-y-3">
-                {/* Group by phase */}
-                {["discovery", "enrichment", "scoring"].map((phase) => {
-                  const phaseActors = allActors.filter((a) => a.phase === phase);
-                  if (phaseActors.length === 0) return null;
-                  return (
-                    <div key={phase}>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2 capitalize">
-                        {phase} Phase
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {phaseActors.map((actor) => {
-                          const isSelected = selectedActors.includes(actor.id);
-                          return (
-                            <button
-                              key={actor.id}
-                              onClick={() => toggleActor(actor.id)}
-                              className={`text-left p-3 rounded-lg border transition-colors ${
-                                isSelected
-                                  ? "bg-neutral-100 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600 text-neutral-950 dark:text-neutral-50"
-                                  : "bg-neutral-50 dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-500"
-                              }`}
-                            >
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-sm font-medium">
-                                  {actor.name}
-                                </span>
-                                <div
-                                  className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                    isSelected
-                                      ? "border-white bg-white"
-                                      : "border-neutral-300 dark:border-neutral-600"
-                                  }`}
-                                >
-                                  {isSelected && (
-                                    <CheckCircleIcon
-                                      size={10}
-                                      className="text-black"
-                                      weight="fill"
-                                    />
-                                  )}
-                                </div>
+              <div className="space-y-4">
+                {findActors.length > 0 && (
+                  <div>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
+                      Find Phase
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {findActors.map((actor: ActorDefinition) => {
+                        const isSelected = selectedActors.includes(actor.id);
+                        return (
+                          <button
+                            key={actor.id}
+                            onClick={() => toggleActor(actor.id)}
+                            className={`text-left p-3 rounded-lg border transition-colors ${
+                              isSelected
+                                ? "bg-neutral-100 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600 text-neutral-950 dark:text-neutral-50"
+                                : "bg-neutral-50 dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-500"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">{actor.name}</span>
+                              <div
+                                className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                  isSelected
+                                    ? "border-neutral-950 dark:border-white bg-neutral-950 dark:bg-white"
+                                    : "border-neutral-300 dark:border-neutral-600"
+                                }`}
+                              >
+                                {isSelected && (
+                                  <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-neutral-950" />
+                                )}
                               </div>
-                              <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">
-                                {actor.description}
-                              </p>
-                            </button>
-                          );
-                        })}
-                      </div>
+                            </div>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">
+                              {actor.description}
+                            </p>
+                          </button>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                )}
+
+                {enrichActors.length > 0 && (
+                  <div>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
+                      Enrich Phase
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {enrichActors.map((actor: ActorDefinition) => {
+                        const isSelected = selectedActors.includes(actor.id);
+                        return (
+                          <button
+                            key={actor.id}
+                            onClick={() => toggleActor(actor.id)}
+                            className={`text-left p-3 rounded-lg border transition-colors ${
+                              isSelected
+                                ? "bg-neutral-100 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600 text-neutral-950 dark:text-neutral-50"
+                                : "bg-neutral-50 dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-500"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">{actor.name}</span>
+                              <div
+                                className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                  isSelected
+                                    ? "border-neutral-950 dark:border-white bg-neutral-950 dark:bg-white"
+                                    : "border-neutral-300 dark:border-neutral-600"
+                                }`}
+                              >
+                                {isSelected && (
+                                  <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-neutral-950" />
+                                )}
+                              </div>
+                            </div>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">
+                              {actor.description}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -624,8 +762,9 @@ export default function NewCampaignPage() {
               </h3>
               <div className="space-y-6">
                 {selectedActors.map((actorId) => {
-                  const actor = allActors.find((a) => a.id === actorId);
+                  const actor = allActors.find((a: ActorDefinition) => a.id === actorId);
                   if (!actor) return null;
+                  const fields = Object.entries(actor.inputFieldDescriptions || {});
                   return (
                     <div
                       key={actorId}
@@ -634,26 +773,16 @@ export default function NewCampaignPage() {
                       <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-3">
                         {actor.name}
                       </p>
-                      {actor.requiredInputFields?.length > 0 ? (
+                      {fields.length > 0 ? (
                         <div className="space-y-3">
-                          {actor.requiredInputFields.map((field) => (
-                            <div key={field.key}>
-                              <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">
-                                {field.label}
-                                {field.required && (
-                                  <span className="text-red-600 dark:text-red-400 ml-0.5">*</span>
-                                )}
-                              </label>
-                              <input
-                                type={field.type === "number" ? "number" : "text"}
-                                value={actorConfigs[actorId]?.[field.key] || ""}
-                                onChange={(e) =>
-                                  updateActorConfig(actorId, field.key, e.target.value)
-                                }
-                                placeholder={field.placeholder || ""}
-                                className="w-full px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 transition-shadow focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
-                              />
-                            </div>
+                          {fields.map(([fieldKey, desc]) => (
+                            <ActorConfigField
+                              key={fieldKey}
+                              fieldKey={fieldKey}
+                              desc={desc}
+                              value={actorConfigs[actorId]?.[fieldKey] ?? ""}
+                              onChange={(v) => updateActorConfig(actorId, fieldKey, v)}
+                            />
                           ))}
                         </div>
                       ) : (
@@ -716,33 +845,35 @@ export default function NewCampaignPage() {
                     key={i}
                     className="flex gap-3 items-start p-3 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
                   >
-                    <div className="flex-1 grid grid-cols-3 gap-2">
-                      <input
-                        type="text"
-                        value={kpi.label}
-                        onChange={(e) => updateKpi(i, "label", e.target.value)}
-                        placeholder="KPI Label"
-                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
-                      />
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={kpi.label}
+                          onChange={(e) => updateKpi(i, "label", e.target.value)}
+                          placeholder="KPI Label"
+                          className="flex-1 px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+                        />
+                        <TypeToggle
+                          value={kpi.type}
+                          options={[
+                            { value: "boolean", label: "Yes/No" },
+                            { value: "text", label: "Text" },
+                          ]}
+                          onChange={(v) => updateKpi(i, "type", v)}
+                        />
+                      </div>
                       <input
                         type="text"
                         value={kpi.description}
                         onChange={(e) => updateKpi(i, "description", e.target.value)}
-                        placeholder="Description"
-                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
+                        placeholder="Description (e.g., Does the company have more than 10 employees?)"
+                        className="w-full px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
                       />
-                      <select
-                        value={kpi.type}
-                        onChange={(e) => updateKpi(i, "type", e.target.value)}
-                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
-                      >
-                        <option value="boolean">Boolean (Yes/No)</option>
-                        <option value="text">Text</option>
-                      </select>
                     </div>
                     <button
                       onClick={() => removeKpi(i)}
-                      className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:text-red-400 transition-colors"
+                      className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 transition-colors mt-0.5"
                     >
                       <TrashIcon size={14} />
                     </button>
@@ -779,34 +910,37 @@ export default function NewCampaignPage() {
                     key={i}
                     className="flex gap-3 items-start p-3 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
                   >
-                    <div className="flex-1 grid grid-cols-3 gap-2">
-                      <input
-                        type="text"
-                        value={field.label}
-                        onChange={(e) => updateField(i, "label", e.target.value)}
-                        placeholder="Field Label"
-                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
-                      />
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={field.label}
+                          onChange={(e) => updateField(i, "label", e.target.value)}
+                          placeholder="Field Label"
+                          className="flex-1 px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+                        />
+                        <TypeToggle
+                          value={field.type}
+                          options={[
+                            { value: "text", label: "Text" },
+                            { value: "number", label: "Num" },
+                            { value: "boolean", label: "Bool" },
+                            { value: "url", label: "URL" },
+                          ]}
+                          onChange={(v) => updateField(i, "type", v)}
+                        />
+                      </div>
                       <input
                         type="text"
                         value={field.description}
                         onChange={(e) => updateField(i, "description", e.target.value)}
-                        placeholder="Description"
-                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
+                        placeholder="Description (helps AI understand what to extract)"
+                        className="w-full px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
                       />
-                      <select
-                        value={field.source}
-                        onChange={(e) => updateField(i, "source", e.target.value)}
-                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
-                      >
-                        <option value="mapped">Mapped Data</option>
-                        <option value="enrichment">Enrichment</option>
-                        <option value="manual">Manual</option>
-                      </select>
                     </div>
                     <button
                       onClick={() => removeField(i)}
-                      className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:text-red-400 transition-colors"
+                      className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 transition-colors mt-0.5"
                     >
                       <TrashIcon size={14} />
                     </button>
@@ -835,7 +969,7 @@ export default function NewCampaignPage() {
               </div>
               <div>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">AI Provider</p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">{aiProvider === "openrouter" ? "OpenRouter" : aiProvider === "openai" ? "OpenAI" : "Anthropic"}</p>
+                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium capitalize">{aiProvider}</p>
               </div>
               <div>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Schedule</p>
@@ -874,7 +1008,7 @@ export default function NewCampaignPage() {
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">Selected Actors</p>
                 <div className="space-y-1.5">
                   {selectedActors.map((id) => {
-                    const actor = allActors.find((a) => a.id === id);
+                    const actor = allActors.find((a: ActorDefinition) => a.id === id);
                     return (
                       <div
                         key={id}
@@ -934,7 +1068,7 @@ export default function NewCampaignPage() {
                       >
                         <span className="text-xs text-neutral-950 dark:text-neutral-50">{field.label}</span>
                         <span className="text-[10px] text-neutral-500 dark:text-neutral-400 capitalize">
-                          {field.source}
+                          {field.type}
                         </span>
                       </div>
                     ))}
@@ -952,7 +1086,7 @@ export default function NewCampaignPage() {
             {creating ? (
               <>
                 <CircleNotchIcon size={16} className="animate-spin" />
-                Creating Campaign...
+                Creating campaign...
               </>
             ) : (
               <>
@@ -964,25 +1098,26 @@ export default function NewCampaignPage() {
         </div>
       )}
 
-      {/* ── Step navigation ───────────────────────────────────────────── */}
-      {step < 4 && (
-        <div className="max-w-3xl mt-8 flex items-center justify-between">
+      {/* ── Navigation buttons ─────────────────────────────────────────── */}
+      {step > 1 && (
+        <div className="flex items-center justify-between max-w-3xl pt-2">
           <button
-            onClick={() => setStep(Math.max(1, step - 1))}
-            disabled={step === 1}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm font-medium hover:text-neutral-950 dark:hover:text-neutral-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            onClick={() => setStep((s) => s - 1)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-950 dark:text-neutral-50 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
           >
             <ArrowLeftIcon size={14} />
             Back
           </button>
-          <button
-            onClick={() => setStep(Math.min(4, step + 1))}
-            disabled={!canGoNext()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            Next
-            <ArrowRightIcon size={14} />
-          </button>
+
+          {step < 4 && (
+            <button
+              onClick={() => setStep((s) => s + 1)}
+              disabled={!canGoNext()}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          )}
         </div>
       )}
     </div>

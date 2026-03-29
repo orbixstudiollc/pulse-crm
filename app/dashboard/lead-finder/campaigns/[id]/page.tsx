@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -15,22 +15,57 @@ import {
   CircleNotchIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ClockIcon,
   TrashIcon,
   DownloadIcon,
   DotsThreeIcon,
   MagnifyingGlassIcon,
-  TargetIcon,
   GearIcon,
   LightningIcon,
   ArrowRightIcon,
   EnvelopeIcon,
   GlobeIcon,
+  SlidersHorizontalIcon,
+  PlusIcon,
+  XIcon,
+  CaretUpIcon,
+  CaretDownIcon,
+  ClockIcon,
+  WarningCircleIcon,
+  ArrowCounterClockwiseIcon,
+  ChevronsRightIcon,
+  PowerIcon,
+  ToggleLeftIcon,
+  ToggleRightIcon,
+  HashIcon,
+  LinkIcon,
+  TextTIcon,
+  BarChartIcon,
+  TagIcon,
+  CaretRightIcon,
+  CaretDownIcon as ChevronDownIcon,
+  InfoIcon,
 } from "@/components/ui";
 import { ScoreBadge } from "@/components/lead-finder/ScoreBadge";
 import { useLeadEvents } from "@/hooks/use-lead-events";
+import { useLeadFinderActors } from "@/hooks/use-lead-finder-actors";
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// ── Types ───────────────────────────────────────────────────────────────────
+
+interface LeadFieldDefinition {
+  id?: string;
+  key?: string;
+  label: string;
+  type: "text" | "number" | "boolean" | "url";
+  description?: string;
+}
+
+interface KpiDefinition {
+  id?: string;
+  key?: string;
+  label: string;
+  type: "boolean" | "text";
+  description?: string;
+}
 
 interface Lead {
   id: string;
@@ -48,8 +83,16 @@ interface Lead {
   created_at: string;
   personalization?: {
     campaign_kpis?: Record<string, boolean | string>;
-    summary?: string;
   } | null;
+}
+
+interface CampaignRun {
+  id: string;
+  actor_id: string;
+  status: string;
+  result_count: number;
+  cost_usd: number | null;
+  started_at: string;
 }
 
 interface Campaign {
@@ -63,10 +106,12 @@ interface Campaign {
   auto_enrich: boolean;
   apify_actors: string[];
   actor_configs: Record<string, Record<string, unknown>>;
-  kpi_definitions: { id?: string; key?: string; label: string; type: string }[];
-  lead_field_definitions: { id?: string; key?: string; label: string; type: string; description?: string }[];
+  kpi_definitions: KpiDefinition[];
+  lead_field_definitions: LeadFieldDefinition[];
+  enrichment_concurrency: number | null;
+  last_discovery_at: string | null;
   leads: Lead[];
-  runs: { id: string; actor_id: string; status: string; cost_usd: number; started_at: string }[];
+  runs: CampaignRun[];
   stats: {
     totalLeads: number;
     enrichedLeads: number;
@@ -80,344 +125,148 @@ interface Campaign {
   };
 }
 
-// ── Status styles ──────────────────────────────────────────────────────────
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
-const LEAD_STATUS_STYLES: Record<string, string> = {
-  new: "text-blue-700 dark:text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30",
-  enriching: "text-amber-700 dark:text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30",
-  enriched: "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
+function formatRelativeTime(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString();
+}
+
+function resolveFieldId(f: LeadFieldDefinition | KpiDefinition): string {
+  return (f.id ?? (f as { key?: string }).key ?? "");
+}
+
+function resolveFieldValue(
+  lead: Lead,
+  field: LeadFieldDefinition
+): { display: string; isUrl: boolean } {
+  const fid = resolveFieldId(field);
+  const mapped = lead.mapped_data ?? {};
+  const raw = lead.raw_data ?? {};
+  const val = mapped[fid] ?? raw[fid];
+
+  if (val == null) return { display: "—", isUrl: false };
+
+  if (field.type === "boolean") {
+    return {
+      display: val === true || val === "true" ? "Yes" : val === false || val === "false" ? "No" : String(val),
+      isUrl: false,
+    };
+  }
+  if (field.type === "number" && typeof val === "number") {
+    return { display: val.toLocaleString(), isUrl: false };
+  }
+  if (field.type === "url" && typeof val === "string" && val.startsWith("http")) {
+    return { display: val, isUrl: true };
+  }
+  if (typeof val === "object") {
+    if (Array.isArray(val)) {
+      if (val.length === 0) return { display: "—", isUrl: false };
+      const joined = val
+        .filter((v) => v != null)
+        .map((item) =>
+          typeof item !== "object" || item === null
+            ? String(item)
+            : Object.values(item as Record<string, unknown>)
+                .filter((v) => v != null)
+                .map(String)
+                .join(": ")
+        )
+        .join(", ");
+      return { display: joined, isUrl: false };
+    }
+    const entries = Object.entries(val as Record<string, unknown>)
+      .filter(([, v]) => v != null)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(", ");
+    return { display: entries || "—", isUrl: false };
+  }
+  const strVal = String(val);
+  const isUrl = strVal.startsWith("http");
+  return { display: strVal, isUrl };
+}
+
+const STATUS_STYLES: Record<string, string> = {
+  new: "text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30",
+  enriching: "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 animate-pulse",
+  "awaiting enrichment": "text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800",
   qualified: "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
-  disqualified: "text-red-700 dark:text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30",
-  converted: "text-violet-700 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/30",
-  error: "text-red-700 dark:text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30",
+  converted: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30",
+  disqualified: "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30",
+  declined: "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30",
+  archived: "text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800",
 };
 
-const CAMPAIGN_STATUS_STYLES: Record<string, string> = {
-  draft: "text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800",
-  active: "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
-  paused: "text-amber-700 dark:text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30",
-  completed: "text-blue-700 dark:text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30",
-};
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-function StatusBadge({ status, styles }: { status: string; styles: Record<string, string> }) {
-  return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${styles[status] || "text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800"}`}
-    >
-      {status}
-    </span>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  color,
-}: {
-  label: string;
-  value: string | number;
-  icon: React.ComponentType<{ size: number; className?: string }>;
-  color?: string;
-}) {
-  return (
-    <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-4">
-      <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400 mb-2">
-        <Icon size={14} />
-        <span className="text-xs uppercase tracking-wider">{label}</span>
-      </div>
-      <p className={`text-2xl font-bold ${color || "text-white"}`}>{value}</p>
-    </div>
-  );
-}
-
-// ── Action dropdown for individual leads ───────────────────────────────────
-
-function LeadActionMenu({
-  lead,
-  onEnrich,
-  onChangeStatus,
-  onDelete,
-  onViewDetail,
-}: {
-  lead: Lead;
-  onEnrich: (id: string) => void;
-  onChangeStatus: (id: string, status: string) => void;
-  onDelete: (id: string) => void;
-  onViewDetail: (id: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="relative">
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen(!open);
-        }}
-        className="p-1 rounded text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:bg-neutral-800 transition-colors"
-      >
-        <DotsThreeIcon size={16} weight="bold" />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full z-50 mt-1 w-44 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-xl py-1">
-            <button
-              onClick={() => {
-                onViewDetail(lead.id);
-                setOpen(false);
-              }}
-              className="w-full text-left px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:bg-neutral-800 transition-colors"
-            >
-              View Details
-            </button>
-            <button
-              onClick={() => {
-                onEnrich(lead.id);
-                setOpen(false);
-              }}
-              className="w-full text-left px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:bg-neutral-800 transition-colors"
-            >
-              Enrich Lead
-            </button>
-            <div className="border-t border-neutral-200 dark:border-neutral-800 my-1" />
-            {["qualified", "disqualified", "converted"].map((s) => (
-              <button
-                key={s}
-                onClick={() => {
-                  onChangeStatus(lead.id, s);
-                  setOpen(false);
-                }}
-                className="w-full text-left px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:bg-neutral-800 transition-colors capitalize"
-              >
-                Mark as {s}
-              </button>
-            ))}
-            <div className="border-t border-neutral-200 dark:border-neutral-800 my-1" />
-            <button
-              onClick={() => {
-                onDelete(lead.id);
-                setOpen(false);
-              }}
-              className="w-full text-left px-3 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-400/10 transition-colors"
-            >
-              Delete Lead
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-// ── Settings panel ─────────────────────────────────────────────────────────
-
-interface ActorDef {
-  id: string;
-  name: string;
-  phase: string;
-  category: string;
-}
-
-function SettingsPanel({
-  campaign,
-  onClose,
-  onUpdate,
-}: {
-  campaign: Campaign;
-  onClose: () => void;
-  onUpdate: (updates: Record<string, unknown>) => void;
-}) {
-  const [autoEnrich, setAutoEnrich] = useState(campaign.auto_enrich);
-  const [schedule, setSchedule] = useState(campaign.schedule_frequency);
-  const [selectedActors, setSelectedActors] = useState<string[]>(campaign.apify_actors);
-  const [availableActors, setAvailableActors] = useState<ActorDef[]>([]);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/lead-finder/actors")
-      .then((r) => r.json())
-      .then((j) => setAvailableActors(j.data ?? []))
-      .catch(() => {});
-  }, []);
-
-  const toggleActor = (actorId: string) => {
-    setSelectedActors((prev) =>
-      prev.includes(actorId) ? prev.filter((a) => a !== actorId) : [...prev, actorId]
-    );
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    await onUpdate({ auto_enrich: autoEnrich, schedule_frequency: schedule, apify_actors: selectedActors });
-    setSaving(false);
-    onClose();
-  };
-
-  const findActors = availableActors.filter((a) => a.phase === "find");
-  const enrichActors = availableActors.filter((a) => a.phase === "enrich");
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">Campaign Settings</h3>
-          <button onClick={onClose} className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50">
-            <XCircleIcon size={20} />
-          </button>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1.5">Schedule</label>
-            <select
-              value={schedule}
-              onChange={(e) => setSchedule(e.target.value)}
-              className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
-            >
-              <option value="once">Once</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="biweekly">Bi-weekly</option>
-              <option value="monthly">Monthly</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1.5">Auto-Enrich</label>
-            <button
-              onClick={() => setAutoEnrich(!autoEnrich)}
-              className={`inline-flex items-center gap-2 h-9 px-3 rounded border text-sm font-medium transition-colors ${
-                autoEnrich
-                  ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/50"
-                  : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700"
-              }`}
-            >
-              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${autoEnrich ? "bg-green-500" : "bg-neutral-400"}`} />
-              {autoEnrich ? "Auto-enrich on" : "Auto-enrich off"}
-            </button>
-          </div>
-          <div>
-            <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1.5">AI Provider</label>
-            <p className="text-sm text-neutral-950 dark:text-neutral-50 capitalize">{campaign.ai_provider}</p>
-          </div>
-          <div>
-            <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-2">
-              Actors ({selectedActors.length} selected)
-            </label>
-            {availableActors.length === 0 ? (
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">Loading actors...</p>
-            ) : (
-              <div className="space-y-3">
-                {findActors.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1.5">Find</p>
-                    <div className="space-y-1">
-                      {findActors.map((actor) => (
-                        <label key={actor.id} className="flex items-center gap-2.5 cursor-pointer group">
-                          <input
-                            type="checkbox"
-                            checked={selectedActors.includes(actor.id)}
-                            onChange={() => toggleActor(actor.id)}
-                            className="w-4 h-4 rounded accent-neutral-950 dark:accent-white"
-                          />
-                          <span className="text-sm text-neutral-950 dark:text-neutral-50 group-hover:text-neutral-700 dark:group-hover:text-neutral-300">
-                            {actor.name}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {enrichActors.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 mb-1.5">Enrich</p>
-                    <div className="space-y-1">
-                      {enrichActors.map((actor) => (
-                        <label key={actor.id} className="flex items-center gap-2.5 cursor-pointer group">
-                          <input
-                            type="checkbox"
-                            checked={selectedActors.includes(actor.id)}
-                            onChange={() => toggleActor(actor.id)}
-                            className="w-4 h-4 rounded accent-neutral-950 dark:accent-white"
-                          />
-                          <span className="text-sm text-neutral-950 dark:text-neutral-50 group-hover:text-neutral-700 dark:group-hover:text-neutral-300">
-                            {actor.name}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="flex justify-end gap-3 mt-6">
-          <button
-            onClick={onClose}
-            className="h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm font-medium hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="h-9 px-3 rounded bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 transition-colors"
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Main component ─────────────────────────────────────────────────────────
+// ── Main Component ───────────────────────────────────────────────────────────
 
 export default function CampaignDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { getActorById, getActorsByPhase } = useLeadFinderActors();
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
-  const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [discovering, setDiscovering] = useState(false);
-  const [enrichingAll, setEnrichingAll] = useState(false);
-  const [enrichingLead, setEnrichingLead] = useState<string | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
 
-  // Selection for bulk actions
+  // Discovery / Enrichment
+  const [runningActor, setRunningActor] = useState<string | null>(null);
+  const [lastActorResult, setLastActorResult] = useState<{ actorId: string; inserted: number; total: number } | null>(null);
+  const [discoveryProgress, setDiscoveryProgress] = useState<{ current: number; total: number } | null>(null);
+  const [discoveryError, setDiscoveryError] = useState<string | null>(null);
+  const [enrichingAll, setEnrichingAll] = useState(false);
+  const enrichAbortRef = useRef<AbortController | null>(null);
+  const [reEnrichingLeads, setReEnrichingLeads] = useState<Set<string>>(new Set());
+
+  // Table
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [extraColumns, setExtraColumns] = useState<Set<string>>(new Set());
+  const [showColumnMenu, setShowColumnMenu] = useState(false);
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
 
-  // Discovery/enrichment progress
-  const [discoveryProgress, setDiscoveryProgress] = useState<{ current: number; total: number } | null>(null);
-  const [enrichmentProgress, setEnrichmentProgress] = useState<{ completed: number; total: number } | null>(null);
+  // Settings panel
+  const [showSettings, setShowSettings] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [editSettings, setEditSettings] = useState<{
+    targetNiche: string;
+    aiProvider: string;
+    scheduleFrequency: string;
+    autoEnrich: boolean;
+    enrichmentConcurrency: number | "";
+    actorConfigs: Record<string, Record<string, string>>;
+    actorOrder: string[];
+  } | null>(null);
+  const [editLeadFields, setEditLeadFields] = useState<LeadFieldDefinition[]>([]);
+  const [editKpis, setEditKpis] = useState<KpiDefinition[]>([]);
+  const [collapsedActors, setCollapsedActors] = useState<Set<string>>(new Set());
+  const [addActorOpen, setAddActorOpen] = useState(false);
 
-  // Delete campaign
+  // Delete
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showClearLeadsConfirm, setShowClearLeadsConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [clearingLeads, setClearingLeads] = useState(false);
 
-  // Delete all leads
-  const [showDeleteLeadsConfirm, setShowDeleteLeadsConfirm] = useState(false);
-  const [deletingLeads, setDeletingLeads] = useState(false);
+  // Cost breakdown popover
+  const [showCostBreakdown, setShowCostBreakdown] = useState(false);
 
-  // Search & filters
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  // ── Load campaign ──────────────────────────────────────────────────────────
 
-  // ── Fetch campaign ─────────────────────────────────────────────────────
+  const loadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchCampaign = useCallback(async () => {
+  const fetchNow = useCallback(async () => {
     try {
       const res = await fetch(`/api/lead-finder/campaigns/${id}`);
-      if (!res.ok) throw new Error("Failed to fetch");
+      if (!res.ok) throw new Error("Failed");
       const json = await res.json();
       setCampaign(json.data);
-      setLeads(json.data.leads ?? []);
     } catch {
       toast.error("Failed to load campaign");
     } finally {
@@ -425,802 +274,1117 @@ export default function CampaignDetailPage() {
     }
   }, [id]);
 
-  useEffect(() => {
-    fetchCampaign();
-  }, [fetchCampaign]);
+  const fetch300 = useCallback(() => {
+    if (loadTimer.current) clearTimeout(loadTimer.current);
+    loadTimer.current = setTimeout(fetchNow, 300);
+  }, [fetchNow]);
 
-  // ── SSE real-time events ───────────────────────────────────────────────
+  useEffect(() => { fetchNow(); }, [fetchNow]);
+
+  // ── Real-time events ───────────────────────────────────────────────────────
 
   useLeadEvents({
     campaignId: id,
     enabled: !!campaign,
     onLeadDiscovered: (data) => {
       const d = data as Record<string, unknown>;
-      const newLead: Lead = {
-        id: d.leadId as string,
-        campaign_id: d.campaignId as string,
-        display_name: (d.displayName as string) || null,
-        email: (d.email as string) || null,
-        phone: (d.phone as string) || null,
-        website: (d.website as string) || null,
-        score: 0,
-        status: (d.status as string) || "new",
-        source: (d.source as string) || "unknown",
-        raw_data: (d.rawData as Record<string, unknown>) || null,
-        mapped_data: (d.mappedData as Record<string, unknown>) || null,
-        llm_cost_usd: 0,
-        created_at: (d.createdAt as string) || new Date().toISOString(),
-      };
-      setLeads((prev) => [newLead, ...prev]);
-      setDiscoveryProgress({
-        current: (d.index as number) || 0,
-        total: (d.totalItems as number) || 0,
+      setDiscoveryProgress({ current: (d.index as number) || 0, total: (d.totalItems as number) || 0 });
+      setCampaign((prev) => {
+        if (!prev) return prev;
+        if (prev.leads.some((l) => l.id === d.leadId)) return prev;
+        const newLead: Lead = {
+          id: d.leadId as string,
+          campaign_id: id,
+          display_name: (d.displayName as string) || null,
+          email: (d.email as string) || null,
+          phone: null,
+          website: (d.website as string) || null,
+          score: 0,
+          status: (d.status as string) || "new",
+          source: (d.source as string) || "",
+          raw_data: (d.rawData as Record<string, unknown>) || null,
+          mapped_data: null,
+          llm_cost_usd: 0,
+          created_at: (d.createdAt as string) || new Date().toISOString(),
+        };
+        return { ...prev, leads: [newLead, ...prev.leads], stats: { ...prev.stats, totalLeads: prev.stats.totalLeads + 1 } };
+      });
+    },
+    onLeadStatusChanged: (data) => {
+      const d = data as Record<string, unknown>;
+      setCampaign((prev) => {
+        if (!prev) return prev;
+        return { ...prev, leads: prev.leads.map((l) => l.id === d.leadId ? { ...l, status: d.newStatus as string } : l) };
       });
     },
     onLeadEnrichmentCompleted: (data) => {
       const d = data as Record<string, unknown>;
-      setLeads((prev) =>
-        prev.map((l) =>
-          l.id === d.leadId
-            ? { ...l, score: (d.score as number) || 0, status: (d.status as string) || l.status }
-            : l
-        )
-      );
+      setReEnrichingLeads((prev) => { const next = new Set(prev); next.delete(d.leadId as string); return next; });
+      fetch300();
     },
-    onLeadKpiUpdated: (data) => {
+    onLeadKpiUpdated: () => fetch300(),
+    onDiscoveryStarted: (data) => {
       const d = data as Record<string, unknown>;
-      setLeads((prev) =>
-        prev.map((l) =>
-          l.id === d.leadId
-            ? {
-                ...l,
-                personalization: {
-                  ...l.personalization,
-                  campaign_kpis: d.kpis as Record<string, boolean | string>,
-                },
-              }
-            : l
-        )
-      );
-    },
-    onLeadStatusChanged: (data) => {
-      const d = data as Record<string, unknown>;
-      setLeads((prev) =>
-        prev.map((l) => (l.id === d.leadId ? { ...l, status: d.newStatus as string } : l))
-      );
-    },
-    onDiscoveryStarted: () => {
-      setDiscovering(true);
-      setDiscoveryProgress({ current: 0, total: 0 });
-    },
-    onDiscoveryCompleted: (data) => {
-      const d = data as Record<string, unknown>;
-      setDiscovering(false);
+      const ids = d.actorIds as string[];
+      if (ids?.length) setRunningActor(ids[0]);
       setDiscoveryProgress(null);
-      toast.success(
-        `Discovery complete: ${d.totalInserted} leads found, ${d.totalDeduplicated} duplicates skipped`
-      );
-      fetchCampaign();
     },
-    onEnrichmentProgress: (data) => {
-      const d = data as Record<string, unknown>;
-      setEnrichmentProgress({
-        completed: (d.completed as number) || 0,
-        total: (d.total as number) || 0,
-      });
-      if ((d.completed as number) >= (d.total as number)) {
-        setEnrichingAll(false);
-        setEnrichmentProgress(null);
-        toast.success("Enrichment complete");
-        fetchCampaign();
-      }
+    onDiscoveryCompleted: () => {
+      setRunningActor(null);
+      setDiscoveryProgress(null);
+      fetch300();
     },
+    onEnrichmentProgress: () => fetch300(),
   });
 
-  // ── Actions ────────────────────────────────────────────────────────────
+  // ── Computed ───────────────────────────────────────────────────────────────
 
-  const handleActivatePause = async () => {
-    if (!campaign) return;
-    const newStatus = campaign.status === "active" ? "paused" : "active";
-    try {
-      const res = await fetch(`/api/lead-finder/campaigns/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (!res.ok) throw new Error("Failed to update");
-      setCampaign((prev) => (prev ? { ...prev, status: newStatus } : null));
-      toast.success(`Campaign ${newStatus === "active" ? "activated" : "paused"}`);
-    } catch {
-      toast.error("Failed to update campaign status");
+  if (loading || !campaign) {
+    return (
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
+        <CircleNotchIcon size={32} className="animate-spin text-neutral-400" />
+      </div>
+    );
+  }
+
+  const fields = (campaign.lead_field_definitions || []).map((f) => ({ ...f, _id: resolveFieldId(f) }));
+  const kpis = (campaign.kpi_definitions || []).map((k) => ({ ...k, _id: resolveFieldId(k) }));
+
+  const serverIsEnriching = campaign.leads.some((l) => l.status === "enriching");
+  const isEnrichmentActive = enrichingAll || serverIsEnriching || reEnrichingLeads.size > 0;
+  const unenrichedCount = campaign.leads.filter((l) => l.status === "new" || l.status === "enriching").length;
+  const hasUnenrichedLeads = unenrichedCount > 0;
+
+  const latestRunByActor = new Map<string, CampaignRun>();
+  for (const run of campaign.runs) {
+    const existing = latestRunByActor.get(run.actor_id);
+    if (!existing || new Date(run.started_at) > new Date(existing.started_at)) {
+      latestRunByActor.set(run.actor_id, run);
     }
+  }
+
+  const findActors = (campaign.apify_actors || []).filter((aid) => getActorById(aid)?.phase === "find");
+  const enrichActors = (campaign.apify_actors || []).filter((aid) => getActorById(aid)?.phase === "enrich");
+
+  const filteredLeads = campaign.leads.filter((l) => {
+    if (statusFilter !== "all" && l.status !== statusFilter) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      return l.display_name?.toLowerCase().includes(q) || l.email?.toLowerCase().includes(q) || l.website?.toLowerCase().includes(q);
+    }
+    return true;
+  });
+
+  const displayStatus = (lead: Lead) => {
+    if (reEnrichingLeads.has(lead.id)) return "enriching";
+    if ((lead.status === "new" || lead.status === "enriching") && !isEnrichmentActive) return "awaiting enrichment";
+    return lead.status;
   };
 
-  const handleRunDiscovery = async () => {
-    setDiscovering(true);
+  // ── Actions ────────────────────────────────────────────────────────────────
+
+  const handleRunActor = async (actorId: string) => {
+    setRunningActor(actorId);
+    setDiscoveryError(null);
     try {
       const res = await fetch(`/api/lead-finder/campaigns/${id}/discover`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actorId }),
       });
+      const data = await res.json();
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Discovery failed");
+        setDiscoveryError(data.error || "Actor run failed");
+        return;
       }
-      toast.success("Discovery started");
+      const inserted = data.inserted ?? 0;
+      const total = data.totalResults ?? 0;
+      setLastActorResult({ actorId, inserted, total });
+      setTimeout(() => setLastActorResult(null), 10000);
+      if (inserted > 0) {
+        toast.success(`${inserted} new leads from ${getActorById(actorId)?.name || actorId}`);
+        if (campaign.auto_enrich && !enrichingAll) triggerEnrichment();
+      } else {
+        toast.info("Actor completed — no new leads found");
+      }
+      fetch300();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Discovery failed");
-      setDiscovering(false);
+      toast.error(String(err));
+    } finally {
+      setRunningActor(null);
+      setDiscoveryProgress(null);
     }
   };
 
-  const handleEnrichAll = async () => {
+  const triggerEnrichment = async () => {
     setEnrichingAll(true);
+    const abort = new AbortController();
+    enrichAbortRef.current = abort;
     try {
       const res = await fetch(`/api/lead-finder/campaigns/${id}/enrich`, {
         method: "POST",
+        signal: abort.signal,
       });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Enrichment failed");
-      }
-      toast.success("Enrichment started");
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error || "Enrichment failed"); return; }
+      if (data.enriched > 0) toast.success(`Enriched ${data.enriched} leads`);
+      else toast.info("No new leads to enrich");
+      fetch300();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Enrichment failed");
-      setEnrichingAll(false);
-    }
-  };
-
-  const handleEnrichLead = async (leadId: string) => {
-    setEnrichingLead(leadId);
-    try {
-      const res = await fetch(`/api/lead-finder/leads/${leadId}/enrich`, {
-        method: "POST",
-      });
-      if (!res.ok) throw new Error("Failed to enrich lead");
-      toast.success("Lead enrichment started");
-    } catch {
-      toast.error("Failed to enrich lead");
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      toast.error(String(err));
     } finally {
-      setEnrichingLead(null);
+      setEnrichingAll(false);
+      enrichAbortRef.current = null;
     }
   };
 
-  const handleChangeStatus = async (leadId: string, status: string) => {
-    try {
-      const res = await fetch(`/api/lead-finder/leads/${leadId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      if (!res.ok) throw new Error("Failed");
-      setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, status } : l)));
-      toast.success(`Lead marked as ${status}`);
-    } catch {
-      toast.error("Failed to update lead status");
-    }
+  const handlePauseEnrichment = async () => {
+    enrichAbortRef.current?.abort();
+    enrichAbortRef.current = null;
+    setEnrichingAll(false);
+    await fetch(`/api/lead-finder/campaigns/${id}/enrich`, { method: "DELETE" }).catch(() => {});
+    fetch300();
+  };
+
+  const handleReEnrich = (leadId: string) => {
+    setReEnrichingLeads((prev) => new Set(prev).add(leadId));
+    setCampaign((prev) => prev ? { ...prev, leads: prev.leads.map((l) => l.id === leadId ? { ...l, status: "enriching" } : l) } : prev);
+    fetch(`/api/lead-finder/leads/${leadId}/enrich`, { method: "POST" })
+      .then((res) => { if (!res.ok) throw new Error("Failed"); toast.success("Re-enrichment started"); })
+      .catch(() => toast.error("Failed to re-enrich"))
+      .finally(() => { setReEnrichingLeads((prev) => { const n = new Set(prev); n.delete(leadId); return n; }); fetch300(); });
+  };
+
+  const handleSkip = async (leadId: string) => {
+    await fetch(`/api/lead-finder/leads/${leadId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "qualified", score: 0 }),
+    });
+    toast.success("Lead skipped");
+    fetch300();
   };
 
   const handleDeleteLead = async (leadId: string) => {
-    try {
-      const res = await fetch(`/api/lead-finder/leads/${leadId}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed");
-      setLeads((prev) => prev.filter((l) => l.id !== leadId));
-      setSelectedLeads((prev) => {
-        const next = new Set(prev);
-        next.delete(leadId);
-        return next;
-      });
-      toast.success("Lead deleted");
-    } catch {
-      toast.error("Failed to delete lead");
-    }
+    await fetch(`/api/lead-finder/leads/${leadId}`, { method: "DELETE" });
+    setCampaign((prev) => prev ? { ...prev, leads: prev.leads.filter((l) => l.id !== leadId) } : prev);
+    setSelectedLeads((prev) => { const n = new Set(prev); n.delete(leadId); return n; });
+    toast.success("Lead deleted");
   };
 
   const handleDeleteCampaign = async () => {
     setDeleting(true);
     try {
-      const res = await fetch(`/api/lead-finder/campaigns/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed");
+      await fetch(`/api/lead-finder/campaigns/${id}`, { method: "DELETE" });
       toast.success("Campaign deleted");
       router.push("/dashboard/lead-finder/campaigns");
-    } catch {
-      toast.error("Failed to delete campaign");
-      setDeleting(false);
-    }
+    } catch { toast.error("Failed to delete"); setDeleting(false); }
   };
 
-  const handleDeleteAllLeads = async () => {
-    setDeletingLeads(true);
+  const handleClearLeads = async () => {
+    setClearingLeads(true);
     try {
-      const res = await fetch(`/api/lead-finder/campaigns/${id}/leads`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed");
-      setLeads([]);
+      await fetch(`/api/lead-finder/campaigns/${id}/leads`, { method: "DELETE" });
+      setCampaign((prev) => prev ? { ...prev, leads: [], stats: { ...prev.stats, totalLeads: 0, enrichedLeads: 0, qualifiedLeads: 0, convertedLeads: 0, avgScore: 0 } } : prev);
       setSelectedLeads(new Set());
-      toast.success("All leads deleted");
-      fetchCampaign();
-    } catch {
-      toast.error("Failed to delete leads");
-    } finally {
-      setDeletingLeads(false);
-      setShowDeleteLeadsConfirm(false);
-    }
+      toast.success("All leads cleared");
+    } catch { toast.error("Failed to clear leads"); }
+    finally { setClearingLeads(false); setShowClearLeadsConfirm(false); }
   };
 
   const handleImportToCRM = async () => {
     const ids = Array.from(selectedLeads);
-    if (ids.length === 0) {
-      toast.error("Select leads to import");
-      return;
-    }
+    if (!ids.length) { toast.error("Select leads to import"); return; }
     setImporting(true);
     try {
-      const res = await fetch("/api/lead-finder/leads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "import", leadIds: ids }),
-      });
-      if (!res.ok) throw new Error("Import failed");
-      toast.success(`${ids.length} lead(s) imported to CRM`);
+      await fetch("/api/lead-finder/leads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "import", leadIds: ids }) });
+      toast.success(`${ids.length} lead(s) imported`);
       setSelectedLeads(new Set());
-      fetchCampaign();
-    } catch {
-      toast.error("Failed to import leads");
-    } finally {
-      setImporting(false);
-    }
+    } catch { toast.error("Import failed"); }
+    finally { setImporting(false); }
   };
 
-  const handleExportCSV = async () => {
+  const handleExportCSV = () => {
+    const headers = ["Name", "Email", "Phone", "Website", "Score", "Status", "Source", "Created"];
+    const rows = filteredLeads.map((l) => [l.display_name || "", l.email || "", l.phone || "", l.website || "", l.score, l.status, l.source, l.created_at]);
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `${campaign.name}-leads.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleActivatePause = async () => {
+    const newStatus = campaign.status === "active" ? "paused" : "active";
+    await fetch(`/api/lead-finder/campaigns/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: newStatus }) });
+    setCampaign((prev) => prev ? { ...prev, status: newStatus } : prev);
+    toast.success(`Campaign ${newStatus}`);
+  };
+
+  // ── Settings helpers ───────────────────────────────────────────────────────
+
+  const openSettings = () => {
+    const configs: Record<string, Record<string, string>> = {};
+    for (const actorId of campaign.apify_actors || []) {
+      const config = campaign.actor_configs?.[actorId] || {};
+      configs[actorId] = {};
+      for (const [k, v] of Object.entries(config)) {
+        configs[actorId][k] = Array.isArray(v) ? (v as string[]).join(", ") : String(v ?? "");
+      }
+    }
+    setEditSettings({
+      targetNiche: campaign.target_niche,
+      aiProvider: campaign.ai_provider,
+      scheduleFrequency: campaign.schedule_frequency,
+      autoEnrich: campaign.auto_enrich,
+      enrichmentConcurrency: campaign.enrichment_concurrency ?? "",
+      actorConfigs: configs,
+      actorOrder: [...(campaign.apify_actors || [])],
+    });
+    setEditLeadFields((campaign.lead_field_definitions || []).map((f) => ({ ...f })));
+    setEditKpis((campaign.kpi_definitions || []).map((k) => ({ ...k })));
+    setCollapsedActors(new Set(campaign.apify_actors || []));
+    setShowSettings(true);
+  };
+
+  const handleSaveSettings = async () => {
+    if (!editSettings) return;
+    setSavingSettings(true);
     try {
-      const res = await fetch(`/api/lead-finder/leads?campaignId=${id}&limit=10000&offset=0`);
-      if (!res.ok) throw new Error("Failed");
-      const json = await res.json();
-      const csvLeads = json.data || [];
-      if (csvLeads.length === 0) {
-        toast.error("No leads to export");
-        return;
+      const actorConfigs: Record<string, Record<string, unknown>> = {};
+      for (const actorId of editSettings.actorOrder) {
+        const actorDef = getActorById(actorId);
+        if (!actorDef) continue;
+        const input: Record<string, unknown> = { ...(actorDef.defaultInput || {}) };
+        const edited = editSettings.actorConfigs[actorId] || {};
+        for (const [fieldName, rawValue] of Object.entries(edited)) {
+          const desc = actorDef.inputFieldDescriptions?.[fieldName];
+          if (!String(rawValue).trim()) continue;
+          if (desc?.type === "string-array") {
+            input[fieldName] = String(rawValue).split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
+          } else if (desc?.type === "number") {
+            input[fieldName] = Number(rawValue) || 0;
+          } else {
+            input[fieldName] = rawValue;
+          }
+        }
+        actorConfigs[actorId] = input;
       }
 
-      const headers = ["Name", "Email", "Phone", "Website", "Score", "Status", "Source", "Created"];
-      const rows = csvLeads.map((l: Lead) => [
-        l.display_name || "",
-        l.email || "",
-        l.phone || "",
-        l.website || "",
-        l.score,
-        l.status,
-        l.source,
-        l.created_at,
-      ]);
-
-      const csv = [headers.join(","), ...rows.map((r: (string | number)[]) => r.map((c) => `"${c}"`).join(","))].join("\n");
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${campaign?.name || "leads"}-export.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("CSV exported");
-    } catch {
-      toast.error("Failed to export CSV");
-    }
-  };
-
-  const handleUpdateCampaign = async (updates: Record<string, unknown>) => {
-    try {
-      const res = await fetch(`/api/lead-finder/campaigns/${id}`, {
+      await fetch(`/api/lead-finder/campaigns/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
+        body: JSON.stringify({
+          target_niche: editSettings.targetNiche,
+          ai_provider: editSettings.aiProvider,
+          schedule_frequency: editSettings.scheduleFrequency,
+          auto_enrich: editSettings.autoEnrich,
+          enrichment_concurrency: editSettings.enrichmentConcurrency === "" ? null : Number(editSettings.enrichmentConcurrency),
+          actor_configs: actorConfigs,
+          apify_actors: editSettings.actorOrder,
+          lead_field_definitions: editLeadFields.filter((f) => f.label.trim()),
+          kpi_definitions: editKpis.filter((k) => k.label.trim()),
+        }),
       });
-      if (!res.ok) throw new Error("Failed");
-      toast.success("Campaign updated");
-      fetchCampaign();
-    } catch {
-      toast.error("Failed to update campaign");
-    }
+
+      if (!editSettings.autoEnrich && isEnrichmentActive) {
+        enrichAbortRef.current?.abort();
+        await fetch(`/api/lead-finder/campaigns/${id}/enrich`, { method: "DELETE" }).catch(() => {});
+      }
+
+      toast.success("Settings saved");
+      setShowSettings(false);
+      fetchNow();
+    } catch { toast.error("Failed to save settings"); }
+    finally { setSavingSettings(false); }
   };
 
-  // ── Selection helpers ──────────────────────────────────────────────────
-
-  const toggleSelectAll = () => {
-    if (selectedLeads.size === filteredLeads.length) {
-      setSelectedLeads(new Set());
-    } else {
-      setSelectedLeads(new Set(filteredLeads.map((l) => l.id)));
+  const findExistingSearchTerms = (): string | null => {
+    if (!editSettings) return null;
+    for (const actorId of editSettings.actorOrder) {
+      const def = getActorById(actorId);
+      if (def?.phase !== "find") continue;
+      const config = editSettings.actorConfigs[actorId] || {};
+      for (const [fieldName, desc] of Object.entries(def.inputFieldDescriptions || {})) {
+        if (desc.type === "string-array" && config[fieldName]?.trim()) return config[fieldName];
+      }
     }
+    return null;
   };
 
-  const toggleSelect = (id: string) => {
-    setSelectedLeads((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const addActorToSettings = (actorId: string) => {
+    if (!editSettings) return;
+    const def = getActorById(actorId);
+    if (!def) return;
+    const prefilled: Record<string, string> = {};
+    if (def.phase === "find" && def.inputFieldDescriptions) {
+      const existing = findExistingSearchTerms();
+      for (const [fieldName, desc] of Object.entries(def.inputFieldDescriptions)) {
+        if (desc.type === "string-array" && existing) prefilled[fieldName] = existing;
+        else if (desc.type === "number" && def.defaultInput?.[fieldName] != null) prefilled[fieldName] = String(def.defaultInput[fieldName]);
+      }
+    }
+    if (def.defaultInput) {
+      for (const [k, v] of Object.entries(def.defaultInput)) {
+        if (!prefilled[k] && v != null) prefilled[k] = Array.isArray(v) ? (v as string[]).join(", ") : String(v);
+      }
+    }
+    setEditSettings({ ...editSettings, actorOrder: [...editSettings.actorOrder, actorId], actorConfigs: { ...editSettings.actorConfigs, [actorId]: prefilled } });
+    const hasFields = def.phase !== "enrich" && Object.keys(def.inputFieldDescriptions || {}).length > 0;
+    setCollapsedActors((prev) => { const n = new Set(prev); if (hasFields) n.delete(actorId); else n.add(actorId); return n; });
+    setAddActorOpen(false);
   };
 
-  // ── Filtered leads ─────────────────────────────────────────────────────
+  const removeActorFromSettings = (actorId: string) => {
+    if (!editSettings) return;
+    const { [actorId]: _removed, ...rest } = editSettings.actorConfigs;
+    setEditSettings({ ...editSettings, actorOrder: editSettings.actorOrder.filter((a) => a !== actorId), actorConfigs: rest });
+  };
 
-  const filteredLeads = useMemo(() => {
-    let result = leads;
-    if (statusFilter !== "all") {
-      result = result.filter((l) => l.status === statusFilter);
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (l) =>
-          l.display_name?.toLowerCase().includes(q) ||
-          l.email?.toLowerCase().includes(q) ||
-          l.website?.toLowerCase().includes(q)
-      );
-    }
-    return result;
-  }, [leads, statusFilter, search]);
+  const moveActor = (idx: number, dir: -1 | 1) => {
+    if (!editSettings) return;
+    const newOrder = [...editSettings.actorOrder];
+    const [item] = newOrder.splice(idx, 1);
+    newOrder.splice(idx + dir, 0, item);
+    setEditSettings({ ...editSettings, actorOrder: newOrder });
+  };
 
-  // ── Loading ────────────────────────────────────────────────────────────
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
-        <CircleNotchIcon size={32} className="animate-spin text-neutral-500 dark:text-neutral-400" />
-      </div>
-    );
-  }
-
-  if (!campaign) {
-    return (
-      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex flex-col items-center justify-center">
-        <p className="text-neutral-500 dark:text-neutral-400 mb-4">Campaign not found</p>
-        <Link href="/dashboard/lead-finder/campaigns" className="text-white text-sm underline">
-          Back to campaigns
-        </Link>
-      </div>
-    );
-  }
-
-  const stats = campaign.stats;
-
-  // ── Render ─────────────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+    <div className="p-6 lg:p-8 space-y-5">
+
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard/lead-finder/campaigns"
-            className="p-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
-          >
+          <Link href="/dashboard/lead-finder/campaigns" className="p-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
             <ArrowLeftIcon size={16} />
           </Link>
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold text-neutral-950 dark:text-neutral-50">{campaign.name}</h1>
-              <StatusBadge status={campaign.status} styles={CAMPAIGN_STATUS_STYLES} />
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${campaign.status === "active" ? "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30" : campaign.status === "paused" ? "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30" : "text-neutral-500 bg-neutral-100 dark:bg-neutral-800"}`}>
+                {campaign.status}
+              </span>
             </div>
             <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">{campaign.target_niche}</p>
           </div>
         </div>
-
-        {/* Action buttons */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowDeleteLeadsConfirm(true)}
-            disabled={leads.length === 0}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium transition-colors whitespace-nowrap"
-            title="Delete All Leads"
-          >
-            <TrashIcon size={14} />
-            Clear Leads
+          <button onClick={() => setShowClearLeadsConfirm(true)} disabled={campaign.leads.length === 0} className="inline-flex items-center gap-1.5 h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium transition-colors">
+            <TrashIcon size={14} /> Clear Leads
           </button>
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="inline-flex items-center justify-center h-9 w-9 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-            title="Delete Campaign"
-          >
+          <button onClick={() => setShowDeleteConfirm(true)} className="inline-flex items-center justify-center h-9 w-9 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors" title="Delete Campaign">
             <TrashIcon size={15} />
           </button>
-          <button
-            onClick={() => setShowSettings(true)}
-            className="inline-flex items-center justify-center h-9 w-9 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
-            title="Settings"
-          >
-            <GearIcon size={15} />
+          <button onClick={openSettings} className="inline-flex items-center gap-2 h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 text-sm font-medium transition-colors">
+            <GearIcon size={15} /> Settings
           </button>
-          <button
-            onClick={handleActivatePause}
-            className={`inline-flex items-center gap-2 h-9 px-3 rounded text-sm font-medium transition-colors whitespace-nowrap ${
-              campaign.status === "active"
-                ? "bg-amber-400/10 text-amber-600 dark:text-amber-400 border border-amber-400/20 hover:bg-amber-400/20"
-                : "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/50"
-            }`}
-          >
-            {campaign.status === "active" ? (
-              <><PauseIcon size={14} /> Pause</>
-            ) : (
-              <><PlayIcon size={14} /> Activate</>
-            )}
-          </button>
-          <button
-            onClick={handleRunDiscovery}
-            disabled={discovering}
-            className="inline-flex items-center gap-2 h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 text-sm font-medium hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-50 transition-colors whitespace-nowrap"
-          >
-            {discovering ? (
-              <CircleNotchIcon size={14} className="animate-spin" />
-            ) : (
-              <LightningIcon size={14} />
-            )}
-            Run Discovery
-          </button>
-          <button
-            onClick={handleEnrichAll}
-            disabled={enrichingAll || leads.length === 0}
-            className="inline-flex items-center gap-2 h-9 px-3 rounded bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 transition-colors whitespace-nowrap"
-          >
-            {enrichingAll ? (
-              <CircleNotchIcon size={14} className="animate-spin" />
-            ) : (
-              <SparkleIcon size={14} />
-            )}
-            Enrich All
+          <button onClick={handleActivatePause} className={`inline-flex items-center gap-2 h-9 px-3 rounded text-sm font-medium transition-colors ${campaign.status === "active" ? "bg-amber-400/10 text-amber-600 dark:text-amber-400 border border-amber-400/20 hover:bg-amber-400/20" : "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/50"}`}>
+            {campaign.status === "active" ? <><PauseIcon size={14} /> Pause</> : <><PlayIcon size={14} /> Activate</>}
           </button>
         </div>
       </div>
 
-      {/* Progress indicators */}
-      {discoveryProgress && (
-        <div className="mb-4 p-3 rounded-lg bg-blue-400/5 border border-blue-400/20">
-          <div className="flex items-center gap-2 mb-2">
-            <CircleNotchIcon size={14} className="animate-spin text-blue-600 dark:text-blue-400" />
-            <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-              Discovering leads... {discoveryProgress.current}/{discoveryProgress.total || "?"}
-            </span>
-          </div>
-          {discoveryProgress.total > 0 && (
-            <div className="h-1 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
-              <div
-                className="h-full bg-blue-400 rounded-full transition-all duration-300"
-                style={{
-                  width: `${Math.min(100, (discoveryProgress.current / discoveryProgress.total) * 100)}%`,
-                }}
-              />
+      {/* ── Stats bar ── */}
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+        <div className="flex flex-wrap items-stretch divide-x divide-neutral-100 dark:divide-neutral-800">
+          {[
+            { label: "Leads", value: campaign.stats.totalLeads, icon: <UsersIcon size={12} /> },
+            { label: "Enriched", value: campaign.stats.enrichedLeads, icon: <SparkleIcon size={12} /> },
+            { label: "Avg Score", value: campaign.stats.avgScore, icon: <ChartBarIcon size={12} /> },
+          ].map((s) => (
+            <div key={s.label} className="flex-1 min-w-[90px] px-4 py-3">
+              <div className="flex items-center gap-1 text-neutral-500 dark:text-neutral-400 mb-1">
+                {s.icon}
+                <span className="text-[10px] uppercase tracking-wider">{s.label}</span>
+              </div>
+              <p className="text-lg font-bold text-neutral-950 dark:text-neutral-50">{s.value}</p>
             </div>
-          )}
-        </div>
-      )}
-
-      {enrichmentProgress && (
-        <div className="mb-4 p-3 rounded-lg bg-purple-400/5 border border-purple-400/20">
-          <div className="flex items-center gap-2 mb-2">
-            <CircleNotchIcon size={14} className="animate-spin text-violet-600 dark:text-violet-400" />
-            <span className="text-xs text-violet-600 dark:text-violet-400 font-medium">
-              Enriching leads... {enrichmentProgress.completed}/{enrichmentProgress.total}
-            </span>
+          ))}
+          <div className="relative flex-1 min-w-[120px] px-4 py-3 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors" onClick={() => setShowCostBreakdown((v) => !v)}>
+            <div className="flex items-center gap-1 text-neutral-500 dark:text-neutral-400 mb-1">
+              <CurrencyDollarIcon size={12} />
+              <span className="text-[10px] uppercase tracking-wider">Total Cost</span>
+              <InfoIcon size={10} className="ml-0.5" />
+            </div>
+            <p className="text-lg font-bold text-neutral-950 dark:text-neutral-50">${campaign.stats.totalCost.toFixed(4)}</p>
+            {showCostBreakdown && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={(e) => { e.stopPropagation(); setShowCostBreakdown(false); }} />
+                <div className="absolute left-0 top-full z-40 mt-1 w-52 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-xl p-3 space-y-2">
+                  <p className="text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium">Cost Breakdown</p>
+                  {[
+                    ["Avg / Lead", `$${campaign.stats.avgCostPerLead.toFixed(4)}`],
+                    ["Apify", `$${campaign.stats.apifyCost.toFixed(4)}`],
+                    ["LLM", `$${campaign.stats.llmCost.toFixed(4)}`],
+                  ].map(([label, val]) => (
+                    <div key={label} className="flex justify-between text-sm">
+                      <span className="text-neutral-500 dark:text-neutral-400">{label}</span>
+                      <span className="font-medium text-neutral-950 dark:text-neutral-50">{val}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-          <div className="h-1 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
-            <div
-              className="h-full bg-purple-400 rounded-full transition-all duration-300"
-              style={{
-                width: `${Math.min(100, (enrichmentProgress.completed / enrichmentProgress.total) * 100)}%`,
-              }}
-            />
-          </div>
         </div>
-      )}
-
-      {/* Stats cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Total Leads" value={stats.totalLeads} icon={UsersIcon} />
-        <StatCard
-          label="Enriched"
-          value={stats.enrichedLeads}
-          icon={SparkleIcon}
-          color="text-green-700 dark:text-green-400"
-        />
-        <StatCard
-          label="Avg Score"
-          value={stats.avgScore}
-          icon={ChartBarIcon}
-          color={
-            stats.avgScore >= 70
-              ? "text-green-700 dark:text-green-400"
-              : stats.avgScore >= 40
-                ? "text-amber-600 dark:text-amber-400"
-                : "text-white"
-          }
-        />
-        <StatCard
-          label="Total Cost"
-          value={`$${stats.totalCost.toFixed(4)}`}
-          icon={CurrencyDollarIcon}
-        />
       </div>
 
-      {/* Filter bar + bulk actions */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          {/* Search */}
-          <div className="relative">
-            <MagnifyingGlassIcon
-              size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400"
-            />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search leads..."
-              className="pl-8 pr-3 h-9 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus w-64"
-            />
+      {/* ── Discovery Configuration ── */}
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Discovery Configuration</h2>
+            {campaign.last_discovery_at && (
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                Last run: {new Date(campaign.last_discovery_at).toLocaleString()}
+              </p>
+            )}
           </div>
-
-          {/* Status filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-9 px-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
-          >
-            <option value="all">All Statuses</option>
-            <option value="new">New</option>
-            <option value="enriching">Enriching</option>
-            <option value="enriched">Enriched</option>
-            <option value="qualified">Qualified</option>
-            <option value="disqualified">Disqualified</option>
-            <option value="converted">Converted</option>
-          </select>
-
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-            {filteredLeads.length} lead{filteredLeads.length !== 1 ? "s" : ""}
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
+            <ClockIcon size={10} /> {campaign.schedule_frequency}
           </span>
         </div>
+        <div className="p-5 space-y-3">
+          {/* Find actors */}
+          {findActors.map((actorId) => {
+            const actor = getActorById(actorId);
+            const latestRun = latestRunByActor.get(actorId);
+            const actorIsRunning = runningActor === actorId || latestRun?.status === "running";
+            const anyRunning = runningActor !== null;
+            return (
+              <div key={actorId} className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{actor?.name || actorId}</p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{actor?.description || ""}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {actorIsRunning ? (
+                      <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                        <CircleNotchIcon size={12} className="animate-spin" /> Running
+                      </span>
+                    ) : latestRun?.status === "succeeded" ? (
+                      <span className="inline-flex items-center gap-1 text-xs text-green-700 dark:text-green-400">
+                        <CheckCircleIcon size={12} /> {latestRun.result_count} results
+                      </span>
+                    ) : latestRun?.status === "failed" ? (
+                      <span className="inline-flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
+                        <XCircleIcon size={12} /> Failed
+                      </span>
+                    ) : (
+                      <span className="text-xs text-neutral-400 dark:text-neutral-500">Not run yet</span>
+                    )}
+                    <button
+                      onClick={() => handleRunActor(actorId)}
+                      disabled={anyRunning || campaign.status !== "active"}
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 text-xs font-medium hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-50 transition-colors"
+                    >
+                      {actorIsRunning ? <><CircleNotchIcon size={12} className="animate-spin" /> Running...</> : <><PlayIcon size={12} /> Run Scraper</>}
+                    </button>
+                  </div>
+                </div>
+                {lastActorResult?.actorId === actorId && (
+                  <p className="text-xs text-green-700 dark:text-green-400 mt-2">
+                    Found {lastActorResult.total} results — {lastActorResult.inserted} new leads added
+                  </p>
+                )}
+                {actorIsRunning && (
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+                    {discoveryProgress
+                      ? `Processing lead ${discoveryProgress.current} of ${discoveryProgress.total}...`
+                      : "Scraping in progress — this may take 1–2 minutes..."}
+                  </p>
+                )}
+              </div>
+            );
+          })}
 
-        {/* Bulk actions */}
-        <div className="flex items-center gap-2">
-          {selectedLeads.size > 0 && (
-            <button
-              onClick={handleImportToCRM}
-              disabled={importing}
-              className="inline-flex items-center gap-2 h-9 px-3 rounded bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 text-sm font-medium hover:bg-green-100 dark:hover:bg-green-950/50 transition-colors whitespace-nowrap"
-            >
-              {importing ? (
-                <CircleNotchIcon size={12} className="animate-spin" />
-              ) : (
-                <ArrowRightIcon size={12} />
-              )}
-              Import {selectedLeads.size} to CRM
-            </button>
+          {/* Discovery error */}
+          {discoveryError && (
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-400">
+              <WarningCircleIcon size={16} className="shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium">Discovery Error</p>
+                <p className="text-xs mt-0.5">{discoveryError}</p>
+              </div>
+              <button onClick={() => setDiscoveryError(null)} className="ml-auto text-red-400 hover:text-red-600 transition-colors">
+                <XIcon size={14} />
+              </button>
+            </div>
           )}
-          <button
-            onClick={handleExportCSV}
-            className="inline-flex items-center gap-2 h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-sm font-medium transition-colors whitespace-nowrap"
-          >
-            <DownloadIcon size={12} />
-            Export CSV
-          </button>
+
+          {/* Enrich actors */}
+          {enrichActors.length > 0 && (
+            <>
+              <div className="border-t border-neutral-100 dark:border-neutral-800 pt-3 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Lead Enrichment</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    {isEnrichmentActive ? (
+                      <span className="flex items-center gap-1"><CircleNotchIcon size={10} className="animate-spin" /> Enriching {unenrichedCount} leads...</span>
+                    ) : hasUnenrichedLeads ? (
+                      `${unenrichedCount} leads awaiting enrichment`
+                    ) : "All leads enriched"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {campaign.auto_enrich && isEnrichmentActive ? (
+                    <button onClick={handlePauseEnrichment} className="inline-flex items-center gap-1.5 h-8 px-3 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-950 dark:text-neutral-50 text-xs font-medium hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                      <PauseIcon size={12} /> Pause
+                    </button>
+                  ) : campaign.auto_enrich && !isEnrichmentActive && hasUnenrichedLeads ? (
+                    <button onClick={triggerEnrichment} className="inline-flex items-center gap-1.5 h-8 px-3 rounded bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors">
+                      <PlayIcon size={12} /> Resume
+                    </button>
+                  ) : !campaign.auto_enrich && isEnrichmentActive ? (
+                    <button onClick={handlePauseEnrichment} className="inline-flex items-center gap-1.5 h-8 px-3 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-950 dark:text-neutral-50 text-xs font-medium hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                      <PowerIcon size={12} /> Stop
+                    </button>
+                  ) : !campaign.auto_enrich && !isEnrichmentActive && hasUnenrichedLeads ? (
+                    <button onClick={triggerEnrichment} className="inline-flex items-center gap-1.5 h-8 px-3 rounded bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors">
+                      <LightningIcon size={12} /> Start Enrichment
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+              <div className="space-y-2">
+                {enrichActors.map((actorId) => {
+                  const actor = getActorById(actorId);
+                  return (
+                    <div key={actorId} className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-3 flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{actor?.name || actorId}</p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{actor?.description || ""}</p>
+                      </div>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800">enrich</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {findActors.length === 0 && enrichActors.length === 0 && (
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 py-4 text-center">
+              No actors configured. Open Settings to add actors.
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Leads table */}
+      {/* ── Leads Table ── */}
       <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
+        {/* Table toolbar */}
+        <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative">
+              <MagnifyingGlassIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search leads..."
+                className="pl-8 pr-3 h-8 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded text-sm placeholder-neutral-400 focus:outline-none focus:border-neutral-300 dark:focus:border-neutral-600 w-52"
+              />
+            </div>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-8 px-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded text-sm focus:outline-none">
+              <option value="all">All Statuses</option>
+              <option value="new">New</option>
+              <option value="enriching">Enriching</option>
+              <option value="qualified">Qualified</option>
+              <option value="disqualified">Disqualified</option>
+              <option value="converted">Converted</option>
+            </select>
+            {/* Column toggle */}
+            {fields.length > 0 && (
+              <div className="relative">
+                <button onClick={() => setShowColumnMenu((v) => !v)} className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded border border-neutral-200 dark:border-neutral-700 text-xs text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                  <SlidersHorizontalIcon size={13} /> Columns
+                </button>
+                {showColumnMenu && (
+                  <>
+                    <div className="fixed inset-0 z-30" onClick={() => setShowColumnMenu(false)} />
+                    <div className="absolute left-0 top-full z-40 mt-1 w-48 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-xl py-1.5">
+                      <p className="px-3 py-1 text-[10px] uppercase tracking-wider font-medium text-neutral-400 dark:text-neutral-500">Toggle columns</p>
+                      {fields.map((f) => (
+                        <label key={f._id} className="flex items-center gap-2 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={extraColumns.has(f._id)}
+                            onChange={(e) => setExtraColumns((prev) => { const n = new Set(prev); if (e.target.checked) n.add(f._id); else n.delete(f._id); return n; })}
+                            className="rounded"
+                          />
+                          {f.label}
+                        </label>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+            <span className="text-xs text-neutral-400 dark:text-neutral-500">{filteredLeads.length} lead{filteredLeads.length !== 1 ? "s" : ""}</span>
+            {unenrichedCount > 0 && (
+              <span className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
+                {isEnrichmentActive && <CircleNotchIcon size={10} className="animate-spin" />}
+                {unenrichedCount} awaiting enrichment
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {selectedLeads.size > 0 && (
+              <button onClick={handleImportToCRM} disabled={importing} className="inline-flex items-center gap-1.5 h-8 px-3 rounded bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 text-xs font-medium hover:bg-green-100 dark:hover:bg-green-950/50 transition-colors">
+                {importing ? <CircleNotchIcon size={11} className="animate-spin" /> : <ArrowRightIcon size={11} />}
+                Import {selectedLeads.size} to CRM
+              </button>
+            )}
+            <button onClick={handleExportCSV} className="inline-flex items-center gap-1.5 h-8 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-xs font-medium transition-colors">
+              <DownloadIcon size={12} /> Export CSV
+            </button>
+          </div>
+        </div>
+
+        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-neutral-200 dark:border-neutral-800">
-                <th className="p-3 w-10">
-                  <input
-                    type="checkbox"
-                    checked={selectedLeads.size === filteredLeads.length && filteredLeads.length > 0}
-                    onChange={toggleSelectAll}
-                    className="rounded border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50"
-                  />
+              <tr className="border-b border-neutral-100 dark:border-neutral-800">
+                <th className="p-3 w-9">
+                  <input type="checkbox" checked={selectedLeads.size === filteredLeads.length && filteredLeads.length > 0} onChange={() => setSelectedLeads(selectedLeads.size === filteredLeads.length ? new Set() : new Set(filteredLeads.map((l) => l.id)))} className="rounded" />
                 </th>
-                <th className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Website
-                </th>
-                <th className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Score
-                </th>
-                <th className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                  Source
-                </th>
-                {/* Dynamic field columns */}
-                {(campaign.lead_field_definitions || []).slice(0, 3).map((f) => {
-                  const fid = f.id ?? f.key ?? "";
-                  return (
-                    <th
-                      key={fid}
-                      className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
-                    >
-                      {f.label}
-                    </th>
-                  );
-                })}
-                {/* KPI columns */}
-                {(campaign.kpi_definitions || []).slice(0, 3).map((k) => {
-                  const kid = k.id ?? k.key ?? "";
-                  return (
-                    <th
-                      key={kid}
-                      className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider"
-                    >
-                      {k.label}
-                    </th>
-                  );
-                })}
-                <th className="p-3 w-10" />
+                <th className="p-3 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider whitespace-nowrap">Label</th>
+                {fields.filter((f) => extraColumns.has(f._id)).map((f) => (
+                  <th key={f._id} className="p-3 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider whitespace-nowrap">{f.label}</th>
+                ))}
+                <th className="p-3 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider whitespace-nowrap">Added</th>
+                <th className="p-3 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider whitespace-nowrap">Score</th>
+                <th className="p-3 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider whitespace-nowrap">Status</th>
+                <th className="p-3 w-20" />
               </tr>
             </thead>
             <tbody>
               {filteredLeads.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={
-                      7 +
-                      (campaign.lead_field_definitions || []).slice(0, 3).length +
-                      (campaign.kpi_definitions || []).slice(0, 3).length +
-                      1
-                    }
-                    className="p-12 text-center text-sm text-neutral-500 dark:text-neutral-400"
-                  >
-                    {leads.length === 0
-                      ? "No leads yet. Run discovery to find leads."
+                  <td colSpan={6 + fields.filter((f) => extraColumns.has(f._id)).length} className="p-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
+                    {campaign.leads.length === 0
+                      ? runningActor ? <span className="flex items-center justify-center gap-2"><CircleNotchIcon size={14} className="animate-spin" /> Discovery running — leads will appear here shortly</span>
+                      : "No leads yet. Run a scraper from Discovery Configuration above."
                       : "No leads match your filters."}
                   </td>
                 </tr>
               ) : (
-                filteredLeads.map((lead) => (
-                  <tr
-                    key={lead.id}
-                    className="border-b border-neutral-200 dark:border-neutral-800/50 hover:bg-white dark:bg-neutral-800 transition-colors cursor-pointer"
-                    onClick={() =>
-                      router.push(`/dashboard/lead-finder/leads/${lead.id}`)
-                    }
-                  >
-                    <td className="p-3" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={selectedLeads.has(lead.id)}
-                        onChange={() => toggleSelect(lead.id)}
-                        className="rounded border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-950"
-                      />
-                    </td>
-                    <td className="p-3">
-                      <span className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">
-                        {lead.display_name || "Unknown"}
-                      </span>
-                    </td>
-                    <td className="p-3">
-                      {lead.email ? (
-                        <span className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
-                          <EnvelopeIcon size={12} />
-                          {lead.email}
+                filteredLeads.map((lead) => {
+                  const status = displayStatus(lead);
+                  const isRe = reEnrichingLeads.has(lead.id);
+                  return (
+                    <tr key={lead.id} className="border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors">
+                      <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                        <input type="checkbox" checked={selectedLeads.has(lead.id)} onChange={() => setSelectedLeads((prev) => { const n = new Set(prev); if (n.has(lead.id)) n.delete(lead.id); else n.add(lead.id); return n; })} className="rounded" />
+                      </td>
+                      <td className="p-3 max-w-[200px]">
+                        <Link href={`/dashboard/lead-finder/leads/${lead.id}`} className="text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:underline break-words line-clamp-2">
+                          {lead.display_name || "Unknown"}
+                        </Link>
+                        {lead.email && <p className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1 mt-0.5"><EnvelopeIcon size={10} />{lead.email}</p>}
+                        {lead.website && (
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1 mt-0.5 truncate max-w-[180px]">
+                            <GlobeIcon size={10} />
+                            <a href={lead.website} target="_blank" rel="noopener noreferrer" className="hover:underline" onClick={(e) => e.stopPropagation()}>
+                              {lead.website.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}
+                            </a>
+                          </p>
+                        )}
+                      </td>
+                      {fields.filter((f) => extraColumns.has(f._id)).map((f) => {
+                        const { display, isUrl } = resolveFieldValue(lead, f);
+                        return (
+                          <td key={f._id} className="p-3 text-xs max-w-[160px]">
+                            {isUrl && display !== "—" ? (
+                              <a href={display} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline truncate block" onClick={(e) => e.stopPropagation()}>
+                                {display.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}
+                              </a>
+                            ) : (
+                              <span className="text-neutral-600 dark:text-neutral-400 truncate block">{display}</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td className="p-3 text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap">{formatRelativeTime(lead.created_at)}</td>
+                      <td className="p-3">
+                        {lead.status === "new" || lead.status === "enriching"
+                          ? <span className="text-xs text-neutral-400 dark:text-neutral-500">—</span>
+                          : <ScoreBadge score={lead.score} />}
+                      </td>
+                      <td className="p-3">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium capitalize ${STATUS_STYLES[status] || "text-neutral-500 bg-neutral-100 dark:bg-neutral-800"}`}>
+                          {status}
                         </span>
-                      ) : (
-                        <span className="text-xs text-neutral-400 dark:text-neutral-500">--</span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      {lead.website ? (
-                        <span className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center gap-1">
-                          <GlobeIcon size={12} />
-                          <span className="truncate max-w-[150px]">{lead.website}</span>
-                        </span>
-                      ) : (
-                        <span className="text-xs text-neutral-400 dark:text-neutral-500">--</span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      <ScoreBadge score={lead.score} />
-                    </td>
-                    <td className="p-3">
-                      <StatusBadge status={lead.status} styles={LEAD_STATUS_STYLES} />
-                    </td>
-                    <td className="p-3">
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400 capitalize">
-                        {lead.source?.replace(/_/g, " ") || "--"}
-                      </span>
-                    </td>
-                    {/* Dynamic field values */}
-                    {(campaign.lead_field_definitions || []).slice(0, 3).map((f) => {
-                      const fid = f.id ?? f.key ?? "";
-                      return (
-                        <td key={fid} className="p-3">
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                            {(lead.mapped_data as Record<string, unknown>)?.[fid]
-                              ? String((lead.mapped_data as Record<string, unknown>)[fid])
-                              : "--"}
-                          </span>
-                        </td>
-                      );
-                    })}
-                    {/* KPI values */}
-                    {(campaign.kpi_definitions || []).slice(0, 3).map((k) => {
-                      const kid = k.id ?? k.key ?? "";
-                      const kpiVal = lead.personalization?.campaign_kpis?.[kid];
-                      return (
-                        <td key={kid} className="p-3">
-                          {kpiVal === true ? (
-                            <CheckCircleIcon size={14} className="text-green-700 dark:text-green-400" />
-                          ) : kpiVal === false ? (
-                            <XCircleIcon size={14} className="text-red-600 dark:text-red-400" />
-                          ) : kpiVal ? (
-                            <span className="text-xs text-neutral-500 dark:text-neutral-400">{String(kpiVal)}</span>
-                          ) : (
-                            <span className="text-xs text-neutral-400 dark:text-neutral-500">--</span>
-                          )}
-                        </td>
-                      );
-                    })}
-                    <td className="p-3" onClick={(e) => e.stopPropagation()}>
-                      <LeadActionMenu
-                        lead={lead}
-                        onEnrich={handleEnrichLead}
-                        onChangeStatus={handleChangeStatus}
-                        onDelete={handleDeleteLead}
-                        onViewDetail={(lid) =>
-                          router.push(`/dashboard/lead-finder/leads/${lid}`)
-                        }
-                      />
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                        {isRe ? (
+                          <CircleNotchIcon size={14} className="animate-spin text-neutral-400" />
+                        ) : lead.status === "new" ? (
+                          <div className="flex items-center gap-0.5">
+                            <button onClick={() => handleReEnrich(lead.id)} title="Enrich" className="p-1 rounded text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                              <LightningIcon size={14} />
+                            </button>
+                            <button onClick={() => handleSkip(lead.id)} title="Skip enrichment" className="p-1 rounded text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                              <ArrowRightIcon size={14} />
+                            </button>
+                            <button onClick={() => handleDeleteLead(lead.id)} title="Delete" className="p-1 rounded text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                              <TrashIcon size={13} />
+                            </button>
+                          </div>
+                        ) : (lead.status === "qualified" || lead.status === "converted" || lead.status === "disqualified" || lead.status === "declined") ? (
+                          <div className="flex items-center gap-0.5">
+                            <button onClick={() => handleReEnrich(lead.id)} title="Re-enrich" className="p-1 rounded text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                              <ArrowCounterClockwiseIcon size={14} />
+                            </button>
+                            <button onClick={() => handleDeleteLead(lead.id)} title="Delete" className="p-1 rounded text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                              <TrashIcon size={13} />
+                            </button>
+                          </div>
+                        ) : null}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Settings panel */}
-      {showSettings && (
-        <SettingsPanel
-          campaign={campaign}
-          onClose={() => setShowSettings(false)}
-          onUpdate={handleUpdateCampaign}
-        />
+      {/* ── Run History ── */}
+      {campaign.runs.length > 0 && (
+        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-neutral-100 dark:border-neutral-800">
+            <h2 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Run History</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-neutral-100 dark:border-neutral-800">
+                  {["Actor", "Status", "Results", "Cost", "Started"].map((h) => (
+                    <th key={h} className="p-3 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {campaign.runs.map((run) => {
+                  const actor = getActorById(run.actor_id);
+                  return (
+                    <tr key={run.id} className="border-b border-neutral-100 dark:border-neutral-800/50">
+                      <td className="p-3 text-sm text-neutral-950 dark:text-neutral-50">{actor?.name || run.actor_id}</td>
+                      <td className="p-3">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${run.status === "succeeded" ? "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30" : run.status === "running" ? "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30" : "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30"}`}>
+                          {run.status === "running" && <CircleNotchIcon size={10} className="animate-spin" />}
+                          {run.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-sm text-neutral-600 dark:text-neutral-400">{run.result_count ?? "—"}</td>
+                      <td className="p-3 text-sm text-neutral-600 dark:text-neutral-400">{run.cost_usd != null ? `$${run.cost_usd.toFixed(4)}` : "—"}</td>
+                      <td className="p-3 text-xs text-neutral-500 dark:text-neutral-400">{new Date(run.started_at).toLocaleString()}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
-      {showDeleteLeadsConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowDeleteLeadsConfirm(false)} />
-          <div className="relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-sm w-full mx-4">
-            <h3 className="text-base font-semibold text-neutral-950 dark:text-neutral-50 mb-2">Delete All Leads</h3>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-5">
-              This will permanently delete all <span className="font-medium text-neutral-950 dark:text-neutral-50">{leads.length} leads</span> in this campaign. The campaign itself will remain. This cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowDeleteLeadsConfirm(false)}
-                className="h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm font-medium hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
-              >
-                Cancel
+      {/* ── Settings Panel ── */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowSettings(false)} />
+          <div className="relative ml-auto w-full max-w-xl bg-white dark:bg-neutral-900 border-l border-neutral-200 dark:border-neutral-800 shadow-2xl flex flex-col h-full">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 shrink-0">
+              <div>
+                <h2 className="text-base font-semibold text-neutral-950 dark:text-neutral-50">Campaign Settings</h2>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Edit configuration for {campaign.name}</p>
+              </div>
+              <button onClick={() => setShowSettings(false)} className="p-2 rounded-lg text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                <XIcon size={16} />
               </button>
-              <button
-                onClick={handleDeleteAllLeads}
-                disabled={deletingLeads}
-                className="h-9 px-3 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50 transition-colors"
-              >
-                {deletingLeads ? "Deleting..." : "Delete All Leads"}
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {editSettings && (
+                <>
+                  {/* Basic settings */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Target Niche</label>
+                      <input value={editSettings.targetNiche} onChange={(e) => setEditSettings({ ...editSettings, targetNiche: e.target.value })} className="w-full h-9 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none focus:border-neutral-300 dark:focus:border-neutral-600" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">AI Provider</label>
+                        <select value={editSettings.aiProvider} onChange={(e) => setEditSettings({ ...editSettings, aiProvider: e.target.value })} className="w-full h-9 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none">
+                          <option value="openrouter">OpenRouter</option>
+                          <option value="anthropic">Anthropic (Claude)</option>
+                          <option value="openai">OpenAI</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Schedule</label>
+                        <select value={editSettings.scheduleFrequency} onChange={(e) => setEditSettings({ ...editSettings, scheduleFrequency: e.target.value })} className="w-full h-9 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none">
+                          <option value="once">Run Once</option>
+                          <option value="daily">Daily</option>
+                          <option value="weekly">Weekly</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Lead Enrichment</label>
+                        <select value={editSettings.autoEnrich ? "automatic" : "off"} onChange={(e) => setEditSettings({ ...editSettings, autoEnrich: e.target.value === "automatic" })} className="w-full h-9 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none">
+                          <option value="automatic">Automatic</option>
+                          <option value="off">Off</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Enrichment Concurrency</label>
+                        <input type="number" min={1} value={editSettings.enrichmentConcurrency} onChange={(e) => setEditSettings({ ...editSettings, enrichmentConcurrency: e.target.value === "" ? "" : parseInt(e.target.value) || 1 })} placeholder="Default (1)" className="w-full h-9 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actors */}
+                  <div className="border-t border-neutral-100 dark:border-neutral-800 pt-5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Actors</p>
+                      {(() => {
+                        const used = new Set(editSettings.actorOrder);
+                        const avFind = getActorsByPhase("find").filter((a) => !used.has(a.id));
+                        const avEnrich = getActorsByPhase("enrich").filter((a) => !used.has(a.id));
+                        if (avFind.length === 0 && avEnrich.length === 0) return null;
+                        return (
+                          <div className="relative">
+                            <button onClick={() => setAddActorOpen((v) => !v)} className="inline-flex items-center gap-1 h-7 px-2.5 rounded border border-neutral-200 dark:border-neutral-700 text-xs text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                              <PlusIcon size={12} /> Add Actor
+                            </button>
+                            {addActorOpen && (
+                              <>
+                                <div className="fixed inset-0 z-10" onClick={() => setAddActorOpen(false)} />
+                                <div className="absolute right-0 top-full z-20 mt-1 w-64 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-xl py-1.5">
+                                  {avFind.length > 0 && (
+                                    <>
+                                      <p className="px-3 py-1 text-[10px] uppercase tracking-wider font-medium text-neutral-400 dark:text-neutral-500">Scraping</p>
+                                      {avFind.map((a) => (
+                                        <button key={a.id} onClick={() => addActorToSettings(a.id)} className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                                          <div>
+                                            <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{a.name}</p>
+                                            <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1">{a.description}</p>
+                                          </div>
+                                        </button>
+                                      ))}
+                                    </>
+                                  )}
+                                  {avEnrich.length > 0 && (
+                                    <>
+                                      {avFind.length > 0 && <div className="border-t border-neutral-100 dark:border-neutral-800 my-1" />}
+                                      <p className="px-3 py-1 text-[10px] uppercase tracking-wider font-medium text-neutral-400 dark:text-neutral-500">Enrichment</p>
+                                      {avEnrich.map((a) => (
+                                        <button key={a.id} onClick={() => addActorToSettings(a.id)} className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                                          <div>
+                                            <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{a.name}</p>
+                                            <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1">{a.description}</p>
+                                          </div>
+                                        </button>
+                                      ))}
+                                    </>
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Use arrows to reorder. Actors run top-to-bottom during discovery and enrichment.</p>
+                    {editSettings.actorOrder.length === 0 ? (
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400 py-4 text-center border border-dashed border-neutral-200 dark:border-neutral-700 rounded-lg">No actors. Click &quot;Add Actor&quot; to get started.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {editSettings.actorOrder.map((actorId, idx) => {
+                          const def = getActorById(actorId);
+                          if (!def) return null;
+                          const isCollapsed = collapsedActors.has(actorId);
+                          const hasFields = def.phase !== "enrich" && Object.keys(def.inputFieldDescriptions || {}).length > 0;
+                          const fieldVals = editSettings.actorConfigs[actorId] || {};
+                          return (
+                            <div key={actorId} className="rounded-lg border border-neutral-200 dark:border-neutral-800">
+                              <div className="flex items-center">
+                                <div className="flex flex-col border-r border-neutral-100 dark:border-neutral-800 px-1.5 py-1 gap-0.5">
+                                  <button onClick={() => idx > 0 && moveActor(idx, -1)} disabled={idx === 0} className="p-0.5 rounded text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 disabled:opacity-30 transition-colors"><CaretUpIcon size={12} /></button>
+                                  <button onClick={() => idx < editSettings.actorOrder.length - 1 && moveActor(idx, 1)} disabled={idx === editSettings.actorOrder.length - 1} className="p-0.5 rounded text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 disabled:opacity-30 transition-colors"><CaretDownIcon size={12} /></button>
+                                </div>
+                                <button onClick={() => setCollapsedActors((prev) => { const n = new Set(prev); if (n.has(actorId)) n.delete(actorId); else n.add(actorId); return n; })} className="flex-1 flex items-center justify-between p-3 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors min-w-0">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{def.name}</span>
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 capitalize">{def.phase}</span>
+                                    </div>
+                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 truncate">{def.description}</p>
+                                  </div>
+                                  {isCollapsed ? <CaretRightIcon size={14} className="shrink-0 text-neutral-400" /> : <ChevronDownIcon size={14} className="shrink-0 text-neutral-400" />}
+                                </button>
+                                <button onClick={() => removeActorFromSettings(actorId)} className="p-2 mr-1 rounded text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors" title="Remove actor">
+                                  <XIcon size={14} />
+                                </button>
+                              </div>
+                              {!isCollapsed && (
+                                <div className="border-t border-neutral-100 dark:border-neutral-800 px-4 py-3">
+                                  {hasFields ? (
+                                    <div className="space-y-3">
+                                      {Object.keys(def.inputFieldDescriptions || {}).map((fieldName) => {
+                                        const desc = def.inputFieldDescriptions?.[fieldName];
+                                        const val = fieldVals[fieldName] || "";
+                                        return (
+                                          <div key={fieldName} className="space-y-1">
+                                            <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300">{desc?.label || fieldName}</label>
+                                            {desc?.type === "string-array" ? (
+                                              <textarea
+                                                value={val}
+                                                onChange={(e) => {
+                                                  const upd = { ...editSettings };
+                                                  if (!upd.actorConfigs[actorId]) upd.actorConfigs[actorId] = {};
+                                                  upd.actorConfigs[actorId][fieldName] = e.target.value;
+                                                  setEditSettings({ ...upd });
+                                                }}
+                                                placeholder={desc?.placeholder}
+                                                rows={3}
+                                                className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 resize-none focus:outline-none focus:border-neutral-300 dark:focus:border-neutral-600"
+                                              />
+                                            ) : (
+                                              <input
+                                                type={desc?.type === "number" ? "number" : "text"}
+                                                value={val}
+                                                onChange={(e) => {
+                                                  const upd = { ...editSettings };
+                                                  if (!upd.actorConfigs[actorId]) upd.actorConfigs[actorId] = {};
+                                                  upd.actorConfigs[actorId][fieldName] = e.target.value;
+                                                  setEditSettings({ ...upd });
+                                                }}
+                                                placeholder={desc?.placeholder}
+                                                className="w-full h-8 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none focus:border-neutral-300 dark:focus:border-neutral-600"
+                                              />
+                                            )}
+                                            {desc?.helpText && <p className="text-xs text-neutral-500 dark:text-neutral-400">{desc.helpText}</p>}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs text-neutral-500 dark:text-neutral-400">No configurable fields — inputs filled from lead data during enrichment.</p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Lead Data Fields */}
+                  <div className="border-t border-neutral-100 dark:border-neutral-800 pt-5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <TagIcon size={14} className="text-neutral-500 dark:text-neutral-400" />
+                        <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Lead Data Fields</p>
+                      </div>
+                      <button onClick={() => setEditLeadFields((prev) => [...prev, { id: `field_${Date.now()}`, label: "", type: "text" }])} className="inline-flex items-center gap-1 h-7 px-2.5 rounded border border-neutral-200 dark:border-neutral-700 text-xs text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                        <PlusIcon size={12} /> Add
+                      </button>
+                    </div>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Fields extracted from each lead during enrichment.</p>
+                    {editLeadFields.length === 0 ? (
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400 py-3 text-center border border-dashed border-neutral-200 dark:border-neutral-700 rounded-lg">No custom fields. Click &quot;Add&quot; to track extra data per lead.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {editLeadFields.map((f) => (
+                          <div key={f.id} className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-3 space-y-2">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-1 space-y-1.5 min-w-0">
+                                <input value={f.label} onChange={(e) => setEditLeadFields((prev) => prev.map((x) => x.id === f.id ? { ...x, label: e.target.value } : x))} placeholder="Field label" className="w-full h-8 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 font-medium focus:outline-none" />
+                                <input value={f.description || ""} onChange={(e) => setEditLeadFields((prev) => prev.map((x) => x.id === f.id ? { ...x, description: e.target.value } : x))} placeholder="Description (optional)" className="w-full h-7 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-xs text-neutral-700 dark:text-neutral-300 focus:outline-none" />
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {[{ type: "text" as const, icon: <TextTIcon size={11} />, title: "Text" }, { type: "number" as const, icon: <HashIcon size={11} />, title: "Number" }, { type: "boolean" as const, icon: <ToggleRightIcon size={11} />, title: "Yes/No" }, { type: "url" as const, icon: <LinkIcon size={11} />, title: "URL" }].map(({ type, icon, title }) => (
+                                  <button key={type} onClick={() => setEditLeadFields((prev) => prev.map((x) => x.id === f.id ? { ...x, type } : x))} title={title} className={`flex items-center justify-center h-7 w-7 rounded border transition-colors ${f.type === type ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 border-neutral-950 dark:border-white" : "border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600"}`}>
+                                    {icon}
+                                  </button>
+                                ))}
+                                <button onClick={() => setEditLeadFields((prev) => prev.filter((x) => x.id !== f.id))} className="flex items-center justify-center h-7 w-7 rounded text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                                  <XIcon size={13} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* KPIs */}
+                  <div className="border-t border-neutral-100 dark:border-neutral-800 pt-5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <BarChartIcon size={14} className="text-neutral-500 dark:text-neutral-400" />
+                        <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Tracked KPIs</p>
+                      </div>
+                      <button onClick={() => setEditKpis((prev) => [...prev, { id: `kpi_${Date.now()}`, label: "", type: "boolean" }])} className="inline-flex items-center gap-1 h-7 px-2.5 rounded border border-neutral-200 dark:border-neutral-700 text-xs text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                        <PlusIcon size={12} /> Add
+                      </button>
+                    </div>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">KPIs automatically filled by AI during enrichment.</p>
+                    {editKpis.length === 0 ? (
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400 py-3 text-center border border-dashed border-neutral-200 dark:border-neutral-700 rounded-lg">No KPIs configured. Click &quot;Add&quot; to track custom metrics.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {editKpis.map((k) => (
+                          <div key={k.id} className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-3">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-1 space-y-1.5 min-w-0">
+                                <input value={k.label} onChange={(e) => setEditKpis((prev) => prev.map((x) => x.id === k.id ? { ...x, label: e.target.value } : x))} placeholder="KPI label" className="w-full h-8 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 font-medium focus:outline-none" />
+                                <input value={k.description || ""} onChange={(e) => setEditKpis((prev) => prev.map((x) => x.id === k.id ? { ...x, description: e.target.value } : x))} placeholder="Description (optional)" className="w-full h-7 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-xs text-neutral-700 dark:text-neutral-300 focus:outline-none" />
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {[{ type: "boolean" as const, label: "Yes/No", icon: <ToggleLeftIcon size={11} /> }, { type: "text" as const, label: "Text", icon: <TextTIcon size={11} /> }].map(({ type, label, icon }) => (
+                                  <button key={type} onClick={() => setEditKpis((prev) => prev.map((x) => x.id === k.id ? { ...x, type } : x))} className={`inline-flex items-center gap-1 h-7 px-2 rounded border text-xs transition-colors ${k.type === type ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 border-neutral-950 dark:border-white" : "border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600"}`}>
+                                    {icon} {label}
+                                  </button>
+                                ))}
+                                <button onClick={() => setEditKpis((prev) => prev.filter((x) => x.id !== k.id))} className="flex items-center justify-center h-7 w-7 rounded text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                                  <XIcon size={13} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-neutral-200 dark:border-neutral-800 shrink-0">
+              <button onClick={() => setShowSettings(false)} className="h-9 px-4 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-sm font-medium hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">Cancel</button>
+              <button onClick={handleSaveSettings} disabled={savingSettings} className="h-9 px-4 rounded bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 transition-colors">
+                {savingSettings ? <span className="flex items-center gap-2"><CircleNotchIcon size={14} className="animate-spin" /> Saving...</span> : "Save Changes"}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* ── Delete Campaign Modal ── */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowDeleteConfirm(false)} />
@@ -1230,18 +1394,28 @@ export default function CampaignDetailPage() {
               This will permanently delete <span className="font-medium text-neutral-950 dark:text-neutral-50">{campaign.name}</span> and all its leads. This cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm font-medium hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteCampaign}
-                disabled={deleting}
-                className="h-9 px-3 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50 transition-colors"
-              >
+              <button onClick={() => setShowDeleteConfirm(false)} className="h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-sm font-medium hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">Cancel</button>
+              <button onClick={handleDeleteCampaign} disabled={deleting} className="h-9 px-3 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50 transition-colors">
                 {deleting ? "Deleting..." : "Delete Campaign"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Clear Leads Modal ── */}
+      {showClearLeadsConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowClearLeadsConfirm(false)} />
+          <div className="relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-sm w-full mx-4">
+            <h3 className="text-base font-semibold text-neutral-950 dark:text-neutral-50 mb-2">Delete All Leads</h3>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-5">
+              This will permanently delete all <span className="font-medium text-neutral-950 dark:text-neutral-50">{campaign.leads.length} leads</span>. The campaign will remain. This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setShowClearLeadsConfirm(false)} className="h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-sm font-medium hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">Cancel</button>
+              <button onClick={handleClearLeads} disabled={clearingLeads} className="h-9 px-3 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50 transition-colors">
+                {clearingLeads ? "Deleting..." : "Delete All Leads"}
               </button>
             </div>
           </div>

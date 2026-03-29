@@ -42,6 +42,20 @@ interface Campaign {
   avgCostPerLead: number;
 }
 
+// ── Relative date ─────────────────────────────────────────────────────────
+
+function relativeDate(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString();
+}
+
 // ── Status helpers ─────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<string, { color: string; icon: React.ReactNode }> = {
@@ -169,34 +183,63 @@ export default function CampaignsPage() {
 
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-3 mb-4">
-                  {[
-                    { icon: <UsersIcon size={12} />, label: "Leads", value: campaign.leadCount, color: "" },
-                    { icon: <SparkleIcon size={12} />, label: "Enriched", value: campaign.enrichedCount, color: "" },
-                    {
-                      icon: <ChartBarIcon size={12} />, label: "Avg Score", value: campaign.avgScore,
-                      color: campaign.avgScore >= 70 ? "text-green-600 dark:text-green-400" : campaign.avgScore >= 40 ? "text-amber-600 dark:text-amber-400" : ""
-                    },
-                  ].map((stat) => (
-                    <div key={stat.label} className="text-center">
-                      <div className="flex items-center justify-center gap-1 text-neutral-400 dark:text-neutral-500 mb-1">
-                        {stat.icon}
-                        <span className="text-[10px] uppercase tracking-wider">{stat.label}</span>
-                      </div>
-                      <p className={`text-lg font-serif font-semibold ${stat.color || "text-neutral-950 dark:text-neutral-50"}`}>{stat.value}</p>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 text-neutral-400 dark:text-neutral-500 mb-1">
+                      <UsersIcon size={12} />
+                      <span className="text-[10px] uppercase tracking-wider">Leads</span>
                     </div>
-                  ))}
+                    <p className="text-lg font-serif font-semibold text-neutral-950 dark:text-neutral-50">{campaign.leadCount}</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 text-neutral-400 dark:text-neutral-500 mb-1">
+                      <SparkleIcon size={12} />
+                      <span className="text-[10px] uppercase tracking-wider">Enriched</span>
+                    </div>
+                    <p className="text-lg font-serif font-semibold text-neutral-950 dark:text-neutral-50">
+                      {campaign.enrichedCount}
+                      {campaign.leadCount > 0 && (
+                        <span className="text-xs font-sans font-normal text-neutral-400 dark:text-neutral-500">
+                          /{campaign.leadCount}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 text-neutral-400 dark:text-neutral-500 mb-1">
+                      <ChartBarIcon size={12} />
+                      <span className="text-[10px] uppercase tracking-wider">Score</span>
+                    </div>
+                    <p className={`text-lg font-serif font-semibold ${campaign.avgScore >= 70 ? "text-green-600 dark:text-green-400" : campaign.avgScore >= 40 ? "text-amber-600 dark:text-amber-400" : "text-neutral-950 dark:text-neutral-50"}`}>
+                      {campaign.avgScore}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Footer */}
                 <div className="flex items-center justify-between pt-3 border-t border-neutral-100 dark:border-neutral-800">
                   <div className="flex items-center gap-2">
                     <span className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
-                      <CurrencyDollarIcon size={12} />${campaign.totalCost.toFixed(4)}
+                      <CurrencyDollarIcon size={12} />
+                      ${campaign.totalCost.toFixed(4)}
+                      {campaign.avgCostPerLead > 0 && (
+                        <span className="text-neutral-400 dark:text-neutral-600">
+                          · ${campaign.avgCostPerLead.toFixed(4)}/lead
+                        </span>
+                      )}
                     </span>
-                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${campaign.ai_provider === "anthropic" ? "bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400" : "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"}`}>
-                      {campaign.ai_provider === "anthropic" ? "Claude" : "GPT"}
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                      campaign.ai_provider === "anthropic"
+                        ? "bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400"
+                        : campaign.ai_provider === "openrouter"
+                          ? "bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400"
+                          : "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
+                    }`}>
+                      {campaign.ai_provider === "anthropic" ? "Claude" : campaign.ai_provider === "openrouter" ? "OpenRouter" : "GPT"}
                     </span>
                   </div>
+                  <span className="text-[10px] text-neutral-400 dark:text-neutral-600">
+                    {relativeDate(campaign.created_at)}
+                  </span>
 
                   <button
                     onClick={(e) => { e.stopPropagation(); setDeleteTarget(campaign); }}
