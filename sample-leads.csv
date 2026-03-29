@@ -1,0 +1,11 @@
+name,email,company,phone,source,estimated_value,status,industry,website
+Sarah Chen,sarah.chen@techvault.io,TechVault Inc,+1-415-555-0101,LinkedIn,75000,hot,Technology,https://techvault.io
+Marcus Johnson,marcus.j@brightpath.com,BrightPath Solutions,+1-212-555-0202,Referral,45000,warm,Consulting,https://brightpath.com
+Emily Rodriguez,emily.r@greenleaf.co,GreenLeaf Energy,+1-305-555-0303,Website,120000,hot,Energy,https://greenleaf.co
+David Kim,david.kim@novasoft.dev,NovaSoft,+1-650-555-0404,Cold Email,30000,cold,Software,https://novasoft.dev
+Priya Patel,priya@cloudnine.ai,CloudNine AI,+1-512-555-0505,LinkedIn,95000,hot,AI/ML,https://cloudnine.ai
+James O'Brien,james.obrien@steelworks.com,SteelWorks Manufacturing,+1-313-555-0606,Trade Show,200000,warm,Manufacturing,https://steelworks.com
+Lisa Zhang,lisa.z@finpro.com,FinPro Analytics,+1-646-555-0707,Website,60000,warm,Finance,https://finpro.com
+Ahmed Hassan,ahmed@logixhub.io,LogixHub,+1-408-555-0808,Referral,85000,hot,Logistics,https://logixhub.io
+Rachel Foster,rachel.f@medicore.health,MediCore Health,+1-617-555-0909,Cold Email,150000,warm,Healthcare,https://medicore.health
+Tom Williams,tom.w@urbancraft.co,UrbanCraft Design,+1-503-555-1010,Website,25000,cold,Design,https://urbancraft.co

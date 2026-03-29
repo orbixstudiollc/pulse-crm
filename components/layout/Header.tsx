@@ -52,6 +52,7 @@ export function Header() {
             const isIdSegment = /^[0-9]+$/.test(segment) || segment.length > 20;
             // Friendly names for hyphenated route segments
             const segmentLabels: Record<string, string> = {
+              "lead-finder": "Lead Finder",
               "lead-scraper": "Lead Finder",
               "email-accounts": "Email Accounts",
             };
