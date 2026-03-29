@@ -186,7 +186,7 @@ export async function GET(req: NextRequest) {
       resultCount: r.result_count ?? 0,
       costUsd: Math.round((r.cost_usd ?? 0) * 10000) / 10000,
       startedAt: r.started_at,
-      campaignName: campaignNames[r.campaign_id] || "Unknown",
+      campaignName: (r.campaign_id ? campaignNames[r.campaign_id] : null) || "Unknown",
     }));
 
     return NextResponse.json({
