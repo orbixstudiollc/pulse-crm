@@ -18,8 +18,8 @@ export async function GET() {
 
     const admin = createAdminClient();
 
-    // Only select columns that are guaranteed to exist
-    const { data: ai } = await admin
+    // Use user-scoped client for ai_settings (user SELECT policy covers this)
+    const { data: ai } = await supabase
       .from("ai_settings")
       .select("api_key, apify_api_key, openrouter_api_key, openai_api_key, default_model")
       .eq("organization_id", profile.organization_id)
@@ -88,8 +88,8 @@ export async function PUT(req: NextRequest) {
       if (body.openrouterKey && !String(body.openrouterKey).includes("•")) aiUpdates.openrouter_api_key = body.openrouterKey;
       if (body.openaiKey && !String(body.openaiKey).includes("•"))       aiUpdates.openai_api_key = body.openaiKey;
 
-      // Check if row exists — use update if it does, insert if it doesn't
-      const { data: existing } = await admin
+      // Use user-scoped client — RLS INSERT/UPDATE policies allow org members
+      const { data: existing } = await supabase
         .from("ai_settings")
         .select("id")
         .eq("organization_id", profile.organization_id)
@@ -97,14 +97,14 @@ export async function PUT(req: NextRequest) {
 
       if (existing) {
         if (Object.keys(aiUpdates).length > 0) {
-          const { error } = await admin
+          const { error } = await supabase
             .from("ai_settings")
             .update(aiUpdates)
             .eq("organization_id", profile.organization_id);
           if (error) return NextResponse.json({ error: error.message }, { status: 500 });
         }
       } else {
-        const { error } = await admin
+        const { error } = await supabase
           .from("ai_settings")
           .insert({ organization_id: profile.organization_id, ...aiUpdates });
         if (error) return NextResponse.json({ error: error.message }, { status: 500 });
