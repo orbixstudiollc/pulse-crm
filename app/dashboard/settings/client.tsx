@@ -9,6 +9,7 @@ import {
   Button,
   Input,
   Select,
+  Textarea,
   Toast,
   Badge,
   UserIcon,
@@ -3524,41 +3525,33 @@ function LeadFinderSettingsSection() {
   ];
 
   const renderField = (field: LFSettingField) => (
-    <div key={field.key} className="space-y-1.5">
-      <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-        {field.label}
-      </label>
+    <div key={field.key}>
       {field.type === "textarea" ? (
-        <textarea
+        <Textarea
+          label={field.label}
           value={settings[field.key] || ""}
           onChange={(e) => setSettings((s) => ({ ...s, [field.key]: e.target.value }))}
           placeholder={field.placeholder}
           rows={3}
-          className="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600 resize-none"
         />
       ) : field.type === "select" ? (
-        <select
+        <Select
+          label={field.label}
           value={settings[field.key] || ""}
           onChange={(e) => setSettings((s) => ({ ...s, [field.key]: e.target.value }))}
-          className="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600"
-        >
-          {field.options?.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+          options={field.options || []}
+        />
       ) : (
-        <input
+        <Input
+          label={field.label}
           type={field.type}
           value={settings[field.key] || ""}
           onChange={(e) => setSettings((s) => ({ ...s, [field.key]: e.target.value }))}
           placeholder={field.placeholder}
-          className="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600"
         />
       )}
       {field.helpText && (
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">{field.helpText}</p>
+        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{field.helpText}</p>
       )}
     </div>
   );
@@ -3600,23 +3593,15 @@ function LeadFinderSettingsSection() {
           </div>
           <div className="px-5 py-4 space-y-4">
             {g.fields.map(renderField)}
-            <button
+            <Button
+              variant="primary"
               onClick={() => saveGroup(g.key, g.fields)}
               disabled={saving === g.key}
-              className="w-full flex items-center justify-center gap-2 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 px-4 py-2.5 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 transition-colors"
+              leftIcon={saving === g.key ? <CircleNotchIcon size={14} className="animate-spin" /> : <FloppyDiskIcon size={14} />}
+              className="w-full"
             >
-              {saving === g.key ? (
-                <>
-                  <CircleNotchIcon size={14} className="animate-spin" />
-                  Saving…
-                </>
-              ) : (
-                <>
-                  <FloppyDiskIcon size={14} />
-                  Save {g.title}
-                </>
-              )}
-            </button>
+              {saving === g.key ? "Saving..." : `Save ${g.title}`}
+            </Button>
           </div>
         </div>
       ))}

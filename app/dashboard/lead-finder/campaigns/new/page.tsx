@@ -24,6 +24,10 @@ import {
   TextTIcon,
   ToggleLeftIcon,
   ToggleRightIcon,
+  Input,
+  Select,
+  Textarea,
+  Button,
 } from "@/components/ui";
 import { useLeadFinderActors } from "@/hooks/use-lead-finder-actors";
 import type { ActorDefinition } from "@/lib/lead-finder/apify/registry";
@@ -124,32 +128,34 @@ function ActorConfigField({
         <PencilSimpleIcon size={10} className="text-neutral-400 dark:text-neutral-500" />
       </label>
       {desc.type === "boolean" ? (
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => onChange(value === "true" ? "false" : "true")}
-          className={`inline-flex items-center gap-2 h-8 px-3 rounded border text-xs font-medium transition-colors ${
+          className={`text-xs ${
             value === "true"
               ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
-              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800"
+              : ""
           }`}
+          leftIcon={<span className={`w-1.5 h-1.5 rounded-full ${value === "true" ? "bg-green-500" : "bg-neutral-400"}`} />}
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${value === "true" ? "bg-green-500" : "bg-neutral-400"}`} />
           {value === "true" ? "Yes" : "No"}
-        </button>
+        </Button>
       ) : desc.type === "string-array" ? (
-        <textarea
+        <Textarea
           rows={3}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={desc.placeholder}
-          className="w-full px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs placeholder-neutral-400 dark:placeholder-neutral-500 resize-none focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+          className="text-xs py-2"
         />
       ) : (
-        <input
+        <Input
           type={desc.type === "number" ? "number" : "text"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={desc.placeholder}
-          className="w-full px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+          className="text-xs py-2"
         />
       )}
       {desc.helpText && (
@@ -173,18 +179,19 @@ function TypeToggle<T extends string>({
   return (
     <div className="inline-flex rounded border border-neutral-200 dark:border-neutral-700 overflow-hidden text-[10px]">
       {options.map((opt) => (
-        <button
+        <Button
           key={opt.value}
+          variant={value === opt.value ? "primary" : "ghost"}
           onClick={() => onChange(opt.value)}
-          className={`flex items-center gap-1 px-2 py-1 transition-colors ${
-            value === opt.value
-              ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
-              : "bg-white dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"
+          className={`rounded-none h-auto px-2 py-1 text-[10px] gap-1 ${
+            value !== opt.value
+              ? "bg-white dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"
+              : ""
           }`}
+          leftIcon={opt.icon}
         >
-          {opt.icon}
           {opt.label}
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -653,61 +660,48 @@ export default function NewCampaignPage() {
       {step === 1 && (
         <div className="max-w-2xl">
           <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-1.5">
-                Campaign Name
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Miami Dentists Q1 2026"
-                className="w-full px-3 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
-              />
-            </div>
+            <Input
+              label="Campaign Name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., Miami Dentists Q1 2026"
+            />
 
             <div>
-              <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-1.5">
-                What leads do you want to find?
-              </label>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
-                Describe in plain English what you are looking for. Be specific about the
-                business type, location, and what information you need. AI will generate
-                search terms, select actors, and configure the campaign for you.
-              </p>
-              <textarea
+              <Textarea
+                label="What leads do you want to find?"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={6}
                 placeholder="Find dentists and orthodontists in Miami FL. I need their email addresses, phone numbers, and websites. Focus on practices with good ratings that might need help with their online presence."
-                className="w-full px-3 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 resize-none focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
               />
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1.5">
+                Describe in plain English what you are looking for. Be specific about the
+                business type, location, and what information you need. AI will generate
+                search terms, select actors, and configure the campaign for you.
+              </p>
             </div>
 
-            <button
+            <Button
+              variant="primary"
+              size="lg"
               onClick={handlePlanWithAI}
               disabled={planning || !description.trim()}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full"
+              leftIcon={planning ? <CircleNotchIcon size={16} className="animate-spin" /> : <SparkleIcon size={16} />}
             >
-              {planning ? (
-                <>
-                  <CircleNotchIcon size={16} className="animate-spin" />
-                  AI is analyzing your campaign...
-                </>
-              ) : (
-                <>
-                  <SparkleIcon size={16} />
-                  Plan Campaign with AI
-                </>
-              )}
-            </button>
+              {planning ? "AI is analyzing your campaign..." : "Plan Campaign with AI"}
+            </Button>
 
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setStep(2)}
-              className="w-full text-center text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+              className="w-full text-xs"
             >
               Skip AI planning and configure manually
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -760,18 +754,13 @@ export default function NewCampaignPage() {
               Campaign Settings
             </h3>
             <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5">
-                  Target Niche
-                </label>
-                <input
-                  type="text"
-                  value={editableNiche}
-                  onChange={(e) => setEditableNiche(e.target.value)}
-                  placeholder="e.g., B2B SaaS Founders, Miami Dentists"
-                  className="w-full px-3 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
-                />
-              </div>
+              <Input
+                label="Target Niche"
+                type="text"
+                value={editableNiche}
+                onChange={(e) => setEditableNiche(e.target.value)}
+                placeholder="e.g., B2B SaaS Founders, Miami Dentists"
+              />
 
               <div>
                 <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5">
@@ -784,69 +773,72 @@ export default function NewCampaignPage() {
                       className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 text-xs"
                     >
                       {term}
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() =>
                           setSearchTerms((prev) => prev.filter((_, j) => j !== i))
                         }
-                        className="text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400"
+                        className="p-0 h-auto text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400"
                       >
                         <XIcon size={10} />
-                      </button>
+                      </Button>
                     </span>
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <input
+                  <Input
                     type="text"
                     value={newSearchTerm}
                     onChange={(e) => setNewSearchTerm(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addSearchTerm()}
                     placeholder="Add search term..."
-                    className="flex-1 px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+                    className="flex-1"
                   />
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="md"
                     onClick={addSearchTerm}
-                    className="px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-sm transition-colors"
                   >
                     <PlusIcon size={14} />
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5">
-                    Schedule
-                  </label>
-                  <select
-                    value={editableSchedule}
-                    onChange={(e) => setEditableSchedule(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
-                  >
-                    <option value="once">Run Once</option>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="biweekly">Bi-weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
-                </div>
+                <Select
+                  label="Schedule"
+                  value={editableSchedule}
+                  onChange={(e) => setEditableSchedule(e.target.value)}
+                  options={[
+                    { label: "Run Once", value: "once" },
+                    { label: "Daily", value: "daily" },
+                    { label: "Weekly", value: "weekly" },
+                    { label: "Bi-weekly", value: "biweekly" },
+                    { label: "Monthly", value: "monthly" },
+                  ]}
+                />
                 <div>
                   <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5">
                     Auto-Enrich Leads
                   </label>
-                  <button
+                  <Button
+                    variant="outline"
+                    size="md"
                     onClick={() => setEditableAutoEnrich(!editableAutoEnrich)}
-                    className={`inline-flex items-center gap-2 h-[42px] px-3 rounded border text-sm font-medium transition-colors ${
+                    className={
                       editableAutoEnrich
                         ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/50"
-                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700"
-                    }`}
+                        : ""
+                    }
+                    leftIcon={
+                      <span
+                        className={`w-2 h-2 rounded-full flex-shrink-0 ${editableAutoEnrich ? "bg-green-500" : "bg-neutral-400"}`}
+                      />
+                    }
                   >
-                    <span
-                      className={`w-2 h-2 rounded-full flex-shrink-0 ${editableAutoEnrich ? "bg-green-500" : "bg-neutral-400"}`}
-                    />
                     {editableAutoEnrich ? "Enabled" : "Disabled"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -910,13 +902,15 @@ export default function NewCampaignPage() {
           </div>
 
           {/* Next button */}
-          <button
+          <Button
+            variant="primary"
+            size="lg"
             onClick={handleGoToStep3}
             disabled={selectedActors.size === 0}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full"
           >
             Next: Configure Fields & KPIs
-          </button>
+          </Button>
         </div>
       )}
 
@@ -925,18 +919,15 @@ export default function NewCampaignPage() {
         <div className="max-w-3xl space-y-6">
           {/* AI suggest button */}
           <div className="flex justify-end">
-            <button
+            <Button
+              variant="secondary"
+              size="md"
               onClick={handleSuggestFields}
               disabled={suggestingFields || !editableNiche}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-sm transition-colors disabled:opacity-50"
+              leftIcon={suggestingFields ? <CircleNotchIcon size={14} className="animate-spin" /> : <SparkleIcon size={14} />}
             >
-              {suggestingFields ? (
-                <CircleNotchIcon size={14} className="animate-spin" />
-              ) : (
-                <SparkleIcon size={14} />
-              )}
               Re-suggest with AI
-            </button>
+            </Button>
           </div>
 
           {/* Lead Data Fields */}
@@ -946,13 +937,14 @@ export default function NewCampaignPage() {
                 <HardDrivesIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
                 Lead Data Fields
               </h3>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={addField}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-xs transition-colors"
+                leftIcon={<PlusIcon size={12} />}
               >
-                <PlusIcon size={12} />
                 Add Field
-              </button>
+              </Button>
             </div>
 
             {suggestingFields ? (
@@ -974,12 +966,12 @@ export default function NewCampaignPage() {
                   >
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
-                        <input
+                        <Input
                           type="text"
                           value={field.label}
                           onChange={(e) => updateField(i, "label", e.target.value)}
                           placeholder="Field label, e.g. Instagram Handle"
-                          className="flex-1 px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs font-medium focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+                          className="flex-1 text-xs font-medium py-1.5 px-2"
                         />
                         <TypeToggle
                           value={field.type}
@@ -992,20 +984,22 @@ export default function NewCampaignPage() {
                           onChange={(v) => updateField(i, "type", v)}
                         />
                       </div>
-                      <input
+                      <Input
                         type="text"
                         value={field.description}
                         onChange={(e) => updateField(i, "description", e.target.value)}
                         placeholder="Description (helps AI understand what to extract)"
-                        className="w-full px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+                        className="text-xs py-1.5 px-2"
                       />
                     </div>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => removeField(i)}
-                      className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 transition-colors mt-0.5"
+                      className="p-1 h-auto text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 mt-0.5"
                     >
                       <TrashIcon size={14} />
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -1019,13 +1013,14 @@ export default function NewCampaignPage() {
                 <ChartBarIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
                 Lead KPIs to Track
               </h3>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={addKpi}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-xs transition-colors"
+                leftIcon={<PlusIcon size={12} />}
               >
-                <PlusIcon size={12} />
                 Add KPI
-              </button>
+              </Button>
             </div>
 
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
@@ -1047,12 +1042,12 @@ export default function NewCampaignPage() {
                   >
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
-                        <input
+                        <Input
                           type="text"
                           value={kpi.label}
                           onChange={(e) => updateKpi(i, "label", e.target.value)}
                           placeholder="KPI label, e.g. Has online booking"
-                          className="flex-1 px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs font-medium focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+                          className="flex-1 text-xs font-medium py-1.5 px-2"
                         />
                         <TypeToggle
                           value={kpi.type}
@@ -1063,20 +1058,22 @@ export default function NewCampaignPage() {
                           onChange={(v) => updateKpi(i, "type", v)}
                         />
                       </div>
-                      <input
+                      <Input
                         type="text"
                         value={kpi.description}
                         onChange={(e) => updateKpi(i, "description", e.target.value)}
                         placeholder="Description (e.g., Does the company have more than 10 employees?)"
-                        className="w-full px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+                        className="text-xs py-1.5 px-2"
                       />
                     </div>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => removeKpi(i)}
-                      className="p-1 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 transition-colors mt-0.5"
+                      className="p-1 h-auto text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 mt-0.5"
                     >
                       <TrashIcon size={14} />
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -1084,12 +1081,14 @@ export default function NewCampaignPage() {
           </div>
 
           {/* Next button */}
-          <button
+          <Button
+            variant="primary"
+            size="lg"
             onClick={() => setStep(4)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors"
+            className="w-full"
           >
             Next: Review & Create
-          </button>
+          </Button>
         </div>
       )}
 
@@ -1254,38 +1253,32 @@ export default function NewCampaignPage() {
           </div>
 
           {/* Create button */}
-          <button
+          <Button
+            variant="primary"
+            size="lg"
             onClick={handleCreate}
             disabled={creating || !name.trim() || !editableNiche.trim()}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full"
+            leftIcon={creating ? <CircleNotchIcon size={16} className="animate-spin" /> : <CheckCircleIcon size={16} />}
           >
-            {creating ? (
-              <>
-                <CircleNotchIcon size={16} className="animate-spin" />
-                Creating campaign...
-              </>
-            ) : (
-              <>
-                <CheckCircleIcon size={16} />
-                Create Campaign
-                {kpiDefinitions.filter((k) => k.label).length > 0 &&
-                  ` with ${kpiDefinitions.filter((k) => k.label).length} KPI${kpiDefinitions.filter((k) => k.label).length > 1 ? "s" : ""}`}
-              </>
-            )}
-          </button>
+            {creating
+              ? "Creating campaign..."
+              : `Create Campaign${kpiDefinitions.filter((k) => k.label).length > 0 ? ` with ${kpiDefinitions.filter((k) => k.label).length} KPI${kpiDefinitions.filter((k) => k.label).length > 1 ? "s" : ""}` : ""}`}
+          </Button>
         </div>
       )}
 
       {/* ── Navigation buttons ─────────────────────────────────────────── */}
       {step > 1 && (
         <div className="flex items-center justify-between max-w-3xl pt-2">
-          <button
+          <Button
+            variant="outline"
+            size="md"
             onClick={() => setStep((s) => s - 1)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-950 dark:text-neutral-50 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            leftIcon={<ArrowLeftIcon size={14} />}
           >
-            <ArrowLeftIcon size={14} />
             Back
-          </button>
+          </Button>
         </div>
       )}
     </div>

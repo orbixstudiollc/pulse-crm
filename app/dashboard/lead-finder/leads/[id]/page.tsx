@@ -30,6 +30,8 @@ import {
   FloppyDiskIcon,
   ArrowPathIcon,
   ChevronsRightIcon,
+  Input,
+  Button,
 } from "@/components/ui";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 import { ScoreBadge } from "@/components/lead-finder/ScoreBadge";
@@ -254,11 +256,11 @@ function EditableRow({
     <div className="flex items-start gap-3 py-1">
       {Icon && <Icon size={14} className="text-neutral-400 mt-2.5 shrink-0" />}
       <span className="text-xs text-neutral-400 w-28 shrink-0 mt-2">{label}</span>
-      <input
+      <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="flex-1 h-8 px-2 text-sm bg-neutral-800 border border-neutral-700 rounded-md text-neutral-50 placeholder:text-neutral-500 focus:outline-none focus:border-neutral-600"
+        className="h-8 text-sm"
       />
     </div>
   );
@@ -656,13 +658,15 @@ export default function LeadDetailPage() {
         <div className="flex items-center gap-2 flex-wrap">
           {/* Status dropdown */}
           <div className="relative" ref={statusMenuRef}>
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setStatusMenuOpen(!statusMenuOpen)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium capitalize cursor-pointer transition-opacity hover:opacity-80 ${STATUS_STYLES[lead.status] || "text-neutral-400 bg-neutral-800"}`}
+              rightIcon={<CaretDownIcon size={12} />}
+              className={`rounded-full capitalize ${STATUS_STYLES[lead.status] || "text-neutral-400 bg-neutral-800"}`}
             >
               {lead.status}
-              <CaretDownIcon size={12} />
-            </button>
+            </Button>
             {statusMenuOpen && (
               <div className="absolute right-0 mt-1 w-44 bg-neutral-900 border border-neutral-800 rounded-lg shadow-lg z-30 py-1">
                 {ALL_STATUSES.map((s) => (
@@ -683,33 +687,36 @@ export default function LeadDetailPage() {
           {/* Enrich button(s) */}
           {lead.status === "new" || lead.status === "enriching" ? (
             <>
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={() => handleEnrich()}
                 disabled={isEnrichingState}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-800 text-neutral-50 text-sm font-medium hover:bg-neutral-700 disabled:opacity-50 transition-colors"
+                leftIcon={isEnrichingState ? <CircleNotchIcon size={14} className="animate-spin" /> : <LightningIcon size={14} />}
               >
-                {isEnrichingState ? <CircleNotchIcon size={14} className="animate-spin" /> : <LightningIcon size={14} />}
                 {isEnrichingState ? "Enriching..." : "Enrich Lead"}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => handleStatusChange("qualified")}
                 disabled={isEnrichingState}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-800 text-neutral-50 text-sm font-medium hover:bg-neutral-700 disabled:opacity-50 transition-colors"
+                leftIcon={<ChevronsRightIcon size={14} />}
               >
-                <ChevronsRightIcon size={14} />
                 Skip Enrichment
-              </button>
+              </Button>
             </>
           ) : (
             <div className="flex gap-1">
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={() => handleEnrich()}
                 disabled={isEnrichingState}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-800 text-neutral-50 text-sm font-medium hover:bg-neutral-700 disabled:opacity-50 transition-colors"
+                leftIcon={<ArrowPathIcon size={14} className={isEnrichingState ? "animate-spin" : ""} />}
               >
-                <ArrowPathIcon size={14} className={isEnrichingState ? "animate-spin" : ""} />
                 {isEnrichingState ? "Re-enriching..." : "Re-enrich"}
-              </button>
+              </Button>
               {ld.enrichActorIds.length > 1 && (
                 <div className="relative" ref={actorMenuRef}>
                   <button
@@ -747,14 +754,15 @@ export default function LeadDetailPage() {
           )}
 
           {/* Import to CRM */}
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             onClick={handleImportToCRM}
             disabled={importing}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white text-neutral-950 text-sm font-medium hover:bg-neutral-100 disabled:opacity-50 transition-colors"
+            leftIcon={importing ? <CircleNotchIcon size={14} className="animate-spin" /> : <ArrowRightIcon size={14} />}
           >
-            {importing ? <CircleNotchIcon size={14} className="animate-spin" /> : <ArrowRightIcon size={14} />}
             Import to CRM
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -768,29 +776,34 @@ export default function LeadDetailPage() {
               <h3 className="text-sm font-semibold text-neutral-50">Contact Information</h3>
               {isEditingContact ? (
                 <div className="flex items-center gap-1">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={discardContactEdit}
                     disabled={savingContact}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-neutral-400 hover:text-neutral-50 transition-colors"
+                    leftIcon={<XIcon size={12} />}
                   >
-                    <XIcon size={12} /> Discard
-                  </button>
-                  <button
+                    Discard
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={saveContactEdit}
                     disabled={savingContact}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs bg-white text-neutral-950 hover:bg-neutral-100 transition-colors"
+                    leftIcon={savingContact ? <CircleNotchIcon size={12} className="animate-spin" /> : <CheckIcon size={12} />}
                   >
-                    {savingContact ? <CircleNotchIcon size={12} className="animate-spin" /> : <CheckIcon size={12} />}
                     Save
-                  </button>
+                  </Button>
                 </div>
               ) : (
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={startEditingContact}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-neutral-400 hover:text-neutral-50 transition-colors"
+                  leftIcon={<PencilSimpleIcon size={12} />}
                 >
-                  <PencilSimpleIcon size={12} /> Edit
-                </button>
+                  Edit
+                </Button>
               )}
             </div>
 
@@ -928,14 +941,15 @@ export default function LeadDetailPage() {
               defaultOpen={true}
               action={
                 kpiDirty ? (
-                  <button
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={saveKpis}
                     disabled={savingKpis}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs bg-white text-neutral-950 hover:bg-neutral-100 transition-colors"
+                    leftIcon={<FloppyDiskIcon size={12} />}
                   >
-                    <FloppyDiskIcon size={12} />
                     {savingKpis ? "Saving..." : "Save"}
-                  </button>
+                  </Button>
                 ) : null
               }
             >
@@ -959,11 +973,11 @@ export default function LeadDetailPage() {
                       <div className="w-full space-y-1">
                         <p className="text-sm text-neutral-50">{kpi.label}</p>
                         {kpi.description && <p className="text-xs text-neutral-500">{kpi.description}</p>}
-                        <input
+                        <Input
                           value={typeof kpiValues[kpi.id] === "string" ? (kpiValues[kpi.id] as string) : ""}
                           onChange={(e) => updateKpiValue(kpi.id, e.target.value)}
                           placeholder="Not set"
-                          className="w-full h-8 px-2 text-sm bg-neutral-800 border border-neutral-700 rounded-md text-neutral-50 placeholder:text-neutral-500 focus:outline-none focus:border-neutral-600"
+                          className="h-8 text-sm"
                         />
                       </div>
                     )}

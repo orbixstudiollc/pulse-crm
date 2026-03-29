@@ -19,6 +19,9 @@ import {
   FunnelIcon,
   TargetIcon,
   UsersIcon,
+  Input,
+  Select,
+  Button,
 } from "@/components/ui";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 import { ScoreBadge } from "@/components/lead-finder/ScoreBadge";
@@ -564,13 +567,14 @@ export default function AllLeadsPage() {
           </p>
         </div>
         {filteredLeads.length > 0 && (
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleExportCsv}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-950 dark:text-neutral-50 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            leftIcon={<DownloadIcon size={14} />}
           >
-            <DownloadIcon size={14} />
             Export CSV
-          </button>
+          </Button>
         )}
       </div>
 
@@ -580,63 +584,44 @@ export default function AllLeadsPage() {
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Search */}
-        <div className="relative flex-1 min-w-[200px] max-w-xs">
-          <MagnifyingGlassIcon
-            size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400"
-          />
-          <input
-            type="text"
+        <div className="flex-1 min-w-[200px] max-w-xs">
+          <Input
+            leftIcon={<MagnifyingGlassIcon size={16} />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name, email, website..."
-            className="w-full pl-8 pr-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
           />
         </div>
 
         {/* Campaign filter */}
-        <select
+        <Select
           value={campaignFilter}
           onChange={(e) => handleCampaignChange(e.target.value)}
-          className="px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
-        >
-          <option value="">All Campaigns</option>
-          {campaigns.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+          options={campaigns.map((c) => ({ label: c.name, value: c.id }))}
+          placeholder="All Campaigns"
+        />
 
         {/* Status filter */}
-        <select
+        <Select
           value={statusFilter}
           onChange={(e) => {
             setStatusFilter(e.target.value);
             setOffset(0);
           }}
-          className="px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
-        >
-          <option value="">All Statuses</option>
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>
-              {s.charAt(0).toUpperCase() + s.slice(1)}
-            </option>
-          ))}
-        </select>
+          options={STATUS_OPTIONS.map((s) => ({ label: s.charAt(0).toUpperCase() + s.slice(1), value: s }))}
+          placeholder="All Statuses"
+        />
 
         {/* AI Filter toggle */}
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => setShowAIFilter(!showAIFilter)}
-          className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
-            showAIFilter || aiFilters.length > 0
-              ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 border-neutral-300 dark:border-neutral-600"
-              : "bg-white dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:text-neutral-950 dark:hover:text-neutral-50"
-          }`}
+          leftIcon={<SparkleIcon size={14} />}
+          className={showAIFilter || aiFilters.length > 0 ? "bg-neutral-100 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600" : ""}
         >
-          <SparkleIcon size={14} />
           AI Filter
-        </button>
+        </Button>
 
         {/* Bulk actions */}
         {selectedLeads.size > 0 && (
@@ -644,30 +629,25 @@ export default function AllLeadsPage() {
             <span className="text-xs text-neutral-500 dark:text-neutral-400">
               {selectedLeads.size} selected
             </span>
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleBulkImport}
               disabled={importing}
-              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 text-xs font-medium hover:bg-green-100 dark:hover:bg-green-950/50 transition-colors"
+              leftIcon={importing ? <CircleNotchIcon size={12} className="animate-spin" /> : <ArrowRightIcon size={12} />}
             >
-              {importing ? (
-                <CircleNotchIcon size={12} className="animate-spin" />
-              ) : (
-                <ArrowRightIcon size={12} />
-              )}
               Import to CRM
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleBulkDelete}
               disabled={deleting}
-              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-red-400/10 text-red-600 dark:text-red-400 border border-red-400/20 text-xs font-medium hover:bg-red-400/20 transition-colors"
+              leftIcon={deleting ? <CircleNotchIcon size={12} className="animate-spin" /> : <TrashIcon size={12} />}
+              className="text-red-600 dark:text-red-400 border-red-400/20 hover:bg-red-400/20"
             >
-              {deleting ? (
-                <CircleNotchIcon size={12} className="animate-spin" />
-              ) : (
-                <TrashIcon size={12} />
-              )}
               Delete
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -685,34 +665,31 @@ export default function AllLeadsPage() {
             }}
             className="flex gap-2"
           >
-            <input
+            <Input
               ref={inputRef}
-              type="text"
               value={aiQuery}
               onChange={(e) => setAiQuery(e.target.value)}
               placeholder='e.g., "leads with more than 1000 followers that are business accounts"'
               disabled={aiLoading}
-              className="flex-1 px-3 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
+              className="flex-1"
             />
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="sm"
               disabled={aiLoading || !aiQuery.trim()}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 transition-colors"
+              leftIcon={aiLoading ? <CircleNotchIcon size={14} className="animate-spin" /> : <SparkleIcon size={14} />}
             >
-              {aiLoading ? (
-                <CircleNotchIcon size={14} className="animate-spin" />
-              ) : (
-                <SparkleIcon size={14} />
-              )}
               Filter
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={clearAllFilters}
-              className="px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
             >
               Clear
-            </button>
+            </Button>
           </form>
         </div>
       )}
@@ -963,20 +940,15 @@ export default function AllLeadsPage() {
                   Showing {offset + 1}-{Math.min(offset + pageSize, total)} of{" "}
                   {total}
                 </span>
-                <select
-                  value={pageSize}
+                <Select
+                  value={String(pageSize)}
                   onChange={(e) => {
                     setPageSize(Number(e.target.value));
                     setOffset(0);
                   }}
-                  className="px-2 py-1 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none"
-                >
-                  {PAGE_SIZES.map((s) => (
-                    <option key={s} value={s}>
-                      {s} per page
-                    </option>
-                  ))}
-                </select>
+                  options={PAGE_SIZES.map((s) => ({ label: `${s} per page`, value: String(s) }))}
+                  className="text-xs py-1"
+                />
               </div>
               <div className="flex items-center gap-1">
                 <button

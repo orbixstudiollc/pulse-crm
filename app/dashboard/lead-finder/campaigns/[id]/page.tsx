@@ -45,6 +45,7 @@ import {
   CaretDownIcon as ChevronDownIcon,
   InfoIcon,
 } from "@/components/ui";
+import { Button, Input, Select, Textarea } from "@/components/ui";
 import { ScoreBadge } from "@/components/lead-finder/ScoreBadge";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 import { useLeadEvents } from "@/hooks/use-lead-events";
@@ -674,18 +675,18 @@ export default function CampaignDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowClearLeadsConfirm(true)} disabled={campaign.leads.length === 0} className="inline-flex items-center gap-1.5 h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium transition-colors">
-            <TrashIcon size={14} /> Clear Leads
-          </button>
-          <button onClick={() => setShowDeleteConfirm(true)} className="inline-flex items-center justify-center h-9 w-9 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors" title="Delete Campaign">
+          <Button onClick={() => setShowClearLeadsConfirm(true)} disabled={campaign.leads.length === 0} variant="secondary" size="sm" leftIcon={<TrashIcon size={14} />} className="text-neutral-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30">
+            Clear Leads
+          </Button>
+          <Button onClick={() => setShowDeleteConfirm(true)} variant="secondary" size="sm" className="w-9 px-0 text-neutral-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30" title="Delete Campaign">
             <TrashIcon size={15} />
-          </button>
-          <button onClick={openSettings} className="inline-flex items-center gap-2 h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 text-sm font-medium transition-colors">
-            <GearIcon size={15} /> Settings
-          </button>
-          <button onClick={handleActivatePause} className={`inline-flex items-center gap-2 h-9 px-3 rounded text-sm font-medium transition-colors ${campaign.status === "active" ? "bg-amber-400/10 text-amber-600 dark:text-amber-400 border border-amber-400/20 hover:bg-amber-400/20" : "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/50"}`}>
+          </Button>
+          <Button onClick={openSettings} variant="secondary" size="sm" leftIcon={<GearIcon size={15} />}>
+            Settings
+          </Button>
+          <Button onClick={handleActivatePause} variant="outline" size="sm" className={campaign.status === "active" ? "bg-amber-400/10 text-amber-600 dark:text-amber-400 border-amber-400/20 hover:bg-amber-400/20" : "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/50"}>
             {campaign.status === "active" ? <><PauseIcon size={14} /> Pause</> : <><PlayIcon size={14} /> Activate</>}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -779,13 +780,15 @@ export default function CampaignDetailPage() {
                     ) : (
                       <span className="text-xs text-neutral-400 dark:text-neutral-500">Not run yet</span>
                     )}
-                    <button
+                    <Button
                       onClick={() => handleRunActor(actorId)}
                       disabled={anyRunning || campaign.status !== "active"}
-                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 text-xs font-medium hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-50 transition-colors"
+                      variant="secondary"
+                      size="sm"
+                      className="h-8 text-xs"
                     >
                       {actorIsRunning ? <><CircleNotchIcon size={12} className="animate-spin" /> Running...</> : <><PlayIcon size={12} /> Run Scraper</>}
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 {lastActorResult?.actorId === actorId && (
@@ -812,9 +815,9 @@ export default function CampaignDetailPage() {
                 <p className="font-medium">Discovery Error</p>
                 <p className="text-xs mt-0.5">{discoveryError}</p>
               </div>
-              <button onClick={() => setDiscoveryError(null)} className="ml-auto text-red-400 hover:text-red-600 transition-colors">
+              <Button onClick={() => setDiscoveryError(null)} variant="ghost" size="sm" className="ml-auto text-red-400 hover:text-red-600 px-1">
                 <XIcon size={14} />
-              </button>
+              </Button>
             </div>
           )}
 
@@ -834,21 +837,21 @@ export default function CampaignDetailPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {campaign.auto_enrich && isEnrichmentActive ? (
-                    <button onClick={handlePauseEnrichment} className="inline-flex items-center gap-1.5 h-8 px-3 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-950 dark:text-neutral-50 text-xs font-medium hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
-                      <PauseIcon size={12} /> Pause
-                    </button>
+                    <Button onClick={handlePauseEnrichment} variant="outline" size="sm" leftIcon={<PauseIcon size={12} />} className="h-8 text-xs">
+                      Pause
+                    </Button>
                   ) : campaign.auto_enrich && !isEnrichmentActive && hasUnenrichedLeads ? (
-                    <button onClick={triggerEnrichment} className="inline-flex items-center gap-1.5 h-8 px-3 rounded bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors">
-                      <PlayIcon size={12} /> Resume
-                    </button>
+                    <Button onClick={triggerEnrichment} variant="primary" size="sm" leftIcon={<PlayIcon size={12} />} className="h-8 text-xs">
+                      Resume
+                    </Button>
                   ) : !campaign.auto_enrich && isEnrichmentActive ? (
-                    <button onClick={handlePauseEnrichment} className="inline-flex items-center gap-1.5 h-8 px-3 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-950 dark:text-neutral-50 text-xs font-medium hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
-                      <PowerIcon size={12} /> Stop
-                    </button>
+                    <Button onClick={handlePauseEnrichment} variant="outline" size="sm" leftIcon={<PowerIcon size={12} />} className="h-8 text-xs">
+                      Stop
+                    </Button>
                   ) : !campaign.auto_enrich && !isEnrichmentActive && hasUnenrichedLeads ? (
-                    <button onClick={triggerEnrichment} className="inline-flex items-center gap-1.5 h-8 px-3 rounded bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors">
-                      <LightningIcon size={12} /> Start Enrichment
-                    </button>
+                    <Button onClick={triggerEnrichment} variant="primary" size="sm" leftIcon={<LightningIcon size={12} />} className="h-8 text-xs">
+                      Start Enrichment
+                    </Button>
                   ) : null}
                 </div>
               </div>
@@ -882,30 +885,33 @@ export default function CampaignDetailPage() {
         {/* Table toolbar */}
         <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative">
-              <MagnifyingGlassIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search leads..."
-                className="pl-8 pr-3 h-8 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded text-sm placeholder-neutral-400 focus:outline-none focus:border-neutral-300 dark:focus:border-neutral-600 w-52"
-              />
-            </div>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-8 px-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded text-sm focus:outline-none">
-              <option value="all">All Statuses</option>
-              <option value="new">New</option>
-              <option value="enriching">Enriching</option>
-              <option value="qualified">Qualified</option>
-              <option value="disqualified">Disqualified</option>
-              <option value="converted">Converted</option>
-            </select>
+            <Input
+              leftIcon={<MagnifyingGlassIcon size={14} />}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search leads..."
+              className="h-8 py-1.5 w-52"
+            />
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="h-8 py-1.5 w-auto"
+              placeholder="All Statuses"
+              options={[
+                { label: "All Statuses", value: "all" },
+                { label: "New", value: "new" },
+                { label: "Enriching", value: "enriching" },
+                { label: "Qualified", value: "qualified" },
+                { label: "Disqualified", value: "disqualified" },
+                { label: "Converted", value: "converted" },
+              ]}
+            />
             {/* Column toggle */}
             {fields.length > 0 && (
               <div className="relative">
-                <button onClick={() => setShowColumnMenu((v) => !v)} className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded border border-neutral-200 dark:border-neutral-700 text-xs text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
-                  <SlidersHorizontalIcon size={13} /> Columns
-                </button>
+                <Button onClick={() => setShowColumnMenu((v) => !v)} variant="outline" size="sm" leftIcon={<SlidersHorizontalIcon size={13} />} className="h-8 text-xs text-neutral-600 dark:text-neutral-400">
+                  Columns
+                </Button>
                 {showColumnMenu && (
                   <>
                     <div className="fixed inset-0 z-30" onClick={() => setShowColumnMenu(false)} />
@@ -937,14 +943,14 @@ export default function CampaignDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             {selectedLeads.size > 0 && (
-              <button onClick={handleImportToCRM} disabled={importing} className="inline-flex items-center gap-1.5 h-8 px-3 rounded bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 text-xs font-medium hover:bg-green-100 dark:hover:bg-green-950/50 transition-colors">
+              <Button onClick={handleImportToCRM} disabled={importing} variant="outline" size="sm" className="h-8 text-xs bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/50">
                 {importing ? <CircleNotchIcon size={11} className="animate-spin" /> : <ArrowRightIcon size={11} />}
                 Import {selectedLeads.size} to CRM
-              </button>
+              </Button>
             )}
-            <button onClick={handleExportCSV} className="inline-flex items-center gap-1.5 h-8 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-xs font-medium transition-colors">
-              <DownloadIcon size={12} /> Export CSV
-            </button>
+            <Button onClick={handleExportCSV} variant="secondary" size="sm" leftIcon={<DownloadIcon size={12} />} className="h-8 text-xs">
+              Export CSV
+            </Button>
           </div>
         </div>
 
@@ -1029,24 +1035,24 @@ export default function CampaignDetailPage() {
                           <CircleNotchIcon size={14} className="animate-spin text-neutral-400" />
                         ) : lead.status === "new" ? (
                           <div className="flex items-center gap-0.5">
-                            <button onClick={() => handleReEnrich(lead.id)} title="Enrich" className="p-1 rounded text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                            <Button onClick={() => handleReEnrich(lead.id)} title="Enrich" variant="ghost" size="sm" className="p-1 h-auto">
                               <LightningIcon size={14} />
-                            </button>
-                            <button onClick={() => handleSkip(lead.id)} title="Skip enrichment" className="p-1 rounded text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                            </Button>
+                            <Button onClick={() => handleSkip(lead.id)} title="Skip enrichment" variant="ghost" size="sm" className="p-1 h-auto">
                               <ArrowRightIcon size={14} />
-                            </button>
-                            <button onClick={() => handleDeleteLead(lead.id)} title="Delete" className="p-1 rounded text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                            </Button>
+                            <Button onClick={() => handleDeleteLead(lead.id)} title="Delete" variant="ghost" size="sm" className="p-1 h-auto text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30">
                               <TrashIcon size={13} />
-                            </button>
+                            </Button>
                           </div>
                         ) : (lead.status === "qualified" || lead.status === "converted" || lead.status === "disqualified" || lead.status === "declined") ? (
                           <div className="flex items-center gap-0.5">
-                            <button onClick={() => handleReEnrich(lead.id)} title="Re-enrich" className="p-1 rounded text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                            <Button onClick={() => handleReEnrich(lead.id)} title="Re-enrich" variant="ghost" size="sm" className="p-1 h-auto">
                               <ArrowCounterClockwiseIcon size={14} />
-                            </button>
-                            <button onClick={() => handleDeleteLead(lead.id)} title="Delete" className="p-1 rounded text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                            </Button>
+                            <Button onClick={() => handleDeleteLead(lead.id)} title="Delete" variant="ghost" size="sm" className="p-1 h-auto text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30">
                               <TrashIcon size={13} />
-                            </button>
+                            </Button>
                           </div>
                         ) : null}
                       </td>
@@ -1108,9 +1114,9 @@ export default function CampaignDetailPage() {
                 <h2 className="text-base font-semibold text-neutral-950 dark:text-neutral-50">Campaign Settings</h2>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Edit configuration for {campaign.name}</p>
               </div>
-              <button onClick={() => setShowSettings(false)} className="p-2 rounded-lg text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+              <Button onClick={() => setShowSettings(false)} variant="ghost" size="sm" className="p-2">
                 <XIcon size={16} />
-              </button>
+              </Button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -1118,40 +1124,14 @@ export default function CampaignDetailPage() {
                 <>
                   {/* Basic settings */}
                   <div className="space-y-4">
-                    <div>
-                      <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Target Niche</label>
-                      <input value={editSettings.targetNiche} onChange={(e) => setEditSettings({ ...editSettings, targetNiche: e.target.value })} className="w-full h-9 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none focus:border-neutral-300 dark:focus:border-neutral-600" />
+                    <Input label="Target Niche" value={editSettings.targetNiche} onChange={(e) => setEditSettings({ ...editSettings, targetNiche: e.target.value })} />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Select label="AI Provider" value={editSettings.aiProvider} onChange={(e) => setEditSettings({ ...editSettings, aiProvider: e.target.value })} options={[{ label: "OpenRouter", value: "openrouter" }, { label: "Anthropic (Claude)", value: "anthropic" }, { label: "OpenAI", value: "openai" }]} />
+                      <Select label="Schedule" value={editSettings.scheduleFrequency} onChange={(e) => setEditSettings({ ...editSettings, scheduleFrequency: e.target.value })} options={[{ label: "Run Once", value: "once" }, { label: "Daily", value: "daily" }, { label: "Weekly", value: "weekly" }]} />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">AI Provider</label>
-                        <select value={editSettings.aiProvider} onChange={(e) => setEditSettings({ ...editSettings, aiProvider: e.target.value })} className="w-full h-9 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none">
-                          <option value="openrouter">OpenRouter</option>
-                          <option value="anthropic">Anthropic (Claude)</option>
-                          <option value="openai">OpenAI</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Schedule</label>
-                        <select value={editSettings.scheduleFrequency} onChange={(e) => setEditSettings({ ...editSettings, scheduleFrequency: e.target.value })} className="w-full h-9 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none">
-                          <option value="once">Run Once</option>
-                          <option value="daily">Daily</option>
-                          <option value="weekly">Weekly</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Lead Enrichment</label>
-                        <select value={editSettings.autoEnrich ? "automatic" : "off"} onChange={(e) => setEditSettings({ ...editSettings, autoEnrich: e.target.value === "automatic" })} className="w-full h-9 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none">
-                          <option value="automatic">Automatic</option>
-                          <option value="off">Off</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Enrichment Concurrency</label>
-                        <input type="number" min={1} value={editSettings.enrichmentConcurrency} onChange={(e) => setEditSettings({ ...editSettings, enrichmentConcurrency: e.target.value === "" ? "" : parseInt(e.target.value) || 1 })} placeholder="Default (1)" className="w-full h-9 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none" />
-                      </div>
+                      <Select label="Lead Enrichment" value={editSettings.autoEnrich ? "automatic" : "off"} onChange={(e) => setEditSettings({ ...editSettings, autoEnrich: e.target.value === "automatic" })} options={[{ label: "Automatic", value: "automatic" }, { label: "Off", value: "off" }]} />
+                      <Input label="Enrichment Concurrency" type="number" min={1} value={editSettings.enrichmentConcurrency} onChange={(e) => setEditSettings({ ...editSettings, enrichmentConcurrency: e.target.value === "" ? "" : parseInt(e.target.value) || 1 })} placeholder="Default (1)" />
                     </div>
                   </div>
 
@@ -1166,9 +1146,9 @@ export default function CampaignDetailPage() {
                         if (avFind.length === 0 && avEnrich.length === 0) return null;
                         return (
                           <div className="relative">
-                            <button onClick={() => setAddActorOpen((v) => !v)} className="inline-flex items-center gap-1 h-7 px-2.5 rounded border border-neutral-200 dark:border-neutral-700 text-xs text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
-                              <PlusIcon size={12} /> Add Actor
-                            </button>
+                            <Button onClick={() => setAddActorOpen((v) => !v)} variant="outline" size="sm" leftIcon={<PlusIcon size={12} />} className="h-7 text-xs text-neutral-600 dark:text-neutral-400">
+                              Add Actor
+                            </Button>
                             {addActorOpen && (
                               <>
                                 <div className="fixed inset-0 z-10" onClick={() => setAddActorOpen(false)} />
@@ -1177,7 +1157,7 @@ export default function CampaignDetailPage() {
                                     <>
                                       <p className="px-3 py-1 text-[10px] uppercase tracking-wider font-medium text-neutral-400 dark:text-neutral-500">Scraping</p>
                                       {avFind.map((a) => (
-                                        <button key={a.id} onClick={() => addActorToSettings(a.id)} className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                                        <button key={a.id} onClick={() => addActorToSettings(a.id)} className="flex w-full items-start gap-2 px-3 py-2 rounded text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
                                           <div>
                                             <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{a.name}</p>
                                             <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1">{a.description}</p>
@@ -1191,7 +1171,7 @@ export default function CampaignDetailPage() {
                                       {avFind.length > 0 && <div className="border-t border-neutral-100 dark:border-neutral-800 my-1" />}
                                       <p className="px-3 py-1 text-[10px] uppercase tracking-wider font-medium text-neutral-400 dark:text-neutral-500">Enrichment</p>
                                       {avEnrich.map((a) => (
-                                        <button key={a.id} onClick={() => addActorToSettings(a.id)} className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                                        <button key={a.id} onClick={() => addActorToSettings(a.id)} className="flex w-full items-start gap-2 px-3 py-2 rounded text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
                                           <div>
                                             <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{a.name}</p>
                                             <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1">{a.description}</p>
@@ -1222,8 +1202,8 @@ export default function CampaignDetailPage() {
                             <div key={actorId} className="rounded-lg border border-neutral-200 dark:border-neutral-800">
                               <div className="flex items-center">
                                 <div className="flex flex-col border-r border-neutral-100 dark:border-neutral-800 px-1.5 py-1 gap-0.5">
-                                  <button onClick={() => idx > 0 && moveActor(idx, -1)} disabled={idx === 0} className="p-0.5 rounded text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 disabled:opacity-30 transition-colors"><CaretUpIcon size={12} /></button>
-                                  <button onClick={() => idx < editSettings.actorOrder.length - 1 && moveActor(idx, 1)} disabled={idx === editSettings.actorOrder.length - 1} className="p-0.5 rounded text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 disabled:opacity-30 transition-colors"><CaretDownIcon size={12} /></button>
+                                  <Button onClick={() => idx > 0 && moveActor(idx, -1)} disabled={idx === 0} variant="ghost" size="sm" className="p-0.5 h-auto"><CaretUpIcon size={12} /></Button>
+                                  <Button onClick={() => idx < editSettings.actorOrder.length - 1 && moveActor(idx, 1)} disabled={idx === editSettings.actorOrder.length - 1} variant="ghost" size="sm" className="p-0.5 h-auto"><CaretDownIcon size={12} /></Button>
                                 </div>
                                 <button onClick={() => setCollapsedActors((prev) => { const n = new Set(prev); if (n.has(actorId)) n.delete(actorId); else n.add(actorId); return n; })} className="flex-1 flex items-center justify-between p-3 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors min-w-0">
                                   <div className="flex-1 min-w-0">
@@ -1235,9 +1215,9 @@ export default function CampaignDetailPage() {
                                   </div>
                                   {isCollapsed ? <CaretRightIcon size={14} className="shrink-0 text-neutral-400" /> : <ChevronDownIcon size={14} className="shrink-0 text-neutral-400" />}
                                 </button>
-                                <button onClick={() => removeActorFromSettings(actorId)} className="p-2 mr-1 rounded text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors" title="Remove actor">
+                                <Button onClick={() => removeActorFromSettings(actorId)} variant="ghost" size="sm" className="p-2 mr-1 h-auto text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30" title="Remove actor">
                                   <XIcon size={14} />
-                                </button>
+                                </Button>
                               </div>
                               {!isCollapsed && (
                                 <div className="border-t border-neutral-100 dark:border-neutral-800 px-4 py-3">
@@ -1247,10 +1227,10 @@ export default function CampaignDetailPage() {
                                         const desc = def.inputFieldDescriptions?.[fieldName];
                                         const val = fieldVals[fieldName] || "";
                                         return (
-                                          <div key={fieldName} className="space-y-1">
-                                            <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300">{desc?.label || fieldName}</label>
+                                          <div key={fieldName}>
                                             {desc?.type === "string-array" ? (
-                                              <textarea
+                                              <Textarea
+                                                label={desc?.label || fieldName}
                                                 value={val}
                                                 onChange={(e) => {
                                                   const upd = { ...editSettings };
@@ -1260,10 +1240,10 @@ export default function CampaignDetailPage() {
                                                 }}
                                                 placeholder={desc?.placeholder}
                                                 rows={3}
-                                                className="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 resize-none focus:outline-none focus:border-neutral-300 dark:focus:border-neutral-600"
                                               />
                                             ) : (
-                                              <input
+                                              <Input
+                                                label={desc?.label || fieldName}
                                                 type={desc?.type === "number" ? "number" : "text"}
                                                 value={val}
                                                 onChange={(e) => {
@@ -1273,10 +1253,10 @@ export default function CampaignDetailPage() {
                                                   setEditSettings({ ...upd });
                                                 }}
                                                 placeholder={desc?.placeholder}
-                                                className="w-full h-8 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none focus:border-neutral-300 dark:focus:border-neutral-600"
+                                                className="h-8"
                                               />
                                             )}
-                                            {desc?.helpText && <p className="text-xs text-neutral-500 dark:text-neutral-400">{desc.helpText}</p>}
+                                            {desc?.helpText && <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{desc.helpText}</p>}
                                           </div>
                                         );
                                       })}
@@ -1300,9 +1280,9 @@ export default function CampaignDetailPage() {
                         <TagIcon size={14} className="text-neutral-500 dark:text-neutral-400" />
                         <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Lead Data Fields</p>
                       </div>
-                      <button onClick={() => setEditLeadFields((prev) => [...prev, { id: `field_${Date.now()}`, label: "", type: "text" }])} className="inline-flex items-center gap-1 h-7 px-2.5 rounded border border-neutral-200 dark:border-neutral-700 text-xs text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
-                        <PlusIcon size={12} /> Add
-                      </button>
+                      <Button onClick={() => setEditLeadFields((prev) => [...prev, { id: `field_${Date.now()}`, label: "", type: "text" }])} variant="outline" size="sm" leftIcon={<PlusIcon size={12} />} className="h-7 text-xs text-neutral-600 dark:text-neutral-400">
+                        Add
+                      </Button>
                     </div>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">Fields extracted from each lead during enrichment.</p>
                     {editLeadFields.length === 0 ? (
@@ -1313,18 +1293,18 @@ export default function CampaignDetailPage() {
                           <div key={f.id} className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-3 space-y-2">
                             <div className="flex items-start gap-2">
                               <div className="flex-1 space-y-1.5 min-w-0">
-                                <input value={f.label} onChange={(e) => setEditLeadFields((prev) => prev.map((x) => x.id === f.id ? { ...x, label: e.target.value } : x))} placeholder="Field label" className="w-full h-8 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 font-medium focus:outline-none" />
-                                <input value={f.description || ""} onChange={(e) => setEditLeadFields((prev) => prev.map((x) => x.id === f.id ? { ...x, description: e.target.value } : x))} placeholder="Description (optional)" className="w-full h-7 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-xs text-neutral-700 dark:text-neutral-300 focus:outline-none" />
+                                <Input value={f.label} onChange={(e) => setEditLeadFields((prev) => prev.map((x) => x.id === f.id ? { ...x, label: e.target.value } : x))} placeholder="Field label" className="h-8 font-medium" />
+                                <Input value={f.description || ""} onChange={(e) => setEditLeadFields((prev) => prev.map((x) => x.id === f.id ? { ...x, description: e.target.value } : x))} placeholder="Description (optional)" className="h-7 text-xs" />
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
                                 {[{ type: "text" as const, icon: <TextTIcon size={11} />, title: "Text" }, { type: "number" as const, icon: <HashIcon size={11} />, title: "Number" }, { type: "boolean" as const, icon: <ToggleRightIcon size={11} />, title: "Yes/No" }, { type: "url" as const, icon: <LinkIcon size={11} />, title: "URL" }].map(({ type, icon, title }) => (
-                                  <button key={type} onClick={() => setEditLeadFields((prev) => prev.map((x) => x.id === f.id ? { ...x, type } : x))} title={title} className={`flex items-center justify-center h-7 w-7 rounded border transition-colors ${f.type === type ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 border-neutral-950 dark:border-white" : "border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600"}`}>
+                                  <Button key={type} onClick={() => setEditLeadFields((prev) => prev.map((x) => x.id === f.id ? { ...x, type } : x))} title={title} variant={f.type === type ? "primary" : "outline"} size="sm" className="h-7 w-7 px-0">
                                     {icon}
-                                  </button>
+                                  </Button>
                                 ))}
-                                <button onClick={() => setEditLeadFields((prev) => prev.filter((x) => x.id !== f.id))} className="flex items-center justify-center h-7 w-7 rounded text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                                <Button onClick={() => setEditLeadFields((prev) => prev.filter((x) => x.id !== f.id))} variant="ghost" size="sm" className="h-7 w-7 px-0 text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30">
                                   <XIcon size={13} />
-                                </button>
+                                </Button>
                               </div>
                             </div>
                           </div>
@@ -1340,9 +1320,9 @@ export default function CampaignDetailPage() {
                         <BarChartIcon size={14} className="text-neutral-500 dark:text-neutral-400" />
                         <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Tracked KPIs</p>
                       </div>
-                      <button onClick={() => setEditKpis((prev) => [...prev, { id: `kpi_${Date.now()}`, label: "", type: "boolean" }])} className="inline-flex items-center gap-1 h-7 px-2.5 rounded border border-neutral-200 dark:border-neutral-700 text-xs text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
-                        <PlusIcon size={12} /> Add
-                      </button>
+                      <Button onClick={() => setEditKpis((prev) => [...prev, { id: `kpi_${Date.now()}`, label: "", type: "boolean" }])} variant="outline" size="sm" leftIcon={<PlusIcon size={12} />} className="h-7 text-xs text-neutral-600 dark:text-neutral-400">
+                        Add
+                      </Button>
                     </div>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">KPIs automatically filled by AI during enrichment.</p>
                     {editKpis.length === 0 ? (
@@ -1353,18 +1333,18 @@ export default function CampaignDetailPage() {
                           <div key={k.id} className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-3">
                             <div className="flex items-start gap-2">
                               <div className="flex-1 space-y-1.5 min-w-0">
-                                <input value={k.label} onChange={(e) => setEditKpis((prev) => prev.map((x) => x.id === k.id ? { ...x, label: e.target.value } : x))} placeholder="KPI label" className="w-full h-8 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50 font-medium focus:outline-none" />
-                                <input value={k.description || ""} onChange={(e) => setEditKpis((prev) => prev.map((x) => x.id === k.id ? { ...x, description: e.target.value } : x))} placeholder="Description (optional)" className="w-full h-7 px-3 border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-800 text-xs text-neutral-700 dark:text-neutral-300 focus:outline-none" />
+                                <Input value={k.label} onChange={(e) => setEditKpis((prev) => prev.map((x) => x.id === k.id ? { ...x, label: e.target.value } : x))} placeholder="KPI label" className="h-8 font-medium" />
+                                <Input value={k.description || ""} onChange={(e) => setEditKpis((prev) => prev.map((x) => x.id === k.id ? { ...x, description: e.target.value } : x))} placeholder="Description (optional)" className="h-7 text-xs" />
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
                                 {[{ type: "boolean" as const, label: "Yes/No", icon: <ToggleLeftIcon size={11} /> }, { type: "text" as const, label: "Text", icon: <TextTIcon size={11} /> }].map(({ type, label, icon }) => (
-                                  <button key={type} onClick={() => setEditKpis((prev) => prev.map((x) => x.id === k.id ? { ...x, type } : x))} className={`inline-flex items-center gap-1 h-7 px-2 rounded border text-xs transition-colors ${k.type === type ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 border-neutral-950 dark:border-white" : "border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600"}`}>
+                                  <Button key={type} onClick={() => setEditKpis((prev) => prev.map((x) => x.id === k.id ? { ...x, type } : x))} variant={k.type === type ? "primary" : "outline"} size="sm" className="h-7 px-2 text-xs">
                                     {icon} {label}
-                                  </button>
+                                  </Button>
                                 ))}
-                                <button onClick={() => setEditKpis((prev) => prev.filter((x) => x.id !== k.id))} className="flex items-center justify-center h-7 w-7 rounded text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                                <Button onClick={() => setEditKpis((prev) => prev.filter((x) => x.id !== k.id))} variant="ghost" size="sm" className="h-7 w-7 px-0 text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30">
                                   <XIcon size={13} />
-                                </button>
+                                </Button>
                               </div>
                             </div>
                           </div>
@@ -1377,10 +1357,10 @@ export default function CampaignDetailPage() {
             </div>
 
             <div className="flex justify-end gap-3 px-6 py-4 border-t border-neutral-200 dark:border-neutral-800 shrink-0">
-              <button onClick={() => setShowSettings(false)} className="h-9 px-4 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-sm font-medium hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">Cancel</button>
-              <button onClick={handleSaveSettings} disabled={savingSettings} className="h-9 px-4 rounded bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 transition-colors">
+              <Button onClick={() => setShowSettings(false)} variant="secondary" size="sm">Cancel</Button>
+              <Button onClick={handleSaveSettings} disabled={savingSettings} variant="primary" size="sm">
                 {savingSettings ? <span className="flex items-center gap-2"><CircleNotchIcon size={14} className="animate-spin" /> Saving...</span> : "Save Changes"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1396,10 +1376,10 @@ export default function CampaignDetailPage() {
               This will permanently delete <span className="font-medium text-neutral-950 dark:text-neutral-50">{campaign.name}</span> and all its leads. This cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setShowDeleteConfirm(false)} className="h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-sm font-medium hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">Cancel</button>
-              <button onClick={handleDeleteCampaign} disabled={deleting} className="h-9 px-3 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50 transition-colors">
+              <Button onClick={() => setShowDeleteConfirm(false)} variant="secondary" size="sm">Cancel</Button>
+              <Button onClick={handleDeleteCampaign} disabled={deleting} variant="primary" size="sm" className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 dark:text-white">
                 {deleting ? "Deleting..." : "Delete Campaign"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1415,10 +1395,10 @@ export default function CampaignDetailPage() {
               This will permanently delete all <span className="font-medium text-neutral-950 dark:text-neutral-50">{campaign.leads.length} leads</span>. The campaign will remain. This cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setShowClearLeadsConfirm(false)} className="h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-sm font-medium hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">Cancel</button>
-              <button onClick={handleClearLeads} disabled={clearingLeads} className="h-9 px-3 rounded bg-red-600 hover:bg-red-700 text-white text-sm font-medium disabled:opacity-50 transition-colors">
+              <Button onClick={() => setShowClearLeadsConfirm(false)} variant="secondary" size="sm">Cancel</Button>
+              <Button onClick={handleClearLeads} disabled={clearingLeads} variant="primary" size="sm" className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 dark:text-white">
                 {clearingLeads ? "Deleting..." : "Delete All Leads"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
