@@ -59,8 +59,8 @@ interface Lead {
 const STATUS_STYLES: Record<string, string> = {
   new: "text-blue-700 dark:text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30",
   enriching: "text-amber-700 dark:text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30",
-  enriched: "text-green-700 dark:text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
-  qualified: "text-green-700 dark:text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
+  enriched: "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
+  qualified: "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
   disqualified: "text-red-700 dark:text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30",
   converted: "text-violet-700 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/30",
   error: "text-red-700 dark:text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30",
@@ -233,7 +233,7 @@ export default function LeadDetailPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="p-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-white transition-colors"
+            className="p-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
           >
             <ArrowLeftIcon size={16} />
           </button>
@@ -260,7 +260,7 @@ export default function LeadDetailPage() {
           <select
             value={lead.status}
             onChange={(e) => handleStatusChange(e.target.value)}
-            className="px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-[#444]"
+            className="px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
           >
             <option value="new">New</option>
             <option value="enriched">Enriched</option>
@@ -271,7 +271,7 @@ export default function LeadDetailPage() {
           <button
             onClick={handleEnrich}
             disabled={enriching}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 text-sm font-medium hover:bg-[#2a2a30] disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 text-sm font-medium hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-50 transition-colors"
           >
             {enriching ? (
               <CircleNotchIcon size={14} className="animate-spin" />
@@ -283,7 +283,7 @@ export default function LeadDetailPage() {
           <button
             onClick={handleImportToCRM}
             disabled={importing}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white text-black text-sm font-medium hover:bg-white/90 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 transition-colors"
           >
             {importing ? (
               <CircleNotchIcon size={14} className="animate-spin" />
@@ -480,7 +480,7 @@ export default function LeadDetailPage() {
                           value ? (
                             <CheckCircleIcon
                               size={16}
-                              className="text-green-600 dark:text-green-600 dark:text-green-400"
+                              className="text-green-700 dark:text-green-400"
                             />
                           ) : (
                             <XCircleIcon size={16} className="text-red-600 dark:text-red-400" />

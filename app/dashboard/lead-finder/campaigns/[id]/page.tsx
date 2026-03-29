@@ -85,8 +85,8 @@ interface Campaign {
 const LEAD_STATUS_STYLES: Record<string, string> = {
   new: "text-blue-700 dark:text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30",
   enriching: "text-amber-700 dark:text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30",
-  enriched: "text-green-700 dark:text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
-  qualified: "text-green-700 dark:text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
+  enriched: "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
+  qualified: "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
   disqualified: "text-red-700 dark:text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30",
   converted: "text-violet-700 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/30",
   error: "text-red-700 dark:text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30",
@@ -94,7 +94,7 @@ const LEAD_STATUS_STYLES: Record<string, string> = {
 
 const CAMPAIGN_STATUS_STYLES: Record<string, string> = {
   draft: "text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800",
-  active: "text-green-700 dark:text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
+  active: "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
   paused: "text-amber-700 dark:text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30",
   completed: "text-blue-700 dark:text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30",
 };
@@ -157,7 +157,7 @@ function LeadActionMenu({
           e.stopPropagation();
           setOpen(!open);
         }}
-        className="p-1 rounded text-neutral-500 dark:text-neutral-400 hover:text-white hover:bg-neutral-100 dark:bg-neutral-800 transition-colors"
+        className="p-1 rounded text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:bg-neutral-800 transition-colors"
       >
         <DotsThreeIcon size={16} weight="bold" />
       </button>
@@ -170,7 +170,7 @@ function LeadActionMenu({
                 onViewDetail(lead.id);
                 setOpen(false);
               }}
-              className="w-full text-left px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400 hover:text-white hover:bg-neutral-100 dark:bg-neutral-800 transition-colors"
+              className="w-full text-left px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:bg-neutral-800 transition-colors"
             >
               View Details
             </button>
@@ -179,7 +179,7 @@ function LeadActionMenu({
                 onEnrich(lead.id);
                 setOpen(false);
               }}
-              className="w-full text-left px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400 hover:text-white hover:bg-neutral-100 dark:bg-neutral-800 transition-colors"
+              className="w-full text-left px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:bg-neutral-800 transition-colors"
             >
               Enrich Lead
             </button>
@@ -191,7 +191,7 @@ function LeadActionMenu({
                   onChangeStatus(lead.id, s);
                   setOpen(false);
                 }}
-                className="w-full text-left px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400 hover:text-white hover:bg-neutral-100 dark:bg-neutral-800 transition-colors capitalize"
+                className="w-full text-left px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:bg-neutral-800 transition-colors capitalize"
               >
                 Mark as {s}
               </button>
@@ -241,7 +241,7 @@ function SettingsPanel({
       <div className="relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-md w-full mx-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">Campaign Settings</h3>
-          <button onClick={onClose} className="text-neutral-500 dark:text-neutral-400 hover:text-white">
+          <button onClick={onClose} className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50">
             <XCircleIcon size={20} />
           </button>
         </div>
@@ -251,7 +251,7 @@ function SettingsPanel({
             <select
               value={schedule}
               onChange={(e) => setSchedule(e.target.value)}
-              className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-[#444]"
+              className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
             >
               <option value="once">Once</option>
               <option value="daily">Daily</option>
@@ -266,7 +266,7 @@ function SettingsPanel({
               onClick={() => setAutoEnrich(!autoEnrich)}
               className={`w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
                 autoEnrich
-                  ? "bg-emerald-400/10 text-green-600 dark:text-green-600 dark:text-green-400 border-emerald-400/20"
+                  ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
                   : "bg-neutral-50 dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800"
               }`}
             >
@@ -294,14 +294,14 @@ function SettingsPanel({
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm font-medium hover:text-white transition-colors"
+            className="px-4 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm font-medium hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 rounded-lg bg-white text-black text-sm font-medium hover:bg-white/90 disabled:opacity-50 transition-colors"
+            className="px-4 py-2 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 transition-colors"
           >
             {saving ? "Saving..." : "Save Changes"}
           </button>
@@ -692,7 +692,7 @@ export default function CampaignDetailPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/dashboard/lead-finder/campaigns"
-            className="p-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-white transition-colors"
+            className="p-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
           >
             <ArrowLeftIcon size={16} />
           </Link>
@@ -709,7 +709,7 @@ export default function CampaignDetailPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowSettings(true)}
-            className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-white transition-colors"
+            className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
             title="Settings"
           >
             <GearIcon size={16} />
@@ -719,7 +719,7 @@ export default function CampaignDetailPage() {
             className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               campaign.status === "active"
                 ? "bg-amber-400/10 text-amber-600 dark:text-amber-400 border border-amber-400/20 hover:bg-amber-400/20"
-                : "bg-emerald-400/10 text-green-600 dark:text-green-600 dark:text-green-400 border border-emerald-400/20 hover:bg-emerald-400/20"
+                : "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/50"
             }`}
           >
             {campaign.status === "active" ? (
@@ -735,7 +735,7 @@ export default function CampaignDetailPage() {
           <button
             onClick={handleRunDiscovery}
             disabled={discovering}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 text-sm font-medium hover:bg-[#2a2a30] disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 text-sm font-medium hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-50 transition-colors"
           >
             {discovering ? (
               <CircleNotchIcon size={14} className="animate-spin" />
@@ -747,7 +747,7 @@ export default function CampaignDetailPage() {
           <button
             onClick={handleEnrichAll}
             disabled={enrichingAll || leads.length === 0}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white text-black text-sm font-medium hover:bg-white/90 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 transition-colors"
           >
             {enrichingAll ? (
               <CircleNotchIcon size={14} className="animate-spin" />
@@ -807,7 +807,7 @@ export default function CampaignDetailPage() {
           label="Enriched"
           value={stats.enrichedLeads}
           icon={SparkleIcon}
-          color="text-green-600 dark:text-green-600 dark:text-green-400"
+          color="text-green-700 dark:text-green-400"
         />
         <StatCard
           label="Avg Score"
@@ -815,7 +815,7 @@ export default function CampaignDetailPage() {
           icon={ChartBarIcon}
           color={
             stats.avgScore >= 70
-              ? "text-green-600 dark:text-green-600 dark:text-green-400"
+              ? "text-green-700 dark:text-green-400"
               : stats.avgScore >= 40
                 ? "text-amber-600 dark:text-amber-400"
                 : "text-white"
@@ -842,7 +842,7 @@ export default function CampaignDetailPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search leads..."
-              className="pl-8 pr-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444] w-64"
+              className="pl-8 pr-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white w-64"
             />
           </div>
 
@@ -850,7 +850,7 @@ export default function CampaignDetailPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-[#444]"
+            className="px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
           >
             <option value="all">All Statuses</option>
             <option value="new">New</option>
@@ -872,7 +872,7 @@ export default function CampaignDetailPage() {
             <button
               onClick={handleImportToCRM}
               disabled={importing}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-400/10 text-green-600 dark:text-green-600 dark:text-green-400 border border-emerald-400/20 text-xs font-medium hover:bg-emerald-400/20 transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 text-xs font-medium hover:bg-green-100 dark:hover:bg-green-950/50 transition-colors"
             >
               {importing ? (
                 <CircleNotchIcon size={12} className="animate-spin" />
@@ -884,7 +884,7 @@ export default function CampaignDetailPage() {
           )}
           <button
             onClick={handleExportCSV}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-white text-xs font-medium transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-xs font-medium transition-colors"
           >
             <DownloadIcon size={12} />
             Export CSV
@@ -903,7 +903,7 @@ export default function CampaignDetailPage() {
                     type="checkbox"
                     checked={selectedLeads.size === filteredLeads.length && filteredLeads.length > 0}
                     onChange={toggleSelectAll}
-                    className="rounded border-[#444] bg-neutral-50 dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50"
+                    className="rounded border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50"
                   />
                 </th>
                 <th className="p-3 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
@@ -976,7 +976,7 @@ export default function CampaignDetailPage() {
                         type="checkbox"
                         checked={selectedLeads.has(lead.id)}
                         onChange={() => toggleSelect(lead.id)}
-                        className="rounded border-[#444] bg-neutral-50 dark:bg-neutral-950"
+                        className="rounded border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-950"
                       />
                     </td>
                     <td className="p-3">
@@ -991,7 +991,7 @@ export default function CampaignDetailPage() {
                           {lead.email}
                         </span>
                       ) : (
-                        <span className="text-xs text-[#555]">--</span>
+                        <span className="text-xs text-neutral-400 dark:text-neutral-500">--</span>
                       )}
                     </td>
                     <td className="p-3">
@@ -1001,7 +1001,7 @@ export default function CampaignDetailPage() {
                           <span className="truncate max-w-[150px]">{lead.website}</span>
                         </span>
                       ) : (
-                        <span className="text-xs text-[#555]">--</span>
+                        <span className="text-xs text-neutral-400 dark:text-neutral-500">--</span>
                       )}
                     </td>
                     <td className="p-3">
@@ -1031,13 +1031,13 @@ export default function CampaignDetailPage() {
                       return (
                         <td key={k.key} className="p-3">
                           {kpiVal === true ? (
-                            <CheckCircleIcon size={14} className="text-green-600 dark:text-green-600 dark:text-green-400" />
+                            <CheckCircleIcon size={14} className="text-green-700 dark:text-green-400" />
                           ) : kpiVal === false ? (
                             <XCircleIcon size={14} className="text-red-600 dark:text-red-400" />
                           ) : kpiVal ? (
                             <span className="text-xs text-neutral-500 dark:text-neutral-400">{String(kpiVal)}</span>
                           ) : (
-                            <span className="text-xs text-[#555]">--</span>
+                            <span className="text-xs text-neutral-400 dark:text-neutral-500">--</span>
                           )}
                         </td>
                       );

@@ -75,15 +75,15 @@ function StepIndicator({ current }: { current: number }) {
           <div key={step.id} className="flex items-center gap-2">
             {i > 0 && (
               <div
-                className={`w-8 h-px ${isCompleted || isActive ? "bg-white/40" : "bg-neutral-100 dark:bg-neutral-800"}`}
+                className={`w-8 h-px ${isCompleted || isActive ? "bg-neutral-300 dark:bg-neutral-600" : "bg-neutral-100 dark:bg-neutral-800"}`}
               />
             )}
             <div
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-white text-black"
+                  ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
                   : isCompleted
-                    ? "bg-emerald-400/10 text-green-600 dark:text-green-600 dark:text-green-400"
+                    ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
                     : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
               }`}
             >
@@ -351,7 +351,7 @@ export default function NewCampaignPage() {
       <div className="flex items-center gap-3 mb-6">
         <Link
           href="/dashboard/lead-finder/campaigns"
-          className="p-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-white transition-colors"
+          className="p-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
         >
           <ArrowLeftIcon size={16} />
         </Link>
@@ -379,7 +379,7 @@ export default function NewCampaignPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., SaaS Founders Q1 2026"
-                className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444]"
+                className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
               />
             </div>
 
@@ -397,7 +397,7 @@ export default function NewCampaignPage() {
                 onChange={(e) => setDescription(e.target.value)}
                 rows={6}
                 placeholder="I want to find SaaS founders in the B2B space who have between 10-50 employees, have recently raised a Series A, and are looking for CRM solutions..."
-                className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444] resize-none"
+                className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white resize-none"
               />
             </div>
 
@@ -412,8 +412,8 @@ export default function NewCampaignPage() {
                     onClick={() => setAiProvider(provider)}
                     className={`flex-1 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
                       aiProvider === provider
-                        ? "bg-white text-black border-white"
-                        : "bg-neutral-50 dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:border-[#444] hover:text-white"
+                        ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 border-white"
+                        : "bg-neutral-50 dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50"
                     }`}
                   >
                     {provider === "anthropic" ? "Claude (Anthropic)" : "GPT (OpenAI)"}
@@ -425,7 +425,7 @@ export default function NewCampaignPage() {
             <button
               onClick={handlePlanWithAI}
               disabled={planning || !description.trim()}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-white text-black text-sm font-medium hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {planning ? (
                 <>
@@ -443,7 +443,7 @@ export default function NewCampaignPage() {
             {/* Skip planning option */}
             <button
               onClick={() => setStep(2)}
-              className="w-full text-center text-xs text-neutral-500 dark:text-neutral-400 hover:text-white transition-colors"
+              className="w-full text-center text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
             >
               Skip AI planning and configure manually
             </button>
@@ -470,7 +470,7 @@ export default function NewCampaignPage() {
                   value={targetNiche}
                   onChange={(e) => setTargetNiche(e.target.value)}
                   placeholder="e.g., B2B SaaS Founders, Real Estate Agencies"
-                  className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444]"
+                  className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
                 />
               </div>
 
@@ -503,11 +503,11 @@ export default function NewCampaignPage() {
                     onChange={(e) => setNewSearchTerm(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addSearchTerm()}
                     placeholder="Add search term..."
-                    className="flex-1 px-3 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444]"
+                    className="flex-1 px-3 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
                   />
                   <button
                     onClick={addSearchTerm}
-                    className="px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-white text-sm transition-colors"
+                    className="px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-sm transition-colors"
                   >
                     <PlusIcon size={14} />
                   </button>
@@ -522,7 +522,7 @@ export default function NewCampaignPage() {
                   <select
                     value={scheduleFrequency}
                     onChange={(e) => setScheduleFrequency(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-[#444]"
+                    className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
                   >
                     <option value="once">Run Once</option>
                     <option value="daily">Daily</option>
@@ -539,7 +539,7 @@ export default function NewCampaignPage() {
                     onClick={() => setAutoEnrich(!autoEnrich)}
                     className={`w-full px-3 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
                       autoEnrich
-                        ? "bg-emerald-400/10 text-green-600 dark:text-green-600 dark:text-green-400 border-emerald-400/20"
+                        ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
                         : "bg-neutral-50 dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-800"
                     }`}
                   >
@@ -585,8 +585,8 @@ export default function NewCampaignPage() {
                               onClick={() => toggleActor(actor.id)}
                               className={`text-left p-3 rounded-lg border transition-colors ${
                                 isSelected
-                                  ? "bg-white/5 border-white/20 text-neutral-950 dark:text-neutral-50"
-                                  : "bg-neutral-50 dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:border-[#444]"
+                                  ? "bg-neutral-100 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600 text-neutral-950 dark:text-neutral-50"
+                                  : "bg-neutral-50 dark:bg-neutral-950 border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-500"
                               }`}
                             >
                               <div className="flex items-center justify-between mb-1">
@@ -597,7 +597,7 @@ export default function NewCampaignPage() {
                                   className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
                                     isSelected
                                       ? "border-white bg-white"
-                                      : "border-[#444]"
+                                      : "border-neutral-300 dark:border-neutral-600"
                                   }`}
                                 >
                                   {isSelected && (
@@ -659,7 +659,7 @@ export default function NewCampaignPage() {
                                   updateActorConfig(actorId, field.key, e.target.value)
                                 }
                                 placeholder={field.placeholder || ""}
-                                className="w-full px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder:text-[#555] focus:outline-none focus:border-[#444]"
+                                className="w-full px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
                               />
                             </div>
                           ))}
@@ -686,7 +686,7 @@ export default function NewCampaignPage() {
             <button
               onClick={handleSuggestFields}
               disabled={suggestingFields || !targetNiche}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-white text-sm transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-sm transition-colors disabled:opacity-50"
             >
               {suggestingFields ? (
                 <CircleNotchIcon size={14} className="animate-spin" />
@@ -706,7 +706,7 @@ export default function NewCampaignPage() {
               </h3>
               <button
                 onClick={addKpi}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-white text-xs transition-colors"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-xs transition-colors"
               >
                 <PlusIcon size={12} />
                 Add KPI
@@ -730,19 +730,19 @@ export default function NewCampaignPage() {
                         value={kpi.label}
                         onChange={(e) => updateKpi(i, "label", e.target.value)}
                         placeholder="KPI Label"
-                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-[#444]"
+                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
                       />
                       <input
                         type="text"
                         value={kpi.description}
                         onChange={(e) => updateKpi(i, "description", e.target.value)}
                         placeholder="Description"
-                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-[#444]"
+                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
                       />
                       <select
                         value={kpi.type}
                         onChange={(e) => updateKpi(i, "type", e.target.value)}
-                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-[#444]"
+                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
                       >
                         <option value="boolean">Boolean (Yes/No)</option>
                         <option value="text">Text</option>
@@ -769,7 +769,7 @@ export default function NewCampaignPage() {
               </h3>
               <button
                 onClick={addField}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-white text-xs transition-colors"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-xs transition-colors"
               >
                 <PlusIcon size={12} />
                 Add Field
@@ -793,19 +793,19 @@ export default function NewCampaignPage() {
                         value={field.label}
                         onChange={(e) => updateField(i, "label", e.target.value)}
                         placeholder="Field Label"
-                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-[#444]"
+                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
                       />
                       <input
                         type="text"
                         value={field.description}
                         onChange={(e) => updateField(i, "description", e.target.value)}
                         placeholder="Description"
-                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-[#444]"
+                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
                       />
                       <select
                         value={field.source}
                         onChange={(e) => updateField(i, "source", e.target.value)}
-                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:border-[#444]"
+                        className="px-2 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-xs focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-white"
                       >
                         <option value="mapped">Mapped Data</option>
                         <option value="enrichment">Enrichment</option>
@@ -955,7 +955,7 @@ export default function NewCampaignPage() {
           <button
             onClick={handleCreate}
             disabled={creating || !name.trim() || !targetNiche.trim()}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-white text-black text-sm font-medium hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {creating ? (
               <>
@@ -978,7 +978,7 @@ export default function NewCampaignPage() {
           <button
             onClick={() => setStep(Math.max(1, step - 1))}
             disabled={step === 1}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm font-medium hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm font-medium hover:text-neutral-950 dark:hover:text-neutral-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <ArrowLeftIcon size={14} />
             Back
@@ -986,7 +986,7 @@ export default function NewCampaignPage() {
           <button
             onClick={() => setStep(Math.min(4, step + 1))}
             disabled={!canGoNext()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-black text-sm font-medium hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Next
             <ArrowRightIcon size={14} />
