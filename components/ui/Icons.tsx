@@ -77,6 +77,8 @@ export {
   PauseIcon,
   TargetIcon,
   XCircleIcon,
+  FloppyDiskIcon,
+  BuildingsIcon,
   // Competitors
   GlobeIcon,
   ShieldIcon,

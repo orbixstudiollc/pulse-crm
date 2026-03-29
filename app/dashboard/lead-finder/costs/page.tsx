@@ -9,6 +9,9 @@ import {
   UsersIcon,
   CircleNotchIcon,
   ChartBarIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
 } from "@/components/ui";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 import {
@@ -27,9 +30,28 @@ import {
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
+interface RecentRun {
+  id: string;
+  actorId: string;
+  status: string;
+  resultCount: number;
+  costUsd: number;
+  startedAt: string;
+  campaignName: string;
+}
+
+interface LlmModelInfo {
+  provider: string;
+  count: number;
+  totalCost: number;
+  inputTokens: number;
+  outputTokens: number;
+}
+
 interface CostData {
   apifyCostByActor: Record<string, { count: number; totalCost: number }>;
   llmCostByOperation: Record<string, { count: number; totalCost: number; inputTokens: number; outputTokens: number }>;
+  llmCostByModel: Record<string, LlmModelInfo>;
   llmCostByProvider: Record<string, { count: number; totalCost: number }>;
   totalApifyCost: number;
   totalLlmCost: number;
@@ -37,22 +59,43 @@ interface CostData {
   totalRuns: number;
   totalLlmCalls: number;
   costByCampaign: Record<string, { name: string; apifyCost: number; llmCost: number; totalCost: number; leadCount: number }>;
+  recentRuns: RecentRun[];
 }
 
 // ── Colors ─────────────────────────────────────────────────────────────────
 
 const CHART_COLORS = [
-  "#818cf8", // indigo
-  "#34d399", // emerald
-  "#f97316", // orange
-  "#f472b6", // pink
-  "#60a5fa", // blue
-  "#a78bfa", // purple
-  "#fbbf24", // amber
-  "#2dd4bf", // teal
+  "#818cf8",
+  "#34d399",
+  "#f97316",
+  "#f472b6",
+  "#60a5fa",
+  "#a78bfa",
+  "#fbbf24",
+  "#2dd4bf",
 ];
 
-// ── Custom tooltip ─────────────────────────────────────────────────────────
+const RUN_STATUS: Record<string, { icon: typeof CheckCircleIcon; color: string }> = {
+  succeeded: { icon: CheckCircleIcon, color: "text-emerald-400" },
+  failed: { icon: XCircleIcon, color: "text-red-400" },
+  running: { icon: CircleNotchIcon, color: "text-amber-400" },
+  ready: { icon: ClockIcon, color: "text-blue-400" },
+};
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function timeAgo(ts: string) {
+  const diff = Date.now() - new Date(ts).getTime();
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  return `${days}d ago`;
+}
+
+// ── Sub-components ─────────────────────────────────────────────────────────
 
 function CustomTooltip({
   active,
@@ -75,8 +118,6 @@ function CustomTooltip({
     </div>
   );
 }
-
-// ── Stat card ──────────────────────────────────────────────────────────────
 
 function StatCard({
   label,
@@ -109,29 +150,30 @@ export default function CostsPage() {
   useEffect(() => {
     fetch("/api/lead-finder/costs")
       .then((res) => res.json())
-      .then((json) => setData(json))
+      .then((json) => setData(json.data ?? null))
       .catch(() => toast.error("Failed to load cost data"))
       .finally(() => setLoading(false));
   }, []);
 
-  // ── Chart data ─────────────────────────────────────────────────────────
-
   const campaignBarData = useMemo(() => {
     if (!data?.costByCampaign) return [];
-    return Object.values(data.costByCampaign).map((c) => ({
-      name: c.name.length > 20 ? c.name.slice(0, 20) + "..." : c.name,
-      Apify: c.apifyCost,
-      LLM: c.llmCost,
-      Total: c.totalCost,
-    }));
+    return Object.values(data.costByCampaign)
+      .sort((a, b) => b.totalCost - a.totalCost)
+      .map((c) => ({
+        name: c.name.length > 18 ? c.name.slice(0, 18) + "…" : c.name,
+        Apify: c.apifyCost,
+        LLM: c.llmCost,
+      }));
   }, [data]);
 
   const operationPieData = useMemo(() => {
     if (!data?.llmCostByOperation) return [];
-    return Object.entries(data.llmCostByOperation).map(([name, info]) => ({
-      name: name.replace(/_/g, " "),
-      value: info.totalCost,
-    }));
+    return Object.entries(data.llmCostByOperation)
+      .filter(([, info]) => info.totalCost > 0)
+      .map(([name, info]) => ({
+        name: name.replace(/-/g, " ").replace(/_/g, " "),
+        value: info.totalCost,
+      }));
   }, [data]);
 
   const avgCostPerLead = useMemo(() => {
@@ -139,10 +181,13 @@ export default function CostsPage() {
     const campaigns = Object.values(data.costByCampaign);
     const totalLeads = campaigns.reduce((s, c) => s + c.leadCount, 0);
     if (totalLeads === 0) return 0;
-    return data.totalCost / totalLeads;
+    return (data.totalCost ?? 0) / totalLeads;
   }, [data]);
 
-  // ── Render ─────────────────────────────────────────────────────────────
+  const maxModelCost = useMemo(() => {
+    if (!data?.llmCostByModel) return 1;
+    return Math.max(...Object.values(data.llmCostByModel).map((m) => m.totalCost), 1);
+  }, [data]);
 
   return (
     <div className="min-h-screen bg-[#0a0a0c] p-6 lg:p-8">
@@ -150,16 +195,12 @@ export default function CostsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Lead Finder</h1>
-          <p className="text-sm text-[#a0a0a8] mt-1">
-            Cost analytics across all campaigns
-          </p>
+          <p className="text-sm text-[#a0a0a8] mt-1">Cost analytics across all campaigns</p>
         </div>
       </div>
 
-      {/* Sub nav */}
       <LeadFinderSubNav />
 
-      {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-24">
           <CircleNotchIcon size={32} className="animate-spin text-[#a0a0a8]" />
@@ -167,24 +208,23 @@ export default function CostsPage() {
       )}
 
       {data && (
-        <>
+        <div className="space-y-6">
           {/* KPI cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard
               label="Total Cost"
-              value={`$${data.totalCost.toFixed(4)}`}
+              value={`$${(data.totalCost ?? 0).toFixed(4)}`}
               icon={CurrencyDollarIcon}
-              color="text-white"
             />
             <StatCard
               label="Apify Cost"
-              value={`$${data.totalApifyCost.toFixed(4)}`}
+              value={`$${(data.totalApifyCost ?? 0).toFixed(4)}`}
               icon={LightningIcon}
               color="text-orange-400"
             />
             <StatCard
               label="LLM Cost"
-              value={`$${data.totalLlmCost.toFixed(4)}`}
+              value={`$${(data.totalLlmCost ?? 0).toFixed(4)}`}
               icon={SparkleIcon}
               color="text-purple-400"
             />
@@ -197,230 +237,160 @@ export default function CostsPage() {
           </div>
 
           {/* Charts row */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            {/* Cost by campaign (bar chart) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Cost by campaign */}
             <div className="bg-[#141417] border border-[#232329] rounded-xl p-5">
               <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
                 <ChartBarIcon size={14} className="text-[#a0a0a8]" />
                 Cost by Campaign
               </h3>
               {campaignBarData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={campaignBarData}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="#232329"
-                      vertical={false}
-                    />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fill: "#a0a0a8", fontSize: 11 }}
-                      axisLine={{ stroke: "#232329" }}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fill: "#a0a0a8", fontSize: 11 }}
-                      axisLine={{ stroke: "#232329" }}
-                      tickLine={false}
-                      tickFormatter={(v) => `$${v}`}
-                    />
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={campaignBarData} margin={{ top: 0, right: 0, bottom: 0, left: -10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#232329" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fill: "#a0a0a8", fontSize: 11 }} axisLine={{ stroke: "#232329" }} tickLine={false} />
+                    <YAxis tick={{ fill: "#a0a0a8", fontSize: 11 }} axisLine={{ stroke: "#232329" }} tickLine={false} tickFormatter={(v) => `$${v}`} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Bar
-                      dataKey="Apify"
-                      stackId="cost"
-                      fill="#f97316"
-                      radius={[0, 0, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="LLM"
-                      stackId="cost"
-                      fill="#a78bfa"
-                      radius={[4, 4, 0, 0]}
-                    />
+                    <Bar dataKey="Apify" stackId="cost" fill="#f97316" />
+                    <Bar dataKey="LLM" stackId="cost" fill="#a78bfa" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-[300px] text-sm text-[#a0a0a8]">
+                <div className="flex items-center justify-center h-[280px] text-sm text-[#a0a0a8]">
                   No campaign cost data yet
                 </div>
               )}
             </div>
 
-            {/* Cost by operation (pie chart) */}
+            {/* LLM by operation (pie) */}
             <div className="bg-[#141417] border border-[#232329] rounded-xl p-5">
               <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
                 <SparkleIcon size={14} className="text-[#a0a0a8]" />
                 LLM Cost by Operation
               </h3>
               {operationPieData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={280}>
                   <PieChart>
                     <Pie
                       data={operationPieData}
                       cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
+                      cy="45%"
+                      innerRadius={55}
+                      outerRadius={90}
                       paddingAngle={2}
                       dataKey="value"
                     >
-                      {operationPieData.map((_, index) => (
-                        <Cell
-                          key={index}
-                          fill={CHART_COLORS[index % CHART_COLORS.length]}
-                        />
+                      {operationPieData.map((_, i) => (
+                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value) => `$${Number(value).toFixed(4)}`}
-                      contentStyle={{
-                        backgroundColor: "#1a1a1f",
-                        border: "1px solid #232329",
-                        borderRadius: "8px",
-                        color: "#fff",
-                        fontSize: "12px",
-                      }}
+                      formatter={(v: number) => [`$${v.toFixed(4)}`, "Cost"]}
+                      contentStyle={{ background: "#1a1a1f", border: "1px solid #232329", borderRadius: 8, fontSize: 12 }}
                     />
-                    <Legend
-                      formatter={(value) => (
-                        <span className="text-xs text-[#a0a0a8] capitalize">
-                          {value}
-                        </span>
-                      )}
-                    />
+                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, color: "#a0a0a8" }} />
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-[300px] text-sm text-[#a0a0a8]">
+                <div className="flex items-center justify-center h-[280px] text-sm text-[#a0a0a8]">
                   No LLM cost data yet
                 </div>
               )}
             </div>
           </div>
 
-          {/* Campaign cost breakdown table */}
+          {/* Per-model token breakdown */}
+          {data.llmCostByModel && Object.keys(data.llmCostByModel).length > 0 && (
+            <div className="bg-[#141417] border border-[#232329] rounded-xl p-5">
+              <h3 className="text-sm font-semibold text-white mb-4">LLM Model Breakdown</h3>
+              <div className="space-y-4">
+                {Object.entries(data.llmCostByModel)
+                  .sort(([, a], [, b]) => b.totalCost - a.totalCost)
+                  .map(([model, info]) => {
+                    const pct = Math.round((info.totalCost / maxModelCost) * 100);
+                    return (
+                      <div key={model}>
+                        <div className="flex items-center justify-between text-xs mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-white font-medium">{model}</span>
+                            <span className="text-[#a0a0a8] px-1.5 py-0.5 rounded bg-[#232329] capitalize">
+                              {info.provider}
+                            </span>
+                          </div>
+                          <span className="text-white font-medium">${info.totalCost.toFixed(4)}</span>
+                        </div>
+                        <div className="h-1.5 bg-[#232329] rounded-full overflow-hidden mb-1.5">
+                          <div
+                            className="h-full bg-purple-400 rounded-full transition-all"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <div className="flex items-center gap-4 text-[10px] text-[#a0a0a8]">
+                          <span>{info.inputTokens.toLocaleString()} input tokens</span>
+                          <span>{info.outputTokens.toLocaleString()} output tokens</span>
+                          <span>{info.count} call{info.count !== 1 ? "s" : ""}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
+          {/* Campaign cost table */}
           <div className="bg-[#141417] border border-[#232329] rounded-xl overflow-hidden">
             <div className="p-4 border-b border-[#232329]">
-              <h3 className="text-sm font-semibold text-white">
-                Campaign Cost Breakdown
-              </h3>
+              <h3 className="text-sm font-semibold text-white">Campaign Cost Breakdown</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-[#232329]">
-                    <th className="p-3 text-xs font-medium text-[#a0a0a8] uppercase tracking-wider">
-                      Campaign
-                    </th>
-                    <th className="p-3 text-xs font-medium text-[#a0a0a8] uppercase tracking-wider text-right">
-                      Leads
-                    </th>
-                    <th className="p-3 text-xs font-medium text-[#a0a0a8] uppercase tracking-wider text-right">
-                      Apify Cost
-                    </th>
-                    <th className="p-3 text-xs font-medium text-[#a0a0a8] uppercase tracking-wider text-right">
-                      LLM Cost
-                    </th>
-                    <th className="p-3 text-xs font-medium text-[#a0a0a8] uppercase tracking-wider text-right">
-                      Total Cost
-                    </th>
-                    <th className="p-3 text-xs font-medium text-[#a0a0a8] uppercase tracking-wider text-right">
-                      Avg/Lead
-                    </th>
+                    {["Campaign", "Leads", "Apify Cost", "LLM Cost", "Total Cost", "Avg/Lead"].map((h, i) => (
+                      <th
+                        key={h}
+                        className={`p-3 text-xs font-medium text-[#a0a0a8] uppercase tracking-wider ${i > 0 ? "text-right" : ""}`}
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {Object.entries(data.costByCampaign).length === 0 ? (
                     <tr>
-                      <td
-                        colSpan={6}
-                        className="p-8 text-center text-sm text-[#a0a0a8]"
-                      >
-                        No cost data available yet
+                      <td colSpan={6} className="p-8 text-center text-sm text-[#a0a0a8]">
+                        No cost data yet
                       </td>
                     </tr>
                   ) : (
                     Object.entries(data.costByCampaign)
                       .sort(([, a], [, b]) => b.totalCost - a.totalCost)
-                      .map(([campaignId, info]) => (
-                        <tr
-                          key={campaignId}
-                          className="border-b border-[#232329]/50 hover:bg-[#1a1a1f] transition-colors"
-                        >
-                          <td className="p-3">
-                            <span className="text-sm text-white font-medium">
-                              {info.name}
-                            </span>
-                          </td>
-                          <td className="p-3 text-right">
-                            <span className="text-sm text-[#a0a0a8]">
-                              {info.leadCount}
-                            </span>
-                          </td>
-                          <td className="p-3 text-right">
-                            <span className="text-sm text-orange-400">
-                              ${info.apifyCost.toFixed(4)}
-                            </span>
-                          </td>
-                          <td className="p-3 text-right">
-                            <span className="text-sm text-purple-400">
-                              ${info.llmCost.toFixed(4)}
-                            </span>
-                          </td>
-                          <td className="p-3 text-right">
-                            <span className="text-sm text-white font-medium">
-                              ${info.totalCost.toFixed(4)}
-                            </span>
-                          </td>
-                          <td className="p-3 text-right">
-                            <span className="text-sm text-[#a0a0a8]">
-                              $
-                              {info.leadCount > 0
-                                ? (info.totalCost / info.leadCount).toFixed(4)
-                                : "0.0000"}
-                            </span>
+                      .map(([id, info]) => (
+                        <tr key={id} className="border-b border-[#232329]/50 hover:bg-[#1a1a1f] transition-colors">
+                          <td className="p-3 text-sm text-white font-medium">{info.name}</td>
+                          <td className="p-3 text-right text-sm text-[#a0a0a8]">{info.leadCount}</td>
+                          <td className="p-3 text-right text-sm text-orange-400">${info.apifyCost.toFixed(4)}</td>
+                          <td className="p-3 text-right text-sm text-purple-400">${info.llmCost.toFixed(4)}</td>
+                          <td className="p-3 text-right text-sm text-white font-medium">${info.totalCost.toFixed(4)}</td>
+                          <td className="p-3 text-right text-sm text-[#a0a0a8]">
+                            ${info.leadCount > 0 ? (info.totalCost / info.leadCount).toFixed(4) : "0.0000"}
                           </td>
                         </tr>
                       ))
                   )}
                 </tbody>
-                {/* Footer totals */}
                 {Object.keys(data.costByCampaign).length > 0 && (
                   <tfoot>
                     <tr className="border-t border-[#232329] bg-[#0a0a0c]">
-                      <td className="p-3">
-                        <span className="text-sm text-white font-semibold">
-                          Total
-                        </span>
+                      <td className="p-3 text-sm text-white font-semibold">Total</td>
+                      <td className="p-3 text-right text-sm text-white font-medium">
+                        {Object.values(data.costByCampaign).reduce((s, c) => s + c.leadCount, 0)}
                       </td>
-                      <td className="p-3 text-right">
-                        <span className="text-sm text-white font-medium">
-                          {Object.values(data.costByCampaign).reduce(
-                            (s, c) => s + c.leadCount,
-                            0
-                          )}
-                        </span>
-                      </td>
-                      <td className="p-3 text-right">
-                        <span className="text-sm text-orange-400 font-medium">
-                          ${data.totalApifyCost.toFixed(4)}
-                        </span>
-                      </td>
-                      <td className="p-3 text-right">
-                        <span className="text-sm text-purple-400 font-medium">
-                          ${data.totalLlmCost.toFixed(4)}
-                        </span>
-                      </td>
-                      <td className="p-3 text-right">
-                        <span className="text-sm text-white font-bold">
-                          ${data.totalCost.toFixed(4)}
-                        </span>
-                      </td>
-                      <td className="p-3 text-right">
-                        <span className="text-sm text-[#a0a0a8] font-medium">
-                          ${avgCostPerLead.toFixed(4)}
-                        </span>
-                      </td>
+                      <td className="p-3 text-right text-sm text-orange-400 font-medium">${data.totalApifyCost.toFixed(4)}</td>
+                      <td className="p-3 text-right text-sm text-purple-400 font-medium">${data.totalLlmCost.toFixed(4)}</td>
+                      <td className="p-3 text-right text-sm text-white font-bold">${data.totalCost.toFixed(4)}</td>
+                      <td className="p-3 text-right text-sm text-[#a0a0a8] font-medium">${avgCostPerLead.toFixed(4)}</td>
                     </tr>
                   </tfoot>
                 )}
@@ -428,36 +398,92 @@ export default function CostsPage() {
             </div>
           </div>
 
-          {/* LLM provider breakdown */}
-          {data.llmCostByProvider &&
-            Object.keys(data.llmCostByProvider).length > 0 && (
-              <div className="mt-6 bg-[#141417] border border-[#232329] rounded-xl p-5">
-                <h3 className="text-sm font-semibold text-white mb-4">
-                  LLM Provider Breakdown
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {Object.entries(data.llmCostByProvider).map(
-                    ([provider, info]) => (
-                      <div
-                        key={provider}
-                        className="p-3 rounded-lg bg-[#0a0a0c] border border-[#232329]"
-                      >
-                        <p className="text-xs text-[#a0a0a8] mb-1 capitalize">
-                          {provider}
-                        </p>
-                        <p className="text-lg text-white font-semibold">
-                          ${info.totalCost.toFixed(4)}
-                        </p>
-                        <p className="text-[10px] text-[#a0a0a8] mt-1">
-                          {info.count} call{info.count !== 1 ? "s" : ""}
-                        </p>
-                      </div>
-                    )
-                  )}
-                </div>
+          {/* LLM cost by operation table */}
+          {Object.keys(data.llmCostByOperation).length > 0 && (
+            <div className="bg-[#141417] border border-[#232329] rounded-xl overflow-hidden">
+              <div className="p-4 border-b border-[#232329]">
+                <h3 className="text-sm font-semibold text-white">LLM Cost by Operation</h3>
               </div>
-            )}
-        </>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-[#232329]">
+                      {["Operation", "Calls", "Input Tokens", "Output Tokens", "Cost"].map((h, i) => (
+                        <th key={h} className={`p-3 text-xs font-medium text-[#a0a0a8] uppercase tracking-wider ${i > 0 ? "text-right" : ""}`}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(data.llmCostByOperation)
+                      .sort(([, a], [, b]) => b.totalCost - a.totalCost)
+                      .map(([op, info]) => (
+                        <tr key={op} className="border-b border-[#232329]/50 hover:bg-[#1a1a1f] transition-colors">
+                          <td className="p-3 text-sm text-white capitalize">{op.replace(/-/g, " ")}</td>
+                          <td className="p-3 text-right text-sm text-[#a0a0a8]">{info.count}</td>
+                          <td className="p-3 text-right text-sm text-[#a0a0a8]">{info.inputTokens.toLocaleString()}</td>
+                          <td className="p-3 text-right text-sm text-[#a0a0a8]">{info.outputTokens.toLocaleString()}</td>
+                          <td className="p-3 text-right text-sm text-purple-400 font-medium">${info.totalCost.toFixed(4)}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Recent Apify runs */}
+          <div className="bg-[#141417] border border-[#232329] rounded-xl overflow-hidden">
+            <div className="p-4 border-b border-[#232329]">
+              <h3 className="text-sm font-semibold text-white">Recent Apify Runs</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-[#232329]">
+                    {["Actor", "Campaign", "Status", "Results", "Cost", "When"].map((h, i) => (
+                      <th key={h} className={`p-3 text-xs font-medium text-[#a0a0a8] uppercase tracking-wider ${i >= 3 ? "text-right" : ""}`}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {!data.recentRuns || data.recentRuns.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-sm text-[#a0a0a8]">
+                        No Apify runs yet
+                      </td>
+                    </tr>
+                  ) : (
+                    data.recentRuns.map((run) => {
+                      const statusInfo = RUN_STATUS[run.status] ?? RUN_STATUS["ready"];
+                      const StatusIcon = statusInfo.icon;
+                      return (
+                        <tr key={run.id} className="border-b border-[#232329]/50 hover:bg-[#1a1a1f] transition-colors">
+                          <td className="p-3">
+                            <span className="text-sm text-white font-mono text-xs">{run.actorId}</span>
+                          </td>
+                          <td className="p-3 text-sm text-[#a0a0a8]">{run.campaignName}</td>
+                          <td className="p-3">
+                            <span className={`flex items-center gap-1.5 text-xs font-medium ${statusInfo.color}`}>
+                              <StatusIcon size={12} weight="fill" />
+                              {run.status}
+                            </span>
+                          </td>
+                          <td className="p-3 text-right text-sm text-[#a0a0a8]">{run.resultCount}</td>
+                          <td className="p-3 text-right text-sm text-orange-400">${run.costUsd.toFixed(4)}</td>
+                          <td className="p-3 text-right text-sm text-[#a0a0a8]">{timeAgo(run.startedAt)}</td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
