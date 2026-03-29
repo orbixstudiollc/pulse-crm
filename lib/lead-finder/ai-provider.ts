@@ -2,7 +2,7 @@ import "server-only";
 
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import type { AIProvider, AIMessage, AIResponse } from "./types";
 
 // =============================================================================
@@ -46,7 +46,7 @@ async function getApiKeys(
   openrouterKey?: string;
   apifyToken?: string;
 }> {
-  const supabase = createAdminClient();
+  const supabase = await createClient();
   const { data: rows } = await supabase
     .from("ai_settings")
     .select("api_key, apify_api_key, openrouter_api_key")
