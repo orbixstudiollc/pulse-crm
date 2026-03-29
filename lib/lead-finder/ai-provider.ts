@@ -88,10 +88,12 @@ export async function generateCompletion(
   const temperature = options?.temperature ?? 0.7;
   const maxTokens = options?.maxTokens ?? 2048;
 
-  // ── OpenRouter (OpenAI-compatible) ─────────────────────────────────────
-  if (provider === "openai") {
+  // ── Auto-select: prefer Anthropic, fall back to OpenRouter ───────────────
+  const useOpenRouter = provider === "openai" || (!keys.anthropicKey && !!keys.openrouterKey);
+
+  if (useOpenRouter) {
     const apiKey = keys.openrouterKey;
-    if (!apiKey) throw new Error("OpenRouter API key not configured. Set it in Settings or as OPENROUTER_API_KEY env var.");
+    if (!apiKey) throw new Error("OpenRouter API key not configured. Set it in Lead Finder Settings.");
 
     const client = new OpenAI({
       apiKey,
@@ -99,7 +101,7 @@ export async function generateCompletion(
     });
 
     const res = await client.chat.completions.create({
-      model: "openai/gpt-4o",
+      model: "anthropic/claude-sonnet-4-5",
       messages,
       temperature,
       max_tokens: maxTokens,
@@ -111,16 +113,16 @@ export async function generateCompletion(
     return {
       content: res.choices[0]?.message?.content ?? "",
       provider: "openai",
-      model: "gpt-4o",
+      model: "claude-sonnet-4-5",
       inputTokens,
       outputTokens,
       costUsd: calculateCost("gpt-4o", inputTokens, outputTokens),
     };
   }
 
-  // ── Anthropic (direct SDK) ─────────────────────────────────────────────
+  // ── Anthropic direct SDK ───────────────────────────────────────────────
   const apiKey = keys.anthropicKey;
-  if (!apiKey) throw new Error("Anthropic API key not configured");
+  if (!apiKey) throw new Error("No AI API key configured. Add an Anthropic or OpenRouter key in Lead Finder Settings.");
   const client = new Anthropic({ apiKey });
 
   const systemMessage =
