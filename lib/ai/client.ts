@@ -94,6 +94,7 @@ export async function getAIClient(): Promise<AIClientResult> {
     organization_id: profile.organization_id,
     api_key: null,
     apify_api_key: null,
+    openai_api_key: null,
     ai_provider: "anthropic",
     openrouter_api_key: null,
     default_model: "sonnet",

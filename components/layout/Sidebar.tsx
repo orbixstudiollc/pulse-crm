@@ -33,7 +33,7 @@ const navigation = [
   { name: "Overview", href: "/dashboard/overview", icon: GaugeIcon },
   { name: "Customers", href: "/dashboard/customers", icon: UsersIcon },
   { name: "Leads", href: "/dashboard/leads", icon: FunnelIcon },
-  { name: "Lead Finder", href: "/dashboard/lead-scraper", icon: MagnifyingGlassIcon },
+  { name: "Lead Finder", href: "/dashboard/lead-finder", icon: MagnifyingGlassIcon },
   { name: "Website Visitors", href: "/dashboard/website-visitors", icon: CursorClickIcon },
   { name: "ICP", href: "/dashboard/icp", icon: CrosshairIcon },
   { name: "Campaigns", href: "/dashboard/campaigns", icon: PaperPlaneTiltIcon },

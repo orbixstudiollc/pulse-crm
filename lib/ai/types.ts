@@ -46,6 +46,7 @@ export interface AISettings {
   autonomy_objections: string;
   // Integrations
   apify_api_key: string | null;
+  openai_api_key: string | null;
   // Token usage
   tokens_used_today: number;
   tokens_used_month: number;
