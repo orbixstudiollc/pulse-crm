@@ -63,141 +63,25 @@ export const ACTOR_REGISTRY: ActorDefinition[] = [
     pageLimitKey: "maxCrawledPlacesPerSearch",
   },
   {
-    id: "apify/yelp-scraper",
-    name: "Yelp Scraper",
+    id: "poidata/google-maps-email-extractor",
+    name: "Google Maps Email Extractor",
     category: "lead-generation",
     phase: "find",
     description:
-      "Scrape Yelp business listings by search term and location. Returns name, phone, website, rating, reviews.",
-    requiredInputFields: ["searchTerms"],
-    inputFieldDescriptions: {
-      searchTerms: {
-        label: "Search Terms",
-        placeholder: '["restaurants", "dentists"]',
-        type: "string-array",
-        helpText: "What type of business to search for on Yelp.",
-      },
-      locations: {
-        label: "Locations",
-        placeholder: '["New York, NY", "Los Angeles, CA"]',
-        type: "string-array",
-        helpText: "Locations to search.",
-      },
-      maxItems: {
-        label: "Max Results",
-        placeholder: "50",
-        type: "number",
-        helpText: "Maximum listings to return.",
-      },
-    },
-    defaultInput: {
-      searchTerms: [],
-      locations: [],
-      maxItems: 50,
-    },
-    pageLimitKey: "maxItems",
-  },
-  {
-    id: "apify/instagram-scraper",
-    name: "Instagram Scraper",
-    category: "social",
-    phase: "find",
-    description:
-      "Scrape Instagram profiles by username or search keyword. Returns bio, followers, email (business accounts), and website.",
-    requiredInputFields: [],
-    inputFieldDescriptions: {
-      directUrls: {
-        label: "Profile URLs / Usernames",
-        placeholder:
-          '["https://www.instagram.com/example/", "@another_user"]',
-        type: "string-array",
-        helpText:
-          "Instagram profile URLs or @usernames to scrape directly.",
-      },
-      search: {
-        label: "Search Query",
-        placeholder: "fitness coach",
-        type: "string",
-        helpText:
-          "Search keyword to find profiles (alternative to direct URLs).",
-      },
-      searchType: {
-        label: "Search Type",
-        placeholder: "user",
-        type: "string",
-        helpText: 'Type of search: "user", "hashtag", or "place".',
-      },
-      resultsLimit: {
-        label: "Results Limit",
-        placeholder: "20",
-        type: "number",
-        helpText: "Max results to return.",
-      },
-    },
-    defaultInput: {
-      resultsType: "details",
-      resultsLimit: 20,
-    },
-    pageLimitKey: "resultsLimit",
-  },
-  {
-    id: "curious_coder/linkedin-sales-navigator-search",
-    name: "LinkedIn Sales Navigator Search",
-    category: "social",
-    phase: "find",
-    description:
-      "Scrape LinkedIn Sales Navigator search results. Requires a Sales Navigator URL and session cookie.",
-    requiredInputFields: ["searchUrl"],
-    inputFieldDescriptions: {
-      searchUrl: {
-        label: "Sales Navigator Search URL",
-        placeholder:
-          "https://www.linkedin.com/sales/search/people?query=...",
-        type: "string",
-        helpText:
-          "Full Sales Navigator search URL with your filters applied.",
-      },
-      cookie: {
-        label: "Session Cookies",
-        placeholder: '[{"name":"li_at","value":"..."}]',
-        type: "string-array",
-        helpText: "LinkedIn session cookies (li_at at minimum).",
-      },
-      count: {
-        label: "Max Leads",
-        placeholder: "50",
-        type: "number",
-        helpText: "Maximum number of leads to scrape.",
-      },
-    },
-    defaultInput: {
-      deepScrape: true,
-      count: 50,
-      minDelay: 5,
-      maxDelay: 30,
-    },
-    pageLimitKey: "count",
-  },
-  {
-    id: "code_crafter/leads-finder",
-    name: "Leads Finder (Multi-source)",
-    category: "lead-generation",
-    phase: "find",
-    description:
-      "Find leads from multiple sources by job title, company, and location. Combines data from several providers.",
+      "Search Google Maps and extract emails, phones, and websites from business listings in one step.",
     requiredInputFields: ["queries"],
     inputFieldDescriptions: {
       queries: {
         label: "Search Queries",
-        placeholder: '["CEO at tech startups in Austin"]',
+        placeholder: '["digital marketing agency", "SaaS company London"]',
         type: "string-array",
-        helpText: "Natural-language queries for lead search.",
+        helpText: "Google Maps search queries to find businesses.",
       },
       maxResults: {
         label: "Max Results",
         placeholder: "50",
         type: "number",
-        helpText: "Max leads to return.",
+        helpText: "Maximum number of businesses to return.",
       },
     },
     defaultInput: {
@@ -238,43 +122,13 @@ export const ACTOR_REGISTRY: ActorDefinition[] = [
     defaultInput: {
       queries: [],
       maxPagesPerQuery: 3,
-      countryCode: "us",
     },
     pageLimitKey: "maxPagesPerQuery",
   },
 
   // ── Enrich-phase actors ──────────────────────────────────────────────────
   {
-    id: "apify/website-content-crawler",
-    name: "Website Content Crawler",
-    category: "enrichment",
-    phase: "enrich",
-    description:
-      "Crawl a website and extract text content, tech stack, and metadata. Used to enrich leads with company information.",
-    requiredInputFields: ["startUrls"],
-    inputFieldDescriptions: {
-      startUrls: {
-        label: "Website URLs",
-        placeholder: '["https://example.com"]',
-        type: "string-array",
-        helpText: "URLs to crawl.",
-      },
-      maxCrawlPages: {
-        label: "Max Pages",
-        placeholder: "10",
-        type: "number",
-        helpText: "Maximum pages to crawl per site.",
-      },
-    },
-    defaultInput: {
-      startUrls: [],
-      maxCrawlPages: 10,
-      crawlerType: "cheerio",
-    },
-    pageLimitKey: "maxCrawlPages",
-  },
-  {
-    id: "apify/contact-info-scraper",
+    id: "vdrmota/contact-info-scraper",
     name: "Contact Info Scraper",
     category: "enrichment",
     phase: "enrich",
@@ -301,24 +155,43 @@ export const ACTOR_REGISTRY: ActorDefinition[] = [
     },
   },
   {
-    id: "apify/social-media-scraper",
-    name: "Social Media Profile Scraper",
+    id: "apify/facebook-pages-scraper",
+    name: "Facebook Pages Scraper",
     category: "social",
     phase: "enrich",
     description:
-      "Scrape social media profiles (Facebook, Twitter/X, LinkedIn) for enrichment data.",
-    requiredInputFields: ["urls"],
+      "Scrape Facebook business pages for contact info, website, email, phone, and about info.",
+    requiredInputFields: ["startUrls"],
     inputFieldDescriptions: {
-      urls: {
-        label: "Profile URLs",
-        placeholder:
-          '["https://facebook.com/example", "https://twitter.com/example"]',
+      startUrls: {
+        label: "Facebook Page URLs",
+        placeholder: '["https://www.facebook.com/example"]',
         type: "string-array",
-        helpText: "Social media profile URLs to scrape.",
+        helpText: "Facebook page URLs to scrape.",
       },
     },
     defaultInput: {
-      urls: [],
+      startUrls: [],
+    },
+  },
+  {
+    id: "apify/instagram-profile-scraper",
+    name: "Instagram Profile Scraper",
+    category: "social",
+    phase: "enrich",
+    description:
+      "Scrape Instagram business profiles for bio, website, email, and follower data.",
+    requiredInputFields: ["usernames"],
+    inputFieldDescriptions: {
+      usernames: {
+        label: "Usernames",
+        placeholder: '["example_brand", "another_company"]',
+        type: "string-array",
+        helpText: "Instagram usernames to scrape (without @).",
+      },
+    },
+    defaultInput: {
+      usernames: [],
     },
   },
 ];
@@ -332,33 +205,30 @@ export const ACTOR_WORKFLOWS: ActorWorkflow[] = [
     id: "local-business",
     label: "Local Business Discovery",
     description:
-      "Find local businesses via Google Maps, then enrich with website data and contact info.",
+      "Find local businesses via Google Maps, then enrich with contact info.",
     actors: [
       "compass/crawler-google-places",
-      "apify/website-content-crawler",
-      "apify/contact-info-scraper",
+      "vdrmota/contact-info-scraper",
     ],
   },
   {
-    id: "social-outreach",
-    label: "Social Media Outreach",
+    id: "maps-email",
+    label: "Google Maps Email Extraction",
     description:
-      "Find leads on Instagram or LinkedIn, then enrich with website and social data.",
+      "Find businesses on Google Maps and extract emails in one step, then enrich with contact info.",
     actors: [
-      "apify/instagram-scraper",
-      "apify/website-content-crawler",
-      "apify/social-media-scraper",
+      "poidata/google-maps-email-extractor",
+      "vdrmota/contact-info-scraper",
     ],
   },
   {
     id: "b2b-prospecting",
     label: "B2B Prospecting",
     description:
-      "Find B2B leads via Google Search and Leads Finder, enrich with company website data.",
+      "Find B2B leads via Google Search, enrich with contact info.",
     actors: [
       "apify/google-search-scraper",
-      "code_crafter/leads-finder",
-      "apify/website-content-crawler",
+      "vdrmota/contact-info-scraper",
     ],
   },
 ];

@@ -39,6 +39,8 @@ export function normalizeSingleItem(
       "company_name",
       "companyName",
       "displayName",
+      "pageName",
+      "username",
     ]) ?? undefined;
 
   // For person-type results, try combining first/last
@@ -58,6 +60,7 @@ export function normalizeSingleItem(
       "businessEmail",
       "publicEmail",
       "mail",
+      "emailAddress",
     ]) ?? undefined;
 
   // Try extracting from free text if not found
@@ -103,6 +106,7 @@ export function normalizeSingleItem(
       "companyWebsite",
       "company_domain",
       "domain",
+      "websiteLink",
     ]) ?? undefined;
 
   return lead;
