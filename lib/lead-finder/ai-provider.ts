@@ -15,8 +15,8 @@ const MODEL_PRICING: Record<
 > = {
   "gpt-4o": { inputPer1M: 2.5, outputPer1M: 10.0 },
   "gpt-4o-mini": { inputPer1M: 0.15, outputPer1M: 0.6 },
-  "claude-sonnet-4-20250514": { inputPer1M: 3.0, outputPer1M: 15.0 },
-  "claude-haiku-3-20240307": { inputPer1M: 0.25, outputPer1M: 1.25 },
+  "claude-sonnet-4-6": { inputPer1M: 3.0, outputPer1M: 15.0 },
+  "claude-haiku-4-5-20251001": { inputPer1M: 0.8, outputPer1M: 4.0 },
 };
 
 function calculateCost(
@@ -47,11 +47,12 @@ async function getApiKeys(
   apifyToken?: string;
 }> {
   const supabase = createAdminClient();
-  const { data } = await supabase
+  const { data: rows } = await supabase
     .from("ai_settings")
     .select("api_key, apify_api_key, openrouter_api_key")
     .eq("organization_id", orgId)
-    .single();
+    .limit(1);
+  const data = rows?.[0] ?? null;
 
   return {
     anthropicKey:
@@ -132,7 +133,7 @@ export async function generateCompletion(
     }));
 
   const res = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: maxTokens,
     system: systemMessage,
     messages: nonSystemMessages,
@@ -147,11 +148,11 @@ export async function generateCompletion(
   return {
     content: textBlock?.text ?? "",
     provider: "anthropic",
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     inputTokens,
     outputTokens,
     costUsd: calculateCost(
-      "claude-sonnet-4-20250514",
+      "claude-sonnet-4-6",
       inputTokens,
       outputTokens
     ),

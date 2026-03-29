@@ -49,15 +49,16 @@ export async function enrichSingleLead(
   const supabase = createAdminClient();
 
   // Load lead
-  const { data: lead, error: leadErr } = await supabase
+  const { data: leadRows } = await supabase
     .from("lf_leads")
     .select("*")
     .eq("id", leadId)
     .eq("organization_id", orgId)
-    .single();
+    .limit(1);
+  const lead = leadRows?.[0] ?? null;
 
-  if (leadErr || !lead) {
-    throw new Error(`Lead not found: ${leadErr?.message}`);
+  if (!lead) {
+    throw new Error(`Lead not found: ${leadId}`);
   }
 
   const typedLead = lead as unknown as LFLead;
@@ -215,23 +216,25 @@ export async function enrichCampaignLeads(
   clearCancellation(campaignId);
 
   // Load campaign for config
-  const { data: campaign } = await supabase
+  const { data: campRows } = await supabase
     .from("lf_campaigns")
     .select("*")
     .eq("id", campaignId)
     .eq("organization_id", orgId)
-    .single();
+    .limit(1);
+  const campaign = campRows?.[0] ?? null;
 
   if (!campaign) throw new Error("Campaign not found");
 
   const typedCampaign = campaign as unknown as LFCampaign;
-  const enrichmentActors = (typedCampaign.apify_actors ?? []).filter(
-    (id) => {
-      // Only use enrich-phase actors
-      // We check by convention: enrich actors have IDs containing "content", "contact", or "social"
-      return true; // Caller should configure only enrichment actors
-    }
-  );
+
+  // Resolve actor phases and keep only enrichment-phase actors
+  const allActorIds = typedCampaign.apify_actors ?? [];
+  const enrichmentActors: string[] = [];
+  for (const id of allActorIds) {
+    const def = await getActorById(id, orgId);
+    if (def?.phase === "enrich") enrichmentActors.push(id);
+  }
 
   const concurrency = options?.concurrency ?? typedCampaign.enrichment_concurrency ?? 1;
   const limit = options?.limit ?? typedCampaign.max_leads_per_run ?? 50;

@@ -114,15 +114,16 @@ export async function runCampaignDiscovery(
   const supabase = createAdminClient();
 
   // Load campaign
-  const { data: campaign, error: campErr } = await supabase
+  const { data: campRows } = await supabase
     .from("lf_campaigns")
     .select("*")
     .eq("id", campaignId)
     .eq("organization_id", orgId)
-    .single();
+    .limit(1);
+  const campaign = campRows?.[0] ?? null;
 
-  if (campErr || !campaign) {
-    throw new Error(`Campaign not found: ${campErr?.message}`);
+  if (!campaign) {
+    throw new Error(`Campaign not found: ${campaignId}`);
   }
 
   const typedCampaign = campaign as unknown as LFCampaign;

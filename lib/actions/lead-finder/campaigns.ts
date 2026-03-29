@@ -86,12 +86,13 @@ export async function getLFCampaignById(id: string) {
   const supabase = await createClient();
   const orgId = await getOrgId();
 
-  const { data: campaign, error } = await supabase
+  const { data: campRows, error } = await supabase
     .from("lf_campaigns")
     .select("*")
     .eq("id", id)
     .eq("organization_id", orgId)
-    .single();
+    .limit(1);
+  const campaign = campRows?.[0] ?? null;
 
   if (error || !campaign)
     return { error: error?.message ?? "Not found", data: null };
@@ -213,12 +214,12 @@ export async function updateLFCampaign(
   const supabase = await createClient();
   await getOrgId();
 
-  const { data, error } = await supabase
+  const { data: rows, error } = await supabase
     .from("lf_campaigns")
     .update(updates as never)
     .eq("id", id)
-    .select()
-    .single();
+    .select();
+  const data = rows?.[0] ?? null;
 
   if (error) return { error: error.message, data: null };
   revalidatePath("/dashboard/lead-finder");

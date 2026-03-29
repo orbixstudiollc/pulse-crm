@@ -32,7 +32,29 @@ export async function POST(req: NextRequest) {
       orgId,
       aiProvider || "anthropic"
     );
-    return NextResponse.json({ data: plan });
+
+    // Transform to snake_case format expected by the UI
+    const aiPlan = {
+      name: plan.name,
+      target_niche: plan.targetNiche,
+      suggested_actors: plan.suggestedActors,
+      suggested_search_terms: [] as string[],
+      schedule_frequency: "once",
+      kpi_definitions: plan.kpiDefinitions.map((k) => ({
+        key: k.id,
+        label: k.label,
+        description: k.description ?? "",
+        type: (k.type === "number" ? "text" : k.type) as "boolean" | "text",
+      })),
+      lead_field_definitions: plan.leadFieldDefinitions.map((f) => ({
+        key: f.id,
+        label: f.label,
+        description: f.description ?? "",
+        source: "mapped",
+      })),
+    };
+
+    return NextResponse.json({ data: aiPlan });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }

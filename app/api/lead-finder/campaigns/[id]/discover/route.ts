@@ -18,12 +18,13 @@ export async function POST(
 
     const orgId = await getOrgId();
 
-    const { data: campaign } = await supabase
+    const { data: campRows } = await supabase
       .from("lf_campaigns")
       .select("status, apify_actors")
       .eq("id", id)
       .eq("organization_id", orgId)
-      .single();
+      .limit(1);
+    const campaign = campRows?.[0] ?? null;
 
     if (!campaign)
       return NextResponse.json(

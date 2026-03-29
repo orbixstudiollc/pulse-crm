@@ -32,7 +32,19 @@ export async function POST(req: NextRequest) {
       orgId,
       aiProvider || "anthropic"
     );
-    return NextResponse.json({ data: fields });
+
+    // Transform to the format expected by the UI
+    return NextResponse.json({
+      data: {
+        kpi_definitions: [],
+        lead_field_definitions: fields.map((f) => ({
+          key: f.id,
+          label: f.label,
+          description: f.description ?? "",
+          source: "mapped",
+        })),
+      },
+    });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
