@@ -11,6 +11,7 @@ import type {
   LFCampaign,
   LFLead,
   KpiDefinition,
+  LeadFieldDefinition,
 } from "../types";
 
 // =============================================================================
@@ -44,6 +45,7 @@ export async function enrichSingleLead(
     aiProvider?: AIProvider;
     enrichmentActors?: string[];
     kpiDefinitions?: KpiDefinition[];
+    leadFieldDefinitions?: LeadFieldDefinition[];
   }
 ): Promise<void> {
   const supabase = await createClient();
@@ -81,6 +83,7 @@ export async function enrichSingleLead(
     const enrichmentActors = options?.enrichmentActors ?? [];
     const aiProvider = options?.aiProvider ?? "anthropic";
     const kpiDefinitions = options?.kpiDefinitions ?? [];
+    const leadFieldDefinitions = options?.leadFieldDefinitions ?? [];
 
     // Collect enrichment data from all configured actors
     const rawEnrichmentData: Record<string, unknown> = {};
@@ -128,6 +131,7 @@ export async function enrichSingleLead(
       typedLead,
       rawEnrichmentData,
       kpiDefinitions,
+      leadFieldDefinitions,
       aiProvider,
       orgId,
       campaignId
@@ -271,6 +275,7 @@ export async function enrichCampaignLeads(
           aiProvider: typedCampaign.ai_provider,
           enrichmentActors,
           kpiDefinitions: typedCampaign.kpi_definitions,
+          leadFieldDefinitions: typedCampaign.lead_field_definitions,
         })
       )
     );
@@ -360,6 +365,7 @@ async function analyzeEnrichmentData(
   lead: LFLead,
   rawData: Record<string, unknown>,
   kpiDefinitions: KpiDefinition[],
+  leadFieldDefinitions: LeadFieldDefinition[],
   aiProvider: AIProvider,
   orgId: string,
   campaignId: string
@@ -374,15 +380,37 @@ async function analyzeEnrichmentData(
           .join("\n")}`
       : "";
 
-  const prompt = `You are analyzing enrichment data for a business lead. Based on the raw data collected from web scraping, provide a structured analysis.
+  const fieldInstructions =
+    leadFieldDefinitions.length > 0
+      ? `\nExtract these custom fields into "extractedFields":\n${leadFieldDefinitions
+          .map(
+            (f) =>
+              `- ${f.id} (${f.type}): ${f.label}${f.description ? ` – ${f.description}` : ""}`
+          )
+          .join("\n")}`
+      : "";
+
+  const extractedFieldsShape =
+    leadFieldDefinitions.length > 0
+      ? `{${leadFieldDefinitions.map((f) => `"${f.id}": ${f.type === "boolean" ? "true/false/null" : '"extracted value or null"'}`).join(", ")}}`
+      : "{}";
+
+  // Combine discovery raw_data with any enrichment actor data
+  const combinedData = {
+    discoveryData: lead.raw_data ?? {},
+    ...(Object.keys(rawData).length > 0 ? { enrichmentData: rawData } : {}),
+  };
+
+  const prompt = `You are analyzing data for a business lead. Extract structured information from the available data.
 
 Lead: ${lead.display_name || "Unknown"}
 Website: ${lead.website || "N/A"}
 Email: ${lead.email || "N/A"}
+Phone: ${lead.phone || "N/A"}
 
-Raw enrichment data:
-${JSON.stringify(rawData, null, 2).slice(0, 8000)}
-${kpiInstructions}
+Available data:
+${JSON.stringify(combinedData, null, 2).slice(0, 8000)}
+${kpiInstructions}${fieldInstructions}
 
 Respond in JSON with this exact structure:
 {
@@ -401,7 +429,7 @@ Respond in JSON with this exact structure:
   "personalizationSummary": "2-3 sentence summary useful for personalized outreach",
   "kpis": {${kpiDefinitions.map((k) => `"${k.id}": ${k.type === "boolean" ? "true/false" : '"text value"'}`).join(", ")}},
   "score": 0-100,
-  "extractedFields": {}
+  "extractedFields": ${extractedFieldsShape}
 }`;
 
   try {
