@@ -54,6 +54,59 @@ export async function POST(req: NextRequest) {
     const orgId = await getOrgId();
     const body = await req.json();
 
+    // Handle bulk import to CRM
+    if (body.action === "import" && Array.isArray(body.leadIds)) {
+      const leadIds = body.leadIds as string[];
+      if (leadIds.length === 0)
+        return NextResponse.json({ error: "No leads specified" }, { status: 400 });
+
+      // Fetch the leads to import
+      const { data: lfLeads, error: fetchErr } = await supabase
+        .from("lf_leads")
+        .select("*")
+        .in("id", leadIds)
+        .eq("organization_id", orgId);
+
+      if (fetchErr) return NextResponse.json({ error: fetchErr.message }, { status: 500 });
+      if (!lfLeads || lfLeads.length === 0)
+        return NextResponse.json({ error: "No matching leads found" }, { status: 404 });
+
+      const imported: string[] = [];
+      for (const lf of lfLeads) {
+        if (lf.imported) continue; // skip already imported
+
+        // Create a lead in the main CRM leads table
+        const { data: crmLead, error: insertErr } = await supabase
+          .from("leads")
+          .insert({
+            organization_id: orgId,
+            name: lf.display_name || lf.email || "Unknown",
+            email: lf.email,
+            phone: lf.phone,
+            website: lf.website,
+            source: "lead-finder",
+            status: "new",
+            score: lf.score ?? 0,
+          } as never)
+          .select("id")
+          .single();
+
+        if (insertErr) continue; // skip on error, don't fail entire batch
+
+        // Mark as imported
+        await supabase
+          .from("lf_leads")
+          .update({ imported: true, imported_lead_id: crmLead.id })
+          .eq("id", lf.id);
+
+        imported.push(lf.id);
+      }
+
+      return NextResponse.json({
+        data: { imported: imported.length, total: leadIds.length },
+      });
+    }
+
     const insertPayload = {
         organization_id: orgId,
         campaign_id: body.campaignId ?? null,
