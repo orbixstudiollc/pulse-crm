@@ -2,7 +2,7 @@ import "server-only";
 
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import type { AIProvider, AIMessage, AIResponse } from "./types";
 
 // =============================================================================
