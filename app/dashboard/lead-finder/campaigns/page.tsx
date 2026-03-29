@@ -155,7 +155,7 @@ export default function CampaignsPage() {
                     <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 truncate">{campaign.name}</h3>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 truncate">{campaign.target_niche}</p>
                   </div>
-                  <Badge color={statusCfg.color as "neutral" | "green" | "amber" | "blue" | "red"}>
+                  <Badge variant={statusCfg.color as "neutral" | "green" | "amber" | "blue" | "red"}>
                     <span className="flex items-center gap-1">
                       {statusCfg.icon}
                       <span className="capitalize">{campaign.status}</span>
