@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { toast } from "sonner";
 import {
   MagnifyingGlassIcon,
@@ -24,6 +23,7 @@ import {
   Button,
 } from "@/components/ui";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
+import { LeadDetailDrawer } from "@/components/lead-finder/LeadDetailDrawer";
 import { ScoreBadge } from "@/components/lead-finder/ScoreBadge";
 import { getLeadDisplayName, formatSource, formatCost } from "@/lib/lead-finder/utils/lead-display";
 import type { LFLead } from "@/lib/lead-finder/types";
@@ -255,6 +255,9 @@ export default function AllLeadsPage() {
   // Pagination
   const [pageSize, setPageSize] = useState<number>(25);
   const [offset, setOffset] = useState(0);
+
+  // Drawer
+  const [drawerLeadId, setDrawerLeadId] = useState<string | null>(null);
 
   // Selection
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
@@ -816,11 +819,7 @@ export default function AllLeadsPage() {
                     <tr
                       key={lead.id}
                       className="border-b border-neutral-200 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer"
-                      onClick={() =>
-                        router.push(
-                          `/dashboard/lead-finder/leads/${lead.id}`
-                        )
-                      }
+                      onClick={() => setDrawerLeadId(lead.id)}
                     >
                       <td
                         className="p-3"
@@ -834,13 +833,13 @@ export default function AllLeadsPage() {
                         />
                       </td>
                       <td className="p-3">
-                        <Link
-                          href={`/dashboard/lead-finder/leads/${lead.id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-sm text-neutral-950 dark:text-neutral-50 font-medium hover:underline break-words line-clamp-2"
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setDrawerLeadId(lead.id); }}
+                          className="text-sm text-neutral-950 dark:text-neutral-50 font-medium hover:underline break-words line-clamp-2 text-left cursor-pointer"
                         >
                           {displayName}
-                        </Link>
+                        </button>
                       </td>
                       {/* Dynamic field columns */}
                       {dynFields.map((f) => {
@@ -998,6 +997,13 @@ export default function AllLeadsPage() {
           )}
         </div>
       )}
+
+      <LeadDetailDrawer
+        open={!!drawerLeadId}
+        onClose={() => { setDrawerLeadId(null); fetchLeads(); }}
+        leadId={drawerLeadId}
+        campaignId={campaignFilter || null}
+      />
     </div>
   );
 }

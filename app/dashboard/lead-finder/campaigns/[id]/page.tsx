@@ -47,6 +47,7 @@ import {
 } from "@/components/ui";
 import { Button, Input, Select, Textarea } from "@/components/ui";
 import { ScoreBadge } from "@/components/lead-finder/ScoreBadge";
+import { LeadDetailDrawer } from "@/components/lead-finder/LeadDetailDrawer";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 import { useLeadEvents } from "@/hooks/use-lead-events";
 import { useLeadFinderActors } from "@/hooks/use-lead-finder-actors";
@@ -224,6 +225,9 @@ export default function CampaignDetailPage() {
   const [enrichingAll, setEnrichingAll] = useState(false);
   const enrichAbortRef = useRef<AbortController | null>(null);
   const [reEnrichingLeads, setReEnrichingLeads] = useState<Set<string>>(new Set());
+
+  // Drawer
+  const [drawerLeadId, setDrawerLeadId] = useState<string | null>(null);
 
   // Table
   const [search, setSearch] = useState("");
@@ -992,14 +996,14 @@ export default function CampaignDetailPage() {
                   const status = displayStatus(lead);
                   const isRe = reEnrichingLeads.has(lead.id);
                   return (
-                    <tr key={lead.id} className="border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors">
+                    <tr key={lead.id} className="border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer" onClick={() => setDrawerLeadId(lead.id)}>
                       <td className="p-3" onClick={(e) => e.stopPropagation()}>
                         <input type="checkbox" checked={selectedLeads.has(lead.id)} onChange={() => setSelectedLeads((prev) => { const n = new Set(prev); if (n.has(lead.id)) n.delete(lead.id); else n.add(lead.id); return n; })} className="rounded" />
                       </td>
                       <td className="p-3 max-w-[200px]">
-                        <Link href={`/dashboard/lead-finder/leads/${lead.id}`} className="text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:underline break-words line-clamp-2">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setDrawerLeadId(lead.id); }} className="text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:underline break-words line-clamp-2 text-left cursor-pointer">
                           {lead.display_name || "Unknown"}
-                        </Link>
+                        </button>
                         {lead.email && <p className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1 mt-0.5"><EnvelopeIcon size={10} />{lead.email}</p>}
                         {lead.website && (
                           <p className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1 mt-0.5 truncate max-w-[180px]">
@@ -1408,6 +1412,13 @@ export default function CampaignDetailPage() {
           </div>
         </div>
       )}
+
+      <LeadDetailDrawer
+        open={!!drawerLeadId}
+        onClose={() => { setDrawerLeadId(null); fetchNow(); }}
+        leadId={drawerLeadId}
+        campaignId={id as string}
+      />
     </div>
   );
 }
