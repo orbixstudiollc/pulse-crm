@@ -20,7 +20,7 @@ export type { ActorDefinition, ActorCategory, ActorPhase, InputFieldDescription 
 export const ACTOR_REGISTRY: ActorDefinition[] = [
   // ── Find-phase actors ────────────────────────────────────────────────────
   {
-    id: "apify/google-maps-scraper",
+    id: "compass/crawler-google-places",
     name: "Google Maps Scraper",
     category: "lead-generation",
     phase: "find",
@@ -334,7 +334,7 @@ export const ACTOR_WORKFLOWS: ActorWorkflow[] = [
     description:
       "Find local businesses via Google Maps, then enrich with website data and contact info.",
     actors: [
-      "apify/google-maps-scraper",
+      "compass/crawler-google-places",
       "apify/website-content-crawler",
       "apify/contact-info-scraper",
     ],

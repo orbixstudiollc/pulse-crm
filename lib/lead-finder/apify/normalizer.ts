@@ -97,7 +97,6 @@ export function normalizeSingleItem(
     coalesce(item, [
       "website",
       "webUrl",
-      "url",
       "externalUrl",
       "external_url",
       "companyUrl",
