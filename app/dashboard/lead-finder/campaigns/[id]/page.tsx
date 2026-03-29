@@ -294,14 +294,14 @@ function SettingsPanel({
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm font-medium hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+            className="h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-sm font-medium hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 transition-colors"
+            className="h-9 px-3 rounded bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 transition-colors"
           >
             {saving ? "Saving..." : "Save Changes"}
           </button>
@@ -709,33 +709,29 @@ export default function CampaignDetailPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowSettings(true)}
-            className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+            className="inline-flex items-center justify-center h-9 w-9 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
             title="Settings"
           >
-            <GearIcon size={16} />
+            <GearIcon size={15} />
           </button>
           <button
             onClick={handleActivatePause}
-            className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`inline-flex items-center gap-2 h-9 px-3 rounded text-sm font-medium transition-colors whitespace-nowrap ${
               campaign.status === "active"
                 ? "bg-amber-400/10 text-amber-600 dark:text-amber-400 border border-amber-400/20 hover:bg-amber-400/20"
                 : "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/50"
             }`}
           >
             {campaign.status === "active" ? (
-              <>
-                <PauseIcon size={14} /> Pause
-              </>
+              <><PauseIcon size={14} /> Pause</>
             ) : (
-              <>
-                <PlayIcon size={14} /> Activate
-              </>
+              <><PlayIcon size={14} /> Activate</>
             )}
           </button>
           <button
             onClick={handleRunDiscovery}
             disabled={discovering}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 text-sm font-medium hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 text-sm font-medium hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-50 transition-colors whitespace-nowrap"
           >
             {discovering ? (
               <CircleNotchIcon size={14} className="animate-spin" />
@@ -747,7 +743,7 @@ export default function CampaignDetailPage() {
           <button
             onClick={handleEnrichAll}
             disabled={enrichingAll || leads.length === 0}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-2 h-9 px-3 rounded bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50 transition-colors whitespace-nowrap"
           >
             {enrichingAll ? (
               <CircleNotchIcon size={14} className="animate-spin" />
@@ -842,7 +838,7 @@ export default function CampaignDetailPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search leads..."
-              className="pl-8 pr-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus w-64"
+              className="pl-8 pr-3 h-9 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus w-64"
             />
           </div>
 
@@ -850,7 +846,7 @@ export default function CampaignDetailPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
+            className="h-9 px-3 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded text-neutral-950 dark:text-neutral-50 text-sm focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
           >
             <option value="all">All Statuses</option>
             <option value="new">New</option>
@@ -872,7 +868,7 @@ export default function CampaignDetailPage() {
             <button
               onClick={handleImportToCRM}
               disabled={importing}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 text-xs font-medium hover:bg-green-100 dark:hover:bg-green-950/50 transition-colors"
+              className="inline-flex items-center gap-2 h-9 px-3 rounded bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 text-sm font-medium hover:bg-green-100 dark:hover:bg-green-950/50 transition-colors whitespace-nowrap"
             >
               {importing ? (
                 <CircleNotchIcon size={12} className="animate-spin" />
@@ -884,7 +880,7 @@ export default function CampaignDetailPage() {
           )}
           <button
             onClick={handleExportCSV}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-xs font-medium transition-colors"
+            className="inline-flex items-center gap-2 h-9 px-3 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 text-sm font-medium transition-colors whitespace-nowrap"
           >
             <DownloadIcon size={12} />
             Export CSV
