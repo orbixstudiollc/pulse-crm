@@ -90,14 +90,16 @@ export async function PUT(req: NextRequest) {
     if (Object.keys(aiUpdates).length > 0) {
       const { error: aiError } = await admin
         .from("ai_settings")
-        .update(aiUpdates)
-        .eq("organization_id", profile.organization_id);
+        .upsert(
+          { organization_id: profile.organization_id, ...aiUpdates },
+          { onConflict: "organization_id" }
+        );
       if (aiError)
         return NextResponse.json({ error: aiError.message }, { status: 500 });
     }
 
     // Update org name if provided
-    if (body.agencyName && typeof body.agencyName === "string") {
+    if (typeof body.agencyName === "string") {
       await admin
         .from("organizations")
         .update({ name: body.agencyName })
