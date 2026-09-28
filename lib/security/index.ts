@@ -148,6 +148,11 @@ for (const [net6, prefix] of [
   ["64:ff9b::", 96],
   ["fc00::", 7],
   ["fe80::", 10],
+  ["::", 96], // "::/96" IPv4-compatible (covers ::7f00:1)
+  ["ff00::", 8], // "ff00::/8" multicast
+  ["fec0::", 10], // "fec0::/10" site-local
+  ["2002::", 16], // "2002::/16" 6to4
+  ["64:ff9b:1::", 48], // "64:ff9b:1::/48" local-use NAT64
 ] as const) {
   PRIVATE_BLOCKLIST.ipv6.addSubnet(net6, prefix, "ipv6");
 }

@@ -79,4 +79,27 @@ describe("sanitizeEmailHtml", () => {
     expect(second).toBe(first);
     expect(second.match(/noopener/g)).toHaveLength(1);
   });
+
+  it("drops class attributes", () => {
+    expect(sanitizeEmailHtml('<div class="fixed inset-0 z-50">x</div>')).not.toContain("class=");
+  });
+
+  it("drops id attributes", () => {
+    expect(sanitizeEmailHtml('<p id="__next_f">x</p>')).not.toContain("id=");
+  });
+
+  it("drops protocol-relative img src", () => {
+    const img = parse('<img src="//evil.test/a.png">').querySelector("img")!;
+    expect(img.hasAttribute("src")).toBe(false);
+  });
+
+  it("drops relative href", () => {
+    const a = parse('<a href="/api/x">x</a>').querySelector("a")!;
+    expect(a.hasAttribute("href")).toBe(false);
+  });
+
+  it("still keeps absolute https href", () => {
+    const a = parse('<a href="https://x.test/">x</a>').querySelector("a")!;
+    expect(a.getAttribute("href")).toBe("https://x.test/");
+  });
 });

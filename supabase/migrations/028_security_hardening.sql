@@ -145,6 +145,24 @@ CREATE POLICY "Service role full access to sequence_enrollments" ON sequence_enr
   FOR ALL USING (auth.role() = 'service_role');
 
 
+-- ─── (H5b) email_messages: the sender account must belong to the message's organization
+
+DROP POLICY IF EXISTS "org_email_messages" ON email_messages;
+CREATE POLICY "org_email_messages" ON email_messages
+  FOR ALL
+  USING (
+    organization_id IN (SELECT organization_id FROM profiles WHERE id = auth.uid())
+  )
+  WITH CHECK (
+    organization_id IN (SELECT organization_id FROM profiles WHERE id = auth.uid())
+    AND (email_account_id IS NULL OR email_account_id IN (SELECT id FROM email_accounts WHERE organization_id IN (SELECT organization_id FROM profiles WHERE id = auth.uid())))
+  );
+
+DROP POLICY IF EXISTS "Service role full access to email_messages" ON email_messages;
+CREATE POLICY "Service role full access to email_messages" ON email_messages
+  FOR ALL USING (auth.role() = 'service_role');
+
+
 -- ============================================================
 -- Owner verification (comments only -- not executed):
 --

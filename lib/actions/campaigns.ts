@@ -572,7 +572,7 @@ export async function launchCampaignRun(id: string) {
     return { error: "No leads in audience" };
   }
 
-  if (campaign.audience_type !== "filter" && !(await allIdsBelongToOrg(supabase, "leads", orgId, leadIds))) {
+  if (!(await allIdsBelongToOrg(supabase, "leads", orgId, leadIds))) {
     return { error: "One or more leads do not belong to this organization" };
   }
 

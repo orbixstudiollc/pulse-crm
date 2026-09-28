@@ -41,8 +41,8 @@ export function sanitizeEmailHtml(html: string): string {
       "input", "button", "textarea", "select", "option", "svg", "math", "link",
       "meta", "base", "template", "video", "audio", "source", "track",
     ],
-    FORBID_ATTR: ["style", "srcset", "formaction", "xlink:href", "action", "ping"],
-    ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|#|\/(?!\/)|\.{0,2}\/|\?)/i,
+    FORBID_ATTR: ["style", "class", "id", "srcset", "formaction", "xlink:href", "action", "ping"],
+    ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|#)/i,
     ADD_ATTR: ["target"],
   });
 }

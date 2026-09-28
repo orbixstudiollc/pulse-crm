@@ -1,5 +1,6 @@
 "use server";
 
+import { unstable_rethrow } from "next/navigation";
 import { postpeerClient } from "@/lib/postpeer/client";
 import { PlatformType, PlatformConnection } from "@/lib/postpeer/types";
 import { requirePostPeerOrg } from "@/lib/postpeer/tenant";
@@ -43,6 +44,7 @@ export async function getConnections(): Promise<{
       data: connections,
     };
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Failed to fetch connections:", error);
     return {
       success: false,
@@ -76,6 +78,7 @@ export async function getOAuthUrl(
       url: oauthUrl,
     };
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Failed to get OAuth URL:", error);
     return {
       success: false,
@@ -105,6 +108,7 @@ export async function connectPlatform(
       data: connection,
     };
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Failed to connect platform:", error);
     return {
       success: false,
@@ -131,6 +135,7 @@ export async function disconnectPlatform(
       success: true,
     };
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Failed to disconnect platform:", error);
     return {
       success: false,
@@ -158,6 +163,7 @@ export async function reconnectPlatform(
     // Then get a new OAuth URL
     return await getOAuthUrl(platform);
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Failed to reconnect platform:", error);
     return {
       success: false,

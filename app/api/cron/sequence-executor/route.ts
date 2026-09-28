@@ -86,7 +86,7 @@ export async function GET(request: Request) {
   // 1. Process scheduled emails (queued messages past their scheduled_at)
   const { data: scheduledMsgs } = await supabase
     .from("email_messages")
-    .select("id, email_account_id, to_addresses, subject, body_html, body_text")
+    .select("id, organization_id, email_account_id, to_addresses, subject, body_html, body_text")
     .eq("status", "queued")
     .lte("scheduled_at", now)
     .limit(50);
@@ -104,7 +104,16 @@ export async function GET(request: Request) {
           .from("email_accounts")
           .select("*")
           .eq("id", msg.email_account_id)
+          .eq("organization_id", msg.organization_id)
           .single();
+        if (!acctTracking) {
+          await supabase
+            .from("email_messages")
+            .update({ status: "failed" as const, error_message: "Email account not found for this organization" })
+            .eq("id", msg.id);
+          errors++;
+          continue;
+        }
         const trackingDomain = (acctTracking as Record<string, unknown>)?.tracking_domain as string | null;
 
         let html = msg.body_html;
