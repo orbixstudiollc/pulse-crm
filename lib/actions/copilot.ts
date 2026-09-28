@@ -198,15 +198,17 @@ export async function scrapeWebsiteForMemory(url: string): Promise<{
   error?: string;
 }> {
   try {
-    // Validate & normalize URL
+    // Validate & normalize URL, then guard against SSRF (private IPs, non-http(s) schemes)
     let normalizedUrl = url.trim();
     if (!normalizedUrl.match(/^https?:\/\//i)) {
       normalizedUrl = "https://" + normalizedUrl;
     }
+    const { assertSafeFetchUrl } = await import("@/lib/security");
+    let safeUrl: URL;
     try {
-      new URL(normalizedUrl);
+      safeUrl = assertSafeFetchUrl(normalizedUrl);
     } catch {
-      return { error: "Invalid URL format. Please enter a valid website address." };
+      return { error: "Invalid URL. Only public http(s) URLs are allowed." };
     }
 
     // Fetch with timeout
@@ -215,8 +217,9 @@ export async function scrapeWebsiteForMemory(url: string): Promise<{
 
     let response: Response;
     try {
-      response = await fetch(normalizedUrl, {
+      response = await fetch(safeUrl.toString(), {
         signal: controller.signal,
+        redirect: "manual",
         headers: {
           "User-Agent": "Mozilla/5.0 (compatible; PulseCRM/1.0; +https://pulse-crm.com)",
           "Accept": "text/html,application/xhtml+xml",

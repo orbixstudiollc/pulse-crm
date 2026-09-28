@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgId, getCurrentUserProfile } from "./helpers";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
+import { escapePostgrestLike } from "@/lib/security";
 
 type ActivityInsert = Database["public"]["Tables"]["activities"]["Insert"];
 type ActivityUpdate = Database["public"]["Tables"]["activities"]["Update"];
@@ -43,7 +44,10 @@ export async function getActivities(filters: ActivityFilters = {}) {
 
   if (search) {
     query = query.or(
-      `title.ilike.%${search}%,description.ilike.%${search}%`,
+      (() => {
+        const q = escapePostgrestLike(search);
+        return `title.ilike.%${q}%,description.ilike.%${q}%`;
+      })(),
     );
   }
 

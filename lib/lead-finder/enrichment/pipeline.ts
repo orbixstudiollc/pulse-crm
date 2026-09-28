@@ -1,11 +1,12 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { runActorAndCollect } from "../apify/runner";
 import { getActorById } from "../apify/registry-server";
 import { coerceActorInput } from "../apify/coerce-input";
 import { generateCompletion, logLlmCost } from "../ai-provider";
 import { leadEmitter } from "../events/emitter";
+import { enabledEnrichActorsForCampaign } from "./actor-selection";
 import type {
   AIProvider,
   LFCampaign,
@@ -18,19 +19,25 @@ import type {
 // Enrichment Pipeline – enriches discovered leads with website/social data + AI
 // =============================================================================
 
-// Cancellation tokens per campaign
+// Cancellation tokens per (org, campaign). Keying by orgId in addition to
+// campaignId prevents a malicious tenant from flipping another tenant's flag
+// in-process, even if an upstream route handler forgets to enforce org scope.
 const activeCancellations = new Map<string, boolean>();
 
-export function cancelEnrichment(campaignId: string): void {
-  activeCancellations.set(campaignId, true);
+function cancellationKey(campaignId: string, orgId: string): string {
+  return `${orgId}:${campaignId}`;
 }
 
-function isCancelled(campaignId: string): boolean {
-  return activeCancellations.get(campaignId) === true;
+export function cancelEnrichment(campaignId: string, orgId: string): void {
+  activeCancellations.set(cancellationKey(campaignId, orgId), true);
 }
 
-function clearCancellation(campaignId: string): void {
-  activeCancellations.delete(campaignId);
+function isCancelled(campaignId: string, orgId: string): boolean {
+  return activeCancellations.get(cancellationKey(campaignId, orgId)) === true;
+}
+
+function clearCancellation(campaignId: string, orgId: string): void {
+  activeCancellations.delete(cancellationKey(campaignId, orgId));
 }
 
 // ---------------------------------------------------------------------------
@@ -208,95 +215,278 @@ export async function enrichSingleLead(
 }
 
 // ---------------------------------------------------------------------------
-// Batch enrichment for a campaign
+// Batch enrichment – enqueues all "new" leads in a campaign into the durable
+// enrichment queue. Returns immediately; the background worker drains jobs.
 // ---------------------------------------------------------------------------
 
 export async function enrichCampaignLeads(
   campaignId: string,
   orgId: string,
-  options?: { limit?: number; concurrency?: number }
-): Promise<{ enriched: number; failed: number; cancelled: boolean }> {
-  const supabase = await createClient();
-  clearCancellation(campaignId);
+  options?: { limit?: number }
+): Promise<{
+  enqueued: number;
+  skipped: number;
+  remaining: number;
+  batchId?: string;
+}> {
+  const admin = createAdminClient();
+  clearCancellation(campaignId, orgId);
 
-  // Load campaign for config
-  const { data: campRows } = await supabase
+  // Reset any stale "enriching" leads (from previous crashed runs) to "new"
+  await admin
+    .from("lf_leads")
+    .update({ status: "new" })
+    .eq("campaign_id", campaignId)
+    .eq("organization_id", orgId)
+    .eq("status", "enriching");
+
+  const { data: campaign } = await admin
     .from("lf_campaigns")
-    .select("*")
+    .select("id, name, apify_actors, max_leads_per_run")
     .eq("id", campaignId)
     .eq("organization_id", orgId)
-    .limit(1);
-  const campaign = campRows?.[0] ?? null;
-
+    .maybeSingle();
   if (!campaign) throw new Error("Campaign not found");
 
-  const typedCampaign = campaign as unknown as LFCampaign;
+  const typedCampaign = campaign as unknown as Pick<
+    LFCampaign,
+    "id" | "name" | "apify_actors" | "max_leads_per_run"
+  >;
+  const actorIds = await enabledEnrichActorsForCampaign(
+    typedCampaign,
+    orgId
+  );
 
-  // Resolve actor phases and keep only enrichment-phase actors
-  const allActorIds = typedCampaign.apify_actors ?? [];
-  const enrichmentActors: string[] = [];
-  for (const id of allActorIds) {
-    const def = await getActorById(id, orgId);
-    if (def?.phase === "enrich") enrichmentActors.push(id);
-  }
+  const limit =
+    options?.limit ?? typedCampaign.max_leads_per_run ?? 9999;
 
-  const concurrency = options?.concurrency ?? typedCampaign.enrichment_concurrency ?? 1;
-  const limit = options?.limit ?? typedCampaign.max_leads_per_run ?? 50;
-
-  // Get unenriched leads
-  const { data: leads } = await supabase
+  const { data: candidateLeads } = await admin
     .from("lf_leads")
-    .select("id, display_name")
+    .select("id")
     .eq("campaign_id", campaignId)
     .eq("organization_id", orgId)
     .eq("status", "new")
     .order("created_at", { ascending: true })
     .limit(limit);
 
-  if (!leads || leads.length === 0) {
-    return { enriched: 0, failed: 0, cancelled: false };
+  const candidates = (candidateLeads ?? []).map((l) => l.id);
+  if (candidates.length === 0) {
+    return { enqueued: 0, skipped: 0, remaining: 0 };
   }
 
-  let enriched = 0;
-  let failed = 0;
+  // Skip leads that already have active/queued enrichment jobs
+  const { data: activeRows } = await admin
+    .from("lf_enrichment_jobs")
+    .select("lead_id")
+    .in("lead_id", candidates)
+    .in("status", ["queued", "retry", "running"]);
+  const active = new Set((activeRows ?? []).map((r) => r.lead_id));
+  const toEnqueue = candidates.filter((id) => !active.has(id));
 
-  // Process in batches of `concurrency`
-  for (let i = 0; i < leads.length; i += concurrency) {
-    if (isCancelled(campaignId)) {
-      clearCancellation(campaignId);
-      return { enriched, failed, cancelled: true };
-    }
+  if (toEnqueue.length === 0) {
+    return {
+      enqueued: 0,
+      skipped: candidates.length,
+      remaining: 0,
+    };
+  }
 
-    const batch = leads.slice(i, i + concurrency);
+  const label = typedCampaign.name
+    ? `${typedCampaign.name} — campaign enrich`
+    : `Campaign ${campaignId} enrich`;
 
-    const batchResults = await Promise.allSettled(
-      batch.map((lead) =>
-        enrichSingleLead(lead.id, campaignId, orgId, {
-          aiProvider: typedCampaign.ai_provider,
-          enrichmentActors,
-          kpiDefinitions: typedCampaign.kpi_definitions,
-          leadFieldDefinitions: typedCampaign.lead_field_definitions,
-        })
-      )
+  const { data: batchRow, error: batchErr } = await admin
+    .from("lf_enrichment_batches")
+    .insert({
+      organization_id: orgId,
+      campaign_id: campaignId,
+      label,
+      total: toEnqueue.length,
+      status: "queued",
+    } as never)
+    .select("id")
+    .single();
+  if (batchErr || !batchRow) {
+    throw new Error(
+      `Failed to create enrichment batch: ${batchErr?.message}`
     );
+  }
+  const batchId = batchRow.id as string;
 
-    for (const result of batchResults) {
-      if (result.status === "fulfilled") enriched++;
-      else failed++;
+  // Insert jobs in chunks to stay within payload limits
+  const CHUNK = 500;
+  for (let i = 0; i < toEnqueue.length; i += CHUNK) {
+    const chunk = toEnqueue.slice(i, i + CHUNK);
+    const rows = chunk.map((leadId) => ({
+      organization_id: orgId,
+      batch_id: batchId,
+      lead_id: leadId,
+      actor_ids: actorIds,
+      status: "queued" as const,
+    }));
+    const { error: jobsErr } = await admin
+      .from("lf_enrichment_jobs")
+      .insert(rows as never);
+    if (jobsErr) {
+      throw new Error(
+        `Failed to enqueue enrichment jobs: ${jobsErr.message}`
+      );
     }
-
-    // Emit progress
-    leadEmitter.emit("campaign:enrichment-progress", {
-      campaignId,
-      completed: enriched + failed,
-      total: leads.length,
-      currentLeadId: batch[batch.length - 1]?.id ?? null,
-      currentLeadName: batch[batch.length - 1]?.display_name ?? null,
-    });
   }
 
-  clearCancellation(campaignId);
-  return { enriched, failed, cancelled: false };
+  // Kick the worker
+  try {
+    const { workerPump } = await import("./worker");
+    workerPump();
+  } catch (err) {
+    console.error(
+      "[lead-finder] Failed to start enrichment worker:",
+      err
+    );
+  }
+
+  leadEmitter.emit("campaign:enrichment-progress", {
+    campaignId,
+    completed: 0,
+    total: toEnqueue.length,
+    currentLeadId: null,
+    currentLeadName: null,
+    batchId,
+  });
+
+  return {
+    enqueued: toEnqueue.length,
+    skipped: candidates.length - toEnqueue.length,
+    remaining: toEnqueue.length,
+    batchId,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Explicit lead-level enqueue (used by bulk-enrich and per-lead triggers)
+// ---------------------------------------------------------------------------
+
+export async function enqueueLeadsEnrichment(
+  leadIds: string[],
+  orgId: string,
+  options?: { label?: string; campaignId?: string | null; actorIds?: string[] }
+): Promise<{ batchId: string; enqueued: number; skipped: number }> {
+  if (leadIds.length === 0) {
+    throw new Error("No lead IDs provided");
+  }
+  const admin = createAdminClient();
+
+  // Validate every lead is in this org (defense in depth against IDOR)
+  const { data: ownedLeadsData } = await admin
+    .from("lf_leads")
+    .select("id, campaign_id")
+    .in("id", leadIds)
+    .eq("organization_id", orgId);
+  const ownedLeads = ownedLeadsData ?? [];
+  const ownedIds = new Set(ownedLeads.map((r) => r.id));
+  const candidates = leadIds.filter((id) => ownedIds.has(id));
+  if (candidates.length === 0) {
+    throw new Error("No leads matched the caller's organization");
+  }
+
+  const { data: activeRows } = await admin
+    .from("lf_enrichment_jobs")
+    .select("lead_id")
+    .in("lead_id", candidates)
+    .in("status", ["queued", "retry", "running"]);
+  const active = new Set((activeRows ?? []).map((r) => r.lead_id));
+  const toEnqueue = candidates.filter((id) => !active.has(id));
+
+  // Derive a campaignId & actor set: if all leads share a campaign, use it.
+  let campaignId: string | null =
+    options?.campaignId ?? ownedLeads[0]?.campaign_id ?? null;
+  if (
+    !options?.campaignId &&
+    campaignId &&
+    !ownedLeads.every((r) => r.campaign_id === campaignId)
+  ) {
+    campaignId = null;
+  }
+
+  let actorIds = options?.actorIds ?? [];
+  if (actorIds.length === 0 && campaignId) {
+    const { data: campaign } = await admin
+      .from("lf_campaigns")
+      .select("apify_actors")
+      .eq("id", campaignId)
+      .eq("organization_id", orgId)
+      .maybeSingle();
+    actorIds = await enabledEnrichActorsForCampaign(
+      (campaign as Pick<LFCampaign, "apify_actors"> | null) ?? null,
+      orgId
+    );
+  }
+  if (actorIds.length === 0) {
+    actorIds = ["vdrmota/contact-info-scraper"];
+  }
+
+  const { data: batchRow, error: batchErr } = await admin
+    .from("lf_enrichment_batches")
+    .insert({
+      organization_id: orgId,
+      campaign_id: campaignId,
+      label: options?.label ?? `Bulk enrich (${toEnqueue.length} leads)`,
+      total: toEnqueue.length,
+      status: toEnqueue.length === 0 ? "done" : "queued",
+      finished_at: toEnqueue.length === 0 ? new Date().toISOString() : null,
+    } as never)
+    .select("id")
+    .single();
+  if (batchErr || !batchRow) {
+    throw new Error(
+      `Failed to create enrichment batch: ${batchErr?.message}`
+    );
+  }
+  const batchId = batchRow.id as string;
+
+  if (toEnqueue.length === 0) {
+    return {
+      batchId,
+      enqueued: 0,
+      skipped: candidates.length - toEnqueue.length,
+    };
+  }
+
+  const CHUNK = 500;
+  for (let i = 0; i < toEnqueue.length; i += CHUNK) {
+    const chunk = toEnqueue.slice(i, i + CHUNK);
+    const rows = chunk.map((leadId) => ({
+      organization_id: orgId,
+      batch_id: batchId,
+      lead_id: leadId,
+      actor_ids: actorIds,
+      status: "queued" as const,
+    }));
+    const { error: jobsErr } = await admin
+      .from("lf_enrichment_jobs")
+      .insert(rows as never);
+    if (jobsErr) {
+      throw new Error(
+        `Failed to enqueue enrichment jobs: ${jobsErr.message}`
+      );
+    }
+  }
+
+  try {
+    const { workerPump } = await import("./worker");
+    workerPump();
+  } catch (err) {
+    console.error(
+      "[lead-finder] Failed to start enrichment worker:",
+      err
+    );
+  }
+
+  return {
+    batchId,
+    enqueued: toEnqueue.length,
+    skipped: candidates.length - toEnqueue.length,
+  };
 }
 
 // =============================================================================

@@ -155,12 +155,12 @@ interface AnalyticsData {
 
 const statusConfig: Record<
   string,
-  { label: string; variant: "neutral" | "green" | "amber" | "red" }
+  { label: string; variant: "neutral" | "success" | "warning" | "error" }
 > = {
   draft: { label: "Draft", variant: "neutral" },
-  active: { label: "Active", variant: "green" },
-  paused: { label: "Paused", variant: "amber" },
-  archived: { label: "Archived", variant: "red" },
+  active: { label: "Active", variant: "success" },
+  paused: { label: "Paused", variant: "warning" },
+  archived: { label: "Archived", variant: "error" },
 };
 
 const categoryConfig: Record<string, string> = {
@@ -268,13 +268,13 @@ const getChannelForStepType = (st: string): string => {
 
 const enrollmentStatusConfig: Record<
   string,
-  { label: string; variant: "neutral" | "green" | "amber" | "red" | "blue" }
+  { label: string; variant: "neutral" | "success" | "warning" | "error" | "info" }
 > = {
-  active: { label: "Active", variant: "green" },
-  paused: { label: "Paused", variant: "amber" },
-  completed: { label: "Completed", variant: "blue" },
-  replied: { label: "Replied", variant: "green" },
-  bounced: { label: "Bounced", variant: "red" },
+  active: { label: "Active", variant: "success" },
+  paused: { label: "Paused", variant: "warning" },
+  completed: { label: "Completed", variant: "info" },
+  replied: { label: "Replied", variant: "success" },
+  bounced: { label: "Bounced", variant: "error" },
   unsubscribed: { label: "Unsubscribed", variant: "neutral" },
 };
 
@@ -1083,10 +1083,10 @@ export function SequenceDetailClient({
                             </span>
                             <Badge
                               variant={
-                                step.step_type === "email" ? "blue"
+                                step.step_type === "email" ? "info"
                                   : step.step_type === "wait" ? "neutral"
-                                    : step.step_type === "task" ? "amber"
-                                      : step.step_type === "call" ? "green" : "violet"
+                                    : step.step_type === "task" ? "warning"
+                                      : step.step_type === "call" ? "success" : "primary"
                               }
                             >
                               {typeConfig.label}
@@ -1152,7 +1152,7 @@ export function SequenceDetailClient({
                               <div className="mt-3 grid grid-cols-2 gap-2">
                                 <div className="p-2 rounded border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30">
                                   <div className="flex items-center gap-1.5 mb-1">
-                                    <Badge variant="blue">A</Badge>
+                                    <Badge variant="info">A</Badge>
                                     <span className="text-xs text-neutral-500 truncate">{step.subject}</span>
                                   </div>
                                   <div className="flex gap-3 text-xs text-neutral-500">
@@ -1162,7 +1162,7 @@ export function SequenceDetailClient({
                                 </div>
                                 <div className="p-2 rounded border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/30">
                                   <div className="flex items-center gap-1.5 mb-1">
-                                    <Badge variant="violet">B</Badge>
+                                    <Badge variant="primary">B</Badge>
                                     <span className="text-xs text-neutral-500 truncate">{varB.subject}</span>
                                   </div>
                                   <div className="flex gap-3 text-xs text-neutral-500">
@@ -1623,7 +1623,7 @@ export function SequenceDetailClient({
                     <div className="grid grid-cols-2 gap-3">
                       <div className={cn("p-3 rounded border", s.winner === "A" ? "border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20" : "border-neutral-200 dark:border-neutral-700")}>
                         <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="blue">A</Badge>
+                          <Badge variant="info">A</Badge>
                           {s.winner === "A" && <span className="text-xs text-green-600 dark:text-green-400 font-medium">Winner</span>}
                         </div>
                         <p className="text-xs text-neutral-500 truncate mb-2">{s.subjectA || "—"}</p>
@@ -1636,7 +1636,7 @@ export function SequenceDetailClient({
                       </div>
                       <div className={cn("p-3 rounded border", s.winner === "B" ? "border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20" : "border-neutral-200 dark:border-neutral-700")}>
                         <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="violet">B</Badge>
+                          <Badge variant="primary">B</Badge>
                           {s.winner === "B" && <span className="text-xs text-green-600 dark:text-green-400 font-medium">Winner</span>}
                         </div>
                         <p className="text-xs text-neutral-500 truncate mb-2">{s.subjectB}</p>
@@ -1692,22 +1692,26 @@ export function SequenceDetailClient({
               <div className="grid grid-cols-2 gap-4">
                 <Select
                   label="Start Hour"
-                  options={Array.from({ length: 24 }, (_, i) => ({
-                    label: `${i.toString().padStart(2, "0")}:00`,
-                    value: i.toString(),
-                  }))}
                   value={settStartHour}
                   onChange={(e) => setSettStartHour(e.target.value)}
-                />
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i.toString()} value={i.toString()}>
+                      {`${i.toString().padStart(2, "0")}:00`}
+                    </option>
+                  ))}
+                </Select>
                 <Select
                   label="End Hour"
-                  options={Array.from({ length: 24 }, (_, i) => ({
-                    label: `${i.toString().padStart(2, "0")}:00`,
-                    value: i.toString(),
-                  }))}
                   value={settEndHour}
                   onChange={(e) => setSettEndHour(e.target.value)}
-                />
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i.toString()} value={i.toString()}>
+                      {`${i.toString().padStart(2, "0")}:00`}
+                    </option>
+                  ))}
+                </Select>
               </div>
             </div>
           </div>
@@ -1799,7 +1803,10 @@ export function SequenceDetailClient({
             <h3 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-4">Timezone</h3>
             <Select
               label="Sending Timezone"
-              options={[
+              value={settTimezone}
+              onChange={(e) => setSettTimezone(e.target.value)}
+            >
+              {[
                 { label: "US/Eastern (EST)", value: "America/New_York" },
                 { label: "US/Central (CST)", value: "America/Chicago" },
                 { label: "US/Mountain (MST)", value: "America/Denver" },
@@ -1810,10 +1817,12 @@ export function SequenceDetailClient({
                 { label: "Asia/Kolkata (IST)", value: "Asia/Kolkata" },
                 { label: "Asia/Tokyo (JST)", value: "Asia/Tokyo" },
                 { label: "Australia/Sydney (AEST)", value: "Australia/Sydney" },
-              ]}
-              value={settTimezone}
-              onChange={(e) => setSettTimezone(e.target.value)}
-            />
+              ].map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
           </div>
 
           {/* Save Button */}
@@ -1860,13 +1869,13 @@ export function SequenceDetailClient({
           </div>
 
           <div className="space-y-4">
-            <Select label="Step Type" required options={stepTypeOptions} value={stepType} onChange={(e) => { setStepType(e.target.value); setStepChannel(getChannelForStepType(e.target.value)); }} />
+            <Select label="Step Type" required value={stepType} onChange={(e) => { setStepType(e.target.value); setStepChannel(getChannelForStepType(e.target.value)); }}>{stepTypeOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</Select>
             <Input label="Delay (days)" type="number" min="0" placeholder="0" value={stepDelayDays} onChange={(e) => setStepDelayDays(e.target.value)} />
 
             {/* Channel badge */}
             <div className="flex items-center gap-2">
               <span className="text-xs text-neutral-500 dark:text-neutral-400">Channel:</span>
-              <Badge variant={stepType === "whatsapp" ? "green" : stepType.startsWith("linkedin") ? "blue" : stepType === "email" ? "neutral" : "amber"}>
+              <Badge variant={stepType === "whatsapp" ? "success" : stepType.startsWith("linkedin") ? "info" : stepType === "email" ? "neutral" : "warning"}>
                 {getChannelForStepType(stepType).charAt(0).toUpperCase() + getChannelForStepType(stepType).slice(1)}
               </Badge>
             </div>
@@ -1876,7 +1885,7 @@ export function SequenceDetailClient({
               <>
                 {showVariantB && (
                   <div className="flex items-center gap-2">
-                    <Badge variant="blue">Variant A ({variantAWeight}%)</Badge>
+                    <Badge variant="info">Variant A ({variantAWeight}%)</Badge>
                   </div>
                 )}
                 <Input label="Subject" placeholder="e.g. Quick question about {{company}}" value={stepSubject} onChange={(e) => setStepSubject(e.target.value)} />
@@ -1933,7 +1942,7 @@ export function SequenceDetailClient({
                 ) : (
                   <div className="border border-dashed border-neutral-300 dark:border-neutral-700 rounded p-4 space-y-4">
                     <div className="flex items-center justify-between">
-                      <Badge variant="violet">Variant B ({100 - variantAWeight}%)</Badge>
+                      <Badge variant="primary">Variant B ({100 - variantAWeight}%)</Badge>
                       <button type="button" onClick={() => { setShowVariantB(false); setVariantBSubject(""); setVariantBBody(""); }} className="flex h-6 w-6 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
                         <XIcon size={14} className="text-neutral-500" />
                       </button>
@@ -2295,7 +2304,7 @@ export function SequenceDetailClient({
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{lead.email}</p>
                   </div>
                   {lead.score != null && (
-                    <Badge variant={lead.score >= 70 ? "green" : lead.score >= 40 ? "amber" : "neutral"}>
+                    <Badge variant={lead.score >= 70 ? "success" : lead.score >= 40 ? "warning" : "neutral"}>
                       {lead.score}
                     </Badge>
                   )}

@@ -60,10 +60,10 @@ function relativeDate(dateStr: string): string {
 
 const STATUS_CONFIG: Record<string, { color: string; icon: React.ReactNode }> = {
   draft:     { color: "neutral", icon: <ClockIcon size={10} /> },
-  active:    { color: "green",   icon: <PlayIcon size={10} /> },
-  paused:    { color: "amber",   icon: <PauseIcon size={10} /> },
-  completed: { color: "blue",    icon: <CheckCircleIcon size={10} /> },
-  archived:  { color: "red",     icon: null },
+  active:    { color: "success", icon: <PlayIcon size={10} /> },
+  paused:    { color: "warning", icon: <PauseIcon size={10} /> },
+  completed: { color: "info",    icon: <CheckCircleIcon size={10} /> },
+  archived:  { color: "error",   icon: null },
 };
 
 // ── Delete confirmation modal ──────────────────────────────────────────────
@@ -169,7 +169,7 @@ export default function CampaignsPage() {
                     <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 truncate">{campaign.name}</h3>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 truncate">{campaign.target_niche}</p>
                   </div>
-                  <Badge variant={statusCfg.color as "neutral" | "green" | "amber" | "blue" | "red"}>
+                  <Badge variant={statusCfg.color as "neutral" | "success" | "warning" | "info" | "error"}>
                     <span className="flex items-center gap-1">
                       {statusCfg.icon}
                       <span className="capitalize">{campaign.status}</span>

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgId, getCurrentUserProfile } from "./helpers";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
+import { escapePostgrestLike } from "@/lib/security";
 
 type DealInsert = Database["public"]["Tables"]["deals"]["Insert"];
 type DealUpdate = Database["public"]["Tables"]["deals"]["Update"];
@@ -40,8 +41,9 @@ export async function getDeals(filters: DealFilters = {}) {
     .eq("organization_id", orgId);
 
   if (search) {
+    const q = escapePostgrestLike(search);
     query = query.or(
-      `name.ilike.%${search}%,company.ilike.%${search}%,contact_name.ilike.%${search}%`,
+      `name.ilike.%${q}%,company.ilike.%${q}%,contact_name.ilike.%${q}%`,
     );
   }
 

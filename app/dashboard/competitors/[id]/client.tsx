@@ -46,10 +46,10 @@ interface BattleCardData {
   [key: string]: unknown;
 }
 
-const categoryBadgeVariant: Record<string, "green" | "amber" | "blue"> = {
-  direct: "green",
-  indirect: "amber",
-  aspirational: "blue",
+const categoryBadgeVariant: Record<string, "success" | "warning" | "info"> = {
+  direct: "success",
+  indirect: "warning",
+  aspirational: "info",
 };
 
 // ── Editable Tag Section ─────────────────────────────────────────────────────

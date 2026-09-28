@@ -277,16 +277,16 @@ export function InboxClient() {
 
   const statusBadge = (status: string) => {
     switch (status) {
-      case "sent": return <Badge variant="blue">Sent</Badge>;
-      case "delivered": return <Badge variant="green">Delivered</Badge>;
-      case "opened": return <Badge variant="emerald">Opened</Badge>;
-      case "read": return <Badge variant="emerald">Read</Badge>;
-      case "clicked": return <Badge variant="violet">Clicked</Badge>;
-      case "bounced": return <Badge variant="red">Bounced</Badge>;
-      case "failed": return <Badge variant="red">Failed</Badge>;
-      case "replied": return <Badge variant="green">Replied</Badge>;
-      case "accepted": return <Badge variant="green">Accepted</Badge>;
-      case "declined": return <Badge variant="red">Declined</Badge>;
+      case "sent": return <Badge variant="info">Sent</Badge>;
+      case "delivered": return <Badge variant="success">Delivered</Badge>;
+      case "opened": return <Badge variant="success">Opened</Badge>;
+      case "read": return <Badge variant="success">Read</Badge>;
+      case "clicked": return <Badge variant="primary">Clicked</Badge>;
+      case "bounced": return <Badge variant="error">Bounced</Badge>;
+      case "failed": return <Badge variant="error">Failed</Badge>;
+      case "replied": return <Badge variant="success">Replied</Badge>;
+      case "accepted": return <Badge variant="success">Accepted</Badge>;
+      case "declined": return <Badge variant="error">Declined</Badge>;
       case "pending": return <Badge variant="neutral">Pending</Badge>;
       case "queued": return <Badge variant="neutral">Queued</Badge>;
       default: return null;

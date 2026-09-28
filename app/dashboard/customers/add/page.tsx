@@ -330,18 +330,28 @@ export default function AddCustomerPage() {
           <div className="grid grid-cols-2 gap-4 mb-4">
             <Select
               label="Industry"
-              placeholder="Select industry"
-              options={industryOptions}
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
-            />
+            >
+              <option value="">Select industry</option>
+              {industryOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
             <Select
               label="Company Size"
-              placeholder="Select size"
-              options={companySizeOptions}
               value={companySize}
               onChange={(e) => setCompanySize(e.target.value)}
-            />
+            >
+              <option value="">Select size</option>
+              {companySizeOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
           </div>
 
           <Input
@@ -392,11 +402,16 @@ export default function AddCustomerPage() {
             />
             <Select
               label="Country"
-              placeholder="Select country"
-              options={countryOptions}
               value={country}
               onChange={(e) => setCountry(e.target.value)}
-            />
+            >
+              <option value="">Select country</option>
+              {countryOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
           </div>
         </FormSection>
 
@@ -417,11 +432,16 @@ export default function AddCustomerPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label="Plan"
-              placeholder="Select plan"
-              options={planOptions}
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
-            />
+            >
+              <option value="">Select plan</option>
+              {planOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
             <Input
               label="Monthly Revenue"
               placeholder="$0.00"

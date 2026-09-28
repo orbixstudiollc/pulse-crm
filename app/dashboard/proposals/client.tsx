@@ -73,13 +73,13 @@ interface PricingTier {
 
 const statusConfig: Record<
   string,
-  { label: string; variant: "neutral" | "blue" | "amber" | "green" | "red" }
+  { label: string; variant: "neutral" | "info" | "warning" | "success" | "error" }
 > = {
   draft: { label: "Draft", variant: "neutral" },
-  sent: { label: "Sent", variant: "blue" },
-  viewed: { label: "Viewed", variant: "amber" },
-  accepted: { label: "Accepted", variant: "green" },
-  rejected: { label: "Rejected", variant: "red" },
+  sent: { label: "Sent", variant: "info" },
+  viewed: { label: "Viewed", variant: "warning" },
+  accepted: { label: "Accepted", variant: "success" },
+  rejected: { label: "Rejected", variant: "error" },
 };
 
 const statusTabs = [
@@ -618,10 +618,15 @@ export function ProposalsPageClient({
             {editingProposal && (
               <Select
                 label="Status"
-                options={statusOptions}
                 value={formStatus}
                 onChange={(e) => setFormStatus(e.target.value)}
-              />
+              >
+                {statusOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </Select>
             )}
 
             <Input

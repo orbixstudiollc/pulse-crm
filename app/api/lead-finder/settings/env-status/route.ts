@@ -1,23 +1,31 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { getApifyTokenFromEnv } from "@/lib/lead-finder/apify/token";
 
+/**
+ * Reports which lead-finder integrations are configured for the caller's org.
+ *
+ * SECURITY notes:
+ * - Never reports whether CRON_SECRET is set (that's an internal deployment
+ *   concern and exposing it would help a targeted attacker).
+ * - Never reveals the source (env vs DB) beyond a boolean flag.
+ */
 export async function GET() {
   try {
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user)
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    // Get org ID
     const { data: profile } = await supabase
       .from("profiles")
       .select("organization_id")
       .eq("id", user.id)
       .single();
 
-    // Get DB-stored keys too
     let dbApify = false;
     let dbAnthropic = false;
     let dbOpenRouter = false;
@@ -34,25 +42,27 @@ export async function GET() {
     }
 
     const status = {
-      apify: {
-        configured: dbApify || !!process.env.APIFY_TOKEN,
-        source: dbApify ? "settings" : process.env.APIFY_TOKEN ? "env" : null,
-      },
+      apify: { configured: dbApify || !!getApifyTokenFromEnv() },
       openrouter: {
         configured: dbOpenRouter || !!process.env.OPENROUTER_API_KEY,
-        source: dbOpenRouter ? "settings" : process.env.OPENROUTER_API_KEY ? "env" : null,
       },
       anthropic: {
         configured: dbAnthropic || !!process.env.ANTHROPIC_API_KEY,
-        source: dbAnthropic ? "settings" : process.env.ANTHROPIC_API_KEY ? "env" : null,
       },
-      cronSecret: {
-        configured: !!process.env.CRON_SECRET,
+      ollama_cloud: {
+        configured: !!process.env.OLLAMA_CLOUD_API_KEY,
+      },
+      groq: {
+        configured: !!process.env.GROQ_API_KEY,
       },
     };
 
     return NextResponse.json({ data: status });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[lead-finder/settings/env-status] error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

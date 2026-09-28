@@ -19,7 +19,9 @@ export class ApifyError extends Error {
   constructor(
     message: string,
     public readonly statusCode?: number,
-    public readonly errorType?: string
+    public readonly errorType: string = "unknown",
+    public readonly actionUrl?: string,
+    public readonly actionLabel?: string
   ) {
     super(message);
     this.name = "ApifyError";
@@ -29,13 +31,95 @@ export class ApifyError extends Error {
 export function parseApifyError(body: string, statusCode: number): ApifyError {
   try {
     const parsed = JSON.parse(body);
+    const errorType: string = parsed?.error?.type || "";
+    const errorMessage: string = parsed?.error?.message || "";
+
+    if (
+      errorType === "platform-feature-disabled" ||
+      errorMessage.toLowerCase().includes("hard limit exceeded")
+    ) {
+      return new ApifyError(
+        "Your Apify account has reached its monthly usage limit. Please upgrade your plan or wait for the next billing cycle.",
+        statusCode,
+        "usage-limit",
+        "https://console.apify.com/billing",
+        "Manage Apify billing"
+      );
+    }
+
+    if (
+      errorMessage.toLowerCase().includes("exceed the memory limit") ||
+      errorMessage.toLowerCase().includes("memory limit")
+    ) {
+      return new ApifyError(
+        "Apify account memory capacity is currently exhausted. Enrichment will retry after backoff.",
+        statusCode,
+        "memory-limit",
+        "https://console.apify.com/billing/subscription",
+        "Manage Apify memory capacity"
+      );
+    }
+
+    if (statusCode === 401) {
+      return new ApifyError(
+        "Invalid Apify token. Check APIFY_API_TOKEN in your environment or the Lead Finder Settings page.",
+        statusCode,
+        "auth-invalid"
+      );
+    }
+
+    if (statusCode === 403) {
+      return new ApifyError(
+        "Access denied. Please verify your Apify token is valid and your subscription covers this actor.",
+        statusCode,
+        "access-denied",
+        "https://console.apify.com/billing",
+        "Check Apify subscription"
+      );
+    }
+
+    if (statusCode === 404) {
+      return new ApifyError(
+        "Actor not found. This actor ID may be incorrect or no longer available on Apify.",
+        statusCode,
+        "not-found"
+      );
+    }
+
     return new ApifyError(
-      parsed?.error?.message || parsed?.message || body,
+      errorMessage || `Apify returned an unexpected error (${statusCode}).`,
       statusCode,
-      parsed?.error?.type || "UNKNOWN"
+      "unknown"
     );
   } catch {
-    return new ApifyError(body, statusCode, "UNKNOWN");
+    if (statusCode === 401) {
+      return new ApifyError(
+        "Invalid Apify token. Check APIFY_API_TOKEN in your environment or the Lead Finder Settings page.",
+        statusCode,
+        "auth-invalid"
+      );
+    }
+    if (statusCode === 403) {
+      return new ApifyError(
+        "Access denied. Your Apify subscription may not cover this actor or your usage limit has been reached.",
+        statusCode,
+        "access-denied",
+        "https://console.apify.com/billing",
+        "Check Apify subscription"
+      );
+    }
+    if (statusCode === 404) {
+      return new ApifyError(
+        "Actor not found. This actor ID may be incorrect or no longer available on Apify.",
+        statusCode,
+        "not-found"
+      );
+    }
+    return new ApifyError(
+      `Apify returned an unexpected error (${statusCode}).`,
+      statusCode,
+      "unknown"
+    );
   }
 }
 
@@ -73,12 +157,16 @@ export async function startActorRun(
     throw new Error(`Failed to create apify run record: ${dbErr?.message}`);
   }
 
-  // Call Apify
+  // Call Apify – actor IDs are of the form "owner/name"; Apify accepts "owner~name" in the URL.
+  const encodedActorId = actorId.replace("/", "~");
   const res = await fetch(
-    `${APIFY_BASE}/acts/${encodeURIComponent(actorId)}/runs?token=${token}`,
+    `${APIFY_BASE}/acts/${encodedActorId}/runs`,
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify(input),
     }
   );
@@ -122,7 +210,8 @@ export async function pollRunUntilDone(
 
   for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
     const res = await fetch(
-      `${APIFY_BASE}/actor-runs/${runId}?token=${token}`
+      `${APIFY_BASE}/actor-runs/${runId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
     );
 
     if (!res.ok) {
@@ -191,7 +280,8 @@ export async function fetchDatasetItems(
   const token = await getApifyToken(orgId);
 
   const res = await fetch(
-    `${APIFY_BASE}/datasets/${datasetId}/items?token=${token}&limit=${limit}&format=json`
+    `${APIFY_BASE}/datasets/${datasetId}/items?limit=${limit}&format=json`,
+    { headers: { Authorization: `Bearer ${token}` } }
   );
 
   if (!res.ok) {

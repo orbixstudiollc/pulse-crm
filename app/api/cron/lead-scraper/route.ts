@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { verifyCronRequest } from "@/lib/security";
 
 /**
  * Lead Scraper Cron — runs daily.
@@ -10,10 +11,8 @@ import { createAdminClient } from "@/lib/supabase/server";
  *   4. Auto-enrolls in sequence if configured
  */
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = verifyCronRequest(request);
+  if (authErr) return authErr;
 
   const admin = createAdminClient();
   let searchesProcessed = 0;

@@ -1,15 +1,19 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { recordTrackingEvent } from "@/lib/email/tracking";
 import { redirect } from "next/navigation";
+import { isSafeExternalUrl, isUuid } from "@/lib/security";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ linkId: string }> },
 ) {
   const { linkId } = await params;
+  if (!isUuid(linkId)) {
+    return new Response("Invalid link", { status: 400 });
+  }
+
   const supabase = createAdminClient();
 
-  // Get original URL
   const { data: link } = await supabase
     .from("email_link_tracking")
     .select("original_url, message_id")
@@ -20,7 +24,14 @@ export async function GET(
     return new Response("Link not found", { status: 404 });
   }
 
-  // Increment click count on the link
+  const targetUrl = typeof link.original_url === "string" ? link.original_url : "";
+
+  // SECURITY: only allow http(s) redirects to public hosts. This blocks
+  // javascript:/data: URLs and SSRF-style redirects to private networks.
+  if (!isSafeExternalUrl(targetUrl)) {
+    return new Response("Link destination is not allowed", { status: 400 });
+  }
+
   const { data: currentLink } = await supabase
     .from("email_link_tracking")
     .select("click_count")
@@ -33,14 +44,14 @@ export async function GET(
       .eq("id", linkId);
   }
 
-  // Record click event (fire-and-forget)
   recordTrackingEvent(link.message_id, "clicked", {
     link_id: linkId,
-    original_url: link.original_url,
-    ip: request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip"),
+    original_url: targetUrl,
+    ip:
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip"),
     user_agent: request.headers.get("user-agent"),
   }).catch(() => {});
 
-  // Redirect to original URL
-  redirect(link.original_url);
+  redirect(targetUrl);
 }

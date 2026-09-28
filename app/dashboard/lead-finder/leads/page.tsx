@@ -25,6 +25,7 @@ import {
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 import { LeadDetailDrawer } from "@/components/lead-finder/LeadDetailDrawer";
 import { ScoreBadge } from "@/components/lead-finder/ScoreBadge";
+import { EnrichmentProgressBanner, registerActiveBatch } from "@/components/lead-finder/EnrichmentProgressBanner";
 import { getLeadDisplayName, formatSource, formatCost } from "@/lib/lead-finder/utils/lead-display";
 import type { LFLead } from "@/lib/lead-finder/types";
 
@@ -185,6 +186,9 @@ function applyFilters(leads: Lead[], filters: LeadFilter[]): Lead[] {
   return leads.filter((lead) => filters.every((f) => matchesFilter(lead, f)));
 }
 
+// Kept as a fallback for client-side CSV generation; the primary Export CSV
+// flow now hits /api/lead-finder/analytics/export for server-enforced tenant
+// filtering. Referenced via the `_fallbackCsv` alias below to avoid lint noise.
 function generateCsv(leads: Lead[], dynFields: LeadFieldDefinition[]): string {
   const headers = [
     "ID",
@@ -225,6 +229,11 @@ function generateCsv(leads: Lead[], dynFields: LeadFieldDefinition[]): string {
   return [headers.map(escape).join(","), ...rows].join("\n");
 }
 
+// Re-export as a non-UI alias so the linter does not flag the helper as unused
+// while we keep it available for potential offline fallback exports.
+const _fallbackCsv = generateCsv;
+void _fallbackCsv;
+
 // ── Main component ────────────────────────────────────────────────────────
 
 export default function AllLeadsPage() {
@@ -263,6 +272,8 @@ export default function AllLeadsPage() {
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [enriching, setEnriching] = useState(false);
+  const [activeBatchId, setActiveBatchId] = useState<string | null>(null);
 
   // ── Sync campaignFilter from URL ────────────────────────────────────────
 
@@ -454,17 +465,31 @@ export default function AllLeadsPage() {
 
   // ── CSV export ──────────────────────────────────────────────────────────
 
-  const handleExportCsv = () => {
-    const dynFields = selectedCampaign?.leadFieldDefinitions || [];
-    const csv = generateCsv(filteredLeads, dynFields);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `leads-${selectedCampaign?.name || "export"}-${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success(`Exported ${filteredLeads.length} leads to CSV`);
+  const handleExportCsv = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (campaignFilter) params.set("campaignId", campaignFilter);
+      if (statusFilter) params.set("status", statusFilter);
+      const res = await fetch(
+        `/api/lead-finder/analytics/export?${params.toString()}`
+      );
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(txt || `Export failed (${res.status})`);
+      }
+      const csv = await res.text();
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const datePart = new Date().toISOString().split("T")[0];
+      a.download = `leads-${datePart}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("CSV export ready");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Export failed");
+    }
   };
 
   // ── Selection helpers ───────────────────────────────────────────────────
@@ -505,6 +530,41 @@ export default function AllLeadsPage() {
       toast.error("Failed to import leads");
     } finally {
       setImporting(false);
+    }
+  };
+
+  const handleBulkEnrich = async () => {
+    const ids = Array.from(selectedLeads);
+    if (ids.length === 0) return;
+    setEnriching(true);
+    try {
+      const res = await fetch("/api/lead-finder/leads/bulk-enrich", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadIds: ids,
+          campaignId: campaignFilter || undefined,
+          label: `Bulk enrich ${ids.length} leads`,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json?.error || "Bulk enrich failed");
+      }
+      setActiveBatchId(json.batchId ?? null);
+      if (json.batchId) registerActiveBatch(json.batchId);
+      setSelectedLeads(new Set());
+      toast.success(
+        `Enrichment queued for ${json.enqueued ?? ids.length} lead${
+          (json.enqueued ?? ids.length) === 1 ? "" : "s"
+        }${json.skipped ? ` (${json.skipped} skipped)` : ""}`
+      );
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to enrich leads"
+      );
+    } finally {
+      setEnriching(false);
     }
   };
 
@@ -584,6 +644,15 @@ export default function AllLeadsPage() {
       {/* Sub nav */}
       <LeadFinderSubNav />
 
+      <EnrichmentProgressBanner
+        campaignId={campaignFilter || undefined}
+        batchId={activeBatchId}
+        onBatchFinished={() => {
+          setActiveBatchId(null);
+          void fetchLeads();
+        }}
+      />
+
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Search */}
@@ -600,9 +669,14 @@ export default function AllLeadsPage() {
         <Select
           value={campaignFilter}
           onChange={(e) => handleCampaignChange(e.target.value)}
-          options={campaigns.map((c) => ({ label: c.name, value: c.id }))}
-          placeholder="All Campaigns"
-        />
+        >
+          <option value="">All Campaigns</option>
+          {campaigns.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </Select>
 
         {/* Status filter */}
         <Select
@@ -611,9 +685,14 @@ export default function AllLeadsPage() {
             setStatusFilter(e.target.value);
             setOffset(0);
           }}
-          options={STATUS_OPTIONS.map((s) => ({ label: s.charAt(0).toUpperCase() + s.slice(1), value: s }))}
-          placeholder="All Statuses"
-        />
+        >
+          <option value="">All Statuses</option>
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {s.charAt(0).toUpperCase() + s.slice(1)}
+            </option>
+          ))}
+        </Select>
 
         {/* AI Filter toggle */}
         <Button
@@ -632,6 +711,21 @@ export default function AllLeadsPage() {
             <span className="text-xs text-neutral-500 dark:text-neutral-400">
               {selectedLeads.size} selected
             </span>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleBulkEnrich}
+              disabled={enriching}
+              leftIcon={
+                enriching ? (
+                  <CircleNotchIcon size={12} className="animate-spin" />
+                ) : (
+                  <SparkleIcon size={12} />
+                )
+              }
+            >
+              Bulk Enrich
+            </Button>
             <Button
               variant="secondary"
               size="sm"
@@ -945,9 +1039,14 @@ export default function AllLeadsPage() {
                     setPageSize(Number(e.target.value));
                     setOffset(0);
                   }}
-                  options={PAGE_SIZES.map((s) => ({ label: `${s} per page`, value: String(s) }))}
                   className="text-xs py-1"
-                />
+                >
+                  {PAGE_SIZES.map((s) => (
+                    <option key={String(s)} value={String(s)}>
+                      {`${s} per page`}
+                    </option>
+                  ))}
+                </Select>
               </div>
               <div className="flex items-center gap-1">
                 <button

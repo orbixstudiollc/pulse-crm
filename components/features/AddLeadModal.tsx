@@ -311,9 +311,14 @@ export function AddLeadModal({
             name="source"
             value={formData.source}
             onChange={handleChange}
-            options={sourceOptions}
-            placeholder="Select source..."
-          />
+          >
+            <option value="">Select source...</option>
+            {sourceOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
           <Input
             label="Estimated Value"
             type="number"
@@ -382,17 +387,27 @@ export function AddLeadModal({
               name="revenueRange"
               value={formData.revenueRange}
               onChange={handleChange}
-              options={revenueRangeOptions}
-              placeholder="Select range..."
-            />
+            >
+              <option value="">Select range...</option>
+              {revenueRangeOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
             <Select
               label="Funding Stage"
               name="fundingStage"
               value={formData.fundingStage}
               onChange={handleChange}
-              options={fundingStageOptions}
-              placeholder="Select stage..."
-            />
+            >
+              <option value="">Select stage...</option>
+              {fundingStageOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
@@ -415,9 +430,14 @@ export function AddLeadModal({
             name="decisionRole"
             value={formData.decisionRole}
             onChange={handleChange}
-            options={decisionRoleOptions}
-            placeholder="Select role..."
-          />
+          >
+            <option value="">Select role...</option>
+            {decisionRoleOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
         </SectionToggle>
 
         {/* === Preferences Section === */}
@@ -447,9 +467,14 @@ export function AddLeadModal({
             name="meetingPreference"
             value={formData.meetingPreference}
             onChange={handleChange}
-            options={meetingPrefOptions}
-            placeholder="Select preference..."
-          />
+          >
+            <option value="">Select preference...</option>
+            {meetingPrefOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
         </SectionToggle>
 
         {/* === Additional Info Section === */}

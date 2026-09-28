@@ -1,6 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { recordTrackingEvent } from "@/lib/email/tracking";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { isUuid, verifyWebhookHeader } from "@/lib/security";
 
 const MEETING_KEYWORDS = [
   "meeting", "call", "schedule", "calendar", "book", "slot",
@@ -14,42 +16,83 @@ function detectMeetingIntent(text: string): boolean {
   return MEETING_KEYWORDS.some((kw) => lower.includes(kw));
 }
 
+const replyBodySchema = z.object({
+  messageId: z.string().min(1).max(998).optional(),
+  inReplyTo: z.string().min(1).max(998).optional(),
+  from: z.string().max(998).optional(),
+  subject: z.string().max(998).optional(),
+  textBody: z.string().max(500_000).optional(),
+  htmlBody: z.string().max(500_000).optional(),
+});
+
 /**
  * Webhook: Inbound Reply Detection
  * Called by email provider (e.g., SendGrid, Postmark) when a reply is received.
  */
 export async function POST(request: Request) {
-  const secret = request.headers.get("x-webhook-secret");
-  if (secret !== process.env.EMAIL_WEBHOOK_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = verifyWebhookHeader(
+    request,
+    "x-webhook-secret",
+    "EMAIL_WEBHOOK_SECRET"
+  );
+  if (authErr) return authErr;
 
-  const body = await request.json();
+  let body: z.infer<typeof replyBodySchema>;
+  try {
+    body = replyBodySchema.parse(await request.json());
+  } catch {
+    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  }
   const { messageId, inReplyTo, from, subject, textBody, htmlBody } = body;
 
   if (!messageId && !inReplyTo) {
-    return NextResponse.json({ error: "Missing messageId or inReplyTo" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing messageId or inReplyTo" },
+      { status: 400 }
+    );
   }
 
   const supabase = createAdminClient();
 
-  // Find original message by provider_message_id or id
-  const lookupId = inReplyTo || messageId;
-  const { data: originalMessage } = await supabase
-    .from("email_messages")
-    .select("id, thread_id, enrollment_id, organization_id, email_account_id")
-    .or(`id.eq.${lookupId},provider_message_id.eq.${lookupId}`)
-    .limit(1)
-    .maybeSingle();
+  // SECURITY: only do exact lookups on validated identifiers. Never interpolate
+  // user input into a PostgREST `.or()` filter.
+  const lookupId = inReplyTo || messageId || "";
+  let originalMessage: {
+    id: string;
+    thread_id: string | null;
+    enrollment_id: string | null;
+    organization_id: string;
+    email_account_id: string;
+  } | null = null;
+
+  if (isUuid(lookupId)) {
+    const { data } = await supabase
+      .from("email_messages")
+      .select(
+        "id, thread_id, enrollment_id, organization_id, email_account_id"
+      )
+      .eq("id", lookupId)
+      .maybeSingle();
+    originalMessage = data ?? null;
+  }
+
+  if (!originalMessage) {
+    const { data } = await supabase
+      .from("email_messages")
+      .select(
+        "id, thread_id, enrollment_id, organization_id, email_account_id"
+      )
+      .eq("provider_message_id", lookupId)
+      .maybeSingle();
+    originalMessage = data ?? null;
+  }
 
   if (!originalMessage) {
     return NextResponse.json({ success: true, matched: false });
   }
 
-  // Record reply event
   await recordTrackingEvent(originalMessage.id, "opened", { reply: true });
 
-  // Get lead_id from thread
   let leadId: string | null = null;
   if (originalMessage.thread_id) {
     const { data: thread } = await supabase
@@ -60,7 +103,6 @@ export async function POST(request: Request) {
     leadId = thread?.lead_id ?? null;
   }
 
-  // Store reply as inbound message
   if (originalMessage.thread_id) {
     await supabase.from("email_messages").insert({
       organization_id: originalMessage.organization_id,
@@ -77,7 +119,6 @@ export async function POST(request: Request) {
     });
   }
 
-  // Record sequence event for reply
   if (originalMessage.enrollment_id) {
     await supabase.from("sequence_events").insert({
       enrollment_id: originalMessage.enrollment_id,
@@ -85,14 +126,12 @@ export async function POST(request: Request) {
       event_data: { from, subject },
     });
 
-    // Update enrollment reply status
     await supabase
       .from("sequence_enrollments")
       .update({ status: "replied" })
       .eq("id", originalMessage.enrollment_id);
   }
 
-  // Fire automation trigger
   if (leadId) {
     const replyText = textBody || htmlBody || "";
     const hasMeetingIntent = detectMeetingIntent(replyText);
@@ -104,7 +143,6 @@ export async function POST(request: Request) {
       }).catch(() => {}),
     );
 
-    // Auto-log meeting interest as activity
     if (hasMeetingIntent) {
       const { data: lead } = await supabase
         .from("leads")

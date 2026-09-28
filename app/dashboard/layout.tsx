@@ -3,6 +3,7 @@ import { HeaderProvider } from "@/components/layout/HeaderContext";
 import { SidebarProvider } from "@/components/layout/SidebarContext";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { AIChatProvider, AIChatPanel } from "@/components/features/AIChat";
+import { EnrichmentProgressBanner } from "@/components/lead-finder/EnrichmentProgressBanner";
 import { Toaster } from "sonner";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -38,6 +39,9 @@ export default async function DashboardLayout({
               <Sidebar />
               <MobileSidebar />
               <div className="flex flex-1 flex-col overflow-hidden">
+                <div className="px-4 pt-4 empty:hidden lead-finder-banner-slot">
+                  <EnrichmentProgressBanner />
+                </div>
                 <Header />
                 <main className="flex-1 overflow-auto">{children}</main>
               </div>

@@ -617,7 +617,7 @@ export function ImportLeadsModal({
                 <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                   {fileName}
                 </span>
-                <Badge variant="blue">{totalRows} rows</Badge>
+                <Badge variant="info">{totalRows} rows</Badge>
               </div>
               <button
                 onClick={handleAIMapFields}
@@ -654,12 +654,17 @@ export function ImportLeadsModal({
                   />
                   <div className="flex-1 min-w-0">
                     <Select
-                      options={LEAD_FIELD_OPTIONS}
                       value={fieldMapping[header] || "__skip__"}
                       onChange={(e) =>
                         handleMappingChange(header, e.target.value)
                       }
-                    />
+                    >
+                      {LEAD_FIELD_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </Select>
                   </div>
                 </div>
               ))}
@@ -846,7 +851,7 @@ export function ImportLeadsModal({
                       </p>
                     </div>
                     {isDone && (
-                      <Badge variant="green">{count} done</Badge>
+                      <Badge variant="success">{count} done</Badge>
                     )}
                   </div>
                 );

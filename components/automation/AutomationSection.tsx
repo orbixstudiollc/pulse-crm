@@ -291,7 +291,7 @@ export function AutomationSection() {
                         <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
                           {rule.name}
                         </p>
-                        <Badge variant={rule.is_active ? "green" : "neutral"}>
+                        <Badge variant={rule.is_active ? "success" : "neutral"}>
                           {rule.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   CheckCircleIcon,
@@ -27,27 +28,48 @@ interface ActorDef {
   id: string;
   name: string;
   phase: "find" | "enrich";
+  category?: string;
   isCustom?: boolean;
-  dbId?: string; // lf_custom_actors row id for delete
+  dbId?: string;
 }
 
+// Shape returned by GET /api/lead-finder/settings. Field names mirror the
+// server response (snake_case) so we never silently drop saves due to a
+// client/server naming drift.
 interface SettingsData {
-  apifyKey: string | null;
-  anthropicKey: string | null;
-  openrouterKey: string | null;
-  hasApify: boolean;
-  hasAnthropic: boolean;
-  hasOpenRouter: boolean;
-  defaultModel: string;
-  parallelEnrichmentLimit: number;
-  agencyName: string;
-  agencyType: string;
-  agencyDescription: string;
-  services: string;
-  resultsCaseStudies: string;
-  targetIndustries: string;
-  agencyWebsite: string;
+  apify_token: string;
+  anthropic_api_key: string;
+  openrouter_api_key: string;
+  openai_api_key: string;
+  groq_api_key: string;
+  ollama_base_url: string;
+  openrouter_oauth_active: boolean;
+  has_apify: boolean;
+  has_anthropic: boolean;
+  has_openrouter: boolean;
+  has_openai: boolean;
+  has_groq: boolean;
+  has_ollama: boolean;
+  ai_provider: string;
+  ai_model: string;
+  enrichment_concurrency: string;
+  agency_name: string;
+  agency_type: string;
+  agency_description: string;
+  agency_services: string;
+  agency_results: string;
+  agency_target_industries: string;
+  agency_website: string;
+  obsidian_vault_path: string;
+  obsidian_sync_enabled: boolean;
 }
+
+type TabId =
+  | "providers"
+  | "agency"
+  | "actors"
+  | "enrichment"
+  | "obsidian";
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
@@ -70,15 +92,25 @@ function ApiKeyField({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{label}</label>
-        {hasValue && (
+        <label className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+          {label}
+        </label>
+        {hasValue ? (
           <span className="inline-flex items-center gap-1 text-xs text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30 px-1.5 py-0.5 rounded-full">
             <CheckCircleIcon size={11} weight="fill" />
-            Saved
+            Configured
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded-full">
+            Missing
           </span>
         )}
       </div>
-      {description && <p className="text-xs text-neutral-500 dark:text-neutral-400">{description}</p>}
+      {description && (
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          {description}
+        </p>
+      )}
       <div className="relative">
         <input
           type={show ? "text" : "password"}
@@ -99,22 +131,44 @@ function ApiKeyField({
   );
 }
 
-function SectionCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function SectionCard({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className={`rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 ${className}`}>
+    <div
+      className={`rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 ${className}`}
+    >
       {children}
     </div>
   );
 }
 
-function SectionHeader({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle?: string }) {
+function SectionHeader({
+  icon,
+  title,
+  subtitle,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle?: string;
+}) {
   return (
     <div className="mb-4">
       <div className="flex items-center gap-2 mb-0.5">
         {icon}
-        <h2 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">{title}</h2>
+        <h2 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+          {title}
+        </h2>
       </div>
-      {subtitle && <p className="text-xs text-neutral-500 dark:text-neutral-400">{subtitle}</p>}
+      {subtitle && (
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          {subtitle}
+        </p>
+      )}
     </div>
   );
 }
@@ -128,143 +182,385 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-sm font-medium text-neutral-950 dark:text-neutral-50 block">{label}</label>
+      <label className="text-sm font-medium text-neutral-950 dark:text-neutral-50 block">
+        {label}
+      </label>
       {children}
     </div>
   );
 }
 
-const inputCls = "w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus";
+const inputCls =
+  "w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus";
 const textareaCls = `${inputCls} resize-none`;
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+        active
+          ? "bg-neutral-950 dark:bg-neutral-50 text-neutral-50 dark:text-neutral-950"
+          : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
 
 // ── Main ───────────────────────────────────────────────────────────────────
 
-export default function LeadFinderSettingsPage() {
+function LeadFinderSettingsPageInner() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   const [data, setData] = useState<SettingsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<TabId>("providers");
+  const [envStatus, setEnvStatus] = useState<Record<string, { configured: boolean }> | null>(null);
 
-  // API Keys state
+  // Provider keys state (blank means "keep existing")
   const [apifyKey, setApifyKey] = useState("");
   const [anthropicKey, setAnthropicKey] = useState("");
   const [openrouterKey, setOpenrouterKey] = useState("");
+  const [openaiKey, setOpenaiKey] = useState("");
+  const [groqKey, setGroqKey] = useState("");
+  const [ollamaBaseUrl, setOllamaBaseUrl] = useState("");
+  const [aiProvider, setAiProvider] = useState("openrouter");
+  const [aiModel, setAiModel] = useState("");
   const [savingKeys, setSavingKeys] = useState(false);
 
-  // Enrichment state
+  // Enrichment
   const [parallelLimit, setParallelLimit] = useState(1);
   const [savingEnrichment, setSavingEnrichment] = useState(false);
 
-  // Agency state
+  // Agency
   const [agencyName, setAgencyName] = useState("");
   const [agencyType, setAgencyType] = useState("");
   const [agencyDescription, setAgencyDescription] = useState("");
-  const [services, setServices] = useState("");
-  const [resultsCaseStudies, setResultsCaseStudies] = useState("");
-  const [targetIndustries, setTargetIndustries] = useState("");
+  const [agencyServices, setAgencyServices] = useState("");
+  const [agencyResults, setAgencyResults] = useState("");
+  const [agencyTargetIndustries, setAgencyTargetIndustries] = useState("");
   const [agencyWebsite, setAgencyWebsite] = useState("");
+  const [senderFirstName, setSenderFirstName] = useState("");
+  const [senderLastName, setSenderLastName] = useState("");
+  const [senderEmail, setSenderEmail] = useState("");
   const [savingAgency, setSavingAgency] = useState(false);
+  const [generateContext, setGenerateContext] = useState("");
+  const [generatingProfile, setGeneratingProfile] = useState(false);
 
-  // Actors state
+  // Actors
   const [actors, setActors] = useState<ActorDef[]>([]);
   const [showAddActor, setShowAddActor] = useState(false);
   const [newActorId, setNewActorId] = useState("");
   const [newActorName, setNewActorName] = useState("");
   const [newActorPhase, setNewActorPhase] = useState<"find" | "enrich">("find");
   const [savingActor, setSavingActor] = useState(false);
+  const [validatingId, setValidatingId] = useState<string | null>(null);
 
+  // Obsidian
+  const [vaultPath, setVaultPath] = useState("");
+  const [vaultEnabled, setVaultEnabled] = useState(false);
+  const [savingObsidian, setSavingObsidian] = useState(false);
+
+  // React to OpenRouter OAuth callback flags
   useEffect(() => {
-    fetch("/api/lead-finder/settings")
-      .then((r) => r.json())
-      .then((j) => {
-        const d: SettingsData = j.data;
-        setData(d);
-        if (d) {
-          setParallelLimit(d.parallelEnrichmentLimit ?? 1);
-          setAgencyName(d.agencyName ?? "");
-          setAgencyType(d.agencyType ?? "");
-          setAgencyDescription(d.agencyDescription ?? "");
-          setServices(d.services ?? "");
-          setResultsCaseStudies(d.resultsCaseStudies ?? "");
-          setTargetIndustries(d.targetIndustries ?? "");
-          setAgencyWebsite(d.agencyWebsite ?? "");
-        }
-      })
-      .catch(() => toast.error("Failed to load settings"))
-      .finally(() => setLoading(false));
+    const success = searchParams?.get("success");
+    const errorParam = searchParams?.get("error");
+    if (success === "true") {
+      toast.success("OpenRouter account connected");
+      router.replace("/dashboard/lead-finder/settings");
+    } else if (errorParam) {
+      toast.error(`OpenRouter sign-in failed: ${errorParam}`);
+      router.replace("/dashboard/lead-finder/settings");
+    }
+  }, [searchParams, router]);
 
-    fetch("/api/lead-finder/actors")
-      .then((r) => r.json())
-      .then((j) => {
-        if (j.data) setActors(j.data as ActorDef[]);
-      })
-      .catch(() => {});
+  const loadSettings = useCallback(async () => {
+    try {
+      const res = await fetch("/api/lead-finder/settings", {
+        cache: "no-store",
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "Failed to load");
+      const d: SettingsData = json.data;
+      setData(d);
+      setAiProvider(d.ai_provider || "openrouter");
+      setAiModel(d.ai_model || "");
+      setOllamaBaseUrl(d.ollama_base_url || "");
+      setParallelLimit(Number(d.enrichment_concurrency) || 1);
+      setAgencyName(d.agency_name || "");
+      setAgencyType(d.agency_type || "general");
+      setAgencyDescription(d.agency_description || "");
+      setAgencyServices(d.agency_services || "");
+      setAgencyResults(d.agency_results || "");
+      setAgencyTargetIndustries(d.agency_target_industries || "");
+      setAgencyWebsite(d.agency_website || "");
+      setVaultPath(d.obsidian_vault_path || "");
+      setVaultEnabled(!!d.obsidian_sync_enabled);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to load settings");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  async function save(section: string, payload: Record<string, unknown>, setSaving: (v: boolean) => void) {
+  const loadActors = useCallback(async () => {
+    try {
+      const res = await fetch("/api/lead-finder/actors");
+      const json = await res.json();
+      if (json?.data) setActors(json.data as ActorDef[]);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const loadEnvStatus = useCallback(async () => {
+    try {
+      const res = await fetch("/api/lead-finder/settings/env-status", {
+        cache: "no-store",
+      });
+      const json = await res.json();
+      if (res.ok && json?.data) setEnvStatus(json.data);
+    } catch {
+      // ignore — env status is advisory
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSettings();
+    void loadActors();
+    void loadEnvStatus();
+  }, [loadSettings, loadActors, loadEnvStatus]);
+
+  async function putSettings(
+    payload: Record<string, unknown>,
+    setSaving: (v: boolean) => void
+  ) {
     setSaving(true);
     try {
       const res = await fetch("/api/lead-finder/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ section, ...payload }),
+        body: JSON.stringify(payload),
       });
-      const json = await res.json();
-      if (!res.ok || json.error) { toast.error(json.error || "Failed to save"); return; }
-      toast.success("Saved");
-
-      if (section === "keys") {
-        // Immediately update hasXxx flags based on what was just saved
-        setData((prev) => prev ? {
-          ...prev,
-          hasApify: prev.hasApify || !!(payload.apifyKey && !String(payload.apifyKey).includes("•")),
-          hasAnthropic: prev.hasAnthropic || !!(payload.anthropicKey && !String(payload.anthropicKey).includes("•")),
-          hasOpenRouter: prev.hasOpenRouter || !!(payload.openrouterKey && !String(payload.openrouterKey).includes("•")),
-        } : prev);
-        setApifyKey(""); setAnthropicKey(""); setOpenrouterKey("");
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json.error) {
+        toast.error(json.error || "Failed to save");
+        return;
       }
-
-      // Refresh from server to get accurate state (no-store to skip cache)
-      const refreshed = await fetch("/api/lead-finder/settings", { cache: "no-store" }).then((r) => r.json()).catch(() => null);
-      if (refreshed?.data) setData(refreshed.data);
-    } catch { toast.error("Failed to save"); }
-    finally { setSaving(false); }
+      toast.success("Saved");
+      await loadSettings();
+    } catch {
+      toast.error("Failed to save");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  const allRequired = data?.hasApify && (data?.hasAnthropic || data?.hasOpenRouter);
+  async function saveKeys() {
+    const isMasked = (v: string) => !v || v.includes("•");
+    const payload: Record<string, unknown> = {
+      section: "keys",
+      ai_provider: aiProvider,
+    };
+    if (!isMasked(apifyKey)) payload.apify_token = apifyKey.trim();
+    if (!isMasked(anthropicKey)) payload.anthropic_api_key = anthropicKey.trim();
+    if (!isMasked(openrouterKey))
+      payload.openrouter_api_key = openrouterKey.trim();
+    if (!isMasked(openaiKey)) payload.openai_api_key = openaiKey.trim();
+    if (!isMasked(groqKey)) payload.groq_api_key = groqKey.trim();
+    if (ollamaBaseUrl.trim()) payload.ollama_base_url = ollamaBaseUrl.trim();
+    if (aiModel.trim()) payload.ai_model = aiModel.trim();
+    await putSettings(payload, setSavingKeys);
+    setApifyKey("");
+    setAnthropicKey("");
+    setOpenrouterKey("");
+    setOpenaiKey("");
+    setGroqKey("");
+  }
+
+  async function saveEnrichment() {
+    await putSettings(
+      {
+        section: "enrichment",
+        enrichment_concurrency: parallelLimit,
+      },
+      setSavingEnrichment
+    );
+  }
+
+  async function saveAgency() {
+    await putSettings(
+      {
+        section: "agency",
+        agency_name: agencyName,
+        agency_type: agencyType,
+        agency_description: agencyDescription,
+        agency_services: agencyServices,
+        agency_results: agencyResults,
+        agency_target_industries: agencyTargetIndustries,
+        agency_website: agencyWebsite,
+      },
+      setSavingAgency
+    );
+  }
+
+  async function saveObsidian() {
+    await putSettings(
+      {
+        section: "obsidian",
+        obsidian_vault_path: vaultPath,
+        obsidian_sync_enabled: vaultEnabled,
+      },
+      setSavingObsidian
+    );
+  }
+
+  async function generateProfile() {
+    const ctx = generateContext.trim();
+    if (!ctx) {
+      toast.error("Paste website or about-page text first");
+      return;
+    }
+    setGeneratingProfile(true);
+    try {
+      const res = await fetch("/api/lead-finder/settings/generate-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ context: ctx }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json?.error || "Generation failed");
+        return;
+      }
+      if (json.agency_name) setAgencyName(String(json.agency_name));
+      if (json.agency_description)
+        setAgencyDescription(String(json.agency_description));
+      if (json.agency_services) setAgencyServices(String(json.agency_services));
+      if (json.agency_results) setAgencyResults(String(json.agency_results));
+      if (json.agency_target_industries)
+        setAgencyTargetIndustries(String(json.agency_target_industries));
+      if (json.agency_website) setAgencyWebsite(String(json.agency_website));
+      if (json.sender_first_name)
+        setSenderFirstName(String(json.sender_first_name));
+      if (json.sender_last_name)
+        setSenderLastName(String(json.sender_last_name));
+      if (json.sender_email) setSenderEmail(String(json.sender_email));
+      toast.success("Profile generated — review and save");
+    } catch {
+      toast.error("Generation failed");
+    } finally {
+      setGeneratingProfile(false);
+    }
+  }
 
   async function addCustomActor() {
-    if (!newActorId.trim() || !newActorName.trim()) { toast.error("Actor ID and name are required"); return; }
+    if (!newActorId.trim() || !newActorName.trim()) {
+      toast.error("Actor ID and name are required");
+      return;
+    }
     setSavingActor(true);
     try {
       const res = await fetch("/api/lead-finder/actors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ actorId: newActorId.trim(), name: newActorName.trim(), phase: newActorPhase }),
+        body: JSON.stringify({
+          actorId: newActorId.trim(),
+          name: newActorName.trim(),
+          phase: newActorPhase,
+        }),
       });
       const json = await res.json();
-      if (!res.ok || json.error) { toast.error(json.error || "Failed to add actor"); return; }
+      if (!res.ok || json.error) {
+        toast.error(json.error || "Failed to add actor");
+        return;
+      }
       toast.success("Actor added");
-      setNewActorId(""); setNewActorName(""); setNewActorPhase("find"); setShowAddActor(false);
-      const updated = await fetch("/api/lead-finder/actors").then((r) => r.json()).catch(() => null);
-      if (updated?.data) setActors(updated.data as ActorDef[]);
-    } catch { toast.error("Failed to add actor"); }
-    finally { setSavingActor(false); }
+      setNewActorId("");
+      setNewActorName("");
+      setNewActorPhase("find");
+      setShowAddActor(false);
+      await loadActors();
+    } catch {
+      toast.error("Failed to add actor");
+    } finally {
+      setSavingActor(false);
+    }
   }
 
   async function deleteCustomActor(actor: ActorDef) {
     if (!actor.dbId) return;
     try {
-      const res = await fetch(`/api/lead-finder/actors/${actor.dbId}`, { method: "DELETE" });
+      const res = await fetch(`/api/lead-finder/actors/${actor.dbId}`, {
+        method: "DELETE",
+      });
       const json = await res.json();
-      if (!res.ok || json.error) { toast.error(json.error || "Failed to delete"); return; }
+      if (!res.ok || json.error) {
+        toast.error(json.error || "Failed to delete");
+        return;
+      }
       toast.success("Actor removed");
       setActors((prev) => prev.filter((a) => a.dbId !== actor.dbId));
-    } catch { toast.error("Failed to delete actor"); }
+    } catch {
+      toast.error("Failed to delete actor");
+    }
   }
+
+  async function validateActor(actor: ActorDef) {
+    setValidatingId(actor.id);
+    try {
+      const res = await fetch("/api/lead-finder/actors/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actorId: actor.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json?.error || "Validation failed");
+        return;
+      }
+      if (json.valid) {
+        toast.success(
+          `Actor valid${json.actor?.title ? `: ${json.actor.title}` : ""}`
+        );
+      } else {
+        toast.error(json.error || "Actor not found on Apify");
+      }
+    } catch {
+      toast.error("Validation failed");
+    } finally {
+      setValidatingId(null);
+    }
+  }
+
+  const allRequired =
+    data?.has_apify && (data?.has_anthropic || data?.has_openrouter);
+
+  const providerTabs = useMemo(
+    () => [
+      { id: "providers" as const, label: "AI Providers" },
+      { id: "agency" as const, label: "Agency Profile" },
+      { id: "actors" as const, label: "Actors" },
+      { id: "enrichment" as const, label: "Enrichment" },
+      { id: "obsidian" as const, label: "Obsidian Sync" },
+    ],
+    []
+  );
 
   return (
     <div className="p-6 lg:p-8 space-y-6">
       <PageHeader title="Lead Finder" />
-
       <LeadFinderSubNav />
 
       {loading && (
@@ -273,302 +569,796 @@ export default function LeadFinderSettingsPage() {
         </div>
       )}
 
-      {!loading && (
+      {!loading && data && (
         <>
-          {/* Status banner */}
-          <div className={`flex items-start gap-3 p-4 rounded-xl border ${allRequired ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900" : "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900"}`}>
-            {allRequired
-              ? <CheckCircleIcon size={18} weight="fill" className="text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-              : <XCircleIcon size={18} weight="fill" className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />}
+          <div
+            className={`flex items-start gap-3 p-4 rounded-xl border ${
+              allRequired
+                ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900"
+                : "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900"
+            }`}
+          >
+            {allRequired ? (
+              <CheckCircleIcon
+                size={18}
+                weight="fill"
+                className="text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5"
+              />
+            ) : (
+              <XCircleIcon
+                size={18}
+                weight="fill"
+                className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"
+              />
+            )}
             <div>
-              <p className={`text-sm font-medium ${allRequired ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"}`}>
-                {allRequired ? "All required keys configured" : "Missing required API keys"}
+              <p
+                className={`text-sm font-medium ${
+                  allRequired
+                    ? "text-green-700 dark:text-green-400"
+                    : "text-amber-700 dark:text-amber-400"
+                }`}
+              >
+                {allRequired
+                  ? "All required keys configured"
+                  : "Missing required API keys"}
               </p>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                {allRequired ? "Lead Finder is ready to discover and enrich leads." : "Add your Apify token and at least one AI provider key below."}
+                {allRequired
+                  ? "Lead Finder is ready to discover and enrich leads."
+                  : "Add your Apify token and at least one AI provider key below."}
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left column */}
-            <div className="space-y-6">
+          {envStatus && (
+            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3">
+              <p className="text-[11px] uppercase tracking-wide text-neutral-500 dark:text-neutral-400 mb-2">
+                Environment variables
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { key: "apify", label: "APIFY_TOKEN" },
+                  { key: "openrouter", label: "OPENROUTER_API_KEY" },
+                  { key: "ollama_cloud", label: "OLLAMA_CLOUD_API_KEY" },
+                  { key: "anthropic", label: "ANTHROPIC_API_KEY" },
+                  { key: "groq", label: "GROQ_API_KEY" },
+                ].map(({ key, label }) => {
+                  const configured = !!envStatus[key]?.configured;
+                  return (
+                    <span
+                      key={key}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${
+                        configured
+                          ? "border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
+                          : "border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950/40 text-neutral-500 dark:text-neutral-400"
+                      }`}
+                    >
+                      {configured ? (
+                        <CheckCircleIcon size={12} weight="fill" />
+                      ) : (
+                        <XCircleIcon size={12} weight="fill" />
+                      )}
+                      {label}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-              {/* API Keys */}
-              <SectionCard>
-                <SectionHeader
-                  icon={<LightningIcon size={15} className="text-orange-500" />}
-                  title="API Keys"
-                  subtitle="Configure your API keys and AI provider"
+          <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1">
+            {providerTabs.map((t) => (
+              <TabButton
+                key={t.id}
+                active={tab === t.id}
+                onClick={() => setTab(t.id)}
+              >
+                {t.label}
+              </TabButton>
+            ))}
+          </div>
+
+          {tab === "providers" && (
+            <SectionCard>
+              <SectionHeader
+                icon={<LightningIcon size={15} className="text-orange-500" />}
+                title="AI Providers"
+                subtitle="Configure keys per provider. Pick a default provider and model."
+              />
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Field label="Default provider">
+                    <select
+                      value={aiProvider}
+                      onChange={(e) => setAiProvider(e.target.value)}
+                      className={inputCls}
+                    >
+                      <option value="anthropic">Anthropic</option>
+                      <option value="openai">OpenAI</option>
+                      <option value="openrouter">OpenRouter</option>
+                      <option value="groq">Groq</option>
+                      <option value="ollama">Ollama</option>
+                      <option value="ollama_cloud">Ollama Cloud</option>
+                    </select>
+                  </Field>
+                  <Field label="Default model">
+                    <input
+                      type="text"
+                      value={aiModel}
+                      onChange={(e) => setAiModel(e.target.value)}
+                      placeholder="e.g. anthropic/claude-sonnet-4"
+                      className={inputCls}
+                    />
+                  </Field>
+                </div>
+
+                <ApiKeyField
+                  label="Apify Token"
+                  value={apifyKey}
+                  onChange={setApifyKey}
+                  hasValue={data.has_apify}
+                  placeholder="apify_api_..."
+                  description="Required for running discovery campaigns"
                 />
-                <div className="space-y-4">
-                  <ApiKeyField
-                    label="Apify Token"
-                    value={apifyKey}
-                    onChange={setApifyKey}
-                    hasValue={data?.hasApify ?? false}
-                    placeholder="apify_api_..."
-                    description="Required for running discovery campaigns"
-                  />
-                  <ApiKeyField
-                    label="Anthropic API Key"
-                    value={anthropicKey}
-                    onChange={setAnthropicKey}
-                    hasValue={data?.hasAnthropic ?? false}
-                    placeholder="sk-ant-..."
-                    description="console.anthropic.com/settings/keys"
-                  />
+                <ApiKeyField
+                  label="Anthropic API Key"
+                  value={anthropicKey}
+                  onChange={setAnthropicKey}
+                  hasValue={data.has_anthropic}
+                  placeholder="sk-ant-..."
+                  description="console.anthropic.com/settings/keys"
+                />
+                <div className="space-y-2">
                   <ApiKeyField
                     label="OpenRouter API Key"
                     value={openrouterKey}
                     onChange={setOpenrouterKey}
-                    hasValue={data?.hasOpenRouter ?? false}
+                    hasValue={data.has_openrouter}
                     placeholder="sk-or-..."
-                    description="openrouter.ai/keys — access GPT-4o and other models"
+                    description="openrouter.ai/keys — or sign in with OAuth below"
                   />
                   <Button
-                    className="w-full justify-center"
-                    onClick={() => save("keys", { apifyKey, anthropicKey, openrouterKey }, setSavingKeys)}
-                    disabled={savingKeys}
-                    leftIcon={savingKeys ? <CircleNotchIcon size={14} className="animate-spin" /> : <FloppyDiskIcon size={14} />}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      window.location.href = "/api/lead-finder/auth/openrouter";
+                    }}
                   >
-                    Save API Keys
+                    {data.openrouter_oauth_active
+                      ? "Reconnect OpenRouter"
+                      : "Sign in with OpenRouter"}
                   </Button>
                 </div>
-              </SectionCard>
-
-              {/* Enrichment */}
-              <SectionCard>
-                <SectionHeader
-                  icon={<GearIcon size={15} className="text-blue-500" />}
-                  title="Enrichment"
-                  subtitle="Configure how leads are enriched across all campaigns"
+                <ApiKeyField
+                  label="OpenAI API Key"
+                  value={openaiKey}
+                  onChange={setOpenaiKey}
+                  hasValue={data.has_openai}
+                  placeholder="sk-..."
+                  description="platform.openai.com/api-keys"
                 />
-                <div className="space-y-4">
-                  <Field label="Parallel Enrichment Limit">
-                    <input
-                      type="number"
-                      min={1}
-                      max={10}
-                      value={parallelLimit}
-                      onChange={(e) => setParallelLimit(Number(e.target.value))}
-                      className={inputCls}
-                    />
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                      How many leads to enrich simultaneously. Higher values speed up enrichment but use more Apify credits concurrently. Default: 1 (sequential).
-                    </p>
-                  </Field>
-                  <Button
-                    className="w-full justify-center"
-                    onClick={() => save("enrichment", { parallelEnrichmentLimit: parallelLimit }, setSavingEnrichment)}
-                    disabled={savingEnrichment}
-                    leftIcon={savingEnrichment ? <CircleNotchIcon size={14} className="animate-spin" /> : <FloppyDiskIcon size={14} />}
-                  >
-                    Save Enrichment
-                  </Button>
-                </div>
-              </SectionCard>
-            </div>
-
-            {/* Right column — Agency Profile */}
-            <div>
-              <SectionCard>
-                <div className="flex items-start justify-between mb-4">
-                  <SectionHeader
-                    icon={<BuildingsIcon size={15} className="text-violet-500" />}
-                    title="Agency Profile"
-                    subtitle="Configure your agency details for lead scoring and enrichment"
+                <ApiKeyField
+                  label="Groq API Key"
+                  value={groqKey}
+                  onChange={setGroqKey}
+                  hasValue={data.has_groq}
+                  placeholder="gsk_..."
+                  description="console.groq.com/keys"
+                />
+                <Field label="Ollama base URL">
+                  <input
+                    type="text"
+                    value={ollamaBaseUrl}
+                    onChange={(e) => setOllamaBaseUrl(e.target.value)}
+                    placeholder="http://localhost:11434"
+                    className={inputCls}
                   />
-                  <button
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-950/50 transition-colors flex-shrink-0"
-                    onClick={() => toast.info("AI generation coming soon")}
-                  >
-                    <SparkleIcon size={12} />
-                    Generate with AI
-                  </button>
-                </div>
-                <div className="space-y-4">
-                  <Field label="Agency Name">
-                    <input type="text" value={agencyName} onChange={(e) => setAgencyName(e.target.value)} placeholder="Your agency name" className={inputCls} />
-                  </Field>
-                  <Field label="Agency Type">
-                    <select value={agencyType} onChange={(e) => setAgencyType(e.target.value)} className={inputCls}>
-                      <option value="">Select type...</option>
-                      <option value="general">General</option>
-                      <option value="marketing">Marketing</option>
-                      <option value="sales">Sales</option>
-                      <option value="design">Design</option>
-                      <option value="development">Development</option>
-                      <option value="consulting">Consulting</option>
-                      <option value="seo">SEO</option>
-                      <option value="social_media">Social Media</option>
-                      <option value="ai_automation">AI & Automation</option>
-                    </select>
-                  </Field>
-                  <Field label="Agency Description">
-                    <textarea
-                      rows={3}
-                      value={agencyDescription}
-                      onChange={(e) => setAgencyDescription(e.target.value)}
-                      placeholder="What your agency does, your pitch, unique approach..."
-                      className={textareaCls}
-                    />
-                  </Field>
-                  <Field label="Services">
-                    <textarea
-                      rows={2}
-                      value={services}
-                      onChange={(e) => setServices(e.target.value)}
-                      placeholder="Key services you offer, e.g. voice AI assistants, AI phone handling..."
-                      className={textareaCls}
-                    />
-                  </Field>
-                  <Field label="Results & Case Studies">
-                    <textarea
-                      rows={2}
-                      value={resultsCaseStudies}
-                      onChange={(e) => setResultsCaseStudies(e.target.value)}
-                      placeholder="Case studies, results, social proof, e.g. helped 40+ dental practices automate 80% of calls..."
-                      className={textareaCls}
-                    />
-                  </Field>
-                  <Field label="Target Industries">
-                    <input
-                      type="text"
-                      value={targetIndustries}
-                      onChange={(e) => setTargetIndustries(e.target.value)}
-                      placeholder="e.g. dental, healthcare, real estate, restaurants"
-                      className={inputCls}
-                    />
-                  </Field>
-                  <Field label="Agency Website">
-                    <input
-                      type="url"
-                      value={agencyWebsite}
-                      onChange={(e) => setAgencyWebsite(e.target.value)}
-                      placeholder="https://youragency.com"
-                      className={inputCls}
-                    />
-                  </Field>
-                  <Button
-                    className="w-full justify-center"
-                    onClick={() => save("agency", { agencyName, agencyType, agencyDescription, services, resultsCaseStudies, targetIndustries, agencyWebsite }, setSavingAgency)}
-                    disabled={savingAgency}
-                    leftIcon={savingAgency ? <CircleNotchIcon size={14} className="animate-spin" /> : <FloppyDiskIcon size={14} />}
-                  >
-                    Save Agency Profile
-                  </Button>
-                </div>
-              </SectionCard>
-            </div>
-          </div>
-
-          {/* Apify Actors — full width */}
-          <SectionCard>
-            <div className="flex items-center justify-between mb-4">
-              <SectionHeader
-                icon={<LightningIcon size={15} className="text-orange-500" />}
-                title="Apify Actors"
-                subtitle="Manage scrapers and enrichment actors. Custom actors use AI to automatically map output data."
-              />
-              <button
-                onClick={() => setShowAddActor((v) => !v)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-950 dark:bg-neutral-50 text-neutral-50 dark:text-neutral-950 hover:opacity-90 transition-opacity flex-shrink-0"
-              >
-                <PlusIcon size={12} />
-                Add Custom Actor
-              </button>
-            </div>
-
-            {/* Add actor inline form */}
-            {showAddActor && (
-              <div className="mb-4 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 space-y-3">
-                <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300">New Custom Actor</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="sm:col-span-1">
-                    <input
-                      type="text"
-                      value={newActorId}
-                      onChange={(e) => setNewActorId(e.target.value)}
-                      placeholder="e.g. apify/linkedin-scraper"
-                      className={inputCls}
-                    />
-                    <p className="text-xs text-neutral-400 mt-1">Apify actor path</p>
-                  </div>
-                  <div className="sm:col-span-1">
-                    <input
-                      type="text"
-                      value={newActorName}
-                      onChange={(e) => setNewActorName(e.target.value)}
-                      placeholder="Display name"
-                      className={inputCls}
-                    />
-                    <p className="text-xs text-neutral-400 mt-1">Name shown in UI</p>
-                  </div>
-                  <div className="sm:col-span-1">
-                    <select
-                      value={newActorPhase}
-                      onChange={(e) => setNewActorPhase(e.target.value as "find" | "enrich")}
-                      className={inputCls}
-                    >
-                      <option value="find">Find</option>
-                      <option value="enrich">Enrich</option>
-                    </select>
-                    <p className="text-xs text-neutral-400 mt-1">Phase</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={addCustomActor}
-                    disabled={savingActor}
-                    leftIcon={savingActor ? <CircleNotchIcon size={13} className="animate-spin" /> : <PlusIcon size={13} />}
-                  >
-                    Add Actor
-                  </Button>
-                  <button
-                    onClick={() => setShowAddActor(false)}
-                    className="px-3 py-1.5 text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                    Leave blank unless you self-host Ollama.
+                  </p>
+                </Field>
+                <Button
+                  className="w-full justify-center"
+                  onClick={saveKeys}
+                  disabled={savingKeys}
+                  leftIcon={
+                    savingKeys ? (
+                      <CircleNotchIcon size={14} className="animate-spin" />
+                    ) : (
+                      <FloppyDiskIcon size={14} />
+                    )
+                  }
+                >
+                  Save Providers
+                </Button>
               </div>
-            )}
+            </SectionCard>
+          )}
 
-            {/* Actor list */}
-            <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-              {actors.length === 0 && (
-                <p className="text-sm text-neutral-400 py-4 text-center">No actors loaded.</p>
-              )}
-              {actors.map((actor) => (
-                <div key={actor.id} className="flex items-center gap-3 py-3">
-                  <LockIcon size={14} className="text-neutral-400 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">{actor.name}</p>
-                    <p className="text-xs text-neutral-400 truncate">{actor.id}</p>
-                  </div>
-                  <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full flex-shrink-0 ${
-                    actor.phase === "find"
-                      ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
-                      : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
-                  }`}>
-                    {actor.phase === "find" ? "Find" : "Enrich"}
-                  </span>
-                  {actor.isCustom && actor.dbId && (
-                    <button
-                      onClick={() => deleteCustomActor(actor)}
-                      className="p-1 text-neutral-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex-shrink-0"
-                      title="Remove actor"
+          {tab === "agency" && (
+            <SectionCard>
+              <div className="flex items-start justify-between mb-4 gap-3">
+                <SectionHeader
+                  icon={<BuildingsIcon size={15} className="text-violet-500" />}
+                  title="Agency Profile"
+                  subtitle="Used for lead scoring, enrichment prompts and outreach personalisation."
+                />
+              </div>
+
+              <div className="space-y-4">
+                <Field label="Paste your website/about page text">
+                  <textarea
+                    rows={4}
+                    value={generateContext}
+                    onChange={(e) => setGenerateContext(e.target.value)}
+                    placeholder="Copy/paste your website hero, about page, or sales deck here..."
+                    className={textareaCls}
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={generateProfile}
+                      disabled={generatingProfile}
+                      leftIcon={
+                        generatingProfile ? (
+                          <CircleNotchIcon size={12} className="animate-spin" />
+                        ) : (
+                          <SparkleIcon size={12} />
+                        )
+                      }
                     >
-                      <TrashIcon size={14} />
-                    </button>
-                  )}
+                      {generatingProfile ? "Generating..." : "Generate profile"}
+                    </Button>
+                  </div>
+                </Field>
+
+                <Field label="Agency Name">
+                  <input
+                    type="text"
+                    value={agencyName}
+                    onChange={(e) => setAgencyName(e.target.value)}
+                    placeholder="Your agency name"
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label="Agency Type">
+                  <select
+                    value={agencyType}
+                    onChange={(e) => setAgencyType(e.target.value)}
+                    className={inputCls}
+                  >
+                    <option value="general">General</option>
+                    <option value="marketing">Marketing</option>
+                    <option value="sales">Sales</option>
+                    <option value="design">Design</option>
+                    <option value="development">Development</option>
+                    <option value="consulting">Consulting</option>
+                    <option value="seo">SEO</option>
+                    <option value="social_media">Social Media</option>
+                    <option value="ai_automation">AI & Automation</option>
+                  </select>
+                </Field>
+                <Field label="Agency Description">
+                  <textarea
+                    rows={3}
+                    value={agencyDescription}
+                    onChange={(e) => setAgencyDescription(e.target.value)}
+                    placeholder="What your agency does, your pitch, unique approach..."
+                    className={textareaCls}
+                  />
+                </Field>
+                <Field label="Services">
+                  <textarea
+                    rows={2}
+                    value={agencyServices}
+                    onChange={(e) => setAgencyServices(e.target.value)}
+                    placeholder="Key services you offer..."
+                    className={textareaCls}
+                  />
+                </Field>
+                <Field label="Results & Case Studies">
+                  <textarea
+                    rows={2}
+                    value={agencyResults}
+                    onChange={(e) => setAgencyResults(e.target.value)}
+                    placeholder="Case studies, social proof, outcomes..."
+                    className={textareaCls}
+                  />
+                </Field>
+                <Field label="Target Industries">
+                  <input
+                    type="text"
+                    value={agencyTargetIndustries}
+                    onChange={(e) => setAgencyTargetIndustries(e.target.value)}
+                    placeholder="e.g. dental, healthcare, real estate"
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label="Agency Website">
+                  <input
+                    type="url"
+                    value={agencyWebsite}
+                    onChange={(e) => setAgencyWebsite(e.target.value)}
+                    placeholder="https://youragency.com"
+                    className={inputCls}
+                  />
+                </Field>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-neutral-200 dark:border-neutral-800">
+                  <Field label="Sender First Name">
+                    <input
+                      type="text"
+                      value={senderFirstName}
+                      onChange={(e) => setSenderFirstName(e.target.value)}
+                      placeholder="Jane"
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="Sender Last Name">
+                    <input
+                      type="text"
+                      value={senderLastName}
+                      onChange={(e) => setSenderLastName(e.target.value)}
+                      placeholder="Doe"
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="Sender Email">
+                    <input
+                      type="email"
+                      value={senderEmail}
+                      onChange={(e) => setSenderEmail(e.target.value)}
+                      placeholder="jane@agency.com"
+                      className={inputCls}
+                    />
+                  </Field>
                 </div>
-              ))}
-            </div>
-          </SectionCard>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  Sender details are used to prefill outreach. A dedicated
+                  persistence API will be enabled in a follow-up migration.
+                </p>
+
+                <Button
+                  className="w-full justify-center"
+                  onClick={saveAgency}
+                  disabled={savingAgency}
+                  leftIcon={
+                    savingAgency ? (
+                      <CircleNotchIcon size={14} className="animate-spin" />
+                    ) : (
+                      <FloppyDiskIcon size={14} />
+                    )
+                  }
+                >
+                  Save Agency Profile
+                </Button>
+              </div>
+            </SectionCard>
+          )}
+
+          {tab === "actors" && (
+            <SectionCard>
+              <div className="flex items-center justify-between mb-4">
+                <SectionHeader
+                  icon={<LightningIcon size={15} className="text-orange-500" />}
+                  title="Apify Actors"
+                  subtitle="Discovery and enrichment scrapers. Add your own via Apify actor IDs."
+                />
+                <button
+                  onClick={() => setShowAddActor((v) => !v)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-950 dark:bg-neutral-50 text-neutral-50 dark:text-neutral-950 hover:opacity-90 transition-opacity flex-shrink-0"
+                >
+                  <PlusIcon size={12} />
+                  Add Custom Actor
+                </button>
+              </div>
+
+              {showAddActor && (
+                <div className="mb-4 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 space-y-3">
+                  <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                    New Custom Actor
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <input
+                        type="text"
+                        value={newActorId}
+                        onChange={(e) => setNewActorId(e.target.value)}
+                        placeholder="e.g. apify/linkedin-scraper"
+                        className={inputCls}
+                      />
+                      <p className="text-xs text-neutral-400 mt-1">
+                        Apify actor path
+                      </p>
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        value={newActorName}
+                        onChange={(e) => setNewActorName(e.target.value)}
+                        placeholder="Display name"
+                        className={inputCls}
+                      />
+                      <p className="text-xs text-neutral-400 mt-1">
+                        Name shown in UI
+                      </p>
+                    </div>
+                    <div>
+                      <select
+                        value={newActorPhase}
+                        onChange={(e) =>
+                          setNewActorPhase(e.target.value as "find" | "enrich")
+                        }
+                        className={inputCls}
+                      >
+                        <option value="find">Find</option>
+                        <option value="enrich">Enrich</option>
+                      </select>
+                      <p className="text-xs text-neutral-400 mt-1">Phase</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={addCustomActor}
+                      disabled={savingActor}
+                      leftIcon={
+                        savingActor ? (
+                          <CircleNotchIcon size={13} className="animate-spin" />
+                        ) : (
+                          <PlusIcon size={13} />
+                        )
+                      }
+                    >
+                      Add Actor
+                    </Button>
+                    <button
+                      onClick={() => setShowAddActor(false)}
+                      className="px-3 py-1.5 text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                {actors.length === 0 && (
+                  <p className="text-sm text-neutral-400 py-4 text-center">
+                    No actors loaded.
+                  </p>
+                )}
+                {actors.map((actor) => (
+                  <div
+                    key={`${actor.id}:${actor.dbId ?? "builtin"}`}
+                    className="flex items-center gap-3 py-3"
+                  >
+                    <LockIcon
+                      size={14}
+                      className="text-neutral-400 flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                        {actor.name}
+                      </p>
+                      <p className="text-xs text-neutral-400 truncate">
+                        {actor.id}
+                        {actor.category ? ` · ${actor.category}` : ""}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-xs font-semibold px-2.5 py-0.5 rounded-full flex-shrink-0 ${
+                        actor.phase === "find"
+                          ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
+                          : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
+                      }`}
+                    >
+                      {actor.phase === "find" ? "Find" : "Enrich"}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => validateActor(actor)}
+                      disabled={validatingId === actor.id}
+                      leftIcon={
+                        validatingId === actor.id ? (
+                          <CircleNotchIcon size={12} className="animate-spin" />
+                        ) : null
+                      }
+                    >
+                      Validate
+                    </Button>
+                    {actor.isCustom && actor.dbId && (
+                      <button
+                        onClick={() => deleteCustomActor(actor)}
+                        className="p-1 text-neutral-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex-shrink-0"
+                        title="Remove actor"
+                      >
+                        <TrashIcon size={14} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          )}
+
+          {tab === "enrichment" && (
+            <SectionCard>
+              <SectionHeader
+                icon={<GearIcon size={15} className="text-blue-500" />}
+                title="Enrichment"
+                subtitle="How aggressively leads are enriched across campaigns."
+              />
+              <div className="space-y-4">
+                <Field label={`Parallel enrichment limit (${parallelLimit})`}>
+                  <input
+                    type="range"
+                    min={1}
+                    max={100}
+                    step={1}
+                    value={parallelLimit}
+                    onChange={(e) => setParallelLimit(Number(e.target.value))}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                    Concurrent enrichment workers. Higher values speed up runs
+                    but consume more Apify credits.
+                  </p>
+                </Field>
+                <Button
+                  className="w-full justify-center"
+                  onClick={saveEnrichment}
+                  disabled={savingEnrichment}
+                  leftIcon={
+                    savingEnrichment ? (
+                      <CircleNotchIcon size={14} className="animate-spin" />
+                    ) : (
+                      <FloppyDiskIcon size={14} />
+                    )
+                  }
+                >
+                  Save Enrichment
+                </Button>
+              </div>
+            </SectionCard>
+          )}
+
+          {tab === "obsidian" && (
+            <ObsidianSyncSection
+              vaultPath={vaultPath}
+              setVaultPath={setVaultPath}
+              enabled={vaultEnabled}
+              setEnabled={setVaultEnabled}
+              saving={savingObsidian}
+              onSave={saveObsidian}
+            />
+          )}
         </>
       )}
     </div>
+  );
+}
+
+export default function LeadFinderSettingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <LeadFinderSettingsPageInner />
+    </Suspense>
+  );
+}
+
+// ── Obsidian Sync section ───────────────────────────────────────────────────
+
+interface ObsidianFile {
+  date: string;
+  path?: string;
+  size?: number;
+  modifiedAt?: string | null;
+}
+
+function ObsidianSyncSection({
+  vaultPath,
+  setVaultPath,
+  enabled,
+  setEnabled,
+  saving,
+  onSave,
+}: {
+  vaultPath: string;
+  setVaultPath: (v: string) => void;
+  enabled: boolean;
+  setEnabled: (v: boolean) => void;
+  saving: boolean;
+  onSave: () => void;
+}) {
+  const [files, setFiles] = useState<ObsidianFile[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [previewDate, setPreviewDate] = useState<string | null>(null);
+  const [previewBody, setPreviewBody] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/lead-finder/obsidian");
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json?.error || `Request failed (${res.status})`);
+      }
+      setFiles(Array.isArray(json.files) ? (json.files as ObsidianFile[]) : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load files");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const viewFile = async (date: string) => {
+    setPreviewDate(date);
+    setPreviewBody(null);
+    setPreviewLoading(true);
+    try {
+      const res = await fetch(
+        `/api/lead-finder/obsidian?date=${encodeURIComponent(date)}`
+      );
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json?.error || "Failed to load file");
+      }
+      const text = await res.text();
+      setPreviewBody(text);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to load observation file"
+      );
+      setPreviewDate(null);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  return (
+    <SectionCard>
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <SectionHeader
+          icon={<FloppyDiskIcon size={15} className="text-emerald-500" />}
+          title="Obsidian Sync"
+          subtitle="Daily observation files generated from your campaigns."
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => void load()}
+          disabled={loading}
+          leftIcon={
+            loading ? (
+              <CircleNotchIcon size={12} className="animate-spin" />
+            ) : null
+          }
+        >
+          Refresh
+        </Button>
+      </div>
+
+      <div className="space-y-4 mb-6">
+        <Field label="Vault path">
+          <input
+            type="text"
+            value={vaultPath}
+            onChange={(e) => setVaultPath(e.target.value)}
+            placeholder="/Users/you/Obsidian/Vault"
+            className={inputCls}
+          />
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+            Absolute server-side path to the Obsidian vault root.
+          </p>
+        </Field>
+        <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+          />
+          Enable Obsidian sync for this organization
+        </label>
+        <Button
+          onClick={onSave}
+          disabled={saving}
+          leftIcon={
+            saving ? (
+              <CircleNotchIcon size={14} className="animate-spin" />
+            ) : (
+              <FloppyDiskIcon size={14} />
+            )
+          }
+        >
+          Save Obsidian Settings
+        </Button>
+      </div>
+
+      <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+        Recent observation files
+      </p>
+
+      {error && (
+        <p className="text-xs text-red-600 dark:text-red-400 mb-3">{error}</p>
+      )}
+
+      {!error && files.length === 0 && !loading && (
+        <p className="text-sm text-neutral-500 dark:text-neutral-400 py-4 text-center border border-dashed border-neutral-200 dark:border-neutral-700 rounded-lg">
+          No observation files yet.
+        </p>
+      )}
+
+      {files.length > 0 && (
+        <div className="divide-y divide-neutral-100 dark:divide-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-800">
+          {files.map((file) => (
+            <div
+              key={file.date}
+              className="flex items-center justify-between gap-3 px-3 py-2"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                  {file.date}
+                </p>
+                {file.path && (
+                  <p className="truncate text-xs text-neutral-500 dark:text-neutral-400">
+                    {file.path}
+                  </p>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void viewFile(file.date)}
+              >
+                View
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {previewDate && (
+        <div className="mt-4 rounded-lg border border-neutral-200 dark:border-neutral-800">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-200 dark:border-neutral-800">
+            <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              {previewDate}
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setPreviewDate(null);
+                setPreviewBody(null);
+              }}
+            >
+              Close
+            </Button>
+          </div>
+          <div className="max-h-80 overflow-auto p-3">
+            {previewLoading ? (
+              <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+                <CircleNotchIcon size={14} className="animate-spin" />
+                Loading...
+              </div>
+            ) : (
+              <pre className="whitespace-pre-wrap text-xs text-neutral-700 dark:text-neutral-300">
+                {previewBody ?? ""}
+              </pre>
+            )}
+          </div>
+        </div>
+      )}
+    </SectionCard>
   );
 }

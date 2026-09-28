@@ -51,13 +51,13 @@ interface ObjectionRecord {
 
 const categoryConfig: Record<
   string,
-  { label: string; variant: "neutral" | "green" | "amber" | "red" }
+  { label: string; variant: "neutral" | "success" | "warning" | "error" }
 > = {
-  pricing: { label: "Pricing", variant: "green" },
-  competition: { label: "Competition", variant: "amber" },
+  pricing: { label: "Pricing", variant: "success" },
+  competition: { label: "Competition", variant: "warning" },
   timing: { label: "Timing", variant: "neutral" },
-  authority: { label: "Authority", variant: "red" },
-  need: { label: "Need", variant: "amber" },
+  authority: { label: "Authority", variant: "error" },
+  need: { label: "Need", variant: "warning" },
   implementation: { label: "Implementation", variant: "neutral" },
 };
 
@@ -474,10 +474,15 @@ export function PlaybookPageClient({
             <Select
               label="Category"
               required
-              options={categoryOptions}
               value={formCategory}
               onChange={(e) => setFormCategory(e.target.value)}
-            />
+            >
+              {categoryOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
             <Textarea
               label="Objection"
               required

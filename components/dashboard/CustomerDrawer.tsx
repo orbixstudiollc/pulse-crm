@@ -32,14 +32,14 @@ interface CustomerDrawerProps {
 }
 
 const statusConfig = {
-  active: { label: "Active", variant: "green" as const },
-  pending: { label: "Pending", variant: "amber" as const },
+  active: { label: "Active", variant: "success" as const },
+  pending: { label: "Pending", variant: "warning" as const },
   inactive: { label: "Inactive", variant: "neutral" as const },
 };
 
 const planConfig = {
-  enterprise: { label: "Enterprise", variant: "violet" as const },
-  pro: { label: "Pro", variant: "blue" as const },
+  enterprise: { label: "Enterprise", variant: "primary" as const },
+  pro: { label: "Pro", variant: "info" as const },
   starter: { label: "Starter", variant: "neutral" as const },
   free: { label: "Free", variant: "neutral" as const },
 };

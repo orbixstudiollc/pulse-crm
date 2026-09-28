@@ -1,3 +1,5 @@
+import type { BadgeVariant } from "@/components/ui";
+
 export type LeadStatus = "hot" | "warm" | "cold";
 export type LeadSource =
   | "Website"
@@ -56,10 +58,10 @@ export interface Lead {
 
 export const leadStatusConfig: Record<
   LeadStatus,
-  { label: string; variant: "red" | "amber" | "neutral" }
+  { label: string; variant: BadgeVariant }
 > = {
-  hot: { label: "Hot", variant: "red" },
-  warm: { label: "Warm", variant: "amber" },
+  hot: { label: "Hot", variant: "error" },
+  warm: { label: "Warm", variant: "warning" },
   cold: { label: "Cold", variant: "neutral" },
 };
 
@@ -110,7 +112,7 @@ export interface LeadActivity {
   description: string;
   badge?: {
     label: string;
-    variant: "green" | "red" | "amber" | "blue" | "neutral" | "violet";
+    variant: BadgeVariant;
   };
   meta?: string;
 }

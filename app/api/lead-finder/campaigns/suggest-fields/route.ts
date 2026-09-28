@@ -1,8 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/actions/helpers";
 import { suggestLeadFields } from "@/lib/lead-finder/ai/campaign-planner";
-import type { AIProvider } from "@/lib/lead-finder/types";
+
+const AIProviderEnum = z.enum([
+  "openai",
+  "anthropic",
+  "openrouter",
+  "groq",
+  "ollama",
+  "ollama_cloud",
+]);
+
+const BodySchema = z.object({
+  targetNiche: z
+    .string()
+    .trim()
+    .min(1, "targetNiche is required")
+    .max(2_000),
+  aiProvider: AIProviderEnum.optional(),
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,18 +32,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const orgId = await getOrgId();
-    const body = await req.json();
-    const { targetNiche, aiProvider } = body as {
-      targetNiche: string;
-      aiProvider?: AIProvider;
-    };
 
-    if (!targetNiche) {
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const parsed = BodySchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "targetNiche is required" },
+        { error: parsed.error.issues[0]?.message ?? "Invalid request" },
         { status: 400 }
       );
     }
+    const { targetNiche, aiProvider } = parsed.data;
 
     const fields = await suggestLeadFields(
       targetNiche,
@@ -33,7 +55,6 @@ export async function POST(req: NextRequest) {
       aiProvider || "anthropic"
     );
 
-    // Transform to the format expected by the UI
     return NextResponse.json({
       data: {
         kpi_definitions: [],
@@ -46,6 +67,10 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[lead-finder/suggest-fields] error", err);
+    return NextResponse.json(
+      { error: "Failed to suggest fields" },
+      { status: 500 }
+    );
   }
 }

@@ -1,3 +1,5 @@
+import type { BadgeVariant } from "@/components/ui";
+
 export interface Customer {
   id: string;
   firstName?: string;
@@ -39,14 +41,7 @@ export interface ActivityItem {
   description: string;
   badge?: {
     label: string;
-    variant:
-      | "green"
-      | "amber"
-      | "blue"
-      | "red"
-      | "emerald"
-      | "violet"
-      | "neutral";
+    variant: BadgeVariant;
   };
   meta?: string;
 }
@@ -82,13 +77,13 @@ export const stageConfig: Record<
   DealStage,
   {
     label: string;
-    variant: "amber" | "blue" | "green" | "red" | "violet" | "neutral";
+    variant: BadgeVariant;
   }
 > = {
   prospecting: { label: "Prospecting", variant: "neutral" },
-  qualification: { label: "Qualification", variant: "blue" },
-  proposal: { label: "Proposal", variant: "violet" },
-  negotiation: { label: "Negotiation", variant: "amber" },
-  closed_won: { label: "Closed Won", variant: "green" },
-  closed_lost: { label: "Closed Lost", variant: "red" },
+  qualification: { label: "Qualification", variant: "info" },
+  proposal: { label: "Proposal", variant: "primary" },
+  negotiation: { label: "Negotiation", variant: "warning" },
+  closed_won: { label: "Closed Won", variant: "success" },
+  closed_lost: { label: "Closed Lost", variant: "error" },
 };

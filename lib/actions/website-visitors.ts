@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "./helpers";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
+import { escapePostgrestLike } from "@/lib/security";
 
 type TrackingScriptInsert = Database["public"]["Tables"]["tracking_scripts"]["Insert"];
 type VisitorRow = Database["public"]["Tables"]["website_visitors"]["Row"];
@@ -113,7 +114,10 @@ export async function getWebsiteVisitors(filters: VisitorFilters = {}) {
 
   if (search) {
     query = query.or(
-      `company_name.ilike.%${search}%,company_domain.ilike.%${search}%,ip_address.ilike.%${search}%,city.ilike.%${search}%,country.ilike.%${search}%`
+      (() => {
+        const q = escapePostgrestLike(search);
+        return `company_name.ilike.%${q}%,company_domain.ilike.%${q}%,ip_address.ilike.%${q}%,city.ilike.%${q}%,country.ilike.%${q}%`;
+      })()
     );
   }
 

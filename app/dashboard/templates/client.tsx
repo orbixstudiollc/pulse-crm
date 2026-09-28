@@ -437,10 +437,15 @@ export function TemplatesPageClient({
             />
             <Select
               label="Category"
-              options={categoryOptions}
               value={formCategory}
               onChange={(e) => setFormCategory(e.target.value)}
-            />
+            >
+              {categoryOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
             <Input
               label="Subject"
               required

@@ -1,8 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/actions/helpers";
 import { planCampaign } from "@/lib/lead-finder/ai/campaign-planner";
-import type { AIProvider } from "@/lib/lead-finder/types";
+
+const AIProviderEnum = z.enum([
+  "openai",
+  "anthropic",
+  "openrouter",
+  "groq",
+  "ollama",
+  "ollama_cloud",
+]);
+
+const BodySchema = z.object({
+  description: z
+    .string()
+    .trim()
+    .min(1, "description is required")
+    .max(20_000),
+  aiProvider: AIProviderEnum.optional(),
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,18 +32,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const orgId = await getOrgId();
-    const body = await req.json();
-    const { description, aiProvider } = body as {
-      description: string;
-      aiProvider?: AIProvider;
-    };
 
-    if (!description) {
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const parsed = BodySchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "description is required" },
+        { error: parsed.error.issues[0]?.message ?? "Invalid request" },
         { status: 400 }
       );
     }
+    const { description, aiProvider } = parsed.data;
 
     const plan = await planCampaign(
       description,
@@ -56,6 +78,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ data: aiPlan });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[lead-finder/campaigns/plan] error", err);
+    return NextResponse.json(
+      { error: "Failed to plan campaign" },
+      { status: 500 }
+    );
   }
 }

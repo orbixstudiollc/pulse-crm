@@ -370,16 +370,26 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
           <div className="grid grid-cols-2 gap-4 mb-4">
             <Select
               label="Industry"
-              options={industryOptions}
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
-            />
+            >
+              {industryOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
             <Select
               label="Company Size"
-              options={companySizeOptions}
               value={companySize}
               onChange={(e) => setCompanySize(e.target.value)}
-            />
+            >
+              {companySizeOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
           </div>
 
           <Input
@@ -425,10 +435,15 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
             />
             <Select
               label="Country"
-              options={countryOptions}
               value={country}
               onChange={(e) => setCountry(e.target.value)}
-            />
+            >
+              {countryOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
           </div>
         </FormSection>
 
@@ -449,10 +464,15 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label="Plan"
-              options={planOptions}
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
-            />
+            >
+              {planOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
             <Input
               label="Monthly Revenue"
               value={monthlyRevenue}

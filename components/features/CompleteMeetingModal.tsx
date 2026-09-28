@@ -107,26 +107,36 @@ export function CompleteMeetingModal({
             label="Duration"
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
-            options={[
+          >
+            {[
               { label: "15 mins", value: "15" },
               { label: "30 mins", value: "30" },
               { label: "45 mins", value: "45" },
               { label: "1 hour", value: "60" },
               { label: "1.5 hours", value: "90" },
               { label: "2 hours", value: "120" },
-            ]}
-          />
+            ].map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
           <Select
             label="Follow Up"
             value={followUp}
             onChange={(e) => setFollowUp(e.target.value)}
-            options={[
+          >
+            {[
               { label: "No follow-up", value: "none" },
               { label: "Send email", value: "email" },
               { label: "Schedule meeting", value: "meeting" },
               { label: "Create task", value: "task" },
-            ]}
-          />
+            ].map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
         </div>
 
         {/* Notes */}

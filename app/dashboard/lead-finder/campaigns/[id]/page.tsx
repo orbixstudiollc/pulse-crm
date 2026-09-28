@@ -17,7 +17,6 @@ import {
   XCircleIcon,
   TrashIcon,
   DownloadIcon,
-  DotsThreeIcon,
   MagnifyingGlassIcon,
   GearIcon,
   LightningIcon,
@@ -27,12 +26,9 @@ import {
   SlidersHorizontalIcon,
   PlusIcon,
   XIcon,
-  CaretUpIcon,
-  CaretDownIcon,
   ClockIcon,
   WarningCircleIcon,
   ArrowCounterClockwiseIcon,
-  ChevronsRightIcon,
   PowerIcon,
   ToggleLeftIcon,
   ToggleRightIcon,
@@ -49,6 +45,8 @@ import { Button, Input, Select, Textarea } from "@/components/ui";
 import { ScoreBadge } from "@/components/lead-finder/ScoreBadge";
 import { LeadDetailDrawer } from "@/components/lead-finder/LeadDetailDrawer";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
+import { EnrichmentProgressBanner, registerActiveBatch } from "@/components/lead-finder/EnrichmentProgressBanner";
+import { SortableList } from "@/components/lead-finder/SortableList";
 import { useLeadEvents } from "@/hooks/use-lead-events";
 import { useLeadFinderActors } from "@/hooks/use-lead-finder-actors";
 
@@ -354,7 +352,9 @@ export default function CampaignDetailPage() {
   }
 
   const fields = (campaign.lead_field_definitions || []).map((f) => ({ ...f, _id: resolveFieldId(f) }));
-  const kpis = (campaign.kpi_definitions || []).map((k) => ({ ...k, _id: resolveFieldId(k) }));
+  // kpis are rendered via a subcomponent that reads kpi_definitions directly;
+  // this computed list is retained for future in-place editing.
+  void (campaign.kpi_definitions || []).map((k) => ({ ...k, _id: resolveFieldId(k) }));
 
   const serverIsEnriching = campaign.leads.some((l) => l.status === "enriching");
   const isEnrichmentActive = enrichingAll || serverIsEnriching || reEnrichingLeads.size > 0;
@@ -433,6 +433,7 @@ export default function CampaignDetailPage() {
       });
       const data = await res.json();
       if (!res.ok) { toast.error(data.error || "Enrichment failed"); return; }
+      if (data.batchId) registerActiveBatch(data.batchId);
       if (data.enriched > 0) toast.success(`Enriched ${data.enriched} leads`);
       else toast.info("No new leads to enrich");
       fetch300();
@@ -653,19 +654,13 @@ export default function CampaignDetailPage() {
     setEditSettings({ ...editSettings, actorOrder: editSettings.actorOrder.filter((a) => a !== actorId), actorConfigs: rest });
   };
 
-  const moveActor = (idx: number, dir: -1 | 1) => {
-    if (!editSettings) return;
-    const newOrder = [...editSettings.actorOrder];
-    const [item] = newOrder.splice(idx, 1);
-    newOrder.splice(idx + dir, 0, item);
-    setEditSettings({ ...editSettings, actorOrder: newOrder });
-  };
-
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <div className="p-6 lg:p-8 space-y-5">
       <LeadFinderSubNav />
+
+      <EnrichmentProgressBanner campaignId={id} />
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
@@ -905,16 +900,21 @@ export default function CampaignDetailPage() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="h-8 py-1.5 w-auto"
-              placeholder="All Statuses"
-              options={[
+            >
+              <option value="">All Statuses</option>
+              {[
                 { label: "All Statuses", value: "all" },
                 { label: "New", value: "new" },
                 { label: "Enriching", value: "enriching" },
                 { label: "Qualified", value: "qualified" },
                 { label: "Disqualified", value: "disqualified" },
                 { label: "Converted", value: "converted" },
-              ]}
-            />
+              ].map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
             {/* Column toggle */}
             {fields.length > 0 && (
               <div className="relative">
@@ -1135,11 +1135,11 @@ export default function CampaignDetailPage() {
                   <div className="space-y-4">
                     <Input label="Target Niche" value={editSettings.targetNiche} onChange={(e) => setEditSettings({ ...editSettings, targetNiche: e.target.value })} />
                     <div className="grid grid-cols-2 gap-3">
-                      <Select label="AI Provider" value={editSettings.aiProvider} onChange={(e) => setEditSettings({ ...editSettings, aiProvider: e.target.value })} options={[{ label: "OpenRouter", value: "openrouter" }, { label: "Anthropic (Claude)", value: "anthropic" }, { label: "Ollama (Local)", value: "ollama" }]} />
-                      <Select label="Schedule" value={editSettings.scheduleFrequency} onChange={(e) => setEditSettings({ ...editSettings, scheduleFrequency: e.target.value })} options={[{ label: "Run Once", value: "once" }, { label: "Daily", value: "daily" }, { label: "Weekly", value: "weekly" }]} />
+                      <Select label="AI Provider" value={editSettings.aiProvider} onChange={(e) => setEditSettings({ ...editSettings, aiProvider: e.target.value })}>{[{ label: "OpenRouter", value: "openrouter" }, { label: "Anthropic (Claude)", value: "anthropic" }, { label: "Ollama (Local)", value: "ollama" }].map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</Select>
+                      <Select label="Schedule" value={editSettings.scheduleFrequency} onChange={(e) => setEditSettings({ ...editSettings, scheduleFrequency: e.target.value })}>{[{ label: "Run Once", value: "once" }, { label: "Daily", value: "daily" }, { label: "Weekly", value: "weekly" }].map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</Select>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <Select label="Lead Enrichment" value={editSettings.autoEnrich ? "automatic" : "off"} onChange={(e) => setEditSettings({ ...editSettings, autoEnrich: e.target.value === "automatic" })} options={[{ label: "Automatic", value: "automatic" }, { label: "Off", value: "off" }]} />
+                      <Select label="Lead Enrichment" value={editSettings.autoEnrich ? "automatic" : "off"} onChange={(e) => setEditSettings({ ...editSettings, autoEnrich: e.target.value === "automatic" })}>{[{ label: "Automatic", value: "automatic" }, { label: "Off", value: "off" }].map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</Select>
                       <Input label="Enrichment Concurrency" type="number" min={1} value={editSettings.enrichmentConcurrency} onChange={(e) => setEditSettings({ ...editSettings, enrichmentConcurrency: e.target.value === "" ? "" : parseInt(e.target.value) || 1 })} placeholder="Default (1)" />
                     </div>
                   </div>
@@ -1196,24 +1196,26 @@ export default function CampaignDetailPage() {
                         );
                       })()}
                     </div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Use arrows to reorder. Actors run top-to-bottom during discovery and enrichment.</p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Drag the handle to reorder. Actors run top-to-bottom during discovery and enrichment.</p>
                     {editSettings.actorOrder.length === 0 ? (
                       <p className="text-sm text-neutral-500 dark:text-neutral-400 py-4 text-center border border-dashed border-neutral-200 dark:border-neutral-700 rounded-lg">No actors. Click &quot;Add Actor&quot; to get started.</p>
                     ) : (
-                      <div className="space-y-2">
-                        {editSettings.actorOrder.map((actorId, idx) => {
+                      <SortableList
+                        items={editSettings.actorOrder}
+                        getId={(actorId) => actorId}
+                        onReorder={(next) =>
+                          setEditSettings((prev) => prev ? { ...prev, actorOrder: next } : prev)
+                        }
+                        className="space-y-2"
+                        renderItem={(actorId) => {
                           const def = getActorById(actorId);
                           if (!def) return null;
                           const isCollapsed = collapsedActors.has(actorId);
                           const hasFields = def.phase !== "enrich" && Object.keys(def.inputFieldDescriptions || {}).length > 0;
                           const fieldVals = editSettings.actorConfigs[actorId] || {};
                           return (
-                            <div key={actorId} className="rounded-lg border border-neutral-200 dark:border-neutral-800">
+                            <div className="rounded-lg border border-neutral-200 dark:border-neutral-800">
                               <div className="flex items-center">
-                                <div className="flex flex-col border-r border-neutral-100 dark:border-neutral-800 px-1.5 py-1 gap-0.5">
-                                  <Button onClick={() => idx > 0 && moveActor(idx, -1)} disabled={idx === 0} variant="ghost" size="sm" className="p-0.5 h-auto"><CaretUpIcon size={12} /></Button>
-                                  <Button onClick={() => idx < editSettings.actorOrder.length - 1 && moveActor(idx, 1)} disabled={idx === editSettings.actorOrder.length - 1} variant="ghost" size="sm" className="p-0.5 h-auto"><CaretDownIcon size={12} /></Button>
-                                </div>
                                 <button onClick={() => setCollapsedActors((prev) => { const n = new Set(prev); if (n.has(actorId)) n.delete(actorId); else n.add(actorId); return n; })} className="flex-1 flex items-center justify-between p-3 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors min-w-0">
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
@@ -1277,8 +1279,8 @@ export default function CampaignDetailPage() {
                               )}
                             </div>
                           );
-                        })}
-                      </div>
+                        }}
+                      />
                     )}
                   </div>
 

@@ -56,12 +56,12 @@ import { cn } from "@/lib/utils";
 
 const statusConfig: Record<
   string,
-  { label: string; variant: "neutral" | "green" | "amber" | "red" }
+  { label: string; variant: "neutral" | "success" | "warning" | "error" }
 > = {
   draft: { label: "Draft", variant: "neutral" },
-  active: { label: "Active", variant: "green" },
-  paused: { label: "Paused", variant: "amber" },
-  archived: { label: "Archived", variant: "red" },
+  active: { label: "Active", variant: "success" },
+  paused: { label: "Paused", variant: "warning" },
+  archived: { label: "Archived", variant: "error" },
 };
 
 const categoryConfig: Record<string, string> = {
@@ -757,10 +757,15 @@ export function SequencesPageClient({
             <Select
               label="Category"
               required
-              options={categoryOptions}
               value={formCategory}
               onChange={(e) => setFormCategory(e.target.value)}
-            />
+            >
+              {categoryOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
           </div>
 
           {/* Actions */}
@@ -927,7 +932,7 @@ export function SequencesPageClient({
                         {perfDrawer.data.topStep.subject || "Untitled"}
                       </p>
                     </div>
-                    <Badge variant="green">
+                    <Badge variant="success">
                       {perfDrawer.data.topStep.replyRate}% reply
                     </Badge>
                   </div>

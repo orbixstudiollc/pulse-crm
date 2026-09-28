@@ -62,8 +62,13 @@ export function MarkDealLostModal({
           label="Reason for Loss"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          options={lossReasons}
-        />
+        >
+          {lossReasons.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
 
         {/* Competitor Name */}
         <Input

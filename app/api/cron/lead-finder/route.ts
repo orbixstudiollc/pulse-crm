@@ -3,19 +3,16 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { runCampaignDiscovery } from "@/lib/lead-finder/apify/discovery";
 import { enrichCampaignLeads } from "@/lib/lead-finder/enrichment/pipeline";
 import type { LFCampaign } from "@/lib/lead-finder/types";
+import { verifyCronRequest } from "@/lib/security";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // 5 minutes
 
 export async function GET(req: NextRequest) {
-  try {
-    // Authenticate via CRON_SECRET header
-    const authHeader = req.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET;
+  const authErr = verifyCronRequest(req);
+  if (authErr) return authErr;
 
-    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  try {
 
     const supabase = createAdminClient();
     const now = new Date().toISOString();
@@ -29,7 +26,8 @@ export async function GET(req: NextRequest) {
       .lte("next_discovery_at", now);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("[cron/lead-finder] fetch campaigns failed", error);
+      return NextResponse.json({ error: "Internal error" }, { status: 500 });
     }
 
     if (!campaigns || campaigns.length === 0) {
@@ -43,7 +41,11 @@ export async function GET(req: NextRequest) {
       campaignId: string;
       name: string;
       discovery: { totalInserted: number; totalDeduplicated: number } | null;
-      enrichment: { enriched: number; failed: number } | null;
+      enrichment: {
+        enqueued: number;
+        skipped: number;
+        batchId: string | null;
+      } | null;
       error?: string;
     }[] = [];
 
@@ -94,18 +96,23 @@ export async function GET(req: NextRequest) {
           },
           enrichment: enrichmentResult
             ? {
-                enriched: enrichmentResult.enriched,
-                failed: enrichmentResult.failed,
+                enqueued: enrichmentResult.enqueued,
+                skipped: enrichmentResult.skipped,
+                batchId: enrichmentResult.batchId ?? null,
               }
             : null,
         });
       } catch (err) {
+        console.error(
+          `[cron/lead-finder] campaign ${campaign.id} failed`,
+          err
+        );
         results.push({
           campaignId: campaign.id,
           name: campaign.name,
           discovery: null,
           enrichment: null,
-          error: String(err),
+          error: "Campaign run failed",
         });
       }
     }
@@ -116,7 +123,8 @@ export async function GET(req: NextRequest) {
       results,
     });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[cron/lead-finder] unexpected error", err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Drawer, Badge, Button, CalendarBlankIcon } from "@/components/ui";
+import { Drawer, Badge, Button, CalendarBlankIcon, type BadgeVariant } from "@/components/ui";
 
 interface ActivityDetail {
   id: string;
@@ -9,14 +9,7 @@ interface ActivityDetail {
   description: string;
   badge?: {
     label: string;
-    variant:
-      | "green"
-      | "amber"
-      | "blue"
-      | "red"
-      | "emerald"
-      | "violet"
-      | "neutral";
+    variant: BadgeVariant;
   };
   meta?: string;
 }

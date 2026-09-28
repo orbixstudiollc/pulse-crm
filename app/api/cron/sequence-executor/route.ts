@@ -6,6 +6,7 @@ import { sendLinkedIn } from "@/lib/linkedin/sender";
 import { getRandomDelay } from "@/lib/linkedin/rate-limiter";
 import { NextResponse } from "next/server";
 import type { Json } from "@/types/database";
+import { verifyCronRequest } from "@/lib/security";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // 5 minutes
@@ -72,11 +73,8 @@ function pickVariant(variants: StepVariant[]): StepVariant | null {
 }
 
 export async function GET(request: Request) {
-  // Verify cron secret
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = verifyCronRequest(request);
+  if (authErr) return authErr;
 
   const supabase = createAdminClient();
   const now = new Date().toISOString();

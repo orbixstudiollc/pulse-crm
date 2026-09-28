@@ -2,7 +2,13 @@
 // Lead Finder – Shared Types
 // =============================================================================
 
-export type AIProvider = "openai" | "anthropic" | "openrouter";
+export type AIProvider =
+  | "openai"
+  | "anthropic"
+  | "openrouter"
+  | "groq"
+  | "ollama"
+  | "ollama_cloud";
 export type CampaignStatus = "draft" | "active" | "paused" | "completed";
 export type LeadStatus =
   | "new"
@@ -16,7 +22,8 @@ export type ActorCategory =
   | "lead-generation"
   | "enrichment"
   | "social"
-  | "search";
+  | "search"
+  | "outreach-intel";
 
 // ---------------------------------------------------------------------------
 // Definition helpers (stored as JSONB in campaign rows)

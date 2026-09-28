@@ -80,13 +80,18 @@ export function CreateTaskModal({
             label="Priority"
             value={priority}
             onChange={(e) => setPriority(e.target.value)}
-            options={[
+          >
+            {[
               { label: "Low", value: "low" },
               { label: "Medium", value: "medium" },
               { label: "High", value: "high" },
               { label: "Urgent", value: "urgent" },
-            ]}
-          />
+            ].map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
         </div>
 
         {/* Assigned To */}
@@ -94,13 +99,18 @@ export function CreateTaskModal({
           label="Assigned To"
           value={assignedTo}
           onChange={(e) => setAssignedTo(e.target.value)}
-          options={[
+        >
+          {[
             { label: "Me", value: "me" },
             { label: "Sarah Kim", value: "sarah" },
             { label: "Mike Johnson", value: "mike" },
             { label: "Jennifer Kim", value: "jennifer" },
-          ]}
-        />
+          ].map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
 
         {/* Reminder */}
         <Checkbox

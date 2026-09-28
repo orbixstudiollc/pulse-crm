@@ -59,6 +59,17 @@ export interface CampaignEnrichmentProgressEvent {
   total: number;
   currentLeadId: string | null;
   currentLeadName: string | null;
+  batchId?: string | null;
+}
+
+export interface EnrichmentBatchUpdatedEvent {
+  batchId: string;
+  organizationId: string;
+  campaignId: string | null;
+  total: number;
+  completed: number;
+  failed: number;
+  status: "queued" | "running" | "paused" | "done" | "cancelled";
 }
 
 // =============================================================================
@@ -73,6 +84,7 @@ export type LeadEventMap = {
   "campaign:discovery-started": CampaignDiscoveryStartedEvent;
   "campaign:discovery-completed": CampaignDiscoveryCompletedEvent;
   "campaign:enrichment-progress": CampaignEnrichmentProgressEvent;
+  "enrichment-batch:updated": EnrichmentBatchUpdatedEvent;
 };
 
 export type LeadEventType = keyof LeadEventMap;

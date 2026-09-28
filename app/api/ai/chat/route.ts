@@ -6,6 +6,7 @@ import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
 import { assembleContext, fetchEntityForChat } from "@/lib/ai/context";
 import { logTokenUsage } from "@/lib/ai/client";
 import { PageContext } from "@/lib/ai/types";
+import { escapePostgrestLike } from "@/lib/security";
 
 export const maxDuration = 60;
 
@@ -181,7 +182,10 @@ User: ${user.email}`;
               )
               .eq("organization_id", prof.organization_id)
               .or(
-                `name.ilike.%${query}%,email.ilike.%${query}%`
+                (() => {
+                  const q = escapePostgrestLike(query);
+                  return `name.ilike.%${q}%,email.ilike.%${q}%`;
+                })()
               )
               .limit(10);
             return data?.length
@@ -226,7 +230,7 @@ User: ${user.email}`;
                 "id, name, value, stage, probability, close_date, contact_name"
               )
               .eq("organization_id", prof.organization_id);
-            if (query) q = q.ilike("name", `%${query}%`);
+            if (query) q = q.ilike("name", `%${escapePostgrestLike(query)}%`);
             if (stage) q = q.eq("stage", stage as "discovery" | "proposal" | "negotiation" | "closed_won" | "closed_lost");
             if (minValue) q = q.gte("value", minValue);
             const { data } = await q
@@ -264,7 +268,10 @@ User: ${user.email}`;
               )
               .eq("organization_id", prof.organization_id)
               .or(
-                `name.ilike.%${leadNameOrEmail}%,email.ilike.%${leadNameOrEmail}%`
+                (() => {
+                  const q = escapePostgrestLike(leadNameOrEmail);
+                  return `name.ilike.%${q}%,email.ilike.%${q}%`;
+                })()
               )
               .limit(3);
             if (!leads?.length) return "No leads found.";

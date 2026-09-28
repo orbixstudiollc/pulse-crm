@@ -15,6 +15,7 @@ import {
   EyeIcon,
   PencilSimpleIcon,
   TrashIcon,
+  type BadgeVariant,
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
@@ -49,14 +50,7 @@ interface ActivityRowProps {
   description: string;
   badge?: {
     label: string;
-    variant:
-      | "green"
-      | "amber"
-      | "red"
-      | "blue"
-      | "neutral"
-      | "violet"
-      | "emerald";
+    variant: BadgeVariant;
   };
   meta?: string;
   showBorder?: boolean;

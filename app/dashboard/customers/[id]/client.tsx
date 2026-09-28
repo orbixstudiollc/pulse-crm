@@ -18,6 +18,7 @@ import {
   ActionMenu,
   TrashIcon,
   PencilSimpleIcon,
+  type BadgeVariant,
 } from "@/components/ui";
 import { ActivityRow, type ActivityRowType, ConfirmModal } from "@/components/dashboard";
 import { cn } from "@/lib/utils";
@@ -111,14 +112,14 @@ interface CustomerDetailClientProps {
 
 // --- Stage config for deal badges ---
 
-const stageConfig: Record<string, { label: string; variant: string }> = {
-  discovery: { label: "Discovery", variant: "blue" },
-  prospecting: { label: "Prospecting", variant: "blue" },
-  qualification: { label: "Qualification", variant: "amber" },
-  proposal: { label: "Proposal", variant: "violet" },
-  negotiation: { label: "Negotiation", variant: "amber" },
-  closed_won: { label: "Closed Won", variant: "green" },
-  closed_lost: { label: "Closed Lost", variant: "red" },
+const stageConfig: Record<string, { label: string; variant: BadgeVariant }> = {
+  discovery: { label: "Discovery", variant: "info" },
+  prospecting: { label: "Prospecting", variant: "info" },
+  qualification: { label: "Qualification", variant: "warning" },
+  proposal: { label: "Proposal", variant: "primary" },
+  negotiation: { label: "Negotiation", variant: "warning" },
+  closed_won: { label: "Closed Won", variant: "success" },
+  closed_lost: { label: "Closed Lost", variant: "error" },
 };
 
 // --- Component ---
@@ -282,9 +283,9 @@ export function CustomerDetailClient({
                 <Badge
                   variant={
                     customer.status === "active"
-                      ? "green"
+                      ? "success"
                       : customer.status === "pending"
-                        ? "amber"
+                        ? "warning"
                         : "neutral"
                   }
                 >
@@ -294,9 +295,9 @@ export function CustomerDetailClient({
                 <Badge
                   variant={
                     customer.plan === "enterprise"
-                      ? "violet"
+                      ? "primary"
                       : customer.plan === "pro"
-                        ? "blue"
+                        ? "info"
                         : "neutral"
                   }
                 >
@@ -452,7 +453,7 @@ export function CustomerDetailClient({
                                 <span className="text-[13px] text-neutral-500 dark:text-neutral-400 w-20">
                                   Stage
                                 </span>
-                                <Badge variant={stage.variant as any}>
+                                <Badge variant={stage.variant}>
                                   {stage.label}
                                 </Badge>
                               </div>

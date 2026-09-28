@@ -532,7 +532,7 @@ function ICPProfileCard({
               {profile.name}
             </h3>
             {profile.is_primary && (
-              <Badge variant="violet" dot>
+              <Badge variant="primary" dot>
                 Primary
               </Badge>
             )}
@@ -572,7 +572,7 @@ function ICPProfileCard({
                 Industries:
               </span>
               {criteria.firmographic.industries.slice(0, 3).map((ind) => (
-                <Badge key={ind} variant="blue">
+                <Badge key={ind} variant="info">
                   {ind}
                 </Badge>
               ))}
@@ -589,7 +589,7 @@ function ICPProfileCard({
                 Size:
               </span>
               {criteria.firmographic.company_sizes.map((s) => (
-                <Badge key={s} variant="emerald">
+                <Badge key={s} variant="success">
                   {s}
                 </Badge>
               ))}
@@ -601,7 +601,7 @@ function ICPProfileCard({
                 Geo:
               </span>
               {criteria.firmographic.geography.slice(0, 3).map((g) => (
-                <Badge key={g} variant="amber">
+                <Badge key={g} variant="warning">
                   {g}
                 </Badge>
               ))}
@@ -1188,10 +1188,10 @@ function ICPWizardModal({
                           </p>
                           <div className="flex flex-wrap gap-1.5">
                             {persona.goals.slice(0, 3).map((g) => (
-                              <Badge key={g} variant="blue">{g}</Badge>
+                              <Badge key={g} variant="info">{g}</Badge>
                             ))}
                             {persona.challenges.slice(0, 2).map((c) => (
-                              <Badge key={c} variant="amber">{c}</Badge>
+                              <Badge key={c} variant="warning">{c}</Badge>
                             ))}
                           </div>
                         </div>

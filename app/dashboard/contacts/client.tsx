@@ -59,22 +59,22 @@ const ROLE_TABS = [
 
 const roleBadgeConfig: Record<
   string,
-  { label: string; variant: "violet" | "green" | "blue" | "neutral" | "red" | "amber" }
+  { label: string; variant: "primary" | "success" | "info" | "neutral" | "error" | "warning" }
 > = {
-  economic_buyer: { label: "Economic Buyer", variant: "violet" },
-  champion: { label: "Champion", variant: "green" },
-  technical_evaluator: { label: "Technical Evaluator", variant: "blue" },
+  economic_buyer: { label: "Economic Buyer", variant: "primary" },
+  champion: { label: "Champion", variant: "success" },
+  technical_evaluator: { label: "Technical Evaluator", variant: "info" },
   end_user: { label: "End User", variant: "neutral" },
-  blocker: { label: "Blocker", variant: "red" },
-  coach: { label: "Coach", variant: "amber" },
+  blocker: { label: "Blocker", variant: "error" },
+  coach: { label: "Coach", variant: "warning" },
 };
 
 const influenceBadgeConfig: Record<
   string,
-  { label: string; variant: "green" | "amber" | "neutral" }
+  { label: string; variant: "success" | "warning" | "neutral" }
 > = {
-  high: { label: "High", variant: "green" },
-  medium: { label: "Medium", variant: "amber" },
+  high: { label: "High", variant: "success" },
+  medium: { label: "Medium", variant: "warning" },
   low: { label: "Low", variant: "neutral" },
 };
 
@@ -564,10 +564,6 @@ export function ContactsPageClient({
             <div className="grid grid-cols-2 gap-4">
               <Select
                 label="Buying Role"
-                options={BUYING_ROLES.map((r) => ({
-                  label: r.label,
-                  value: r.value,
-                }))}
                 value={formState.buying_role}
                 onChange={(e) =>
                   setFormState((s) => ({
@@ -575,13 +571,15 @@ export function ContactsPageClient({
                     buying_role: e.target.value,
                   }))
                 }
-              />
+              >
+                {BUYING_ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </Select>
               <Select
                 label="Influence Level"
-                options={INFLUENCE_LEVELS.map((l) => ({
-                  label: l.label,
-                  value: l.value,
-                }))}
                 value={formState.influence_level}
                 onChange={(e) =>
                   setFormState((s) => ({
@@ -589,7 +587,13 @@ export function ContactsPageClient({
                     influence_level: e.target.value,
                   }))
                 }
-              />
+              >
+                {INFLUENCE_LEVELS.map((l) => (
+                  <option key={l.value} value={l.value}>
+                    {l.label}
+                  </option>
+                ))}
+              </Select>
             </div>
 
             <Textarea

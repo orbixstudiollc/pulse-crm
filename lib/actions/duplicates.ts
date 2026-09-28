@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "./helpers";
 import { revalidatePath } from "next/cache";
+import { escapePostgrestLike } from "@/lib/security";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,7 +46,7 @@ export async function findDuplicates(email: string, name?: string) {
     const { data: nameMatches, error: nameError } = await supabase
       .from("leads")
       .select(selectFields)
-      .ilike("name", `%${name}%`)
+      .ilike("name", `%${escapePostgrestLike(name)}%`)
       .eq("organization_id", orgId);
 
     if (nameError) return { error: nameError.message };

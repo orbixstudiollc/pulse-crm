@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/actions/helpers";
+import { isUuid } from "@/lib/security";
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,7 +13,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const orgId = await getOrgId();
-    const campaignId = req.nextUrl.searchParams.get("campaignId");
+    const campaignIdRaw = req.nextUrl.searchParams.get("campaignId");
+    if (campaignIdRaw !== null && campaignIdRaw !== "" && !isUuid(campaignIdRaw)) {
+      return NextResponse.json(
+        { error: "campaignId must be a UUID" },
+        { status: 400 }
+      );
+    }
+    const campaignId = campaignIdRaw || null;
 
     // All leads
     let leadsQuery = supabase
@@ -185,6 +193,10 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[lead-finder/analytics] error", err);
+    return NextResponse.json(
+      { error: "Failed to load analytics" },
+      { status: 500 }
+    );
   }
 }

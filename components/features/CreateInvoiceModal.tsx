@@ -86,13 +86,18 @@ export function CreateInvoiceModal({
             label="Currency"
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
-            options={[
+          >
+            {[
               { label: "USD", value: "usd" },
               { label: "EUR", value: "eur" },
               { label: "GBP", value: "gbp" },
               { label: "CAD", value: "cad" },
-            ]}
-          />
+            ].map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
         </div>
 
         {/* Issue Date & Due Date */}
@@ -116,14 +121,19 @@ export function CreateInvoiceModal({
           label="Payment Terms"
           value={paymentTerms}
           onChange={(e) => setPaymentTerms(e.target.value)}
-          options={[
+        >
+          {[
             { label: "Due on Receipt", value: "receipt" },
             { label: "Net 15", value: "net15" },
             { label: "Net 30", value: "net30" },
             { label: "Net 45", value: "net45" },
             { label: "Net 60", value: "net60" },
-          ]}
-        />
+          ].map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
       </div>
 
       {/* Footer */}

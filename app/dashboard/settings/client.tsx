@@ -785,7 +785,7 @@ function SecuritySection() {
               </div>
             </div>
             {session.isCurrent ? (
-              <Badge variant="green">This Device</Badge>
+              <Badge variant="success">This Device</Badge>
             ) : (
               <Button
                 variant="outline"
@@ -978,31 +978,51 @@ function PreferencesSection({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
             label="Timezone"
-            options={timezoneOptions}
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
-          />
+          >
+            {timezoneOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
           <Select
             label="Date Format"
-            options={dateFormatOptions}
             value={dateFormat}
             onChange={(e) => setDateFormat(e.target.value)}
-          />
+          >
+            {dateFormatOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
             label="Time Format"
-            options={timeFormatOptions}
             value={timeFormat}
             onChange={(e) => setTimeFormat(e.target.value)}
-          />
+          >
+            {timeFormatOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
           <Select
             label="Language"
-            options={languageOptions}
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-          />
+          >
+            {languageOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
         </div>
 
         <Button
@@ -1255,7 +1275,7 @@ function IntegrationsSection({
                   type="button"
                   onClick={() => handleToggleConnection(item.id, item.name)}
                 >
-                  <Badge variant="green" className="cursor-pointer">
+                  <Badge variant="success" className="cursor-pointer">
                     Connected
                   </Badge>
                 </button>
@@ -1773,11 +1793,16 @@ function AISettingsSection({
         <Select
           value={defaultModel}
           onChange={(e) => setDefaultModel(e.target.value as "haiku" | "sonnet")}
-          options={[
+        >
+          {[
             { label: "Claude Sonnet (Recommended)", value: "sonnet" },
             { label: "Claude Haiku (Faster, Cheaper)", value: "haiku" },
-          ]}
-        />
+          ].map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
       </div>
 
       {/* Feature Toggles + Autonomy */}
@@ -2025,9 +2050,9 @@ function AISettingsSection({
                     </td>
                     <td className="px-4 py-2 text-center">
                       {entry.success ? (
-                        <Badge variant="green">OK</Badge>
+                        <Badge variant="success">OK</Badge>
                       ) : (
-                        <Badge variant="red">Fail</Badge>
+                        <Badge variant="error">Fail</Badge>
                       )}
                     </td>
                     <td className="px-4 py-2 text-right text-xs text-neutral-400">
@@ -3539,8 +3564,13 @@ function LeadFinderSettingsSection() {
           label={field.label}
           value={settings[field.key] || ""}
           onChange={(e) => setSettings((s) => ({ ...s, [field.key]: e.target.value }))}
-          options={field.options || []}
-        />
+        >
+          {(field.options || []).map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
       ) : (
         <Input
           label={field.label}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/actions/helpers";
+import { isUuid } from "@/lib/security";
 import { enrichSingleLead } from "@/lib/lead-finder/enrichment/pipeline";
 
 export async function POST(
@@ -8,6 +9,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  if (!isUuid(id)) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
   try {
     const supabase = await createClient();
     const {
@@ -68,6 +72,10 @@ export async function POST(
 
     return NextResponse.json({ success: true, leadId: id });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[lead-finder/leads/enrich] error", err);
+    return NextResponse.json(
+      { error: "Enrichment failed" },
+      { status: 500 }
+    );
   }
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Drawer, Button, Badge, ArrowRightIcon } from "@/components/ui";
+import { Drawer, Button, Badge, ArrowRightIcon, type BadgeVariant } from "@/components/ui";
 import {
   type PipelineDeal,
   type PipelineStage,
@@ -424,7 +424,7 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
                             </p>
                             {activity.badge_label && (
                               <Badge
-                                variant={(activity.badge_variant as "green" | "amber" | "blue" | "red" | "neutral") || "neutral"}
+                                variant={(activity.badge_variant as BadgeVariant) || "neutral"}
                               >
                                 {activity.badge_label}
                               </Badge>

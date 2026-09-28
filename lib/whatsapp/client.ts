@@ -318,7 +318,10 @@ export async function verifyWebhookSignature(
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
 
-    return expectedSignature === signature;
+    // SECURITY: constant-time compare to prevent timing side-channel on the
+    // HMAC digest. Dynamic import keeps `node:crypto` out of edge bundles.
+    const { timingSafeEqualStr } = await import("@/lib/security");
+    return timingSafeEqualStr(expectedSignature, signature);
   } catch {
     return false;
   }

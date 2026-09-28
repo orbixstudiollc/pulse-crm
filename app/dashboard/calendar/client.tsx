@@ -564,7 +564,7 @@ export function CalendarPageClient({
                       ? "Completed"
                       : "Scheduled",
                   variant:
-                    selectedEvent.status === "completed" ? "neutral" : "green",
+                    selectedEvent.status === "completed" ? "neutral" : "success",
                 },
                 meta: `${selectedEvent.date} at ${selectedEvent.time}`,
               }

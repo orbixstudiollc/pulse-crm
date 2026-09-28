@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId, getCurrentUserProfile } from "../helpers";
 import { revalidatePath } from "next/cache";
+import { escapePostgrestLike } from "@/lib/security";
 
 // ── List / Search LF Leads ─────────────────────────────────────────────────
 
@@ -37,7 +38,10 @@ export async function getLFLeads(
     query = query.lte("score", filters.maxScore);
   if (filters?.search) {
     query = query.or(
-      `display_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,company.ilike.%${filters.search}%,headline.ilike.%${filters.search}%`
+      (() => {
+        const q = escapePostgrestLike(filters.search);
+        return `display_name.ilike.%${q}%,email.ilike.%${q}%,company.ilike.%${q}%,headline.ilike.%${q}%`;
+      })()
     );
   }
 

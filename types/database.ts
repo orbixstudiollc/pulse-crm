@@ -1364,6 +1364,13 @@ export type Database = {
           apify_api_key: string | null;
           ai_provider: string | null;
           openrouter_api_key: string | null;
+          openrouter_oauth_token: string | null;
+          openrouter_code_verifier: string | null;
+          openrouter_expires_at: string | null;
+          groq_api_key: string | null;
+          ollama_base_url: string | null;
+          obsidian_vault_path: string | null;
+          obsidian_sync_enabled: boolean;
           openai_api_key: string | null;
           default_model: string;
           feature_lead_scoring: boolean;
@@ -1401,6 +1408,13 @@ export type Database = {
           apify_api_key?: string | null;
           ai_provider?: string | null;
           openrouter_api_key?: string | null;
+          openrouter_oauth_token?: string | null;
+          openrouter_code_verifier?: string | null;
+          openrouter_expires_at?: string | null;
+          groq_api_key?: string | null;
+          ollama_base_url?: string | null;
+          obsidian_vault_path?: string | null;
+          obsidian_sync_enabled?: boolean;
           openai_api_key?: string | null;
           default_model?: string;
           parallel_enrichment_limit?: number;
@@ -1436,6 +1450,13 @@ export type Database = {
           apify_api_key?: string | null;
           ai_provider?: string | null;
           openrouter_api_key?: string | null;
+          openrouter_oauth_token?: string | null;
+          openrouter_code_verifier?: string | null;
+          openrouter_expires_at?: string | null;
+          groq_api_key?: string | null;
+          ollama_base_url?: string | null;
+          obsidian_vault_path?: string | null;
+          obsidian_sync_enabled?: boolean;
           openai_api_key?: string | null;
           default_model?: string;
           parallel_enrichment_limit?: number;
@@ -2888,6 +2909,9 @@ export type Database = {
           max_pages_per_search: number | null;
           enrichment_concurrency: number | null;
           status: string;
+          search_params: Json;
+          agency_type: string;
+          obsidian_sync_enabled: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -2911,6 +2935,9 @@ export type Database = {
           max_pages_per_search?: number | null;
           enrichment_concurrency?: number | null;
           status?: string;
+          search_params?: Json;
+          agency_type?: string;
+          obsidian_sync_enabled?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -2934,6 +2961,145 @@ export type Database = {
           max_pages_per_search?: number | null;
           enrichment_concurrency?: number | null;
           status?: string;
+          search_params?: Json;
+          agency_type?: string;
+          obsidian_sync_enabled?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      lf_enrichment_batches: {
+        Row: {
+          id: string;
+          organization_id: string;
+          campaign_id: string | null;
+          label: string | null;
+          total: number;
+          status:
+            | "queued"
+            | "running"
+            | "paused"
+            | "done"
+            | "cancelled";
+          created_at: string;
+          started_at: string | null;
+          finished_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          campaign_id?: string | null;
+          label?: string | null;
+          total?: number;
+          status?:
+            | "queued"
+            | "running"
+            | "paused"
+            | "done"
+            | "cancelled";
+          created_at?: string;
+          started_at?: string | null;
+          finished_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          campaign_id?: string | null;
+          label?: string | null;
+          total?: number;
+          status?:
+            | "queued"
+            | "running"
+            | "paused"
+            | "done"
+            | "cancelled";
+          started_at?: string | null;
+          finished_at?: string | null;
+        };
+        Relationships: [];
+      };
+      lf_enrichment_jobs: {
+        Row: {
+          id: string;
+          organization_id: string;
+          batch_id: string;
+          lead_id: string;
+          actor_ids: Json;
+          status:
+            | "queued"
+            | "running"
+            | "done"
+            | "failed"
+            | "retry"
+            | "cancelled";
+          attempts: number;
+          last_error: string | null;
+          started_at: string | null;
+          finished_at: string | null;
+          next_attempt_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          batch_id: string;
+          lead_id: string;
+          actor_ids?: Json;
+          status?:
+            | "queued"
+            | "running"
+            | "done"
+            | "failed"
+            | "retry"
+            | "cancelled";
+          attempts?: number;
+          last_error?: string | null;
+          started_at?: string | null;
+          finished_at?: string | null;
+          next_attempt_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          batch_id?: string;
+          lead_id?: string;
+          actor_ids?: Json;
+          status?:
+            | "queued"
+            | "running"
+            | "done"
+            | "failed"
+            | "retry"
+            | "cancelled";
+          attempts?: number;
+          last_error?: string | null;
+          started_at?: string | null;
+          finished_at?: string | null;
+          next_attempt_at?: string;
+        };
+        Relationships: [];
+      };
+      lf_obsidian_sync_state: {
+        Row: {
+          organization_id: string;
+          last_synced_at: string | null;
+          last_synced_lead: string | null;
+          cursor: Json;
+          updated_at: string;
+        };
+        Insert: {
+          organization_id: string;
+          last_synced_at?: string | null;
+          last_synced_lead?: string | null;
+          cursor?: Json;
+          updated_at?: string;
+        };
+        Update: {
+          organization_id?: string;
+          last_synced_at?: string | null;
+          last_synced_lead?: string | null;
+          cursor?: Json;
           updated_at?: string;
         };
         Relationships: [];

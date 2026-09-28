@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgId, getCurrentUserProfile } from "./helpers";
 import { revalidatePath } from "next/cache";
 import type { Database, Json } from "@/types/database";
+import { getApifyToken as resolveApifyToken } from "@/lib/lead-finder/apify/token";
 
 type ApifyRunInsert = Database["public"]["Tables"]["apify_scraper_runs"]["Insert"];
 type ApifyRunRow = Database["public"]["Tables"]["apify_scraper_runs"]["Row"];
@@ -132,22 +133,13 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 // ── Get Apify Token ───────────────────────────────────────────────────────────
+// Delegates to the single canonical helper in `lib/lead-finder/apify/token.ts`
+// so tenant overrides and the env fallback chain (APIFY_API_TOKEN →
+// APIFY_TOKEN → APIFY_API_KEY) stay in one place.
 
 async function getApifyToken(): Promise<string> {
-  const supabase = await createClient();
   const orgId = await getOrgId();
-
-  const { data: settings } = await supabase
-    .from("ai_settings")
-    .select("apify_api_key")
-    .eq("organization_id", orgId)
-    .single();
-
-  const token = settings?.apify_api_key || process.env.APIFY_API_KEY;
-  if (!token) {
-    throw new Error("No Apify API key configured. Add one in Settings > AI or set APIFY_API_KEY in environment.");
-  }
-  return token;
+  return resolveApifyToken(orgId);
 }
 
 // ── Start Scrape ──────────────────────────────────────────────────────────────
@@ -204,10 +196,13 @@ export async function startApifyScrape(params: {
 
     // Call Apify API to start actor run
     const apifyRes = await fetch(
-      `https://api.apify.com/v2/acts/${actorId}/runs?token=${token}`,
+      `https://api.apify.com/v2/acts/${actorId}/runs`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(actorInput),
       }
     );
@@ -261,7 +256,8 @@ export async function checkApifyRunStatus(runId: string): Promise<{
 
     // Check Apify API
     const res = await fetch(
-      `https://api.apify.com/v2/actor-runs/${run.apify_run_id}?token=${token}`
+      `https://api.apify.com/v2/actor-runs/${run.apify_run_id}`,
+      { headers: { Authorization: `Bearer ${token}` } }
     );
 
     if (!res.ok) return { data: { status: run.status }, error: undefined };
@@ -326,7 +322,8 @@ export async function fetchApifyResults(runId: string): Promise<{
 
     // Fetch dataset items from Apify
     const res = await fetch(
-      `https://api.apify.com/v2/datasets/${run.apify_dataset_id}/items?token=${token}&limit=500`
+      `https://api.apify.com/v2/datasets/${run.apify_dataset_id}/items?limit=500`,
+      { headers: { Authorization: `Bearer ${token}` } }
     );
 
     if (!res.ok) return { data: null, error: `Failed to fetch results: ${res.status}` };

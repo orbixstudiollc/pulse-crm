@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgId, getCurrentUserProfile } from "./helpers";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
+import { escapePostgrestLike } from "@/lib/security";
 
 type SequenceInsert = Database["public"]["Tables"]["sequences"]["Insert"];
 type SequenceUpdate = Database["public"]["Tables"]["sequences"]["Update"];
@@ -964,8 +965,9 @@ export async function getLeadsForEnrollment(
     .limit(200);
 
   if (filters.search) {
+    const q = escapePostgrestLike(filters.search);
     query = query.or(
-      `name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,company.ilike.%${filters.search}%`,
+      `name.ilike.%${q}%,email.ilike.%${q}%,company.ilike.%${q}%`,
     );
   }
 
@@ -1010,8 +1012,9 @@ export async function getLeadsForEnrollmentCount(
     .eq("organization_id", orgId);
 
   if (filters.search) {
+    const q = escapePostgrestLike(filters.search);
     query = query.or(
-      `name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,company.ilike.%${filters.search}%`,
+      `name.ilike.%${q}%,email.ilike.%${q}%,company.ilike.%${q}%`,
     );
   }
 
@@ -1060,8 +1063,9 @@ export async function enrollAllMatchingLeads(
     .limit(5000);
 
   if (filters.search) {
+    const q = escapePostgrestLike(filters.search);
     query = query.or(
-      `name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,company.ilike.%${filters.search}%`,
+      `name.ilike.%${q}%,email.ilike.%${q}%,company.ilike.%${q}%`,
     );
   }
 

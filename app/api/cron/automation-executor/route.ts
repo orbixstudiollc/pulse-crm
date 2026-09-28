@@ -7,17 +7,15 @@ import {
   type LeadForEvaluation,
   type TriggerConfig,
 } from "@/lib/automation/engine";
+import { verifyCronRequest } from "@/lib/security";
 
 /**
  * Automation Executor Cron — runs hourly.
  * Evaluates time-based automation rules (e.g., days_in_status).
  */
 export async function GET(request: Request) {
-  // Verify cron secret
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = verifyCronRequest(request);
+  if (authErr) return authErr;
 
   const admin = createAdminClient();
   let rulesProcessed = 0;
@@ -117,6 +115,23 @@ export async function GET(request: Request) {
                   .single();
                 if (seq) seqId = seq.id;
                 else continue;
+              } else {
+                // SECURITY: never enroll a lead in a sequence from a different
+                // organization, even if the rule's config points at one.
+                const { data: seqOwned } = await admin
+                  .from("sequences")
+                  .select("id")
+                  .eq("id", seqId)
+                  .eq("organization_id", rule.organization_id)
+                  .maybeSingle();
+                if (!seqOwned) {
+                  actionsExecuted.push({
+                    type: "enroll_sequence",
+                    success: false,
+                    error: "Sequence not found in this organization",
+                  });
+                  continue;
+                }
               }
 
               const { data: existing } = await admin

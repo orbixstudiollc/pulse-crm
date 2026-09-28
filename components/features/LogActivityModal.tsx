@@ -362,10 +362,15 @@ export function LogActivityModal({
         {/* Duration */}
         <Select
           label="Duration"
-          options={durationOptions}
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
-        />
+        >
+          {durationOptions.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
 
         {/* Notes */}
         <Textarea

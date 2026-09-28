@@ -56,11 +56,11 @@ export interface ActivityRecord {
 
 const statusConfig: Record<
   ActivityStatus,
-  { label: string; variant: "green" | "amber" | "red" | "neutral" }
+  { label: string; variant: "success" | "warning" | "error" | "neutral" }
 > = {
-  completed: { label: "Completed", variant: "green" },
-  scheduled: { label: "Scheduled", variant: "green" },
-  pending: { label: "Pending", variant: "amber" },
+  completed: { label: "Completed", variant: "success" },
+  scheduled: { label: "Scheduled", variant: "success" },
+  pending: { label: "Pending", variant: "warning" },
   cancelled: { label: "Cancelled", variant: "neutral" },
 };
 
@@ -352,29 +352,39 @@ export function ActivityPageClient({
             setTypeFilter(e.target.value);
             setCurrentPage(1);
           }}
-          options={[
+        >
+          {[
             { label: "All Types", value: "all" },
             { label: "Call", value: "call" },
             { label: "Meeting", value: "meeting" },
             { label: "Task", value: "task" },
             { label: "Email", value: "email" },
             { label: "Note", value: "note" },
-          ]}
-        />
+          ].map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
         <Select
           value={statusFilter}
           onChange={(e) => {
             setStatusFilter(e.target.value);
             setCurrentPage(1);
           }}
-          options={[
+        >
+          {[
             { label: "All Statuses", value: "all" },
             { label: "Completed", value: "completed" },
             { label: "Scheduled", value: "scheduled" },
             { label: "Pending", value: "pending" },
             { label: "Cancelled", value: "cancelled" },
-          ]}
-        />
+          ].map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
       </div>
 
       {/* Activity List */}

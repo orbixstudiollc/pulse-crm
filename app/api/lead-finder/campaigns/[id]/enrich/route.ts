@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/actions/helpers";
+import { isUuid } from "@/lib/security";
 import {
   enrichCampaignLeads,
   cancelEnrichment,
@@ -11,6 +12,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  if (!isUuid(id)) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
   try {
     const supabase = await createClient();
     const {
@@ -39,7 +43,11 @@ export async function POST(
     const result = await enrichCampaignLeads(id, orgId);
     return NextResponse.json({ success: true, ...result });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[lead-finder/campaigns/:id/enrich] POST error", err);
+    return NextResponse.json(
+      { error: "Failed to start enrichment" },
+      { status: 500 }
+    );
   }
 }
 
@@ -48,6 +56,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  if (!isUuid(id)) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
   try {
     const supabase = await createClient();
     const {
@@ -58,10 +69,24 @@ export async function DELETE(
 
     const orgId = await getOrgId();
 
-    // Cancel the enrichment pipeline
-    cancelEnrichment(id);
+    // SECURITY (IDOR): verify the campaign belongs to this org BEFORE calling
+    // cancelEnrichment. Otherwise a malicious tenant could flip the in-memory
+    // cancellation flag for another org's campaign (DoS against their run).
+    const { data: campRows } = await supabase
+      .from("lf_campaigns")
+      .select("id")
+      .eq("id", id)
+      .eq("organization_id", orgId)
+      .limit(1);
+    if (!campRows || campRows.length === 0) {
+      return NextResponse.json(
+        { error: "Campaign not found" },
+        { status: 404 }
+      );
+    }
 
-    // Reset any leads stuck in "enriching" status back to "new"
+    cancelEnrichment(id, orgId);
+
     const { count } = await supabase
       .from("lf_leads")
       .update({ status: "new" })
@@ -75,6 +100,10 @@ export async function DELETE(
       resetCount: count ?? 0,
     });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[lead-finder/campaigns/:id/enrich] DELETE error", err);
+    return NextResponse.json(
+      { error: "Failed to cancel enrichment" },
+      { status: 500 }
+    );
   }
 }

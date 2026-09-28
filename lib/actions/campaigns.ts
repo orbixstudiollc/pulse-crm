@@ -4,6 +4,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getOrgId, getCurrentUserProfile } from "./helpers";
 import { revalidatePath } from "next/cache";
 import type { Database, Json } from "@/types/database";
+import { escapePostgrestLike } from "@/lib/security";
 
 type EmailAccountInsert = Database["public"]["Tables"]["email_accounts"]["Insert"];
 type EmailAccountUpdate = Database["public"]["Tables"]["email_accounts"]["Update"];
@@ -304,7 +305,7 @@ export async function getCampaignsWithTags(filters?: {
     query = query.eq("status", filters.status as Database["public"]["Enums"]["sequence_status"]);
   }
   if (filters?.search) {
-    query = query.ilike("name", `%${filters.search}%`);
+    query = query.ilike("name", `%${escapePostgrestLike(filters.search)}%`);
   }
 
   const { data: sequences, error } = await query;
@@ -393,7 +394,7 @@ export async function getCampaignRuns(filters?: {
     query = query.eq("status", filters.status);
   }
   if (filters?.search) {
-    query = query.ilike("name", `%${filters.search}%`);
+    query = query.ilike("name", `%${escapePostgrestLike(filters.search)}%`);
   }
 
   const { data, error } = await query;

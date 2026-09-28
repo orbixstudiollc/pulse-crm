@@ -639,7 +639,7 @@ function DealCard({
       <div className="flex items-center justify-between px-5 py-4 border-t-[0.5px] border-neutral-100 dark:border-neutral-800">
         <div className="flex items-center gap-3">
           {isClosed ? (
-            <Badge variant={isWon ? "green" : "red"} dot>
+            <Badge variant={isWon ? "success" : "error"} dot>
               {isWon ? "Won" : "Lost"}
             </Badge>
           ) : (

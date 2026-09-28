@@ -1,5 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { tryGetApifyToken } from "@/lib/lead-finder/apify/token";
+
+const validateSchema = z.object({
+  actorId: z
+    .string()
+    .min(1)
+    .max(128)
+    // Apify actors look like `username/actor-name` or a bare id
+    .regex(/^[a-zA-Z0-9._\-/~]+$/, "Invalid actor id"),
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -7,36 +18,37 @@ export async function POST(req: NextRequest) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user)
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-    const body = await req.json();
-    const { actorId } = body as { actorId: string };
-
-    if (!actorId) {
-      return NextResponse.json(
-        { error: "actorId is required" },
-        { status: 400 }
-      );
     }
 
-    // Validate via Apify public API
-    const apifyToken = process.env.APIFY_API_TOKEN;
+    let parsed: z.infer<typeof validateSchema>;
+    try {
+      parsed = validateSchema.parse(await req.json());
+    } catch {
+      return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+    }
+
+    const apifyToken = await tryGetApifyToken();
     if (!apifyToken) {
       return NextResponse.json(
-        { error: "APIFY_API_TOKEN not configured" },
-        { status: 500 }
+        { error: "Apify token not configured" },
+        { status: 503 }
       );
     }
 
-    const actorUrl = `https://api.apify.com/v2/acts/${encodeURIComponent(actorId)}?token=${apifyToken}`;
-    const response = await fetch(actorUrl);
+    // SECURITY: pass the token via Authorization header so it doesn't leak
+    // into access logs, APM traces, or Referer.
+    const actorUrl = `https://api.apify.com/v2/acts/${encodeURIComponent(parsed.actorId)}`;
+    const response = await fetch(actorUrl, {
+      headers: { Authorization: `Bearer ${apifyToken}` },
+    });
 
     if (!response.ok) {
       return NextResponse.json(
         {
           valid: false,
-          error: `Actor "${actorId}" not found or inaccessible`,
+          error: `Actor "${parsed.actorId}" not found or inaccessible`,
         },
         { status: 200 }
       );
@@ -55,6 +67,10 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[lead-finder/actors/validate] error", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

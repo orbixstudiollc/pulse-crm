@@ -54,10 +54,10 @@ const categoryTabs: { label: string; value: CategoryFilter }[] = [
   { label: "Aspirational", value: "aspirational" },
 ];
 
-const categoryBadgeVariant: Record<string, "green" | "amber" | "blue"> = {
-  direct: "green",
-  indirect: "amber",
-  aspirational: "blue",
+const categoryBadgeVariant: Record<string, "success" | "warning" | "info"> = {
+  direct: "success",
+  indirect: "warning",
+  aspirational: "info",
 };
 
 const categoryOptions = [
@@ -481,10 +481,15 @@ export function CompetitorsPageClient({
             <Select
               label="Category"
               required
-              options={categoryOptions}
               value={formCategory}
               onChange={(e) => setFormCategory(e.target.value)}
-            />
+            >
+              {categoryOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
 
             <Textarea
               label="Description"

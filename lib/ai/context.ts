@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { PageContext } from "./types";
+import { escapePostgrestLike } from "@/lib/security";
 
 export async function assembleContext(pageContext: PageContext): Promise<string> {
   const supabase = await createClient();
@@ -253,7 +254,12 @@ export async function fetchEntityForChat(
           .from("leads")
           .select("id, name, company, email, status, score, estimated_value")
           .eq("organization_id", orgId)
-          .or(`name.ilike.%${query}%,company.ilike.%${query}%,email.ilike.%${query}%`)
+          .or(
+            (() => {
+              const q = escapePostgrestLike(query);
+              return `name.ilike.%${q}%,company.ilike.%${q}%,email.ilike.%${q}%`;
+            })()
+          )
           .limit(10);
         return data?.length
           ? `Found ${data.length} leads:\n${data.map((l) => `- ${l.name} (${l.company || "N/A"}) - ${l.status}, Score: ${l.score ?? "N/A"}`).join("\n")}`
@@ -271,7 +277,7 @@ export async function fetchEntityForChat(
           .from("deals")
           .select("id, name, value, stage, probability")
           .eq("organization_id", orgId)
-          .ilike("name", `%${query}%`)
+          .ilike("name", `%${escapePostgrestLike(query)}%`)
           .limit(10);
         return data?.length
           ? `Found ${data.length} deals:\n${data.map((d) => `- ${d.name} ($${d.value || 0}) - ${d.stage}`).join("\n")}`
@@ -289,7 +295,12 @@ export async function fetchEntityForChat(
           .from("customers")
           .select("id, first_name, last_name, email, company, status")
           .eq("organization_id", orgId)
-          .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,company.ilike.%${query}%,email.ilike.%${query}%`)
+          .or(
+            (() => {
+              const q = escapePostgrestLike(query);
+              return `first_name.ilike.%${q}%,last_name.ilike.%${q}%,company.ilike.%${q}%,email.ilike.%${q}%`;
+            })()
+          )
           .limit(10);
         return data?.length
           ? `Found ${data.length} customers:\n${data.map((c) => `- ${c.first_name} ${c.last_name} (${c.company || "N/A"}) - ${c.status}`).join("\n")}`
@@ -307,7 +318,7 @@ export async function fetchEntityForChat(
           .from("competitors")
           .select("id, name, website, category")
           .eq("organization_id", orgId)
-          .ilike("name", `%${query}%`)
+          .ilike("name", `%${escapePostgrestLike(query)}%`)
           .limit(10);
         return data?.length
           ? `Found ${data.length} competitors:\n${data.map((c) => `- ${c.name} (${c.website || "N/A"}) - ${c.category || "N/A"}`).join("\n")}`

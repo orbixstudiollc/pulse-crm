@@ -125,48 +125,63 @@ function ProfileSetup({
 
         <Select
           label="Company Size"
-          placeholder="Select size"
           value={companySize}
           onChange={(e) => setCompanySize(e.target.value)}
           className="dark:bg-neutral-800 dark:border-neutral-700"
-          options={[
+        >
+          <option value="">Select size</option>
+          {[
             { label: "1-10", value: "1-10" },
             { label: "11-50", value: "11-50" },
             { label: "51-200", value: "51-200" },
             { label: "201-500", value: "201-500" },
             { label: "500+", value: "500+" },
-          ]}
-        />
+          ].map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
 
         <Select
           label="Your Role"
-          placeholder="Select role"
           value={userRole}
           onChange={(e) => setUserRole(e.target.value)}
           className="dark:bg-neutral-800 dark:border-neutral-700"
-          options={[
+        >
+          <option value="">Select role</option>
+          {[
             { label: "Sales Rep", value: "sales-rep" },
             { label: "Sales Manager", value: "sales-manager" },
             { label: "VP of Sales", value: "vp-sales" },
             { label: "Founder / CEO", value: "founder" },
             { label: "Other", value: "other" },
-          ]}
-        />
+          ].map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
 
         <Select
           label="What's your main goal with Pulse?"
-          placeholder="Select goal"
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
           className="dark:bg-neutral-800 dark:border-neutral-700"
-          options={[
+        >
+          <option value="">Select goal</option>
+          {[
             { label: "Manage leads", value: "leads" },
             { label: "Track deals", value: "deals" },
             { label: "Team collaboration", value: "collaboration" },
             { label: "Reporting & analytics", value: "analytics" },
             { label: "All of the above", value: "all" },
-          ]}
-        />
+          ].map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
 
         <Button
           className="w-full"

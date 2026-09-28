@@ -232,12 +232,12 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
     }
   };
 
-  const statusVariant = (status: string): "blue" | "violet" | "red" | "green" | "neutral" => {
+  const statusVariant = (status: string): "info" | "primary" | "error" | "success" | "neutral" => {
     switch (status) {
-      case "new": return "blue";
-      case "returning": return "violet";
-      case "hot": return "red";
-      case "converted": return "green";
+      case "new": return "info";
+      case "returning": return "primary";
+      case "hot": return "error";
+      case "converted": return "success";
       case "ignored": return "neutral";
       default: return "neutral";
     }
@@ -426,7 +426,7 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
                     <div className="flex items-center gap-3">
                       <div className={`w-2.5 h-2.5 rounded-full ${script.is_active ? "bg-green-500" : "bg-neutral-300 dark:bg-neutral-600"}`} />
                       <span className="font-medium text-neutral-900 dark:text-neutral-100">{script.domain}</span>
-                      <Badge variant={script.is_active ? "green" : "neutral"}>{script.is_active ? "Active" : "Paused"}</Badge>
+                      <Badge variant={script.is_active ? "success" : "neutral"}>{script.is_active ? "Active" : "Paused"}</Badge>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button

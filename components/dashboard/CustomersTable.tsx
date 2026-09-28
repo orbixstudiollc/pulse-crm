@@ -27,16 +27,16 @@ interface CustomersTableProps {
 
 const statusConfig: Record<
   CustomerStatus,
-  { label: string; variant: "green" | "amber" | "neutral" }
+  { label: string; variant: "success" | "warning" | "neutral" }
 > = {
-  active: { label: "Active", variant: "green" },
-  pending: { label: "Pending", variant: "amber" },
+  active: { label: "Active", variant: "success" },
+  pending: { label: "Pending", variant: "warning" },
   inactive: { label: "Inactive", variant: "neutral" },
 };
 
 const planConfig = {
-  enterprise: { label: "Enterprise", variant: "violet" as const },
-  pro: { label: "Pro", variant: "blue" as const },
+  enterprise: { label: "Enterprise", variant: "primary" as const },
+  pro: { label: "Pro", variant: "info" as const },
   starter: { label: "Starter", variant: "neutral" as const },
   free: { label: "Free", variant: "neutral" as const },
 };

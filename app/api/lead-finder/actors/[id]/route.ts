@@ -1,12 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/actions/helpers";
+import { isUuid } from "@/lib/security";
+
+const UpdateSchema = z
+  .object({
+    name: z.string().trim().min(1).max(200).optional(),
+    description: z.string().trim().max(5_000).nullish(),
+    phase: z.enum(["find", "enrich"]).optional(),
+    required_input_fields: z
+      .array(z.string().trim().min(1).max(200))
+      .max(200)
+      .optional(),
+    input_field_descriptions: z.record(z.string(), z.unknown()).optional(),
+    default_input: z.record(z.string(), z.unknown()).optional(),
+    page_limit_key: z.string().trim().min(1).max(200).nullish(),
+    is_enabled: z.boolean().optional(),
+  })
+  .strict();
 
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  if (!isUuid(id)) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
   try {
     const supabase = await createClient();
     const {
@@ -16,25 +37,23 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const orgId = await getOrgId();
-    const body = await req.json();
 
-    // Only allow updating custom actors belonging to this org
-    const allowedFields = [
-      "name",
-      "description",
-      "phase",
-      "required_input_fields",
-      "input_field_descriptions",
-      "default_input",
-      "page_limit_key",
-      "is_enabled",
-    ];
-
-    const updates: Record<string, unknown> = {};
-    for (const key of allowedFields) {
-      if (key in body) updates[key] = body[key];
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
+    const parsed = UpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Invalid request" },
+        { status: 400 }
+      );
+    }
+
+    const updates = parsed.data as Record<string, unknown>;
     if (Object.keys(updates).length === 0) {
       return NextResponse.json(
         { error: "No valid fields to update" },
@@ -51,12 +70,20 @@ export async function PUT(
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      console.error("[lead-finder/actors/:id] update error", error);
+      return NextResponse.json(
+        { error: "Failed to update actor" },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json({ data: actor });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[lead-finder/actors/:id] PUT error", err);
+    return NextResponse.json(
+      { error: "Failed to update actor" },
+      { status: 500 }
+    );
   }
 }
 
@@ -65,6 +92,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  if (!isUuid(id)) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
   try {
     const supabase = await createClient();
     const {
@@ -82,11 +112,19 @@ export async function DELETE(
       .eq("organization_id", orgId);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      console.error("[lead-finder/actors/:id] delete error", error);
+      return NextResponse.json(
+        { error: "Failed to delete actor" },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[lead-finder/actors/:id] DELETE error", err);
+    return NextResponse.json(
+      { error: "Failed to delete actor" },
+      { status: 500 }
+    );
   }
 }

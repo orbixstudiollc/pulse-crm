@@ -165,11 +165,11 @@ function getGrade(score: number): string {
   return "D";
 }
 
-function getGradeVariant(grade: string): "green" | "blue" | "amber" | "red" {
-  if (grade === "A+" || grade === "A") return "green";
-  if (grade === "B") return "blue";
-  if (grade === "C") return "amber";
-  return "red";
+function getGradeVariant(grade: string): "success" | "info" | "warning" | "error" {
+  if (grade === "A+" || grade === "A") return "success";
+  if (grade === "B") return "info";
+  if (grade === "C") return "warning";
+  return "error";
 }
 
 // ── Weight labels ─────────────────────────────────────────────────────────────
@@ -582,7 +582,7 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
             {profile.name}
           </h2>
           {profile.is_primary && (
-            <Badge variant="violet" dot>
+            <Badge variant="primary" dot>
               Primary
             </Badge>
           )}

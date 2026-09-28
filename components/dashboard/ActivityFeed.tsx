@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRightIcon, Badge, IconButton } from "@/components/ui";
+import { ArrowUpRightIcon, Badge, IconButton, type BadgeVariant } from "@/components/ui";
 import {
   EnvelopeIcon,
   PhoneIcon,
@@ -44,8 +44,6 @@ function getRelativeTime(dateStr: string): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-type BadgeVariant = "green" | "amber" | "blue" | "emerald";
-
 const activityIcons: Record<ActivityType, ReactNode> = {
   email: <EnvelopeIcon size={16} />,
   call: <PhoneIcon size={16} />,
@@ -55,10 +53,10 @@ const activityIcons: Record<ActivityType, ReactNode> = {
 };
 
 const statusConfig: Record<string, { label: string; variant: BadgeVariant }> = {
-  completed: { label: "Completed", variant: "emerald" },
-  scheduled: { label: "Scheduled", variant: "blue" },
-  pending: { label: "Pending", variant: "amber" },
-  cancelled: { label: "Cancelled", variant: "amber" },
+  completed: { label: "Completed", variant: "success" },
+  scheduled: { label: "Scheduled", variant: "info" },
+  pending: { label: "Pending", variant: "warning" },
+  cancelled: { label: "Cancelled", variant: "warning" },
 };
 
 export function ActivityFeed({
@@ -93,7 +91,7 @@ export function ActivityFeed({
       <div>
         {activities.length > 0 ? (
           activities.map((activity, index) => {
-            const status = statusConfig[activity.status] || { label: activity.status, variant: "blue" as BadgeVariant };
+            const status = statusConfig[activity.status] || { label: activity.status, variant: "info" as BadgeVariant };
             return (
               <div
                 key={activity.id}

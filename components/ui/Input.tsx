@@ -10,6 +10,8 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   prefix?: string;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
+  error?: string;
+  helperText?: string;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
@@ -21,6 +23,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       prefix,
       leftIcon,
       rightIcon,
+      error,
+      helperText,
       className,
       id,
       ...props
@@ -57,8 +61,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             id={id}
+            aria-invalid={error ? "true" : "false"}
+            aria-describedby={
+              error ? `${id}-error` : helperText ? `${id}-helper` : undefined
+            }
             className={cn(
-              "w-full rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 transition-shadow focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus",
+              "w-full rounded-lg border bg-white dark:bg-neutral-900 px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50",
+              error
+                ? "border-red-300 dark:border-red-700"
+                : "border-neutral-200 dark:border-neutral-800",
               (leftIcon || prefix) && "pl-10",
               rightIcon && "pr-10",
               className,
@@ -71,6 +82,22 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             </span>
           )}
         </div>
+        {error && (
+          <p
+            id={`${id}-error`}
+            className="text-sm text-red-600 dark:text-red-400"
+          >
+            {error}
+          </p>
+        )}
+        {!error && helperText && (
+          <p
+            id={`${id}-helper`}
+            className="text-sm text-neutral-500 dark:text-neutral-400"
+          >
+            {helperText}
+          </p>
+        )}
       </div>
     );
   },

@@ -132,13 +132,13 @@ interface LeadDetailClientProps {
 // --- Lead status config ---
 
 const leadStatusConfig: Record<string, { label: string; variant: string }> = {
-  new: { label: "New", variant: "blue" },
-  contacted: { label: "Contacted", variant: "amber" },
-  qualified: { label: "Qualified", variant: "green" },
-  proposal: { label: "Proposal", variant: "violet" },
-  negotiation: { label: "Negotiation", variant: "amber" },
-  won: { label: "Won", variant: "green" },
-  lost: { label: "Lost", variant: "red" },
+  new: { label: "New", variant: "info" },
+  contacted: { label: "Contacted", variant: "warning" },
+  qualified: { label: "Qualified", variant: "success" },
+  proposal: { label: "Proposal", variant: "primary" },
+  negotiation: { label: "Negotiation", variant: "warning" },
+  won: { label: "Won", variant: "success" },
+  lost: { label: "Lost", variant: "error" },
 };
 
 export function LeadDetailClient({

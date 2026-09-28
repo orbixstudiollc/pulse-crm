@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
 import { calculateLeadScore } from "./scoring";
 import { calculateICPMatch } from "./icp";
+import { escapePostgrestLike } from "@/lib/security";
 
 type LeadInsert = Database["public"]["Tables"]["leads"]["Insert"];
 type LeadUpdate = Database["public"]["Tables"]["leads"]["Update"];
@@ -53,8 +54,9 @@ export async function getLeads(filters: LeadFilters = {}) {
     .eq("organization_id", orgId);
 
   if (search) {
+    const q = escapePostgrestLike(search);
     query = query.or(
-      `name.ilike.%${search}%,email.ilike.%${search}%,company.ilike.%${search}%`,
+      `name.ilike.%${q}%,email.ilike.%${q}%,company.ilike.%${q}%`,
     );
   }
 

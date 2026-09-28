@@ -1,18 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { validateApiKey, unauthorized, corsHeaders } from '@/lib/api-auth'
-import { createAdminClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from "next/server";
+import { authenticatePublicRequest, corsHeaders } from "@/lib/api-auth";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export async function OPTIONS() {
-  return NextResponse.json(null, { headers: corsHeaders })
+  return NextResponse.json(null, { headers: corsHeaders });
 }
 
 export async function GET(request: NextRequest) {
-  if (!validateApiKey(request)) return unauthorized()
+  const auth = await authenticatePublicRequest(request);
+  if (!auth.ok) return auth.response;
 
   try {
-    const supabase = createAdminClient()
+    const supabase = createAdminClient();
 
-    // Run all queries in parallel
     const [
       leadsResult,
       customersResult,
@@ -21,38 +21,55 @@ export async function GET(request: NextRequest) {
       proposalsResult,
       activitiesResult,
     ] = await Promise.all([
-      supabase.from('leads').select('id, status', { count: 'exact' }),
-      supabase.from('customers').select('id, status', { count: 'exact' }),
-      supabase.from('deals').select('id, stage, value', { count: 'exact' }),
-      supabase.from('contacts').select('id', { count: 'exact' }),
-      supabase.from('proposals').select('id', { count: 'exact' }),
       supabase
-        .from('activities')
-        .select('id, type, title, description, related_type, related_id, created_at')
-        .order('created_at', { ascending: false })
+        .from("leads")
+        .select("id, status", { count: "exact" })
+        .eq("organization_id", auth.orgId),
+      supabase
+        .from("customers")
+        .select("id, status", { count: "exact" })
+        .eq("organization_id", auth.orgId),
+      supabase
+        .from("deals")
+        .select("id, stage, value", { count: "exact" })
+        .eq("organization_id", auth.orgId),
+      supabase
+        .from("contacts")
+        .select("id", { count: "exact" })
+        .eq("organization_id", auth.orgId),
+      supabase
+        .from("proposals")
+        .select("id", { count: "exact" })
+        .eq("organization_id", auth.orgId),
+      supabase
+        .from("activities")
+        .select(
+          "id, type, title, description, related_type, related_id, created_at"
+        )
+        .eq("organization_id", auth.orgId)
+        .order("created_at", { ascending: false })
         .limit(10),
-    ])
+    ]);
 
-    // Leads breakdown by status
-    const leads = leadsResult.data ?? []
-    const leadsByStatus: Record<string, number> = {}
+    const leads = leadsResult.data ?? [];
+    const leadsByStatus: Record<string, number> = {};
     for (const lead of leads) {
-      const s = lead.status ?? 'unknown'
-      leadsByStatus[s] = (leadsByStatus[s] || 0) + 1
+      const s = lead.status ?? "unknown";
+      leadsByStatus[s] = (leadsByStatus[s] || 0) + 1;
     }
 
-    // Customer counts
-    const customers = customersResult.data ?? []
-    const activeCustomers = customers.filter((c) => c.status === 'active').length
+    const customers = customersResult.data ?? [];
+    const activeCustomers = customers.filter(
+      (c) => c.status === "active"
+    ).length;
 
-    // Deals breakdown by stage + pipeline value
-    const deals = dealsResult.data ?? []
-    const dealsByStage: Record<string, number> = {}
-    let totalPipelineValue = 0
+    const deals = dealsResult.data ?? [];
+    const dealsByStage: Record<string, number> = {};
+    let totalPipelineValue = 0;
     for (const deal of deals) {
-      const s = deal.stage ?? 'unknown'
-      dealsByStage[s] = (dealsByStage[s] || 0) + 1
-      totalPipelineValue += deal.value ?? 0
+      const s = deal.stage ?? "unknown";
+      dealsByStage[s] = (dealsByStage[s] || 0) + 1;
+      totalPipelineValue += deal.value ?? 0;
     }
 
     const analytics = {
@@ -66,11 +83,13 @@ export async function GET(request: NextRequest) {
       total_contacts: contactsResult.count ?? 0,
       total_proposals: proposalsResult.count ?? 0,
       recent_activities: activitiesResult.data ?? [],
-    }
+    };
 
-    return NextResponse.json(analytics, { headers: corsHeaders })
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal server error'
-    return NextResponse.json({ error: message }, { status: 500, headers: corsHeaders })
+    return NextResponse.json(analytics, { headers: corsHeaders });
+  } catch {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500, headers: corsHeaders }
+    );
   }
 }

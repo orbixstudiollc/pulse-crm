@@ -1,6 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/actions/helpers";
+
+const LeadStatusEnum = z.enum([
+  "new",
+  "enriching",
+  "qualified",
+  "converted",
+  "declined",
+  "archived",
+]);
+
+const QuerySchema = z.object({
+  format: z
+    .enum(["json", "csv"])
+    .optional()
+    .or(z.literal("").transform(() => undefined))
+    .transform((v) => v ?? "csv"),
+  campaignId: z
+    .string()
+    .uuid("campaignId must be a UUID")
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  status: LeadStatusEnum.optional().or(
+    z.literal("").transform(() => undefined)
+  ),
+});
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,8 +38,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const orgId = await getOrgId();
-    const campaignId = req.nextUrl.searchParams.get("campaignId");
-    const status = req.nextUrl.searchParams.get("status");
+
+    const parsed = QuerySchema.safeParse(
+      Object.fromEntries(req.nextUrl.searchParams.entries())
+    );
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Invalid query" },
+        { status: 400 }
+      );
+    }
+    const { format, campaignId, status } = parsed.data;
 
     let query = supabase
       .from("lf_leads")
@@ -29,12 +64,25 @@ export async function GET(req: NextRequest) {
     const { data: leads, error } = await query;
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("[analytics/export] supabase error", error);
+      return NextResponse.json(
+        { error: "Failed to export leads" },
+        { status: 500 }
+      );
     }
 
     const allLeads = leads ?? [];
+    const dateSuffix = new Date().toISOString().split("T")[0];
 
-    // Build CSV
+    if (format === "json") {
+      return new NextResponse(JSON.stringify(allLeads, null, 2), {
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Content-Disposition": `attachment; filename="lead-finder-export-${dateSuffix}.json"`,
+        },
+      });
+    }
+
     const headers = [
       "ID",
       "Name",
@@ -70,17 +118,31 @@ export async function GET(req: NextRequest) {
     return new Response(csv, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="lead-finder-export-${new Date().toISOString().split("T")[0]}.csv"`,
+        "Content-Disposition": `attachment; filename="lead-finder-export-${dateSuffix}.csv"`,
       },
     });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[analytics/export] unhandled error", err);
+    return NextResponse.json(
+      { error: "Failed to export leads" },
+      { status: 500 }
+    );
   }
 }
 
+// SECURITY (CSV formula injection): cells beginning with any of
+// `= + - @ \t \r` can be interpreted as formulas by Excel / LibreOffice and
+// may exfiltrate data or execute commands. Prefix such cells with a single
+// quote neutralizer and still apply RFC 4180 quoting when needed.
+const CSV_FORMULA_TRIGGERS = new Set(["=", "+", "-", "@", "\t", "\r"]);
+
 function csvEscape(value: string): string {
-  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
-    return `"${value.replace(/"/g, '""')}"`;
+  let v = value ?? "";
+  if (v.length > 0 && CSV_FORMULA_TRIGGERS.has(v[0]!)) {
+    v = "'" + v;
   }
-  return value;
+  if (v.includes(",") || v.includes('"') || v.includes("\n") || v.includes("\r")) {
+    return `"${v.replace(/"/g, '""')}"`;
+  }
+  return v;
 }

@@ -131,8 +131,13 @@ function DealForm({
           name="customer"
           value={formData.customer}
           onChange={handleChange}
-          options={customerOptions}
-        />
+        >
+          {customerOptions.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
 
         {/* Value & Stage */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -150,8 +155,13 @@ function DealForm({
             name="stage"
             value={formData.stage}
             onChange={handleChange}
-            options={stageOptions}
-          />
+          >
+            {stageOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
         </div>
 
         {/* Probability & Expected Close */}
@@ -161,8 +171,13 @@ function DealForm({
             name="probability"
             value={formData.probability}
             onChange={handleChange}
-            options={probabilityOptions}
-          />
+          >
+            {probabilityOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
           <Input
             label="Expected Close"
             type="date"

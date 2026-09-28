@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgId, getCurrentUserProfile } from "./helpers";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
+import { escapePostgrestLike } from "@/lib/security";
 
 type ScrapedLeadInsert = Database["public"]["Tables"]["scraped_leads"]["Insert"];
 
@@ -33,14 +34,19 @@ export async function searchScrapedLeads(
     .order("created_at", { ascending: false });
 
   if (filters?.search) {
+    const q = escapePostgrestLike(filters.search);
     query = query.or(
-      `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,company.ilike.%${filters.search}%`
+      `first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%,company.ilike.%${q}%`
     );
   }
-  if (filters?.company) query = query.ilike("company", `%${filters.company}%`);
-  if (filters?.title) query = query.ilike("title", `%${filters.title}%`);
-  if (filters?.location) query = query.ilike("location", `%${filters.location}%`);
-  if (filters?.industry) query = query.ilike("industry", `%${filters.industry}%`);
+  if (filters?.company)
+    query = query.ilike("company", `%${escapePostgrestLike(filters.company)}%`);
+  if (filters?.title)
+    query = query.ilike("title", `%${escapePostgrestLike(filters.title)}%`);
+  if (filters?.location)
+    query = query.ilike("location", `%${escapePostgrestLike(filters.location)}%`);
+  if (filters?.industry)
+    query = query.ilike("industry", `%${escapePostgrestLike(filters.industry)}%`);
   if (filters?.verified !== undefined) query = query.eq("verified", filters.verified);
   if (filters?.imported !== undefined) query = query.eq("imported", filters.imported);
   if (filters?.searchId) query = query.eq("search_id", filters.searchId);

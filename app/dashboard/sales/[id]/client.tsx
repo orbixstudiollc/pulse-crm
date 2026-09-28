@@ -354,7 +354,7 @@ export function DealDetailClient({
       <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 mb-6">
         <div className="flex items-start justify-between mb-6">
           <div>
-            <Badge variant="amber" className="mb-3">
+            <Badge variant="warning" className="mb-3">
               {stageLabels[currentStage] || currentStage}
             </Badge>
             <h1 className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   UsersIcon,
   TargetIcon,
@@ -17,6 +18,8 @@ import {
 import { PageHeader, StatCard } from "@/components/dashboard";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 import { Button } from "@/components/ui";
+import { EnrichmentProgressBanner } from "@/components/lead-finder/EnrichmentProgressBanner";
+import { useLeadEvents } from "@/hooks/use-lead-events";
 import {
   BarChart,
   Bar,
@@ -86,17 +89,87 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
 
 // ── Main ───────────────────────────────────────────────────────────────────
 
+interface CampaignSummary {
+  id: string;
+  name: string;
+  status: string;
+  leadCount: number;
+  enrichedCount: number;
+  avgScore: number;
+  target_niche?: string | null;
+  schedule_frequency?: string | null;
+  auto_enrich?: boolean | null;
+  updated_at?: string | null;
+  created_at?: string | null;
+}
+
+function campaignStatusClass(status: string): string {
+  switch (status) {
+    case "active":
+      return "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30";
+    case "paused":
+      return "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30";
+    case "completed":
+      return "text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30";
+    default:
+      return "text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800";
+  }
+}
+
 export default function LeadFinderOverviewPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
+  const pendingLeadsRef = useRef(0);
+  const pendingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const refreshAnalytics = useMemo(
+    () => () =>
+      fetch("/api/lead-finder/analytics")
+        .then((r) => r.json())
+        .then((j) => setData(j.data ?? null))
+        .catch(() => {}),
+    []
+  );
 
   useEffect(() => {
-    fetch("/api/lead-finder/analytics")
-      .then((r) => r.json())
-      .then((j) => setData(j.data ?? null))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+    Promise.all([
+      refreshAnalytics(),
+      fetch("/api/lead-finder/campaigns")
+        .then((r) => r.json())
+        .then((j) => {
+          const list = Array.isArray(j?.data) ? j.data : [];
+          setCampaigns(list);
+        })
+        .catch(() => {}),
+    ]).finally(() => setLoading(false));
+  }, [refreshAnalytics]);
+
+  // ── Live updates via SSE ───────────────────────────────────────────────
+
+  useLeadEvents({
+    onLeadDiscovered: () => {
+      // Increment local total leads + batch "+N new leads" toasts.
+      setData((prev) =>
+        prev ? { ...prev, totalLeads: prev.totalLeads + 1 } : prev
+      );
+      pendingLeadsRef.current += 1;
+      if (pendingTimer.current) clearTimeout(pendingTimer.current);
+      pendingTimer.current = setTimeout(() => {
+        const n = pendingLeadsRef.current;
+        pendingLeadsRef.current = 0;
+        if (n > 0) {
+          toast.success(`+${n} new lead${n === 1 ? "" : "s"} discovered`);
+        }
+      }, 1_500);
+    },
+    onLeadEnrichmentCompleted: () => {
+      void refreshAnalytics();
+    },
+    onDiscoveryCompleted: () => {
+      void refreshAnalytics();
+    },
+  });
 
   const scoreChartData = useMemo(() => {
     if (!data?.scoreDistribution) return [];
@@ -117,6 +190,8 @@ export default function LeadFinderOverviewPage() {
       </PageHeader>
 
       <LeadFinderSubNav />
+
+      <EnrichmentProgressBanner onBatchFinished={() => void refreshAnalytics()} />
 
       {loading && (
         <div className="flex items-center justify-center py-24">
@@ -276,6 +351,93 @@ export default function LeadFinderOverviewPage() {
               )}
             </div>
           </div>
+
+          {/* Per-campaign mini-cards */}
+          {campaigns.length > 0 && (
+            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <TargetIcon size={15} className="text-neutral-400 dark:text-neutral-500" />
+                  <h2 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Campaigns</h2>
+                </div>
+                <Link
+                  href="/dashboard/lead-finder/campaigns"
+                  className="flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-neutral-50 transition-colors"
+                >
+                  View all <ArrowRightIcon size={12} />
+                </Link>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {campaigns.slice(0, 6).map((campaign) => {
+                  const newCount = Math.max(
+                    0,
+                    (campaign.leadCount ?? 0) - (campaign.enrichedCount ?? 0)
+                  );
+                  return (
+                    <Link
+                      key={campaign.id}
+                      href={`/dashboard/lead-finder/campaigns/${campaign.id}`}
+                      className="group flex flex-col gap-3 rounded-lg border border-neutral-200 dark:border-neutral-800 p-3 transition-colors hover:border-neutral-300 dark:hover:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-900/50"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                            {campaign.name}
+                          </p>
+                          {campaign.target_niche && (
+                            <p className="truncate text-xs text-neutral-500 dark:text-neutral-400">
+                              {campaign.target_niche}
+                            </p>
+                          )}
+                        </div>
+                        <span
+                          className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-medium capitalize ${campaignStatusClass(campaign.status)}`}
+                        >
+                          {campaign.status}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div>
+                          <p className="text-base font-semibold text-neutral-950 dark:text-neutral-50">
+                            {campaign.leadCount ?? 0}
+                          </p>
+                          <p className="text-[10px] uppercase text-neutral-500 dark:text-neutral-400">
+                            Leads
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-base font-semibold text-blue-600 dark:text-blue-400">
+                            {newCount}
+                          </p>
+                          <p className="text-[10px] uppercase text-neutral-500 dark:text-neutral-400">
+                            New
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-base font-semibold text-neutral-950 dark:text-neutral-50">
+                            {campaign.avgScore ?? 0}
+                          </p>
+                          <p className="text-[10px] uppercase text-neutral-500 dark:text-neutral-400">
+                            Avg
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-neutral-500 dark:text-neutral-400">
+                        <span>
+                          {campaign.schedule_frequency
+                            ? `Runs ${campaign.schedule_frequency}`
+                            : "Manual run"}
+                        </span>
+                        {campaign.updated_at && (
+                          <span>{timeAgo(campaign.updated_at)}</span>
+                        )}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {data.totalLeads === 0 && data.totalCampaigns === 0 && (
             <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-8 text-center">

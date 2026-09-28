@@ -810,14 +810,19 @@ export default function NewCampaignPage() {
                   label="Schedule"
                   value={editableSchedule}
                   onChange={(e) => setEditableSchedule(e.target.value)}
-                  options={[
+                >
+                  {[
                     { label: "Run Once", value: "once" },
                     { label: "Daily", value: "daily" },
                     { label: "Weekly", value: "weekly" },
                     { label: "Bi-weekly", value: "biweekly" },
                     { label: "Monthly", value: "monthly" },
-                  ]}
-                />
+                  ].map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </Select>
                 <div>
                   <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5">
                     Auto-Enrich Leads

@@ -1,8 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/actions/helpers";
 import { generateCompletion } from "@/lib/lead-finder/ai-provider";
-import type { AIProvider } from "@/lib/lead-finder/types";
+
+const AIProviderEnum = z.enum([
+  "openai",
+  "anthropic",
+  "openrouter",
+  "groq",
+  "ollama",
+  "ollama_cloud",
+]);
+
+const BodySchema = z.object({
+  query: z.string().trim().min(1, "query is required").max(5_000),
+  campaignId: z.string().uuid().optional(),
+  aiProvider: AIProviderEnum.optional(),
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,19 +29,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const orgId = await getOrgId();
-    const body = await req.json();
-    const { query, campaignId, aiProvider } = body as {
-      query: string;
-      campaignId?: string;
-      aiProvider?: AIProvider;
-    };
 
-    if (!query) {
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const parsed = BodySchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "query is required" },
+        { error: parsed.error.issues[0]?.message ?? "Invalid request" },
         { status: 400 }
       );
     }
+    const { query, campaignId, aiProvider } = parsed.data;
 
     // Load campaign field definitions for context
     let fieldContext = "";
@@ -39,8 +57,17 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (campaign) {
-        const fields = (campaign.lead_field_definitions as { id: string; label: string }[]) ?? [];
-        const kpis = (campaign.kpi_definitions as { id: string; label: string; type: string }[]) ?? [];
+        const fields =
+          (campaign.lead_field_definitions as {
+            id: string;
+            label: string;
+          }[]) ?? [];
+        const kpis =
+          (campaign.kpi_definitions as {
+            id: string;
+            label: string;
+            type: string;
+          }[]) ?? [];
         fieldContext = `
 Campaign target: ${campaign.target_niche}
 Custom fields: ${fields.map((f) => `${f.id} (${f.label})`).join(", ") || "none"}
@@ -87,9 +114,13 @@ Respond in JSON:
       );
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
-    return NextResponse.json({ data: parsed });
+    const parsedResp = JSON.parse(jsonMatch[0]);
+    return NextResponse.json({ data: parsedResp });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[lead-finder/ai-filter] error", err);
+    return NextResponse.json(
+      { error: "AI filter generation failed" },
+      { status: 500 }
+    );
   }
 }

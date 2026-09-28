@@ -8,9 +8,70 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { verifyWebhookSignature } from "@/lib/whatsapp/client";
+import { timingSafeEqualStr } from "@/lib/security";
+import { z } from "zod";
 
 const WHATSAPP_VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "";
 const WHATSAPP_APP_SECRET = process.env.WHATSAPP_APP_SECRET || "";
+
+// Meta webhook body — permissive shape validation; unknown fields are allowed
+// but mistyped statuses / messages are rejected early.
+const statusSchema = z.object({
+  id: z.string(),
+  status: z.enum(["sent", "delivered", "read", "failed"]),
+  timestamp: z.string(),
+  errors: z
+    .array(z.object({ code: z.number(), title: z.string() }))
+    .optional(),
+});
+
+const messageSchema = z.object({
+  id: z.string(),
+  from: z.string(),
+  timestamp: z.string(),
+  type: z.string(),
+  text: z.object({ body: z.string() }).optional(),
+  image: z
+    .object({ id: z.string(), caption: z.string().optional(), mime_type: z.string() })
+    .optional(),
+  document: z
+    .object({
+      id: z.string(),
+      caption: z.string().optional(),
+      filename: z.string(),
+      mime_type: z.string(),
+    })
+    .optional(),
+  video: z
+    .object({ id: z.string(), caption: z.string().optional(), mime_type: z.string() })
+    .optional(),
+  audio: z.object({ id: z.string(), mime_type: z.string() }).optional(),
+});
+
+const webhookBodySchema = z.object({
+  entry: z
+    .array(
+      z.object({
+        changes: z
+          .array(
+            z.object({
+              field: z.string().optional(),
+              value: z
+                .object({
+                  statuses: z.array(statusSchema).optional(),
+                  messages: z.array(messageSchema).optional(),
+                  metadata: z
+                    .object({ phone_number_id: z.string().optional() })
+                    .optional(),
+                })
+                .optional(),
+            })
+          )
+          .optional(),
+      })
+    )
+    .optional(),
+});
 
 // ============================================================
 // GET: Webhook Verification (Meta Challenge)
@@ -22,7 +83,12 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get("hub.verify_token");
   const challenge = searchParams.get("hub.challenge");
 
-  if (mode === "subscribe" && token === WHATSAPP_VERIFY_TOKEN) {
+  if (
+    mode === "subscribe" &&
+    WHATSAPP_VERIFY_TOKEN &&
+    token &&
+    timingSafeEqualStr(token, WHATSAPP_VERIFY_TOKEN)
+  ) {
     return new NextResponse(challenge, { status: 200 });
   }
 
@@ -36,8 +102,19 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
 
-  // Verify signature if app secret is configured
-  if (WHATSAPP_APP_SECRET) {
+  // SECURITY: always require HMAC verification in production. If the secret
+  // isn't configured we fail closed rather than trusting the payload.
+  if (!WHATSAPP_APP_SECRET) {
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { error: "Webhook not configured" },
+        { status: 503 }
+      );
+    }
+    console.warn(
+      "[whatsapp/webhook] WHATSAPP_APP_SECRET not set — allowing unsigned payload in non-production only"
+    );
+  } else {
     const signature = request.headers.get("x-hub-signature-256") || "";
     const isValid = await verifyWebhookSignature(
       rawBody,
@@ -50,11 +127,20 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const body = JSON.parse(rawBody);
+  let body: unknown;
+  try {
+    body = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+  const parsed = webhookBodySchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
   const supabase = createAdminClient();
 
   try {
-    const entries = body.entry || [];
+    const entries = parsed.data.entry || [];
 
     for (const entry of entries) {
       const changes = entry.changes || [];
@@ -63,6 +149,7 @@ export async function POST(request: NextRequest) {
         if (change.field !== "messages") continue;
 
         const value = change.value;
+        if (!value) continue;
 
         // Handle status updates (sent, delivered, read, failed)
         if (value.statuses) {

@@ -1,7 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/actions/helpers";
 import { getAllActors } from "@/lib/lead-finder/apify/registry-server";
+
+const ActorIdString = z
+  .string()
+  .trim()
+  .min(1, "actorId is required")
+  .max(200, "actorId too long")
+  // Apify actor ids must be in `username/actor-name` form
+  .regex(/^[a-zA-Z0-9._\-/~]+$/, "Invalid actorId")
+  .refine(
+    (v) => v.includes("/"),
+    "Actor ID must be in format: username/actor-name"
+  );
+
+const BodySchema = z.object({
+  actorId: ActorIdString,
+  name: z.string().trim().min(1, "name is required").max(200),
+  phase: z.enum(["find", "enrich"]),
+  description: z.string().trim().max(5_000).optional(),
+  requiredInputFields: z
+    .array(z.string().trim().min(1).max(200))
+    .max(200)
+    .optional(),
+  inputFieldDescriptions: z.record(z.string(), z.unknown()).optional(),
+  defaultInput: z.record(z.string(), z.unknown()).optional(),
+  pageLimitKey: z.string().trim().min(1).max(200).optional(),
+});
 
 export async function GET() {
   try {
@@ -16,7 +43,11 @@ export async function GET() {
     const actors = await getAllActors(orgId);
     return NextResponse.json({ data: actors });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[lead-finder/actors] GET error", err);
+    return NextResponse.json(
+      { error: "Failed to list actors" },
+      { status: 500 }
+    );
   }
 }
 
@@ -30,8 +61,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const orgId = await getOrgId();
-    const body = await req.json();
 
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const parsed = BodySchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Invalid request" },
+        { status: 400 }
+      );
+    }
     const {
       actorId,
       name,
@@ -41,23 +85,7 @@ export async function POST(req: NextRequest) {
       inputFieldDescriptions,
       defaultInput,
       pageLimitKey,
-    } = body as {
-      actorId: string;
-      name: string;
-      phase: "find" | "enrich";
-      description?: string;
-      requiredInputFields?: string[];
-      inputFieldDescriptions?: Record<string, unknown>;
-      defaultInput?: Record<string, unknown>;
-      pageLimitKey?: string;
-    };
-
-    if (!actorId || !name || !phase) {
-      return NextResponse.json(
-        { error: "actorId, name, and phase are required" },
-        { status: 400 }
-      );
-    }
+    } = parsed.data;
 
     const insertData: Record<string, unknown> = {
       organization_id: orgId,
@@ -78,11 +106,19 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      console.error("[lead-finder/actors] insert error", error);
+      return NextResponse.json(
+        { error: "Failed to create actor" },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json({ data: actor }, { status: 201 });
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error("[lead-finder/actors] POST error", err);
+    return NextResponse.json(
+      { error: "Failed to create actor" },
+      { status: 500 }
+    );
   }
 }

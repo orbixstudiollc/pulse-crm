@@ -245,11 +245,20 @@ export async function updateLFCampaign(
 
 export async function deleteLFCampaign(id: string) {
   const supabase = await createClient();
-  await getOrgId();
+  const orgId = await getOrgId();
 
-  // Clean up analytics events (cascade handles leads/runs via FK)
-  await supabase.from("lf_analytics_events").delete().eq("campaign_id", id);
-  const { error } = await supabase.from("lf_campaigns").delete().eq("id", id);
+  // Clean up analytics events (cascade handles leads/runs via FK).
+  // Explicit org filters here are defense-in-depth on top of RLS.
+  await supabase
+    .from("lf_analytics_events")
+    .delete()
+    .eq("campaign_id", id)
+    .eq("organization_id", orgId);
+  const { error } = await supabase
+    .from("lf_campaigns")
+    .delete()
+    .eq("id", id)
+    .eq("organization_id", orgId);
 
   if (error) return { error: error.message };
   revalidatePath("/dashboard/lead-finder");

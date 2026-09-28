@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "./helpers";
 import { revalidatePath } from "next/cache";
+import { escapePostgrestLike } from "@/lib/security";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -63,7 +64,7 @@ export async function getEmailThreads(filters: ThreadFilters = {}) {
     query = query.eq("is_archived", false);
   }
   if (filters.search) {
-    query = query.ilike("subject", `%${filters.search}%`);
+    query = query.ilike("subject", `%${escapePostgrestLike(filters.search)}%`);
   }
 
   const limit = filters.limit || 50;

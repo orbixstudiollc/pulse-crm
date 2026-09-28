@@ -39,6 +39,20 @@ export async function composeAndSendEmail(opts: ComposeEmailOptions) {
   const supabase = await createClient();
   const orgId = await getOrgId();
 
+  // SECURITY: verify the email account belongs to the caller's org before
+  // trusting `opts.accountId`. Without this, a user with a valid session can
+  // send mail *from* any account whose id they can guess.
+  const { data: ownedAccount, error: accountErr } = await supabase
+    .from("email_accounts")
+    .select("id")
+    .eq("id", opts.accountId)
+    .eq("organization_id", orgId)
+    .maybeSingle();
+
+  if (accountErr || !ownedAccount) {
+    return { error: "Email account not found" };
+  }
+
   // Create or get thread
   let threadId = opts.threadId;
   if (!threadId) {
@@ -213,6 +227,17 @@ export async function saveDraft(opts: {
 }) {
   const supabase = await createClient();
   const orgId = await getOrgId();
+
+  // SECURITY: verify account ownership before writing a draft tied to it.
+  const { data: ownedAccount } = await supabase
+    .from("email_accounts")
+    .select("id")
+    .eq("id", opts.accountId)
+    .eq("organization_id", orgId)
+    .maybeSingle();
+  if (!ownedAccount) {
+    return { error: "Email account not found" };
+  }
 
   // Create thread for the draft if none provided
   let threadId = opts.threadId;
