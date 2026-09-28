@@ -122,14 +122,14 @@ export function MultiStepForm({
                         onClick={() => goToStep(index)}
                         disabled={index > currentStep}
                         className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center font-medium text-sm transition-colors relative z-10",
+                          "w-7 h-7 rounded-full flex items-center justify-center font-medium text-[13px] transition-colors duration-150 relative z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page",
                           isCompleted &&
-                            "bg-indigo-600 text-white hover:bg-indigo-700",
+                            "bg-accent-strong text-on-inverse hover:opacity-90",
                           isCurrent &&
-                            "bg-indigo-600 text-white ring-4 ring-indigo-100 dark:ring-indigo-900",
+                            "bg-accent-strong text-on-inverse ring-2 ring-accent/30 ring-offset-2 ring-offset-page",
                           !isCompleted &&
                             !isCurrent &&
-                            "bg-neutral-200 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400",
+                            "bg-muted text-fg-secondary",
                           index > currentStep &&
                             "cursor-not-allowed opacity-50"
                         )}
@@ -137,7 +137,7 @@ export function MultiStepForm({
                         aria-label={`Step ${index + 1}: ${step.title}`}
                       >
                         {isCompleted ? (
-                          <CheckIcon className="h-5 w-5" />
+                          <CheckIcon className="h-4 w-4" />
                         ) : (
                           <span>{index + 1}</span>
                         )}
@@ -147,8 +147,8 @@ export function MultiStepForm({
                           className={cn(
                             "text-xs font-medium",
                             isCurrent
-                              ? "text-neutral-900 dark:text-neutral-100"
-                              : "text-neutral-500 dark:text-neutral-400"
+                              ? "text-fg"
+                              : "text-fg-secondary"
                           )}
                         >
                           {step.title}
@@ -158,10 +158,10 @@ export function MultiStepForm({
                     {index < steps.length - 1 && (
                       <div
                         className={cn(
-                          "h-0.5 flex-1 -mt-10",
+                          "h-px flex-1 -mt-6",
                           index < currentStep
-                            ? "bg-indigo-600"
-                            : "bg-neutral-200 dark:bg-neutral-800"
+                            ? "bg-accent-strong"
+                            : "bg-active"
                         )}
                         aria-hidden="true"
                       />
@@ -172,9 +172,9 @@ export function MultiStepForm({
             </div>
 
             {/* Linear Progress Bar */}
-            <div className="w-full bg-neutral-200 dark:bg-neutral-800 rounded-full h-1.5 overflow-hidden">
+            <div className="w-full bg-muted rounded-full h-1 overflow-hidden">
               <motion.div
-                className="h-full bg-indigo-600"
+                className="h-full bg-accent-strong"
                 initial={{ width: 0 }}
                 animate={{ width: `${progressPercentage}%` }}
                 transition={{ duration: 0.3 }}

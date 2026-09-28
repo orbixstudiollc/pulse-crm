@@ -41,12 +41,12 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {label && (
           <label
             htmlFor={id}
-            className="block text-sm font-medium text-neutral-950 dark:text-neutral-50"
+            className="block text-sm font-medium text-fg"
           >
             {label}
-            {required && <span className="text-red-500 ml-0.5">*</span>}
+            {required && <span className="text-danger ml-0.5">*</span>}
             {optional && (
-              <span className="text-neutral-400 dark:text-neutral-500 font-normal ml-1">
+              <span className="text-fg-muted font-normal ml-1">
                 (optional)
               </span>
             )}
@@ -61,10 +61,10 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           }
           onChange={handleChange}
           className={cn(
-            "w-full rounded-lg border bg-white dark:bg-neutral-900 px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 resize-none",
+            "w-full rounded-md border bg-surface px-3 py-1.5 text-sm text-fg placeholder:text-fg-muted transition-colors duration-150 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50 resize-none",
             error
-              ? "border-red-300 dark:border-red-700"
-              : "border-neutral-200 dark:border-neutral-800",
+              ? "border-danger"
+              : "border-line",
             !autoResize && "resize-y",
             className,
           )}
@@ -73,7 +73,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {error && (
           <p
             id={`${id}-error`}
-            className="text-sm text-red-600 dark:text-red-400"
+            className="text-xs text-danger"
           >
             {error}
           </p>
@@ -81,7 +81,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {!error && helperText && (
           <p
             id={`${id}-helper`}
-            className="text-sm text-neutral-500 dark:text-neutral-400"
+            className="text-xs text-fg-secondary"
           >
             {helperText}
           </p>

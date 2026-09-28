@@ -36,12 +36,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={id}
-            className="block text-sm font-medium text-neutral-950 dark:text-neutral-50"
+            className="block text-sm font-medium text-fg"
           >
             {label}
-            {required && <span className="text-red-500 ml-0.5">*</span>}
+            {required && <span className="text-danger ml-0.5">*</span>}
             {optional && (
-              <span className="text-neutral-400 dark:text-neutral-500 font-normal ml-1">
+              <span className="text-fg-muted font-normal ml-1">
                 (optional)
               </span>
             )}
@@ -49,12 +49,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           {leftIcon && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted">
               {leftIcon}
             </span>
           )}
           {prefix && !leftIcon && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-neutral-500 dark:text-neutral-400">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-fg-secondary">
               {prefix}
             </span>
           )}
@@ -66,12 +66,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               error ? `${id}-error` : helperText ? `${id}-helper` : undefined
             }
             className={cn(
-              "w-full rounded-lg border bg-white dark:bg-neutral-900 px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50",
+              "h-8 w-full rounded-md border bg-surface px-3 text-sm text-fg placeholder:text-fg-muted transition-colors duration-150 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50",
               error
-                ? "border-red-300 dark:border-red-700"
-                : "border-neutral-200 dark:border-neutral-800",
-              (leftIcon || prefix) && "pl-10",
-              rightIcon && "pr-10",
+                ? "border-danger"
+                : "border-line",
+              (leftIcon || prefix) && "pl-9",
+              rightIcon && "pr-9",
               className,
             )}
             {...props}
@@ -85,7 +85,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {error && (
           <p
             id={`${id}-error`}
-            className="text-sm text-red-600 dark:text-red-400"
+            className="text-xs text-danger"
           >
             {error}
           </p>
@@ -93,7 +93,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {!error && helperText && (
           <p
             id={`${id}-helper`}
-            className="text-sm text-neutral-500 dark:text-neutral-400"
+            className="text-xs text-fg-secondary"
           >
             {helperText}
           </p>

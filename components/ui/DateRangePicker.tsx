@@ -111,7 +111,7 @@ export function DateRangePicker({
   return (
     <div className={cn("relative", className)} ref={containerRef}>
       {label && (
-        <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-1.5">
+        <label className="block text-sm font-medium text-fg mb-1.5">
           {label}
         </label>
       )}
@@ -119,9 +119,9 @@ export function DateRangePicker({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "w-full flex items-center justify-between rounded-lg border bg-white dark:bg-neutral-900 px-3 py-2.5 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600",
-          "border-neutral-200 dark:border-neutral-800",
-          !hasValue && "text-neutral-400 dark:text-neutral-500"
+          "h-8 w-full flex items-center justify-between rounded-md border bg-surface px-3 text-sm text-fg transition-colors duration-150 hover:bg-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30",
+          "border-line",
+          !hasValue && "text-fg-muted"
         )}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
@@ -137,7 +137,7 @@ export function DateRangePicker({
               e.stopPropagation();
               handleClear();
             }}
-            className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+            className="text-fg-muted hover:text-fg-secondary"
             aria-label="Clear date range"
           >
             <XIcon className="h-4 w-4" />
@@ -152,14 +152,14 @@ export function DateRangePicker({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-50 mt-2 w-full min-w-[320px] rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-lg"
+            className="absolute z-50 mt-1 w-full min-w-[320px] rounded-lg border border-line bg-surface shadow-dropdown"
             role="dialog"
             aria-label="Date range picker"
           >
-            <div className="p-4 space-y-4">
+            <div className="p-3 space-y-3">
               {/* Preset Ranges */}
               <div className="space-y-2">
-                <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+                <p className="text-xs font-medium text-fg-secondary">
                   Quick Select
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -168,7 +168,7 @@ export function DateRangePicker({
                       key={preset.label}
                       type="button"
                       onClick={() => handlePresetClick(preset)}
-                      className="px-3 py-2 text-sm text-left rounded-md border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                      className="h-8 px-3 text-sm text-left text-fg rounded-md border border-line bg-surface hover:bg-muted transition-colors duration-150"
                     >
                       {preset.label}
                     </button>
@@ -178,12 +178,12 @@ export function DateRangePicker({
 
               {/* Custom Range Inputs */}
               <div className="space-y-3">
-                <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+                <p className="text-xs font-medium text-fg-secondary">
                   Custom Range
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">
+                    <label className="block text-xs text-fg-secondary mb-1">
                       Start Date
                     </label>
                     <input
@@ -199,11 +199,11 @@ export function DateRangePicker({
                           : null;
                         setLocalRange({ ...localRange, start: newDate });
                       }}
-                      className="w-full rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                      className="h-8 w-full rounded-md border border-line bg-surface px-2 text-sm text-fg focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1">
+                    <label className="block text-xs text-fg-secondary mb-1">
                       End Date
                     </label>
                     <input
@@ -224,14 +224,14 @@ export function DateRangePicker({
                           ? localRange.start.toISOString().split("T")[0]
                           : undefined
                       }
-                      className="w-full rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                      className="h-8 w-full rounded-md border border-line bg-surface px-2 text-sm text-fg focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-200 dark:border-neutral-800">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-divider">
                 <Button
                   type="button"
                   variant="ghost"

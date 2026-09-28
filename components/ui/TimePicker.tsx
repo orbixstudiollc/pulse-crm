@@ -138,7 +138,7 @@ export function TimePicker({
   return (
     <div className={cn("relative", className)} ref={containerRef}>
       {label && (
-        <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-1.5">
+        <label className="block text-sm font-medium text-fg mb-1.5">
           {label}
         </label>
       )}
@@ -146,13 +146,13 @@ export function TimePicker({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2.5 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600"
+        className="h-8 flex items-center gap-2 w-full rounded-md border border-line bg-surface px-3 text-sm transition-colors duration-150 hover:bg-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-label="Choose time"
       >
-        <ClockIcon className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
-        <span className="flex-1 text-left text-neutral-900 dark:text-neutral-100">
+        <ClockIcon className="h-4 w-4 text-fg-muted" />
+        <span className="flex-1 text-left text-fg">
           {formatDisplayTime()}
         </span>
       </button>
@@ -164,18 +164,18 @@ export function TimePicker({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-50 mt-2 w-full min-w-[280px] rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-lg"
+            className="absolute z-50 mt-1 w-full min-w-[280px] rounded-lg border border-line bg-surface shadow-dropdown"
             role="dialog"
             aria-label="Time picker"
           >
-            <div className="p-4 space-y-4">
+            <div className="p-3 space-y-3">
               {/* Time Selectors */}
               <div className="flex items-center gap-2">
                 {/* Hour Select */}
                 <div className="flex-1">
                   <label
                     htmlFor="hour-select"
-                    className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1"
+                    className="block text-xs text-fg-secondary mb-1"
                   >
                     Hour
                   </label>
@@ -183,7 +183,7 @@ export function TimePicker({
                     id="hour-select"
                     value={hours}
                     onChange={(e) => handleHourChange(e.target.value)}
-                    className="w-full rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                    className="h-8 w-full rounded-md border border-line bg-surface px-3 text-sm text-fg focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
                   >
                     {hourOptions.map((hour) => (
                       <option key={hour} value={hour}>
@@ -193,7 +193,7 @@ export function TimePicker({
                   </select>
                 </div>
 
-                <span className="text-2xl font-bold text-neutral-400 dark:text-neutral-500 mt-5">
+                <span className="text-lg font-semibold text-fg-muted mt-5">
                   :
                 </span>
 
@@ -201,7 +201,7 @@ export function TimePicker({
                 <div className="flex-1">
                   <label
                     htmlFor="minute-select"
-                    className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1"
+                    className="block text-xs text-fg-secondary mb-1"
                   >
                     Minute
                   </label>
@@ -209,7 +209,7 @@ export function TimePicker({
                     id="minute-select"
                     value={minutes}
                     onChange={(e) => handleMinuteChange(e.target.value)}
-                    className="w-full rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                    className="h-8 w-full rounded-md border border-line bg-surface px-3 text-sm text-fg focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
                   >
                     {minuteOptions.map((minute) => (
                       <option key={minute} value={minute}>
@@ -225,7 +225,7 @@ export function TimePicker({
                     <button
                       type="button"
                       onClick={handlePeriodToggle}
-                      className="px-3 py-2 rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                      className="h-8 px-3 rounded-md border border-line bg-surface text-sm font-medium text-fg hover:bg-muted transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                       aria-label={`Switch to ${period === "AM" ? "PM" : "AM"}`}
                     >
                       {period}
@@ -236,8 +236,8 @@ export function TimePicker({
 
               {/* Quick Presets */}
               {showPresets && (
-                <div className="pt-3 border-t border-neutral-200 dark:border-neutral-800">
-                  <p className="text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-2">
+                <div className="pt-3 border-t border-divider">
+                  <p className="text-xs font-medium text-fg-secondary mb-2">
                     Quick Select
                   </p>
                   <div className="grid grid-cols-2 gap-2">
@@ -246,7 +246,7 @@ export function TimePicker({
                         key={preset.value}
                         type="button"
                         onClick={() => handlePresetClick(preset.value)}
-                        className="px-3 py-2 text-sm text-left rounded-md border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                        className="h-8 px-3 text-sm text-left text-fg rounded-md border border-line bg-surface hover:bg-muted transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                       >
                         {preset.label}
                       </button>
@@ -256,10 +256,10 @@ export function TimePicker({
               )}
 
               {/* Keyboard Input */}
-              <div className="pt-3 border-t border-neutral-200 dark:border-neutral-800">
+              <div className="pt-3 border-t border-divider">
                 <label
                   htmlFor="time-input"
-                  className="block text-xs text-neutral-600 dark:text-neutral-400 mb-1"
+                  className="block text-xs text-fg-secondary mb-1"
                 >
                   Or type time
                 </label>
@@ -268,7 +268,7 @@ export function TimePicker({
                   type="time"
                   value={value}
                   onChange={(e) => onChange?.(e.target.value)}
-                  className="w-full rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="h-8 w-full rounded-md border border-line bg-surface px-3 text-sm text-fg focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
                 />
               </div>
             </div>

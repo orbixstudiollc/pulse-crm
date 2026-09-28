@@ -4,6 +4,11 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { CheckIcon } from "./Icons";
+import {
+  COLOR_SWATCHES,
+  DEFAULT_SWATCH,
+  HEX_INPUT_PLACEHOLDER,
+} from "@/lib/design-system/palette-data";
 
 interface ColorPickerProps {
   value?: string;
@@ -14,31 +19,10 @@ interface ColorPickerProps {
   showRecentColors?: boolean;
 }
 
-const DEFAULT_PRESET_COLORS = [
-  "#EF4444", // red
-  "#F97316", // orange
-  "#F59E0B", // amber
-  "#EAB308", // yellow
-  "#84CC16", // lime
-  "#22C55E", // green
-  "#10B981", // emerald
-  "#14B8A6", // teal
-  "#06B6D4", // cyan
-  "#0EA5E9", // sky
-  "#3B82F6", // blue
-  "#6366F1", // indigo
-  "#8B5CF6", // violet
-  "#A855F7", // purple
-  "#D946EF", // fuchsia
-  "#EC4899", // pink
-  "#F43F5E", // rose
-  "#64748B", // slate
-  "#6B7280", // gray
-  "#000000", // black
-];
+const DEFAULT_PRESET_COLORS: string[] = [...COLOR_SWATCHES];
 
 export function ColorPicker({
-  value = "#3B82F6",
+  value = DEFAULT_SWATCH,
   onChange,
   label,
   className,
@@ -120,7 +104,7 @@ export function ColorPicker({
   return (
     <div className={cn("relative", className)} ref={containerRef}>
       {label && (
-        <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-1.5">
+        <label className="block text-sm font-medium text-fg mb-1.5">
           {label}
         </label>
       )}
@@ -128,17 +112,17 @@ export function ColorPicker({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2.5 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600"
+        className="flex h-8 items-center gap-2 w-full rounded-md border border-line bg-surface px-3 text-sm transition-colors duration-150 hover:bg-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-label="Choose color"
       >
         <div
-          className="w-6 h-6 rounded border border-neutral-300 dark:border-neutral-600"
+          className="w-4 h-4 rounded-sm border border-line"
           style={{ backgroundColor: value }}
           aria-hidden="true"
         />
-        <span className="flex-1 text-left text-neutral-900 dark:text-neutral-100">
+        <span className="flex-1 text-left text-fg">
           {value}
         </span>
       </button>
@@ -150,7 +134,7 @@ export function ColorPicker({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-50 mt-2 w-full min-w-[280px] rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-lg p-4"
+            className="absolute z-50 mt-1 w-full min-w-[280px] rounded-lg border border-line bg-surface shadow-dropdown p-3"
             role="dialog"
             aria-label="Color picker"
           >
@@ -159,7 +143,7 @@ export function ColorPicker({
               <div>
                 <label
                   htmlFor="hex-input"
-                  className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1.5"
+                  className="block text-xs font-medium text-fg-secondary mb-1"
                 >
                   Hex Color
                 </label>
@@ -168,13 +152,13 @@ export function ColorPicker({
                   type="text"
                   value={hexInput}
                   onChange={(e) => handleHexInputChange(e.target.value)}
-                  placeholder="#000000"
+                  placeholder={HEX_INPUT_PLACEHOLDER}
                   maxLength={7}
                   className={cn(
-                    "w-full rounded-md border bg-white dark:bg-neutral-800 px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-indigo-600",
+                    "h-8 w-full rounded-md border bg-surface px-3 text-sm font-mono text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30",
                     isValidHex(hexInput)
-                      ? "border-neutral-200 dark:border-neutral-700"
-                      : "border-red-300 dark:border-red-700"
+                      ? "border-line"
+                      : "border-danger"
                   )}
                   aria-invalid={!isValidHex(hexInput)}
                 />
@@ -182,7 +166,7 @@ export function ColorPicker({
 
               {/* Preset Colors */}
               <div>
-                <p className="text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-2">
+                <p className="text-xs font-medium text-fg-secondary mb-2">
                   Preset Colors
                 </p>
                 <div className="grid grid-cols-10 gap-2">
@@ -191,7 +175,7 @@ export function ColorPicker({
                       key={color}
                       type="button"
                       onClick={() => handleColorSelect(color)}
-                      className="relative w-full aspect-square rounded border border-neutral-200 dark:border-neutral-700 hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2"
+                      className="relative w-full aspect-square rounded-sm border border-line hover:scale-110 transition-transform duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                       style={{ backgroundColor: color }}
                       aria-label={color}
                       title={color}
@@ -209,7 +193,7 @@ export function ColorPicker({
               {/* Recent Colors */}
               {showRecentColors && recentColors.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-2">
+                  <p className="text-xs font-medium text-fg-secondary mb-2">
                     Recent Colors
                   </p>
                   <div className="grid grid-cols-10 gap-2">
@@ -218,7 +202,7 @@ export function ColorPicker({
                         key={`${color}-${index}`}
                         type="button"
                         onClick={() => handleColorSelect(color)}
-                        className="relative w-full aspect-square rounded border border-neutral-200 dark:border-neutral-700 hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2"
+                        className="relative w-full aspect-square rounded-sm border border-line hover:scale-110 transition-transform duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                         style={{ backgroundColor: color }}
                         aria-label={color}
                         title={color}

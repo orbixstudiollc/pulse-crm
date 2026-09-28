@@ -34,12 +34,12 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {label && (
           <label
             htmlFor={id}
-            className="block text-sm font-medium text-neutral-950 dark:text-neutral-50"
+            className="block text-sm font-medium text-fg"
           >
             {label}
-            {required && <span className="text-red-500 ml-0.5">*</span>}
+            {required && <span className="text-danger ml-0.5">*</span>}
             {optional && (
-              <span className="text-neutral-400 dark:text-neutral-500 font-normal ml-1">
+              <span className="text-fg-muted font-normal ml-1">
                 (optional)
               </span>
             )}
@@ -47,7 +47,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         )}
         <div className="relative">
           {icon && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 pointer-events-none">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted pointer-events-none">
               {icon}
             </span>
           )}
@@ -59,19 +59,19 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
               error ? `${id}-error` : helperText ? `${id}-helper` : undefined
             }
             className={cn(
-              "w-full appearance-none rounded-lg border bg-white dark:bg-neutral-900 px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50",
+              "h-8 w-full appearance-none rounded-md border bg-surface px-3 text-sm text-fg transition-colors duration-150 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50",
               error
-                ? "border-red-300 dark:border-red-700"
-                : "border-neutral-200 dark:border-neutral-800",
-              icon && "pl-10",
-              "pr-10",
+                ? "border-danger"
+                : "border-line",
+              icon && "pl-9",
+              "pr-9",
               className,
             )}
             {...props}
           >
             {children}
           </select>
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400 dark:text-neutral-500">
+          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-fg-muted">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="16"
@@ -90,7 +90,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {error && (
           <p
             id={`${id}-error`}
-            className="text-sm text-red-600 dark:text-red-400"
+            className="text-xs text-danger"
           >
             {error}
           </p>
@@ -98,7 +98,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {!error && helperText && (
           <p
             id={`${id}-helper`}
-            className="text-sm text-neutral-500 dark:text-neutral-400"
+            className="text-xs text-fg-secondary"
           >
             {helperText}
           </p>

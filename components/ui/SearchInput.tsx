@@ -155,7 +155,7 @@ export function SearchInput({
     <div className={cn("relative", className)} ref={containerRef}>
       <div className="relative">
         {/* Search Icon */}
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 pointer-events-none">
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted pointer-events-none">
           <MagnifyingGlassIcon className="h-4 w-4" />
         </div>
 
@@ -170,8 +170,8 @@ export function SearchInput({
           placeholder={placeholder}
           autoFocus={autoFocus}
           className={cn(
-            "w-full rounded-lg border bg-white dark:bg-neutral-900 pl-10 pr-20 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600",
-            "border-neutral-200 dark:border-neutral-800"
+            "h-8 w-full rounded-md border bg-surface pl-9 pr-20 text-sm text-fg placeholder:text-fg-muted transition-colors duration-150 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30",
+            "border-line"
           )}
           role="combobox"
           aria-expanded={isOpen}
@@ -182,10 +182,10 @@ export function SearchInput({
         />
 
         {/* Right Icons */}
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
           {/* Loading Spinner */}
           {loading && (
-            <CircleNotchIcon className="h-4 w-4 text-neutral-400 dark:text-neutral-500 animate-spin" />
+            <CircleNotchIcon className="h-4 w-4 text-fg-muted animate-spin" />
           )}
 
           {/* Clear Button */}
@@ -193,7 +193,7 @@ export function SearchInput({
             <button
               type="button"
               onClick={handleClear}
-              className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+              className="text-fg-muted hover:text-fg-secondary transition-colors"
               aria-label="Clear search"
             >
               <XIcon className="h-4 w-4" />
@@ -202,7 +202,7 @@ export function SearchInput({
 
           {/* Keyboard Shortcut */}
           {showShortcut && !localValue && (
-            <kbd className="hidden sm:inline-flex items-center gap-1 rounded border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 text-xs font-mono text-neutral-500 dark:text-neutral-400">
+            <kbd className="hidden sm:inline-flex items-center gap-1 rounded-sm bg-code px-1.5 text-xs font-mono text-fg-secondary">
               <span className="text-xs">⌘</span>K
             </kbd>
           )}
@@ -219,19 +219,19 @@ export function SearchInput({
             transition={{ duration: 0.15 }}
             id="search-results"
             role="listbox"
-            className="absolute z-50 mt-2 w-full rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-lg overflow-hidden"
+            className="absolute z-50 mt-1 w-full rounded-lg border border-line bg-surface shadow-dropdown p-1 overflow-hidden"
           >
             <div className="max-h-[400px] overflow-y-auto">
               {loading && results.length === 0 ? (
-                <div className="flex items-center justify-center py-8 text-sm text-neutral-500 dark:text-neutral-400">
+                <div className="flex items-center justify-center py-8 text-sm text-fg-secondary">
                   Searching...
                 </div>
               ) : results.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                  <p className="text-sm font-medium text-fg">
                     No results found
                   </p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  <p className="text-xs text-fg-secondary mt-1">
                     Try a different search term
                   </p>
                 </div>
@@ -240,7 +240,7 @@ export function SearchInput({
                   {Object.entries(groupedResults).map(
                     ([category, categoryResults]) => (
                       <div key={category}>
-                        <div className="px-3 py-2 text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide bg-neutral-50 dark:bg-neutral-800/50">
+                        <div className="px-2 py-1.5 text-xs font-medium text-fg-secondary">
                           {category}
                         </div>
                         <div className="py-1">
@@ -257,23 +257,23 @@ export function SearchInput({
                                 onClick={() => handleResultClick(result)}
                                 onMouseEnter={() => setSelectedIndex(globalIndex)}
                                 className={cn(
-                                  "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors",
+                                  "w-full flex items-center gap-3 px-2 py-1.5 rounded-md text-left transition-colors duration-150",
                                   isSelected
-                                    ? "bg-indigo-50 dark:bg-indigo-900/20"
-                                    : "hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                                    ? "bg-accent-surface text-accent-on-surface"
+                                    : "hover:bg-muted"
                                 )}
                               >
                                 {result.icon && (
-                                  <div className="flex-shrink-0 text-neutral-400 dark:text-neutral-500">
+                                  <div className="flex-shrink-0 text-fg-muted">
                                     {result.icon}
                                   </div>
                                 )}
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                                  <p className="text-sm font-medium text-fg truncate">
                                     {result.title}
                                   </p>
                                   {result.description && (
-                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                                    <p className="text-xs text-fg-secondary truncate">
                                       {result.description}
                                     </p>
                                   )}

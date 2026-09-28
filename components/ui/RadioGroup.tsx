@@ -28,7 +28,7 @@ export function RadioGroup({
   return (
     <div className={className}>
       {label && (
-        <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-2">
+        <label className="block text-sm font-medium text-fg mb-2">
           {label}
         </label>
       )}
@@ -37,10 +37,10 @@ export function RadioGroup({
           <label
             key={option.value}
             className={cn(
-              "relative flex-1 flex items-center gap-3 px-4 py-3 rounded border cursor-pointer transition-colors",
+              "relative flex-1 flex items-center gap-3 px-3 py-2.5 rounded-md border cursor-pointer transition-colors duration-150 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent",
               value === option.value
-                ? "border-neutral-950 dark:border-neutral-50 bg-neutral-50 dark:bg-neutral-800"
-                : "border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50",
+                ? "border-accent bg-accent-surface"
+                : "border-line hover:bg-muted",
             )}
           >
             <input
@@ -53,22 +53,22 @@ export function RadioGroup({
             />
             <div
               className={cn(
-                "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors",
+                "w-4 h-4 shrink-0 rounded-full border bg-surface flex items-center justify-center transition-colors",
                 value === option.value
-                  ? "border-neutral-950 dark:border-neutral-50"
-                  : "border-neutral-300 dark:border-neutral-600",
+                  ? "border-accent"
+                  : "border-line",
               )}
             >
               {value === option.value && (
-                <div className="w-2 h-2 rounded-full bg-neutral-950 dark:bg-neutral-50" />
+                <div className="w-2 h-2 rounded-full bg-accent" />
               )}
             </div>
             <div>
-              <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              <p className="text-sm font-medium text-fg">
                 {option.label}
               </p>
               {option.description && (
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                <p className="text-xs text-fg-secondary">
                   {option.description}
                 </p>
               )}

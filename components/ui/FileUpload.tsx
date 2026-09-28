@@ -166,7 +166,7 @@ export function FileUpload({
   return (
     <div className={cn("space-y-3", className)}>
       {label && (
-        <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+        <label className="block text-sm font-medium text-fg">
           {label}
         </label>
       )}
@@ -178,13 +178,13 @@ export function FileUpload({
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
         className={cn(
-          "relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
+          "relative border border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors duration-150",
           isDragging
-            ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-950/20"
+            ? "border-accent bg-accent-surface"
             : error
-              ? "border-red-300 dark:border-red-700"
-              : "border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-600",
-          "focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2"
+              ? "border-danger bg-subtle"
+              : "border-line bg-subtle hover:border-fg-muted",
+          "focus-within:outline-none focus-within:ring-2 focus-within:ring-accent focus-within:ring-offset-2 focus-within:ring-offset-page"
         )}
         role="button"
         tabIndex={0}
@@ -211,29 +211,29 @@ export function FileUpload({
         <div className="flex flex-col items-center gap-3">
           <div
             className={cn(
-              "w-12 h-12 rounded-full flex items-center justify-center",
+              "w-10 h-10 rounded-full flex items-center justify-center",
               isDragging
-                ? "bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400"
-                : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
+                ? "bg-accent-surface text-accent-on-surface"
+                : "bg-muted text-fg-secondary"
             )}
           >
-            <UploadIcon className="h-6 w-6" />
+            <UploadIcon className="h-5 w-5" />
           </div>
 
           <div className="space-y-1">
-            <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+            <p className="text-sm font-medium text-fg">
               {isDragging ? (
                 "Drop files here"
               ) : (
                 <>
-                  <span className="text-indigo-600 dark:text-indigo-400">
+                  <span className="text-accent-strong">
                     Click to upload
                   </span>{" "}
                   or drag and drop
                 </>
               )}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs text-fg-secondary">
               {accept || "Any file type"} up to {formatFileSize(maxSize)}
             </p>
           </div>
@@ -243,14 +243,14 @@ export function FileUpload({
       {helperText && !error && (
         <p
           id="file-helper"
-          className="text-sm text-neutral-500 dark:text-neutral-400"
+          className="text-xs text-fg-secondary"
         >
           {helperText}
         </p>
       )}
 
       {error && (
-        <p id="file-error" className="text-sm text-red-600 dark:text-red-400">
+        <p id="file-error" className="text-xs text-danger">
           {error}
         </p>
       )}
@@ -258,7 +258,7 @@ export function FileUpload({
       {/* File Previews */}
       {showPreviews && value.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+          <p className="text-sm font-medium text-fg">
             {value.length} {value.length === 1 ? "file" : "files"} selected
           </p>
           <AnimatePresence>
@@ -272,32 +272,32 @@ export function FileUpload({
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -100 }}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900"
+                  className="flex items-center gap-3 p-2.5 rounded-md border border-line bg-surface"
                 >
                   {previewUrl ? (
                     <img
                       src={previewUrl}
                       alt={file.name}
-                      className="w-12 h-12 rounded object-cover"
+                      className="w-10 h-10 rounded-md object-cover"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-500 dark:text-neutral-400">
+                    <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center text-fg-secondary">
                       {getFileIcon(file)}
                     </div>
                   )}
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                    <p className="text-sm font-medium text-fg truncate">
                       {file.name}
                     </p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    <p className="text-xs text-fg-secondary">
                       {formatFileSize(file.size)}
                     </p>
 
                     {progress !== undefined && (
-                      <div className="mt-1.5 w-full bg-neutral-200 dark:bg-neutral-800 rounded-full h-1 overflow-hidden">
+                      <div className="mt-1.5 w-full bg-active rounded-full h-1 overflow-hidden">
                         <motion.div
-                          className="h-full bg-indigo-600"
+                          className="h-full bg-accent-strong"
                           initial={{ width: 0 }}
                           animate={{ width: `${progress}%` }}
                           transition={{ duration: 0.1 }}
@@ -309,7 +309,7 @@ export function FileUpload({
                   <button
                     type="button"
                     onClick={() => removeFile(index)}
-                    className="p-1.5 rounded-md text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                    className="p-1.5 rounded-md text-fg-muted hover:text-fg hover:bg-muted transition-colors duration-150"
                     aria-label={`Remove ${file.name}`}
                   >
                     <XIcon className="h-4 w-4" />

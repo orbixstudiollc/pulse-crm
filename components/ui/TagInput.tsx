@@ -40,25 +40,25 @@ export function TagInput({
   return (
     <div className={className}>
       {label && (
-        <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-1.5">
+        <label className="block text-sm font-medium text-fg mb-1.5">
           {label}
         </label>
       )}
       <div
         className={cn(
-          "flex flex-wrap items-center gap-2 px-3 py-2.5 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 focus-within:border-neutral-200 dark:focus-within:border-neutral-700 focus-within:shadow-focus transition-shadow",
+          "flex flex-wrap items-center gap-1.5 min-h-8 px-2 py-1 rounded-md border border-line bg-surface focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/30 transition-colors duration-150",
         )}
       >
         {tags.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-sm text-neutral-950 dark:text-neutral-50"
+            className="inline-flex items-center gap-1 h-6 px-2 rounded-sm bg-muted text-[13px] text-fg"
           >
             {tag}
             <button
               type="button"
               onClick={() => removeTag(tag)}
-              className="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+              className="text-fg-secondary hover:text-fg"
             >
               <XIcon size={14} />
             </button>
@@ -70,10 +70,10 @@ export function TagInput({
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={tags.length === 0 ? placeholder : ""}
-          className="flex-1 min-w-[120px] bg-transparent text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 outline-none"
+          className="flex-1 min-w-[120px] h-6 px-1 bg-transparent text-sm text-fg placeholder:text-fg-muted outline-none"
         />
       </div>
-      <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1.5">
+      <p className="text-xs text-fg-secondary mt-1">
         Press Enter to add a tag
       </p>
     </div>
