@@ -1,0 +1,441 @@
+[
+  {
+    "id": "T1",
+    "title": "Restore HEAD profile actions verbatim; delete orphaned app/onboarding flow and workspace actions; repoint Buffer callback",
+    "files": [
+      "lib/actions/profile.ts",
+      "app/onboarding/start/page.tsx",
+      "app/onboarding/profile/page.tsx",
+      "app/onboarding/profile/client.tsx",
+      "app/onboarding/workspace/page.tsx",
+      "app/onboarding/workspace/client.tsx",
+      "app/onboarding/connect/page.tsx",
+      "app/onboarding/connect/client.tsx",
+      "lib/actions/workspace.ts",
+      "app/api/buffer/callback/route.ts"
+    ],
+    "interface": "Run from repo root in Git Bash. (1) `git show HEAD:lib/actions/profile.ts > lib/actions/profile.ts` so the file exports exactly HEAD's getProfile, updateProfile, uploadAvatar (returns {data}|{error}, storage bucket `avatars`), removeAvatar, updatePreferences, updateNotificationPreferences, updatePassword. This makes app/dashboard/settings/{page,client}.tsx compile unchanged. The working-tree exports updateProfileSetup/getCurrentProfile are dropped; their only callers are app/onboarding/** which is deleted. (2) Delete the directory app/onboarding (four route folders listed in files) and lib/actions/workspace.ts (createWorkspace/createSoloWorkspace, only imported by app/onboarding). The LIVE onboarding flow app/(auth)/onboarding/page.tsx is NOT touched. Do not add an organizations.onboarding_completed column. (3) In app/api/buffer/callback/route.ts replace every redirect target `/onboarding/connect` with `/dashboard/settings`, keeping any `?error=` query string. Do not run git checkout/stash on any file.",
+    "verify": "git diff --quiet HEAD -- lib/actions/profile.ts && test ! -d app/onboarding && test ! -f lib/actions/workspace.ts && test $(grep -c 'onboarding/connect' app/api/buffer/callback/route.ts) -eq 0 && test $(grep -rl 'actions/workspace\\|updateProfileSetup\\|getCurrentProfile' app components lib --include=*.ts --include=*.tsx | grep -v 'lib/linkedin/\\|linkedin-accounts' | wc -l) -eq 0 && test $(npx tsc --noEmit 2>&1 | grep -c 'actions/profile\\|app/onboarding/\\|settings/page.tsx\\|settings/client.tsx(5[7-9]\\|settings/client.tsx(6[0-2]\\|settings/client.tsx(22[89]') -eq 0 && echo T1-OK",
+    "depends_on": []
+  },
+  {
+    "id": "T2",
+    "title": "Module-level G1 fixes (orphan billing route, Card import casing, duplicate RadioGroup export, AnimatePresence import, Card empty interface) plus middleware prefix gate for the social routes",
+    "files": [
+      "app/dashboard/billing/page.tsx",
+      "app/drafts/client.tsx",
+      "app/drafts/loading.tsx",
+      "components/ui/index.tsx",
+      "components/ui/MultiStepForm.tsx",
+      "components/ui/Card.tsx",
+      "lib/supabase/middleware.ts"
+    ],
+    "interface": "(1) Delete the directory app/dashboard/billing (untracked page importing a non-existent ./client; nothing links the route; settings already renders getBillingData). (2) app/drafts/client.tsx and app/drafts/loading.tsx: import from \"@/components/ui/Card\" (capital C). (3) components/ui/index.tsx: change `export * from \"./Radio\"` to `export { Radio } from \"./Radio\"` so the barrel's RadioGroup is the options-based one from ./RadioGroup that app/dashboard/customers/add and customers/[id]/edit already use. (4) components/ui/MultiStepForm.tsx line 4: `import { motion, AnimatePresence } from \"framer-motion\"`. (5) components/ui/Card.tsx: replace the empty `interface CardFooterProps extends HTMLAttributes<HTMLDivElement> {}` with `type CardFooterProps = HTMLAttributes<HTMLDivElement>` (lint no-empty-object-type). (6) lib/supabase/middleware.ts: add `const PROTECTED_PREFIXES = [\"/dashboard\", \"/calendar\", \"/compose\", \"/drafts\", \"/connections\", \"/team\"] as const;` and `const isProtectedPath = (p: string) => PROTECTED_PREFIXES.some((x) => p === x || p.startsWith(x + \"/\"));` and change the unauthenticated redirect condition from `request.nextUrl.pathname.startsWith(\"/dashboard\")` to `isProtectedPath(request.nextUrl.pathname)`. This puts the route-level auth gate into the first pushable commit.",
+    "verify": "test ! -d app/dashboard/billing && test $(grep -rn 'components/ui/card\"' app components --include=*.tsx | wc -l) -eq 0 && grep -q 'export { Radio } from \"./Radio\"' components/ui/index.tsx && sed -n '1,10p' components/ui/MultiStepForm.tsx | grep -q 'AnimatePresence' && grep -q '\"/calendar\"' lib/supabase/middleware.ts && grep -q 'isProtectedPath(request.nextUrl.pathname)' lib/supabase/middleware.ts && test $(grep -c 'interface CardFooterProps' components/ui/Card.tsx) -eq 0 && test $(npx tsc --noEmit 2>&1 | grep -c 'TS1149\\|TS2308\\|TS2304\\|TS7006\\|billing/page\\|middleware.ts') -eq 0 && echo T2-OK",
+    "depends_on": []
+  },
+  {
+    "id": "T3",
+    "title": "Postpeer client G1 fixes: MediaUploader `as` prop, drafts PlatformBadge, compose Tabs API, team/client kit props",
+    "files": [
+      "components/postpeer/MediaUploader.tsx",
+      "app/drafts/client.tsx",
+      "app/compose/client.tsx",
+      "app/team/client.tsx"
+    ],
+    "interface": "(1) components/postpeer/MediaUploader.tsx ~:172-181: replace `<Button as=\"span\" ...>` with a real `<button type=\"button\">` that calls `fileInputRef.current?.click()` (keyboard accessible; Enter/Space work), carrying the same secondary/sm classes via the kit Button if it is not inside a <label>, otherwise a plain <button> with equivalent classes. Do not use a <span role=\"button\">. (2) app/drafts/client.tsx ~:356: `<PlatformIcon key={platform} platform={platform} size=\"sm\" />` (PlatformBadge requires `status` and has no `size`); drop the PlatformBadge import if orphaned. (3) app/compose/client.tsx ~:478-519: rewrite to the kit's compound Tabs API: `<Tabs defaultValue={selectedPlatforms[0]}><TabsList>{selectedPlatforms.map(p => <TabsTrigger key={p} value={p}>…</TabsTrigger>)}</TabsList>{selectedPlatforms.map(p => <TabsContent key={p} value={p}>{existing preview div}</TabsContent>)}</Tabs>` importing TabsList/TabsTrigger/TabsContent from \"@/components/ui/Tabs\", guarded by `selectedPlatforms.length > 0`. (4) app/team/client.tsx: Input `icon=` -> `leftIcon=`; Button `icon=` -> `leftIcon=`; remove `size=\"sm\"` from the <Select> near :400; make getRoleBadgeColor/getStatusBadgeColor return BadgeVariant values (purple->primary, blue->info, green->success, yellow->warning, gray->neutral); ConfirmDialog `isOpen` -> `open`; escape the apostrophe near :283 with &apos;.",
+    "verify": "test $(grep -c 'as=\"span\"' components/postpeer/MediaUploader.tsx) -eq 0 && test $(grep -c 'role=\"button\"' components/postpeer/MediaUploader.tsx) -eq 0 && grep -q 'TabsTrigger' app/compose/client.tsx && test $(grep -c 'isOpen=' app/team/client.tsx) -eq 0 && test $(npx tsc --noEmit 2>&1 | grep -c 'app/team/\\|app/compose/\\|app/drafts/\\|MediaUploader') -eq 0 && echo T3-OK",
+    "depends_on": [
+      "T2"
+    ]
+  },
+  {
+    "id": "T4",
+    "title": "Migrate every Badge caller to the new variant union (export BadgeVariant; update lib/data maps and local helpers)",
+    "files": [
+      "components/ui/Badge.tsx",
+      "lib/data/customers.ts",
+      "lib/data/leads.ts",
+      "components/dashboard/ActivityFeed.tsx",
+      "components/dashboard/ActivityRow.tsx",
+      "components/dashboard/CustomerDrawer.tsx",
+      "components/dashboard/CustomersTable.tsx",
+      "components/dashboard/LatestLeads.tsx",
+      "components/dashboard/LeadDrawer.tsx",
+      "components/automation/AutomationSection.tsx",
+      "components/features/ActivityDetailDrawer.tsx",
+      "components/features/DealDrawer.tsx",
+      "components/features/ImportLeadsModal.tsx",
+      "app/dashboard/activity/client.tsx",
+      "app/dashboard/competitors/client.tsx",
+      "app/dashboard/competitors/[id]/client.tsx",
+      "app/dashboard/contacts/client.tsx",
+      "app/dashboard/customers/[id]/client.tsx",
+      "app/dashboard/icp/client.tsx",
+      "app/dashboard/icp/[id]/client.tsx",
+      "app/dashboard/inbox/client.tsx",
+      "app/dashboard/lead-finder/campaigns/page.tsx",
+      "app/dashboard/leads/client.tsx",
+      "app/dashboard/playbook/client.tsx",
+      "app/dashboard/proposals/client.tsx",
+      "app/dashboard/sales/client.tsx",
+      "app/dashboard/sales/[id]/client.tsx",
+      "app/dashboard/sequences/client.tsx",
+      "app/dashboard/sequences/[id]/client.tsx",
+      "app/dashboard/settings/client.tsx",
+      "app/dashboard/website-visitors/client.tsx"
+    ],
+    "interface": "components/ui/Badge.tsx: add `export` to `type BadgeVariant` (no other change to the component). Apply this fixed mapping everywhere a Badge `variant` is produced: red->error, amber->warning, green->success, blue->info, emerald->success, violet->primary, neutral->neutral. Covers literal `variant=\"…\"`, object maps `variant: \"…\"` (lib/data/customers.ts ~:85-93, lib/data/leads.ts ~:59-63 and ~:113; retype those fields as `BadgeVariant` imported from \"@/components/ui\"), helper functions returning colour strings, and the local `type BadgeVariant` in components/dashboard/ActivityFeed.tsx ~:47 (replace with the exported type). Remove the now-unneeded `stage.variant as any` cast at app/dashboard/customers/[id]/client.tsx ~:455. Button and Avatar variants/sizes are unaffected (both `size=\"xl\"` usages in the tree are on Avatar and stay). Use the tsc output containing `BadgeVariant` as the authoritative list of sites.",
+    "verify": "grep -q 'export type BadgeVariant' components/ui/Badge.tsx && test $(grep -rnE 'variant=\"(red|amber|green|blue|emerald|violet|gray|yellow|purple)\"' app components --include=*.tsx | wc -l) -eq 0 && test $(grep -rnE 'variant: \"(red|amber|green|blue|emerald|violet)\"' lib/data app components --include=*.ts --include=*.tsx | wc -l) -eq 0 && test $(npx tsc --noEmit 2>&1 | grep -c 'BadgeVariant') -eq 0 && echo T4-OK",
+    "depends_on": [
+      "T1",
+      "T2",
+      "T3"
+    ]
+  },
+  {
+    "id": "T5",
+    "title": "Migrate every Select caller from `options=`/`placeholder=` props to <option> children",
+    "files": [
+      "app/(auth)/onboarding/page.tsx",
+      "app/dashboard/activity/client.tsx",
+      "app/dashboard/competitors/client.tsx",
+      "app/dashboard/contacts/client.tsx",
+      "app/dashboard/customers/[id]/edit/client.tsx",
+      "app/dashboard/customers/add/page.tsx",
+      "app/dashboard/lead-finder/campaigns/[id]/page.tsx",
+      "app/dashboard/lead-finder/campaigns/new/page.tsx",
+      "app/dashboard/lead-finder/leads/page.tsx",
+      "app/dashboard/playbook/client.tsx",
+      "app/dashboard/proposals/client.tsx",
+      "app/dashboard/sequences/client.tsx",
+      "app/dashboard/sequences/[id]/client.tsx",
+      "app/dashboard/settings/client.tsx",
+      "app/dashboard/templates/client.tsx",
+      "components/features/AddDealModal.tsx",
+      "components/features/AddLeadModal.tsx",
+      "components/features/CompleteMeetingModal.tsx",
+      "components/features/CreateInvoiceModal.tsx",
+      "components/features/CreateTaskModal.tsx",
+      "components/features/ImportLeadsModal.tsx",
+      "components/features/LogActivityModal.tsx",
+      "components/features/MarkDealLostModal.tsx",
+      "components/features/ScheduleMeetingModal.tsx"
+    ],
+    "interface": "For each call site reported by tsc with `HTMLSelectElement` (about 40): remove `options={X}` and `placeholder=\"P\"` props; add children `{P && <option value=\"\">P</option>}` (or a literal `<option value=\"\">P</option>` when P is a string literal) followed by `{X.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}`. This is exactly what HEAD's Select rendered internally, so behaviour is unchanged. Keep every other prop (label, name, value, onChange, required, disabled, id, className). Do not modify components/ui/Select.tsx.",
+    "verify": "test $(npx tsc --noEmit 2>&1 | grep -c 'HTMLSelectElement') -eq 0 && test $(grep -rn --include=*.tsx -A10 '<Select$\\|<Select ' app components | grep -c 'options=') -eq 0 && echo T5-OK",
+    "depends_on": [
+      "T1",
+      "T2"
+    ]
+  },
+  {
+    "id": "T6",
+    "title": "G1 gate and first commit: tsc at 0 errors, commit the entire working tree (excluding PLAN.md and tasks.json)",
+    "files": [
+      "(all uncommitted paths except PLAN.md and tasks.json)"
+    ],
+    "interface": "NONE. Precondition: T1-T5 landed. `git add -A` is deliberate and settled by fact: lib/security/ is untracked and imported by 42 modified tracked files; components/ui/{Card,Tabs,Switch,Radio,MultiStepForm,TimePicker}.tsx, lib/env.ts and instrumentation.ts are untracked and load-bearing, so no partial stage can type-check. PLAN.md and tasks.json stay uncommitted until the final task. Commit message: `fix(types): migrate callers to new UI kit, restore profile actions, drop orphaned onboarding/billing routes, gate social routes in middleware`.",
+    "verify": "test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && git add -A -- . ':!PLAN.md' ':!tasks.json' && git diff --cached --check && git commit -q -m 'fix(types): migrate callers to new UI kit, restore profile actions, drop orphaned onboarding/billing routes, gate social routes in middleware' && test $(git status --porcelain | grep -v 'PLAN.md\\|tasks.json' | wc -l) -eq 0 && echo T6-OK",
+    "depends_on": [
+      "T1",
+      "T2",
+      "T3",
+      "T4",
+      "T5"
+    ]
+  },
+  {
+    "id": "T7",
+    "title": "G2: page- and action-level auth for the Postpeer surface; label mock data; document POSTPEER_API_KEY; label the default billing plan",
+    "files": [
+      "app/calendar/page.tsx",
+      "app/compose/page.tsx",
+      "app/drafts/page.tsx",
+      "app/connections/page.tsx",
+      "app/team/page.tsx",
+      "lib/actions/compose.ts",
+      "lib/actions/connections.ts",
+      ".env.example",
+      "lib/actions/billing.ts",
+      "app/dashboard/settings/client.tsx"
+    ],
+    "interface": "Each of the five page.tsx becomes `async` and calls `await getOrgId()` (import from \"@/lib/actions/helpers\"; it redirects to /login or /onboarding) as its first statement. lib/actions/compose.ts (3 exported functions) and lib/actions/connections.ts (5 exported functions): `await getOrgId();` as the first statement of each exported function, placed BEFORE any existing `try` so the NEXT_REDIRECT throw is not swallowed by a catch. Do NOT create a second auth helper. app/calendar, app/drafts and app/team page.tsx render `<p role=\"note\" className=\"mx-4 mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200\">Preview with sample data — social scheduling is not connected.</p>` above their client component. .env.example gains `POSTPEER_API_KEY=\"\"` with a one-line comment (existing optional variable read by lib/postpeer/client.ts). lib/actions/billing.ts ~:109-110: make the comment explicit that the plan is a hardcoded default. app/dashboard/settings/client.tsx: next to the plan name in the Billing section (~:1354) render `<p className=\"text-xs text-neutral-500\">Default plan — billing is not connected to a payment provider.</p>`. app/api/buffer/** handlers already call auth.getUser() and return 401; leave them. Commit: `fix(auth): require org session in social-scheduling pages and actions`.",
+    "verify": "for f in app/calendar/page.tsx app/compose/page.tsx app/drafts/page.tsx app/connections/page.tsx app/team/page.tsx; do grep -q 'await getOrgId()' \"$f\" || exit 1; done && test $(grep -c 'await getOrgId()' lib/actions/compose.ts) -eq 3 && test $(grep -c 'await getOrgId()' lib/actions/connections.ts) -eq 5 && grep -q 'POSTPEER_API_KEY' .env.example && grep -q 'not connected to a payment provider' app/dashboard/settings/client.tsx && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && git add -A -- . ':!PLAN.md' ':!tasks.json' && git diff --cached --check && git commit -q -m 'fix(auth): require org session in social-scheduling pages and actions' && echo T7-OK",
+    "depends_on": [
+      "T6"
+    ]
+  },
+  {
+    "id": "T8",
+    "title": "G3.7: add the four marketing tables to types/database.ts and remove every `as any` in marketing actions and pages",
+    "files": [
+      "types/database.ts",
+      "lib/actions/marketing.ts",
+      "lib/actions/ai-marketing.ts",
+      "app/dashboard/marketing/page.tsx",
+      "app/dashboard/marketing/[id]/page.tsx",
+      "app/dashboard/marketing/new/client.tsx"
+    ],
+    "interface": "types/database.ts `Tables` gains marketing_audits, marketing_content, marketing_reports, marketing_action_items with Row/Insert/Update/Relationships: [] in the file's existing style, columns mirrored 1:1 from supabase/migrations/020_marketing_suite.sql (NOT NULL -> non-nullable, DEFAULT -> optional in Insert, JSONB -> Json, TIMESTAMPTZ/DATE -> string). lib/actions/marketing.ts and ai-marketing.ts drop all `\"…\" as any` table casts and `auditRaw as any`. app/dashboard/marketing/page.tsx and [id]/page.tsx drop `as any` on props; align local interfaces to the Row rather than casting. app/dashboard/marketing/new/client.tsx ~:77,85,117 typed as `{ id: string }`, the audit Row, and `Record<string, unknown>`. No SQL migration (tables already exist).",
+    "verify": "grep -q 'marketing_action_items: {' types/database.ts && grep -q 'marketing_reports: {' types/database.ts && grep -q 'marketing_audits: {' types/database.ts && grep -q 'marketing_content: {' types/database.ts && test $(cat lib/actions/marketing.ts lib/actions/ai-marketing.ts app/dashboard/marketing/page.tsx 'app/dashboard/marketing/[id]/page.tsx' app/dashboard/marketing/new/client.tsx | grep -c 'as any') -eq 0 && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && echo T8-OK",
+    "depends_on": [
+      "T7"
+    ]
+  },
+  {
+    "id": "T9",
+    "title": "G3.1: Lead Finder search must reference only real lf_leads columns",
+    "files": [
+      "lib/actions/lead-finder/leads.ts"
+    ],
+    "interface": "lib/actions/lead-finder/leads.ts ~:41-44: the `.or()` filter string becomes `display_name.ilike.%q%,email.ilike.%q%,website.ilike.%q%,mapped_data->>company.ilike.%q%`. `q` stays wrapped in the existing escapePostgrestLike. `company` is the mapped_data key the CSV export in the same file already reads; no `headline` key exists anywhere, so it is dropped, not guessed.",
+    "verify": "grep -q 'mapped_data->>company.ilike' lib/actions/lead-finder/leads.ts && grep -q 'escapePostgrestLike(filters.search)' lib/actions/lead-finder/leads.ts && test $(grep -c 'headline.ilike\\|,company.ilike' lib/actions/lead-finder/leads.ts) -eq 0 && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && echo T9-OK",
+    "depends_on": [
+      "T7"
+    ]
+  },
+  {
+    "id": "T10",
+    "title": "G3.2: persist the Ollama base URL to ai_settings.ollama_base_url; ignore legacy corrupted default_model on read",
+    "files": [
+      "app/api/lead-finder/settings/route.ts",
+      "lib/lead-finder/ai-provider.ts"
+    ],
+    "interface": "app/api/lead-finder/settings/route.ts ~:222-227: keep `if (body.ollama_model) aiUpdates.default_model = body.ollama_model;`; replace the `aiUpdates.default_model = \\`ollama:${body.ollama_base_url}:…\\`` line with `if (body.ollama_base_url) aiUpdates.ollama_base_url = body.ollama_base_url;` (column exists per migration 027 and is what loadOrgSettings in ai-provider.ts ~:131-142 reads). Fix the misleading comment above it. lib/lead-finder/ai-provider.ts ~:218: `const raw = settings?.default_model ?? null; const defaultModel = raw && raw.startsWith(\"ollama:\") ? null : raw;` so rows corrupted by the old writer fall through to the provider default instead of being sent verbatim as a model name. Do NOT parse the legacy string (URLs and model tags contain colons); such rows heal when settings are re-saved.",
+    "verify": "grep -q 'aiUpdates.ollama_base_url = body.ollama_base_url' app/api/lead-finder/settings/route.ts && test $(grep -c 'ollama:\\$' app/api/lead-finder/settings/route.ts) -eq 0 && grep -q 'startsWith(\"ollama:\")' lib/lead-finder/ai-provider.ts && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && echo T10-OK",
+    "depends_on": [
+      "T7"
+    ]
+  },
+  {
+    "id": "T11",
+    "title": "G3.3: campaign planner fallback actor must exist in ACTOR_REGISTRY",
+    "files": [
+      "lib/lead-finder/ai/campaign-planner.ts"
+    ],
+    "interface": "lib/lead-finder/ai/campaign-planner.ts ~:134 and ~:201: replace `\"apify/google-maps-scraper\"` with `\"compass/crawler-google-places\"` (lib/lead-finder/apify/registry.ts:23). No other change.",
+    "verify": "test $(grep -c 'apify/google-maps-scraper' lib/lead-finder/ai/campaign-planner.ts) -eq 0 && test $(grep -c 'compass/crawler-google-places' lib/lead-finder/ai/campaign-planner.ts) -eq 2 && grep -q 'id: \"compass/crawler-google-places\"' lib/lead-finder/apify/registry.ts && echo T11-OK",
+    "depends_on": [
+      "T7"
+    ]
+  },
+  {
+    "id": "T12",
+    "title": "G3.4: durable, migration-free enrichment cancellation with a compare-and-swap on the job row; remove the dead in-memory cancellation map",
+    "files": [
+      "app/api/lead-finder/campaigns/[id]/enrich/route.ts",
+      "lib/lead-finder/enrichment/pipeline.ts",
+      "lib/lead-finder/enrichment/worker.ts"
+    ],
+    "interface": "No migration, RPC, or new column: `cancelled` already exists for both lf_enrichment_jobs and lf_enrichment_batches (migration 027). (1) DELETE handler in app/api/lead-finder/campaigns/[id]/enrich/route.ts (~:88-100), after the existing org-scoped campaign check, using the existing user-scoped `supabase` (RLS permits org updates on both tables): (a) `const { data: batches } = await supabase.from(\"lf_enrichment_batches\").select(\"id\").eq(\"campaign_id\", id).eq(\"organization_id\", orgId).in(\"status\", [\"queued\",\"running\",\"paused\"])`; (b) if batchIds non-empty, FIRST `supabase.from(\"lf_enrichment_jobs\").update({ status: \"cancelled\", finished_at: nowIso }).eq(\"organization_id\", orgId).in(\"batch_id\", batchIds).in(\"status\", [\"queued\",\"retry\",\"running\"])`, THEN `supabase.from(\"lf_enrichment_batches\").update({ status: \"cancelled\", finished_at: nowIso }).eq(\"organization_id\", orgId).in(\"id\", batchIds).in(\"status\", [\"queued\",\"running\",\"paused\"])` (jobs before batches so a crash between the two never leaves a claimable job under an open batch). Check the error of every DB call and return 500 on error. (c) keep the existing lf_leads enriching->new reset; remove the `cancelEnrichment` import/call; add `cancelledJobs` to the JSON response. (2) lib/lead-finder/enrichment/pipeline.ts `enrichSingleLead`: add optional `options.jobId?: string` and change the return type to `Promise<{ persisted: boolean }>`. Immediately after `analyzeEnrichmentData` returns and BEFORE the lf_lead_personalization upsert: if `options.jobId` is set, run `const { data: claimed } = await createAdminClient().from(\"lf_enrichment_jobs\").update({ status: \"done\", finished_at: new Date().toISOString() }).eq(\"id\", options.jobId).in(\"status\", [\"running\", \"retry\"]).select(\"id\")`; if `!claimed || claimed.length === 0` return `{ persisted: false }` without touching lf_lead_personalization or lf_leads. (`retry` is accepted only because recoverStaleRunning can flip a still-executing job to retry after 10 minutes; `cancelled`, `done`, `failed` are never accepted.) The CAS MUST use createAdminClient (cron/worker context has no user session). Wrap the personalization upsert + lf_leads update that follow in try/catch: on error run `createAdminClient().from(\"lf_enrichment_jobs\").update({ status: \"failed\", last_error: String(err).slice(0, 500) }).eq(\"id\", options.jobId).eq(\"status\", \"done\")` then rethrow. Return `{ persisted: true }` on success. Delete `activeCancellations`, `cancellationKey`, `cancelEnrichment`, `isCancelled`, `clearCancellation` and the `clearCancellation(...)` call (~:233). The other caller app/api/lead-finder/leads/[id]/enrich/route.ts passes no jobId and may ignore the return value. (3) lib/lead-finder/enrichment/worker.ts: failJob (~:410-420) and retryJob (~:428-438) add `.eq(\"status\", \"running\")` directly after `.eq(\"id\", job.id)`; processJob passes `jobId: job.id` in the enrichSingleLead options, captures `const { persisted } = await enrichSingleLead(...)`, and if `!persisted` returns before the Obsidian write; delete the now-redundant done write (~:534-541) because the CAS in the pipeline is the done write. claimJobs, recoverStaleRunning, failAncientRetryJobs, syncBatchStatuses and batch progress writes are untouched (they already filter on non-cancelled statuses). Documented residual: process death between the successful CAS and the lead write leaves job=done with no result; deploy-overlap can let an old-code worker move a cancelled job to retry once.",
+    "verify": "node -e 'const fs=require(\"fs\");const p=fs.readFileSync(\"lib/lead-finder/enrichment/pipeline.ts\",\"utf8\");const w=fs.readFileSync(\"lib/lead-finder/enrichment/worker.ts\",\"utf8\");const r=fs.readFileSync(\"app/api/lead-finder/campaigns/[id]/enrich/route.ts\",\"utf8\");const cas=p.indexOf(\".in(\\\"status\\\", [\\\"running\\\", \\\"retry\\\"])\");const ups=p.indexOf(\"lf_lead_personalization\");const byId=(w.match(/\\.eq\\(\"id\", job\\.id\\)/g)||[]).length;const guarded=(w.match(/\\.eq\\(\"id\", job\\.id\\)\\s*\\.eq\\(\"status\", \"running\"\\)/g)||[]).length;const jobsCancel=r.indexOf(\"lf_enrichment_jobs\");const batchCancel=r.lastIndexOf(\"lf_enrichment_batches\");const dead=/isCancelled|cancelEnrichment|clearCancellation|activeCancellations/.test(p+r);const ok=cas>0&&ups>cas&&p.includes(\"persisted\")&&byId>=2&&byId===guarded&&w.includes(\"jobId: job.id\")&&r.includes(\"status: \\\"cancelled\\\"\")&&jobsCancel>0&&jobsCancel<batchCancel&&!dead;console.log(JSON.stringify({cas,ups,byId,guarded,jobsCancel,batchCancel,dead,ok}));process.exit(ok?0:1)' && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && echo T12-OK",
+    "depends_on": [
+      "T7"
+    ]
+  },
+  {
+    "id": "T13",
+    "title": "G3.5: unify deal stages on the DB enum (A7)",
+    "files": [
+      "lib/data/customers.ts",
+      "app/dashboard/sales/[id]/client.tsx"
+    ],
+    "interface": "DB enum `deal_stage` (supabase/migrations/001_initial_schema.sql:14) and app/dashboard/sales/client.tsx use discovery|proposal|negotiation|closed_won|closed_lost; no later migration alters it. lib/data/customers.ts ~:61-67 `DealStage` becomes that union and the config map at ~:88-93 drops prospecting/qualification (the map is Record<DealStage,…>, so tsc enforces completeness). app/dashboard/sales/[id]/client.tsx ~:36 local `DealStage`, `pipelineStages` (~:81-83), `activeStageOrder` (~:90-92), `stageLabels` (~:99-100) and stage colours (~:108-109) lose `qualification` (today selecting it calls updateDealStage with a value Postgres rejects with 22P02). lib/data/sales.ts already matches and is untouched.",
+    "verify": "test $(grep -c '\"prospecting\"\\|\"qualification\"' lib/data/customers.ts 'app/dashboard/sales/[id]/client.tsx' | awk -F: '{s+=$2} END {print s}') -eq 0 && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && echo T13-OK",
+    "depends_on": [
+      "T7"
+    ]
+  },
+  {
+    "id": "T14",
+    "title": "G3.8: the enrichment pipeline must not use the cookie-scoped Supabase client when invoked by the worker; check write errors",
+    "files": [
+      "lib/lead-finder/enrichment/pipeline.ts"
+    ],
+    "interface": "Verified fact: `enrichSingleLead` (pipeline.ts:58) does `const supabase = await createClient()` (cookie-scoped) and is called by the worker (worker.ts:512) from the cron route and instrumentation.ts boot where there is no user session: from cron the client is anon so RLS makes the lf_lead_personalization upsert and lf_leads update silently affect zero rows (their errors are never checked), and from boot `cookies()` throws outside a request scope. Change: inside `enrichSingleLead` replace `await createClient()` with `createAdminClient()` (justified: worker/cron context, same category as worker.ts). Every read/write in that function must keep or gain an explicit `.eq(\"organization_id\", orgId)` filter (the lf_leads update already has it; add it to the initial lead select if missing; the lf_lead_personalization upsert row must include `organization_id: orgId` if the table has that column per migration 025, otherwise scope by lead_id which was already org-checked). Capture `{ error }` from the personalization upsert and the lf_leads update and `throw new Error(error.message)` so a failed persist fails the job (worker retry) instead of being reported as done. Leave the other `createClient()` usages in pipeline.ts (~:645 and the enqueue functions) as they are; they run inside authenticated request handlers. Coordinate with T12: this task edits the same function; apply T12 first, then this.",
+    "verify": "node -e 'const fs=require(\"fs\");const p=fs.readFileSync(\"lib/lead-finder/enrichment/pipeline.ts\",\"utf8\");const fn=p.slice(p.indexOf(\"export async function enrichSingleLead\"));const body=fn.slice(0, fn.indexOf(\"\\nexport \", 10)>0?fn.indexOf(\"\\nexport \", 10):fn.length);const ok=!/await createClient\\(\\)/.test(body)&&/createAdminClient\\(\\)/.test(body)&&(body.match(/organization_id/g)||[]).length>=2&&/error/.test(body.slice(body.indexOf(\"lf_lead_personalization\")));console.log(JSON.stringify({usesCookieClient:/await createClient\\(\\)/.test(body),ok}));process.exit(ok?0:1)' && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && echo T14-OK",
+    "depends_on": [
+      "T12"
+    ]
+  },
+  {
+    "id": "T15",
+    "title": "G3.6: implement the add_tag automation action in both executors with an org-scoped lead lookup; commit the G3 group",
+    "files": [
+      "lib/actions/automation.ts",
+      "app/api/cron/automation-executor/route.ts"
+    ],
+    "interface": "Config contract: `action.config.tag: string` (engine.ts declares the type; no UI emits it yet). Both executors: `const tag = String(action.config.tag ?? \"\").trim()`; if empty push `{ type: \"add_tag\", success: false, error: \"No tag configured\" }`; else `select tags from leads where id = leadId and organization_id = organizationId` (maybeSingle; the client already in scope in each executor); if null push `{ success: false, error: \"Lead not found in this organization\" }`; else `next = Array.from(new Set([...(lead.tags ?? []), tag]))`; `update leads set tags = next where id = leadId and organization_id = organizationId`; check the error; push success. lib/actions/automation.ts gets a `case \"add_tag\":` in the switch; the cron executor gets an `else if (action.type === \"add_tag\")` branch matching its style. Cron executor's missing assign_to/update_field/send_notification branches are recorded in PLAN.md as deferred, not implemented. Commit: `fix(lead-finder,automation,deals): close confirmed correctness defects G3.1-G3.8`.",
+    "verify": "test $(grep -c 'case \"add_tag\"' lib/actions/automation.ts) -eq 1 && grep -q 'action.type === \"add_tag\"' app/api/cron/automation-executor/route.ts && test $(grep -c 'Lead not found in this organization' lib/actions/automation.ts app/api/cron/automation-executor/route.ts | awk -F: '{s+=$2} END {print s}') -eq 2 && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && git add -A -- . ':!PLAN.md' ':!tasks.json' && git diff --cached --check && git commit -q -m 'fix(lead-finder,automation,deals): close confirmed correctness defects G3.1-G3.8' && echo T15-OK",
+    "depends_on": [
+      "T8",
+      "T9",
+      "T10",
+      "T11",
+      "T12",
+      "T13",
+      "T14"
+    ]
+  },
+  {
+    "id": "T16",
+    "title": "G4.1: install vitest with the first real test; HTML-escape merge-field values at the two HTML email sites",
+    "files": [
+      "package.json",
+      "package-lock.json",
+      "vitest.config.ts",
+      "lib/personalization/substitute.ts",
+      "lib/personalization/merge-engine.ts",
+      "app/api/cron/sequence-executor/route.ts",
+      "tests/substitute.test.ts"
+    ],
+    "interface": "`npm i -D vitest --no-audit --no-fund` (the only new dependency). package.json scripts: `\"test\": \"vitest run\"`. vitest.config.ts: `import path from \"node:path\"; import { defineConfig } from \"vitest/config\"; export default defineConfig({ test: { environment: \"node\", include: [\"tests/**/*.test.ts\"] }, resolve: { alias: { \"@\": path.resolve(__dirname) } } });`. Tests import from \"vitest\" (no globals). New pure module lib/personalization/substitute.ts (no Supabase or next imports): `export function escapeHtml(s: string): string` (& < > \" ' -> &amp; &lt; &gt; &quot; &#39;) and `export function substituteVariables(template: string, context: Record<string, unknown>, opts?: { html?: boolean }): string` moved verbatim from merge-engine.ts ~:217-223, applying escapeHtml to each substituted VALUE when opts.html is true; authored template markup is never touched; inserted values are never re-interpreted as template syntax. merge-engine.ts imports substituteVariables from \"./substitute\" and `resolveMergeFields(template, leadId, accountId?, opts?: { html?: boolean })` forwards opts. All six call sites are in app/api/cron/sequence-executor/route.ts (lib/actions/sequences.ts has none): the `html` body (~:698) and `bookingCtaHtml` (~:753) pass `{ html: true }`; subject (~:697), WhatsApp (~:330), LinkedIn note (~:394) and message body (~:442) stay plain. tests/substitute.test.ts: (1) a value containing `<img src=x onerror=alert(1)>` is entity-escaped with html:true, (2) untouched without it, (3) `{{missing}}` renders empty, (4) `<b>` in the template survives html:true, (5) `&` and quotes in values are escaped.",
+    "verify": "test -f vitest.config.ts && node -e \"const p=require('./package.json');if(p.scripts.test!=='vitest run'||!p.devDependencies.vitest)process.exit(1)\" && npm test -- tests/substitute.test.ts && test $(grep -c 'html: true' app/api/cron/sequence-executor/route.ts) -eq 2 && grep -q 'from \"./substitute\"' lib/personalization/merge-engine.ts && grep -q 'export function escapeHtml' lib/personalization/substitute.ts && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && echo T16-OK",
+    "depends_on": [
+      "T15"
+    ]
+  },
+  {
+    "id": "T17",
+    "title": "G4.2: event-path enroll_sequence must verify the sequence belongs to the rule's organization",
+    "files": [
+      "lib/actions/automation.ts"
+    ],
+    "interface": "In executeAutomationActions `case \"enroll_sequence\"` (automation.ts ~:276-324), after the `__FIRST_ACTIVE__` branch resolves `sequenceId` and before the existing-enrollment check, mirror the cron path: `select id from sequences where id = sequenceId and organization_id = organizationId` (maybeSingle); if null push `{ type: \"enroll_sequence\", success: false, error: \"Sequence not found in this organization\" }` and break. `organizationId` is already a parameter of the function.",
+    "verify": "grep -q 'Sequence not found in this organization' lib/actions/automation.ts && test $(awk '/case \"enroll_sequence\"/{f=1} f&&/case \"assign_to\"/{exit} f' lib/actions/automation.ts | grep -c '.eq(\"organization_id\", organizationId)') -ge 2 && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && echo T17-OK",
+    "depends_on": [
+      "T15"
+    ]
+  },
+  {
+    "id": "T18",
+    "title": "G4.3: allowlist sortBy in the four core list actions via pickSortColumn, with a unit test",
+    "files": [
+      "lib/actions/leads.ts",
+      "lib/actions/customers.ts",
+      "lib/actions/deals.ts",
+      "lib/actions/activities.ts",
+      "tests/security.test.ts"
+    ],
+    "interface": "Each action defines a module-level `const SORTABLE = [...] as const` of real Row columns (check types/database.ts) and replaces `query.order(sortBy, …)` with `query.order(pickSortColumn(sortBy, SORTABLE, <default>), …)` importing pickSortColumn from \"@/lib/security\". Allowlists: leads [\"created_at\",\"updated_at\",\"name\",\"email\",\"company\",\"status\",\"source\",\"score\",\"estimated_value\",\"last_contacted_at\",\"next_followup\"] default created_at; customers [\"created_at\",\"updated_at\",\"first_name\",\"last_name\",\"email\",\"company\",\"status\",\"plan\",\"mrr\",\"health_score\",\"lifetime_value\",\"last_contact\",\"renewal_date\"] default created_at; deals [\"created_at\",\"updated_at\",\"name\",\"company\",\"value\",\"probability\",\"stage\",\"close_date\",\"last_activity\"] default created_at; activities [\"date\",\"created_at\",\"updated_at\",\"type\",\"title\",\"status\",\"time\"] default date. Drop any name not present in the Row type. tests/security.test.ts: pickSortColumn returns the raw value when allowed and the fallback for `\"id; drop table\"`, null and undefined. lib/security/index.ts imports next/server and node:crypto; if vitest cannot load next/server in node env, set `process.env.NEXT_RUNTIME` or fall back to testing the identical logic by importing the module under `// @vitest-environment node`; if still impossible, delete tests/security.test.ts and rely on the grep assertions (record in PLAN.md).",
+    "verify": "test $(grep -l 'pickSortColumn(' lib/actions/leads.ts lib/actions/customers.ts lib/actions/deals.ts lib/actions/activities.ts | wc -l) -eq 4 && test $(grep -c 'order(sortBy' lib/actions/leads.ts lib/actions/customers.ts lib/actions/deals.ts lib/actions/activities.ts | awk -F: '{s+=$2} END {print s}') -eq 0 && npm test && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && echo T18-OK",
+    "depends_on": [
+      "T16"
+    ]
+  },
+  {
+    "id": "T19",
+    "title": "G4.4: remove unconfirmed write tools from the streaming chat route; enforce token limits and the existing per-org rate limiter",
+    "files": [
+      "app/api/ai/chat/route.ts",
+      "lib/ai/client.ts",
+      "lib/ai/prompts.ts"
+    ],
+    "interface": "app/api/ai/chat/route.ts: delete the `createNewDeal`, `logDealActivity`, `addDealNote` tool definitions (~:297-418); read-only tools and stepCountIs(3) stay; audit remaining `execute` callbacks for any write and remove it. Because ChatActionPreview / execute-action is not rendered or called anywhere (verified), the chat system prompt in lib/ai/prompts.ts states that the assistant cannot create or modify records and must point the user to the relevant dashboard page; wiring the confirm flow is deferred (PLAN.md). lib/ai/client.ts: extract the daily/monthly checks from checkAIAccess (~:322-334) into `export function tokenLimitReason(settings: Pick<AISettings, \"daily_token_limit\" | \"monthly_token_limit\" | \"tokens_used_today\" | \"tokens_used_month\" | \"last_token_reset_daily\" | \"last_token_reset_monthly\">): string | null` and use it inside checkAIAccess (behaviour unchanged). chat/route.ts extends its ai_settings select (~:37) with those six columns and returns 429 `{ error: reason }` when tokenLimitReason is non-null. Do NOT call checkAIAccess() itself from the route (it constructs a client with a different provider order). Rate limiting: import from \"@/lib/ai/rate-limiter\"; call `checkRateLimit(orgId)` (429 with Retry-After on rejection), then `const release = acquireRateLimit(orgId)` (use the limiter's actual exported names; read the file). `release()` must run exactly once via a guarded wrapper (`let released = false`) from streamText `onFinish`, `onError`/the route catch, and `request.signal.addEventListener(\"abort\", …)`. No distributed limiter.",
+    "verify": "test $(grep -c 'createNewDeal\\|logDealActivity\\|addDealNote' app/api/ai/chat/route.ts) -eq 0 && grep -q 'rate-limiter' app/api/ai/chat/route.ts && grep -q 'tokenLimitReason' app/api/ai/chat/route.ts && grep -q 'export function tokenLimitReason' lib/ai/client.ts && grep -q 'addEventListener(\"abort\"' app/api/ai/chat/route.ts && grep -q 'onFinish' app/api/ai/chat/route.ts && test $(grep -c '\\.insert(' app/api/ai/chat/route.ts) -eq 0 && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && echo T19-OK",
+    "depends_on": [
+      "T15"
+    ]
+  },
+  {
+    "id": "T20",
+    "title": "G4.5: encrypt email OAuth tokens at rest with fail-closed detect-on-read for sealed values and plaintext passthrough for legacy rows; commit the G4 group",
+    "files": [
+      "lib/email/oauth-tokens.ts",
+      "app/api/email/oauth/google/callback/route.ts",
+      "app/api/email/oauth/microsoft/callback/route.ts",
+      "lib/email/sender.ts",
+      "lib/actions/email-accounts.ts",
+      "tests/oauth-tokens.test.ts"
+    ],
+    "interface": "New lib/email/oauth-tokens.ts: `export interface OAuthTokens { access_token: string; refresh_token?: string; expires_at?: number; scope?: string }`; `export function isSealedValue(v: unknown): v is string` = `/^[0-9a-f]{32}:[0-9a-f]{32}:[0-9a-f]*$/i` (lib/utils/encryption.ts uses a 16-byte IV and 16-byte tag, hex-encoded); `export function sealOAuthTokens(t: OAuthTokens): OAuthTokens` encrypts access_token and refresh_token individually with encrypt() (an absent refresh_token stays absent, never the string \"undefined\"); `export function openOAuthTokens(t: unknown): OAuthTokens | null` returns legacy plaintext values unchanged, decrypts sealed values, and returns null (fail closed) when a value is sealed but decrypt() throws, so a rotated ENCRYPTION_KEY surfaces through the existing 'No OAuth tokens found. Please reconnect.' path instead of sending ciphertext as a bearer token. Write sites call sealOAuthTokens: google callback (~:73), microsoft callback (~:76), sender.ts refreshGmailToken (~:52) and refreshMicrosoftToken (~:90); legacy rows are re-sealed on their next refresh; both refresh helpers keep preserving the prior refresh_token when the provider omits it. Read sites call openOAuthTokens: sender.ts getValidAccessToken (~:114; return null when open() is null) and lib/actions/email-accounts.ts (~:245 and ~:273). Audit that no browser-facing result from email-accounts.ts returns the tokens object. tests/oauth-tokens.test.ts sets process.env.ENCRYPTION_KEY before importing and asserts: seal->open round trip; plaintext passthrough; mixed row (one sealed, one plaintext); tampered ciphertext -> null; different key -> null; absent refresh_token stays absent. Commit: `fix(security): escape merge fields, scope sequence enrolment, allowlist sort columns, drop unconfirmed chat writes, encrypt OAuth tokens`.",
+    "verify": "test $(grep -c 'sealOAuthTokens(' app/api/email/oauth/google/callback/route.ts app/api/email/oauth/microsoft/callback/route.ts lib/email/sender.ts | awk -F: '{s+=$2} END {print s}') -ge 4 && test $(grep -c 'openOAuthTokens(' lib/email/sender.ts lib/actions/email-accounts.ts | awk -F: '{s+=$2} END {print s}') -ge 3 && grep -qi 'different key\\|wrong key' tests/oauth-tokens.test.ts && npm test && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && git add -A -- . ':!PLAN.md' ':!tasks.json' && git diff --cached --check && git commit -q -m 'fix(security): escape merge fields, scope sequence enrolment, allowlist sort columns, drop unconfirmed chat writes, encrypt OAuth tokens' && echo T20-OK",
+    "depends_on": [
+      "T16",
+      "T17",
+      "T18",
+      "T19"
+    ]
+  },
+  {
+    "id": "T21",
+    "title": "G5: delete dead code with proven zero importers; commit",
+    "files": [
+      "components/layout/AppLayout.tsx",
+      "components/layout/TopBar.tsx",
+      "components/layout/DataTable.tsx",
+      "components/layout/StatCard.tsx",
+      "components/layout/PageHeader.tsx",
+      "components/layout/EmptyState.tsx",
+      "components/layout/index.tsx",
+      "lib/design-system/tokens.ts",
+      "lib/lead-finder/ai/lead-extractor.ts",
+      "lib/lead-finder/ai/lead-scorer.ts",
+      "lib/lead-finder/ai/field-resolver.ts",
+      "lib/api-auth.ts"
+    ],
+    "interface": "Before each deletion grep for direct, relative, barrel and dynamic-import references; delete only if zero. Delete the six layout files individually and remove their export lines (and `export type { Column }`) from components/layout/index.tsx, keeping Sidebar/MobileSidebar/Header/HeaderUserMenu/SearchBar/SidebarProvider/useSidebar/HeaderProvider/useHeader (live via app/dashboard/layout.tsx). Delete lib/design-system/tokens.ts and the now-empty directory. Delete the three lib/lead-finder/ai files (imported nowhere; campaign-planner.ts stays). Remove the deprecated `validateApiKey` from lib/api-auth.ts (zero callers). NOT consolidated (record in PLAN.md): DeleteConfirmModal/ConfirmDialog/ConfirmModal and Toggle/Switch have different prop contracts; lf_leads.last_enrich_error/last_enrich_attempt_at/enrich_attempts stay (additive-only schema). Commit: `chore: remove dead layout components, design tokens, unused lead-finder AI modules`.",
+    "verify": "for f in components/layout/AppLayout.tsx components/layout/TopBar.tsx components/layout/DataTable.tsx components/layout/StatCard.tsx components/layout/PageHeader.tsx components/layout/EmptyState.tsx lib/design-system/tokens.ts lib/lead-finder/ai/lead-extractor.ts lib/lead-finder/ai/lead-scorer.ts lib/lead-finder/ai/field-resolver.ts; do test ! -e \"$f\" || exit 1; done && test $(grep -rn 'validateApiKey\\|design-system/tokens\\|ai/lead-extractor\\|ai/lead-scorer\\|ai/field-resolver\\|\\./AppLayout\\|\\./TopBar\\|\\./DataTable\\|layout/StatCard\\|layout/PageHeader\\|layout/EmptyState' app components lib hooks --include=*.ts --include=*.tsx | wc -l) -eq 0 && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && git add -A -- . ':!PLAN.md' ':!tasks.json' && git diff --cached --check && git commit -q -m 'chore: remove dead layout components, design tokens, unused lead-finder AI modules' && echo T21-OK",
+    "depends_on": [
+      "T20"
+    ]
+  },
+  {
+    "id": "T22",
+    "title": "Lint to zero errors (warnings untouched), verified by exit status; commit",
+    "files": [
+      "app/calendar/page.tsx",
+      "app/dashboard/analytics/client.tsx",
+      "app/dashboard/leads/[id]/client.tsx",
+      "app/dashboard/leads/client.tsx",
+      "app/dashboard/website-visitors/client.tsx",
+      "app/dashboard/copilot/client.tsx",
+      "app/dashboard/inbox/client.tsx",
+      "app/dashboard/settings/client.tsx",
+      "components/features/BANTEditor.tsx",
+      "components/dashboard/LeadDrawer.tsx",
+      "components/ui/MultiStepForm.tsx",
+      "components/ui/TimePicker.tsx",
+      "components/features/AIChat/AIChatInput.tsx",
+      "components/features/AIChat/SlashCommandMenu.tsx",
+      "components/features/DealDrawer.tsx",
+      "components/features/ScoringConfigModal.tsx",
+      "components/features/SequencePickerModal.tsx",
+      "hooks/use-lead-events.ts"
+    ],
+    "interface": "Baseline on the working tree today: `npm run lint` exits 1 with 106 errors (83 no-explicit-any, 2 react/no-unescaped-entities, 1 react/jsx-no-undef, 1 no-empty-object-type, the rest react-hooks rules) and 180 warnings; several are already fixed by earlier tasks. Run `npm run lint` first and fix every remaining ERROR (warnings are out of scope). Rules: no-explicit-any -> narrow local interfaces or `unknown` with type guards; `catch (e: any)` -> `catch (e) { … e instanceof Error ? e.message : \"…\" }`; JSX-in-try (calendar/page.tsx) -> move the try/catch into a helper returning `{ error?: string }` and return JSX outside it; use-before-declare (use-lead-events.ts ~:133) -> reference via a ref or reorder. react-hooks/set-state-in-effect: restructure where trivial and behaviour-preserving (TimePicker useMemo; reset-on-open handlers in SequencePickerModal/ScoringConfigModal/DealDrawer); ONLY where the effect syncs server-provided props into local state and a restructure would change behaviour (copilot ~:337, inbox ~:183/:194, settings ~:874/:2130/:2478/:2822, AIChatInput ~:35, SlashCommandMenu ~:46) add `// eslint-disable-next-line react-hooks/set-state-in-effect -- syncs server data into local state; restructure tracked in PLAN.md` on that line only. No eslint-disable for any other rule, no eslint config changes, no file-level disables. Add every file you had to touch to PLAN.md's lint note. Commit: `chore(lint): zero eslint errors`.",
+    "verify": "npm run lint > /tmp/lint-final.txt 2>&1; RC=$?; test $RC -eq 0 && test $(grep -cE '^\\s+[0-9]+:[0-9]+\\s+error\\s' /tmp/lint-final.txt) -eq 0 && test $(git diff HEAD -- app components lib hooks | grep '^+' | grep 'eslint-disable' | grep -vc 'react-hooks/set-state-in-effect') -eq 0 && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && git add -A -- . ':!PLAN.md' ':!tasks.json' && git diff --cached --check && git commit -q -m 'chore(lint): zero eslint errors' && echo T22-OK",
+    "depends_on": [
+      "T21"
+    ]
+  },
+  {
+    "id": "T24",
+    "title": "Review fixes: strip email secrets from campaign actions; restore lead status and retryability around the enrichment CAS; escape the HTML fallback in the sequence executor",
+    "files": [
+      "lib/actions/campaigns.ts",
+      "lib/lead-finder/enrichment/pipeline.ts",
+      "app/api/cron/sequence-executor/route.ts",
+      "app/dashboard/campaigns/client.tsx"
+    ],
+    "interface": "Three findings from the post-execution adversarial review. (1) lib/actions/campaigns.ts: `getEmailAccounts` (~:14-25) and `getAccountWarmupStatus` (~:364-376) select(\"*\") from email_accounts and return rows containing `oauth_tokens`, `smtp_config`, `imap_config` to the browser (app/dashboard/campaigns/page.tsx passes them as initialAccounts). Add a private module-level helper `function withoutSecrets<T extends { oauth_tokens?: unknown; smtp_config?: unknown; imap_config?: unknown }>(row: T)` that returns a copy with those three keys removed (typed as `Omit<T, \"oauth_tokens\" | \"smtp_config\" | \"imap_config\">`), and map the returned arrays of both functions through it. The campaigns client only reads id, email_address, display_name, provider, status, daily_send_limit, daily_sent_count, warmup_enabled, warmup_limit, reputation_score, so nothing else changes. Other select(\"*\") calls in the file that are used server-side only (send paths) stay. (2) lib/lead-finder/enrichment/pipeline.ts in enrichSingleLead: (a) the compare-and-swap update (~:134-140, `.in(\"status\", [\"running\", \"retry\"]).select(\"id\")`) must capture `{ data: claimed, error: casError }` and `throw new Error(casError.message)` when casError is set, so a transient DB failure goes down the worker's normal retry path instead of silently discarding a paid result; (b) on the `return { persisted: false }` path (~:141) first restore the lead: `await supabase.from(\"lf_leads\").update({ status: typedLead.status }).eq(\"id\", leadId).eq(\"organization_id\", orgId).eq(\"status\", \"enriching\")` (typedLead.status is the pre-enrichment status read at the top of the function; the `.eq(\"status\",\"enriching\")` guard means a lead the cancel route already reset to new, or another worker already set to qualified, is left alone); (c) in the catch after the CAS (~:186-194) change the job update from `status: \"failed\"` to `status: \"running\"` (keep last_error) so the worker's retryJob/failJob guards (status = running) apply and the job gets normal backoff/attempt accounting instead of terminal failure with no retry. (3) app/api/cron/sequence-executor/route.ts fallback catch (~:700-709): import `escapeHtml` from \"@/lib/personalization/substitute\" and use `escapeHtml(value)` for the `html` replacement only; the `subject` replacement stays plain. No other changes. AMENDMENT: app/dashboard/campaigns/client.tsx line ~59 declares `type EmailAccount = Database[\"public\"][\"Tables\"][\"email_accounts\"][\"Row\"]`; change it to `Omit<Database[\"public\"][\"Tables\"][\"email_accounts\"][\"Row\"], \"oauth_tokens\" | \"smtp_config\" | \"imap_config\">` so the prop and state types are truthful. No cast in campaigns.ts.",
+    "verify": "grep -q 'function withoutSecrets' lib/actions/campaigns.ts && test $(grep -c 'withoutSecrets' lib/actions/campaigns.ts) -ge 3 && grep -q 'casError' lib/lead-finder/enrichment/pipeline.ts && grep -q '.eq(\"status\", \"enriching\")' lib/lead-finder/enrichment/pipeline.ts && test $(grep -c 'status: \"failed\", last_error' lib/lead-finder/enrichment/pipeline.ts) -eq 0 && grep -q 'status: \"running\", last_error' lib/lead-finder/enrichment/pipeline.ts && grep -q 'escapeHtml' app/api/cron/sequence-executor/route.ts && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && npm test && npm run lint && git add -A -- . ':!PLAN.md' ':!tasks.json' && git diff --cached --check && git commit -q -m 'fix(review): strip email secrets from campaign actions, restore lead status and retry path around enrichment CAS, escape HTML fallback' && echo T24-OK",
+    "depends_on": [
+      "T22"
+    ]
+  },
+  {
+    "id": "T23",
+    "title": "Final gate: tsc, lint, test, build; record commit hashes in PLAN.md; commit PLAN.md and tasks.json",
+    "files": [
+      "PLAN.md",
+      "tasks.json"
+    ],
+    "interface": "Append to PLAN.md a `## Execution record` section listing each commit hash from `git log --oneline -7`, any deviation from a task's interface, and any test file that had to be dropped (T18 fallback). Then run the full gates. This is the first and only `npm run build` in the plan. Commit: `docs: PLAN.md and tasks.json for the gap-closing plan`. No git push, no deploy.",
+    "verify": "test -f PLAN.md && grep -q 'Execution record' PLAN.md && test $(npx tsc --noEmit 2>&1 | grep -c 'error TS') -eq 0 && npm run lint && npm test && npm run build && git add PLAN.md tasks.json && git diff --cached --check && git commit -q -m 'docs: PLAN.md and tasks.json for the gap-closing plan' && test $(git status --porcelain | wc -l) -eq 0 && echo T23-OK",
+    "depends_on": [
+      "T24"
+    ]
+  }
+]
