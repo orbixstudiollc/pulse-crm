@@ -6,8 +6,54 @@
 
 :root {
     /* ── Base ─────────────────────────────────────────────────────────────── */
-    --background: #ffffff;
-    --foreground: #0a0a0a;
+    --background: #fdfdfd;
+    --foreground: #0f0f0f;
+
+    /* ── Surfaces ─────────────────────────────────────────────────────────── */
+    --page: #fdfdfd;
+    --surface: #ffffff;
+    --subtle: #f8f8f8;
+    --muted: #f0f0f0;
+    --active: #e9e9e9;
+    --sidebar: #f8f8f8;
+    --inverse: #363636;
+    --on-inverse: #ffffff;
+    --code: #efefef;
+
+    /* ── Lines ────────────────────────────────────────────────────────────── */
+    --line: #e7e7e7;
+    --divider: #eeeeee;
+    --row: #f0f0f0;
+
+    /* ── Foregrounds ──────────────────────────────────────────────────────── */
+    --fg: #0f0f0f;
+    --fg-secondary: #6b6b6b;
+    --fg-muted: #8a8a8a;
+    --fg-disabled: #b3b3b3;
+
+    /* ── Accent ───────────────────────────────────────────────────────────── */
+    --accent: #317cff;
+    --accent-strong: #2563eb;
+    --accent-surface: #eaeffb;
+    --accent-on-surface: #2563eb;
+
+    /* ── Status ───────────────────────────────────────────────────────────── */
+    --success: #1e7a4f;
+    --success-surface: #dcf8e7;
+    --success-fill: #288c5f;
+    --warning: #946014;
+    --warning-surface: #fdf3dc;
+    --danger: #c02a26;
+    --danger-surface: #fde8e8;
+
+    /* ── Charts ───────────────────────────────────────────────────────────── */
+    --chart-1: #317cff;
+    --chart-2: #288c5f;
+    --chart-3: #b7791f;
+    --chart-4: #d0312d;
+    --chart-5: #8a8a8a;
+    --chart-grid: #eeeeee;
+    --chart-axis: #8a8a8a;
 
     /* ── Primary (Blue) ───────────────────────────────────────────────────── */
     --color-primary-50: #EFF6FF;
@@ -21,32 +67,6 @@
     --color-primary-800: #193CB8;
     --color-primary-900: #1C398E;
     --color-primary-950: #162456;
-
-    /* ── Violet ────────────────────────────────────────────────────────────── */
-    --color-violet-50: #F5F3FF;
-    --color-violet-100: #EDE9FE;
-    --color-violet-200: #DDD6FE;
-    --color-violet-300: #C4B5FD;
-    --color-violet-400: #A78BFA;
-    --color-violet-500: #8E51FF;
-    --color-violet-600: #7C3AED;
-    --color-violet-700: #6D28D9;
-    --color-violet-800: #5B21B6;
-    --color-violet-900: #4C1D95;
-    --color-violet-950: #2F0D68;
-
-    /* ── Lime ──────────────────────────────────────────────────────────────── */
-    --color-lime-50: #F7FEE7;
-    --color-lime-100: #ECFCCB;
-    --color-lime-200: #D9F99D;
-    --color-lime-300: #BEF264;
-    --color-lime-400: #A3E635;
-    --color-lime-500: #7CCF00;
-    --color-lime-600: #65A30D;
-    --color-lime-700: #4D7C0F;
-    --color-lime-800: #3F6212;
-    --color-lime-900: #365314;
-    --color-lime-950: #192E03;
 
     /* ── Success (Green) ──────────────────────────────────────────────────── */
     --color-success-50: #F0FDF4;
@@ -89,22 +109,59 @@
 
     /* ── Focus Ring ────────────────────────────────────────────────────────── */
     --ring-offset: #ffffff;
-    --ring-color: #0a0a0a;
+    --ring-color: var(--accent);
     --ring-danger: #FF6467;
 
     /* ── Shadows ───────────────────────────────────────────────────────────── */
-    --shadow-focus: 0 0 0 2px var(--ring-offset), 0 0 0 4px var(--ring-color);
+    --shadow-focus: 0 0 0 2px var(--accent);
     --shadow-focus-danger: 0 0 0 2px var(--ring-offset), 0 0 0 4px var(--ring-danger);
-    --shadow-dropdown: 0 8px 24px 0 rgba(0, 0, 0, 0.12);
+    --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.12);
+    --shadow-modal: 0 16px 48px rgba(0, 0, 0, 0.16);
 }
 
 .dark {
-    --background: #0a0a0a;
-    --foreground: #fafafa;
+    --background: #141414;
+    --foreground: #ededed;
+
+    --page: #141414;
+    --surface: #181818;
+    --subtle: #181818;
+    --muted: #1f1f1f;
+    --active: #252525;
+    --sidebar: #181818;
+    --inverse: #ededed;
+    --on-inverse: #0f0f0f;
+    --code: #1f1f1f;
+
+    --line: #1f1f1f;
+    --divider: #1f1f1f;
+    --row: #1f1f1f;
+
+    --fg: #ededed;
+    --fg-secondary: #8a8a8a;
+    --fg-muted: #7a7a7a;
+    --fg-disabled: #4a4a4a;
+
+    --accent: #317cff;
+    --accent-strong: #6da2ff;
+    --accent-surface: #17253f;
+    --accent-on-surface: #9dc0ff;
+
+    --success: #4ade80;
+    --success-surface: #123524;
+    --warning: #fbbf24;
+    --warning-surface: #3a2a0a;
+    --danger: #f87171;
+    --danger-surface: #3b1212;
+
+    --chart-2: #4ade80;
+    --chart-3: #fbbf24;
+    --chart-4: #f87171;
+    --chart-grid: #1f1f1f;
+
     --ring-offset: #171717;
-    --ring-color: #fafafa;
     --ring-danger: #FF6467;
-    --shadow-dropdown: 0 8px 24px 0 rgba(0, 0, 0, 0.4);
+    --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -116,10 +173,55 @@
     --color-background: var(--background);
     --color-foreground: var(--foreground);
 
-    /* ── Fonts ─────────────────────────────────────────────────────────────── */
-    --font-sans: var(--font-figtree);
-    --font-serif: var(--font-serif);
-    --font-onest: var(--font-onest);
+    /* ── Semantic ──────────────────────────────────────────────────────────── */
+    --color-page: var(--page);
+    --color-surface: var(--surface);
+    --color-subtle: var(--subtle);
+    --color-muted: var(--muted);
+    --color-active: var(--active);
+    --color-sidebar: var(--sidebar);
+    --color-inverse: var(--inverse);
+    --color-on-inverse: var(--on-inverse);
+    --color-line: var(--line);
+    --color-divider: var(--divider);
+    --color-row: var(--row);
+    --color-fg: var(--fg);
+    --color-fg-secondary: var(--fg-secondary);
+    --color-fg-muted: var(--fg-muted);
+    --color-fg-disabled: var(--fg-disabled);
+    --color-accent: var(--accent);
+    --color-accent-strong: var(--accent-strong);
+    --color-accent-surface: var(--accent-surface);
+    --color-accent-on-surface: var(--accent-on-surface);
+    --color-success: var(--success);
+    --color-success-surface: var(--success-surface);
+    --color-success-fill: var(--success-fill);
+    --color-warning: var(--warning);
+    --color-warning-surface: var(--warning-surface);
+    --color-danger: var(--danger);
+    --color-danger-surface: var(--danger-surface);
+    --color-code: var(--code);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --color-chart-grid: var(--chart-grid);
+    --color-chart-axis: var(--chart-axis);
+
+    /* ── Radius ────────────────────────────────────────────────────────────── */
+    --radius: 6px;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 8px;
+    --radius-2xl: 8px;
+    --radius-3xl: 8px;
+
+    /* ── Fonts (serif and onest are aliases of Inter) ─────────────────────── */
+    --font-sans: var(--font-inter);
+    --font-serif: var(--font-inter);
+    --font-onest: var(--font-inter);
 
     /* ── Primary ───────────────────────────────────────────────────────────── */
     --color-primary-50: var(--color-primary-50);
@@ -133,32 +235,6 @@
     --color-primary-800: var(--color-primary-800);
     --color-primary-900: var(--color-primary-900);
     --color-primary-950: var(--color-primary-950);
-
-    /* ── Violet ─────────────────────────────────────────────────────────────── */
-    --color-violet-50: var(--color-violet-50);
-    --color-violet-100: var(--color-violet-100);
-    --color-violet-200: var(--color-violet-200);
-    --color-violet-300: var(--color-violet-300);
-    --color-violet-400: var(--color-violet-400);
-    --color-violet-500: var(--color-violet-500);
-    --color-violet-600: var(--color-violet-600);
-    --color-violet-700: var(--color-violet-700);
-    --color-violet-800: var(--color-violet-800);
-    --color-violet-900: var(--color-violet-900);
-    --color-violet-950: var(--color-violet-950);
-
-    /* ── Lime ───────────────────────────────────────────────────────────────── */
-    --color-lime-50: var(--color-lime-50);
-    --color-lime-100: var(--color-lime-100);
-    --color-lime-200: var(--color-lime-200);
-    --color-lime-300: var(--color-lime-300);
-    --color-lime-400: var(--color-lime-400);
-    --color-lime-500: var(--color-lime-500);
-    --color-lime-600: var(--color-lime-600);
-    --color-lime-700: var(--color-lime-700);
-    --color-lime-800: var(--color-lime-800);
-    --color-lime-900: var(--color-lime-900);
-    --color-lime-950: var(--color-lime-950);
 
     /* ── Success ────────────────────────────────────────────────────────────── */
     --color-success-50: var(--color-success-50);
@@ -212,8 +288,18 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 body {
-    background: var(--background);
-    color: var(--foreground);
+    background: var(--page);
+    color: var(--fg);
+    font-size: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -226,7 +312,7 @@ body {
     .focus-visible\:shadow-focus:focus-visible,
     .peer-focus-visible\:shadow-focus:is(:where(.peer):focus-visible ~ *),
     .focus-within\:shadow-focus:focus-within {
-        --tw-shadow: 0 0 0 2px var(--ring-offset), 0 0 0 4px var(--ring-color);
+        --tw-shadow: var(--shadow-focus);
         box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     }
 
@@ -241,147 +327,159 @@ body {
         --tw-shadow: var(--shadow-dropdown);
         box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     }
+
+    .shadow-modal {
+        --tw-shadow: var(--shadow-modal);
+        box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Typography — Design System Utility Classes
+   Typography — Design System Utility Classes (Inter)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Display (Onest Medium) ────────────────────────────────────────────────── */
+/* ── Display (capped at page-title size) ───────────────────────────────────── */
 
 .text-display-2xl {
-    font-family: var(--font-onest);
-    font-weight: 500;
-    font-size: 72px;
-    line-height: 80px;
-    letter-spacing: -1.44px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 24px;
+    line-height: 32px;
+    letter-spacing: 0;
 }
 
 .text-display-xl {
-    font-family: var(--font-onest);
-    font-weight: 500;
-    font-size: 64px;
-    line-height: 72px;
-    letter-spacing: -1.28px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 24px;
+    line-height: 32px;
+    letter-spacing: 0;
 }
 
-/* ── Heading 1–5 (Onest Medium) ────────────────────────────────────────────── */
+/* ── Heading 1–5 ───────────────────────────────────────────────────────────── */
 
 .text-h1 {
-    font-family: var(--font-onest);
-    font-weight: 500;
-    font-size: 56px;
-    line-height: 64px;
-    letter-spacing: -1.12px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 24px;
+    line-height: 32px;
+    letter-spacing: 0;
 }
 
 .text-h2 {
-    font-family: var(--font-onest);
-    font-weight: 500;
-    font-size: 48px;
-    line-height: 56px;
-    letter-spacing: -0.96px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 22px;
+    line-height: 28px;
+    letter-spacing: 0;
 }
 
 .text-h3 {
-    font-family: var(--font-onest);
-    font-weight: 500;
-    font-size: 40px;
-    line-height: 48px;
-    letter-spacing: -0.80px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 28px;
+    letter-spacing: 0;
 }
 
 .text-h4 {
-    font-family: var(--font-onest);
-    font-weight: 500;
-    font-size: 32px;
-    line-height: 40px;
-    letter-spacing: -0.64px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 24px;
+    letter-spacing: 0;
 }
 
 .text-h5 {
-    font-family: var(--font-onest);
-    font-weight: 500;
-    font-size: 28px;
-    line-height: 36px;
-    letter-spacing: -0.56px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: 0;
 }
 
-/* ── Heading Large/Medium/Small (Instrument Serif) ─────────────────────────── */
+/* ── Heading Large/Medium/Small ────────────────────────────────────────────── */
 
 .text-heading-lg {
-    font-family: var(--font-serif);
-    font-weight: 400;
-    font-size: 24px;
-    line-height: 32px;
-    letter-spacing: -0.24px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 28px;
+    letter-spacing: 0;
 }
 
 .text-heading-md {
-    font-family: var(--font-serif);
-    font-weight: 400;
-    font-size: 20px;
-    line-height: 28px;
-    letter-spacing: -0.20px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: 0;
 }
 
 .text-heading-sm {
-    font-family: var(--font-serif);
-    font-weight: 400;
-    font-size: 16px;
-    line-height: 24px;
-    letter-spacing: -0.16px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0;
 }
 
-/* ── Label (Figtree Medium) ────────────────────────────────────────────────── */
+/* ── Label (Medium) ────────────────────────────────────────────────────────── */
 
 .text-label-lg {
-    font-family: var(--font-figtree);
+    font-family: var(--font-sans);
     font-weight: 500;
     font-size: 16px;
     line-height: 24px;
+    letter-spacing: 0;
 }
 
 .text-label-md {
-    font-family: var(--font-figtree);
+    font-family: var(--font-sans);
     font-weight: 500;
     font-size: 14px;
     line-height: 20px;
+    letter-spacing: 0;
 }
 
 .text-label-sm {
-    font-family: var(--font-figtree);
+    font-family: var(--font-sans);
     font-weight: 500;
     font-size: 13px;
     line-height: 20px;
+    letter-spacing: 0;
 }
 
 .text-label-xs {
-    font-family: var(--font-figtree);
+    font-family: var(--font-sans);
     font-weight: 500;
     font-size: 12px;
     line-height: 18px;
+    letter-spacing: 0;
 }
 
-/* ── Body (Figtree Regular) ────────────────────────────────────────────────── */
+/* ── Body (Regular) ────────────────────────────────────────────────────────── */
 
 .text-body-lg {
-    font-family: var(--font-figtree);
+    font-family: var(--font-sans);
     font-weight: 400;
     font-size: 16px;
     line-height: 24px;
+    letter-spacing: 0;
 }
 
 .text-body-md {
-    font-family: var(--font-figtree);
+    font-family: var(--font-sans);
     font-weight: 400;
     font-size: 14px;
     line-height: 22px;
+    letter-spacing: 0;
 }
 
 .text-body-sm {
-    font-family: var(--font-figtree);
+    font-family: var(--font-sans);
     font-weight: 400;
     font-size: 12px;
     line-height: 20px;
+    letter-spacing: 0;
 }
