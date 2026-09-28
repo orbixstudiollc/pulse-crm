@@ -1,7 +1,9 @@
 import { getPostPeerClient } from "@/lib/postpeer/client";
+import { getOrgId } from "@/lib/actions/helpers";
 import { CalendarPageClient } from "./client";
 
 export default async function CalendarPage() {
+  await getOrgId();
   try {
     // Initialize PostPeer client with API key from environment or database
     const apiKey = process.env.POSTPEER_API_KEY || "";
@@ -28,10 +30,13 @@ export default async function CalendarPage() {
     const currentYear = now.getFullYear();
 
     return (
-      <CalendarPageClient
-        initialMonth={currentMonth}
-        initialYear={currentYear}
-      />
+      <>
+        <p role="note" className="mx-4 mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">Preview with sample data — social scheduling is not connected.</p>
+        <CalendarPageClient
+          initialMonth={currentMonth}
+          initialYear={currentYear}
+        />
+      </>
     );
   } catch (error) {
     console.error("Calendar page error:", error);

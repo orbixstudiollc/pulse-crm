@@ -1,6 +1,8 @@
+import { getOrgId } from "@/lib/actions/helpers";
 import { TeamPageClient } from "./client";
 
 export default async function TeamPage() {
+  await getOrgId();
   // In a real implementation, this would fetch data from PostPeer API
   // For now, returning mock data structure that matches expected types
 
@@ -15,5 +17,10 @@ export default async function TeamPage() {
     activityLog: [],
   };
 
-  return <TeamPageClient initialData={teamData} />;
+  return (
+    <>
+      <p role="note" className="mx-4 mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">Preview with sample data — social scheduling is not connected.</p>
+      <TeamPageClient initialData={teamData} />
+    </>
+  );
 }

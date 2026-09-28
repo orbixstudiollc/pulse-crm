@@ -1,8 +1,10 @@
 import { Suspense } from "react";
 import { ComposeClient } from "./client";
 import { Spinner } from "@/components/ui/Spinner";
+import { getOrgId } from "@/lib/actions/helpers";
 
-export default function ComposePage() {
+export default async function ComposePage() {
+  await getOrgId();
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
       <Suspense

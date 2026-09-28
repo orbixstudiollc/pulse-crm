@@ -2,8 +2,10 @@
 
 import { getPostPeerClient } from "@/lib/postpeer/client";
 import { PostContent, Post } from "@/lib/postpeer/types";
+import { getOrgId } from "@/lib/actions/helpers";
 
 export async function publishPost(content: PostContent): Promise<Post> {
+  await getOrgId();
   try {
     const client = getPostPeerClient();
     return await client.createPost(content);
@@ -15,6 +17,7 @@ export async function publishPost(content: PostContent): Promise<Post> {
 }
 
 export async function schedulePost(content: PostContent): Promise<Post> {
+  await getOrgId();
   try {
     const client = getPostPeerClient();
     return await client.schedulePost(content);
@@ -28,6 +31,7 @@ export async function schedulePost(content: PostContent): Promise<Post> {
 export async function uploadMedia(
   file: File
 ): Promise<{ url: string; id: string }> {
+  await getOrgId();
   try {
     const client = getPostPeerClient();
     return await client.uploadMedia(file);

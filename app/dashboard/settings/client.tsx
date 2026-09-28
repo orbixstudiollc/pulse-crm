@@ -1373,6 +1373,7 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
             <h3 className="text-2xl font-serif text-neutral-950 dark:text-neutral-50">
               {plan.name}
             </h3>
+            <p className="text-xs text-neutral-500">Default plan — billing is not connected to a payment provider.</p>
           </div>
           <div className="text-right">
             <p className="text-3xl font-semibold text-neutral-950 dark:text-neutral-50">

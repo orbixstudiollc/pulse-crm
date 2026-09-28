@@ -106,7 +106,7 @@ export async function getBillingData(): Promise<{ data?: BillingData; error?: st
     const customerCount = customersRes.count ?? 0;
     const orgCreatedAt = orgRes.data?.created_at ?? null;
 
-    // Determine plan — default to pro for now (could be stored in org table later)
+    // Plan is a hardcoded default ("pro") — not stored per org and not backed by a payment provider
     const planId: PlanId = "pro";
     const plan = PLAN_TIERS[planId];
 

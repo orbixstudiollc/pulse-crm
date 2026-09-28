@@ -2,6 +2,7 @@
 
 import { postpeerClient } from "@/lib/postpeer/client";
 import { PlatformType, PlatformConnection } from "@/lib/postpeer/types";
+import { getOrgId } from "@/lib/actions/helpers";
 
 /**
  * Get PostPeer API key from environment or database
@@ -32,6 +33,7 @@ export async function getConnections(): Promise<{
   data?: PlatformConnection[];
   error?: string;
 }> {
+  await getOrgId();
   try {
     const client = await initClient();
     const connections = await client.getConnections();
@@ -59,6 +61,7 @@ export async function getOAuthUrl(
   url?: string;
   error?: string;
 }> {
+  await getOrgId();
   try {
     // In a real implementation, this would call PostPeer's OAuth initiation endpoint
     // For now, we'll construct a mock URL
@@ -92,6 +95,7 @@ export async function connectPlatform(
   data?: PlatformConnection;
   error?: string;
 }> {
+  await getOrgId();
   try {
     const client = await initClient();
     const connection = await client.connectPlatform(platform, authCode);
@@ -118,6 +122,7 @@ export async function disconnectPlatform(
   success: boolean;
   error?: string;
 }> {
+  await getOrgId();
   try {
     const client = await initClient();
     await client.disconnectPlatform(connectionId);
@@ -145,6 +150,7 @@ export async function reconnectPlatform(
   url?: string;
   error?: string;
 }> {
+  await getOrgId();
   try {
     // First disconnect the old connection
     await disconnectPlatform(connectionId);
