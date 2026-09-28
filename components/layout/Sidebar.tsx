@@ -24,6 +24,7 @@ import {
   ScrollIcon,
   ShieldIcon,
   UsersIcon,
+  XIcon,
 } from "../ui";
 import { useSidebar } from "./SidebarContext";
 
@@ -149,6 +150,7 @@ export function MobileSidebar() {
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="fixed left-0 top-0 h-full w-[260px] bg-sidebar border-r border-divider z-50 flex flex-col lg:hidden"
           >
+            <button type="button" onClick={closeMobile} aria-label="Close menu" className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:bg-muted hover:text-fg"><XIcon size={16} /></button>
             <SidebarContent onNavClick={closeMobile} />
           </motion.aside>
         </>

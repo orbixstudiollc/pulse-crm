@@ -180,7 +180,7 @@ function StatusToggle({
       disabled={isPending}
       className="group relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50"
       style={{
-        backgroundColor: isActive ? "var(--success-fill)" : "var(--active)",
+        backgroundColor: isActive ? "var(--success-fill)" : "var(--fg-muted)",
       }}
     >
       <span

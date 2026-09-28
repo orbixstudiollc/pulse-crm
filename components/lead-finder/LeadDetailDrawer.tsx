@@ -840,7 +840,7 @@ export function LeadDetailDrawer({ open, onClose, leadId, campaignId }: LeadDeta
                                 </div>
                                 <button
                                   onClick={() => updateKpiValue(kpi.id, kpiValues[kpi.id] !== true)}
-                                  className={`relative w-9 h-[18px] rounded-full transition-colors ${kpiValues[kpi.id] === true ? "bg-success-fill" : "bg-active"}`}
+                                  className={`relative w-9 h-[18px] rounded-full transition-colors ${kpiValues[kpi.id] === true ? "bg-success-fill" : "bg-fg-muted"}`}
                                 >
                                   <span className={`absolute top-[2px] left-[2px] w-[14px] h-[14px] rounded-full bg-surface transition-transform ${kpiValues[kpi.id] === true ? "translate-x-[18px]" : ""}`} />
                                 </button>

@@ -964,7 +964,7 @@ export default function LeadDetailPage() {
                         </div>
                         <button
                           onClick={() => updateKpiValue(kpi.id, kpiValues[kpi.id] !== true)}
-                          className={`relative w-10 h-5 rounded-full transition-colors ${kpiValues[kpi.id] === true ? "bg-success" : "bg-active"}`}
+                          className={`relative w-10 h-5 rounded-full transition-colors ${kpiValues[kpi.id] === true ? "bg-success" : "bg-fg-muted"}`}
                         >
                           <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-surface transition-transform ${kpiValues[kpi.id] === true ? "translate-x-5" : ""}`} />
                         </button>

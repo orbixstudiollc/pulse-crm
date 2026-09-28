@@ -679,10 +679,10 @@ export default function CampaignDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => setShowClearLeadsConfirm(true)} disabled={campaign.leads.length === 0} variant="secondary" size="sm" leftIcon={<TrashIcon size={14} />} className="text-fg-secondary hover:text-danger hover:bg-danger-surface">
+          <Button onClick={() => setShowClearLeadsConfirm(true)} disabled={campaign.leads.length === 0} variant="ghost" size="sm" leftIcon={<TrashIcon size={14} />} className="text-fg-secondary hover:text-danger hover:bg-danger-surface">
             Clear Leads
           </Button>
-          <Button onClick={() => setShowDeleteConfirm(true)} variant="secondary" size="sm" className="w-9 px-0 text-fg-secondary hover:text-danger hover:bg-danger-surface" title="Delete Campaign">
+          <Button onClick={() => setShowDeleteConfirm(true)} variant="ghost" size="sm" className="w-9 px-0 text-fg-secondary hover:text-danger hover:bg-danger-surface" title="Delete Campaign">
             <TrashIcon size={15} />
           </Button>
           <Button onClick={openSettings} variant="secondary" size="sm" leftIcon={<GearIcon size={15} />}>

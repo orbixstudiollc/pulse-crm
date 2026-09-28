@@ -339,7 +339,7 @@ export function InboxClient() {
   // ── Render ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-full bg-surface">
+    <div data-full-bleed className="flex h-full bg-surface">
       {/* Thread List (left panel) */}
       <div
         className={cn(

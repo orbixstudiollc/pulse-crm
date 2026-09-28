@@ -113,7 +113,7 @@ const closedStageIds: PipelineStage[] = ["closed_won", "closed_lost"];
 const stageColors: Record<PipelineStage, string> = {
   discovery: "bg-accent-strong",
   proposal: "bg-warning",
-  negotiation: "bg-accent-strong",
+  negotiation: "bg-inverse",
   closed_won: "bg-success",
   closed_lost: "bg-danger",
 };
@@ -209,7 +209,7 @@ function DroppableColumn({
           </h3>
           <span
             className={cn(
-              "flex h-5 min-w-5 items-center justify-center rounded px-1.5 text-xs font-semibold text-white",
+              "flex h-5 min-w-5 items-center justify-center rounded px-1.5 text-xs font-semibold text-on-inverse",
               stageColors[stageId],
             )}
           >
@@ -441,7 +441,7 @@ export function SalesPageClient({
   };
 
   return (
-    <div className="p-6 flex flex-col gap-6 min-h-full">
+    <div data-full-bleed className="p-6 flex flex-col gap-6 min-h-full">
       {/* Header */}
       <PageHeader title="Sales Pipeline">
         <Button

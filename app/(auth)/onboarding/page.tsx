@@ -44,9 +44,9 @@ function Stepper({
             <div
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors ${
                 isCompleted
-                  ? "bg-accent-strong text-white"
+                  ? "bg-accent-strong text-on-inverse"
                   : isCurrent
-                    ? "bg-accent-strong text-white"
+                    ? "bg-accent-strong text-on-inverse"
                     : "bg-muted text-fg-secondary"
               }`}
             >

@@ -629,8 +629,7 @@ function ForecastTab({ data }: { data: ForecastData }) {
                       className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
                       style={{
                         backgroundColor:
-                          (STAGE_COLORS[deal.stage] || CHART_COLORS.indigo) +
-                          "1a",
+                          `color-mix(in srgb, ${STAGE_COLORS[deal.stage] || CHART_COLORS.indigo} 10%, transparent)`,
                         color:
                           STAGE_COLORS[deal.stage] || CHART_COLORS.indigo,
                       }}
