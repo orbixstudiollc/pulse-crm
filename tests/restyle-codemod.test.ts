@@ -3,7 +3,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { rewriteClasses } from "../scripts/restyle/codemod.mjs";
+import { checkDiff } from "../scripts/restyle/diffguard.mjs";
 import { jsxText } from "../scripts/restyle/jsxtext.mjs";
+import { scanFile } from "../scripts/restyle/scan.mjs";
 
 /** Rewrite one class string (wrapped as a string literal). */
 const rw = (cls: string): string => JSON.parse(rewriteClasses(JSON.stringify(cls)).out);
@@ -276,5 +278,68 @@ describe("rulings", () => {
       status = (e as { status: number }).status;
     }
     expect(status).toBe(2);
+  });
+});
+
+/** Build a single-hunk `git diff -U0` between two line arrays (one changed region). */
+function diffOf(base: string[], cur: string[]): string {
+  let pre = 0;
+  while (pre < base.length && pre < cur.length && base[pre] === cur[pre]) pre++;
+  let suf = 0;
+  while (suf < base.length - pre && suf < cur.length - pre && base[base.length - 1 - suf] === cur[cur.length - 1 - suf]) suf++;
+  const removed = base.slice(pre, base.length - suf);
+  const added = cur.slice(pre, cur.length - suf);
+  const head = `@@ -${pre + 1},${removed.length} +${pre + 1},${added.length} @@`;
+  return [head, ...removed.map((l) => "-" + l), ...added.map((l) => "+" + l)].join("\n");
+}
+const guard = (base: string[], cur: string[]): string[] =>
+  checkDiff("x.tsx", diffOf(base, cur), base.join("\n"), cur.join("\n"));
+
+describe("diffguard chart colour edits (T2b)", () => {
+  it("accepts lines inside a multi-line style/contentStyle object", () => {
+    const base = ["<Tooltip", "  contentStyle={{", "    borderRadius: 8,", '    border: "1px solid #e5e7eb",', "  }}", "/>"];
+    const cur = ["<Tooltip", "  contentStyle={chartTooltipStyle}", "/>"];
+    expect(guard(base, cur)).toEqual([]);
+    const sBase = ["<span", "  style={{", '    backgroundColor: on ? "#22c55e" : "#d1d5db",', "  }}", "/>"];
+    const sCur = ["<span", "  style={{", '    backgroundColor: on ? "var(--success-fill)" : "var(--active)",', "  }}", "/>"];
+    expect(guard(sBase, sCur)).toEqual([]);
+  });
+
+  it("accepts colour-map entry lines", () => {
+    const base = ["const C = {", '  indigo: "#6366f1",', '  green: "#10b981",', "};"];
+    const cur = ["const C = {", "  indigo: chartSeries[0],", "  green: chartSeries[1],", "};"];
+    expect(guard(base, cur)).toEqual([]);
+  });
+
+  it("accepts a removed palette array, the blank line after it, and ...chartTooltipStyle", () => {
+    const base = ['const PIE = ["#818cf8", "#34d399"];', "", "const x = 1;"];
+    const cur = ["const x = 1;"];
+    expect(guard(base, cur)).toEqual([]);
+    const tBase = ["<Tooltip", "  contentStyle={{ fontSize: 12 }}", "/>"];
+    const tCur = ["<Tooltip", "  contentStyle={{", "    ...chartTooltipStyle,", "  }}", "/>"];
+    expect(guard(tBase, tCur)).toEqual([]);
+  });
+
+  it("still rejects a changed handler line", () => {
+    const base = ["<button", "  onClick={() => save()}", "/>"];
+    const cur = ["<button", "  onClick={() => remove()}", "/>"];
+    expect(guard(base, cur)).toHaveLength(2);
+    const pBase = ['const MIXED = ["#818cf8", label];', "", "const x = 1;"];
+    expect(guard(pBase, ["const x = 1;"])).toHaveLength(2);
+  });
+});
+
+describe("scan TABLE_SCROLL (T2b)", () => {
+  const wrap = (cls: string, gap: number) =>
+    [`<div className="${cls}">`, ...Array.from({ length: gap }, () => "  <p>x</p>"), '  <table className="w-full">', "  </table>", "</div>"].join("\n");
+  const rules = (src: string) => scanFile("x.tsx", src).map((v: { rule: string }) => v.rule);
+
+  it("sees a far overflow-x-auto wrapper", () => {
+    expect(rules(wrap("overflow-x-auto", 15))).toEqual([]);
+  });
+
+  it("accepts overflow-visible as an explicit opt-out and flags other wrappers", () => {
+    expect(rules(wrap("overflow-visible", 2))).toEqual([]);
+    expect(rules(wrap("overflow-hidden", 2))).toEqual(["TABLE_SCROLL"]);
   });
 });

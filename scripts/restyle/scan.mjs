@@ -55,11 +55,14 @@ function lineStarts(src) {
   };
 }
 
+const TABLE_LOOKBACK = 30;
+
 // Nearest enclosing element (walking tags backwards, skipping closed siblings)
-// that carries a className, within the 6 lines before the <table.
+// that carries a className, within the TABLE_LOOKBACK lines before the <table;
+// a wrapper with overflow-visible is an explicit opt-out (row menus must not clip).
 function enclosingClass(lines, i, at) {
   let depth = 0;
-  for (let j = i; j >= Math.max(0, i - 6); j--) {
+  for (let j = i; j >= Math.max(0, i - TABLE_LOOKBACK); j--) {
     const text = j === i ? lines[i].slice(0, at) : lines[j];
     for (const t of [...text.matchAll(/<\/?[A-Za-z][\w.]*|\/>/g)].reverse()) {
       if (t[0] === "/>" || t[0].startsWith("</")) { depth++; continue; }
@@ -78,7 +81,7 @@ function tableScroll(lines, report) {
     const at = ln.search(/<table\b/);
     if (at < 0) return;
     const tag = enclosingClass(lines, i, at);
-    if (!tag || !/overflow-x-auto/.test(tag)) report(i + 1, "TABLE_SCROLL", "<table");
+    if (!tag || !/overflow-x-auto|overflow-visible/.test(tag)) report(i + 1, "TABLE_SCROLL", "<table");
   });
 }
 
