@@ -19,34 +19,28 @@ export function Header() {
   const hasCustomActions = !!config.actions;
 
   return (
-    <header className="flex h-16 lg:h-20 items-center justify-between border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 lg:px-8">
+    <header className="h-12 flex shrink-0 items-center justify-between border-b border-divider bg-page px-6">
       {/* Left: Mobile menu + Back button + Breadcrumb */}
       <div className="flex items-center gap-3">
         {/* Mobile hamburger */}
         <button
           onClick={openMobile}
-          className="hidden max-lg:flex h-11 w-11 items-center justify-center rounded border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+          className="hidden max-lg:flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface hover:bg-muted transition-colors"
           aria-label="Open menu"
         >
-          <ListIcon
-            size={20}
-            className="text-neutral-600 dark:text-neutral-400"
-          />
+          <ListIcon size={16} className="text-fg-secondary" />
         </button>
 
         {config.backHref && (
           <Link
             href={config.backHref}
-            className="flex h-11 w-11 items-center justify-center rounded border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface hover:bg-muted transition-colors"
           >
-            <CaretLeftIcon
-              size={16}
-              className="text-neutral-600 dark:text-neutral-400"
-            />
+            <CaretLeftIcon size={16} className="text-fg-secondary" />
           </Link>
         )}
 
-        <nav className="hidden sm:flex items-center gap-2 text-xs">
+        <nav className="hidden sm:flex items-center gap-2 text-sm">
           {segments.map((segment, index) => {
             // Replace ID-like segments (numeric or long hashes) with breadcrumbLabel
             const isIdSegment = /^[0-9]+$/.test(segment) || segment.length > 20;
@@ -59,16 +53,17 @@ export function Header() {
             const displayText =
               isIdSegment && config.breadcrumbLabel
                 ? config.breadcrumbLabel
-                : segmentLabels[segment] ?? decodeURIComponent(segment);
+                : segmentLabels[segment] ??
+                  decodeURIComponent(segment).replace(/^./, (c) => c.toUpperCase());
 
             return (
               <span key={index} className="flex items-center gap-2">
-                {index > 0 && <span className="text-neutral-500">/</span>}
+                {index > 0 && <span className="text-fg-muted">/</span>}
                 <span
                   className={
                     index === segments.length - 1
-                      ? "font-medium text-neutral-950 dark:text-neutral-50 uppercase"
-                      : "text-neutral-500 uppercase"
+                      ? "font-medium text-fg"
+                      : "text-fg-secondary"
                   }
                 >
                   {displayText}
@@ -80,7 +75,7 @@ export function Header() {
       </div>
 
       {/* Right: Custom actions or default toolbar */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {hasCustomActions ? (
           config.actions
         ) : (
@@ -92,10 +87,10 @@ export function Header() {
         )}
         <Link
           href="/dashboard/settings"
-          className="flex h-11 w-11 items-center justify-center rounded border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface hover:bg-muted transition-colors"
           aria-label="Settings"
         >
-          <GearIcon size={18} className="text-neutral-600 dark:text-neutral-400" />
+          <GearIcon size={16} className="text-fg-secondary" />
         </Link>
         <HeaderUserMenu />
       </div>

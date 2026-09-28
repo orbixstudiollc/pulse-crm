@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,7 +23,6 @@ import {
   RobotIcon,
   ScrollIcon,
   ShieldIcon,
-  SidebarSimpleIcon,
   UsersIcon,
 } from "../ui";
 import { useSidebar } from "./SidebarContext";
@@ -51,80 +50,24 @@ const navigation = [
 
 // ── Shared sidebar content ──────────────────────────────────────────────────
 
-function SidebarContent({
-  collapsed,
-  onCollapse,
-  onExpand,
-  onNavClick,
-}: {
-  collapsed: boolean;
-  onCollapse: () => void;
-  onExpand: () => void;
-  onNavClick?: () => void;
-}) {
+function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const pathname = usePathname();
 
   return (
     <>
-      <div
-        className={cn(
-          "flex items-center gap-3 px-5 py-6",
-          collapsed ? "justify-center" : "justify-between",
-        )}
-      >
-        <div className="relative flex items-center">
-          <Link
-            href="/dashboard/overview"
-            className="relative flex items-center h-10"
-            onClick={onNavClick}
-          >
-            <span
-              className={cn(
-                "font-serif text-4xl italic text-neutral-950 dark:text-neutral-50",
-                "transition-all duration-300 ease-out",
-                collapsed ? "scale-95" : "scale-100",
-              )}
-            >
-              {collapsed ? "P" : "Pulse"}
-            </span>
-          </Link>
-        </div>
-
-        {!collapsed && (
-          <button
-            onClick={onCollapse}
-            className="flex h-8 w-8 items-center justify-center rounded transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-800"
-            aria-label="Collapse sidebar"
-          >
-            <SidebarSimpleIcon
-              weight="regular"
-              size={20}
-              className="text-neutral-500 dark:text-neutral-400"
-            />
-          </button>
-        )}
+      <div className="flex h-12 shrink-0 items-center px-3">
+        <Link
+          href="/dashboard/overview"
+          className="flex h-8 items-center px-2 text-sm font-semibold text-fg"
+          onClick={onNavClick}
+        >
+          Pulse
+        </Link>
       </div>
 
-      {/* Toggle button (below logo when collapsed) */}
-      {collapsed && (
-        <div className="flex justify-center px-2 pb-4">
-          <button
-            onClick={onExpand}
-            className="flex h-10 w-10 items-center justify-center rounded transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-800"
-            aria-label="Expand sidebar"
-          >
-            <SidebarSimpleIcon
-              weight="regular"
-              size={20}
-              className="text-neutral-500 dark:text-neutral-400"
-            />
-          </button>
-        </div>
-      )}
-
       {/* Navigation */}
-      <nav className={cn("flex-1 py-4", collapsed ? "px-3" : "px-5")}>
-        <ul className="space-y-1.5">
+      <nav className="flex-1 overflow-y-auto px-3 py-2">
+        <ul className="space-y-0.5">
           {navigation.map((item) => {
             const isActive = pathname.startsWith(item.href);
             return (
@@ -133,64 +76,30 @@ function SidebarContent({
                   href={item.href}
                   onClick={onNavClick}
                   className={cn(
-                    "flex items-center rounded text-sm font-medium border",
-                    "transition-[background-color,color,box-shadow,border-color] duration-200 ease-in-out",
-                    collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5",
+                    "flex h-8 items-center gap-2.5 rounded-md px-2 text-sm font-medium transition-colors duration-150",
                     isActive
-                      ? "bg-white dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 border-neutral-200 dark:border-neutral-700 shadow-focus"
-                      : "border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50",
+                      ? "bg-active text-fg"
+                      : "text-fg-secondary hover:bg-muted hover:text-fg",
                   )}
-                  title={collapsed ? item.name : undefined}
                 >
-                  <item.icon
-                    className={cn(
-                      "h-5 w-5 shrink-0 transition-all duration-200 ease-in-out",
-                      collapsed
-                        ? "opacity-90 scale-[1.05]"
-                        : "opacity-100 scale-100",
-                    )}
-                    weight="regular"
-                  />
-
-                  <span
-                    className={cn(
-                      "overflow-hidden whitespace-nowrap transition-all duration-300 ease-out",
-                      collapsed
-                        ? "max-w-0 opacity-0 ml-0"
-                        : "max-w-37.5 opacity-100 ml-3",
-                    )}
-                  >
-                    {item.name}
-                  </span>
+                  <item.icon size={16} weight="regular" className="shrink-0" />
+                  <span className="truncate">{item.name}</span>
                 </Link>
               </li>
             );
           })}
         </ul>
       </nav>
-
     </>
   );
 }
 
-// ── Desktop Sidebar (inline, collapsible) ───────────────────────────────────
+// ── Desktop Sidebar (inline) ────────────────────────────────────────────────
 
 export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
-
   return (
-    <aside
-      className={cn(
-        "hidden lg:flex flex-col border-r bg-neutral-100 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800",
-        "transition-[width] duration-300 ease-in-out",
-        collapsed ? "w-18" : "w-60",
-      )}
-    >
-      <SidebarContent
-        collapsed={collapsed}
-        onCollapse={() => setCollapsed(true)}
-        onExpand={() => setCollapsed(false)}
-      />
+    <aside className="hidden lg:flex w-[260px] shrink-0 flex-col bg-sidebar border-r border-divider">
+      <SidebarContent />
     </aside>
   );
 }
@@ -237,15 +146,10 @@ export function MobileSidebar() {
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed left-0 top-0 h-full w-60 bg-neutral-100 dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 z-50 flex flex-col lg:hidden"
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="fixed left-0 top-0 h-full w-[260px] bg-sidebar border-r border-divider z-50 flex flex-col lg:hidden"
           >
-            <SidebarContent
-              collapsed={false}
-              onCollapse={closeMobile}
-              onExpand={() => {}}
-              onNavClick={closeMobile}
-            />
+            <SidebarContent onNavClick={closeMobile} />
           </motion.aside>
         </>
       )}

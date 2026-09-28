@@ -120,43 +120,40 @@ export function CalendarDropdown() {
     <div className="relative" ref={dropdownRef}>
       <IconButton
         icon={
-          <CalendarBlankIcon
-            size={20}
-            className="text-neutral-600 dark:text-neutral-400"
-          />
+          <CalendarBlankIcon size={16} className="text-fg-secondary" />
         }
         aria-label="Calendar"
         onClick={() => setOpen(!open)}
       />
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xl overflow-hidden z-50">
+        <div className="absolute right-0 top-full mt-1 w-80 rounded-lg border border-line bg-surface shadow-dropdown overflow-hidden z-50">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-800">
+          <div className="flex h-12 items-center justify-between px-3 border-b border-divider">
             <button
               onClick={prevMonth}
-              className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
             >
               <CaretLeftIcon
                 size={16}
-                className="text-neutral-600 dark:text-neutral-400"
+                className="text-fg-secondary"
               />
             </button>
 
             <button
               onClick={goToToday}
-              className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+              className="text-sm font-semibold text-fg hover:text-fg-secondary transition-colors"
             >
               {MONTHS[month]} {year}
             </button>
 
             <button
               onClick={nextMonth}
-              className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
             >
               <CaretRightIcon
                 size={16}
-                className="text-neutral-600 dark:text-neutral-400"
+                className="text-fg-secondary"
               />
             </button>
           </div>
@@ -168,7 +165,7 @@ export function CalendarDropdown() {
               {DAYS.map((day) => (
                 <div
                   key={day}
-                  className="text-center text-xs font-medium text-neutral-400 dark:text-neutral-500 py-2"
+                  className="text-center text-xs font-medium text-fg-muted py-2"
                 >
                   {day}
                 </div>
@@ -185,12 +182,12 @@ export function CalendarDropdown() {
                   <button
                     key={index}
                     className={cn(
-                      "relative flex flex-col items-center justify-center h-9 rounded text-sm transition-colors",
+                      "relative flex flex-col items-center justify-center h-9 rounded-md text-sm transition-colors",
                       isCurrentMonth
-                        ? "text-neutral-950 dark:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                        : "text-neutral-300 dark:text-neutral-600",
+                        ? "text-fg hover:bg-muted"
+                        : "text-fg-disabled",
                       isTodayDate &&
-                        "bg-neutral-950 dark:bg-neutral-50 text-white dark:text-neutral-950 hover:bg-neutral-800 dark:hover:bg-neutral-200",
+                        "bg-inverse text-on-inverse hover:bg-inverse",
                     )}
                   >
                     {day}
@@ -199,8 +196,8 @@ export function CalendarDropdown() {
                         className={cn(
                           "absolute bottom-1 h-1 w-1 rounded-full",
                           isTodayDate
-                            ? "bg-white dark:bg-neutral-950"
-                            : "bg-neutral-950 dark:bg-neutral-50",
+                            ? "bg-on-inverse"
+                            : "bg-inverse",
                         )}
                       />
                     )}
@@ -211,11 +208,11 @@ export function CalendarDropdown() {
           </div>
 
           {/* Footer */}
-          <div className="border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 px-4 py-3">
+          <div className="border-t border-divider bg-subtle px-4 py-2.5">
             <Link
               href="/dashboard/calendar"
               onClick={() => setOpen(false)}
-              className="flex items-center justify-center gap-2 text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+              className="flex items-center justify-center gap-2 text-xs font-medium text-fg-secondary hover:text-fg transition-colors"
             >
               View full calendar
               <ArrowRightIcon size={14} />

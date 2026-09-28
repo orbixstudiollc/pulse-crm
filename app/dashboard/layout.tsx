@@ -4,7 +4,7 @@ import { SidebarProvider } from "@/components/layout/SidebarContext";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { AIChatProvider, AIChatPanel } from "@/components/features/AIChat";
 import { EnrichmentProgressBanner } from "@/components/lead-finder/EnrichmentProgressBanner";
-import { Toaster } from "sonner";
+import { ThemedToaster } from "@/components/features/ThemeProvider";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -43,11 +43,13 @@ export default async function DashboardLayout({
                   <EnrichmentProgressBanner />
                 </div>
                 <Header />
-                <main className="flex-1 overflow-auto">{children}</main>
+                <main className="flex-1 overflow-auto bg-page">
+                  <div className="mx-auto w-full max-w-[1120px]">{children}</div>
+                </main>
               </div>
             </div>
             <AIChatPanel />
-            <Toaster position="top-right" theme="dark" richColors closeButton />
+            <ThemedToaster />
           </AIChatProvider>
         </HeaderProvider>
       </SidebarProvider>

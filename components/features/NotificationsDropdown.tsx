@@ -93,10 +93,7 @@ export function NotificationsDropdown() {
     <div className="relative" ref={dropdownRef}>
       <IconButton
         icon={
-          <BellIcon
-            size={20}
-            className="text-neutral-600 dark:text-neutral-400"
-          />
+          <BellIcon size={16} className="text-fg-secondary" />
         }
         badge={unreadCount > 0 ? unreadCount : undefined}
         aria-label="Notifications"
@@ -104,16 +101,16 @@ export function NotificationsDropdown() {
       />
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-96 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xl overflow-hidden z-50">
+        <div className="absolute right-0 top-full mt-1 w-96 rounded-lg border border-line bg-surface shadow-dropdown overflow-hidden z-50">
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-neutral-800">
-            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+          <div className="flex h-12 items-center justify-between px-4 border-b border-divider">
+            <h3 className="text-sm font-semibold text-fg">
               Notifications
             </h3>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-xs font-medium text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+                className="text-xs font-medium text-fg-secondary hover:text-fg transition-colors"
               >
                 Mark all as read
               </button>
@@ -124,16 +121,13 @@ export function NotificationsDropdown() {
           <div className="max-h-96 overflow-y-auto">
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="flex h-11 w-11 items-center justify-center rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 mb-3">
-                  <BellIcon
-                    size={20}
-                    className="text-neutral-400 dark:text-neutral-500"
-                  />
+                <div className="flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface mb-3">
+                  <BellIcon size={16} className="text-fg-muted" />
                 </div>
-                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-1">
+                <p className="text-sm font-medium text-fg mb-1">
                   No notifications
                 </p>
-                <span className="text-sm text-neutral-500">
+                <span className="text-sm text-fg-secondary">
                   You&apos;re all caught up!
                 </span>
               </div>
@@ -143,15 +137,15 @@ export function NotificationsDropdown() {
                   key={notification.id}
                   onClick={() => markAsRead(notification.id)}
                   className={cn(
-                    "flex w-full items-start gap-3 px-5 py-3 text-left transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/50",
+                    "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted",
                     !notification.read &&
-                      "bg-neutral-50/50 dark:bg-neutral-800/30",
+                      "bg-subtle",
                     index < items.length - 1 &&
-                      "border-b-[0.5px] border-neutral-100 dark:border-neutral-800",
+                      "border-b border-divider",
                   )}
                 >
                   {/* Icon */}
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full shrink-0 mt-0.5 border-[0.5px] border-neutral-200 dark:border-neutral-400/30 bg-neutral-100 dark:bg-neutral-400/15 text-neutral-950 dark:text-neutral-50">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-md shrink-0 bg-muted text-fg-secondary">
                     {notification.icon}
                   </span>
 
@@ -162,20 +156,20 @@ export function NotificationsDropdown() {
                         className={cn(
                           "text-sm truncate",
                           notification.read
-                            ? "text-neutral-600 dark:text-neutral-400"
-                            : "font-medium text-neutral-950 dark:text-neutral-50",
+                            ? "text-fg-secondary"
+                            : "font-medium text-fg",
                         )}
                       >
                         {notification.title}
                       </p>
                       {!notification.read && (
-                        <span className="h-2 w-2 rounded-full bg-blue-500 dark:bg-blue-400 shrink-0 mt-1.5" />
+                        <span className="h-2 w-2 rounded-full bg-accent-strong shrink-0 mt-1.5" />
                       )}
                     </div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
+                    <p className="text-xs text-fg-secondary truncate mt-0.5">
                       {notification.description}
                     </p>
-                    <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+                    <p className="text-xs text-fg-muted mt-1">
                       {notification.time}
                     </p>
                   </div>
@@ -185,8 +179,8 @@ export function NotificationsDropdown() {
           </div>
 
           {/* Footer */}
-          <div className="border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 px-5 py-3">
-            <button className="w-full text-center text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
+          <div className="border-t border-divider bg-subtle px-4 py-2.5">
+            <button className="w-full text-center text-xs font-medium text-fg-secondary hover:text-fg transition-colors">
               View all notifications
             </button>
           </div>

@@ -25,20 +25,20 @@ export function SearchBar() {
       {/* Mobile: icon-only button */}
       <button
         onClick={() => setOpen(true)}
-        className="flex md:hidden h-11 w-11 items-center justify-center rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
+        className="flex md:hidden h-8 w-8 items-center justify-center rounded-md border border-line bg-surface transition-colors hover:bg-muted"
         aria-label="Search"
       >
-        <MagnifyingGlassIcon size={20} className="text-neutral-500" />
+        <MagnifyingGlassIcon size={16} className="text-fg-secondary" />
       </button>
 
       {/* Desktop: full search bar */}
       <button
         onClick={() => setOpen(true)}
-        className="hidden md:flex h-11 w-60 items-center gap-2 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 px-4 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
+        className="hidden md:flex h-8 w-56 items-center gap-2 rounded-md border border-line bg-surface px-2.5 text-sm text-fg-secondary transition-colors hover:bg-muted"
       >
-        <MagnifyingGlassIcon size={16} className="text-neutral-500" />
-        <span className="text-sm text-neutral-500">Search...</span>
-        <kbd className="ml-auto rounded-sm border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-1.5 py-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+        <MagnifyingGlassIcon size={16} className="text-fg-secondary" />
+        <span>Search...</span>
+        <kbd className="ml-auto rounded-sm bg-code px-1.5 py-0.5 text-xs text-fg-secondary">
           ⌘K
         </kbd>
       </button>
