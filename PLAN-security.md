@@ -87,3 +87,55 @@ Executor rules: edit only declared files; no git state changes (the verify commi
 - Global-fetch `dispatcher` pinning with an npm undici Agent: Next's patched fetch wraps Node's bundled undici; a silently dropped dispatcher would reopen the window while every check passes.
 - `npm audit fix --force`: would bump `ai`/`@ai-sdk/*` majors.
 - A repository inventory doc and a rollout doc under `docs/`: the migration footer and this file carry the owner steps; no new repo docs.
+
+## Execution record (2026-09-29)
+
+Executed with `astra-fable-execute`: 13 tasks in 3 waves (10 parallel, 2 parallel, 1), Opus executors, each task gated by its own verify. Snapshot ref before execution: `refs/backups/pre-sec-20260929`. Diff to HEAD: 50 files, +2777/-525. Scope drift against declared file lists: none. No task was retried or escalated.
+
+| # | Commit | Task | Finding |
+|---|---|---|---|
+| 0 | `98e5431` docs | plan and tasks | |
+| 1 | `d9376cb` | T6 org-scoped automation execution log | H3 |
+| 2 | `840c4b7` | T5 `028_security_hardening.sql` | C1/H3/H5 |
+| 3 | `db7501c` | T11 PostPeer owner-org gate | H6 |
+| 4 | `af851cc` | T10 ownership checks + settings schema | H5 |
+| 5 | `539aeb0` | T9 executor and merge-engine org filters | H5 |
+| 6 | `69536e0` | T7 public AI settings | H4 |
+| 7 | `bd4da24` | T8 channel tokens sealed | H4 |
+| 8 | `c0efc0f` | T2 SSRF guard, DNS check, pinned fetch | H1 |
+| 9 | `385632c` | T12 Apify credential snapshot + actor policy | H7 |
+| 10 | `c5ae663` | T1 profile allowlist | C1 |
+| 11 | `a7ed59a` | T3 SSRF callers | H1 |
+| 12 | `4a717db` | T4 inbox sanitizer | H2 |
+| 13 | `bb2f43d` | T13 next 16.3.6, nodemailer 10.0.12, audit fixes | H8 |
+| 14 | `98f86f3` | T14 judgment-review fixes (see below) | H5b, H2, H1 |
+| 15 | (this commit) docs | this record; verify patches and T14 in tasks-security.json | |
+
+**Final gate on `bb2f43d` (T13):** `npx tsc --noEmit` 0 errors; `npm run lint` 0 errors (175 warnings, pre-existing families); `npm test` 251/251 across 13 files (was 167); `npm run build` ok; `npm audit --omit=dev` `{"info":0,"low":0,"moderate":0,"high":0,"critical":0}` (was 1 critical, 4 high, 1 moderate, 5 low). No `overrides` were needed: `npm audit fix` without `--force` moved `ws` to 8.22.0 and the `ai`/`@ai-sdk/*` chain within range. nodemailer CHANGELOG 9.0.0 (TLS validation when fetching remote content, unused here) and 10.0.0 (Node >= 20, bundled types) required only the import form change in `lib/email/sender.ts`.
+
+**Plan defects fixed in the verifies during execution (recorded, not hidden):** T11 committed `.env.example`, which `.gitignore` excludes (`.env*`), so it was dropped from the commit list and the edit stays local; T8 expected 4 reads of `account.access_token_encrypted` while its own interface prescribes 5; T9 expected 12 `resolveMergeFields(` lines where the file has 6.
+
+**Executor deviations accepted:** T2 split `PRIVATE_BLOCKLIST` into per-family `BlockList`s because Node checks IPv4 addresses against IPv6 rules too (`::ffff:0:0/96` would have rejected every public IPv4). T4 added a hook branch that drops non-raster `data:` image sources (DOMPurify's default `DATA_URI_TAGS` includes `img`). T12 also routes `pollRunUntilDone`/`fetchDatasetItems` through `authorizeActors(orgId, [])` and rejects a non-array `apify_actors`. T10 returns "Sequence not found" from `enrollLeadsBulk` too. T1 makes an empty `updatePreferences` patch an error instead of an empty update. T11's placement of the gate inside the `try` in `connections.ts` turns a `getOrgId` redirect into an action error for users without an org (they cannot reach those pages anyway). T7 widens the row type for the three secret columns absent from `AISettings`.
+
+**Behaviour changes for legitimate users:** AI keys can no longer be cleared from the settings page (A8); non-numeric sequence-settings inputs are rejected instead of stored as NaN; PostPeer features are disabled for every org except `POSTPEER_OWNER_ORG_ID`; custom Apify actors require a tenant key; new WhatsApp/LinkedIn connections require `ENCRYPTION_KEY`.
+
+**Closure status:** H1, H2, H4, H5 (application), H6, H7, H8 closed on deploy. C1 and H3 are closed at the application boundary on deploy and at the database boundary only once the owner applies `028_security_hardening.sql` (direct PostgREST writes remain possible until then). The legacy `lib/actions/apify.ts` maps a fixed source enum to actor ids and does not take tenant-chosen actors, so it is not a policy bypass.
+
+### Judgment review (Opus, read-only, refs/backups/pre-sec-20260929..HEAD) and fixes (T14, `98f86f3`)
+
+Verdict before fixes: "safe to push, but not yet safe to call C1 and H1-H8 closed". The reviewer probed the pinned lookup (both callback forms, TLS path), the 1 MiB cap and timeout, manual redirects, 18 DOMPurify bypass payloads, nodemailer 10 through ESM and CJS, and re-read the 028 SQL. Everything in the "checked and holding" list of the plan was confirmed: no remaining user-client write to `organization_id`/`role`; onboarding survives the trigger; every user-URL fetch in `lib/actions` goes through the pinned path; `dangerouslySetInnerHTML` only in the inbox; every executor lead/account lookup org-scoped; every Apify run through `authorizeActors`.
+
+| # | Severity | Finding | Resolution |
+|---|---|---|---|
+| 1 | HIGH | Scheduled-send loop in the sequence executor loaded the sender account by id only; a direct PostgREST insert into `email_messages` with another tenant's `email_account_id` (the policy checks only `organization_id`) would send through that mailbox | Fixed in T14: account lookup filtered by `msg.organization_id`, message marked failed otherwise; 028 gains a `WITH CHECK` requiring `email_account_id` to belong to the caller's org |
+| 2 | MEDIUM | Sanitizer kept `class` and `id`; Tailwind utilities in the built CSS allow a full-screen phishing overlay, `id` allows DOM clobbering | Fixed in T14: both forbidden; tests added |
+| 3 | MEDIUM | AI/Apify keys remain readable by any org member through PostgREST (`GET /rest/v1/ai_settings?select=api_key`); legacy WhatsApp/LinkedIn tokens stay plaintext at rest until reconnected | Deferred, owner-visible: needs column-level `REVOKE SELECT` on the seven secret columns plus admin-client presence checks in `getAISettings` and the lead-finder settings route; risk of breaking the user-client selects that still read those columns. Intra-org exposure only. Rotate keys (owner action 3) |
+| 4 | MEDIUM | SSRF through the tenant's `ollama_base_url` (`lib/lead-finder/ai-provider.ts:313-324` uses the string check; the OpenAI SDK resolves DNS and follows redirects; `updateAISettings` writes the URL unvalidated) | Deferred: needs a custom `fetch` on the OpenAI client through the pinned agent, or disabling the local-Ollama provider in production |
+| 5 | LOW-MEDIUM | `launchCampaignRun` skipped the lead-ownership check when `audience_type` was `filter` but `audience_filters` was null and explicit ids were present | Fixed in T14: the check always runs on the final list |
+| 6 | LOW | Sanitizer allowed relative and protocol-relative URLs, so an email could fire same-origin cookie-carrying GETs on open | Fixed in T14: only `https?:`, `mailto:`, `tel:`, `#` |
+| 7 | LOW | IPv6 blocklist missed `::/96`, `ff00::/8`, `fec0::/10`, `2002::/16`, `64:ff9b:1::/48` | Fixed in T14 with test rows |
+| 8 | LOW | 028 policies for `campaign_leads` and `automation_executions` check the parent row's org but not `lead_id` (stats-only impact) | Deferred |
+| 9 | LOW | `connections.ts` caught the `getOrgId` redirect inside `try` and returned `{ error: "NEXT_REDIRECT" }` | Fixed in T14 with `unstable_rethrow`. Also noted, accepted: cleared number inputs in sequence settings now fail with a generic message; AI keys not clearable from Settings (A8) |
+| 10 | LOW | Tests cover the pure functions, not the guard wiring in actions or the 028 SQL; `PublicAISettings` still declares three secret columns that are stripped at runtime | Deferred |
+
+Final gates on `98f86f3`: `npx tsc --noEmit` 0 errors; `npm run lint` 0 errors (175 warnings); `npm test` 261/261 across 13 files; `npm run build` ok; `npm audit --omit=dev` 0 findings at every severity.
