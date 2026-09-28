@@ -158,7 +158,7 @@ export function LeadsPageClient() {
   const [editLead, setEditLead] = useState<ReturnType<typeof mapLead> | null>(null);
   const [scorePopoverId, setScorePopoverId] = useState<string | null>(null);
   const [aiScoreDrawerOpen, setAIScoreDrawerOpen] = useState(false);
-  const [aiScoreData, setAIScoreData] = useState<any>(null);
+  const [aiScoreData, setAIScoreData] = useState<unknown>(null);
   const [aiScoringLeadId, setAIScoringLeadId] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [showSequencePicker, setShowSequencePicker] = useState(false);

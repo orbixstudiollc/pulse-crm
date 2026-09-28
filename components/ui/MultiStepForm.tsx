@@ -22,8 +22,8 @@ interface MultiStepFormContextValue {
   previousStep: () => void;
   isFirstStep: boolean;
   isLastStep: boolean;
-  formData: Record<string, any>;
-  setFormData: (data: Record<string, any>) => void;
+  formData: Record<string, unknown>;
+  setFormData: (data: Record<string, unknown>) => void;
 }
 
 const MultiStepFormContext = createContext<
@@ -40,9 +40,9 @@ export function useMultiStepForm() {
 
 interface MultiStepFormProps {
   steps: Step[];
-  onComplete: (data: Record<string, any>) => void | Promise<void>;
+  onComplete: (data: Record<string, unknown>) => void | Promise<void>;
   children: ReactNode;
-  initialData?: Record<string, any>;
+  initialData?: Record<string, unknown>;
   showProgress?: boolean;
   className?: string;
 }
@@ -56,7 +56,7 @@ export function MultiStepForm({
   className,
 }: MultiStepFormProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState<Record<string, any>>(initialData);
+  const [formData, setFormData] = useState<Record<string, unknown>>(initialData);
 
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === steps.length - 1;
@@ -85,7 +85,7 @@ export function MultiStepForm({
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
 
-  const updateFormData = (data: Record<string, any>) => {
+  const updateFormData = (data: Record<string, unknown>) => {
     setFormData((prev) => ({ ...prev, ...data }));
   };
 

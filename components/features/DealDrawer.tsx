@@ -154,10 +154,17 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
   const [newNote, setNewNote] = useState("");
   const [isLoadingData, setIsLoadingData] = useState(false);
 
+  // Mark data as loading when the drawer opens (adjusted during render, not in an effect)
+  const loadKey = open && deal?.id ? deal.id : null;
+  const [loadingKey, setLoadingKey] = useState<string | null>(null);
+  if (loadKey !== loadingKey) {
+    setLoadingKey(loadKey);
+    if (loadKey) setIsLoadingData(true);
+  }
+
   // Fetch notes and activities when drawer opens
   useEffect(() => {
     if (open && deal?.id) {
-      setIsLoadingData(true);
       Promise.all([getDealNotes(deal.id), getDealActivities(deal.id)]).then(
         ([notesRes, activitiesRes]) => {
           setNotes((notesRes.data ?? []) as DealNoteRecord[]);

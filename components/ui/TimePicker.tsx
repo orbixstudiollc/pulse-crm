@@ -34,9 +34,12 @@ export function TimePicker({
   const [minutes, setMinutes] = useState("00");
   const [period, setPeriod] = useState<"AM" | "PM">("AM");
   const containerRef = useRef<HTMLDivElement>(null);
+  const [syncedKey, setSyncedKey] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Parse initial value
+  // Parse value whenever it (or the 12h setting) changes — adjusted during render instead of in an effect
+  const valueKey = `${value}|${use12Hour}`;
+  if (valueKey !== syncedKey) {
+    setSyncedKey(valueKey);
     if (value) {
       const [h, m] = value.split(":");
       const hour24 = parseInt(h, 10);
@@ -51,7 +54,7 @@ export function TimePicker({
 
       setMinutes(m);
     }
-  }, [value, use12Hour]);
+  }
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

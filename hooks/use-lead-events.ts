@@ -39,6 +39,7 @@ export function useLeadEvents({
   const esRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retriesRef = useRef(0);
+  const connectRef = useRef<() => void>(() => {});
   const maxRetries = 5;
 
   const handlersRef = useRef({
@@ -51,15 +52,17 @@ export function useLeadEvents({
     onEnrichmentProgress,
   });
 
-  handlersRef.current = {
-    onLeadDiscovered,
-    onLeadKpiUpdated,
-    onLeadEnrichmentCompleted,
-    onLeadStatusChanged,
-    onDiscoveryStarted,
-    onDiscoveryCompleted,
-    onEnrichmentProgress,
-  };
+  useEffect(() => {
+    handlersRef.current = {
+      onLeadDiscovered,
+      onLeadKpiUpdated,
+      onLeadEnrichmentCompleted,
+      onLeadStatusChanged,
+      onDiscoveryStarted,
+      onDiscoveryCompleted,
+      onEnrichmentProgress,
+    };
+  });
 
   const connect = useCallback(() => {
     if (!enabled) return;
@@ -130,10 +133,14 @@ export function useLeadEvents({
       if (retriesRef.current < maxRetries) {
         retriesRef.current++;
         const delay = Math.min(1000 * Math.pow(2, retriesRef.current), 30000);
-        reconnectTimeoutRef.current = setTimeout(connect, delay);
+        reconnectTimeoutRef.current = setTimeout(() => connectRef.current(), delay);
       }
     };
   }, [campaignId, enabled]);
+
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   useEffect(() => {
     connect();

@@ -36,6 +36,8 @@ import type { EmailOverviewStats, AccountHealth, DailyEmailVolume } from "@/lib/
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+type InsightsSummary = Exclude<Awaited<ReturnType<typeof aiGenerateInsightsSummary>>, { error: string }>;
+
 interface PipelineData {
   stages: { stage: string; count: number; totalValue: number }[];
   totalDeals: number;
@@ -1546,7 +1548,7 @@ export function AnalyticsPageClient({
   channels,
 }: AnalyticsPageClientProps) {
   const [activeTab, setActiveTab] = useState<TabId>("pipeline");
-  const [aiInsights, setAIInsights] = useState<any>(null);
+  const [aiInsights, setAIInsights] = useState<InsightsSummary | null>(null);
   const [aiInsightsLoading, setAIInsightsLoading] = useState(false);
 
   const handleGenerateInsights = async () => {
@@ -1651,7 +1653,7 @@ export function AnalyticsPageClient({
                 <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
                   <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Key Metrics</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {aiInsights.key_metrics?.map((m: any, i: number) => (
+                    {aiInsights.key_metrics?.map((m, i) => (
                       <div key={i} className="p-4 rounded bg-neutral-50 dark:bg-neutral-800/50">
                         <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">{m.metric}</p>
                         <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{m.value}</p>
@@ -1667,7 +1669,7 @@ export function AnalyticsPageClient({
                 <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
                   <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Action Items</h3>
                   <div className="space-y-3">
-                    {aiInsights.action_items?.map((item: any, i: number) => (
+                    {aiInsights.action_items?.map((item, i) => (
                       <div key={i} className="flex items-start gap-3 p-3 rounded bg-neutral-50 dark:bg-neutral-800/50">
                         <span className={`shrink-0 mt-0.5 w-2 h-2 rounded-full ${item.priority === "high" ? "bg-red-500" : item.priority === "medium" ? "bg-amber-500" : "bg-green-500"}`} />
                         <div className="flex-1 min-w-0">

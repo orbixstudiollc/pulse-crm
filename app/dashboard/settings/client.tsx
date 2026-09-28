@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -870,8 +870,12 @@ function PreferencesSection({
 }) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  // false during SSR/hydration, true on the client afterwards (same as a mounted flag)
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const [timezone, setTimezone] = useState(preferences?.timezone ?? "pt");
   const [dateFormat, setDateFormat] = useState(
     preferences?.date_format ?? "mm/dd/yyyy",
@@ -2153,6 +2157,7 @@ function WhatsAppSection() {
     setLoading(false);
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs server data into local state; restructure tracked in PLAN.md
   useEffect(() => { fetchData(); }, []);
 
   const toast = (msg: string, variant: "success" | "error" = "success") => {
@@ -2501,6 +2506,7 @@ function LinkedInSection() {
     setLoading(false);
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs server data into local state; restructure tracked in PLAN.md
   useEffect(() => { fetchData(); }, []);
 
   const toast = (msg: string, variant: "success" | "error" = "success") => {
@@ -2845,6 +2851,7 @@ function EmailAccountsSection() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs server data into local state; restructure tracked in PLAN.md
     fetchAccounts();
     // Show success toast on OAuth callback
     const connected = searchParams.get("connected");

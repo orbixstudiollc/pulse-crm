@@ -17,6 +17,7 @@ import {
   UsersThreeIcon,
   PencilSimpleIcon,
   LightningIcon,
+  type BadgeVariant,
 } from "@/components/ui";
 import { ActivityRow, type ActivityRowType, ConfirmModal } from "@/components/dashboard";
 import {
@@ -167,7 +168,7 @@ export function LeadDetailClient({
 
   // AI states
   const [aiScoreDrawerOpen, setAIScoreDrawerOpen] = useState(false);
-  const [aiScoreData, setAIScoreData] = useState<any>(null);
+  const [aiScoreData, setAIScoreData] = useState<unknown>(null);
   const [aiScoring, setAIScoring] = useState(false);
   const [aiMatching, setAIMatching] = useState(false);
   const [aiQualifying, setAIQualifying] = useState(false);
@@ -429,7 +430,7 @@ export function LeadDetailClient({
                 {lead.company || "—"}
               </p>
               <div className="flex items-center gap-2">
-                <Badge variant={statusCfg.variant as any} dot>
+                <Badge variant={statusCfg.variant as BadgeVariant} dot>
                   {statusCfg.label}
                 </Badge>
                 {lead.source && <Badge variant="neutral">{lead.source}</Badge>}

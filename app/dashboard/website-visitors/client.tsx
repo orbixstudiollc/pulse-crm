@@ -97,8 +97,8 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
         const result = await getWebsiteVisitors(filters);
         setVisitors(result.visitors);
         setTotal(result.total);
-      } catch (e: any) {
-        toast.error(e.message);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to load visitors");
       }
     });
   }, []);
@@ -125,8 +125,8 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
       setScripts((prev) => [script, ...prev]);
       setNewDomain("");
       toast.success("Tracking script created!");
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Something went wrong");
     }
   };
 
@@ -135,8 +135,8 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
       await deleteTrackingScript(id);
       setScripts((prev) => prev.filter((s) => s.id !== id));
       toast.success("Script deleted");
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Something went wrong");
     }
   };
 
@@ -145,8 +145,8 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
       await toggleTrackingScript(id, active);
       setScripts((prev) => prev.map((s) => (s.id === id ? { ...s, is_active: active } : s)));
       toast.success(active ? "Script activated" : "Script paused");
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Something went wrong");
     }
   };
 
@@ -217,8 +217,8 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
       setVisitors((prev) => prev.map((v) => (v.id === visitorId ? { ...v, status: "converted" as const } : v)));
       setSelectedVisitor(null);
       toast.success("Visitor converted to lead!");
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Something went wrong");
     }
   };
 
@@ -227,8 +227,8 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
       await updateVisitorStatus(visitorId, "ignored");
       setVisitors((prev) => prev.map((v) => (v.id === visitorId ? { ...v, status: "ignored" as const } : v)));
       toast.success("Visitor ignored");
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Something went wrong");
     }
   };
 

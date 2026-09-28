@@ -334,6 +334,7 @@ function ChatView({
 
   // Load existing messages
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs server data into local state; restructure tracked in PLAN.md
     setLoaded(false);
     sentInitialRef.current = false;
     getMessages(conversationId).then(result => {

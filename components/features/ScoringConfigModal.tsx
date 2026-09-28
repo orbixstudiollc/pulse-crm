@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Modal, Button, Checkbox, TagInput, XIcon } from "@/components/ui";
 import { Faders, Warning } from "@phosphor-icons/react";
 import { upsertScoringProfile } from "@/lib/actions/scoring";
@@ -164,8 +164,10 @@ export function ScoringConfigModal({
     "Cold Call": 30,
   });
 
-  // Sync state from profile when it changes
-  useEffect(() => {
+  // Sync state from profile when it changes (adjusted during render, not in an effect)
+  const [syncedProfile, setSyncedProfile] = useState<ScoringConfigModalProps["profile"]>(null);
+  if (profile !== syncedProfile) {
+    setSyncedProfile(profile);
     if (profile) {
       setWeightCompanySize(profile.weight_company_size);
       setWeightIndustryFit(profile.weight_industry_fit);
@@ -187,7 +189,7 @@ export function ScoringConfigModal({
             },
       );
     }
-  }, [profile]);
+  }
 
   const weightSum =
     weightCompanySize +

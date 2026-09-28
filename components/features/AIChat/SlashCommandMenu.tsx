@@ -42,9 +42,12 @@ export function SlashCommandMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const commands = filterSlashCommands(query);
 
-  useEffect(() => {
+  // Reset selection when the query changes (adjusted during render, not in an effect)
+  const [prevQuery, setPrevQuery] = useState(query);
+  if (query !== prevQuery) {
+    setPrevQuery(query);
     setSelectedIndex(0);
-  }, [query]);
+  }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

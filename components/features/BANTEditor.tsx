@@ -44,7 +44,7 @@ export function BANTEditor({ leadId, data }: BANTEditorProps) {
     if (!input) return;
     setFormData(prev => ({
       ...prev,
-      [key]: { ...prev[key], [field]: [...(prev[key] as any)[field], input] },
+      [key]: { ...prev[key], [field]: [...(prev[key] as unknown as Record<string, string[]>)[field], input] },
     }));
     setTagInputs(prev => ({ ...prev, [`${key}-${field}`]: "" }));
   };
@@ -52,7 +52,7 @@ export function BANTEditor({ leadId, data }: BANTEditorProps) {
   const handleRemoveTag = (key: keyof BANTData, field: string, index: number) => {
     setFormData(prev => ({
       ...prev,
-      [key]: { ...prev[key], [field]: (prev[key] as any)[field].filter((_: string, i: number) => i !== index) },
+      [key]: { ...prev[key], [field]: (prev[key] as unknown as Record<string, string[]>)[field].filter((_: string, i: number) => i !== index) },
     }));
   };
 
@@ -80,8 +80,8 @@ export function BANTEditor({ leadId, data }: BANTEditorProps) {
       <div className="space-y-6">
         {sections.map((section) => {
           const sectionData = formData[section.key];
-          const tags = (sectionData as any)[section.tagsField] as string[];
-          const textValue = (sectionData as any)[section.textField] as string;
+          const tags = (sectionData as unknown as Record<string, string[]>)[section.tagsField];
+          const textValue = (sectionData as unknown as Record<string, string>)[section.textField];
 
           return (
             <div key={section.key} className="rounded border border-neutral-200 dark:border-neutral-800 p-4">

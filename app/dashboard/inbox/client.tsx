@@ -180,6 +180,7 @@ export function InboxClient() {
 
   useEffect(() => {
     if (isEmailView) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs server data into local state; restructure tracked in PLAN.md
       Promise.all([fetchThreads(), fetchStats()]);
     } else {
       fetchUnifiedItems();
@@ -191,6 +192,7 @@ export function InboxClient() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncs server data into local state; restructure tracked in PLAN.md
     setLoading(true);
     setSelectedThread(null);
     setSelectedUnifiedItem(null);

@@ -29,14 +29,12 @@ export function AIChatInput({
     }
   }, [input]);
 
-  // Detect slash commands
-  useEffect(() => {
-    if (input.startsWith("/") && !input.includes(" ")) {
-      setShowSlashMenu(true);
-    } else {
-      setShowSlashMenu(false);
-    }
-  }, [input]);
+  // Detect slash commands (adjusted during render when input changes, not in an effect)
+  const [prevInput, setPrevInput] = useState(input);
+  if (input !== prevInput) {
+    setPrevInput(input);
+    setShowSlashMenu(input.startsWith("/") && !input.includes(" "));
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -18,6 +18,9 @@ import {
 } from "@/lib/data/leads";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import type { ComponentProps } from "react";
+
+type ScoreBreakdownData = ComponentProps<typeof ScoreBreakdown>["breakdown"];
 
 interface LeadDrawerProps {
   open: boolean;
@@ -130,7 +133,7 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
                   breakdown={
                     typeof lead.scoreBreakdown === "string"
                       ? JSON.parse(lead.scoreBreakdown as string)
-                      : (lead.scoreBreakdown as any)
+                      : (lead.scoreBreakdown as unknown as ScoreBreakdownData)
                   }
                   compact
                 />

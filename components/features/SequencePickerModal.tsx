@@ -21,12 +21,20 @@ export function SequencePickerModal({ open, onClose, leadIds, onComplete }: Sequ
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [wasOpen, setWasOpen] = useState(false);
 
-  useEffect(() => {
+  // Reset selection when the modal opens (adjusted during render, not in an effect)
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (open) {
       setLoading(true);
       setSelectedId(null);
       setSearch("");
+    }
+  }
+
+  useEffect(() => {
+    if (open) {
       getSequences().then((res) => {
         setSequences((res.data ?? []).map((s) => ({
           id: s.id, name: s.name, status: s.status,
