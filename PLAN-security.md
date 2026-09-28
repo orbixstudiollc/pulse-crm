@@ -139,3 +139,11 @@ Verdict before fixes: "safe to push, but not yet safe to call C1 and H1-H8 close
 | 10 | LOW | Tests cover the pure functions, not the guard wiring in actions or the 028 SQL; `PublicAISettings` still declares three secret columns that are stripped at runtime | Deferred |
 
 Final gates on `98f86f3`: `npx tsc --noEmit` 0 errors; `npm run lint` 0 errors (175 warnings); `npm test` 261/261 across 13 files; `npm run build` ok; `npm audit --omit=dev` 0 findings at every severity.
+
+## Rollout record (2026-09-29)
+
+- New Vercel project `orbix2/pulse-crm` (team Orbixstudio, Hobby), GitHub-connected, production `https://pulse-crm-weld.vercel.app`. Crons trimmed to the two daily jobs (`2c0bf5b`); lead-finder crons return with Pro.
+- The previous Vercel account (`hello-7669`, Hobby) was paused for fair-use, and the Supabase project `Pluse` (`gwfktpaczpzigfbzrngj`) was paused too; both explain why nothing had deployed since Mar 30. Supabase was resumed on 2026-09-29.
+- `028_security_hardening.sql` applied through the Supabase SQL editor on 2026-09-29 (result row `migration 028 applied`). C1 and H3 are therefore closed at the database boundary as well. `029_open_access_guests.sql` applied the same way.
+- Testing phase: `NEXT_PUBLIC_OPEN_ACCESS=true` is set on the Vercel project and "Allow anonymous sign-ins" is enabled in Supabase Auth, so visitors get a guest workspace and never see login or sign-up (`decc413`). To restore normal auth later: unset the env var and redeploy; the anonymous toggle can stay or go.
+- Env vars on the new project: Supabase URL/anon/service-role, `NEXT_PUBLIC_APP_URL`, `PULSE_CRM_API_KEY`, the Google OAuth trio (redirect URI still points at the old domain), `ENCRYPTION_KEY`, `CRON_SECRET`, `NEXT_PUBLIC_OPEN_ACCESS`. `ANTHROPIC_API_KEY` intentionally not set yet.
