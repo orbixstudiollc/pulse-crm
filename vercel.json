@@ -7,14 +7,6 @@
     {
       "path": "/api/cron/daily-reset",
       "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/lead-finder",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/lead-finder-worker",
-      "schedule": "* * * * *"
     }
   ],
   "functions": {
