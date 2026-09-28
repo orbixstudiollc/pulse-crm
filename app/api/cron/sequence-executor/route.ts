@@ -7,6 +7,7 @@ import { getRandomDelay } from "@/lib/linkedin/rate-limiter";
 import { NextResponse } from "next/server";
 import type { Json } from "@/types/database";
 import { verifyCronRequest } from "@/lib/security";
+import { escapeHtml } from "@/lib/personalization/substitute";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // 5 minutes
@@ -705,7 +706,7 @@ async function processEmailStep(
     };
     for (const [key, value] of Object.entries(mergeFields)) {
       subject = subject.replace(new RegExp(key.replace(/[{}]/g, "\\$&"), "gi"), value);
-      html = html.replace(new RegExp(key.replace(/[{}]/g, "\\$&"), "gi"), value);
+      html = html.replace(new RegExp(key.replace(/[{}]/g, "\\$&"), "gi"), escapeHtml(value));
     }
   }
 

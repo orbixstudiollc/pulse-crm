@@ -9,6 +9,14 @@ import { escapePostgrestLike } from "@/lib/security";
 type EmailAccountInsert = Database["public"]["Tables"]["email_accounts"]["Insert"];
 type EmailAccountUpdate = Database["public"]["Tables"]["email_accounts"]["Update"];
 
+function withoutSecrets<T extends { oauth_tokens?: unknown; smtp_config?: unknown; imap_config?: unknown }>(
+  row: T
+): Omit<T, "oauth_tokens" | "smtp_config" | "imap_config"> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { oauth_tokens, smtp_config, imap_config, ...rest } = row;
+  return rest;
+}
+
 // ── Email Accounts ──────────────────────────────────────────────────────────
 
 export async function getEmailAccounts() {
@@ -22,7 +30,7 @@ export async function getEmailAccounts() {
     .order("created_at", { ascending: false });
 
   if (error) return { error: error.message, data: [] };
-  return { data: data ?? [] };
+  return { data: (data ?? []).map(withoutSecrets) };
 }
 
 export async function createEmailAccount(account: {
@@ -372,7 +380,7 @@ export async function getAccountWarmupStatus() {
     .order("email_address");
 
   if (error) return { error: error.message, data: [] };
-  return { data: data ?? [] };
+  return { data: (data ?? []).map(withoutSecrets) };
 }
 
 // ── Campaign Runs (Multi-sequence campaigns) ────────────────────────────────

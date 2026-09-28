@@ -56,7 +56,7 @@ import {
 } from "@/lib/actions/sequences";
 import type { Database } from "@/types/database";
 
-type EmailAccount = Database["public"]["Tables"]["email_accounts"]["Row"];
+type EmailAccount = Omit<Database["public"]["Tables"]["email_accounts"]["Row"], "oauth_tokens" | "smtp_config" | "imap_config">;
 type CampaignTag = Database["public"]["Tables"]["campaign_tags"]["Row"];
 
 // ── Count-up hook ───────────────────────────────────────────────────────────

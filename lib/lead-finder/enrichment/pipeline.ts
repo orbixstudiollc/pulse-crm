@@ -131,13 +131,20 @@ export async function enrichSingleLead(
     // matches no row and the result is discarded. `retry` is accepted only
     // because recoverStaleRunning can flip a still-executing job to retry.
     if (options?.jobId) {
-      const { data: claimed } = await createAdminClient()
+      const { data: claimed, error: casError } = await createAdminClient()
         .from("lf_enrichment_jobs")
         .update({ status: "done", finished_at: new Date().toISOString() })
         .eq("id", options.jobId)
         .in("status", ["running", "retry"])
         .select("id");
+      if (casError) throw new Error(casError.message);
       if (!claimed || claimed.length === 0) {
+        await supabase
+          .from("lf_leads")
+          .update({ status: typedLead.status })
+          .eq("id", leadId)
+          .eq("organization_id", orgId)
+          .eq("status", "enriching");
         return { persisted: false };
       }
     }
@@ -187,7 +194,7 @@ export async function enrichSingleLead(
       if (options?.jobId) {
         await createAdminClient()
           .from("lf_enrichment_jobs")
-          .update({ status: "failed", last_error: String(err).slice(0, 500) })
+          .update({ status: "running", last_error: String(err).slice(0, 500) })
           .eq("id", options.jobId)
           .eq("status", "done");
       }
