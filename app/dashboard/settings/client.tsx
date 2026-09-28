@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { chartAccent, chartGrid, chartTooltipStyle, axisTick } from "@/lib/design-system/chart-colors";
 import {
   Button,
   Input,
@@ -279,17 +280,17 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
     <>
       {/* Profile header */}
       <div className="mb-8">
-        <h2 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
+        <h2 className="text-xl font-semibold text-fg">
           Profile
         </h2>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+        <p className="text-sm text-fg-secondary mt-1">
           Manage your personal information and account settings
         </p>
       </div>
 
       {/* Avatar section */}
       <div className="flex items-center gap-5 mb-8">
-        <div className="relative w-24 h-24 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+        <div className="relative w-24 h-24 rounded-full bg-muted flex items-center justify-center border border-line overflow-hidden">
           {avatar ? (
             <>
               <Image
@@ -308,7 +309,7 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
               </button>
             </>
           ) : (
-            <UserIcon size={32} className="text-neutral-400" />
+            <UserIcon size={32} className="text-fg-muted" />
           )}
           {uploading && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/40">
@@ -334,14 +335,14 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
             onChange={handleImageUpload}
             className="hidden"
           />
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="text-xs text-fg-secondary">
             JPG, PNG or GIF. Max 2MB.
           </p>
           {avatar && (
             <button
               type="button"
               onClick={handleRemoveAvatar}
-              className="text-xs text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              className="text-xs text-danger hover:text-danger transition-colors"
             >
               Remove Photo
             </button>
@@ -398,14 +399,14 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
       </div>
 
       {/* Divider */}
-      <div className="border-t border-neutral-200 dark:border-neutral-800 my-10" />
+      <div className="border-t border-line my-10" />
 
       {/* Seed Demo Data */}
       <div className="mb-10">
-        <h3 className="text-base font-medium text-neutral-950 dark:text-neutral-50 mb-1">
+        <h3 className="text-base font-medium text-fg mb-1">
           Demo Data
         </h3>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+        <p className="text-sm text-fg-secondary mb-4">
           Populate your workspace with realistic sample data including leads, customers, deals, contacts, competitors, sequences, proposals, and more.
         </p>
         <div className="flex items-center gap-3">
@@ -453,14 +454,14 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
       </div>
 
       {/* Divider */}
-      <div className="border-t border-neutral-200 dark:border-neutral-800 my-10" />
+      <div className="border-t border-line my-10" />
 
       {/* Export Data */}
       <div className="mb-10">
-        <h3 className="text-base font-medium text-neutral-950 dark:text-neutral-50 mb-1">
+        <h3 className="text-base font-medium text-fg mb-1">
           Export Your Data
         </h3>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+        <p className="text-sm text-fg-secondary mb-4">
           Download all your data including leads, customers, deals, and
           activities as a CSV file.
         </p>
@@ -493,11 +494,11 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
       </div>
 
       {/* Danger Zone - Delete Account */}
-      <div className="rounded-xl border border-red-200 dark:border-red-500/30 p-6">
-        <h3 className="text-base font-medium text-red-600 dark:text-red-400 mb-2">
+      <div className="rounded-lg border border-danger bg-surface p-4">
+        <h3 className="text-base font-medium text-danger mb-2">
           Delete Account
         </h3>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+        <p className="text-sm text-fg-secondary mb-4">
           Once you delete your account, there is no going back. All your data
           including leads, customers, deals, activities, and settings will be
           permanently removed. Please be certain.
@@ -513,7 +514,7 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
           }
           onClick={() => setShowDeleteModal(true)}
           disabled={deleting}
-          className="bg-red-500 dark:bg-red-600 border-red-500 dark:border-red-600 text-white! hover:bg-red-600 dark:hover:bg-red-700 hover:border-red-600 dark:hover:border-red-700"
+          className="bg-danger border-danger text-on-inverse! hover:bg-danger hover:border-danger"
         >
           Delete My Account
         </Button>
@@ -632,10 +633,10 @@ function SecuritySection() {
     <>
       {/* Header */}
       <div className="mb-8">
-        <h2 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
+        <h2 className="text-xl font-semibold text-fg">
           Security
         </h2>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+        <p className="text-sm text-fg-secondary mt-1">
           Manage your password and account security
         </p>
       </div>
@@ -654,7 +655,7 @@ function SecuritySection() {
                 type="button"
                 tabIndex={-1}
                 onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                className="text-fg-muted hover:text-fg-secondary transition-colors"
               >
                 {showCurrentPassword ? (
                   <EyeSlashIcon size={18} />
@@ -679,7 +680,7 @@ function SecuritySection() {
                   type="button"
                   tabIndex={-1}
                   onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                  className="text-fg-muted hover:text-fg-secondary transition-colors"
                 >
                   {showNewPassword ? (
                     <EyeSlashIcon size={18} />
@@ -702,7 +703,7 @@ function SecuritySection() {
                   type="button"
                   tabIndex={-1}
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                  className="text-fg-muted hover:text-fg-secondary transition-colors"
                 >
                   {showConfirmPassword ? (
                     <EyeSlashIcon size={18} />
@@ -729,15 +730,15 @@ function SecuritySection() {
       </div>
 
       {/* Divider */}
-      <div className="border-t border-neutral-200 dark:border-neutral-800 my-10" />
+      <div className="border-t border-line my-10" />
 
       {/* Two Factor Authentication */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-base font-medium text-neutral-950 dark:text-neutral-50">
+          <h3 className="text-base font-medium text-fg">
             Two factor authentication
           </h3>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
+          <p className="text-sm text-fg-secondary mt-0.5">
             Add an extra layer of security to your account
           </p>
         </div>
@@ -747,14 +748,14 @@ function SecuritySection() {
       </div>
 
       {/* Divider */}
-      <div className="border-t border-neutral-200 dark:border-neutral-800 my-10" />
+      <div className="border-t border-line my-10" />
 
       {/* Active Sessions */}
       <div className="mb-6">
-        <h3 className="text-base font-medium text-neutral-950 dark:text-neutral-50">
+        <h3 className="text-base font-medium text-fg">
           Active Sessions
         </h3>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
+        <p className="text-sm text-fg-secondary mt-0.5">
           Devices where you&apos;re currently logged in
         </p>
       </div>
@@ -764,21 +765,21 @@ function SecuritySection() {
           <div
             key={session.id}
             className={cn(
-              "flex items-center justify-between rounded-xl border px-5 py-4 border-neutral-200 dark:border-neutral-800",
+              "flex items-center justify-between rounded-lg border border-line bg-surface p-4",
             )}
           >
             <div className="flex items-center gap-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded bg-neutral-100 dark:bg-neutral-900">
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
                 <session.icon
                   size={20}
-                  className="text-neutral-600 dark:text-neutral-400"
+                  className="text-fg-secondary"
                 />
               </div>
               <div>
-                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <p className="text-sm font-medium text-fg">
                   {session.device} &bull; {session.location}
                 </p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                <p className="text-xs text-fg-secondary">
                   {session.isCurrent && "Current session · "}
                   {session.lastActive}
                 </p>
@@ -821,7 +822,7 @@ const themeImages: Record<ThemeOption, string> = {
 
 function ThemePreview({ theme }: { theme: ThemeOption }) {
   return (
-    <div className="rounded border border-neutral-200 dark:border-neutral-800 pt-5 pl-5 pb-0 pr-0 flex items-end justify-end overflow-hidden">
+    <div className="rounded-md border border-line bg-subtle pt-5 pl-5 pb-0 pr-0 flex items-end justify-end overflow-hidden">
       <Image
         src={themeImages[theme]}
         alt={`${theme} theme preview`}
@@ -916,17 +917,17 @@ function PreferencesSection({
     <>
       {/* Header */}
       <div className="mb-8">
-        <h2 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
+        <h2 className="text-xl font-semibold text-fg">
           Preferences
         </h2>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+        <p className="text-sm text-fg-secondary mt-1">
           Customize your experience and display settings
         </p>
       </div>
 
       {/* Theme selector */}
       <div className="mb-10">
-        <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-3">
+        <p className="text-sm font-medium text-fg mb-3">
           Theme
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -938,30 +939,30 @@ function PreferencesSection({
                 type="button"
                 onClick={() => setTheme(t.id)}
                 className={cn(
-                  "relative rounded-xl border-2 p-4 text-left transition-all",
+                  "relative rounded-lg border bg-surface p-4 text-left transition-colors",
                   isSelected
-                    ? "border-neutral-950 dark:border-neutral-50"
-                    : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700",
+                    ? "border-inverse"
+                    : "border-line hover:border-fg-muted",
                 )}
               >
                 {/* Label + checkbox */}
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                  <span className="text-sm font-medium text-fg">
                     {t.label}
                   </span>
                   <div
                     className={cn(
                       "flex h-5 w-5 items-center justify-center rounded border transition-colors",
                       isSelected
-                        ? "bg-neutral-950 dark:bg-neutral-50 border-neutral-950 dark:border-neutral-50"
-                        : "border-neutral-300 dark:border-neutral-700",
+                        ? "bg-inverse border-inverse"
+                        : "border-line",
                     )}
                   >
                     {isSelected && (
                       <CheckIcon
                         size={12}
                         weight="bold"
-                        className="text-white dark:text-neutral-950"
+                        className="text-on-inverse"
                       />
                     )}
                   </div>
@@ -975,7 +976,7 @@ function PreferencesSection({
       </div>
 
       {/* Divider */}
-      <div className="border-t border-neutral-200 dark:border-neutral-800 my-10" />
+      <div className="border-t border-line my-10" />
 
       {/* Dropdowns */}
       <div className="space-y-5">
@@ -1125,23 +1126,23 @@ function NotificationsSection({
     <>
       {/* Header */}
       <div className="mb-8">
-        <h2 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
+        <h2 className="text-xl font-semibold text-fg">
           Notifications
         </h2>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+        <p className="text-sm text-fg-secondary mt-1">
           Choose what you want to be notified about
         </p>
       </div>
 
       {/* Notification rows */}
-      <div className="divide-y divide-neutral-200 dark:divide-neutral-800 border-t border-neutral-200 dark:border-neutral-800">
+      <div className="divide-y divide-row rounded-lg border border-line bg-surface px-4">
         {notificationSettings.map((item) => (
-          <div key={item.id} className="flex items-center justify-between py-5">
+          <div key={item.id} className="flex items-center justify-between gap-4 py-4">
             <div>
-              <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              <p className="text-sm font-medium text-fg">
                 {item.title}
               </p>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
+              <p className="text-sm text-fg-secondary mt-0.5">
                 {item.description}
               </p>
             </div>
@@ -1238,10 +1239,10 @@ function IntegrationsSection({
     <>
       {/* Header */}
       <div className="mb-8">
-        <h2 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
+        <h2 className="text-xl font-semibold text-fg">
           Integrations
         </h2>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+        <p className="text-sm text-fg-secondary mt-1">
           Connect your favorite tools to Pulse
         </p>
       </div>
@@ -1253,10 +1254,10 @@ function IntegrationsSection({
           return (
             <div
               key={item.id}
-              className="flex items-center justify-between rounded-xl border border-neutral-200 dark:border-neutral-800 px-5 py-4"
+              className="flex items-center justify-between rounded-lg border border-line bg-surface p-4"
             >
               <div className="flex items-center gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden">
+                <div className="flex h-10 w-10 items-center justify-center rounded-md border border-line bg-surface overflow-hidden">
                   <Image
                     src={item.icon}
                     alt={item.name}
@@ -1266,10 +1267,10 @@ function IntegrationsSection({
                   />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                  <p className="text-sm font-medium text-fg">
                     {item.name}
                   </p>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  <p className="text-sm text-fg-secondary mt-0.5">
                     {item.description}
                   </p>
                 </div>
@@ -1310,10 +1311,10 @@ function IntegrationsSection({
 // ── Billing Section ──────────────────────────────────────────────────────────
 
 const PLAN_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  free:       { bg: "bg-neutral-100 dark:bg-neutral-500/10", text: "text-neutral-600 dark:text-neutral-400", border: "border-neutral-200 dark:border-neutral-500/30" },
-  starter:    { bg: "bg-green-50 dark:bg-green-500/10", text: "text-green-600 dark:text-green-400", border: "border-green-200 dark:border-green-500/30" },
-  pro:        { bg: "bg-blue-50 dark:bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-200 dark:border-blue-500/30" },
-  enterprise: { bg: "bg-purple-50 dark:bg-purple-500/10", text: "text-purple-600 dark:text-purple-400", border: "border-purple-200 dark:border-purple-500/30" },
+  free:       { bg: "bg-muted", text: "text-fg-secondary", border: "border-line" },
+  starter:    { bg: "bg-success-surface", text: "text-success", border: "border-success" },
+  pro:        { bg: "bg-accent-surface", text: "text-accent-strong", border: "border-accent" },
+  enterprise: { bg: "bg-accent-surface", text: "text-accent-strong", border: "border-accent" },
 };
 
 const USAGE_COLORS: ("green" | "blue" | "yellow" | "amber")[] = ["green", "blue", "yellow", "amber"];
@@ -1325,7 +1326,7 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
   if (!billingData) {
     return (
       <div className="flex items-center justify-center py-20">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">Unable to load billing data.</p>
+        <p className="text-sm text-fg-secondary">Unable to load billing data.</p>
       </div>
     );
   }
@@ -1355,36 +1356,36 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
     <>
       {/* Header */}
       <div className="mb-8">
-        <h2 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
+        <h2 className="text-xl font-semibold text-fg">
           Billing
         </h2>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+        <p className="text-sm text-fg-secondary mt-1">
           Manage your subscription and payment methods
         </p>
       </div>
 
       {/* Plan card */}
-      <div className="rounded-xl border border-neutral-200 dark:border-neutral-800">
+      <div className="rounded-lg border border-line bg-surface">
         {/* Plan header */}
-        <div className="flex items-start justify-between px-6 pt-6 pb-5">
+        <div className="flex items-start justify-between p-4">
           <div>
-            <div className={cn("inline-flex items-center gap-1.5 rounded-full border-[0.5px] px-3 py-1 mb-3", planColor.bg, planColor.border)}>
+            <div className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 mb-3", planColor.bg, planColor.border)}>
               <StarIcon size={14} weight="fill" className={planColor.text} />
-              <span className={cn("text-xs font-semibold uppercase tracking-wide", planColor.text)}>
+              <span className={cn("text-xs font-semibold", planColor.text)}>
                 {plan.label}
               </span>
             </div>
-            <h3 className="text-2xl font-serif text-neutral-950 dark:text-neutral-50">
+            <h3 className="text-[22px] leading-7 font-semibold text-fg">
               {plan.name}
             </h3>
-            <p className="text-xs text-neutral-500">Default plan — billing is not connected to a payment provider.</p>
+            <p className="text-xs text-fg-secondary">Default plan — billing is not connected to a payment provider.</p>
           </div>
           <div className="text-right">
-            <p className="text-3xl font-semibold text-neutral-950 dark:text-neutral-50">
+            <p className="text-xl font-semibold text-fg">
               {plan.price === 0 ? "Free" : `$${plan.price}`}
             </p>
             {plan.price > 0 && (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              <p className="text-sm text-fg-secondary">
                 Per month
               </p>
             )}
@@ -1392,11 +1393,11 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-neutral-200 dark:border-neutral-800" />
+        <div className="border-t border-line" />
 
         {/* Usage section */}
-        <div className="px-6 py-5">
-          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-5">
+        <div className="p-4">
+          <p className="text-xs font-medium text-fg-secondary mb-3">
             Current Usage
           </p>
           <div className="space-y-5">
@@ -1404,7 +1405,7 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
               const isUnlimited = item.total === -1;
               return (
                 <div key={item.label} className="flex items-center gap-4">
-                  <span className="text-sm text-neutral-950 dark:text-neutral-50 w-28 shrink-0">
+                  <span className="text-sm text-fg w-28 shrink-0">
                     {item.label}
                   </span>
                   <Progress
@@ -1413,9 +1414,9 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
                     color={USAGE_COLORS[i % USAGE_COLORS.length]}
                     className="flex-1"
                   />
-                  <span className="text-sm text-neutral-500 dark:text-neutral-400 w-28 text-right shrink-0">
+                  <span className="text-sm text-fg-secondary w-28 text-right shrink-0">
                     {item.used.toLocaleString("en-IN")}{isUnlimited ? "" : ` / ${item.total.toLocaleString("en-IN")}`}
-                    {isUnlimited && <span className="text-xs ml-1 text-neutral-400">(unlimited)</span>}
+                    {isUnlimited && <span className="text-xs ml-1 text-fg-muted">(unlimited)</span>}
                     {item.unit}
                   </span>
                 </div>
@@ -1425,15 +1426,15 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-neutral-200 dark:border-neutral-800" />
+        <div className="border-t border-line" />
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 bg-neutral-50 dark:bg-neutral-900/50 rounded-b-xl">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <div className="flex items-center justify-between px-4 py-3 bg-subtle rounded-b-lg">
+          <p className="text-sm text-fg-secondary">
             {plan.price > 0 ? (
               <>
                 Next billing:{" "}
-                <span className="font-medium text-neutral-950 dark:text-neutral-50">
+                <span className="font-medium text-fg">
                   {formattedBillingDate}
                 </span>
               </>
@@ -1468,20 +1469,20 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
 
       {/* Upgrade banner */}
       {upgradePlanId && (
-        <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 px-6 py-5">
+        <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border border-dashed border-line bg-surface p-4">
           <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded bg-purple-100 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/30">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-accent-surface border border-accent">
               <LightningIcon
                 size={20}
                 weight="fill"
-                className="text-purple-600 dark:text-purple-400"
+                className="text-accent-strong"
               />
             </div>
             <div>
-              <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              <p className="text-sm font-medium text-fg">
                 Upgrade to {UPGRADE_NAMES[upgradePlanId] ?? upgradePlanId}
               </p>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
+              <p className="text-sm text-fg-secondary mt-0.5">
                 {upgradePlanId === "enterprise"
                   ? "Unlimited leads, team members, and custom integrations"
                   : "More leads, team seats, and advanced features"}
@@ -1490,10 +1491,10 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <span className="text-2xl font-semibold text-neutral-950 dark:text-neutral-50">
+              <span className="text-[22px] leading-7 font-semibold text-fg">
                 ${UPGRADE_PRICES[upgradePlanId] ?? 0}
               </span>
-              <span className="text-sm text-neutral-500 dark:text-neutral-400 ml-1">
+              <span className="text-sm text-fg-secondary ml-1">
                 / month
               </span>
             </div>
@@ -1634,10 +1635,10 @@ function AISettingsSection({
   return (
     <div className="max-w-2xl space-y-8">
       <div>
-        <h2 className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
+        <h2 className="text-xl font-semibold text-fg">
           AI Assistant
         </h2>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="mt-1 text-sm text-fg-secondary">
           Configure AI-powered features across your CRM. Pulse AI uses Claude to
           score leads, write emails, generate proposals, and provide strategic
           insights.
@@ -1646,10 +1647,10 @@ function AISettingsSection({
 
       {/* AI Provider */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+        <h3 className="text-sm font-semibold text-fg">
           AI Provider
         </h3>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+        <p className="text-xs text-fg-secondary">
           Choose your AI provider. Anthropic (direct) or OpenRouter for access to
           multiple models.
         </p>
@@ -1657,10 +1658,10 @@ function AISettingsSection({
           <button
             type="button"
             onClick={() => setAiProvider("anthropic")}
-            className={`flex-1 rounded border px-4 py-2.5 text-sm font-medium transition-colors ${
+            className={`flex-1 h-8 rounded-md border px-3 text-sm font-medium transition-colors ${
               aiProvider === "anthropic"
-                ? "border-neutral-950 dark:border-neutral-50 bg-neutral-950 dark:bg-neutral-50 text-white dark:text-neutral-950"
-                : "border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-500"
+                ? "border-inverse bg-inverse text-on-inverse"
+                : "border-line text-fg-secondary hover:border-fg-muted"
             }`}
           >
             Anthropic (Direct)
@@ -1668,10 +1669,10 @@ function AISettingsSection({
           <button
             type="button"
             onClick={() => setAiProvider("openrouter")}
-            className={`flex-1 rounded border px-4 py-2.5 text-sm font-medium transition-colors ${
+            className={`flex-1 h-8 rounded-md border px-3 text-sm font-medium transition-colors ${
               aiProvider === "openrouter"
-                ? "border-neutral-950 dark:border-neutral-50 bg-neutral-950 dark:bg-neutral-50 text-white dark:text-neutral-950"
-                : "border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-neutral-400 dark:hover:border-neutral-500"
+                ? "border-inverse bg-inverse text-on-inverse"
+                : "border-line text-fg-secondary hover:border-fg-muted"
             }`}
           >
             OpenRouter
@@ -1682,10 +1683,10 @@ function AISettingsSection({
       {/* API Key — conditional on provider */}
       {aiProvider === "anthropic" ? (
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+          <h3 className="text-sm font-semibold text-fg">
             Anthropic API Key
           </h3>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="text-xs text-fg-secondary">
             Enter your Anthropic API key for AI features. If not set, the app-level
             key will be used.
           </p>
@@ -1696,12 +1697,12 @@ function AISettingsSection({
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder="sk-ant-..."
-                className="w-full rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-950/10 dark:focus:ring-neutral-50/10"
+                className="h-8 w-full rounded-md border border-line bg-surface px-3 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
               />
               <button
                 type="button"
                 onClick={() => setShowKey(!showKey)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-muted hover:text-fg-secondary"
               >
                 {showKey ? (
                   <EyeSlashIcon size={16} />
@@ -1714,16 +1715,16 @@ function AISettingsSection({
         </div>
       ) : (
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+          <h3 className="text-sm font-semibold text-fg">
             OpenRouter API Key
           </h3>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="text-xs text-fg-secondary">
             Enter your OpenRouter API key. Get one at{" "}
             <a
               href="https://openrouter.ai/keys"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-neutral-950 dark:text-neutral-50 underline"
+              className="text-fg underline"
             >
               openrouter.ai/keys
             </a>
@@ -1735,12 +1736,12 @@ function AISettingsSection({
                 value={openrouterKey}
                 onChange={(e) => setOpenrouterKey(e.target.value)}
                 placeholder="sk-or-v1-..."
-                className="w-full rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-950/10 dark:focus:ring-neutral-50/10"
+                className="h-8 w-full rounded-md border border-line bg-surface px-3 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
               />
               <button
                 type="button"
                 onClick={() => setShowOpenrouterKey(!showOpenrouterKey)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-muted hover:text-fg-secondary"
               >
                 {showOpenrouterKey ? (
                   <EyeSlashIcon size={16} />
@@ -1755,10 +1756,10 @@ function AISettingsSection({
 
       {/* Apify API Key */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+        <h3 className="text-sm font-semibold text-fg">
           Apify Integration
         </h3>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+        <p className="text-xs text-fg-secondary">
           Enter your Apify API token to enable lead scraping from Google Maps,
           LinkedIn, Instagram, and more.
         </p>
@@ -1769,12 +1770,12 @@ function AISettingsSection({
               value={apifyKey}
               onChange={(e) => setApifyKey(e.target.value)}
               placeholder="apify_api_..."
-              className="w-full rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-950/10 dark:focus:ring-neutral-50/10"
+              className="h-8 w-full rounded-md border border-line bg-surface px-3 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
             />
             <button
               type="button"
               onClick={() => setShowApifyKey(!showApifyKey)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-muted hover:text-fg-secondary"
             >
               {showApifyKey ? (
                 <EyeSlashIcon size={16} />
@@ -1788,10 +1789,10 @@ function AISettingsSection({
 
       {/* Default Model */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+        <h3 className="text-sm font-semibold text-fg">
           Default Model
         </h3>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+        <p className="text-xs text-fg-secondary">
           Pulse AI uses smart routing (Haiku for quick tasks, Sonnet for complex).
           Override the default here.
         </p>
@@ -1812,17 +1813,17 @@ function AISettingsSection({
 
       {/* Feature Toggles + Autonomy */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+        <h3 className="text-sm font-semibold text-fg">
           AI Features & Autonomy
         </h3>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+        <p className="text-xs text-fg-secondary">
           Enable or disable AI features and set how autonomous each should be.
         </p>
         <div className="space-y-3">
           {Object.entries(featureLabels).map(([key, label]) => (
             <div
               key={key}
-              className="flex items-center justify-between rounded border border-neutral-200 dark:border-neutral-800 p-3"
+              className="flex items-center justify-between rounded-lg border border-line bg-surface p-3"
             >
               <div className="flex items-center gap-3">
                 <Toggle
@@ -1831,7 +1832,7 @@ function AISettingsSection({
                     setFeatures((prev) => ({ ...prev, [key]: val }))
                   }
                 />
-                <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <span className="text-sm font-medium text-fg">
                   {label}
                 </span>
               </div>
@@ -1841,7 +1842,7 @@ function AISettingsSection({
                   onChange={(e) =>
                     setAutonomy((prev) => ({ ...prev, [key]: e.target.value }))
                   }
-                  className="rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-2 py-1 text-xs text-neutral-700 dark:text-neutral-300 focus:outline-none"
+                  className="h-7 rounded-md border border-line bg-surface px-2 text-xs text-fg focus:outline-none focus:ring-2 focus:ring-accent/30"
                 >
                   {autonomyOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -1857,18 +1858,18 @@ function AISettingsSection({
 
       {/* Token Usage */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+        <h3 className="text-sm font-semibold text-fg">
           Token Usage
         </h3>
         <div className="grid grid-cols-2 gap-4">
-          <div className="rounded border border-neutral-200 dark:border-neutral-800 p-4">
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <p className="text-xs text-fg-secondary mb-2">
               Today
             </p>
-            <p className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+            <p className="text-[22px] leading-7 font-semibold text-fg">
               {tokensToday.toLocaleString()}
             </p>
-            <p className="text-xs text-neutral-400 mt-1">
+            <p className="text-xs text-fg-muted mt-1">
               / {limitDaily.toLocaleString()} limit
             </p>
             <Progress
@@ -1876,14 +1877,14 @@ function AISettingsSection({
               className="mt-2"
             />
           </div>
-          <div className="rounded border border-neutral-200 dark:border-neutral-800 p-4">
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <p className="text-xs text-fg-secondary mb-2">
               This Month
             </p>
-            <p className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+            <p className="text-[22px] leading-7 font-semibold text-fg">
               {tokensMonth.toLocaleString()}
             </p>
-            <p className="text-xs text-neutral-400 mt-1">
+            <p className="text-xs text-fg-muted mt-1">
               / {limitMonthly.toLocaleString()} limit
             </p>
             <Progress
@@ -1896,20 +1897,20 @@ function AISettingsSection({
         </div>
 
         {usageStats.length > 0 && (
-          <div className="rounded border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+          <div className="rounded-lg border border-line bg-surface overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-neutral-50 dark:bg-neutral-800/50">
-                  <th className="text-left px-4 py-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                <tr className="bg-muted">
+                  <th className="text-left px-3 py-2 text-[13px] font-medium text-fg-secondary">
                     Feature
                   </th>
-                  <th className="text-right px-4 py-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                  <th className="text-right px-3 py-2 text-[13px] font-medium text-fg-secondary">
                     Requests
                   </th>
-                  <th className="text-right px-4 py-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                  <th className="text-right px-3 py-2 text-[13px] font-medium text-fg-secondary">
                     Tokens
                   </th>
-                  <th className="text-right px-4 py-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                  <th className="text-right px-3 py-2 text-[13px] font-medium text-fg-secondary">
                     Success
                   </th>
                 </tr>
@@ -1918,18 +1919,18 @@ function AISettingsSection({
                 {usageStats.map((stat) => (
                   <tr
                     key={stat.feature}
-                    className="border-t border-neutral-100 dark:border-neutral-800"
+                    className="border-t border-row"
                   >
-                    <td className="px-4 py-2 text-neutral-950 dark:text-neutral-50 capitalize">
+                    <td className="px-3 py-2 text-[13px] text-fg capitalize">
                       {stat.feature.replace(/_/g, " ")}
                     </td>
-                    <td className="px-4 py-2 text-right text-neutral-600 dark:text-neutral-400">
+                    <td className="px-3 py-2 text-right text-[13px] text-fg-secondary">
                       {stat.total_requests}
                     </td>
-                    <td className="px-4 py-2 text-right text-neutral-600 dark:text-neutral-400">
+                    <td className="px-3 py-2 text-right text-[13px] text-fg-secondary">
                       {stat.total_tokens.toLocaleString()}
                     </td>
-                    <td className="px-4 py-2 text-right text-neutral-600 dark:text-neutral-400">
+                    <td className="px-3 py-2 text-right text-[13px] text-fg-secondary">
                       {stat.success_rate}%
                     </td>
                   </tr>
@@ -1943,38 +1944,37 @@ function AISettingsSection({
       {/* Usage Chart (last 14 days) */}
       {dailyChart.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+          <h3 className="text-sm font-semibold text-fg">
             Token Usage (Last 14 Days)
           </h3>
-          <div className="rounded border border-neutral-200 dark:border-neutral-800 p-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={dailyChart}>
                 <defs>
                   <linearGradient id="tokenGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0a0a0a" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#0a0a0a" stopOpacity={0} />
+                    <stop offset="5%" stopColor={chartAccent} stopOpacity={0.15} />
+                    <stop offset="95%" stopColor={chartAccent} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 11, fill: "#737373" }}
+                  tick={axisTick}
                   tickFormatter={(d) => {
                     const dt = new Date(d + "T00:00:00");
                     return `${dt.getMonth() + 1}/${dt.getDate()}`;
                   }}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: "#737373" }}
+                  tick={axisTick}
                   tickFormatter={(v) =>
                     v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)
                   }
                 />
                 <Tooltip
-                  contentStyle={{
+                  contentStyle={{ ...chartTooltipStyle,
                     fontSize: 12,
                     borderRadius: 8,
-                    border: "1px solid #e5e5e5",
                   }}
                   formatter={(value, name) => [
                     typeof value === "number" && name === "tokens"
@@ -1993,7 +1993,7 @@ function AISettingsSection({
                 <Area
                   type="monotone"
                   dataKey="tokens"
-                  stroke="#0a0a0a"
+                  stroke={chartAccent}
                   strokeWidth={2}
                   fill="url(#tokenGrad)"
                 />
@@ -2006,29 +2006,29 @@ function AISettingsSection({
       {/* Recent Usage Log */}
       {usageLog.length > 0 && (
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+          <h3 className="text-sm font-semibold text-fg">
             Recent Activity
           </h3>
-          <div className="rounded border border-neutral-200 dark:border-neutral-800 overflow-hidden max-h-[320px] overflow-y-auto">
+          <div className="rounded-lg border border-line bg-surface overflow-x-auto max-h-[320px] overflow-y-auto">
             <table className="w-full text-sm">
               <thead className="sticky top-0">
-                <tr className="bg-neutral-50 dark:bg-neutral-800/50">
-                  <th className="text-left px-4 py-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                <tr className="bg-muted">
+                  <th className="text-left px-3 py-2 text-[13px] font-medium text-fg-secondary">
                     Feature
                   </th>
-                  <th className="text-left px-4 py-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                  <th className="text-left px-3 py-2 text-[13px] font-medium text-fg-secondary">
                     Model
                   </th>
-                  <th className="text-right px-4 py-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                  <th className="text-right px-3 py-2 text-[13px] font-medium text-fg-secondary">
                     Tokens
                   </th>
-                  <th className="text-right px-4 py-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                  <th className="text-right px-3 py-2 text-[13px] font-medium text-fg-secondary">
                     Time
                   </th>
-                  <th className="text-center px-4 py-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                  <th className="text-center px-3 py-2 text-[13px] font-medium text-fg-secondary">
                     Status
                   </th>
-                  <th className="text-right px-4 py-2 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                  <th className="text-right px-3 py-2 text-[13px] font-medium text-fg-secondary">
                     When
                   </th>
                 </tr>
@@ -2037,30 +2037,30 @@ function AISettingsSection({
                 {usageLog.map((entry) => (
                   <tr
                     key={entry.id}
-                    className="border-t border-neutral-100 dark:border-neutral-800"
+                    className="border-t border-row"
                   >
-                    <td className="px-4 py-2 text-neutral-950 dark:text-neutral-50 capitalize">
+                    <td className="px-3 py-2 text-[13px] text-fg capitalize">
                       {entry.feature.replace(/_/g, " ")}
                     </td>
-                    <td className="px-4 py-2 text-neutral-600 dark:text-neutral-400 text-xs">
+                    <td className="px-3 py-2 text-fg-secondary text-xs">
                       {entry.model.split("-").pop() || entry.model}
                     </td>
-                    <td className="px-4 py-2 text-right text-neutral-600 dark:text-neutral-400">
+                    <td className="px-3 py-2 text-right text-[13px] text-fg-secondary">
                       {entry.total_tokens.toLocaleString()}
                     </td>
-                    <td className="px-4 py-2 text-right text-neutral-600 dark:text-neutral-400">
+                    <td className="px-3 py-2 text-right text-[13px] text-fg-secondary">
                       {entry.duration_ms < 1000
                         ? `${entry.duration_ms}ms`
                         : `${(entry.duration_ms / 1000).toFixed(1)}s`}
                     </td>
-                    <td className="px-4 py-2 text-center">
+                    <td className="px-3 py-2 text-center">
                       {entry.success ? (
                         <Badge variant="success">OK</Badge>
                       ) : (
                         <Badge variant="error">Fail</Badge>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-right text-xs text-neutral-400">
+                    <td className="px-4 py-2 text-right text-xs text-fg-muted">
                       {new Date(entry.created_at).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
@@ -2077,7 +2077,7 @@ function AISettingsSection({
       )}
 
       {/* Save Button */}
-      <div className="flex justify-end pt-4 border-t border-neutral-200 dark:border-neutral-800">
+      <div className="flex justify-end pt-4 border-t border-line">
         <Button onClick={handleSave} disabled={isPending}>
           {isPending ? (
             <CircleNotchIcon size={16} className="animate-spin mr-2" />
@@ -2222,12 +2222,12 @@ function WhatsAppSection() {
   const qualityBadge = (q: string | null) => {
     if (!q) return null;
     const colors: Record<string, string> = {
-      GREEN: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-      YELLOW: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-      RED: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+      GREEN: "bg-success-surface text-success",
+      YELLOW: "bg-warning-surface text-warning",
+      RED: "bg-danger-surface text-danger",
     };
     return (
-      <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase", colors[q] || "bg-neutral-100 text-neutral-600")}>
+      <span className={cn("text-xs font-semibold px-1.5 py-0.5 rounded", colors[q] || "bg-muted text-fg-secondary")}>
         {q}
       </span>
     );
@@ -2235,20 +2235,20 @@ function WhatsAppSection() {
 
   const statusDot = (s: string) => {
     switch (s) {
-      case "active": return "bg-emerald-500";
-      case "error": return "bg-red-500";
-      default: return "bg-neutral-400";
+      case "active": return "bg-success";
+      case "error": return "bg-danger";
+      default: return "bg-fg-muted";
     }
   };
 
   const tplStatusBadge = (s: string) => {
     const colors: Record<string, string> = {
-      APPROVED: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
-      PENDING: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-      REJECTED: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+      APPROVED: "bg-success-surface text-success",
+      PENDING: "bg-warning-surface text-warning",
+      REJECTED: "bg-danger-surface text-danger",
     };
     return (
-      <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded uppercase", colors[s] || "bg-neutral-100 text-neutral-600")}>
+      <span className={cn("text-xs font-semibold px-1.5 py-0.5 rounded", colors[s] || "bg-muted text-fg-secondary")}>
         {s}
       </span>
     );
@@ -2257,18 +2257,18 @@ function WhatsAppSection() {
   return (
     <div className="space-y-8 max-w-2xl">
       <div>
-        <h2 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">WhatsApp Business</h2>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+        <h2 className="text-lg font-semibold text-fg">WhatsApp Business</h2>
+        <p className="text-sm text-fg-secondary mt-1">
           Connect your WhatsApp Business API account to send messages from sequences.
         </p>
       </div>
 
       {/* Connect Button */}
       <div className="space-y-3">
-        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Connect Account</p>
+        <p className="text-sm font-medium text-fg">Connect Account</p>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="flex items-center gap-2.5 px-4 py-2.5 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-sm font-medium text-neutral-700 dark:text-neutral-300"
+          className="flex h-8 items-center gap-2 px-3 rounded-md border border-line bg-surface hover:bg-muted transition-colors text-sm font-medium text-fg"
         >
           <WhatsappLogoIcon size={18} weight="bold" />
           {showAddForm ? "Cancel" : "Connect WhatsApp Business"}
@@ -2277,9 +2277,9 @@ function WhatsAppSection() {
 
       {/* Connect Form */}
       {showAddForm && (
-        <div className="border border-neutral-200 dark:border-neutral-700 rounded p-5 space-y-5 bg-neutral-50 dark:bg-neutral-900/50">
-          <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Meta Cloud API Credentials</h3>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+        <div className="rounded-lg border border-line bg-surface p-4 space-y-4">
+          <h3 className="text-sm font-semibold text-fg">Meta Cloud API Credentials</h3>
+          <p className="text-xs text-fg-secondary">
             Find these in your Meta Business Suite → WhatsApp → API Setup.
           </p>
           <div className="grid grid-cols-1 gap-4">
@@ -2315,28 +2315,28 @@ function WhatsAppSection() {
 
       {/* Connected Accounts */}
       <div className="space-y-3">
-        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Connected Accounts</p>
+        <p className="text-sm font-medium text-fg">Connected Accounts</p>
         {loading ? (
-          <div className="flex items-center justify-center py-12 text-neutral-400">
+          <div className="flex items-center justify-center py-12 text-fg-muted">
             <CircleNotchIcon size={24} className="animate-spin" />
           </div>
         ) : accounts.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-neutral-200 dark:border-neutral-700 rounded">
-            <WhatsappLogoIcon size={32} className="mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">No WhatsApp accounts connected yet.</p>
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Connect your Meta Cloud API credentials above.</p>
+          <div className="text-center py-12 border border-dashed border-line rounded-lg">
+            <WhatsappLogoIcon size={32} className="mx-auto text-fg-disabled mb-3" />
+            <p className="text-sm text-fg-secondary">No WhatsApp accounts connected yet.</p>
+            <p className="text-xs text-fg-muted mt-1">Connect your Meta Cloud API credentials above.</p>
           </div>
         ) : (
           <div className="space-y-2">
             {accounts.map((acct) => (
-              <div key={acct.id} className="flex items-center gap-4 max-sm:flex-col max-sm:items-start border border-neutral-200 dark:border-neutral-700 rounded p-4 bg-white dark:bg-neutral-900">
+              <div key={acct.id} className="flex items-center gap-4 max-sm:flex-col max-sm:items-start rounded-lg border border-line bg-surface p-4">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="w-9 h-9 rounded bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
-                    <WhatsappLogoIcon size={18} className="text-emerald-600 dark:text-emerald-400" />
+                  <div className="w-9 h-9 rounded-md bg-success-surface flex items-center justify-center shrink-0">
+                    <WhatsappLogoIcon size={18} className="text-success" />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                      <span className="text-sm font-medium text-fg truncate">
                         {acct.display_phone_number}
                       </span>
                       {acct.is_default && <Badge variant="neutral">Default</Badge>}
@@ -2344,20 +2344,20 @@ function WhatsAppSection() {
                     </div>
                     <div className="flex items-center gap-3 mt-0.5">
                       {acct.verified_name && (
-                        <span className="text-xs text-neutral-500 dark:text-neutral-400">{acct.verified_name}</span>
+                        <span className="text-xs text-fg-secondary">{acct.verified_name}</span>
                       )}
                       <span className="flex items-center gap-1 text-xs">
                         <span className={cn("w-1.5 h-1.5 rounded-full", statusDot(acct.status))} />
-                        <span className={acct.status === "active" ? "text-emerald-600 dark:text-emerald-400" : "text-neutral-400"}>
+                        <span className={acct.status === "active" ? "text-success" : "text-fg-muted"}>
                           {acct.status.charAt(0).toUpperCase() + acct.status.slice(1)}
                         </span>
                       </span>
-                      <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                      <span className="text-xs text-fg-muted">
                         {acct.daily_sent_count}/{acct.daily_send_limit} sent today
                       </span>
                     </div>
                     {acct.last_error && (
-                      <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                      <p className="text-xs text-danger mt-1 flex items-center gap-1">
                         <WarningIcon size={12} /> {acct.last_error}
                       </p>
                     )}
@@ -2367,14 +2367,14 @@ function WhatsAppSection() {
                   <button
                     onClick={() => handleSync(acct.id)}
                     disabled={syncingId === acct.id}
-                    className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                    className="text-xs px-3 py-1.5 rounded-md border border-line text-fg-secondary hover:bg-muted transition-colors disabled:opacity-50"
                   >
                     {syncingId === acct.id ? <CircleNotchIcon size={14} className="animate-spin" /> : "Sync Templates"}
                   </button>
                   <button
                     onClick={() => handleTest(acct.id)}
                     disabled={testingId === acct.id}
-                    className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                    className="text-xs px-3 py-1.5 rounded-md border border-line text-fg-secondary hover:bg-muted transition-colors disabled:opacity-50"
                   >
                     {testingId === acct.id ? <CircleNotchIcon size={14} className="animate-spin" /> : "Test"}
                   </button>
@@ -2382,14 +2382,14 @@ function WhatsAppSection() {
                     <button
                       onClick={() => handleSetDefault(acct.id)}
                       disabled={isPending}
-                      className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                      className="text-xs px-3 py-1.5 rounded-md border border-line text-fg-secondary hover:bg-muted transition-colors disabled:opacity-50"
                     >
                       Set Default
                     </button>
                   )}
                   <button
                     onClick={() => { setDeleteTargetId(acct.id); setShowDeleteModal(true); }}
-                    className="text-xs px-3 py-1.5 rounded border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    className="text-xs px-3 py-1.5 rounded-md border border-danger text-danger hover:bg-danger-surface transition-colors"
                   >
                     Disconnect
                   </button>
@@ -2403,18 +2403,18 @@ function WhatsAppSection() {
       {/* Templates */}
       {templates.length > 0 && (
         <div className="space-y-3">
-          <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Message Templates</p>
+          <p className="text-sm font-medium text-fg">Message Templates</p>
           <div className="space-y-2">
             {templates.map((tpl) => (
-              <div key={tpl.id} className="border border-neutral-200 dark:border-neutral-700 rounded p-3 bg-white dark:bg-neutral-900">
+              <div key={tpl.id} className="rounded-lg border border-line bg-surface p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{tpl.name}</span>
+                  <span className="text-sm font-medium text-fg">{tpl.name}</span>
                   {tplStatusBadge(tpl.status)}
-                  <span className="text-[10px] text-neutral-400 uppercase">{tpl.language}</span>
-                  <span className="text-[10px] text-neutral-400 uppercase">{tpl.category}</span>
+                  <span className="text-xs text-fg-muted">{tpl.language}</span>
+                  <span className="text-xs text-fg-muted">{tpl.category}</span>
                 </div>
                 {tpl.body_text && (
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">{tpl.body_text}</p>
+                  <p className="text-xs text-fg-secondary line-clamp-2">{tpl.body_text}</p>
                 )}
               </div>
             ))}
@@ -2424,18 +2424,18 @@ function WhatsAppSection() {
 
       {/* Webhook URL */}
       <div className="space-y-3">
-        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Webhook Configuration</p>
-        <div className="border border-neutral-200 dark:border-neutral-700 rounded p-4 bg-neutral-50 dark:bg-neutral-900/50">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
+        <p className="text-sm font-medium text-fg">Webhook Configuration</p>
+        <div className="rounded-lg border border-line bg-surface p-4">
+          <p className="text-xs text-fg-secondary mb-2">
             Set this URL in your Meta App Dashboard → WhatsApp → Configuration → Callback URL:
           </p>
           <div className="flex items-center gap-2">
-            <code className="flex-1 text-xs bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded px-3 py-2 text-neutral-700 dark:text-neutral-300 font-mono break-all">
+            <code className="flex-1 text-xs bg-code border border-line rounded-md px-3 py-2 text-fg font-mono break-all">
               {webhookUrl}
             </code>
             <button
               onClick={() => { navigator.clipboard.writeText(webhookUrl); toast("Copied to clipboard"); }}
-              className="text-xs px-3 py-2 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors shrink-0"
+              className="text-xs px-3 py-2 rounded-md border border-line text-fg-secondary hover:bg-muted transition-colors shrink-0"
             >
               Copy
             </button>
@@ -2571,10 +2571,10 @@ function LinkedInSection() {
 
   const statusDot = (s: string) => {
     switch (s) {
-      case "active": return "bg-emerald-500";
-      case "rate_limited": return "bg-amber-500";
-      case "error": return "bg-red-500";
-      default: return "bg-neutral-400";
+      case "active": return "bg-success";
+      case "rate_limited": return "bg-warning";
+      case "error": return "bg-danger";
+      default: return "bg-fg-muted";
     }
   };
 
@@ -2590,14 +2590,14 @@ function LinkedInSection() {
 
   const LimitBar = ({ label, used, limit }: { label: string; used: number; limit: number }) => {
     const pct = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
-    const color = pct > 85 ? "bg-red-500" : pct > 60 ? "bg-amber-500" : "bg-emerald-500";
+    const color = pct > 85 ? "bg-danger" : pct > 60 ? "bg-warning" : "bg-success";
     return (
       <div className="space-y-1">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-neutral-600 dark:text-neutral-400">{label}</span>
-          <span className="text-neutral-500 dark:text-neutral-400 font-mono">{used}/{limit}</span>
+          <span className="text-fg-secondary">{label}</span>
+          <span className="text-fg-secondary font-mono">{used}/{limit}</span>
         </div>
-        <div className="h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-700 overflow-hidden">
+        <div className="h-1.5 rounded-full bg-active overflow-hidden">
           <div className={cn("h-full rounded-full transition-all", color)} style={{ width: `${pct}%` }} />
         </div>
       </div>
@@ -2607,18 +2607,18 @@ function LinkedInSection() {
   return (
     <div className="space-y-8 max-w-2xl">
       <div>
-        <h2 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">LinkedIn</h2>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+        <h2 className="text-lg font-semibold text-fg">LinkedIn</h2>
+        <p className="text-sm text-fg-secondary mt-1">
           Connect your LinkedIn account for automated outreach — connections, messages, profile views, and endorsements.
         </p>
       </div>
 
       {/* Connect Button */}
       <div className="space-y-3">
-        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Connect Account</p>
+        <p className="text-sm font-medium text-fg">Connect Account</p>
         <button
           onClick={handleConnectLinkedIn}
-          className="flex items-center gap-2.5 px-4 py-2.5 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-sm font-medium text-neutral-700 dark:text-neutral-300"
+          className="flex h-8 items-center gap-2 px-3 rounded-md border border-line bg-surface hover:bg-muted transition-colors text-sm font-medium text-fg"
         >
           <LinkedinLogoIcon size={18} weight="bold" />
           Connect with LinkedIn
@@ -2627,30 +2627,30 @@ function LinkedInSection() {
 
       {/* Connected Accounts */}
       <div className="space-y-3">
-        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Connected Accounts</p>
+        <p className="text-sm font-medium text-fg">Connected Accounts</p>
         {loading ? (
-          <div className="flex items-center justify-center py-12 text-neutral-400">
+          <div className="flex items-center justify-center py-12 text-fg-muted">
             <CircleNotchIcon size={24} className="animate-spin" />
           </div>
         ) : accounts.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-neutral-200 dark:border-neutral-700 rounded">
-            <LinkedinLogoIcon size={32} className="mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">No LinkedIn accounts connected yet.</p>
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Connect via OAuth to start LinkedIn outreach.</p>
+          <div className="text-center py-12 border border-dashed border-line rounded-lg">
+            <LinkedinLogoIcon size={32} className="mx-auto text-fg-disabled mb-3" />
+            <p className="text-sm text-fg-secondary">No LinkedIn accounts connected yet.</p>
+            <p className="text-xs text-fg-muted mt-1">Connect via OAuth to start LinkedIn outreach.</p>
           </div>
         ) : (
           <div className="space-y-4">
             {accounts.map((acct) => (
-              <div key={acct.id} className="border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900">
+              <div key={acct.id} className="rounded-lg border border-line bg-surface">
                 {/* Account Header */}
                 <div className="flex items-center gap-4 max-sm:flex-col max-sm:items-start p-4">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-9 h-9 rounded bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                      <LinkedinLogoIcon size={18} className="text-blue-600 dark:text-blue-400" />
+                    <div className="w-9 h-9 rounded-md bg-accent-surface flex items-center justify-center shrink-0">
+                      <LinkedinLogoIcon size={18} className="text-accent-strong" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                        <span className="text-sm font-medium text-fg truncate">
                           {acct.display_name || "LinkedIn Account"}
                         </span>
                         {acct.is_default && <Badge variant="neutral">Default</Badge>}
@@ -2658,18 +2658,18 @@ function LinkedInSection() {
                       <div className="flex items-center gap-3 mt-0.5">
                         <span className="flex items-center gap-1 text-xs">
                           <span className={cn("w-1.5 h-1.5 rounded-full", statusDot(acct.status))} />
-                          <span className={acct.status === "active" ? "text-emerald-600 dark:text-emerald-400" : acct.status === "rate_limited" ? "text-amber-600 dark:text-amber-400" : "text-neutral-400"}>
+                          <span className={acct.status === "active" ? "text-success" : acct.status === "rate_limited" ? "text-warning" : "text-fg-muted"}>
                             {statusLabel(acct.status)}
                           </span>
                         </span>
                         {acct.token_expires_at && (
-                          <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                          <span className="text-xs text-fg-muted">
                             Token expires {new Date(acct.token_expires_at).toLocaleDateString()}
                           </span>
                         )}
                       </div>
                       {acct.last_error && (
-                        <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                        <p className="text-xs text-danger mt-1 flex items-center gap-1">
                           <WarningIcon size={12} /> {acct.last_error}
                         </p>
                       )}
@@ -2678,14 +2678,14 @@ function LinkedInSection() {
                   <div className="flex items-center gap-2 shrink-0 max-sm:w-full max-sm:justify-end flex-wrap">
                     <button
                       onClick={() => openLimitsEditor(acct)}
-                      className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                      className="text-xs px-3 py-1.5 rounded-md border border-line text-fg-secondary hover:bg-muted transition-colors"
                     >
                       Rate Limits
                     </button>
                     <button
                       onClick={() => handleTest(acct.id)}
                       disabled={testingId === acct.id}
-                      className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                      className="text-xs px-3 py-1.5 rounded-md border border-line text-fg-secondary hover:bg-muted transition-colors disabled:opacity-50"
                     >
                       {testingId === acct.id ? <CircleNotchIcon size={14} className="animate-spin" /> : "Test"}
                     </button>
@@ -2693,14 +2693,14 @@ function LinkedInSection() {
                       <button
                         onClick={() => handleSetDefault(acct.id)}
                         disabled={isPending}
-                        className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                        className="text-xs px-3 py-1.5 rounded-md border border-line text-fg-secondary hover:bg-muted transition-colors disabled:opacity-50"
                       >
                         Set Default
                       </button>
                     )}
                     <button
                       onClick={() => { setDeleteTargetId(acct.id); setShowDeleteModal(true); }}
-                      className="text-xs px-3 py-1.5 rounded border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      className="text-xs px-3 py-1.5 rounded-md border border-danger text-danger hover:bg-danger-surface transition-colors"
                     >
                       Disconnect
                     </button>
@@ -2718,8 +2718,8 @@ function LinkedInSection() {
 
                 {/* Rate Limits Editor */}
                 {editingLimitsId === acct.id && (
-                  <div className="border-t border-neutral-200 dark:border-neutral-700 p-4 bg-neutral-50 dark:bg-neutral-900/50 space-y-4">
-                    <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">Configure Rate Limits</p>
+                  <div className="border-t border-line p-4 bg-subtle space-y-4">
+                    <p className="text-xs font-medium text-fg-secondary">Configure Rate Limits</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       <Input
                         label="Daily Connections"
@@ -2752,7 +2752,7 @@ function LinkedInSection() {
                         onChange={(e) => setLimitsForm({ ...limitsForm, daily_endorsement_limit: Number(e.target.value) })}
                       />
                     </div>
-                    <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <p className="text-xs text-warning flex items-center gap-1">
                       <WarningIcon size={12} />
                       LinkedIn aggressively bans accounts exceeding limits. Keep defaults unless you know what you&apos;re doing.
                     </p>
@@ -2772,9 +2772,9 @@ function LinkedInSection() {
       </div>
 
       {/* Safety Notice */}
-      <div className="border border-amber-200 dark:border-amber-900/50 rounded p-4 bg-amber-50 dark:bg-amber-900/10">
-        <p className="text-xs font-medium text-amber-800 dark:text-amber-300 mb-1">Safety Notice</p>
-        <p className="text-xs text-amber-700 dark:text-amber-400">
+      <div className="rounded-lg border border-warning bg-warning-surface p-4">
+        <p className="text-xs font-medium text-warning mb-1">Safety Notice</p>
+        <p className="text-xs text-warning">
           LinkedIn automation carries account risk. Pulse CRM enforces conservative rate limits and random delays (2-5 min) between actions to mimic human behavior. Counters reset daily at midnight UTC.
         </p>
       </div>
@@ -2957,19 +2957,19 @@ function EmailAccountsSection() {
 
   const statusColor = (s: string) => {
     switch (s) {
-      case "active": return "text-emerald-600 dark:text-emerald-400";
-      case "error": return "text-red-600 dark:text-red-400";
-      case "warming_up": return "text-amber-600 dark:text-amber-400";
-      default: return "text-neutral-400";
+      case "active": return "text-success";
+      case "error": return "text-danger";
+      case "warming_up": return "text-warning";
+      default: return "text-fg-muted";
     }
   };
 
   const statusDot = (s: string) => {
     switch (s) {
-      case "active": return "bg-emerald-500";
-      case "error": return "bg-red-500";
-      case "warming_up": return "bg-amber-500";
-      default: return "bg-neutral-400";
+      case "active": return "bg-success";
+      case "error": return "bg-danger";
+      case "warming_up": return "bg-warning";
+      default: return "bg-fg-muted";
     }
   };
 
@@ -2983,8 +2983,8 @@ function EmailAccountsSection() {
 
   const ProviderIcon = ({ provider }: { provider: string }) => {
     switch (provider) {
-      case "gmail": return <GoogleLogoIcon size={18} className="text-neutral-600 dark:text-neutral-400" />;
-      default: return <HardDrivesIcon size={18} className="text-neutral-600 dark:text-neutral-400" />;
+      case "gmail": return <GoogleLogoIcon size={18} className="text-fg-secondary" />;
+      default: return <HardDrivesIcon size={18} className="text-fg-secondary" />;
     }
   };
 
@@ -2992,15 +2992,15 @@ function EmailAccountsSection() {
     <div className="space-y-8 max-w-2xl">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">Email Accounts</h2>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+        <h2 className="text-lg font-semibold text-fg">Email Accounts</h2>
+        <p className="text-sm text-fg-secondary mt-1">
           Connect your email accounts to send emails from sequences and manage your unified inbox.
         </p>
       </div>
 
       {/* Connect Buttons */}
       <div className="space-y-3">
-        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Connect an Account</p>
+        <p className="text-sm font-medium text-fg">Connect an Account</p>
         <div className="flex flex-wrap gap-3">
           <Button
             variant="outline"
@@ -3021,8 +3021,8 @@ function EmailAccountsSection() {
 
       {/* Custom IMAP/SMTP Form */}
       {showAddForm && (
-        <div className="border border-neutral-200 dark:border-neutral-700 rounded p-5 space-y-5 bg-neutral-50 dark:bg-neutral-900/50">
-          <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Custom IMAP/SMTP Configuration</h3>
+        <div className="rounded-lg border border-line bg-surface p-4 space-y-4">
+          <h3 className="text-sm font-semibold text-fg">Custom IMAP/SMTP Configuration</h3>
 
           <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
             <Input
@@ -3041,7 +3041,7 @@ function EmailAccountsSection() {
 
           {/* IMAP Settings */}
           <div>
-            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-3">Incoming (IMAP)</p>
+            <p className="text-xs font-medium text-fg-secondary mb-3">Incoming (IMAP)</p>
             <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
               <Input
                 label="IMAP Host"
@@ -3068,12 +3068,12 @@ function EmailAccountsSection() {
                 onChange={(e) => setCustomForm({ ...customForm, imap_password: e.target.value })}
               />
             </div>
-            <label className="flex items-center gap-2 mt-3 text-sm text-neutral-600 dark:text-neutral-400">
+            <label className="flex items-center gap-2 mt-3 text-sm text-fg-secondary">
               <input
                 type="checkbox"
                 checked={customForm.imap_secure}
                 onChange={(e) => setCustomForm({ ...customForm, imap_secure: e.target.checked })}
-                className="rounded border-neutral-300"
+                className="rounded border-line"
               />
               Use SSL/TLS
             </label>
@@ -3081,7 +3081,7 @@ function EmailAccountsSection() {
 
           {/* SMTP Settings */}
           <div>
-            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-3">Outgoing (SMTP)</p>
+            <p className="text-xs font-medium text-fg-secondary mb-3">Outgoing (SMTP)</p>
             <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
               <Input
                 label="SMTP Host"
@@ -3108,12 +3108,12 @@ function EmailAccountsSection() {
                 onChange={(e) => setCustomForm({ ...customForm, smtp_password: e.target.value })}
               />
             </div>
-            <label className="flex items-center gap-2 mt-3 text-sm text-neutral-600 dark:text-neutral-400">
+            <label className="flex items-center gap-2 mt-3 text-sm text-fg-secondary">
               <input
                 type="checkbox"
                 checked={customForm.smtp_secure}
                 onChange={(e) => setCustomForm({ ...customForm, smtp_secure: e.target.checked })}
-                className="rounded border-neutral-300"
+                className="rounded border-line"
               />
               Use SSL/TLS
             </label>
@@ -3139,34 +3139,34 @@ function EmailAccountsSection() {
 
       {/* Connected Accounts List */}
       <div className="space-y-3">
-        <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Connected Accounts</p>
+        <p className="text-sm font-medium text-fg">Connected Accounts</p>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12 text-neutral-400">
+          <div className="flex items-center justify-center py-12 text-fg-muted">
             <CircleNotchIcon size={24} className="animate-spin" />
           </div>
         ) : accounts.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-neutral-200 dark:border-neutral-700 rounded">
-            <EnvelopeIcon size={32} className="mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">No email accounts connected yet.</p>
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Connect a Gmail or custom IMAP/SMTP account above.</p>
+          <div className="text-center py-12 border border-dashed border-line rounded-lg">
+            <EnvelopeIcon size={32} className="mx-auto text-fg-disabled mb-3" />
+            <p className="text-sm text-fg-secondary">No email accounts connected yet.</p>
+            <p className="text-xs text-fg-muted mt-1">Connect a Gmail or custom IMAP/SMTP account above.</p>
           </div>
         ) : (
           <div className="space-y-2">
             {accounts.map((acct) => (
               <div
                 key={acct.id}
-                className="border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900"
+                className="rounded-lg border border-line bg-surface"
               >
                 <div className="flex items-center gap-4 max-sm:flex-col max-sm:items-start p-4">
                   {/* Provider icon + info */}
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-9 h-9 rounded bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-md bg-muted flex items-center justify-center shrink-0">
                       <ProviderIcon provider={acct.provider} />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                        <span className="text-sm font-medium text-fg truncate">
                           {acct.email_address}
                         </span>
                         {acct.is_default && (
@@ -3174,7 +3174,7 @@ function EmailAccountsSection() {
                         )}
                       </div>
                       <div className="flex items-center gap-3 mt-0.5">
-                        <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                        <span className="text-xs text-fg-secondary">
                           {providerLabel(acct.provider)}
                         </span>
                         <span className="flex items-center gap-1 text-xs">
@@ -3183,12 +3183,12 @@ function EmailAccountsSection() {
                             {acct.status === "warming_up" ? "Warming Up" : acct.status.charAt(0).toUpperCase() + acct.status.slice(1)}
                           </span>
                         </span>
-                        <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                        <span className="text-xs text-fg-muted">
                           {acct.daily_sent_count}/{acct.daily_send_limit} sent today
                         </span>
                       </div>
                       {acct.last_error && (
-                        <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                        <p className="text-xs text-danger mt-1 flex items-center gap-1">
                           <WarningIcon size={12} />
                           {acct.last_error}
                         </p>
@@ -3223,7 +3223,7 @@ function EmailAccountsSection() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="!border-red-200 dark:!border-red-900/50 !text-red-600 dark:!text-red-400 hover:!bg-red-50 dark:hover:!bg-red-900/20"
+                      className="!border-danger !text-danger hover:!bg-danger-surface"
                       onClick={() => { setDeleteTargetId(acct.id); setShowDeleteModal(true); }}
                     >
                       Disconnect
@@ -3232,14 +3232,14 @@ function EmailAccountsSection() {
                 </div>
 
                 {/* Tracking Domain */}
-                <div className="border-t border-neutral-100 dark:border-neutral-800 px-4 py-3">
+                <div className="border-t border-row px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Tracking Domain:</span>
+                      <span className="text-xs font-medium text-fg-secondary">Tracking Domain:</span>
                       {acct.tracking_domain ? (
-                        <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400">{acct.tracking_domain}</span>
+                        <span className="text-xs font-mono text-success">{acct.tracking_domain}</span>
                       ) : (
-                        <span className="text-xs text-amber-500 dark:text-amber-400">Not set — tracking disabled to prevent spam</span>
+                        <span className="text-xs text-warning">Not set — tracking disabled to prevent spam</span>
                       )}
                     </div>
                     <Button
@@ -3280,7 +3280,7 @@ function EmailAccountsSection() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="!text-red-500"
+                            className="!text-danger"
                             onClick={() => {
                               setTrackingDomainInput("");
                               handleSaveTrackingDomain(acct.id);
@@ -3291,20 +3291,20 @@ function EmailAccountsSection() {
                           </Button>
                         )}
                       </div>
-                      <div className="bg-neutral-50 dark:bg-neutral-800/50 rounded p-3 space-y-2">
-                        <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300">Setup Instructions:</p>
-                        <ol className="text-xs text-neutral-500 dark:text-neutral-400 space-y-1.5 list-decimal list-inside">
+                      <div className="bg-subtle rounded-md p-3 space-y-2">
+                        <p className="text-xs font-medium text-fg">Setup Instructions:</p>
+                        <ol className="text-xs text-fg-secondary space-y-1.5 list-decimal list-inside">
                           <li>Go to your DNS provider (GoDaddy, Cloudflare, Namecheap, etc.)</li>
                           <li>Add a <strong>CNAME</strong> record:<br />
-                            <code className="text-[11px] bg-neutral-100 dark:bg-neutral-700 px-1.5 py-0.5 rounded font-mono">
+                            <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
                               {trackingDomainInput || "track.yourdomain.com"} → pulse-crm-rosy.vercel.app
                             </code>
                           </li>
-                          <li>In <strong>Vercel</strong> → Project Settings → Domains → Add <code className="text-[11px] bg-neutral-100 dark:bg-neutral-700 px-1.5 py-0.5 rounded font-mono">{trackingDomainInput || "track.yourdomain.com"}</code></li>
+                          <li>In <strong>Vercel</strong> → Project Settings → Domains → Add <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{trackingDomainInput || "track.yourdomain.com"}</code></li>
                           <li>Wait for DNS propagation (usually 5-30 minutes)</li>
                           <li>Enter the domain above and click Save</li>
                         </ol>
-                        <p className="text-[11px] text-neutral-400 dark:text-neutral-500 pt-1">
+                        <p className="text-xs text-fg-muted pt-1">
                           This ensures tracking URLs match your sender domain, so Gmail/Outlook won&apos;t flag them as spam.
                         </p>
                       </div>
@@ -3478,7 +3478,7 @@ function LeadFinderSettingsSection() {
           : currentProvider === "anthropic"
             ? "Using Anthropic — direct Claude API access"
             : "Using OpenRouter — cloud models via single API key",
-      icon: <LockIcon size={16} className="text-neutral-400" />,
+      icon: <LockIcon size={16} className="text-fg-muted" />,
       fields: [
         { key: "apify_token", label: "Apify Token", type: "password", helpText: "Required for lead discovery and enrichment" },
         {
@@ -3498,7 +3498,7 @@ function LeadFinderSettingsSection() {
       key: "enrichment",
       title: "Enrichment",
       description: "Configure how leads are enriched",
-      icon: <SlidersHorizontalIcon size={16} className="text-neutral-400" />,
+      icon: <SlidersHorizontalIcon size={16} className="text-fg-muted" />,
       fields: [
         {
           key: "enrichment_concurrency",
@@ -3513,7 +3513,7 @@ function LeadFinderSettingsSection() {
       key: "agency",
       title: "Agency Profile",
       description: "Your agency info for AI-powered lead scoring",
-      icon: <HardDrivesIcon size={16} className="text-neutral-400" />,
+      icon: <HardDrivesIcon size={16} className="text-fg-muted" />,
       fields: [
         { key: "agency_name", label: "Agency Name", type: "text" },
         {
@@ -3589,7 +3589,7 @@ function LeadFinderSettingsSection() {
         />
       )}
       {field.helpText && (
-        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{field.helpText}</p>
+        <p className="text-xs text-fg-secondary mt-1">{field.helpText}</p>
       )}
     </div>
   );
@@ -3597,7 +3597,7 @@ function LeadFinderSettingsSection() {
   if (!loaded) {
     return (
       <div className="flex items-center justify-center py-20">
-        <CircleNotchIcon size={24} className="animate-spin text-neutral-400" />
+        <CircleNotchIcon size={24} className="animate-spin text-fg-muted" />
       </div>
     );
   }
@@ -3605,10 +3605,10 @@ function LeadFinderSettingsSection() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+        <h2 className="text-lg font-semibold text-fg">
           Lead Finder
         </h2>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="text-sm text-fg-secondary">
           Configure API keys, AI provider, and agency profile for lead discovery & enrichment
         </p>
       </div>
@@ -3616,20 +3616,20 @@ function LeadFinderSettingsSection() {
       {groups.map((g) => (
         <div
           key={g.key}
-          className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 overflow-hidden"
+          className="rounded-lg border border-line bg-surface overflow-hidden"
         >
-          <div className="px-5 py-4 border-b border-neutral-100 dark:border-neutral-800">
+          <div className="px-4 py-3 border-b border-divider">
             <div className="flex items-center gap-2">
               {g.icon}
-              <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
+              <h3 className="text-sm font-semibold text-fg">
                 {g.title}
               </h3>
             </div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+            <p className="text-xs text-fg-secondary mt-0.5">
               {g.description}
             </p>
           </div>
-          <div className="px-5 py-4 space-y-4">
+          <div className="p-4 space-y-4">
             {g.fields.map(renderField)}
             <Button
               variant="primary"
@@ -3700,16 +3700,16 @@ export function SettingsPageClient({
   };
 
   return (
-    <div className="flex flex-row max-md:flex-col h-full bg-white dark:bg-neutral-950">
+    <div className="flex flex-row max-md:flex-col h-full bg-page">
       {/* Settings sidebar — horizontal scroll on mobile, vertical on desktop */}
-      <div className="w-60 shrink-0 max-md:w-full max-md:shrink border-r max-md:border-r-0 max-md:border-b border-neutral-200 dark:border-neutral-800">
-        <div className="px-5 pt-6 pb-6 max-md:pb-0">
-          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-4">
+      <div className="w-60 shrink-0 max-md:w-full max-md:shrink border-r max-md:border-r-0 max-md:border-b border-divider">
+        <div className="px-4 pt-6 pb-3 max-md:pb-0">
+          <p className="text-xs font-medium text-fg-secondary px-1">
             Settings
           </p>
         </div>
-        <nav className="overflow-x-visible max-md:overflow-x-auto px-5 pb-0 max-md:pb-4">
-          <ul className="flex flex-col max-md:flex-row gap-1.5 min-w-0 max-md:min-w-max">
+        <nav className="overflow-x-visible max-md:overflow-x-auto px-4 pb-0 max-md:pb-4">
+          <ul className="flex flex-col max-md:flex-row gap-0.5 rounded-md bg-muted p-0.5 min-w-0 max-md:min-w-max">
             {settingsTabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -3717,15 +3717,15 @@ export function SettingsPageClient({
                   <button
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      "flex items-center whitespace-nowrap rounded text-sm font-medium border px-3 py-2.5",
-                      "transition-[background-color,color,box-shadow,border-color] duration-200 ease-in-out",
+                      "flex w-full h-7 items-center whitespace-nowrap rounded-sm px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+                      "transition-colors duration-150",
                       isActive
-                        ? "bg-white dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 border-neutral-200 dark:border-neutral-700 shadow-focus"
-                        : "border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50",
+                        ? "bg-surface text-fg"
+                        : "text-fg-secondary hover:text-fg",
                     )}
                   >
-                    <tab.icon className="h-5 w-5 shrink-0" weight="regular" />
-                    <span className="ml-3">{tab.label}</span>
+                    <tab.icon className="h-4 w-4 shrink-0" weight="regular" />
+                    <span className="ml-2">{tab.label}</span>
                   </button>
                 </li>
               );
@@ -3735,7 +3735,7 @@ export function SettingsPageClient({
       </div>
 
       {/* Content area */}
-      <div className="flex-1 min-w-0 overflow-y-auto py-6 px-4 sm:py-8 sm:px-6 lg:py-10 lg:px-12">
+      <div className="flex-1 min-w-0 overflow-y-auto py-6 px-4 sm:py-8 sm:px-6 lg:py-10 lg:px-10">
         {renderContent()}
       </div>
     </div>

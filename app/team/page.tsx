@@ -19,7 +19,7 @@ export default async function TeamPage() {
 
   return (
     <>
-      <p role="note" className="mx-4 mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">Preview with sample data — social scheduling is not connected.</p>
+      <p role="note" className="mx-4 mt-4 rounded-lg border border-warning bg-warning-surface p-3 text-sm text-warning">Preview with sample data — social scheduling is not connected.</p>
       <TeamPageClient initialData={teamData} />
     </>
   );

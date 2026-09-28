@@ -164,10 +164,10 @@ export function ConnectionsPageClient({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+          <h1 className="text-xl font-semibold text-fg">
             Social Connections
           </h1>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+          <p className="text-sm text-fg-secondary mt-1">
             Connect your social media accounts to post and schedule content
           </p>
         </div>
@@ -182,14 +182,14 @@ export function ConnectionsPageClient({
 
       {/* Loading State */}
       {isConnecting && connectingPlatform && (
-        <div className="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4">
+        <div className="bg-accent-surface border border-accent rounded-lg p-4">
           <div className="flex items-center gap-3">
-            <div className="animate-spin rounded-full h-5 w-5 border-2 border-indigo-600 border-t-transparent" />
+            <div className="animate-spin rounded-full h-4 w-4 border border-accent border-t-transparent" />
             <div>
-              <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
+              <p className="text-sm font-medium text-accent-strong">
                 Connecting to {PLATFORM_LABELS[connectingPlatform]}...
               </p>
-              <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-0.5">
+              <p className="text-xs text-accent-strong mt-0.5">
                 Complete the authorization in the popup window
               </p>
             </div>
@@ -226,14 +226,14 @@ export function ConnectionsPageClient({
           })}
         </div>
       ) : (
-        <div className="text-center py-12 bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-100 dark:bg-indigo-950/30 flex items-center justify-center">
-            <LinkIcon className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+        <div className="text-center py-12 bg-surface rounded-lg border border-line">
+          <div className="w-10 h-10 mx-auto mb-4 rounded-md border border-line bg-subtle flex items-center justify-center">
+            <LinkIcon className="w-5 h-5 text-fg-secondary" />
           </div>
-          <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+          <h3 className="text-base font-semibold text-fg mb-1">
             No accounts connected
           </h3>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6 max-w-sm mx-auto">
+          <p className="text-sm text-fg-secondary mb-6 max-w-xs mx-auto">
             Connect your social media accounts to start posting and scheduling content
             across multiple platforms
           </p>
@@ -248,15 +248,15 @@ export function ConnectionsPageClient({
 
       {/* Platform Selector Modal */}
       <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <div className="p-6">
-          <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+        <div className="p-5">
+          <h2 className="text-base font-semibold text-fg mb-1">
             Connect Account
           </h2>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
+          <p className="text-sm text-fg-secondary mb-4">
             Choose a platform to connect
           </p>
 
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-3 gap-2 mb-4">
             {ALL_PLATFORMS.map((platform) => {
               const isConnected = connectedPlatforms.has(platform);
               return (
@@ -264,18 +264,18 @@ export function ConnectionsPageClient({
                   key={platform}
                   onClick={() => !isConnected && handleConnect(platform)}
                   disabled={isConnected}
-                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-all ${
+                  className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-colors ${
                     isConnected
-                      ? "opacity-50 cursor-not-allowed border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800"
-                      : "hover:border-indigo-300 dark:hover:border-indigo-700 border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 cursor-pointer"
+                      ? "opacity-50 cursor-not-allowed border-line bg-subtle"
+                      : "hover:border-fg-muted hover:bg-subtle border-line bg-surface cursor-pointer"
                   }`}
                 >
                   <PlatformIcon platform={platform} size="lg" />
-                  <span className="text-xs font-medium text-neutral-900 dark:text-neutral-100">
+                  <span className="text-xs font-medium text-fg">
                     {PLATFORM_LABELS[platform]}
                   </span>
                   {isConnected && (
-                    <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                    <span className="text-xs text-fg-secondary">
                       Connected
                     </span>
                   )}

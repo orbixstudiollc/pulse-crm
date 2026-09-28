@@ -6,7 +6,7 @@ import { getOrgId } from "@/lib/actions/helpers";
 export default async function ComposePage() {
   await getOrgId();
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+    <div className="min-h-screen bg-page">
       <Suspense
         fallback={
           <div className="flex items-center justify-center min-h-screen">

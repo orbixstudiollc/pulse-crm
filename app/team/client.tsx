@@ -239,12 +239,12 @@ export function TeamPageClient({ initialData }: TeamPageClientProps) {
   const atSeatLimit = teamData.plan.seatsUsed >= teamData.plan.seatsTotal;
 
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto">
+    <div className="space-y-6 p-4 sm:p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Team</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-xl font-semibold text-fg">Team</h1>
+          <p className="text-sm text-fg-secondary mt-1">
             Manage your team members and their access
           </p>
         </div>
@@ -254,19 +254,19 @@ export function TeamPageClient({ initialData }: TeamPageClientProps) {
       <Card>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-medium text-gray-900">
+            <h2 className="text-base font-semibold text-fg">
               {teamData.plan.name} Plan
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-fg-secondary mt-1">
               {teamData.plan.seatsUsed} of {teamData.plan.seatsTotal} seats used
             </p>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <div className="text-2xl font-semibold text-indigo-600">
+              <div className="text-[22px] leading-7 font-semibold text-fg">
                 {teamData.plan.seatsUsed}/{teamData.plan.seatsTotal}
               </div>
-              <div className="text-xs text-gray-500">Team seats</div>
+              <div className="text-xs text-fg-secondary">Team seats</div>
             </div>
             {atSeatLimit && (
               <Button variant="primary" size="sm">
@@ -276,13 +276,13 @@ export function TeamPageClient({ initialData }: TeamPageClientProps) {
           </div>
         </div>
         {atSeatLimit && (
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
-            <WarningIcon className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <div className="mt-4 p-3 bg-warning-surface border border-warning rounded-lg flex items-start gap-3">
+            <WarningIcon className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-yellow-900">
+              <p className="text-sm font-medium text-warning">
                 You&apos;ve reached your seat limit
               </p>
-              <p className="text-sm text-yellow-700 mt-1">
+              <p className="text-sm text-warning mt-1">
                 Upgrade your plan to add more team members
               </p>
             </div>
@@ -292,7 +292,7 @@ export function TeamPageClient({ initialData }: TeamPageClientProps) {
 
       {/* Invite Member Form */}
       <Card>
-        <h2 className="text-lg font-medium text-gray-900 mb-4">
+        <h2 className="text-base font-semibold text-fg mb-4">
           Invite Team Member
         </h2>
         <form onSubmit={handleInviteMember} className="flex gap-3">
@@ -335,12 +335,12 @@ export function TeamPageClient({ initialData }: TeamPageClientProps) {
 
       {/* Team Members */}
       <Card>
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Team Members</h2>
+        <h2 className="text-base font-semibold text-fg mb-4">Team Members</h2>
         {teamData.members.length === 0 ? (
           <div className="text-center py-12">
-            <UsersIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <h3 className="text-sm font-medium text-gray-900">No team members yet</h3>
-            <p className="text-sm text-gray-500 mt-1">
+            <UsersIcon className="w-8 h-8 text-fg-muted mx-auto mb-3" />
+            <h3 className="text-sm font-medium text-fg">No team members yet</h3>
+            <p className="text-sm text-fg-secondary mt-1">
               Invite colleagues to collaborate on your workspace
             </p>
           </div>
@@ -348,28 +348,28 @@ export function TeamPageClient({ initialData }: TeamPageClientProps) {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <tr className="bg-muted">
+                  <th className="text-left py-2 px-3 text-[13px] font-medium text-fg-secondary">
                     Member
                   </th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-2 px-3 text-[13px] font-medium text-fg-secondary">
                     Role
                   </th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-2 px-3 text-[13px] font-medium text-fg-secondary">
                     Status
                   </th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-2 px-3 text-[13px] font-medium text-fg-secondary">
                     Joined
                   </th>
-                  <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-right py-2 px-3 text-[13px] font-medium text-fg-secondary">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-row">
                 {teamData.members.map((member) => (
-                  <tr key={member.id} className="hover:bg-gray-50">
-                    <td className="py-4 px-4">
+                  <tr key={member.id} className="hover:bg-subtle">
+                    <td className="py-2 px-3">
                       <div className="flex items-center gap-3">
                         <Avatar
                           name={member.name}
@@ -377,16 +377,16 @@ export function TeamPageClient({ initialData }: TeamPageClientProps) {
                           size="sm"
                         />
                         <div>
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium text-fg">
                             {member.name}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-fg-secondary">
                             {member.email}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-2 px-3">
                       <div className="w-32">
                         <Select
                           value={member.role}
@@ -407,7 +407,7 @@ export function TeamPageClient({ initialData }: TeamPageClientProps) {
                         </Select>
                       </div>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-2 px-3">
                       <Badge
                         variant={getStatusBadgeColor(member.status)}
                         size="sm"
@@ -415,12 +415,12 @@ export function TeamPageClient({ initialData }: TeamPageClientProps) {
                         {member.status}
                       </Badge>
                     </td>
-                    <td className="py-4 px-4">
-                      <span className="text-sm text-gray-600">
+                    <td className="py-2 px-3">
+                      <span className="text-sm text-fg-secondary">
                         {new Date(member.joinedAt).toLocaleDateString()}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-right">
+                    <td className="py-2 px-3 text-right">
                       {member.role !== "owner" && (
                         <Button
                           variant="ghost"
@@ -444,24 +444,24 @@ export function TeamPageClient({ initialData }: TeamPageClientProps) {
       {/* Pending Invitations */}
       {teamData.pendingInvitations.length > 0 && (
         <Card>
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
+          <h2 className="text-base font-semibold text-fg mb-4">
             Pending Invitations
           </h2>
           <div className="space-y-3">
             {teamData.pendingInvitations.map((invitation) => (
               <div
                 key={invitation.id}
-                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                className="flex items-center justify-between p-4 bg-subtle rounded-lg"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <EnvelopeIcon className="w-5 h-5 text-indigo-600" />
+                  <div className="w-10 h-10 rounded-full bg-accent-surface flex items-center justify-center">
+                    <EnvelopeIcon className="w-5 h-5 text-accent-strong" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-fg">
                       {invitation.email}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-fg-secondary">
                       Invited {new Date(invitation.invitedAt).toLocaleDateString()} by{" "}
                       {invitation.invitedBy}
                     </div>
@@ -500,22 +500,22 @@ export function TeamPageClient({ initialData }: TeamPageClientProps) {
       {/* Activity Log */}
       {teamData.activityLog.length > 0 && (
         <Card>
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
+          <h2 className="text-base font-semibold text-fg mb-4">
             Recent Activity
           </h2>
           <div className="space-y-4">
             {teamData.activityLog.map((entry) => (
               <div key={entry.id} className="flex gap-4">
-                <div className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-indigo-600" />
+                <div className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-accent-strong" />
                 <div className="flex-1">
-                  <div className="text-sm text-gray-900">
+                  <div className="text-sm text-fg">
                     <span className="font-medium">{entry.user}</span>{" "}
                     {entry.action}
                   </div>
                   {entry.details && (
-                    <div className="text-sm text-gray-500">{entry.details}</div>
+                    <div className="text-sm text-fg-secondary">{entry.details}</div>
                   )}
-                  <div className="text-xs text-gray-400 mt-1">
+                  <div className="text-xs text-fg-muted mt-1">
                     {new Date(entry.timestamp).toLocaleString()}
                   </div>
                 </div>

@@ -134,22 +134,22 @@ export function DraftsPageClient() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4" />
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading drafts...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b border-accent mx-auto mb-4" />
+          <p className="text-sm text-fg-secondary">Loading drafts...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+          <h1 className="text-xl font-semibold text-fg">
             Drafts
           </h1>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+          <p className="text-sm text-fg-secondary mt-1">
             {filteredDrafts.length} {filteredDrafts.length === 1 ? "draft" : "drafts"}
           </p>
         </div>
@@ -164,7 +164,7 @@ export function DraftsPageClient() {
       {/* Filters & Search */}
       <Card>
         <CardBody>
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-2">
             {/* Search */}
             <div className="flex-1">
               <SearchInput
@@ -178,11 +178,11 @@ export function DraftsPageClient() {
 
             {/* Platform Filter */}
             <div className="flex items-center gap-2">
-              <FunnelSimpleIcon className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
+              <FunnelSimpleIcon className="h-4 w-4 text-fg-muted" />
               <select
                 value={filterPlatform}
                 onChange={(e) => setFilterPlatform(e.target.value as PlatformType | "all")}
-                className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="h-8 rounded-md border border-line bg-surface px-2.5 text-sm text-fg focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
                 aria-label="Filter by platform"
               >
                 {platformOptions.map((option) => (
@@ -195,11 +195,11 @@ export function DraftsPageClient() {
 
             {/* Sort */}
             <div className="flex items-center gap-2">
-              <ClockIcon className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
+              <ClockIcon className="h-4 w-4 text-fg-muted" />
               <select
                 value={sortMode}
                 onChange={(e) => setSortMode(e.target.value as SortMode)}
-                className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="h-8 rounded-md border border-line bg-surface px-2.5 text-sm text-fg focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
                 aria-label="Sort drafts"
               >
                 <option value="newest">Newest first</option>
@@ -208,14 +208,14 @@ export function DraftsPageClient() {
             </div>
 
             {/* View Toggle */}
-            <div className="flex items-center gap-1 border border-neutral-200 dark:border-neutral-800 rounded-lg p-1">
+            <div className="inline-flex h-8 items-center gap-0.5 rounded-md bg-muted p-0.5">
               <button
                 onClick={() => setViewMode("grid")}
                 className={cn(
-                  "p-2 rounded transition-colors",
+                  "flex h-7 w-7 items-center justify-center rounded-sm transition-colors",
                   viewMode === "grid"
-                    ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
-                    : "text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300"
+                    ? "bg-surface text-fg"
+                    : "text-fg-secondary hover:text-fg"
                 )}
                 aria-label="Grid view"
               >
@@ -229,10 +229,10 @@ export function DraftsPageClient() {
               <button
                 onClick={() => setViewMode("list")}
                 className={cn(
-                  "p-2 rounded transition-colors",
+                  "flex h-7 w-7 items-center justify-center rounded-sm transition-colors",
                   viewMode === "list"
-                    ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
-                    : "text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300"
+                    ? "bg-surface text-fg"
+                    : "text-fg-secondary hover:text-fg"
                 )}
                 aria-label="List view"
               >
@@ -248,15 +248,15 @@ export function DraftsPageClient() {
         <Card>
           <CardBody>
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="rounded-full bg-indigo-100 dark:bg-indigo-900/30 p-4 mb-4">
-                <FloppyDiskIcon className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-md border border-line bg-subtle mb-4">
+                <FloppyDiskIcon className="h-5 w-5 text-fg-secondary" />
               </div>
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+              <h3 className="text-base font-semibold text-fg mb-1">
                 {searchQuery || filterPlatform !== "all"
                   ? "No drafts found"
                   : "No drafts yet"}
               </h3>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-md mb-6">
+              <p className="text-sm text-fg-secondary max-w-xs mb-6">
                 {searchQuery || filterPlatform !== "all"
                   ? "Try adjusting your filters or search term"
                   : "Save your first draft by creating a post and saving it for later"}
@@ -333,15 +333,15 @@ function DraftCard({ draft, viewMode, onEdit, onDelete, onSchedule }: DraftCardP
           {/* Content */}
           <div className={cn("flex-1 space-y-3", viewMode === "list" && "space-y-2")}>
             {/* Text Preview */}
-            <p className="text-sm text-neutral-900 dark:text-neutral-100 line-clamp-3">
+            <p className="text-sm text-fg line-clamp-3">
               {contentPreview}
               {draft.content.text.length > 150 && "..."}
             </p>
 
             {/* Media Badge */}
             {hasMedia && (
-              <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                <div className="w-1 h-1 rounded-full bg-indigo-600 dark:bg-indigo-400" />
+              <div className="flex items-center gap-1.5 text-xs text-fg-secondary">
+                <div className="w-1 h-1 rounded-full bg-accent-strong" />
                 <span>
                   {draft.content.media.length}{" "}
                   {draft.content.media.length === 1 ? "attachment" : "attachments"}
@@ -357,14 +357,14 @@ function DraftCard({ draft, viewMode, onEdit, onDelete, onSchedule }: DraftCardP
             </div>
 
             {/* Last Edited */}
-            <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+            <div className="flex items-center gap-1.5 text-xs text-fg-secondary">
               <ClockIcon className="h-3.5 w-3.5" />
               <span>Edited {timeAgo}</span>
             </div>
           </div>
 
           {/* Actions */}
-          <div className={cn("flex gap-2", viewMode === "grid" && "pt-2 border-t border-neutral-200 dark:border-neutral-800")}>
+          <div className={cn("flex gap-2", viewMode === "grid" && "pt-2 border-t border-divider")}>
             <Button
               size="sm"
               variant="outline"

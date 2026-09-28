@@ -42,15 +42,15 @@ const MONTHS = [
 ];
 
 const PLATFORM_COLORS: Record<PlatformType, string> = {
-  twitter: "bg-blue-500/20 border-blue-500 text-blue-700 dark:text-blue-300",
-  facebook: "bg-blue-600/20 border-blue-600 text-blue-700 dark:text-blue-300",
-  instagram: "bg-pink-500/20 border-pink-500 text-pink-700 dark:text-pink-300",
-  linkedin: "bg-sky-600/20 border-sky-600 text-sky-700 dark:text-sky-300",
-  youtube: "bg-red-600/20 border-red-600 text-red-700 dark:text-red-300",
-  tiktok: "bg-neutral-900/20 border-neutral-900 text-neutral-900 dark:text-neutral-100",
-  pinterest: "bg-red-500/20 border-red-500 text-red-700 dark:text-red-300",
-  bluesky: "bg-sky-500/20 border-sky-500 text-sky-700 dark:text-sky-300",
-  threads: "bg-neutral-900/20 border-neutral-900 text-neutral-900 dark:text-neutral-100",
+  twitter: "bg-accent-surface border-accent text-accent-strong",
+  facebook: "bg-accent-surface border-accent text-accent-strong",
+  instagram: "bg-danger-surface border-danger text-danger",
+  linkedin: "bg-accent-surface border-accent text-accent-strong",
+  youtube: "bg-danger-surface border-danger text-danger",
+  tiktok: "bg-inverse/20 border-inverse text-fg",
+  pinterest: "bg-danger-surface border-danger text-danger",
+  bluesky: "bg-accent-surface border-accent text-accent-strong",
+  threads: "bg-inverse/20 border-inverse text-fg",
 };
 
 // ── Helper Functions ───────────────────────────────────────────────────────────
@@ -228,7 +228,7 @@ export function CalendarPageClient({
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-6">
       {/* Header */}
       <PageHeader title="Content Calendar">
         <div className="flex items-center gap-2">
@@ -249,15 +249,15 @@ export function CalendarPageClient({
                   className="fixed inset-0 z-10"
                   onClick={() => setShowFilterDropdown(false)}
                 />
-                <div className="absolute right-0 mt-2 w-56 z-20 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-lg py-2">
+                <div className="absolute right-0 mt-1 w-56 z-20 rounded-lg border border-line bg-surface py-1 shadow-dropdown">
                   <button
                     onClick={() => {
                       setSelectedPlatform("all");
                       setShowFilterDropdown(false);
                     }}
                     className={cn(
-                      "w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors",
-                      selectedPlatform === "all" && "bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300"
+                      "w-full px-3 py-1.5 text-left text-sm text-fg hover:bg-muted transition-colors",
+                      selectedPlatform === "all" && "bg-accent-surface text-accent-on-surface"
                     )}
                   >
                     All Platforms
@@ -270,8 +270,8 @@ export function CalendarPageClient({
                         setShowFilterDropdown(false);
                       }}
                       className={cn(
-                        "w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors flex items-center gap-2",
-                        selectedPlatform === platform && "bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300"
+                        "w-full px-3 py-1.5 text-left text-sm text-fg hover:bg-muted transition-colors flex items-center gap-2",
+                        selectedPlatform === platform && "bg-accent-surface text-accent-on-surface"
                       )}
                     >
                       <PlatformIcon platform={platform} size="sm" />
@@ -299,24 +299,24 @@ export function CalendarPageClient({
         <div className="flex items-center gap-2">
           <button
             onClick={goToPreviousMonth}
-            className="p-2 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface hover:bg-muted transition-colors"
             aria-label="Previous month"
           >
-            <CaretLeft size={16} weight="bold" className="text-neutral-600 dark:text-neutral-400" />
+            <CaretLeft size={16} weight="bold" className="text-fg-secondary" />
           </button>
 
-          <div className="px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 min-w-[160px] text-center">
-            <span className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+          <div className="flex h-8 items-center justify-center px-3 rounded-md border border-line bg-surface min-w-[160px] text-center">
+            <span className="text-sm font-semibold text-fg">
               {MONTHS[month]} {year}
             </span>
           </div>
 
           <button
             onClick={goToNextMonth}
-            className="p-2 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface hover:bg-muted transition-colors"
             aria-label="Next month"
           >
-            <CaretRight size={16} weight="bold" className="text-neutral-600 dark:text-neutral-400" />
+            <CaretRight size={16} weight="bold" className="text-fg-secondary" />
           </button>
 
           <Button
@@ -329,16 +329,16 @@ export function CalendarPageClient({
         </div>
 
         {/* View Mode Toggle */}
-        <div className="flex items-center gap-1 p-1 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+        <div className="inline-flex h-8 items-center gap-0.5 rounded-md bg-muted p-0.5">
           {(["month", "week", "day"] as ViewMode[]).map((mode) => (
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
               className={cn(
-                "px-3 py-1.5 text-sm font-medium rounded-md transition-colors capitalize",
+                "h-7 px-3 text-[13px] font-medium rounded-sm transition-colors capitalize",
                 viewMode === mode
-                  ? "bg-white dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 shadow-sm"
-                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"
+                  ? "bg-surface text-fg"
+                  : "text-fg-secondary hover:text-fg"
               )}
             >
               {mode}
@@ -349,13 +349,13 @@ export function CalendarPageClient({
 
       {/* Calendar Grid (Month View) */}
       {viewMode === "month" && (
-        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
+        <div className="rounded-lg border border-line bg-surface overflow-hidden">
           {/* Day Headers */}
-          <div className="grid grid-cols-7 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+          <div className="grid grid-cols-7 border-b border-divider bg-muted">
             {DAYS.map((day) => (
               <div
                 key={day}
-                className="px-3 py-3 text-center text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wide border-r border-neutral-200 dark:border-neutral-800 last:border-r-0"
+                className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary border-r border-divider last:border-r-0"
               >
                 {day}
               </div>
@@ -375,10 +375,10 @@ export function CalendarPageClient({
                 <div
                   key={index}
                   className={cn(
-                    "min-h-[120px] p-3 border-r border-b border-neutral-200 dark:border-neutral-800 transition-colors",
+                    "min-h-[120px] p-2 border-r border-b border-row transition-colors",
                     "[&:nth-child(7n)]:border-r-0",
-                    !day && "bg-neutral-50/50 dark:bg-neutral-900/30",
-                    day && "hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 cursor-pointer"
+                    !day && "bg-subtle/50",
+                    day && "hover:bg-subtle cursor-pointer"
                   )}
                   onClick={() => day && handleDateClick(day)}
                 >
@@ -389,14 +389,14 @@ export function CalendarPageClient({
                           className={cn(
                             "inline-flex items-center justify-center w-7 h-7 text-sm font-medium rounded-full",
                             isToday
-                              ? "bg-indigo-600 text-white"
-                              : "text-neutral-950 dark:text-neutral-50"
+                              ? "bg-accent-strong text-on-inverse"
+                              : "text-fg"
                           )}
                         >
                           {day}
                         </span>
                         {dayPosts.length > 0 && (
-                          <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                          <span className="text-xs font-medium text-fg-secondary">
                             {dayPosts.length}
                           </span>
                         )}
@@ -413,7 +413,7 @@ export function CalendarPageClient({
                                 handlePostClick(post);
                               }}
                               className={cn(
-                                "w-full px-2 py-1.5 rounded-md text-xs font-medium text-left transition-all hover:shadow-sm border-l-2",
+                                "w-full px-2 py-1.5 rounded-md text-xs font-medium text-left transition-all border-l",
                                 PLATFORM_COLORS[primaryPlatform]
                               )}
                               draggable
@@ -423,18 +423,18 @@ export function CalendarPageClient({
                             >
                               <div className="flex items-center gap-1.5 mb-0.5">
                                 <PlatformIcon platform={primaryPlatform} size="sm" />
-                                <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                                <span className="text-xs text-fg-secondary">
                                   {formatTime(post.scheduledTime)}
                                 </span>
                               </div>
-                              <p className="truncate text-neutral-900 dark:text-neutral-100">
+                              <p className="truncate text-fg">
                                 {post.content.text}
                               </p>
                             </button>
                           );
                         })}
                         {dayPosts.length > 3 && (
-                          <div className="text-xs text-neutral-500 dark:text-neutral-400 pl-2 pt-0.5">
+                          <div className="text-xs text-fg-secondary pl-2 pt-0.5">
                             +{dayPosts.length - 3} more
                           </div>
                         )}
@@ -450,8 +450,8 @@ export function CalendarPageClient({
 
       {/* Week View (Placeholder) */}
       {viewMode === "week" && (
-        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-8 text-center">
-          <p className="text-neutral-500 dark:text-neutral-400">
+        <div className="rounded-lg border border-line bg-surface p-4 py-12 text-center">
+          <p className="text-sm text-fg-secondary">
             Week view coming soon
           </p>
         </div>
@@ -459,8 +459,8 @@ export function CalendarPageClient({
 
       {/* Day View (Placeholder) */}
       {viewMode === "day" && (
-        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-8 text-center">
-          <p className="text-neutral-500 dark:text-neutral-400">
+        <div className="rounded-lg border border-line bg-surface p-4 py-12 text-center">
+          <p className="text-sm text-fg-secondary">
             Day view coming soon
           </p>
         </div>
@@ -473,16 +473,16 @@ export function CalendarPageClient({
           onClick={() => setSelectedPost(null)}
         >
           <div
-            className="bg-white dark:bg-neutral-950 rounded-xl border border-neutral-200 dark:border-neutral-800 p-6 max-w-lg w-full mx-4 shadow-xl"
+            className="bg-surface rounded-lg border border-line p-4 max-w-lg w-full mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+              <h3 className="text-base font-semibold text-fg">
                 Scheduled Post
               </h3>
               <button
                 onClick={() => setSelectedPost(null)}
-                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                className="text-fg-muted hover:text-fg-secondary"
                 aria-label="Close"
               >
                 ✕
@@ -491,17 +491,17 @@ export function CalendarPageClient({
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+                <label className="text-xs font-medium text-fg-secondary">
                   Platforms
                 </label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {selectedPost.content.platforms.map((platform) => (
                     <div
                       key={platform}
-                      className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800"
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted"
                     >
                       <PlatformIcon platform={platform} size="sm" />
-                      <span className="text-xs font-medium capitalize text-neutral-700 dark:text-neutral-300">
+                      <span className="text-xs font-medium capitalize text-fg">
                         {platform}
                       </span>
                     </div>
@@ -510,24 +510,24 @@ export function CalendarPageClient({
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+                <label className="text-xs font-medium text-fg-secondary">
                   Scheduled For
                 </label>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50 mt-1">
+                <p className="text-sm text-fg mt-1">
                   {selectedPost.scheduledDate} at {formatTime(selectedPost.scheduledTime)}
                 </p>
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+                <label className="text-xs font-medium text-fg-secondary">
                   Content
                 </label>
-                <p className="text-sm text-neutral-700 dark:text-neutral-300 mt-1 whitespace-pre-wrap">
+                <p className="text-sm text-fg mt-1 whitespace-pre-wrap">
                   {selectedPost.content.text}
                 </p>
               </div>
 
-              <div className="flex gap-2 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+              <div className="flex gap-2 pt-4 border-t border-divider">
                 <Button
                   variant="outline"
                   size="sm"
@@ -559,7 +559,7 @@ export function CalendarPageClient({
       {/* Loading State */}
       {loading && (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b border-accent" />
         </div>
       )}
     </div>

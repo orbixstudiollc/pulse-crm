@@ -16,9 +16,9 @@ export default function DashboardError({
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-16">
       <div className="mx-auto max-w-md text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+        <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-md border border-danger bg-danger-surface">
           <svg
-            className="h-6 w-6 text-red-600 dark:text-red-400"
+            className="h-5 w-5 text-danger"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={1.5}
@@ -32,16 +32,16 @@ export default function DashboardError({
           </svg>
         </div>
 
-        <h2 className="font-serif text-xl font-semibold text-neutral-950 dark:text-neutral-50">
+        <h2 className="text-base font-semibold text-fg">
           Something went wrong
         </h2>
-        <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+        <p className="mt-2 text-sm text-fg-secondary">
           {error.message || "An unexpected error occurred. Please try again."}
         </p>
 
         <button
           onClick={reset}
-          className="mt-6 inline-flex items-center rounded bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+          className="mt-6 inline-flex h-8 items-center rounded-md bg-inverse px-3 text-sm font-medium text-on-inverse transition-opacity hover:opacity-90"
         >
           Try Again
         </button>
