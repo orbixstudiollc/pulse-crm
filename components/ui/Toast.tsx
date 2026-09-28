@@ -30,34 +30,33 @@ export function Toast({
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed bottom-6 left-4 right-4 sm:left-auto z-50">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-max max-w-[calc(100vw-2rem)]">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
-          transition={{ duration: 0.2 }}
+          exit={{ opacity: 0, y: 8 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
           className={cn(
-            "flex items-center gap-3 px-4 py-3 rounded shadow-lg",
-            "bg-neutral-900 dark:bg-neutral-50 text-white dark:text-neutral-900",
+            "flex items-center gap-2 rounded-full bg-inverse text-on-inverse px-4 py-2 text-sm shadow-dropdown",
           )}
         >
           {variant === "success" ? (
             <CheckCircleIcon
-              size={20}
+              size={16}
               weight="fill"
-              className="text-green-400 dark:text-green-600"
+              className="shrink-0"
             />
           ) : (
             <WarningIcon
-              size={20}
+              size={16}
               weight="fill"
-              className="text-red-400 dark:text-red-600"
+              className="shrink-0"
             />
           )}
-          <span className="text-sm font-medium flex-1">{message}</span>
+          <span className="font-medium flex-1">{message}</span>
           <button
             onClick={onClose}
-            className="ml-2 shrink-0 text-neutral-400 hover:text-white dark:text-neutral-500 dark:hover:text-neutral-900 transition-colors"
+            className="ml-1 shrink-0 rounded-full text-on-inverse/70 hover:text-on-inverse transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <XIcon size={16} />
           </button>

@@ -47,7 +47,7 @@ export function Modal({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
           className={cn(
-            "fixed inset-0 z-50 flex justify-center px-4 bg-black/40 dark:bg-black/60",
+            "fixed inset-0 z-50 flex justify-center px-4 bg-black/40",
             position === "center" && "items-center",
             position === "top" && "items-start pt-[20vh]",
           )}
@@ -57,9 +57,9 @@ export function Modal({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className={cn(
-              "w-full max-w-lg overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-2xl",
+              "w-full max-w-[480px] overflow-hidden rounded-lg border border-line bg-surface shadow-modal",
               className,
             )}
             onClick={(e) => e.stopPropagation()}

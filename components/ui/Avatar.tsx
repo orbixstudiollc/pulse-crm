@@ -31,10 +31,10 @@ const statusSizes = {
 };
 
 const statusColors: Record<AvatarStatus, string> = {
-  online: "bg-green-500",
-  offline: "bg-neutral-400",
-  away: "bg-amber-500",
-  busy: "bg-red-500",
+  online: "bg-success-fill",
+  offline: "bg-fg-muted",
+  away: "bg-warning",
+  busy: "bg-danger",
 };
 
 function getInitials(name: string) {
@@ -61,7 +61,7 @@ export function Avatar({
       {showInitials ? (
         <div
           className={cn(
-            "flex shrink-0 items-center justify-center rounded-full border-[0.5px] border-neutral-200 dark:border-neutral-700 bg-indigo-100 dark:bg-indigo-900/30 font-medium text-indigo-700 dark:text-indigo-400",
+            "flex shrink-0 items-center justify-center rounded-full border border-line bg-accent-surface font-medium text-accent-on-surface",
             sizeClasses[size],
           )}
         >
@@ -70,7 +70,7 @@ export function Avatar({
       ) : (
         <div
           className={cn(
-            "relative shrink-0 rounded-full overflow-hidden border-[0.5px] border-neutral-200 dark:border-neutral-700",
+            "relative shrink-0 rounded-full overflow-hidden border border-line",
             sizeClasses[size],
           )}
         >
@@ -86,7 +86,7 @@ export function Avatar({
       {status && (
         <span
           className={cn(
-            "absolute bottom-0 right-0 block rounded-full ring-2 ring-white dark:ring-neutral-900",
+            "absolute bottom-0 right-0 block rounded-full ring-2 ring-surface",
             statusSizes[size],
             statusColors[status],
           )}
@@ -120,7 +120,7 @@ export function AvatarGroup({
       {remaining > 0 && (
         <div
           className={cn(
-            "flex shrink-0 items-center justify-center rounded-full border-2 border-white dark:border-neutral-900 bg-neutral-200 dark:bg-neutral-800 font-medium text-neutral-600 dark:text-neutral-400",
+            "flex shrink-0 items-center justify-center rounded-full border border-line ring-2 ring-surface bg-muted font-medium text-fg-secondary",
             sizeClasses[size],
           )}
         >

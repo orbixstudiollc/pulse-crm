@@ -38,10 +38,10 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
 
   const itemClassName = (variant?: "default" | "danger") =>
     cn(
-      "flex w-full items-center gap-3 px-3 py-2.5 text-sm text-left rounded transition-colors",
+      "flex w-full items-center gap-2 rounded-sm px-2.5 py-1.5 text-sm text-left transition-colors focus-visible:outline-none",
       variant === "danger"
-        ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
-        : "text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800",
+        ? "text-danger hover:bg-danger-surface focus-visible:bg-danger-surface"
+        : "text-fg hover:bg-muted focus-visible:bg-muted",
     );
 
   const itemContent = (item: ActionMenuItem) => (
@@ -50,8 +50,8 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
         <span
           className={cn(
             item.variant === "danger"
-              ? "text-red-600 dark:text-red-400"
-              : "text-neutral-400 dark:text-neutral-500",
+              ? "text-danger"
+              : "text-fg-muted",
           )}
         >
           {item.icon}
@@ -67,21 +67,21 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
         ref={buttonRef}
         onClick={() => (open ? setOpen(false) : handleOpen())}
         className={cn(
-          "flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors",
+          "flex h-7 w-7 items-center justify-center rounded-sm text-fg-secondary hover:bg-muted hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
           className,
         )}
       >
-        <DotsThreeVerticalIcon size={20} className="text-neutral-500" />
+        <DotsThreeVerticalIcon size={16} className="text-current" />
       </button>
 
       {open && (
         <div
           className={cn(
-            "absolute right-0 min-w-45 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-lg overflow-hidden z-50 p-2",
+            "absolute right-0 min-w-45 rounded-lg border border-line bg-surface shadow-dropdown overflow-hidden z-50 p-1",
             position === "bottom" ? "top-full mt-1" : "bottom-full mb-1",
           )}
         >
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {items.map((item, index) =>
               item.href ? (
                 <Link

@@ -22,7 +22,7 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        "bg-neutral-200 dark:bg-neutral-800",
+        "bg-muted",
         {
           "animate-pulse": animation === "pulse",
           "animate-shimmer": animation === "wave",
@@ -70,7 +70,7 @@ export function SkeletonCard({ className }: SkeletonCardProps) {
   return (
     <div
       className={cn(
-        "rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 space-y-4",
+        "rounded-lg border border-line bg-surface p-4 space-y-4",
         className,
       )}
       aria-hidden="true"

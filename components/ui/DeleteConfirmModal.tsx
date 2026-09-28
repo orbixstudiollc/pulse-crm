@@ -27,34 +27,33 @@ export function DeleteConfirmModal({
 
   return (
     <Modal open={open} onClose={onClose}>
-      <div className="p-6 text-center sm:text-left">
+      <div className="p-4 text-center sm:text-left">
         {/* Icon */}
-        <div className="mx-auto sm:mx-0 w-12 h-12 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center mb-4">
-          <TrashIcon size={24} className="text-red-500 dark:text-red-400" />
+        <div className="mx-auto sm:mx-0 w-8 h-8 rounded-full bg-danger-surface flex items-center justify-center mb-3">
+          <TrashIcon size={16} className="text-danger" />
         </div>
 
         {/* Title */}
-        <h3 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50 mb-2">
+        <h3 className="text-heading-md text-fg mb-1">
           {title}
         </h3>
 
         {/* Description */}
-        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
+        <p className="text-sm text-fg-secondary">
           {description || defaultDescription}
         </p>
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="-mx-4 -mb-4 mt-4 flex justify-end gap-2 px-4 py-3 border-t border-divider">
           <Button
-            variant="outline"
-            className="flex-1"
+            variant="ghost" className="shrink-0"
             onClick={onClose}
             disabled={loading}
           >
             Cancel
           </Button>
           <Button
-            className="flex-1 bg-red-500 dark:bg-red-600 border-red-500 dark:border-red-600 text-white! hover:bg-red-600 dark:hover:bg-red-700 hover:border-red-600 dark:hover:border-red-700"
+            className="shrink-0 bg-danger border-danger text-on-inverse! hover:bg-danger hover:border-danger hover:opacity-90"
             onClick={onConfirm}
             disabled={loading}
             leftIcon={

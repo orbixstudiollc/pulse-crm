@@ -19,7 +19,7 @@ export function Spinner({ size = "md", className }: SpinnerProps) {
   return (
     <svg
       className={cn(
-        "animate-spin text-indigo-600",
+        "animate-spin text-accent",
         sizeClasses[size],
         className,
       )}

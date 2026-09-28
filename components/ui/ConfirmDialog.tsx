@@ -52,7 +52,7 @@ export function ConfirmDialog({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40 dark:bg-black/60"
+          className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40"
           onClick={!loading ? onClose : undefined}
           role="dialog"
           aria-modal="true"
@@ -63,31 +63,31 @@ export function ConfirmDialog({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="w-full max-w-md rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-2xl"
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="w-full max-w-[480px] overflow-hidden rounded-lg border border-line bg-surface shadow-modal"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={handleKeyDown}
           >
             {/* Header */}
-            <div className="flex items-start gap-4 p-6 pb-4">
+            <div className="flex items-start gap-3 px-4 pt-4 pb-2">
               {/* Icon */}
               <div
                 className={cn(
-                  "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center",
+                  "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
                   variant === "danger"
-                    ? "bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400"
-                    : "bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                    ? "bg-danger-surface text-danger"
+                    : "bg-accent-surface text-accent-on-surface"
                 )}
               >
-                {icon || <WarningIcon className="h-6 w-6" />}
+                {icon || <WarningIcon className="h-4 w-4" />}
               </div>
 
               {/* Title and Close */}
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 pt-1">
                 <div className="flex items-start justify-between gap-2">
                   <h2
                     id="confirm-dialog-title"
-                    className="text-lg font-semibold text-neutral-900 dark:text-neutral-100"
+                    className="text-heading-md text-fg"
                   >
                     {title}
                   </h2>
@@ -95,10 +95,10 @@ export function ConfirmDialog({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="flex-shrink-0 p-1 rounded-md text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                      className="flex-shrink-0 -mt-1 -mr-1 flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:text-fg hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                       aria-label="Close dialog"
                     >
-                      <XIcon className="h-5 w-5" />
+                      <XIcon className="h-4 w-4" />
                     </button>
                   )}
                 </div>
@@ -106,17 +106,17 @@ export function ConfirmDialog({
             </div>
 
             {/* Message */}
-            <div className="px-6 pb-6">
+            <div className="pr-4 pb-4 pl-15">
               <p
                 id="confirm-dialog-description"
-                className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed"
+                className="text-sm text-fg-secondary leading-relaxed"
               >
                 {message}
               </p>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 px-6 py-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-b-2xl border-t border-neutral-200 dark:border-neutral-800">
+            <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-divider">
               <Button
                 type="button"
                 variant="ghost"

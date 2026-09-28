@@ -9,23 +9,23 @@ interface ProgressProps {
 }
 
 function getAutoColor(percentage: number) {
-  if (percentage >= 80) return "bg-green-500";
-  if (percentage >= 50) return "bg-amber-500";
-  return "bg-red-500";
+  if (percentage >= 80) return "bg-success-fill";
+  if (percentage >= 50) return "bg-warning";
+  return "bg-danger";
 }
 
 const colorClasses = {
-  green: "bg-green-500",
-  amber: "bg-amber-500",
-  red: "bg-red-500",
-  neutral: "bg-neutral-500",
-  blue: "bg-blue-500",
-  yellow: "bg-yellow-500",
+  green: "bg-success-fill",
+  amber: "bg-warning",
+  red: "bg-danger",
+  neutral: "bg-fg-muted",
+  blue: "bg-accent",
+  yellow: "bg-warning",
 };
 
 const sizeClasses = {
-  sm: "h-1.5",
-  md: "h-2",
+  sm: "h-1",
+  md: "h-1.5",
 };
 
 export function Progress({
@@ -43,7 +43,7 @@ export function Progress({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-full border-[0.5px] border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800",
+        "overflow-hidden rounded-full bg-muted",
         sizeClasses[size],
         className,
       )}

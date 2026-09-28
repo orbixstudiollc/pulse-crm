@@ -13,21 +13,18 @@ export function Card({
   className,
   hover = false,
   border = true,
-  shadow = "sm",
+  // Accepted for API compatibility; flat surfaces render no shadow at any value.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  shadow: _shadow = "sm",
   children,
   ...props
 }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-lg bg-white dark:bg-neutral-900",
-        border && "border border-neutral-200 dark:border-neutral-800",
-        {
-          "shadow-sm": shadow === "sm",
-          "shadow-md": shadow === "md",
-          "shadow-lg": shadow === "lg",
-        },
-        hover && "transition-shadow hover:shadow-md",
+        "rounded-lg bg-surface",
+        border && "border border-line",
+        hover && "transition-colors hover:border-fg-muted",
         className,
       )}
       {...props}
@@ -54,19 +51,19 @@ export function CardHeader({
   return (
     <div
       className={cn(
-        "flex items-start justify-between gap-4 px-6 py-4 border-b border-neutral-200 dark:border-neutral-800",
+        "flex items-start justify-between gap-4 px-4 py-3 border-b border-divider",
         className,
       )}
       {...props}
     >
       <div className="space-y-1 min-w-0 flex-1">
         {title && (
-          <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          <h3 className="text-heading-md text-fg">
             {title}
           </h3>
         )}
         {description && (
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          <p className="text-sm text-fg-secondary">
             {description}
           </p>
         )}
@@ -89,7 +86,7 @@ export function CardBody({
 }: CardBodyProps) {
   return (
     <div
-      className={cn(!noPadding && "px-6 py-4", className)}
+      className={cn(!noPadding && "p-4", className)}
       {...props}
     >
       {children}
@@ -107,7 +104,7 @@ export function CardFooter({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 px-6 py-4 border-t border-neutral-200 dark:border-neutral-800",
+        "flex items-center gap-3 px-4 py-3 border-t border-divider",
         className,
       )}
       {...props}

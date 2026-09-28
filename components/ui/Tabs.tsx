@@ -61,7 +61,7 @@ export function TabsList({ children, className }: TabsListProps) {
     <div
       role="tablist"
       className={cn(
-        "inline-flex items-center gap-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 p-1",
+        "inline-flex h-8 items-center gap-0.5 rounded-md bg-muted p-0.5",
         className,
       )}
     >
@@ -113,10 +113,10 @@ export function TabsTrigger({
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={cn(
-        "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex h-7 items-center gap-2 rounded-sm px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-50",
         isActive
-          ? "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 shadow-sm"
-          : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100",
+          ? "bg-surface text-fg"
+          : "text-fg-secondary hover:text-fg",
         className,
       )}
     >

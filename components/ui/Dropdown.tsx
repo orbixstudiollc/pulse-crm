@@ -57,8 +57,8 @@ export function Dropdown({
       </Button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 min-w-40 rounded-[12px] border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-dropdown overflow-hidden z-50 p-2">
-          <div className="space-y-1">
+        <div className="absolute right-0 top-full mt-1 min-w-40 rounded-lg border border-line bg-surface shadow-dropdown overflow-hidden z-50 p-1">
+          <div className="space-y-0.5">
             {options.map((option) => (
               <button
                 key={option.value}
@@ -67,10 +67,10 @@ export function Dropdown({
                   setOpen(false);
                 }}
                 className={cn(
-                  "flex w-full items-center px-4 py-2.5 text-sm text-left transition-colors rounded",
+                  "flex w-full items-center rounded-sm px-2.5 py-1.5 text-sm text-left text-fg transition-colors focus-visible:outline-none focus-visible:bg-muted",
                   option.value === value
-                    ? "bg-neutral-100 dark:bg-neutral-800 font-medium text-neutral-950 dark:text-neutral-50"
-                    : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/50",
+                    ? "bg-muted font-medium"
+                    : "hover:bg-muted",
                 )}
               >
                 {option.label}
