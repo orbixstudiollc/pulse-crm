@@ -258,13 +258,13 @@ export function CustomerDetailClient({
   const tenure = customer.tenure || customer.tenure_months || 0;
 
   return (
-    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full p-6">
       {/* Header + Stats Card */}
-      <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 mb-6">
+      <div className="rounded-lg border border-line bg-surface p-4 mb-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-4 sm:gap-6">
-            <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-neutral-200 dark:border-neutral-700">
+            <div className="relative w-20 h-20 rounded-full overflow-hidden border border-line">
               <Image
                 src={customer.avatar_url || "/images/avatars/default.svg"}
                 alt={customerName}
@@ -273,10 +273,10 @@ export function CustomerDetailClient({
               />
             </div>
             <div>
-              <h1 className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+              <h1 className="text-xl font-semibold text-fg mb-1">
                 {customerName}
               </h1>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-2">
+              <p className="text-sm text-fg-secondary mb-2">
                 {customer.email}
               </p>
               <div className="flex items-center gap-2">
@@ -319,35 +319,35 @@ export function CustomerDetailClient({
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
-            <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+          <div className="rounded-lg border border-line p-4 text-center">
+            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
               {formatCurrency(mrr)}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+            <p className="text-xs text-fg-secondary">
               Monthly Revenue
             </p>
           </div>
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
-            <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+          <div className="rounded-lg border border-line p-4 text-center">
+            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
               {healthScore}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+            <p className="text-xs text-fg-secondary">
               Health Score
             </p>
           </div>
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
-            <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+          <div className="rounded-lg border border-line p-4 text-center">
+            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
               ${(ltv / 1000).toFixed(1)}K
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+            <p className="text-xs text-fg-secondary">
               Lifetime Value
             </p>
           </div>
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
-            <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+          <div className="rounded-lg border border-line p-4 text-center">
+            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
               {tenure} mo
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+            <p className="text-xs text-fg-secondary">
               Tenure
             </p>
           </div>
@@ -358,24 +358,24 @@ export function CustomerDetailClient({
         {/* Main Content - Left 2 columns */}
         <div className="lg:col-span-2 space-y-6">
           {/* Activity / Deals Tabs */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
-            <div className="flex border-b border-neutral-200 dark:border-neutral-800">
+          <div className="rounded-lg border border-line bg-surface">
+            <div className="flex border-b border-divider">
               <button
                 onClick={() => setActiveTab("activity")}
-                className={`px-6 py-4 text-sm font-medium transition-colors ${
+                className={`px-4 py-3 text-sm font-medium transition-colors ${
                   activeTab === "activity"
-                    ? "text-neutral-950 dark:text-neutral-50 border-b-2 border-neutral-950 dark:border-neutral-50 -mb-px"
-                    : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"
+                    ? "text-fg border-b border-inverse -mb-px"
+                    : "text-fg-secondary hover:text-fg"
                 }`}
               >
                 Activity
               </button>
               <button
                 onClick={() => setActiveTab("deals")}
-                className={`px-6 py-4 text-sm font-medium transition-colors ${
+                className={`px-4 py-3 text-sm font-medium transition-colors ${
                   activeTab === "deals"
-                    ? "text-neutral-950 dark:text-neutral-50 border-b-2 border-neutral-950 dark:border-neutral-50 -mb-px"
-                    : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"
+                    ? "text-fg border-b border-inverse -mb-px"
+                    : "text-fg-secondary hover:text-fg"
                 }`}
               >
                 Deals
@@ -403,7 +403,7 @@ export function CustomerDetailClient({
                       ))}
                     </div>
                   ) : (
-                    <div className="py-12 text-center text-neutral-500 dark:text-neutral-400">
+                    <div className="py-12 text-center text-fg-secondary">
                       <p>No activity yet</p>
                     </div>
                   )}
@@ -427,21 +427,21 @@ export function CustomerDetailClient({
                             key={deal.id}
                             href={`/dashboard/sales/${deal.id}`}
                             className={cn(
-                              "block rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 overflow-hidden transition-all hover:border-neutral-300 dark:hover:border-neutral-700 hover:shadow-sm",
+                              "block rounded border border-line bg-subtle overflow-hidden transition-all hover:border-fg-muted",
                               isClosed && "opacity-70 hover:opacity-100",
                             )}
                           >
                             {/* Card Header */}
-                            <div className="flex items-center justify-between px-4 py-3.5 border-b border-neutral-200 dark:border-neutral-800">
+                            <div className="flex items-center justify-between px-4 py-3.5 border-b border-line">
                               <div>
-                                <p className="text-[15px] font-semibold text-neutral-950 dark:text-neutral-50">
+                                <p className="text-sm font-semibold text-fg">
                                   {deal.name}
                                 </p>
-                                <p className="text-[13px] text-neutral-500 dark:text-neutral-400">
+                                <p className="text-[13px] text-fg-secondary">
                                   {deal.company || customerName}
                                 </p>
                               </div>
-                              <p className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
+                              <p className="text-xl font-semibold text-fg">
                                 {formatCurrency(deal.value || 0)}
                               </p>
                             </div>
@@ -450,7 +450,7 @@ export function CustomerDetailClient({
                             <div className="px-4 py-3.5 space-y-3.5">
                               {/* Stage */}
                               <div className="flex items-center gap-3">
-                                <span className="text-[13px] text-neutral-500 dark:text-neutral-400 w-20">
+                                <span className="text-[13px] text-fg-secondary w-20">
                                   Stage
                                 </span>
                                 <Badge variant={stage.variant}>
@@ -461,7 +461,7 @@ export function CustomerDetailClient({
                               {/* Probability - only show if not closed */}
                               {!isClosed && (
                                 <div className="flex items-center gap-3">
-                                  <span className="text-[13px] text-neutral-500 dark:text-neutral-400 w-20">
+                                  <span className="text-[13px] text-fg-secondary w-20">
                                     Probability
                                   </span>
                                   <Progress
@@ -469,7 +469,7 @@ export function CustomerDetailClient({
                                     color="green"
                                     className="flex-1"
                                   />
-                                  <span className="text-[13px] font-medium text-neutral-950 dark:text-neutral-50 w-10 text-right">
+                                  <span className="text-[13px] font-medium text-fg w-10 text-right">
                                     {deal.probability || 0}%
                                   </span>
                                 </div>
@@ -478,18 +478,18 @@ export function CustomerDetailClient({
                               {/* Dates */}
                               <div className="flex items-center gap-6">
                                 <div>
-                                  <span className="text-xs text-neutral-400 dark:text-neutral-500 block mb-0.5">
+                                  <span className="text-xs text-fg-muted block mb-0.5">
                                     Created
                                   </span>
-                                  <span className="text-[13px] font-medium text-neutral-950 dark:text-neutral-50">
+                                  <span className="text-[13px] font-medium text-fg">
                                     {formatDate(deal.created_at)}
                                   </span>
                                 </div>
                                 <div>
-                                  <span className="text-xs text-neutral-400 dark:text-neutral-500 block mb-0.5">
+                                  <span className="text-xs text-fg-muted block mb-0.5">
                                     {isClosed ? "Closed" : "Expected Close"}
                                   </span>
-                                  <span className="text-[13px] font-medium text-neutral-950 dark:text-neutral-50">
+                                  <span className="text-[13px] font-medium text-fg">
                                     {formatDate(deal.expected_close_date || deal.close_date || null)}
                                   </span>
                                 </div>
@@ -500,7 +500,7 @@ export function CustomerDetailClient({
                       })}
                     </div>
                   ) : (
-                    <div className="py-12 text-center text-neutral-500 dark:text-neutral-400">
+                    <div className="py-12 text-center text-fg-secondary">
                       <p>No deals to display</p>
                     </div>
                   )}
@@ -510,82 +510,82 @@ export function CustomerDetailClient({
           </div>
 
           {/* Details */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
-            <div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-800">
-              <h2 className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
+          <div className="rounded-lg border border-line bg-surface">
+            <div className="flex h-12 items-center justify-between px-4 border-b border-divider">
+              <h2 className="text-heading-md text-fg">
                 Details
               </h2>
               <Link href={`/dashboard/customers/${customer.id}/edit`}>
-                <button className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
+                <button className="text-sm text-fg-secondary hover:text-fg transition-colors">
                   Edit Customer
                 </button>
               </Link>
             </div>
-            <div className="p-6">
+            <div className="p-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
                 <div>
-                  <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
+                  <p className="text-xs text-fg-muted mb-1">
                     Phone
                   </p>
-                  <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                  <p className="text-sm text-fg">
                     {customer.phone || "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
+                  <p className="text-xs text-fg-muted mb-1">
                     Company
                   </p>
-                  <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                  <p className="text-sm text-fg">
                     {customer.company || "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
+                  <p className="text-xs text-fg-muted mb-1">
                     Job Title
                   </p>
-                  <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                  <p className="text-sm text-fg">
                     {customer.job_title || "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
+                  <p className="text-xs text-fg-muted mb-1">
                     Industry
                   </p>
-                  <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                  <p className="text-sm text-fg">
                     {customer.industry || "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
+                  <p className="text-xs text-fg-muted mb-1">
                     Website
                   </p>
-                  <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                  <p className="text-sm text-fg">
                     {customer.website || "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
+                  <p className="text-xs text-fg-muted mb-1">
                     Company Size
                   </p>
-                  <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                  <p className="text-sm text-fg">
                     {customer.company_size || "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
+                  <p className="text-xs text-fg-muted mb-1">
                     Location
                   </p>
-                  <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                  <p className="text-sm text-fg">
                     {[customer.city, customer.state, customer.country]
                       .filter(Boolean)
                       .join(", ") || "—"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-1">
+                  <p className="text-xs text-fg-muted mb-1">
                     Timezone
                   </p>
-                  <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                  <p className="text-sm text-fg">
                     {customer.timezone || "—"}
                   </p>
                 </div>
@@ -594,33 +594,33 @@ export function CustomerDetailClient({
           </div>
 
           {/* Notes */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
-            <div className="p-6 border-b border-neutral-200 dark:border-neutral-800">
-              <h2 className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
+          <div className="rounded-lg border border-line bg-surface">
+            <div className="flex h-12 items-center px-4 border-b border-divider">
+              <h2 className="text-heading-md text-fg">
                 Notes
               </h2>
             </div>
-            <div className="p-6">
+            <div className="p-4">
               {customerNotes.length > 0 ? (
                 <div className="space-y-6 mb-6">
                   {customerNotes.map((note) => (
                     <div key={note.id}>
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                        <p className="text-sm font-medium text-fg">
                           {note.author_name || "Unknown"}
                         </p>
-                        <p className="text-xs text-neutral-400 dark:text-neutral-500">
+                        <p className="text-xs text-fg-muted">
                           {formatDate(note.created_at)}
                         </p>
                       </div>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                      <p className="text-sm text-fg-secondary leading-relaxed">
                         {note.content}
                       </p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">
+                <p className="text-sm text-fg-secondary mb-6">
                   No notes yet
                 </p>
               )}
@@ -648,64 +648,64 @@ export function CustomerDetailClient({
         {/* Sidebar - Right column */}
         <div className="space-y-6">
           {/* Quick Actions */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <p className="text-xs font-medium text-fg-secondary mb-4">
               Quick Actions
             </p>
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setShowMeetingModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-line bg-subtle hover:bg-muted transition-colors"
               >
-                <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full border border-line bg-surface flex items-center justify-center">
                   <CalendarBlankIcon
                     size={18}
-                    className="text-neutral-600 dark:text-neutral-400"
+                    className="text-fg-secondary"
                   />
                 </div>
-                <span className="text-sm font-medium text-neutral-950 dark:text-white">
+                <span className="text-sm font-medium text-fg">
                   Schedule Meeting
                 </span>
               </button>
               <button
                 onClick={() => setShowTaskModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-line bg-subtle hover:bg-muted transition-colors"
               >
-                <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full border border-line bg-surface flex items-center justify-center">
                   <CheckCircleIcon
                     size={18}
-                    className="text-neutral-600 dark:text-neutral-400"
+                    className="text-fg-secondary"
                   />
                 </div>
-                <span className="text-sm font-medium text-neutral-950 dark:text-white">
+                <span className="text-sm font-medium text-fg">
                   Create Task
                 </span>
               </button>
               <button
                 onClick={() => setShowDealModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-line bg-subtle hover:bg-muted transition-colors"
               >
-                <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full border border-line bg-surface flex items-center justify-center">
                   <CurrencyDollarIcon
                     size={18}
-                    className="text-neutral-600 dark:text-neutral-400"
+                    className="text-fg-secondary"
                   />
                 </div>
-                <span className="text-sm font-medium text-neutral-950 dark:text-white">
+                <span className="text-sm font-medium text-fg">
                   Create Deal
                 </span>
               </button>
               <button
                 onClick={() => setShowInvoiceModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-line bg-subtle hover:bg-muted transition-colors"
               >
-                <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full border border-line bg-surface flex items-center justify-center">
                   <FileTextIcon
                     size={18}
-                    className="text-neutral-600 dark:text-neutral-400"
+                    className="text-fg-secondary"
                   />
                 </div>
-                <span className="text-sm font-medium text-neutral-950 dark:text-white">
+                <span className="text-sm font-medium text-fg">
                   Send Invoice
                 </span>
               </button>
@@ -713,25 +713,25 @@ export function CustomerDetailClient({
           </div>
 
           {/* Health Score */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <p className="text-xs font-medium text-fg-secondary mb-4">
               Health Score
             </p>
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center">
-                <span className="text-xl font-semibold text-green-600 dark:text-green-400">
+              <div className="w-14 h-14 rounded-full bg-success-surface flex items-center justify-center">
+                <span className="text-xl font-semibold text-success">
                   {healthScore}
                 </span>
               </div>
               <div>
-                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <p className="text-sm font-medium text-fg">
                   {healthScore >= 80
                     ? "Excellent"
                     : healthScore >= 60
                       ? "Good"
                       : "At Risk"}
                 </p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                <p className="text-xs text-fg-secondary">
                   {healthScore >= 80
                     ? "High engagement, active user"
                     : "Needs attention"}
@@ -741,24 +741,24 @@ export function CustomerDetailClient({
           </div>
 
           {/* Revenue */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <p className="text-xs font-medium text-fg-secondary mb-4">
               Revenue
             </p>
             <div className="space-y-4">
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                <p className="text-xs text-fg-secondary mb-1">
                   Monthly Revenue
                 </p>
-                <p className="text-xl font-semibold text-neutral-950 dark:text-neutral-50">
+                <p className="text-xl font-semibold text-fg">
                   {formatCurrency(mrr)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                <p className="text-xs text-fg-secondary mb-1">
                   Lifetime Value
                 </p>
-                <p className="text-xl font-semibold text-neutral-950 dark:text-neutral-50">
+                <p className="text-xl font-semibold text-fg">
                   {formatCurrency(ltv)}
                 </p>
               </div>
@@ -767,15 +767,15 @@ export function CustomerDetailClient({
 
           {/* Tags */}
           {customer.tags && customer.tags.length > 0 && (
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-              <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+            <div className="rounded-lg border border-line bg-surface p-4">
+              <p className="text-xs font-medium text-fg-secondary mb-4">
                 Tags
               </p>
               <div className="flex flex-wrap gap-2">
                 {customer.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-2.5 py-1 text-xs rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
+                    className="px-2.5 py-1 text-xs rounded bg-muted text-fg-secondary"
                   >
                     {tag}
                   </span>
@@ -785,32 +785,32 @@ export function CustomerDetailClient({
           )}
 
           {/* Key Dates */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <p className="text-xs font-medium text-fg-secondary mb-4">
               Key Dates
             </p>
             <div className="space-y-4">
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">
+                <p className="text-xs text-fg-secondary mb-0.5">
                   Customer Since
                 </p>
-                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <p className="text-sm font-medium text-fg">
                   {formatDate(customer.customer_since)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">
+                <p className="text-xs text-fg-secondary mb-0.5">
                   Last Contact
                 </p>
-                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <p className="text-sm font-medium text-fg">
                   {formatDate(customer.last_contact)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">
+                <p className="text-xs text-fg-secondary mb-0.5">
                   Renewal Date
                 </p>
-                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <p className="text-sm font-medium text-fg">
                   {formatDate(customer.renewal_date)}
                 </p>
               </div>

@@ -261,7 +261,7 @@ export function ContactsPageClient({
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <PageHeader title="Contacts">
         <Button
@@ -282,10 +282,10 @@ export function ContactsPageClient({
               setSearchValue("");
             }}
             className={cn(
-              "rounded px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors",
+              "inline-flex h-7 items-center rounded-md px-3 text-[13px] font-medium whitespace-nowrap transition-colors",
               activeTab === tab.value
-                ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
-                : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300",
+                ? "bg-active text-fg"
+                : "text-fg-secondary hover:bg-muted hover:text-fg",
             )}
           >
             {tab.label}
@@ -301,7 +301,7 @@ export function ContactsPageClient({
           icon={
             <UsersThreeIcon
               size={24}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
@@ -313,7 +313,7 @@ export function ContactsPageClient({
             icon={
               <UserIcon
                 size={24}
-                className="text-neutral-950 dark:text-neutral-50"
+                className="text-fg"
               />
             }
           />
@@ -331,31 +331,31 @@ export function ContactsPageClient({
       </div>
 
       {/* Contacts Table */}
-      <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
+      <div className="rounded-lg border border-line bg-surface overflow-hidden">
         {filteredContacts.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-                  <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3">
+                <tr className="bg-muted">
+                  <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                     Name
                   </th>
-                  <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                  <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                     Title
                   </th>
-                  <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                  <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                     Email
                   </th>
-                  <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                  <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                     Company
                   </th>
-                  <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                  <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                     Buying Role
                   </th>
-                  <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                  <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                     Influence
                   </th>
-                  <th className="text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 px-3 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                  <th className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary">
                     Actions
                   </th>
                 </tr>
@@ -369,52 +369,52 @@ export function ContactsPageClient({
                   return (
                     <tr
                       key={contact.id}
-                      className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                      className="hover:bg-subtle transition-colors"
                     >
                       {/* Name */}
-                      <td className="px-5 py-4">
+                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
                             <UserIcon
                               size={18}
-                              className="text-neutral-500 dark:text-neutral-400"
+                              className="text-fg-secondary"
                             />
                           </div>
-                          <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                          <p className="text-[13px] font-medium text-fg">
                             {contact.name}
                           </p>
                         </div>
                       </td>
 
                       {/* Title */}
-                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                        <span className="text-[13px] text-fg-secondary">
                           {contact.title || "—"}
                         </span>
                       </td>
 
                       {/* Email */}
-                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                        <span className="text-[13px] text-fg-secondary">
                           {contact.email || "—"}
                         </span>
                       </td>
 
                       {/* Company (lead/customer badge) */}
-                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
                         <div className="flex items-center gap-1.5">
                           {contact.lead_id && (
-                            <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-400/15 border border-blue-200 dark:border-blue-400/30 px-2 py-0.5 text-[11px] font-medium text-blue-600 dark:text-blue-400">
+                            <span className="inline-flex items-center rounded-full bg-accent-surface px-2 py-0.5 text-xs font-medium text-accent-on-surface">
                               Lead
                             </span>
                           )}
                           {contact.customer_id && (
-                            <span className="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-400/15 border border-emerald-200 dark:border-emerald-400/30 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                            <span className="inline-flex items-center rounded-full bg-success-surface px-2 py-0.5 text-xs font-medium text-success">
                               Customer
                             </span>
                           )}
                           {!contact.lead_id && !contact.customer_id && (
-                            <span className="text-sm text-neutral-400 dark:text-neutral-500">
+                            <span className="text-[13px] text-fg-muted">
                               —
                             </span>
                           )}
@@ -422,14 +422,14 @@ export function ContactsPageClient({
                       </td>
 
                       {/* Buying Role */}
-                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
                         <Badge variant={roleConfig?.variant ?? "neutral"} dot>
                           {roleConfig?.label ?? contact.buying_role}
                         </Badge>
                       </td>
 
                       {/* Influence Level */}
-                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
                         <Badge
                           variant={influenceConfig?.variant ?? "neutral"}
                         >
@@ -438,7 +438,7 @@ export function ContactsPageClient({
                       </td>
 
                       {/* Actions */}
-                      <td className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
                         <div className="flex justify-center">
                           <ActionMenu
                             items={[
@@ -464,19 +464,19 @@ export function ContactsPageClient({
             </table>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-16 px-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-neutral-200 dark:border-neutral-800 mb-4">
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md border border-line bg-subtle text-fg-secondary mb-4">
               <UserIcon
                 size={24}
-                className="text-neutral-400 dark:text-neutral-500"
+                className="text-fg-secondary"
               />
             </div>
-            <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-1">
+            <p className="text-heading-md text-fg mb-1">
               {searchValue || activeTab !== "all"
                 ? "No contacts found"
                 : "No contacts yet"}
             </p>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center max-w-sm mb-4">
+            <p className="text-sm text-fg-secondary text-center max-w-xs mb-4">
               {searchValue || activeTab !== "all"
                 ? "Try adjusting your search or filters to find what you're looking for."
                 : "Start building your contact intelligence by adding your first contact."}
@@ -497,21 +497,21 @@ export function ContactsPageClient({
       <Modal open={showModal} onClose={closeModal}>
         <form onSubmit={handleSubmit}>
           {/* Modal Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
-            <h2 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-divider">
+            <h2 className="text-heading-md text-fg">
               {editingContact ? "Edit Contact" : "Add Contact"}
             </h2>
             <button
               type="button"
               onClick={closeModal}
-              className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-fg-secondary hover:bg-muted hover:text-fg transition-colors"
             >
-              <XIcon size={20} className="text-neutral-500" />
+              <XIcon size={20} className="text-fg-secondary" />
             </button>
           </div>
 
           {/* Modal Body */}
-          <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
+          <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
             <Input
               label="Name"
               required
@@ -607,7 +607,7 @@ export function ContactsPageClient({
           </div>
 
           {/* Modal Footer */}
-          <div className="flex justify-end gap-3 px-6 py-4 border-t border-neutral-200 dark:border-neutral-800">
+          <div className="flex justify-end gap-2 px-4 py-3 border-t border-divider">
             <Button
               type="button"
               variant="outline"

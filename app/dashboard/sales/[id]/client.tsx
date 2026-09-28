@@ -102,11 +102,11 @@ const stageLabels: Record<string, string> = {
 };
 
 const stageColorMap: Record<string, string> = {
-  discovery: "bg-blue-500",
-  proposal: "bg-amber-500",
-  negotiation: "bg-amber-500",
-  closed_won: "bg-green-500",
-  closed_lost: "bg-red-500",
+  discovery: "bg-accent-strong",
+  proposal: "bg-warning",
+  negotiation: "bg-warning",
+  closed_won: "bg-success",
+  closed_lost: "bg-danger",
 };
 
 // --- Helper components ---
@@ -129,10 +129,10 @@ function StageProgress({ currentStage }: { currentStage: string }) {
             className={cn(
               "h-2 flex-1 rounded-sm transition-colors",
               isFilled
-                ? "bg-neutral-950 dark:bg-neutral-50"
+                ? "bg-inverse"
                 : isLostFilled
-                  ? "bg-red-500"
-                  : "bg-neutral-200 dark:bg-neutral-700",
+                  ? "bg-danger"
+                  : "bg-active",
             )}
           />
         );
@@ -154,13 +154,13 @@ function StageDropdown({
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full px-4 py-3 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+        className="flex items-center justify-between w-full px-4 py-3 rounded-md border border-line bg-surface text-sm font-medium text-fg hover:border-fg-muted transition-colors"
       >
         {stageLabels[currentStage] || currentStage}
         <CaretDownIcon
           size={16}
           className={cn(
-            "text-neutral-500 transition-transform",
+            "text-fg-secondary transition-transform",
             open && "rotate-180",
           )}
         />
@@ -169,7 +169,7 @@ function StageDropdown({
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 right-0 mt-1 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-lg z-20 py-1">
+          <div className="absolute top-full left-0 right-0 mt-1 rounded-lg border border-line bg-surface shadow-dropdown z-20 py-1">
             {pipelineStages.map((stage) => (
               <button
                 key={stage.id}
@@ -178,10 +178,10 @@ function StageDropdown({
                   setOpen(false);
                 }}
                 className={cn(
-                  "flex items-center w-full px-4 py-2 text-sm text-left hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors",
+                  "flex items-center w-full px-4 py-2 text-sm text-left hover:bg-muted transition-colors",
                   currentStage === stage.id
-                    ? "text-neutral-950 dark:text-neutral-50 font-medium"
-                    : "text-neutral-600 dark:text-neutral-400",
+                    ? "text-fg font-medium"
+                    : "text-fg-secondary",
                 )}
               >
                 {stage.label}
@@ -345,25 +345,25 @@ export function DealDetailClient({
   });
 
   return (
-    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-full p-6">
       {/* Header Card */}
-      <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 mb-6">
+      <div className="rounded-lg border border-line bg-surface p-4 mb-6">
         <div className="flex items-start justify-between mb-6">
           <div>
             <Badge variant="warning" className="mb-3">
               {stageLabels[currentStage] || currentStage}
             </Badge>
-            <h1 className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+            <h1 className="text-xl font-semibold text-fg mb-1">
               {deal.name} - {formatCurrency(deal.value || 0)}
             </h1>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            <p className="text-sm text-fg-secondary">
               {deal.company || contactName}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
-              className="border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-300 dark:hover:border-red-500/40"
+              className="border-danger text-danger hover:bg-danger-surface hover:border-danger"
               onClick={() => setShowLostModal(true)}
             >
               Mark Lost
@@ -378,35 +378,35 @@ export function DealDetailClient({
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
-            <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+          <div className="rounded-lg border border-line p-4 text-center">
+            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
               {deal.days_in_stage || 0}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+            <p className="text-xs text-fg-secondary">
               Days in Stage
             </p>
           </div>
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
-            <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+          <div className="rounded-lg border border-line p-4 text-center">
+            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
               {deal.days_to_close || 0}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+            <p className="text-xs text-fg-secondary">
               Days to Close
             </p>
           </div>
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
-            <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+          <div className="rounded-lg border border-line p-4 text-center">
+            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
               {deal.probability || 0}%
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+            <p className="text-xs text-fg-secondary">
               Probability
             </p>
           </div>
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-5 text-center">
-            <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50 mb-1">
+          <div className="rounded-lg border border-line p-4 text-center">
+            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
               {activityItems.length}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+            <p className="text-xs text-fg-secondary">
               Activities
             </p>
           </div>
@@ -417,9 +417,9 @@ export function DealDetailClient({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* Activity */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
-            <div className="p-6 border-b border-neutral-200 dark:border-neutral-800">
-              <h2 className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
+          <div className="rounded-lg border border-line bg-surface">
+            <div className="flex h-12 items-center px-4 border-b border-divider">
+              <h2 className="text-heading-md text-fg">
                 Activity
               </h2>
             </div>
@@ -442,7 +442,7 @@ export function DealDetailClient({
                   ))}
                 </div>
               ) : (
-                <div className="py-12 text-center text-neutral-500 dark:text-neutral-400">
+                <div className="py-12 text-center text-fg-secondary">
                   <p>No activity yet</p>
                 </div>
               )}
@@ -450,33 +450,33 @@ export function DealDetailClient({
           </div>
 
           {/* Notes */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
-            <div className="p-6 border-b border-neutral-200 dark:border-neutral-800">
-              <h2 className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
+          <div className="rounded-lg border border-line bg-surface">
+            <div className="flex h-12 items-center px-4 border-b border-divider">
+              <h2 className="text-heading-md text-fg">
                 Notes
               </h2>
             </div>
-            <div className="p-6">
+            <div className="p-4">
               {dealNotes.length > 0 ? (
                 <div className="space-y-6 mb-6">
                   {dealNotes.map((note) => (
                     <div key={note.id}>
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                        <p className="text-sm font-medium text-fg">
                           {note.author_name || "Unknown"}
                         </p>
-                        <p className="text-xs text-neutral-400 dark:text-neutral-500">
+                        <p className="text-xs text-fg-muted">
                           {formatDate(note.created_at)}
                         </p>
                       </div>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                      <p className="text-sm text-fg-secondary leading-relaxed">
                         {note.content}
                       </p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">
+                <p className="text-sm text-fg-secondary mb-6">
                   No notes yet
                 </p>
               )}
@@ -504,18 +504,18 @@ export function DealDetailClient({
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Deal Stage */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <p className="text-xs font-medium text-fg-secondary mb-4">
               Deal Stage
             </p>
             <div className="flex items-center gap-2 mb-4">
               <span
                 className={cn(
                   "w-2 h-2 rounded-full",
-                  stageColorMap[currentStage] || "bg-neutral-400",
+                  stageColorMap[currentStage] || "bg-fg-muted",
                 )}
               />
-              <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              <span className="text-sm font-medium text-fg">
                 {stageLabels[currentStage] || currentStage}
               </span>
             </div>
@@ -529,30 +529,30 @@ export function DealDetailClient({
           </div>
 
           {/* Quick Actions */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <p className="text-xs font-medium text-fg-secondary mb-4">
               Quick Actions
             </p>
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setShowMeetingModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-line bg-subtle hover:bg-muted transition-colors"
               >
-                <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
-                  <CalendarBlankIcon size={18} className="text-neutral-600 dark:text-neutral-400" />
+                <div className="w-10 h-10 rounded-full border border-line bg-surface flex items-center justify-center">
+                  <CalendarBlankIcon size={18} className="text-fg-secondary" />
                 </div>
-                <span className="text-sm font-medium text-neutral-950 dark:text-white">
+                <span className="text-sm font-medium text-fg">
                   Schedule Meeting
                 </span>
               </button>
               <button
                 onClick={() => setShowTaskModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-line bg-subtle hover:bg-muted transition-colors"
               >
-                <div className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-400/30 bg-white dark:bg-neutral-400/15 flex items-center justify-center">
-                  <CheckCircleIcon size={18} className="text-neutral-600 dark:text-neutral-400" />
+                <div className="w-10 h-10 rounded-full border border-line bg-surface flex items-center justify-center">
+                  <CheckCircleIcon size={18} className="text-fg-secondary" />
                 </div>
-                <span className="text-sm font-medium text-neutral-950 dark:text-white">
+                <span className="text-sm font-medium text-fg">
                   Add Task
                 </span>
               </button>
@@ -560,17 +560,17 @@ export function DealDetailClient({
           </div>
 
           {/* Contact */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <p className="text-xs font-medium text-fg-secondary mb-4">
               Contact
             </p>
             <div className="flex items-center gap-3">
               <Avatar name={contactName} size="md" />
               <div>
-                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <p className="text-sm font-medium text-fg">
                   {contactName}
                 </p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                <p className="text-xs text-fg-secondary">
                   {deal.company || "—"}
                 </p>
               </div>
@@ -578,26 +578,26 @@ export function DealDetailClient({
           </div>
 
           {/* Details */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <p className="text-xs font-medium text-fg-secondary mb-4">
               Details
             </p>
             <div className="space-y-4">
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">Expected Close</p>
-                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <p className="text-xs text-fg-secondary mb-0.5">Expected Close</p>
+                <p className="text-sm font-medium text-fg">
                   {formatDate(deal.expected_close_date ?? deal.close_date ?? null)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">Created</p>
-                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <p className="text-xs text-fg-secondary mb-0.5">Created</p>
+                <p className="text-sm font-medium text-fg">
                   {formatDate(deal.created_at)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">Owner</p>
-                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <p className="text-xs text-fg-secondary mb-0.5">Owner</p>
+                <p className="text-sm font-medium text-fg">
                   {deal.owner_name || "—"}
                 </p>
               </div>

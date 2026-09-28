@@ -117,7 +117,7 @@ export function CustomersPageClient({
   const atRiskCount = allCustomers.filter((c) => c.healthScore < 50).length;
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
+    <div className="p-6 space-y-6">
       <PageHeader title="Customers">
         <Button
           variant="outline"
@@ -151,7 +151,7 @@ export function CustomersPageClient({
           icon={
             <UsersThreeIcon
               size={20}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
@@ -162,7 +162,7 @@ export function CustomersPageClient({
           icon={
             <CheckCircleIcon
               size={20}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
@@ -173,7 +173,7 @@ export function CustomersPageClient({
           icon={
             <WarningIcon
               size={20}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
@@ -219,7 +219,7 @@ export function CustomersPageClient({
           totalCustomers={filteredCustomers.length}
         />
       ) : (
-        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
+        <div className="rounded-lg border border-line bg-surface overflow-hidden">
           <TableHeader
             title="All Customers"
             rowsPerPage="5"

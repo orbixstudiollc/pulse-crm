@@ -422,7 +422,7 @@ export function LeadsPageClient() {
   };
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <PageHeader title="Leads">
         <Button
@@ -477,7 +477,7 @@ export function LeadsPageClient() {
           icon={
             <UsersThreeIcon
               size={24}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
@@ -488,7 +488,7 @@ export function LeadsPageClient() {
           icon={
             <SparkleIcon
               size={24}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
@@ -499,7 +499,7 @@ export function LeadsPageClient() {
           icon={
             <CheckCircleIcon
               size={24}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
@@ -533,15 +533,15 @@ export function LeadsPageClient() {
       />
 
       {/* Leads Table */}
-      <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
+      <div className="rounded-lg border border-line bg-surface overflow-hidden">
         {/* Bulk Actions */}
         {selectedRows.length > 0 && (
-          <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-            <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-divider bg-subtle">
+            <span className="text-[13px] font-medium text-fg">
               {selectedRows.length} item{selectedRows.length > 1 ? "s" : ""}{" "}
               selected
             </span>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => {
                   const selected = filteredLeads.filter((l) => selectedRows.includes(l.id));
@@ -552,7 +552,7 @@ export function LeadsPageClient() {
                     toast.error("No email addresses found for selected leads");
                   }
                 }}
-                className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+                className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
               >
                 Email
               </button>
@@ -567,25 +567,25 @@ export function LeadsPageClient() {
                   a.click(); URL.revokeObjectURL(url);
                   toast.success("Leads exported successfully");
                 }}
-                className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+                className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
               >
                 Export
               </button>
               <button
                 onClick={() => setShowSequencePicker(true)}
-                className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+                className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
               >
                 Add to Sequence
               </button>
               <button
                 onClick={() => setConfirmDelete({ type: "bulk" })}
-                className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
+                className="text-[13px] text-danger hover:opacity-80 transition-colors"
               >
                 Delete
               </button>
               <button
                 onClick={() => setSelectedRows([])}
-                className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+                className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
               >
                 Clear selection
               </button>
@@ -610,35 +610,35 @@ export function LeadsPageClient() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-                    <th className="w-12 px-5 py-3">
+                  <tr className="bg-muted">
+                    <th className="w-10 px-3 py-2">
                       <Checkbox
                         checked={isAllSelected}
                         onChange={toggleSelectAll}
                       />
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Lead
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Status
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Source
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Est. Value
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Score
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Grade
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Created
                     </th>
-                    <th className="text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 px-3 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary">
                       Actions
                     </th>
                   </tr>
@@ -651,10 +651,10 @@ export function LeadsPageClient() {
                         setSelectedLead(lead);
                         setDrawerOpen(true);
                       }}
-                      className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer"
+                      className="hover:bg-subtle transition-colors cursor-pointer"
                     >
                       <td
-                        className="w-12 px-5 py-4"
+                        className="w-10 px-3 py-2 text-[13px] text-fg border-t border-row"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Checkbox
@@ -662,20 +662,20 @@ export function LeadsPageClient() {
                           onChange={() => toggleSelectRow(lead.id)}
                         />
                       </td>
-                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
                         <div className="flex items-center gap-3">
                           <Avatar name={lead.name} />
                           <div>
-                            <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                            <p className="text-[13px] font-medium text-fg">
                               {lead.name}
                             </p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                            <p className="text-xs text-fg-secondary">
                               {lead.email}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
                         <Badge
                           variant={
                             leadStatusConfig[lead.status as keyof typeof leadStatusConfig]
@@ -687,18 +687,18 @@ export function LeadsPageClient() {
                             ?.label ?? lead.status}
                         </Badge>
                       </td>
-                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                        <span className="text-[13px] text-fg-secondary">
                           {lead.source}
                         </span>
                       </td>
-                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                        <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                        <span className="text-[13px] font-medium text-fg">
                           {formatCurrency(lead.estimatedValue)}
                         </span>
                       </td>
                       <td
-                        className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800"
+                        className="px-3 py-2 text-[13px] text-fg border-t border-row"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="relative">
@@ -709,12 +709,12 @@ export function LeadsPageClient() {
                               )
                             }
                             className={cn(
-                              "flex h-9 w-9 items-center justify-center rounded-full border-[0.5px] text-sm font-semibold cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-neutral-300 dark:hover:ring-neutral-600 transition-all",
+                              "flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-fg-muted transition-all",
                               lead.score >= 75
-                                ? "border-green-200 dark:border-green-400/30 bg-green-100 text-green-600 dark:bg-green-400/15 dark:text-green-400"
+                                ? "border-success bg-success-surface text-success"
                                 : lead.score >= 50
-                                  ? "border-amber-200 dark:border-amber-400/30 bg-amber-100 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400"
-                                  : "border-red-200 dark:border-red-400/30 bg-red-100 text-red-600 dark:bg-red-400/15 dark:text-red-400",
+                                  ? "border-warning bg-warning-surface text-warning"
+                                  : "border-danger bg-danger-surface text-danger",
                             )}
                           >
                             {lead.score}
@@ -722,7 +722,7 @@ export function LeadsPageClient() {
                           {scorePopoverId === lead.id && (
                             <div
                               ref={scorePopoverRef}
-                              className="absolute left-0 top-full mt-2 w-72 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-lg p-4 z-50"
+                              className="absolute left-0 top-full mt-2 w-72 rounded-lg border border-line bg-surface shadow-dropdown p-4 z-50"
                             >
                               <ScoreBreakdown
                                 breakdown={lead.scoreBreakdown}
@@ -732,33 +732,33 @@ export function LeadsPageClient() {
                           )}
                         </div>
                       </td>
-                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
                         {lead.qualificationGrade ? (
                           <span
                             className={cn(
-                              "inline-flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold",
+                              "inline-flex h-7 w-7 items-center justify-center rounded-full border text-xs font-semibold",
                               lead.qualificationGrade === "A"
-                                ? "text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-400/15 border-green-200 dark:border-green-400/30"
+                                ? "text-success bg-success-surface border-success"
                                 : lead.qualificationGrade === "B"
-                                  ? "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-400/15 border-blue-200 dark:border-blue-400/30"
+                                  ? "text-accent-on-surface bg-accent-surface border-accent"
                                   : lead.qualificationGrade === "C"
-                                    ? "text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-400/15 border-amber-200 dark:border-amber-400/30"
-                                    : "text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-400/15 border-red-200 dark:border-red-400/30",
+                                    ? "text-warning bg-warning-surface border-warning"
+                                    : "text-danger bg-danger-surface border-danger",
                             )}
                           >
                             {lead.qualificationGrade}
                           </span>
                         ) : (
-                          <span className="text-sm text-neutral-400 dark:text-neutral-500">—</span>
+                          <span className="text-[13px] text-fg-muted">—</span>
                         )}
                       </td>
-                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                        <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                        <span className="text-[13px] text-fg-secondary">
                           {lead.createdDate}
                         </span>
                       </td>
                       <td
-                        className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800"
+                        className="px-3 py-2 text-[13px] text-fg border-t border-row"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex justify-center">

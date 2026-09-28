@@ -1,14 +1,14 @@
 function Skeleton({ className }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded bg-neutral-200 dark:bg-neutral-800 ${className ?? ""}`}
+      className={`animate-pulse rounded bg-active ${className ?? ""}`}
     />
   );
 }
 
 export default function DealDetailLoading() {
   return (
-    <div className="space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+    <div className="p-6 space-y-6">
       {/* Back link + header */}
       <Skeleton className="h-5 w-24" />
       <div className="flex items-center gap-4">

@@ -206,10 +206,10 @@ export default function AddCustomerPage() {
   });
 
   return (
-    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 py-8 sm:py-14 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-full p-6">
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Page Title */}
-        <h1 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
+        <h1 className="text-xl font-semibold text-fg">
           Add Customer
         </h1>
 
@@ -219,7 +219,7 @@ export default function AddCustomerPage() {
           description="Customer's personal and contact details"
         >
           <div className="flex items-center gap-5 mb-6">
-            <div className="relative w-24 h-24 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+            <div className="relative w-24 h-24 rounded-full bg-muted flex items-center justify-center border border-line overflow-hidden">
               {avatar ? (
                 <>
                   <Image
@@ -238,7 +238,7 @@ export default function AddCustomerPage() {
                   </button>
                 </>
               ) : (
-                <UserIcon size={32} className="text-neutral-400" />
+                <UserIcon size={32} className="text-fg-muted" />
               )}
             </div>
             <div className="space-y-2">
@@ -258,14 +258,14 @@ export default function AddCustomerPage() {
                 onChange={handleImageUpload}
                 className="hidden"
               />
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="text-xs text-fg-secondary">
                 JPG, PNG or GIF. Max 2MB.
               </p>
               {avatar && (
                 <button
                   type="button"
                   onClick={removeAvatar}
-                  className="text-xs text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  className="text-xs text-danger hover:text-danger transition-colors"
                 >
                   Remove Photo
                 </button>
@@ -501,11 +501,11 @@ export default function AddCustomerPage() {
                 <button
                   type="button"
                   onClick={() => removeCustomField(field.id)}
-                  className="flex h-10.5 w-10.5 items-center justify-center rounded border border-neutral-200 dark:border-neutral-800 hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-300 dark:hover:border-red-500/30 transition-colors group"
+                  className="flex h-10.5 w-10.5 items-center justify-center rounded border border-line hover:bg-danger-surface hover:border-danger transition-colors group"
                 >
                   <XIcon
                     size={18}
-                    className="text-neutral-400 group-hover:text-red-500"
+                    className="text-fg-muted group-hover:text-danger"
                   />
                 </button>
               </div>
@@ -515,7 +515,7 @@ export default function AddCustomerPage() {
           <button
             type="button"
             onClick={addCustomField}
-            className="flex items-center gap-2 mt-4 px-4 py-2.5 text-sm font-medium text-neutral-600 dark:text-neutral-400 border border-dashed border-neutral-300 dark:border-neutral-700 rounded hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            className="flex items-center gap-2 mt-4 px-4 py-2.5 text-sm font-medium text-fg-secondary border border-dashed border-line rounded hover:border-fg-muted hover:text-fg hover:bg-muted transition-colors"
           >
             <PlusIcon size={18} />
             Add Custom Field
@@ -523,7 +523,7 @@ export default function AddCustomerPage() {
         </FormSection>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-6 border-t border-neutral-200 dark:border-neutral-800">
+        <div className="flex items-center justify-between pt-6 border-t border-line">
           <Link href="/dashboard/customers">
             <Button variant="ghost">Cancel</Button>
           </Link>

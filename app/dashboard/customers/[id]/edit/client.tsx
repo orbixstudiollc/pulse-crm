@@ -253,9 +253,9 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
   };
 
   return (
-    <div className="min-h-full bg-neutral-100 dark:bg-neutral-900 py-8 sm:py-14 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-full p-6">
       <div className="max-w-3xl mx-auto space-y-6">
-        <h1 className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
+        <h1 className="text-xl font-semibold text-fg">
           Edit Customer
         </h1>
 
@@ -265,7 +265,7 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
           description="Customer's personal and contact details"
         >
           <div className="flex items-center gap-5 mb-6">
-            <div className="relative w-24 h-24 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+            <div className="relative w-24 h-24 rounded-full bg-muted flex items-center justify-center border border-line overflow-hidden">
               {avatar ? (
                 <>
                   <Image
@@ -284,7 +284,7 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
                   </button>
                 </>
               ) : (
-                <UserIcon size={32} className="text-neutral-400" />
+                <UserIcon size={32} className="text-fg-muted" />
               )}
             </div>
             <div className="space-y-2">
@@ -304,14 +304,14 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
                 onChange={handleImageUpload}
                 className="hidden"
               />
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="text-xs text-fg-secondary">
                 JPG, PNG or GIF. Max 2MB.
               </p>
               {avatar && (
                 <button
                   type="button"
                   onClick={removeAvatar}
-                  className="text-sm font-medium text-red-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                  className="text-sm font-medium text-danger hover:text-danger transition-colors"
                 >
                   Remove Photo
                 </button>
@@ -530,11 +530,11 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
                 <button
                   type="button"
                   onClick={() => removeCustomField(field.id)}
-                  className="flex h-10.5 w-10.5 items-center justify-center rounded border border-neutral-200 dark:border-neutral-800 hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-300 dark:hover:border-red-500/30 transition-colors group"
+                  className="flex h-10.5 w-10.5 items-center justify-center rounded border border-line hover:bg-danger-surface hover:border-danger transition-colors group"
                 >
                   <XIcon
                     size={18}
-                    className="text-neutral-400 group-hover:text-red-500"
+                    className="text-fg-muted group-hover:text-danger"
                   />
                 </button>
               </div>
@@ -544,7 +544,7 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
           <button
             type="button"
             onClick={addCustomField}
-            className="flex items-center gap-2 mt-4 px-4 py-2.5 text-sm font-medium text-neutral-600 dark:text-neutral-400 border border-dashed border-neutral-300 dark:border-neutral-700 rounded hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            className="flex items-center gap-2 mt-4 px-4 py-2.5 text-sm font-medium text-fg-secondary border border-dashed border-line rounded hover:border-fg-muted hover:text-fg hover:bg-muted transition-colors"
           >
             <PlusIcon size={18} />
             Add Custom Field
@@ -552,11 +552,11 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
         </FormSection>
 
         {/* Danger Zone */}
-        <div className="rounded-xl border border-red-200 dark:border-red-500/30 bg-white dark:bg-neutral-950 p-6">
-          <h3 className="text-base font-medium text-red-600 dark:text-red-400 mb-2">
+        <div className="rounded-lg border border-danger bg-surface p-4">
+          <h3 className="text-base font-medium text-danger mb-2">
             Delete Customer
           </h3>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+          <p className="text-sm text-fg-secondary mb-4">
             Once you delete a customer, there is no going back. All associated
             data including notes, activity history, and deals will be
             permanently removed.
@@ -572,14 +572,14 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
             }
             onClick={() => setShowDeleteModal(true)}
             disabled={deleting}
-            className="bg-red-500 dark:bg-red-600 border-red-500 dark:border-red-600 text-white hover:bg-red-600 dark:hover:bg-red-700 hover:border-red-600 dark:hover:border-red-700"
+            className="bg-danger border-danger text-on-inverse hover:bg-danger hover:border-danger"
           >
             {deleting ? "Deleting..." : "Delete Customer"}
           </Button>
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-6 border-t border-neutral-200 dark:border-neutral-800">
+        <div className="flex items-center justify-between pt-6 border-t border-line">
           <Link href={`/dashboard/customers/${customer.id}`}>
             <Button variant="ghost">Cancel</Button>
           </Link>

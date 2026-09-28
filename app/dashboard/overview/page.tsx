@@ -47,7 +47,7 @@ export default async function OverviewPage() {
   const stats = statsRes.data;
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
+    <div className="p-6 space-y-6">
       {/* Page Header */}
       <PageHeader title={`Welcome back, ${firstName}`}>
         <PageHeaderActions />
@@ -62,7 +62,7 @@ export default async function OverviewPage() {
           icon={
             <CurrencyDollarIcon
               size={20}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
@@ -73,7 +73,7 @@ export default async function OverviewPage() {
           icon={
             <TrophyIcon
               size={20}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
@@ -84,7 +84,7 @@ export default async function OverviewPage() {
           icon={
             <UsersThreeIcon
               size={20}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />

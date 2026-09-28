@@ -1,14 +1,14 @@
 function Skeleton({ className }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded bg-neutral-200 dark:bg-neutral-800 ${className ?? ""}`}
+      className={`animate-pulse rounded bg-active ${className ?? ""}`}
     />
   );
 }
 
 export default function OverviewLoading() {
   return (
-    <div className="space-y-4 px-4 py-6 sm:px-6 lg:px-8">
+    <div className="p-6 space-y-6">
       {/* Page header */}
       <Skeleton className="h-8 w-64" />
 

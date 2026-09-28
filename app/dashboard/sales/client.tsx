@@ -111,11 +111,11 @@ const activeStageIds: PipelineStage[] = ["discovery", "proposal", "negotiation"]
 const closedStageIds: PipelineStage[] = ["closed_won", "closed_lost"];
 
 const stageColors: Record<PipelineStage, string> = {
-  discovery: "bg-blue-500",
-  proposal: "bg-amber-500",
-  negotiation: "bg-violet-500",
-  closed_won: "bg-green-500",
-  closed_lost: "bg-red-500",
+  discovery: "bg-accent-strong",
+  proposal: "bg-warning",
+  negotiation: "bg-accent-strong",
+  closed_won: "bg-success",
+  closed_lost: "bg-danger",
 };
 
 function getProbabilityColor(probability: number): "green" | "amber" | "neutral" {
@@ -155,16 +155,16 @@ function PipelineStats({ deals }: { deals: MappedDeal[] }) {
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="flex items-center gap-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-4 py-3"
+          className="flex items-center gap-3 rounded-lg border border-line bg-surface px-4 py-3"
         >
-          <div className="p-2 rounded bg-neutral-100 dark:bg-neutral-800">
-            <stat.icon size={16} className="text-neutral-500 dark:text-neutral-400" />
+          <div className="p-2 rounded bg-muted">
+            <stat.icon size={16} className="text-fg-secondary" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+            <p className="text-xs text-fg-secondary truncate">
               {stat.label}
             </p>
-            <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+            <p className="text-sm font-semibold text-fg">
               {stat.value}
             </p>
           </div>
@@ -197,14 +197,14 @@ function DroppableColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex flex-col min-w-72 sm:min-w-85 flex-1 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 transition-colors",
-        isOver && "border-neutral-400 dark:border-neutral-600 bg-neutral-100 dark:bg-neutral-800/50",
+        "flex flex-col min-w-72 sm:min-w-85 flex-1 rounded-lg border border-line bg-subtle transition-colors",
+        isOver && "border-fg-muted bg-muted",
       )}
     >
       {/* Column Header */}
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+          <h3 className="text-sm font-semibold text-fg">
             {label}
           </h3>
           <span
@@ -216,7 +216,7 @@ function DroppableColumn({
             {count}
           </span>
         </div>
-        <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+        <span className="text-sm font-medium text-fg-secondary">
           {formatDealCurrency(totalValue)}
         </span>
       </div>
@@ -225,7 +225,7 @@ function DroppableColumn({
       <div className="px-4 mb-3">
         <button
           onClick={onAddDeal}
-          className="flex w-full items-center justify-center gap-2 rounded border border-dashed border-neutral-300 dark:border-neutral-700 py-2.5 text-sm text-neutral-400 dark:text-neutral-500 hover:border-neutral-400 dark:hover:border-neutral-600 hover:text-neutral-600 dark:hover:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800 transition-colors"
+          className="flex w-full items-center justify-center gap-2 rounded border border-dashed border-line py-2.5 text-sm text-fg-secondary hover:border-fg-muted hover:text-fg hover:bg-surface transition-colors"
         >
           <PlusIcon size={16} />
         </button>
@@ -441,7 +441,7 @@ export function SalesPageClient({
   };
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 flex flex-col gap-4 min-h-full">
+    <div className="p-6 flex flex-col gap-6 min-h-full">
       {/* Header */}
       <PageHeader title="Sales Pipeline">
         <Button
@@ -451,7 +451,7 @@ export function SalesPageClient({
         >
           Filters
           {activeFilterCount > 0 && (
-            <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-neutral-950 dark:bg-neutral-50 px-1.5 text-xs font-semibold text-white dark:text-neutral-950">
+            <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-inverse px-1.5 text-xs font-semibold text-on-inverse">
               {activeFilterCount}
             </span>
           )}
@@ -466,13 +466,13 @@ export function SalesPageClient({
 
       {/* Search Bar */}
       <div className="relative">
-        <MagnifyingGlassIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+        <MagnifyingGlassIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
         <input
           type="text"
           placeholder="Search deals..."
           value={filters.search}
           onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
-          className="w-full sm:w-72 pl-9 pr-3 py-2 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-500/50"
+          className="w-full sm:w-72 pl-9 pr-3 h-8 rounded-md border border-line bg-surface text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-line"
         />
       </div>
 
@@ -480,14 +480,14 @@ export function SalesPageClient({
       <PipelineStats deals={allDeals} />
 
       {/* Tabs */}
-      <div className="flex items-center rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-1 w-fit">
+      <div className="inline-flex h-8 items-center gap-0.5 rounded-md bg-muted p-0.5 w-fit">
         <button
           onClick={() => setActiveTab("active")}
           className={cn(
-            "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded transition-colors",
+            "flex h-7 items-center gap-2 px-3 text-[13px] font-medium rounded-sm transition-colors",
             activeTab === "active"
-              ? "bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50 shadow-sm"
-              : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50",
+              ? "bg-surface text-fg"
+              : "text-fg-secondary hover:text-fg",
           )}
         >
           Active Pipeline
@@ -495,8 +495,8 @@ export function SalesPageClient({
             className={cn(
               "flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold",
               activeTab === "active"
-                ? "bg-neutral-950 dark:bg-neutral-50 text-white dark:text-neutral-950"
-                : "bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400",
+                ? "bg-inverse text-on-inverse"
+                : "bg-active text-fg-secondary",
             )}
           >
             {activeDeals.length}
@@ -505,10 +505,10 @@ export function SalesPageClient({
         <button
           onClick={() => setActiveTab("closed")}
           className={cn(
-            "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded transition-colors",
+            "flex h-7 items-center gap-2 px-3 text-[13px] font-medium rounded-sm transition-colors",
             activeTab === "closed"
-              ? "bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50 shadow-sm"
-              : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50",
+              ? "bg-surface text-fg"
+              : "text-fg-secondary hover:text-fg",
           )}
         >
           Closed Deals
@@ -516,8 +516,8 @@ export function SalesPageClient({
             className={cn(
               "flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold",
               activeTab === "closed"
-                ? "bg-neutral-950 dark:bg-neutral-50 text-white dark:text-neutral-950"
-                : "bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400",
+                ? "bg-inverse text-on-inverse"
+                : "bg-active text-fg-secondary",
             )}
           >
             {closedDeals.length}
@@ -613,30 +613,30 @@ function DealCard({
   return (
     <div
       onClick={onClick}
-      className="rounded-xl border-[0.5px] border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 hover:border-neutral-300 dark:hover:border-neutral-700 hover:shadow-sm transition-all cursor-pointer py-1"
+      className="rounded-lg border border-line bg-surface hover:border-fg-muted transition-all cursor-pointer py-1"
     >
       {/* Top row: Name + Value */}
-      <div className="flex items-start justify-between px-5 py-4">
+      <div className="flex items-start justify-between px-4 py-3">
         <div className="min-w-0 flex-1 mr-3 space-y-1">
-          <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+          <p className="text-sm font-medium text-fg truncate">
             {deal.name}
           </p>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          <p className="text-sm text-fg-secondary">
             {deal.company}
           </p>
           {deal.contactName && (
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 truncate">
+            <p className="text-xs text-fg-muted truncate">
               {deal.contactName}
             </p>
           )}
         </div>
-        <p className="text-2xl font-serif font-medium text-neutral-950 dark:text-neutral-50 shrink-0">
+        <p className="text-[22px] leading-7 font-semibold text-fg shrink-0">
           {formatDealCurrency(deal.value)}
         </p>
       </div>
 
       {/* Bottom row: Probability + Date + Avatar */}
-      <div className="flex items-center justify-between px-5 py-4 border-t-[0.5px] border-neutral-100 dark:border-neutral-800">
+      <div className="flex items-center justify-between px-4 py-3 border-t border-divider">
         <div className="flex items-center gap-3">
           {isClosed ? (
             <Badge variant={isWon ? "success" : "error"} dot>
@@ -650,7 +650,7 @@ function DealCard({
                 size="sm"
                 className="w-16"
               />
-              <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+              <span className="text-sm font-medium text-fg-secondary">
                 {deal.probability}%
               </span>
             </div>
@@ -663,19 +663,19 @@ function DealCard({
               className={cn(
                 "text-xs font-medium px-1.5 py-0.5 rounded",
                 deal.daysInStage > 30
-                  ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                  ? "bg-danger-surface text-danger"
                   : deal.daysInStage > 14
-                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
-                    : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400",
+                    ? "bg-warning-surface text-warning"
+                    : "bg-muted text-fg-secondary",
               )}
             >
               {deal.daysInStage}d
             </span>
           )}
-          <span className="text-sm text-neutral-500 dark:text-neutral-400">
+          <span className="text-sm text-fg-secondary">
             {deal.closeDate}
           </span>
-          <div className="relative h-8 w-8 rounded-full overflow-hidden border border-neutral-200 dark:border-neutral-700">
+          <div className="relative h-8 w-8 rounded-full overflow-hidden border border-line">
             <Image
               src={deal.ownerAvatar}
               alt="Deal owner"
