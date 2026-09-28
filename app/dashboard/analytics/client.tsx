@@ -30,6 +30,7 @@ import {
 } from "@/components/ui";
 import { PageHeader } from "@/components/dashboard";
 import { cn } from "@/lib/utils";
+import { chartSeries, chartTooltipStyle, axisTick } from "@/lib/design-system/chart-colors";
 import { formatCurrency } from "@/lib/utils";
 import { aiGenerateInsightsSummary, aiAnalyzePipeline, aiIdentifyRisks, aiPredictForecast } from "@/lib/actions/ai-analytics";
 import type { EmailOverviewStats, AccountHealth, DailyEmailVolume } from "@/lib/actions/email-analytics";
@@ -185,11 +186,11 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 const CHART_COLORS = {
-  indigo: "#6366f1",
-  green: "#10b981",
-  amber: "#f59e0b",
-  red: "#ef4444",
-  purple: "#8b5cf6",
+  indigo: chartSeries[0],
+  green: chartSeries[1],
+  amber: chartSeries[2],
+  red: chartSeries[3],
+  purple: chartSeries[4],
 };
 
 const STAGE_COLORS: Record<string, string> = {
@@ -218,7 +219,7 @@ function Card({
   return (
     <div
       className={cn(
-        "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6",
+        "rounded-lg border border-line bg-surface p-4",
         className,
       )}
     >
@@ -238,14 +239,14 @@ function StatBox({
 }) {
   return (
     <Card>
-      <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+      <p className="text-sm font-medium text-fg-secondary">
         {label}
       </p>
-      <p className="mt-1 text-2xl font-serif font-semibold text-neutral-950 dark:text-neutral-50">
+      <p className="mt-1 text-2xl font-semibold text-fg">
         {value}
       </p>
       {subValue && (
-        <p className="mt-1 text-sm text-neutral-400 dark:text-neutral-500">
+        <p className="mt-1 text-sm text-fg-secondary">
           {subValue}
         </p>
       )}
@@ -256,7 +257,7 @@ function StatBox({
 function EmptyState({ message }: { message: string }) {
   return (
     <Card className="flex items-center justify-center py-16">
-      <p className="text-sm text-neutral-400 dark:text-neutral-500">
+      <p className="text-sm text-fg-secondary">
         {message}
       </p>
     </Card>
@@ -265,7 +266,7 @@ function EmptyState({ message }: { message: string }) {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-base font-semibold text-neutral-950 dark:text-neutral-50 mb-4">
+    <h3 className="text-base font-semibold text-fg mb-4">
       {children}
     </h3>
   );
@@ -288,14 +289,14 @@ function ChartTooltip({
   const fmt = valueFormatter || ((v: number) => v.toLocaleString());
 
   return (
-    <div className="rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 shadow-lg">
-      <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
+    <div className="rounded-md border border-line bg-surface shadow-dropdown px-3 py-2">
+      <p className="text-xs font-medium text-fg-secondary mb-1">
         {label}
       </p>
       {payload.map((entry, i) => (
         <p
           key={i}
-          className="text-sm font-semibold text-neutral-950 dark:text-neutral-50"
+          className="text-sm font-semibold text-fg"
         >
           {fmt(entry.value)}
         </p>
@@ -340,21 +341,21 @@ function PipelineTab({ data }: { data: PipelineData }) {
                   strokeDasharray="3 3"
                   vertical={false}
                   stroke="currentColor"
-                  className="text-neutral-200 dark:text-neutral-800"
+                  className="text-fg-disabled"
                 />
                 <XAxis
                   dataKey="name"
                   tick={{ fontSize: 12 }}
                   tickLine={false}
                   axisLine={false}
-                  className="text-neutral-500 dark:text-neutral-400"
+                  className="text-fg-secondary"
                 />
                 <YAxis
                   tick={{ fontSize: 12 }}
                   tickLine={false}
                   axisLine={false}
                   allowDecimals={false}
-                  className="text-neutral-500 dark:text-neutral-400"
+                  className="text-fg-secondary"
                 />
                 <Tooltip
                   content={<ChartTooltip />}
@@ -380,14 +381,14 @@ function PipelineTab({ data }: { data: PipelineData }) {
                   strokeDasharray="3 3"
                   vertical={false}
                   stroke="currentColor"
-                  className="text-neutral-200 dark:text-neutral-800"
+                  className="text-fg-disabled"
                 />
                 <XAxis
                   dataKey="name"
                   tick={{ fontSize: 12 }}
                   tickLine={false}
                   axisLine={false}
-                  className="text-neutral-500 dark:text-neutral-400"
+                  className="text-fg-secondary"
                 />
                 <YAxis
                   tick={{ fontSize: 12 }}
@@ -396,7 +397,7 @@ function PipelineTab({ data }: { data: PipelineData }) {
                   tickFormatter={(v) =>
                     v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`
                   }
-                  className="text-neutral-500 dark:text-neutral-400"
+                  className="text-fg-secondary"
                 />
                 <Tooltip
                   content={
@@ -445,21 +446,21 @@ function SourcesTab({ data }: { data: SourceData[] }) {
                   strokeDasharray="3 3"
                   vertical={false}
                   stroke="currentColor"
-                  className="text-neutral-200 dark:text-neutral-800"
+                  className="text-fg-disabled"
                 />
                 <XAxis
                   dataKey="name"
                   tick={{ fontSize: 12 }}
                   tickLine={false}
                   axisLine={false}
-                  className="text-neutral-500 dark:text-neutral-400"
+                  className="text-fg-secondary"
                 />
                 <YAxis
                   tick={{ fontSize: 12 }}
                   tickLine={false}
                   axisLine={false}
                   allowDecimals={false}
-                  className="text-neutral-500 dark:text-neutral-400"
+                  className="text-fg-secondary"
                 />
                 <Tooltip
                   content={<ChartTooltip />}
@@ -485,21 +486,21 @@ function SourcesTab({ data }: { data: SourceData[] }) {
                   strokeDasharray="3 3"
                   vertical={false}
                   stroke="currentColor"
-                  className="text-neutral-200 dark:text-neutral-800"
+                  className="text-fg-disabled"
                 />
                 <XAxis
                   dataKey="name"
                   tick={{ fontSize: 12 }}
                   tickLine={false}
                   axisLine={false}
-                  className="text-neutral-500 dark:text-neutral-400"
+                  className="text-fg-secondary"
                 />
                 <YAxis
                   tick={{ fontSize: 12 }}
                   tickLine={false}
                   axisLine={false}
                   domain={[0, 100]}
-                  className="text-neutral-500 dark:text-neutral-400"
+                  className="text-fg-secondary"
                 />
                 <Tooltip
                   content={<ChartTooltip />}
@@ -522,17 +523,17 @@ function SourcesTab({ data }: { data: SourceData[] }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-neutral-200 dark:border-neutral-800">
-                <th className="text-left py-3 px-4 font-medium text-neutral-500 dark:text-neutral-400">
+              <tr className="border-b border-line">
+                <th className="text-left py-3 px-4 font-medium text-fg-secondary">
                   Source
                 </th>
-                <th className="text-right py-3 px-4 font-medium text-neutral-500 dark:text-neutral-400">
+                <th className="text-right py-3 px-4 font-medium text-fg-secondary">
                   Leads
                 </th>
-                <th className="text-right py-3 px-4 font-medium text-neutral-500 dark:text-neutral-400">
+                <th className="text-right py-3 px-4 font-medium text-fg-secondary">
                   Avg Score
                 </th>
-                <th className="text-right py-3 px-4 font-medium text-neutral-500 dark:text-neutral-400">
+                <th className="text-right py-3 px-4 font-medium text-fg-secondary">
                   Hot Rate
                 </th>
               </tr>
@@ -541,15 +542,15 @@ function SourcesTab({ data }: { data: SourceData[] }) {
               {data.map((source) => (
                 <tr
                   key={source.source}
-                  className="border-b border-neutral-100 dark:border-neutral-800/50 last:border-0"
+                  className="border-b border-row last:border-0"
                 >
-                  <td className="py-3 px-4 font-medium text-neutral-950 dark:text-neutral-50">
+                  <td className="py-3 px-4 font-medium text-fg">
                     {source.source}
                   </td>
-                  <td className="py-3 px-4 text-right text-neutral-600 dark:text-neutral-400">
+                  <td className="py-3 px-4 text-right text-fg-secondary">
                     {source.count}
                   </td>
-                  <td className="py-3 px-4 text-right text-neutral-600 dark:text-neutral-400">
+                  <td className="py-3 px-4 text-right text-fg-secondary">
                     {source.avgScore}
                   </td>
                   <td className="py-3 px-4 text-right">
@@ -557,10 +558,10 @@ function SourcesTab({ data }: { data: SourceData[] }) {
                       className={cn(
                         "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
                         source.hotRate >= 50
-                          ? "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400"
+                          ? "bg-success-surface text-success"
                           : source.hotRate >= 25
-                            ? "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400"
-                            : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
+                            ? "bg-warning-surface text-warning"
+                            : "bg-muted text-fg-secondary",
                       )}
                     >
                       {source.hotRate}%
@@ -585,10 +586,10 @@ function ForecastTab({ data }: { data: ForecastData }) {
     <div className="space-y-6">
       {/* Big number */}
       <Card className="text-center py-10">
-        <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-2">
+        <p className="text-sm font-medium text-fg-secondary mb-2">
           Weighted Pipeline Value
         </p>
-        <p className="text-4xl font-serif font-bold text-neutral-950 dark:text-neutral-50">
+        <p className="text-2xl font-semibold text-fg">
           {formatCurrency(data.weighted)}
         </p>
       </Card>
@@ -599,20 +600,20 @@ function ForecastTab({ data }: { data: ForecastData }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-neutral-200 dark:border-neutral-800">
-                <th className="text-left py-3 px-4 font-medium text-neutral-500 dark:text-neutral-400">
+              <tr className="border-b border-line">
+                <th className="text-left py-3 px-4 font-medium text-fg-secondary">
                   Stage
                 </th>
-                <th className="text-right py-3 px-4 font-medium text-neutral-500 dark:text-neutral-400">
+                <th className="text-right py-3 px-4 font-medium text-fg-secondary">
                   Value
                 </th>
-                <th className="text-right py-3 px-4 font-medium text-neutral-500 dark:text-neutral-400">
+                <th className="text-right py-3 px-4 font-medium text-fg-secondary">
                   Probability
                 </th>
-                <th className="text-right py-3 px-4 font-medium text-neutral-500 dark:text-neutral-400">
+                <th className="text-right py-3 px-4 font-medium text-fg-secondary">
                   Weighted
                 </th>
-                <th className="text-right py-3 px-4 font-medium text-neutral-500 dark:text-neutral-400">
+                <th className="text-right py-3 px-4 font-medium text-fg-secondary">
                   Expected Close
                 </th>
               </tr>
@@ -621,7 +622,7 @@ function ForecastTab({ data }: { data: ForecastData }) {
               {data.deals.map((deal, i) => (
                 <tr
                   key={i}
-                  className="border-b border-neutral-100 dark:border-neutral-800/50 last:border-0"
+                  className="border-b border-row last:border-0"
                 >
                   <td className="py-3 px-4">
                     <span
@@ -637,16 +638,16 @@ function ForecastTab({ data }: { data: ForecastData }) {
                       {formatStageName(deal.stage)}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-right font-medium text-neutral-950 dark:text-neutral-50">
+                  <td className="py-3 px-4 text-right font-medium text-fg">
                     {formatCurrency(deal.value)}
                   </td>
-                  <td className="py-3 px-4 text-right text-neutral-600 dark:text-neutral-400">
+                  <td className="py-3 px-4 text-right text-fg-secondary">
                     {deal.probability}%
                   </td>
-                  <td className="py-3 px-4 text-right font-medium text-neutral-950 dark:text-neutral-50">
+                  <td className="py-3 px-4 text-right font-medium text-fg">
                     {formatCurrency(deal.weightedValue)}
                   </td>
-                  <td className="py-3 px-4 text-right text-neutral-600 dark:text-neutral-400">
+                  <td className="py-3 px-4 text-right text-fg-secondary">
                     {deal.expectedClose
                       ? new Date(deal.expectedClose).toLocaleDateString(
                           "en-US",
@@ -701,14 +702,14 @@ function WinLossTab({ data }: { data: WinLossData }) {
           {/* Won bar */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-neutral-950 dark:text-neutral-50">
+              <span className="font-medium text-fg">
                 Won
               </span>
-              <span className="text-neutral-500 dark:text-neutral-400">
+              <span className="text-fg-secondary">
                 {data.won} deals ({wonPercent.toFixed(1)}%)
               </span>
             </div>
-            <div className="h-4 w-full rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+            <div className="h-4 w-full rounded-full bg-muted overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{
@@ -722,14 +723,14 @@ function WinLossTab({ data }: { data: WinLossData }) {
           {/* Lost bar */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-neutral-950 dark:text-neutral-50">
+              <span className="font-medium text-fg">
                 Lost
               </span>
-              <span className="text-neutral-500 dark:text-neutral-400">
+              <span className="text-fg-secondary">
                 {data.lost} deals ({lostPercent.toFixed(1)}%)
               </span>
             </div>
-            <div className="h-4 w-full rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+            <div className="h-4 w-full rounded-full bg-muted overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{
@@ -743,19 +744,19 @@ function WinLossTab({ data }: { data: WinLossData }) {
 
         {/* Value comparison */}
         <div className="mt-8 grid grid-cols-2 gap-4">
-          <div className="rounded p-4 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900">
-            <p className="text-xs font-medium text-green-600 dark:text-green-400 mb-1">
+          <div className="rounded p-4 bg-success-surface border border-success">
+            <p className="text-xs font-medium text-success mb-1">
               Avg Won Deal
             </p>
-            <p className="text-xl font-serif font-semibold text-green-700 dark:text-green-300">
+            <p className="text-xl font-semibold text-success">
               {formatCurrency(data.avgWonValue)}
             </p>
           </div>
-          <div className="rounded p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900">
-            <p className="text-xs font-medium text-red-600 dark:text-red-400 mb-1">
+          <div className="rounded p-4 bg-danger-surface border border-danger">
+            <p className="text-xs font-medium text-danger mb-1">
               Avg Lost Deal
             </p>
-            <p className="text-xl font-serif font-semibold text-red-700 dark:text-red-300">
+            <p className="text-xl font-semibold text-danger">
               {formatCurrency(data.avgLostValue)}
             </p>
           </div>
@@ -795,21 +796,21 @@ function ActivityTab({ data }: { data: ActivityData }) {
                 strokeDasharray="3 3"
                 vertical={false}
                 stroke="currentColor"
-                className="text-neutral-200 dark:text-neutral-800"
+                className="text-fg-disabled"
               />
               <XAxis
                 dataKey="name"
                 tick={{ fontSize: 12 }}
                 tickLine={false}
                 axisLine={false}
-                className="text-neutral-500 dark:text-neutral-400"
+                className="text-fg-secondary"
               />
               <YAxis
                 tick={{ fontSize: 12 }}
                 tickLine={false}
                 axisLine={false}
                 allowDecimals={false}
-                className="text-neutral-500 dark:text-neutral-400"
+                className="text-fg-secondary"
               />
               <Tooltip
                 content={<ChartTooltip />}
@@ -839,17 +840,17 @@ function SequencesTab({ data }: { data: SequenceData[] }) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-neutral-200 dark:border-neutral-800">
-              <th className="text-left py-3 px-4 font-medium text-neutral-500 dark:text-neutral-400">
+            <tr className="border-b border-line">
+              <th className="text-left py-3 px-4 font-medium text-fg-secondary">
                 Sequence
               </th>
-              <th className="text-left py-3 px-4 font-medium text-neutral-500 dark:text-neutral-400">
+              <th className="text-left py-3 px-4 font-medium text-fg-secondary">
                 Status
               </th>
-              <th className="text-right py-3 px-4 font-medium text-neutral-500 dark:text-neutral-400">
+              <th className="text-right py-3 px-4 font-medium text-fg-secondary">
                 Enrolled
               </th>
-              <th className="text-right py-3 px-4 font-medium text-neutral-500 dark:text-neutral-400">
+              <th className="text-right py-3 px-4 font-medium text-fg-secondary">
                 Reply Rate
               </th>
             </tr>
@@ -858,9 +859,9 @@ function SequencesTab({ data }: { data: SequenceData[] }) {
             {data.map((seq) => (
               <tr
                 key={seq.id}
-                className="border-b border-neutral-100 dark:border-neutral-800/50 last:border-0"
+                className="border-b border-row last:border-0"
               >
-                <td className="py-3 px-4 font-medium text-neutral-950 dark:text-neutral-50">
+                <td className="py-3 px-4 font-medium text-fg">
                   {seq.name}
                 </td>
                 <td className="py-3 px-4">
@@ -868,16 +869,16 @@ function SequencesTab({ data }: { data: SequenceData[] }) {
                     className={cn(
                       "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
                       seq.status === "active"
-                        ? "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400"
+                        ? "bg-success-surface text-success"
                         : seq.status === "paused"
-                          ? "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400"
-                          : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
+                          ? "bg-warning-surface text-warning"
+                          : "bg-muted text-fg-secondary",
                     )}
                   >
                     {seq.status.charAt(0).toUpperCase() + seq.status.slice(1)}
                   </span>
                 </td>
-                <td className="py-3 px-4 text-right text-neutral-600 dark:text-neutral-400">
+                <td className="py-3 px-4 text-right text-fg-secondary">
                   {seq.total_enrolled}
                 </td>
                 <td className="py-3 px-4 text-right">
@@ -885,10 +886,10 @@ function SequencesTab({ data }: { data: SequenceData[] }) {
                     className={cn(
                       "font-medium",
                       seq.reply_rate >= 20
-                        ? "text-green-600 dark:text-green-400"
+                        ? "text-success"
                         : seq.reply_rate >= 10
-                          ? "text-amber-600 dark:text-amber-400"
-                          : "text-neutral-600 dark:text-neutral-400",
+                          ? "text-warning"
+                          : "text-fg-secondary",
                     )}
                   >
                     {seq.reply_rate}%
@@ -927,7 +928,7 @@ function ICPTab({ data }: { data: ICPData[] }) {
                   backgroundColor: profile.color || CHART_COLORS.indigo,
                 }}
               />
-              <h4 className="text-base font-semibold text-neutral-950 dark:text-neutral-50 truncate">
+              <h4 className="text-base font-semibold text-fg truncate">
                 {profile.name}
               </h4>
             </div>
@@ -935,32 +936,32 @@ function ICPTab({ data }: { data: ICPData[] }) {
             {/* Metrics */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                <span className="text-sm text-fg-secondary">
                   Matched Leads
                 </span>
-                <span className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+                <span className="text-sm font-semibold text-fg">
                   {profile.matchedLeads}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                <span className="text-sm text-fg-secondary">
                   Hot Leads
                 </span>
-                <span className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+                <span className="text-sm font-semibold text-fg">
                   {profile.hotLeads}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                <span className="text-sm text-fg-secondary">
                   Avg Match Score
                 </span>
-                <span className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+                <span className="text-sm font-semibold text-fg">
                   {profile.avgMatchScore}%
                 </span>
               </div>
 
               {/* Score bar */}
-              <div className="h-2 w-full rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{
@@ -983,13 +984,13 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
   if (!data) {
     return (
       <div className="text-center py-16">
-        <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mx-auto mb-6">
-          <EnvelopeIcon size={32} className="text-indigo-600 dark:text-indigo-400" />
+        <div className="w-16 h-16 rounded-2xl bg-accent-surface flex items-center justify-center mx-auto mb-6">
+          <EnvelopeIcon size={32} className="text-accent-strong" />
         </div>
-        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+        <h3 className="text-lg font-semibold text-fg mb-2">
           No Email Data Yet
         </h3>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-md mx-auto">
+        <p className="text-sm text-fg-secondary max-w-md mx-auto">
           Connect an email account and start sending to see analytics here.
         </p>
       </div>
@@ -1029,7 +1030,7 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
       {/* Daily volume chart */}
       {dailyVolume.length > 0 && (
         <Card>
-          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+          <h3 className="text-sm font-semibold text-fg mb-4">
             Daily Email Volume (Last 30 Days)
           </h3>
           <div className="h-64">
@@ -1038,7 +1039,7 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="currentColor"
-                  className="text-neutral-200 dark:text-neutral-800"
+                  className="text-fg-disabled"
                 />
                 <XAxis
                   dataKey="date"
@@ -1047,15 +1048,11 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
                     const d = new Date(v);
                     return `${d.getMonth() + 1}/${d.getDate()}`;
                   }}
-                  className="text-neutral-500"
+                  className="text-fg-secondary"
                 />
-                <YAxis tick={{ fontSize: 11 }} className="text-neutral-500" />
+                <YAxis tick={{ fontSize: 11 }} className="text-fg-secondary" />
                 <Tooltip
-                  contentStyle={{
-                    borderRadius: 8,
-                    border: "1px solid #e5e7eb",
-                    fontSize: 12,
-                  }}
+                  contentStyle={chartTooltipStyle}
                 />
                 <Bar dataKey="sent" fill={CHART_COLORS.indigo} name="Sent" radius={[2, 2, 0, 0]} />
                 <Bar dataKey="opened" fill={CHART_COLORS.green} name="Opened" radius={[2, 2, 0, 0]} />
@@ -1069,32 +1066,32 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
       {/* Account health */}
       {accounts.length > 0 && (
         <Card>
-          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+          <h3 className="text-sm font-semibold text-fg mb-4">
             Account Health
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-neutral-200 dark:border-neutral-800">
-                  <th className="text-left py-2 font-medium text-neutral-500 dark:text-neutral-400">
+                <tr className="border-b border-line">
+                  <th className="text-left py-2 font-medium text-fg-secondary">
                     Account
                   </th>
-                  <th className="text-left py-2 font-medium text-neutral-500 dark:text-neutral-400">
+                  <th className="text-left py-2 font-medium text-fg-secondary">
                     Provider
                   </th>
-                  <th className="text-right py-2 font-medium text-neutral-500 dark:text-neutral-400">
+                  <th className="text-right py-2 font-medium text-fg-secondary">
                     Sent Today
                   </th>
-                  <th className="text-right py-2 font-medium text-neutral-500 dark:text-neutral-400">
+                  <th className="text-right py-2 font-medium text-fg-secondary">
                     Total Sent
                   </th>
-                  <th className="text-right py-2 font-medium text-neutral-500 dark:text-neutral-400">
+                  <th className="text-right py-2 font-medium text-fg-secondary">
                     Open Rate
                   </th>
-                  <th className="text-right py-2 font-medium text-neutral-500 dark:text-neutral-400">
+                  <th className="text-right py-2 font-medium text-fg-secondary">
                     Bounce Rate
                   </th>
-                  <th className="text-right py-2 font-medium text-neutral-500 dark:text-neutral-400">
+                  <th className="text-right py-2 font-medium text-fg-secondary">
                     Status
                   </th>
                 </tr>
@@ -1103,18 +1100,18 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
                 {accounts.map((acc) => (
                   <tr
                     key={acc.id}
-                    className="border-b border-neutral-100 dark:border-neutral-800/50"
+                    className="border-b border-row"
                   >
-                    <td className="py-3 text-neutral-900 dark:text-neutral-100 font-medium">
+                    <td className="py-3 text-fg font-medium">
                       {acc.email}
                     </td>
-                    <td className="py-3 text-neutral-500 dark:text-neutral-400 capitalize">
+                    <td className="py-3 text-fg-secondary capitalize">
                       {acc.provider}
                     </td>
-                    <td className="py-3 text-right text-neutral-900 dark:text-neutral-100">
+                    <td className="py-3 text-right text-fg">
                       {acc.dailySent}/{acc.dailySendLimit}
                     </td>
-                    <td className="py-3 text-right text-neutral-900 dark:text-neutral-100">
+                    <td className="py-3 text-right text-fg">
                       {acc.totalSent}
                     </td>
                     <td className="py-3 text-right">
@@ -1122,10 +1119,10 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
                         className={cn(
                           "font-medium",
                           acc.openRate >= 30
-                            ? "text-emerald-600"
+                            ? "text-success"
                             : acc.openRate >= 15
-                              ? "text-amber-600"
-                              : "text-red-600",
+                              ? "text-warning"
+                              : "text-danger",
                         )}
                       >
                         {acc.openRate}%
@@ -1136,10 +1133,10 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
                         className={cn(
                           "font-medium",
                           acc.bounceRate <= 2
-                            ? "text-emerald-600"
+                            ? "text-success"
                             : acc.bounceRate <= 5
-                              ? "text-amber-600"
-                              : "text-red-600",
+                              ? "text-warning"
+                              : "text-danger",
                         )}
                       >
                         {acc.bounceRate}%
@@ -1150,14 +1147,14 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
                         className={cn(
                           "inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full",
                           acc.status === "active"
-                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                            : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
+                            ? "bg-success-surface text-success"
+                            : "bg-muted text-fg-secondary",
                         )}
                       >
                         <span
                           className={cn(
                             "w-1.5 h-1.5 rounded-full",
-                            acc.status === "active" ? "bg-emerald-500" : "bg-neutral-400",
+                            acc.status === "active" ? "bg-success" : "bg-fg-muted",
                           )}
                         />
                         {acc.status}
@@ -1177,22 +1174,22 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
 // ── Channels Tab ─────────────────────────────────────────────────────────────
 
 const CHANNEL_COLORS = {
-  email: "#3b82f6",
-  whatsapp: "#10b981",
-  linkedin: "#0ea5e9",
+  email: chartSeries[0],
+  whatsapp: chartSeries[1],
+  linkedin: chartSeries[4],
 };
 
 function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
   if (!data) {
     return (
       <div className="text-center py-16">
-        <div className="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-6">
-          <ChatCircleIcon size={32} className="text-neutral-400" />
+        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-6">
+          <ChatCircleIcon size={32} className="text-fg-muted" />
         </div>
-        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+        <h3 className="text-lg font-semibold text-fg mb-2">
           No Channel Data
         </h3>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="text-sm text-fg-secondary">
           Channel analytics will appear here once you start sending messages across Email, WhatsApp, and LinkedIn.
         </p>
       </div>
@@ -1233,62 +1230,62 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
       {/* Summary stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
+          <p className="text-xs font-medium text-fg-secondary mb-1">
             Total Outreach
           </p>
-          <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+          <p className="text-2xl font-semibold text-fg">
             {data.summary.totalOutreach.toLocaleString()}
           </p>
-          <p className="text-xs text-neutral-400 mt-1">Last 30 days</p>
+          <p className="text-xs text-fg-muted mt-1">Last 30 days</p>
         </Card>
         <Card>
-          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
+          <p className="text-xs font-medium text-fg-secondary mb-1">
             Total Replies
           </p>
-          <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+          <p className="text-2xl font-semibold text-fg">
             {data.summary.totalReplies.toLocaleString()}
           </p>
-          <p className="text-xs text-neutral-400 mt-1">Across all channels</p>
+          <p className="text-xs text-fg-muted mt-1">Across all channels</p>
         </Card>
         <Card>
-          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
+          <p className="text-xs font-medium text-fg-secondary mb-1">
             Overall Reply Rate
           </p>
-          <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+          <p className="text-2xl font-semibold text-fg">
             {data.summary.overallReplyRate}%
           </p>
-          <p className="text-xs text-neutral-400 mt-1">Combined average</p>
+          <p className="text-xs text-fg-muted mt-1">Combined average</p>
         </Card>
         <Card>
-          <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">
+          <p className="text-xs font-medium text-fg-secondary mb-1">
             Best Channel
           </p>
           <div className="flex items-center gap-2">
             {data.summary.bestChannel === "email" && (
-              <EnvelopeIcon size={20} className="text-blue-500" />
+              <EnvelopeIcon size={20} className="text-accent-strong" />
             )}
             {data.summary.bestChannel === "whatsapp" && (
-              <WhatsappLogoIcon size={20} className="text-emerald-500" />
+              <WhatsappLogoIcon size={20} className="text-success" />
             )}
             {data.summary.bestChannel === "linkedin" && (
-              <LinkedinLogoIcon size={20} className="text-sky-500" />
+              <LinkedinLogoIcon size={20} className="text-accent-strong" />
             )}
-            <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 capitalize">
+            <p className="text-2xl font-semibold text-fg capitalize">
               {data.summary.bestChannel}
             </p>
           </div>
-          <p className="text-xs text-neutral-400 mt-1">Highest reply rate</p>
+          <p className="text-xs text-fg-muted mt-1">Highest reply rate</p>
         </Card>
       </div>
 
       {/* Channel distribution bar */}
       <Card>
-        <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+        <h3 className="text-sm font-semibold text-fg mb-4">
           Channel Distribution
         </h3>
         {totalMessages > 0 ? (
           <>
-            <div className="flex h-4 rounded-full overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+            <div className="flex h-4 rounded-full overflow-hidden bg-muted">
               {channelDistribution.map((ch) => (
                 <div
                   key={ch.name}
@@ -1307,9 +1304,9 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: ch.color }}
                   />
-                  <span className="text-xs text-neutral-600 dark:text-neutral-400">
+                  <span className="text-xs text-fg-secondary">
                     {ch.name}{" "}
-                    <strong className="text-neutral-900 dark:text-neutral-100">
+                    <strong className="text-fg">
                       {ch.value}
                     </strong>{" "}
                     ({totalMessages > 0 ? Math.round((ch.value / totalMessages) * 100) : 0}%)
@@ -1319,14 +1316,14 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
             </div>
           </>
         ) : (
-          <p className="text-sm text-neutral-400">No messages sent yet.</p>
+          <p className="text-sm text-fg-secondary">No messages sent yet.</p>
         )}
       </Card>
 
       {/* Daily Volume Chart */}
       {data.dailyVolume.length > 0 && (
         <Card>
-          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+          <h3 className="text-sm font-semibold text-fg mb-4">
             Daily Volume by Channel
           </h3>
           <ResponsiveContainer width="100%" height={280}>
@@ -1334,23 +1331,19 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="currentColor"
-                className="text-neutral-200 dark:text-neutral-800"
+                className="text-fg-disabled"
               />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 11, fill: "#9ca3af" }}
+                tick={axisTick}
                 tickFormatter={(v: string) => {
                   const d = new Date(v + "T00:00:00");
                   return `${d.getMonth() + 1}/${d.getDate()}`;
                 }}
               />
-              <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} allowDecimals={false} />
+              <YAxis tick={axisTick} allowDecimals={false} />
               <Tooltip
-                contentStyle={{
-                  borderRadius: 8,
-                  border: "1px solid #e5e7eb",
-                  fontSize: 12,
-                }}
+                contentStyle={chartTooltipStyle}
               />
               <Bar dataKey="email" name="Email" fill={CHANNEL_COLORS.email} radius={[2, 2, 0, 0]} />
               <Bar dataKey="whatsapp" name="WhatsApp" fill={CHANNEL_COLORS.whatsapp} radius={[2, 2, 0, 0]} />
@@ -1362,7 +1355,7 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
 
       {/* Channel Comparison */}
       <Card>
-        <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+        <h3 className="text-sm font-semibold text-fg mb-4">
           Channel Comparison — Reply Rates
         </h3>
         <ResponsiveContainer width="100%" height={220}>
@@ -1370,21 +1363,17 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
             <CartesianGrid
               strokeDasharray="3 3"
               stroke="currentColor"
-              className="text-neutral-200 dark:text-neutral-800"
+              className="text-fg-disabled"
             />
-            <XAxis type="number" tick={{ fontSize: 11, fill: "#9ca3af" }} unit="%" />
+            <XAxis type="number" tick={axisTick} unit="%" />
             <YAxis
               type="category"
               dataKey="channel"
-              tick={{ fontSize: 12, fill: "#9ca3af" }}
+              tick={axisTick}
               width={80}
             />
             <Tooltip
-              contentStyle={{
-                borderRadius: 8,
-                border: "1px solid #e5e7eb",
-                fontSize: 12,
-              }}
+              contentStyle={chartTooltipStyle}
               formatter={(value: unknown) => [`${value}%`, "Reply Rate"]}
             />
             <Bar dataKey="replyRate" name="Reply Rate" radius={[0, 4, 4, 0]}>
@@ -1410,39 +1399,39 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
         {/* Email detail */}
         <Card>
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <EnvelopeIcon size={16} className="text-blue-600 dark:text-blue-400" />
+            <div className="w-8 h-8 rounded-lg bg-accent-surface flex items-center justify-center">
+              <EnvelopeIcon size={16} className="text-accent-strong" />
             </div>
-            <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+            <h4 className="text-sm font-semibold text-fg">
               Email
             </h4>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-xs">
-              <span className="text-neutral-500">Sent</span>
-              <span className="font-medium text-neutral-900 dark:text-neutral-100">{data.email.sent}</span>
+              <span className="text-fg-secondary">Sent</span>
+              <span className="font-medium text-fg">{data.email.sent}</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-neutral-500">Opened</span>
-              <span className="font-medium text-neutral-900 dark:text-neutral-100">
+              <span className="text-fg-secondary">Opened</span>
+              <span className="font-medium text-fg">
                 {data.email.opened} ({data.email.openRate}%)
               </span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-neutral-500">Clicked</span>
-              <span className="font-medium text-neutral-900 dark:text-neutral-100">
+              <span className="text-fg-secondary">Clicked</span>
+              <span className="font-medium text-fg">
                 {data.email.clicked} ({data.email.clickRate}%)
               </span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-neutral-500">Replied</span>
-              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+              <span className="text-fg-secondary">Replied</span>
+              <span className="font-medium text-success">
                 {data.email.replied} ({data.email.replyRate}%)
               </span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-neutral-500">Bounced</span>
-              <span className="font-medium text-red-600 dark:text-red-400">{data.email.bounced}</span>
+              <span className="text-fg-secondary">Bounced</span>
+              <span className="font-medium text-danger">{data.email.bounced}</span>
             </div>
           </div>
         </Card>
@@ -1450,39 +1439,39 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
         {/* WhatsApp detail */}
         <Card>
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-              <WhatsappLogoIcon size={16} className="text-emerald-600 dark:text-emerald-400" />
+            <div className="w-8 h-8 rounded-lg bg-success-surface flex items-center justify-center">
+              <WhatsappLogoIcon size={16} className="text-success" />
             </div>
-            <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+            <h4 className="text-sm font-semibold text-fg">
               WhatsApp
             </h4>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-xs">
-              <span className="text-neutral-500">Sent</span>
-              <span className="font-medium text-neutral-900 dark:text-neutral-100">{data.whatsapp.sent}</span>
+              <span className="text-fg-secondary">Sent</span>
+              <span className="font-medium text-fg">{data.whatsapp.sent}</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-neutral-500">Delivered</span>
-              <span className="font-medium text-neutral-900 dark:text-neutral-100">
+              <span className="text-fg-secondary">Delivered</span>
+              <span className="font-medium text-fg">
                 {data.whatsapp.delivered} ({data.whatsapp.deliveryRate}%)
               </span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-neutral-500">Read</span>
-              <span className="font-medium text-neutral-900 dark:text-neutral-100">
+              <span className="text-fg-secondary">Read</span>
+              <span className="font-medium text-fg">
                 {data.whatsapp.read} ({data.whatsapp.readRate}%)
               </span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-neutral-500">Replied</span>
-              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+              <span className="text-fg-secondary">Replied</span>
+              <span className="font-medium text-success">
                 {data.whatsapp.replied} ({data.whatsapp.replyRate}%)
               </span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-neutral-500">Failed</span>
-              <span className="font-medium text-red-600 dark:text-red-400">{data.whatsapp.failed}</span>
+              <span className="text-fg-secondary">Failed</span>
+              <span className="font-medium text-danger">{data.whatsapp.failed}</span>
             </div>
           </div>
         </Card>
@@ -1490,41 +1479,41 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
         {/* LinkedIn detail */}
         <Card>
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center">
-              <LinkedinLogoIcon size={16} className="text-sky-600 dark:text-sky-400" />
+            <div className="w-8 h-8 rounded-lg bg-accent-surface flex items-center justify-center">
+              <LinkedinLogoIcon size={16} className="text-accent-strong" />
             </div>
-            <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+            <h4 className="text-sm font-semibold text-fg">
               LinkedIn
             </h4>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-xs">
-              <span className="text-neutral-500">Connections Sent</span>
-              <span className="font-medium text-neutral-900 dark:text-neutral-100">{data.linkedin.connections}</span>
+              <span className="text-fg-secondary">Connections Sent</span>
+              <span className="font-medium text-fg">{data.linkedin.connections}</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-neutral-500">Accepted</span>
-              <span className="font-medium text-neutral-900 dark:text-neutral-100">
+              <span className="text-fg-secondary">Accepted</span>
+              <span className="font-medium text-fg">
                 {data.linkedin.accepted} ({data.linkedin.acceptRate}%)
               </span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-neutral-500">Messages Sent</span>
-              <span className="font-medium text-neutral-900 dark:text-neutral-100">{data.linkedin.messages}</span>
+              <span className="text-fg-secondary">Messages Sent</span>
+              <span className="font-medium text-fg">{data.linkedin.messages}</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-neutral-500">Replied</span>
-              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+              <span className="text-fg-secondary">Replied</span>
+              <span className="font-medium text-success">
                 {data.linkedin.replied} ({data.linkedin.replyRate}%)
               </span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-neutral-500">Profile Views</span>
-              <span className="font-medium text-neutral-900 dark:text-neutral-100">{data.linkedin.profileViews}</span>
+              <span className="text-fg-secondary">Profile Views</span>
+              <span className="font-medium text-fg">{data.linkedin.profileViews}</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-neutral-500">Endorsements</span>
-              <span className="font-medium text-neutral-900 dark:text-neutral-100">{data.linkedin.endorsements}</span>
+              <span className="text-fg-secondary">Endorsements</span>
+              <span className="font-medium text-fg">{data.linkedin.endorsements}</span>
             </div>
           </div>
         </Card>
@@ -1592,13 +1581,13 @@ export function AnalyticsPageClient({
           <div className="space-y-6">
             {!aiInsights && !aiInsightsLoading && (
               <div className="text-center py-16">
-                <div className="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mx-auto mb-6">
-                  <SparkleIcon size={32} className="text-violet-600 dark:text-violet-400" />
+                <div className="w-16 h-16 rounded-2xl bg-accent-surface flex items-center justify-center mx-auto mb-6">
+                  <SparkleIcon size={32} className="text-accent-strong" />
                 </div>
-                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+                <h3 className="text-lg font-semibold text-fg mb-2">
                   AI-Powered Insights
                 </h3>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6 max-w-md mx-auto">
+                <p className="text-sm text-fg-secondary mb-6 max-w-md mx-auto">
                   Get an executive summary of your business health, key metrics, and actionable recommendations powered by AI.
                 </p>
                 <Button
@@ -1612,23 +1601,23 @@ export function AnalyticsPageClient({
 
             {aiInsightsLoading && (
               <div className="text-center py-16">
-                <div className="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mx-auto mb-6 animate-pulse">
-                  <SparkleIcon size={32} className="text-violet-600 dark:text-violet-400" />
+                <div className="w-16 h-16 rounded-2xl bg-accent-surface flex items-center justify-center mx-auto mb-6 animate-pulse">
+                  <SparkleIcon size={32} className="text-accent-strong" />
                 </div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">Analyzing your data with AI...</p>
-                <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">This may take 10-15 seconds</p>
+                <p className="text-sm text-fg-secondary">Analyzing your data with AI...</p>
+                <p className="text-xs text-fg-muted mt-1">This may take 10-15 seconds</p>
               </div>
             )}
 
             {aiInsights && !aiInsightsLoading && (
               <div className="space-y-6">
                 {/* Health Score */}
-                <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
+                <div className="rounded-lg border border-line bg-surface p-4">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Business Health Score</h3>
+                    <h3 className="text-sm font-semibold text-fg">Business Health Score</h3>
                     <button
                       onClick={handleGenerateInsights}
-                      className="text-xs text-violet-600 dark:text-violet-400 hover:underline"
+                      className="text-xs text-accent-strong hover:underline"
                     >
                       Regenerate
                     </button>
@@ -1636,28 +1625,28 @@ export function AnalyticsPageClient({
                   <div className="flex items-center gap-6">
                     <div className="relative w-20 h-20">
                       <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
-                        <circle cx="40" cy="40" r="35" fill="none" stroke="currentColor" strokeWidth="6" className="text-neutral-100 dark:text-neutral-800" />
-                        <circle cx="40" cy="40" r="35" fill="none" stroke="currentColor" strokeWidth="6" strokeDasharray={`${(aiInsights.health_score / 100) * 220} 220`} strokeLinecap="round" className={aiInsights.health_score >= 70 ? "text-green-500" : aiInsights.health_score >= 40 ? "text-amber-500" : "text-red-500"} />
+                        <circle cx="40" cy="40" r="35" fill="none" stroke="currentColor" strokeWidth="6" className="text-muted" />
+                        <circle cx="40" cy="40" r="35" fill="none" stroke="currentColor" strokeWidth="6" strokeDasharray={`${(aiInsights.health_score / 100) * 220} 220`} strokeLinecap="round" className={aiInsights.health_score >= 70 ? "text-success" : aiInsights.health_score >= 40 ? "text-warning" : "text-danger"} />
                       </svg>
-                      <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                      <span className="absolute inset-0 flex items-center justify-center text-lg font-semibold text-fg">
                         {aiInsights.health_score}
                       </span>
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-neutral-700 dark:text-neutral-300">{aiInsights.executive_summary}</p>
+                      <p className="text-sm text-fg">{aiInsights.executive_summary}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Key Metrics */}
-                <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-                  <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Key Metrics</h3>
+                <div className="rounded-lg border border-line bg-surface p-4">
+                  <h3 className="text-sm font-semibold text-fg mb-4">Key Metrics</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {aiInsights.key_metrics?.map((m, i) => (
-                      <div key={i} className="p-4 rounded bg-neutral-50 dark:bg-neutral-800/50">
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">{m.metric}</p>
-                        <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{m.value}</p>
-                        <p className={`text-xs mt-1 ${m.trend === "up" ? "text-green-600 dark:text-green-400" : m.trend === "down" ? "text-red-600 dark:text-red-400" : "text-neutral-500"}`}>
+                      <div key={i} className="p-4 rounded bg-subtle">
+                        <p className="text-xs text-fg-secondary mb-1">{m.metric}</p>
+                        <p className="text-lg font-semibold text-fg">{m.value}</p>
+                        <p className={`text-xs mt-1 ${m.trend === "up" ? "text-success" : m.trend === "down" ? "text-danger" : "text-fg-secondary"}`}>
                           {m.trend === "up" ? "\u2191" : m.trend === "down" ? "\u2193" : "\u2192"} {m.trend}
                         </p>
                       </div>
@@ -1666,19 +1655,19 @@ export function AnalyticsPageClient({
                 </div>
 
                 {/* Action Items */}
-                <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-                  <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Action Items</h3>
+                <div className="rounded-lg border border-line bg-surface p-4">
+                  <h3 className="text-sm font-semibold text-fg mb-4">Action Items</h3>
                   <div className="space-y-3">
                     {aiInsights.action_items?.map((item, i) => (
-                      <div key={i} className="flex items-start gap-3 p-3 rounded bg-neutral-50 dark:bg-neutral-800/50">
-                        <span className={`shrink-0 mt-0.5 w-2 h-2 rounded-full ${item.priority === "high" ? "bg-red-500" : item.priority === "medium" ? "bg-amber-500" : "bg-green-500"}`} />
+                      <div key={i} className="flex items-start gap-3 p-3 rounded bg-subtle">
+                        <span className={`shrink-0 mt-0.5 w-2 h-2 rounded-full ${item.priority === "high" ? "bg-danger" : item.priority === "medium" ? "bg-warning" : "bg-success"}`} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-neutral-900 dark:text-neutral-100">{item.action}</p>
+                          <p className="text-sm text-fg">{item.action}</p>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${item.priority === "high" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : item.priority === "medium" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"}`}>
+                            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${item.priority === "high" ? "bg-danger-surface text-danger" : item.priority === "medium" ? "bg-warning-surface text-warning" : "bg-success-surface text-success"}`}>
                               {item.priority}
                             </span>
-                            <span className="text-[10px] text-neutral-500">Impact: {item.impact}</span>
+                            <span className="text-xs text-fg-secondary">Impact: {item.impact}</span>
                           </div>
                         </div>
                       </div>
@@ -1695,42 +1684,42 @@ export function AnalyticsPageClient({
   };
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-6 min-h-full">
+    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-6 min-h-full">
       {/* Page header */}
       <PageHeader title="Analytics">
-        <div className="flex items-center gap-3 text-sm text-neutral-500 dark:text-neutral-400">
+        <div className="flex items-center gap-3 text-sm text-fg-secondary">
           <span>
-            <strong className="text-neutral-950 dark:text-neutral-50">
+            <strong className="text-fg">
               {funnel.leads}
             </strong>{" "}
             Leads
           </span>
-          <span className="text-neutral-300 dark:text-neutral-700">/</span>
+          <span className="text-fg-disabled">/</span>
           <span>
-            <strong className="text-neutral-950 dark:text-neutral-50">
+            <strong className="text-fg">
               {funnel.deals}
             </strong>{" "}
             Deals
           </span>
-          <span className="text-neutral-300 dark:text-neutral-700">/</span>
+          <span className="text-fg-disabled">/</span>
           <span>
-            <strong className="text-neutral-950 dark:text-neutral-50">
+            <strong className="text-fg">
               {funnel.customers}
             </strong>{" "}
             Customers
           </span>
-          <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">
+          <span className="hidden sm:inline text-fg-disabled">
             |
           </span>
           <span className="hidden sm:inline">
             L-to-D{" "}
-            <strong className="text-neutral-950 dark:text-neutral-50">
+            <strong className="text-fg">
               {funnel.leadToDealRate}%
             </strong>
           </span>
           <span className="hidden sm:inline">
             D-to-C{" "}
-            <strong className="text-neutral-950 dark:text-neutral-50">
+            <strong className="text-fg">
               {funnel.dealToCustomerRate}%
             </strong>
           </span>
@@ -1738,7 +1727,7 @@ export function AnalyticsPageClient({
       </PageHeader>
 
       {/* Tab navigation */}
-      <div className="flex items-center gap-1 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-1 overflow-x-auto">
+      <div className="flex items-center gap-1 rounded border border-line bg-subtle p-1 overflow-x-auto">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -1750,8 +1739,8 @@ export function AnalyticsPageClient({
               className={cn(
                 "relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded transition-colors whitespace-nowrap",
                 isActive
-                  ? "bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50 shadow-sm"
-                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50",
+                  ? "bg-surface text-fg"
+                  : "text-fg-secondary hover:text-fg",
               )}
             >
               <Icon size={16} />

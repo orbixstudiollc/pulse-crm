@@ -57,18 +57,18 @@ interface MappedEvent {
 // ── Display Config ────────────────────────────────────────────────────────────
 
 const eventTypeBgColors: Record<CalendarEventType, string> = {
-  call: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+  call: "bg-accent-surface text-accent-on-surface",
   meeting:
-    "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
-  task: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
-  demo: "bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300",
+    "bg-accent-surface text-accent-on-surface",
+  task: "bg-warning-surface text-warning",
+  demo: "bg-danger-surface text-danger",
 };
 
 const eventDotColors: Record<CalendarEventType, string> = {
-  call: "bg-blue-500",
-  meeting: "bg-purple-500",
-  task: "bg-green-500",
-  demo: "bg-amber-500",
+  call: "bg-accent-strong",
+  meeting: "bg-accent-strong",
+  task: "bg-success",
+  demo: "bg-warning",
 };
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -307,7 +307,7 @@ export function CalendarPageClient({
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-6">
       {/* Header */}
       <PageHeader title="Calendar">
         <Button
@@ -341,32 +341,32 @@ export function CalendarPageClient({
       <div className="flex items-center gap-2 mb-4">
         <button
           onClick={goToPreviousMonth}
-          className="p-2 rounded border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+          className="p-2 rounded border border-line hover:bg-muted transition-colors"
         >
           <CaretLeftIcon
             size={16}
-            className="text-neutral-600 dark:text-neutral-400"
+            className="text-fg-secondary"
           />
         </button>
-        <div className="px-4 py-2 rounded border border-neutral-200 dark:border-neutral-800 min-w-[140px] text-center">
-          <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+        <div className="px-4 py-2 rounded border border-line min-w-[140px] text-center">
+          <span className="text-sm font-medium text-fg">
             {MONTHS[month]} {year}
           </span>
         </div>
         <button
           onClick={goToNextMonth}
-          className="p-2 rounded border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+          className="p-2 rounded border border-line hover:bg-muted transition-colors"
         >
           <CaretRightIcon
             size={16}
-            className="text-neutral-600 dark:text-neutral-400"
+            className="text-fg-secondary"
           />
         </button>
         <button
           onClick={goToToday}
-          className="px-4 py-2 rounded border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+          className="px-4 py-2 rounded border border-line hover:bg-muted transition-colors"
         >
-          <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+          <span className="text-sm font-medium text-fg">
             Today
           </span>
         </button>
@@ -375,13 +375,13 @@ export function CalendarPageClient({
       {/* Calendar + Upcoming Sidebar */}
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Calendar Grid */}
-        <div className="flex-1 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
+        <div className="flex-1 rounded-lg border border-line bg-surface overflow-hidden">
           {/* Day Headers */}
-          <div className="grid grid-cols-7 border-b border-neutral-200 dark:border-neutral-800">
+          <div className="grid grid-cols-7 border-b border-line">
             {DAYS.map((day) => (
               <div
                 key={day}
-                className="px-3 py-3 text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 border-r border-neutral-200 dark:border-neutral-800 last:border-r-0"
+                className="px-3 py-3 text-center text-xs font-medium text-fg-secondary border-r border-row last:border-r-0"
               >
                 {day}
               </div>
@@ -401,9 +401,9 @@ export function CalendarPageClient({
                 <div
                   key={index}
                   className={cn(
-                    "min-h-[110px] p-2 border-r border-b border-neutral-200 dark:border-neutral-800",
+                    "min-h-[110px] p-2 border-r border-b border-row",
                     "[&:nth-child(7n)]:border-r-0",
-                    !day && "bg-neutral-50 dark:bg-neutral-900/50",
+                    !day && "bg-subtle",
                   )}
                 >
                   {day && (
@@ -412,8 +412,8 @@ export function CalendarPageClient({
                         className={cn(
                           "inline-flex items-center justify-center w-7 h-7 text-sm",
                           isToday
-                            ? "bg-neutral-950 dark:bg-neutral-50 text-white dark:text-neutral-950 rounded-full font-medium"
-                            : "text-neutral-950 dark:text-neutral-50",
+                            ? "bg-accent-surface text-accent-on-surface rounded-full font-medium"
+                            : "text-fg",
                         )}
                       >
                         {day}
@@ -434,7 +434,7 @@ export function CalendarPageClient({
                           </button>
                         ))}
                         {dayEvents.length > 2 && (
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400 pl-2">
+                          <span className="text-xs text-fg-secondary pl-2">
                             +{dayEvents.length - 2} more
                           </span>
                         )}
@@ -449,20 +449,20 @@ export function CalendarPageClient({
 
         {/* Upcoming Sidebar */}
         <div className="w-full lg:w-72 lg:shrink-0">
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-            <h2 className="text-lg font-serif text-neutral-950 dark:text-neutral-50 mb-5">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <h2 className="text-lg font-semibold text-fg mb-5">
               Upcoming
             </h2>
 
             <div className="space-y-6">
               {Object.entries(groupedUpcoming).length === 0 ? (
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                <p className="text-sm text-fg-secondary">
                   No upcoming events
                 </p>
               ) : (
                 Object.entries(groupedUpcoming).map(([date, dateEvents]) => (
                   <div key={date}>
-                    <h3 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-3">
+                    <h3 className="text-xs font-medium text-fg-secondary mb-3">
                       {formatDateLabel(date)}
                     </h3>
                     <div className="space-y-2">
@@ -470,14 +470,14 @@ export function CalendarPageClient({
                         <button
                           key={event.id}
                           onClick={() => handleEventClick(event)}
-                          className="w-full p-3 rounded border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors text-left"
+                          className="w-full p-3 rounded border border-line hover:bg-muted transition-colors text-left"
                         >
                           <div className="flex items-start gap-3">
-                            <span className="text-sm text-neutral-500 dark:text-neutral-400 w-11 shrink-0">
+                            <span className="text-sm text-fg-secondary w-11 shrink-0">
                               {formatTime(event.time)}
                             </span>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                              <p className="text-sm font-medium text-fg truncate">
                                 {event.title}
                               </p>
                               <div className="flex items-center gap-1.5 mt-0.5">
@@ -488,7 +488,7 @@ export function CalendarPageClient({
                                       eventDotColors.task,
                                   )}
                                 />
-                                <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                                <span className="text-xs text-fg-secondary">
                                   {event.type.charAt(0).toUpperCase() +
                                     event.type.slice(1)}{" "}
                                   · {event.duration}

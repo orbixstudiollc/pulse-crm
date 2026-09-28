@@ -111,16 +111,16 @@ export function CopilotClient({ initialConversations, initialMemory, initialTask
   ];
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-white dark:bg-neutral-950">
+    <div className="flex h-[calc(100vh-64px)] bg-surface">
       {/* Left Sidebar */}
-      <div className="w-64 border-r border-neutral-200 dark:border-neutral-800 flex flex-col bg-neutral-50 dark:bg-neutral-900/50">
+      <div className="w-64 border-r border-line flex flex-col bg-subtle">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-neutral-200 dark:border-neutral-800">
+        <div className="px-5 py-4 border-b border-line">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-neutral-900 dark:bg-white flex items-center justify-center">
-              <SparkleIcon size={14} className="text-white dark:text-neutral-900" weight="fill" />
+            <div className="w-7 h-7 rounded-full bg-inverse flex items-center justify-center">
+              <SparkleIcon size={14} className="text-on-inverse" weight="fill" />
             </div>
-            <h1 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">Pulse Copilot</h1>
+            <h1 className="text-base font-semibold text-fg">Pulse Copilot</h1>
           </div>
         </div>
 
@@ -140,8 +140,8 @@ export function CopilotClient({ initialConversations, initialMemory, initialTask
               className={cn(
                 "flex items-center gap-2.5 w-full px-3 py-2 rounded text-sm font-medium transition-colors",
                 view === item.id && !activeConversationId
-                  ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-sm border border-neutral-200 dark:border-neutral-700"
-                  : "text-neutral-600 dark:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-100"
+                  ? "bg-surface text-fg border border-line"
+                  : "text-fg-secondary hover:bg-surface hover:text-fg"
               )}
             >
               {item.icon}
@@ -152,11 +152,11 @@ export function CopilotClient({ initialConversations, initialMemory, initialTask
 
         {/* Chat History */}
         <div className="flex-1 overflow-y-auto px-3 pb-3">
-          <div className="border-t border-neutral-200 dark:border-neutral-800 pt-3 mt-1">
+          <div className="border-t border-line pt-3 mt-1">
             {conversations.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-xs text-neutral-400 dark:text-neutral-500">No chat history yet</p>
-                <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">Start a new chat to begin</p>
+                <p className="text-xs text-fg-muted">No chat history yet</p>
+                <p className="text-xs text-fg-muted mt-0.5">Start a new chat to begin</p>
               </div>
             ) : (
               <div className="space-y-0.5">
@@ -173,8 +173,8 @@ export function CopilotClient({ initialConversations, initialMemory, initialTask
                     className={cn(
                       "flex items-center justify-between w-full px-3 py-2 rounded text-sm transition-colors group cursor-pointer",
                       activeConversationId === conv.id
-                        ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-sm border border-neutral-200 dark:border-neutral-700"
-                        : "text-neutral-600 dark:text-neutral-400 hover:bg-white dark:hover:bg-neutral-800"
+                        ? "bg-surface text-fg border border-line"
+                        : "text-fg-secondary hover:bg-surface"
                     )}
                   >
                     <span className="truncate text-left flex-1">{conv.title}</span>
@@ -183,9 +183,9 @@ export function CopilotClient({ initialConversations, initialMemory, initialTask
                         e.stopPropagation();
                         handleDeleteConversation(conv.id);
                       }}
-                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all"
+                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-active transition-all"
                     >
-                      <TrashIcon size={12} className="text-neutral-400" />
+                      <TrashIcon size={12} className="text-fg-muted" />
                     </button>
                   </div>
                 ))}
@@ -222,14 +222,14 @@ export function CopilotClient({ initialConversations, initialMemory, initialTask
 // ── Suggestion Chips ────────────────────────────────────────────────────────
 
 const SUGGESTION_CHIPS = [
-  { label: "Find Ideal Prospects", icon: CrosshairIcon, color: "text-amber-500", prompt: "Help me find ideal prospects that match my ICP. Analyze my current leads and suggest the best profiles to target." },
-  { label: "Generate a Full Campaign", icon: LightningIcon, color: "text-violet-500", prompt: "Generate a full outreach campaign for my top leads. Include email sequences, follow-up timing, and personalization suggestions." },
-  { label: "Write a Sequence", icon: EnvelopeIcon, color: "text-purple-500", prompt: "Help me write an email sequence for lead outreach. I need a multi-step drip campaign." },
-  { label: "Campaign Ideas", icon: StarIcon, color: "text-blue-500", prompt: "Give me creative campaign ideas based on my current pipeline and leads. What strategies would work best?" },
-  { label: "Weekly Analytics", icon: ChartBarIcon, color: "text-emerald-500", prompt: "Give me a weekly analytics summary. Include pipeline changes, lead activity, deals won/lost, and key metrics." },
-  { label: "Best Performing Campaigns", icon: ChartBarIcon, color: "text-teal-500", prompt: "Analyze my campaigns and tell me which ones are performing best. Include open rates, reply rates, and conversion metrics." },
-  { label: "Get Advice", icon: ChatCircleIcon, color: "text-red-400", prompt: "I need advice on my sales strategy. Review my pipeline and suggest improvements." },
-  { label: "Audit My Workspace", icon: ShieldIcon, color: "text-green-500", prompt: "Audit my CRM workspace. Check for stale leads, stuck deals, missing follow-ups, and data quality issues." },
+  { label: "Find Ideal Prospects", icon: CrosshairIcon, color: "text-warning", prompt: "Help me find ideal prospects that match my ICP. Analyze my current leads and suggest the best profiles to target." },
+  { label: "Generate a Full Campaign", icon: LightningIcon, color: "text-accent-strong", prompt: "Generate a full outreach campaign for my top leads. Include email sequences, follow-up timing, and personalization suggestions." },
+  { label: "Write a Sequence", icon: EnvelopeIcon, color: "text-accent-strong", prompt: "Help me write an email sequence for lead outreach. I need a multi-step drip campaign." },
+  { label: "Campaign Ideas", icon: StarIcon, color: "text-accent-strong", prompt: "Give me creative campaign ideas based on my current pipeline and leads. What strategies would work best?" },
+  { label: "Weekly Analytics", icon: ChartBarIcon, color: "text-success", prompt: "Give me a weekly analytics summary. Include pipeline changes, lead activity, deals won/lost, and key metrics." },
+  { label: "Best Performing Campaigns", icon: ChartBarIcon, color: "text-success", prompt: "Analyze my campaigns and tell me which ones are performing best. Include open rates, reply rates, and conversion metrics." },
+  { label: "Get Advice", icon: ChatCircleIcon, color: "text-danger", prompt: "I need advice on my sales strategy. Review my pipeline and suggest improvements." },
+  { label: "Audit My Workspace", icon: ShieldIcon, color: "text-success", prompt: "Audit my CRM workspace. Check for stale leads, stuck deals, missing follow-ups, and data quality issues." },
 ];
 
 // ── Empty Chat View (Instantly-style) ──────────────────────────────────────
@@ -247,13 +247,13 @@ function EmptyChatView({ onNewChat, onSendPrompt }: { onNewChat: () => void; onS
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6">
       {/* Heading */}
-      <h2 className="text-[28px] leading-[36px] tracking-[-0.56px] font-serif text-neutral-950 dark:text-neutral-50 mb-8">
+      <h2 className="text-xl font-semibold text-fg mb-8">
         What can I help with?
       </h2>
 
       {/* Large Input Box */}
       <div className="w-full max-w-2xl mb-8">
-        <div className="border border-neutral-200 dark:border-neutral-700 rounded-2xl bg-white dark:bg-neutral-900 shadow-sm overflow-hidden">
+        <div className="border border-line rounded-lg bg-surface overflow-hidden">
           <textarea
             ref={textareaRef}
             value={input}
@@ -269,17 +269,17 @@ function EmptyChatView({ onNewChat, onSendPrompt }: { onNewChat: () => void; onS
               }
             }}
             placeholder="Ask Pulse AI or type / to see prompts..."
-            className="w-full px-5 pt-4 pb-2 text-base text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 bg-transparent outline-none resize-none min-h-[80px]"
+            className="w-full px-5 pt-4 pb-2 text-base text-fg placeholder:text-fg-muted bg-transparent outline-none resize-none min-h-[80px]"
             rows={2}
           />
           <div className="flex items-center justify-between px-4 pb-3">
-            <button className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+            <button className="w-8 h-8 rounded-full flex items-center justify-center text-fg-muted hover:text-fg-secondary hover:bg-muted transition-colors">
               <ClockIcon size={18} />
             </button>
             <button
               onClick={handleSubmit}
               disabled={!input.trim()}
-              className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-sm hover:from-indigo-600 hover:to-violet-600 disabled:opacity-30 disabled:hover:from-indigo-500 disabled:hover:to-violet-500 transition-all"
+              className="w-9 h-9 rounded-md bg-accent-surface flex items-center justify-center text-accent-on-surface hover:opacity-80 disabled:opacity-30 disabled:hover:opacity-30 transition-all"
             >
               <ArrowUpIcon size={18} weight="bold" />
             </button>
@@ -293,7 +293,7 @@ function EmptyChatView({ onNewChat, onSendPrompt }: { onNewChat: () => void; onS
           <button
             key={chip.label}
             onClick={() => onSendPrompt(chip.prompt)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600 transition-all shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-line bg-surface text-sm font-medium text-fg hover:bg-muted hover:border-fg-muted transition-all"
           >
             <chip.icon size={16} className={chip.color} weight="fill" />
             {chip.label}
@@ -405,14 +405,14 @@ function ChatView({
       <div className="flex-1 overflow-y-auto px-6 py-6 min-h-0">
         {messages.length === 0 && loaded ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <h3 className="text-[28px] leading-[36px] tracking-[-0.56px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">How can I help you today?</h3>
-            <p className="text-sm text-neutral-400 dark:text-neutral-500 mb-8">Ask about your pipeline, leads, deals, or anything CRM-related.</p>
+            <h3 className="text-xl font-semibold text-fg mb-2">How can I help you today?</h3>
+            <p className="text-sm text-fg-secondary mb-8">Ask about your pipeline, leads, deals, or anything CRM-related.</p>
             <div className="flex flex-wrap justify-center gap-2.5 max-w-2xl">
               {SUGGESTION_CHIPS.map(chip => (
                 <button
                   key={chip.label}
                   onClick={() => handleSend(chip.prompt)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600 transition-all shadow-sm"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-line bg-surface text-sm font-medium text-fg hover:bg-muted hover:border-fg-muted transition-all"
                 >
                   <chip.icon size={16} className={chip.color} weight="fill" />
                   {chip.label}
@@ -428,8 +428,8 @@ function ChatView({
                   className={cn(
                     "text-sm leading-relaxed",
                     msg.role === "user"
-                      ? "bg-neutral-100 dark:bg-neutral-800 rounded-2xl px-4 py-3 max-w-[75%] text-neutral-900 dark:text-neutral-100"
-                      : "max-w-full text-neutral-800 dark:text-neutral-200 prose prose-sm dark:prose-invert prose-p:my-2 prose-ul:my-2 prose-li:my-0.5"
+                      ? "bg-muted rounded-2xl px-4 py-3 max-w-[75%] text-fg"
+                      : "max-w-full text-fg prose prose-sm dark:prose-invert prose-p:my-2 prose-ul:my-2 prose-li:my-0.5"
                   )}
                 >
                   <MessageContent content={getMessageText(msg)} />
@@ -439,9 +439,9 @@ function ChatView({
             {isLoading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex gap-3">
                 <div className="flex gap-1.5 py-2">
-                  <span className="w-2 h-2 rounded-full bg-neutral-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span className="w-2 h-2 rounded-full bg-neutral-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <span className="w-2 h-2 rounded-full bg-neutral-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                  <span className="w-2 h-2 rounded-full bg-fg-muted animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="w-2 h-2 rounded-full bg-fg-muted animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="w-2 h-2 rounded-full bg-fg-muted animate-bounce" style={{ animationDelay: "300ms" }} />
                 </div>
               </div>
             )}
@@ -514,7 +514,7 @@ function InlineContent({ text }: { text: string }) {
         if (part.startsWith("**") && part.endsWith("**"))
           return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
         if (part.startsWith("`") && part.endsWith("`"))
-          return <code key={i} className="bg-neutral-200 dark:bg-neutral-700 px-1 py-0.5 rounded text-xs font-mono">{part.slice(1, -1)}</code>;
+          return <code key={i} className="bg-active px-1 py-0.5 rounded text-xs font-mono">{part.slice(1, -1)}</code>;
         return <span key={i}>{part}</span>;
       })}
     </>
@@ -536,7 +536,7 @@ function ChatInput({ onSend, isLoading }: { onSend: (text: string) => void; isLo
 
   return (
     <div className="px-6 py-4">
-      <div className="max-w-3xl mx-auto border border-neutral-200 dark:border-neutral-700 rounded-2xl bg-white dark:bg-neutral-900 overflow-hidden shadow-sm">
+      <div className="max-w-3xl mx-auto border border-line rounded-lg bg-surface overflow-hidden">
         <textarea
           ref={textareaRef}
           value={input}
@@ -552,7 +552,7 @@ function ChatInput({ onSend, isLoading }: { onSend: (text: string) => void; isLo
             }
           }}
           placeholder="Ask Pulse AI or type / to see prompts..."
-          className="w-full px-5 pt-4 pb-2 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 bg-transparent outline-none resize-none min-h-[48px]"
+          className="w-full px-5 pt-4 pb-2 text-sm text-fg placeholder:text-fg-muted bg-transparent outline-none resize-none min-h-[48px]"
           rows={1}
           disabled={isLoading}
         />
@@ -560,7 +560,7 @@ function ChatInput({ onSend, isLoading }: { onSend: (text: string) => void; isLo
           <button
             onClick={handleSubmit}
             disabled={!input.trim() || isLoading}
-            className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white shadow-sm hover:from-indigo-600 hover:to-violet-600 disabled:opacity-30 disabled:hover:from-indigo-500 disabled:hover:to-violet-500 transition-all"
+            className="w-9 h-9 rounded-md bg-accent-surface flex items-center justify-center text-accent-on-surface hover:opacity-80 disabled:opacity-30 disabled:hover:opacity-30 transition-all"
           >
             <ArrowUpIcon size={18} weight="bold" />
           </button>
@@ -698,26 +698,26 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
     <div className="flex-1 overflow-y-auto flex items-center justify-center">
       <div className="max-w-2xl w-full mx-auto p-8">
         <div className="text-center mb-8">
-          <h2 className="text-[28px] leading-[36px] tracking-[-0.56px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">Memory</h2>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          <h2 className="text-xl font-semibold text-fg mb-2">Memory</h2>
+          <p className="text-sm text-fg-secondary">
             Pulse Copilot uses your business details to provide context-aware responses.
           </p>
         </div>
 
         {showForm ? (
           /* Memory Form */
-          <div className="bg-white dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
-            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+          <div className="bg-surface rounded-lg border border-line p-4">
+            <h3 className="text-sm font-semibold text-fg mb-4">
               {editingId ? "Edit Memory" : "Add Memory"}
             </h3>
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1.5 block">Type</label>
+                <label className="text-xs font-medium text-fg-secondary mb-1.5 block">Type</label>
                 <select
                   value={formData.type}
                   onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as MemoryItem["type"] }))}
-                  className="w-full px-3 py-2 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100"
+                  className="w-full px-3 py-2 rounded border border-line bg-surface text-sm text-fg"
                 >
                   {memoryTypes.map(t => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -726,34 +726,34 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1.5 block">Title</label>
+                <label className="text-xs font-medium text-fg-secondary mb-1.5 block">Title</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="e.g. Company Overview"
-                  className="w-full px-3 py-2 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400"
+                  className="w-full px-3 py-2 rounded border border-line bg-surface text-sm text-fg placeholder:text-fg-muted"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1.5 block">Content</label>
+                <label className="text-xs font-medium text-fg-secondary mb-1.5 block">Content</label>
                 <textarea
                   value={formData.content}
                   onChange={e => setFormData(prev => ({ ...prev, content: e.target.value }))}
                   placeholder="Describe your business, products, target audience, etc..."
                   rows={6}
-                  className="w-full px-3 py-2 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 resize-none"
+                  className="w-full px-3 py-2 rounded border border-line bg-surface text-sm text-fg placeholder:text-fg-muted resize-none"
                 />
               </div>
 
               <div className="flex items-center gap-2 pt-2">
-                <button onClick={handleSave} className="px-4 py-2 rounded bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors">
+                <button onClick={handleSave} className="px-4 py-2 rounded bg-inverse text-on-inverse text-sm font-medium hover:bg-inverse transition-colors">
                   {editingId ? "Update" : "Save"}
                 </button>
                 <button
                   onClick={() => { setShowForm(false); setEditingId(null); setFormData({ type: "business_details", title: "", content: "" }); }}
-                  className="px-4 py-2 rounded border border-neutral-200 dark:border-neutral-700 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                  className="px-4 py-2 rounded border border-line text-sm font-medium text-fg-secondary hover:bg-muted transition-colors"
                 >
                   Cancel
                 </button>
@@ -765,12 +765,12 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
           <div className="space-y-6">
             {scrapeResults === null ? (
               /* Phase A: URL Input */
-              <div className="bg-white dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
+              <div className="bg-surface rounded-lg border border-line p-4">
                 <div className="flex items-center gap-2 mb-4">
-                  <SparkleIcon size={18} className="text-neutral-400" />
-                  <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Scan a website</h3>
+                  <SparkleIcon size={18} className="text-fg-muted" />
+                  <h3 className="text-sm font-semibold text-fg">Scan a website</h3>
                 </div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
+                <p className="text-xs text-fg-secondary mb-4">
                   Enter your website URL and AI will automatically extract business details, products, audience, and brand voice.
                 </p>
                 <div className="flex gap-2">
@@ -781,12 +781,12 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                     onKeyDown={e => e.key === "Enter" && !scraping && handleScrape()}
                     placeholder="https://yourcompany.com"
                     disabled={scraping}
-                    className="flex-1 px-3 py-2 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 disabled:opacity-50"
+                    className="flex-1 px-3 py-2 rounded border border-line bg-surface text-sm text-fg placeholder:text-fg-muted disabled:opacity-50"
                   />
                   <button
                     onClick={handleScrape}
                     disabled={scraping || !scrapeUrl.trim()}
-                    className="px-4 py-2 rounded bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    className="px-4 py-2 rounded bg-inverse text-on-inverse text-sm font-medium hover:bg-inverse transition-colors disabled:opacity-50 flex items-center gap-2"
                   >
                     {scraping ? (
                       <>
@@ -805,7 +805,7 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                   <button
                     onClick={exitScrapeMode}
                     disabled={scraping}
-                    className="text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+                    className="text-xs text-fg-secondary hover:text-fg transition-colors"
                   >
                     Cancel
                   </button>
@@ -816,12 +816,12 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <SparkleIcon size={16} className="text-neutral-400" />
-                    <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    <SparkleIcon size={16} className="text-fg-muted" />
+                    <h3 className="text-sm font-semibold text-fg">
                       Found {scrapeResults.length} item{scrapeResults.length > 1 ? "s" : ""} from {scrapeSiteName}
                     </h3>
                   </div>
-                  <span className="text-xs text-neutral-400">{scrapeResults.filter(r => r.selected).length} selected</span>
+                  <span className="text-xs text-fg-muted">{scrapeResults.filter(r => r.selected).length} selected</span>
                 </div>
 
                 <div className="space-y-3 max-h-[400px] overflow-y-auto">
@@ -829,27 +829,27 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                     <div
                       key={idx}
                       className={cn(
-                        "p-4 rounded-xl border transition-all",
+                        "p-4 rounded-lg border transition-all",
                         result.selected
-                          ? "border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800/50"
-                          : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 opacity-60"
+                          ? "border-line bg-surface"
+                          : "border-line bg-surface opacity-60"
                       )}
                     >
                       <div className="flex items-start gap-3">
                         <button
                           onClick={() => setScrapeResults(prev => prev!.map((r, i) => i === idx ? { ...r, selected: !r.selected } : r))}
                           className={cn(
-                            "mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors",
+                            "mt-0.5 w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-colors",
                             result.selected
-                              ? "bg-neutral-900 dark:bg-white border-neutral-900 dark:border-white text-white dark:text-neutral-900"
-                              : "border-neutral-300 dark:border-neutral-600"
+                              ? "bg-inverse border-inverse text-on-inverse"
+                              : "border-line"
                           )}
                         >
                           {result.selected && <CheckIcon size={12} />}
                         </button>
                         <div className="flex-1 min-w-0 space-y-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 font-medium">
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-fg-secondary font-medium">
                               {memoryTypes.find(t => t.value === result.type)?.label || result.type}
                             </span>
                           </div>
@@ -857,13 +857,13 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                             type="text"
                             value={result.title}
                             onChange={e => setScrapeResults(prev => prev!.map((r, i) => i === idx ? { ...r, title: e.target.value } : r))}
-                            className="w-full text-sm font-medium text-neutral-900 dark:text-neutral-100 bg-transparent border-0 p-0 focus:outline-none focus:ring-0"
+                            className="w-full text-sm font-medium text-fg bg-transparent border-0 p-0 focus:outline-none focus:ring-0"
                           />
                           <textarea
                             value={result.content}
                             onChange={e => setScrapeResults(prev => prev!.map((r, i) => i === idx ? { ...r, content: e.target.value } : r))}
                             rows={2}
-                            className="w-full text-xs text-neutral-600 dark:text-neutral-400 bg-transparent border-0 p-0 focus:outline-none focus:ring-0 resize-none"
+                            className="w-full text-xs text-fg-secondary bg-transparent border-0 p-0 focus:outline-none focus:ring-0 resize-none"
                           />
                         </div>
                       </div>
@@ -875,7 +875,7 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                   <button
                     onClick={handleSaveScrapeResults}
                     disabled={savingScrape || scrapeResults.filter(r => r.selected).length === 0}
-                    className="px-4 py-2 rounded bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    className="px-4 py-2 rounded bg-inverse text-on-inverse text-sm font-medium hover:bg-inverse transition-colors disabled:opacity-50 flex items-center gap-2"
                   >
                     {savingScrape ? (
                       <>
@@ -891,13 +891,13 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                   </button>
                   <button
                     onClick={() => { setScrapeResults(null); setScrapeUrl(""); }}
-                    className="px-4 py-2 rounded border border-neutral-200 dark:border-neutral-700 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                    className="px-4 py-2 rounded border border-line text-sm font-medium text-fg-secondary hover:bg-muted transition-colors"
                   >
                     Back
                   </button>
                   <button
                     onClick={exitScrapeMode}
-                    className="px-4 py-2 rounded text-sm font-medium text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+                    className="px-4 py-2 rounded text-sm font-medium text-fg-secondary hover:text-fg transition-colors"
                   >
                     Cancel
                   </button>
@@ -914,22 +914,22 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                   setFormData({ type: "business_details", title: "Business Overview", content: "" });
                   setShowForm(true);
                 }}
-                className="flex flex-col items-center gap-3 p-6 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 hover:shadow-sm transition-all bg-white dark:bg-neutral-800/50"
+                className="flex flex-col items-center gap-3 p-4 rounded-lg border border-line hover:border-fg-muted transition-all bg-surface"
               >
-                <GlobeIcon size={28} className="text-neutral-400" />
+                <GlobeIcon size={28} className="text-fg-muted" />
                 <div>
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Add business details</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Company info, products</p>
+                  <p className="text-sm font-medium text-fg">Add business details</p>
+                  <p className="text-xs text-fg-secondary mt-0.5">Company info, products</p>
                 </div>
               </button>
               <button
                 onClick={() => setScrapeMode(true)}
-                className="flex flex-col items-center gap-3 p-6 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 hover:shadow-sm transition-all bg-white dark:bg-neutral-800/50"
+                className="flex flex-col items-center gap-3 p-4 rounded-lg border border-line hover:border-fg-muted transition-all bg-surface"
               >
-                <SparkleIcon size={28} className="text-neutral-400" />
+                <SparkleIcon size={28} className="text-fg-muted" />
                 <div>
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Scan a website</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Auto-extract with AI</p>
+                  <p className="text-sm font-medium text-fg">Scan a website</p>
+                  <p className="text-xs text-fg-secondary mt-0.5">Auto-extract with AI</p>
                 </div>
               </button>
               <button
@@ -937,12 +937,12 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                   setFormData({ type: "custom", title: "", content: "" });
                   setShowForm(true);
                 }}
-                className="flex flex-col items-center gap-3 p-6 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 hover:shadow-sm transition-all bg-white dark:bg-neutral-800/50"
+                className="flex flex-col items-center gap-3 p-4 rounded-lg border border-line hover:border-fg-muted transition-all bg-surface"
               >
-                <PencilSimpleIcon size={28} className="text-neutral-400" />
+                <PencilSimpleIcon size={28} className="text-fg-muted" />
                 <div>
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Edit manually</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Custom business context</p>
+                  <p className="text-sm font-medium text-fg">Edit manually</p>
+                  <p className="text-xs text-fg-secondary mt-0.5">Custom business context</p>
                 </div>
               </button>
             </div>
@@ -950,31 +950,31 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
             {/* Existing Memory Items */}
             {items.length > 0 && (
               <div className="space-y-3">
-                <h3 className="text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-3">Saved Context</h3>
+                <h3 className="text-sm font-medium text-fg-secondary mb-3">Saved Context</h3>
                 {items.map(item => (
-                  <div key={item.id} className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 group">
+                  <div key={item.id} className="p-4 rounded-lg border border-line bg-surface group">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400 font-medium">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-fg-secondary font-medium">
                             {memoryTypes.find(t => t.value === item.type)?.label || item.type}
                           </span>
                           {item.source === "website" && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">Website</span>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-accent-surface text-accent-on-surface">Website</span>
                           )}
                           {!item.is_active && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">Disabled</span>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-warning-surface text-warning">Disabled</span>
                           )}
                         </div>
-                        <h4 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{item.title}</h4>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2">{item.content}</p>
+                        <h4 className="text-sm font-medium text-fg">{item.title}</h4>
+                        <p className="text-xs text-fg-secondary mt-1 line-clamp-2">{item.content}</p>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-3">
-                        <button onClick={() => handleEdit(item)} className="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
-                          <PencilSimpleIcon size={14} className="text-neutral-400" />
+                        <button onClick={() => handleEdit(item)} className="p-1.5 rounded hover:bg-muted transition-colors">
+                          <PencilSimpleIcon size={14} className="text-fg-muted" />
                         </button>
-                        <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
-                          <TrashIcon size={14} className="text-red-400" />
+                        <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded hover:bg-danger-surface transition-colors">
+                          <TrashIcon size={14} className="text-danger" />
                         </button>
                       </div>
                     </div>
@@ -1048,8 +1048,8 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
     <div className="flex-1 overflow-y-auto flex items-center justify-center">
       <div className="max-w-2xl w-full mx-auto p-8">
         <div className="text-center mb-8">
-          <h2 className="text-[28px] leading-[36px] tracking-[-0.56px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">Tasks</h2>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          <h2 className="text-xl font-semibold text-fg mb-2">Tasks</h2>
+          <p className="text-sm text-fg-secondary">
             Manage recurring prompts that Copilot can execute on a schedule.
           </p>
         </div>
@@ -1058,7 +1058,7 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
           <>
             <button
               onClick={() => setShowForm(true)}
-              className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-neutral-200 dark:border-neutral-700 text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors mb-6"
+              className="w-full flex items-center justify-center gap-2 p-4 rounded-lg border border-dashed border-line text-sm font-medium text-fg-secondary hover:border-fg-muted hover:text-fg transition-colors mb-6"
             >
               <PlusIcon size={16} weight="bold" />
               Create new task
@@ -1066,29 +1066,29 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
 
             {tasks.length === 0 ? (
               <div className="text-center py-12">
-                <ClockIcon size={40} className="text-neutral-300 dark:text-neutral-600 mx-auto mb-3" />
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">No tasks yet</p>
-                <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Create recurring prompts to automate your workflow.</p>
+                <ClockIcon size={40} className="text-fg-disabled mx-auto mb-3" />
+                <p className="text-sm text-fg-secondary">No tasks yet</p>
+                <p className="text-xs text-fg-muted mt-1">Create recurring prompts to automate your workflow.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {tasks.map(task => (
-                  <div key={task.id} className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 group">
+                  <div key={task.id} className="p-4 rounded-lg border border-line bg-surface group">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{task.title}</h4>
+                          <h4 className="text-sm font-medium text-fg">{task.title}</h4>
                           <span className={cn(
                             "text-xs px-2 py-0.5 rounded-full font-medium",
                             task.is_active
-                              ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
-                              : "bg-neutral-100 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400"
+                              ? "bg-success-surface text-success"
+                              : "bg-muted text-fg-secondary"
                           )}>
                             {task.is_active ? "Active" : "Paused"}
                           </span>
                         </div>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1 mb-1">{task.prompt}</p>
-                        <div className="flex items-center gap-3 text-xs text-neutral-400">
+                        <p className="text-xs text-fg-secondary line-clamp-1 mb-1">{task.prompt}</p>
+                        <div className="flex items-center gap-3 text-xs text-fg-muted">
                           <span className="flex items-center gap-1">
                             <ClockIcon size={12} />
                             {scheduleLabels[task.schedule]}
@@ -1099,13 +1099,13 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-3">
                         <button
                           onClick={() => handleToggle(task)}
-                          className="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                          className="p-1.5 rounded hover:bg-muted transition-colors"
                           title={task.is_active ? "Pause" : "Activate"}
                         >
                           {task.is_active ? (
-                            <XIcon size={14} className="text-neutral-400" />
+                            <XIcon size={14} className="text-fg-muted" />
                           ) : (
-                            <CheckIcon size={14} className="text-emerald-500" />
+                            <CheckIcon size={14} className="text-success" />
                           )}
                         </button>
                         <button
@@ -1114,12 +1114,12 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
                             setEditingId(task.id);
                             setShowForm(true);
                           }}
-                          className="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                          className="p-1.5 rounded hover:bg-muted transition-colors"
                         >
-                          <PencilSimpleIcon size={14} className="text-neutral-400" />
+                          <PencilSimpleIcon size={14} className="text-fg-muted" />
                         </button>
-                        <button onClick={() => handleDelete(task.id)} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
-                          <TrashIcon size={14} className="text-red-400" />
+                        <button onClick={() => handleDelete(task.id)} className="p-1.5 rounded hover:bg-danger-surface transition-colors">
+                          <TrashIcon size={14} className="text-danger" />
                         </button>
                       </div>
                     </div>
@@ -1130,40 +1130,40 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
           </>
         ) : (
           /* Task Form */
-          <div className="bg-white dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700 p-6">
-            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+          <div className="bg-surface rounded-lg border border-line p-4">
+            <h3 className="text-sm font-semibold text-fg mb-4">
               {editingId ? "Edit Task" : "Create Task"}
             </h3>
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1.5 block">Title</label>
+                <label className="text-xs font-medium text-fg-secondary mb-1.5 block">Title</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="e.g. Daily Pipeline Summary"
-                  className="w-full px-3 py-2 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400"
+                  className="w-full px-3 py-2 rounded border border-line bg-surface text-sm text-fg placeholder:text-fg-muted"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1.5 block">Prompt</label>
+                <label className="text-xs font-medium text-fg-secondary mb-1.5 block">Prompt</label>
                 <textarea
                   value={formData.prompt}
                   onChange={e => setFormData(prev => ({ ...prev, prompt: e.target.value }))}
                   placeholder="What should Copilot do? e.g. Summarize my pipeline and highlight deals at risk..."
                   rows={4}
-                  className="w-full px-3 py-2 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 resize-none"
+                  className="w-full px-3 py-2 rounded border border-line bg-surface text-sm text-fg placeholder:text-fg-muted resize-none"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1.5 block">Schedule</label>
+                <label className="text-xs font-medium text-fg-secondary mb-1.5 block">Schedule</label>
                 <select
                   value={formData.schedule}
                   onChange={e => setFormData(prev => ({ ...prev, schedule: e.target.value as CopilotTask["schedule"] }))}
-                  className="w-full px-3 py-2 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-neutral-900 dark:text-neutral-100"
+                  className="w-full px-3 py-2 rounded border border-line bg-surface text-sm text-fg"
                 >
                   <option value="daily">Daily</option>
                   <option value="weekly">Weekly</option>
@@ -1173,12 +1173,12 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
               </div>
 
               <div className="flex items-center gap-2 pt-2">
-                <button onClick={handleSave} className="px-4 py-2 rounded bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors">
+                <button onClick={handleSave} className="px-4 py-2 rounded bg-inverse text-on-inverse text-sm font-medium hover:bg-inverse transition-colors">
                   {editingId ? "Update" : "Create"}
                 </button>
                 <button
                   onClick={() => { setShowForm(false); setEditingId(null); setFormData({ title: "", prompt: "", schedule: "daily" }); }}
-                  className="px-4 py-2 rounded border border-neutral-200 dark:border-neutral-700 text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                  className="px-4 py-2 rounded border border-line text-sm font-medium text-fg-secondary hover:bg-muted transition-colors"
                 >
                   Cancel
                 </button>
@@ -1200,18 +1200,18 @@ function SettingsView() {
     <div className="flex-1 overflow-y-auto flex items-center justify-center">
       <div className="max-w-2xl w-full mx-auto p-8">
         <div className="text-center mb-8">
-          <h2 className="text-[28px] leading-[36px] tracking-[-0.56px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">Copilot Settings</h2>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          <h2 className="text-xl font-semibold text-fg mb-2">Copilot Settings</h2>
+          <p className="text-sm text-fg-secondary">
             Configure your Pulse Copilot settings.
           </p>
         </div>
 
         <div className="space-y-4">
           {/* Analytics Toggle */}
-          <div className="flex items-center justify-between p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50">
+          <div className="flex items-center justify-between p-4 rounded-lg border border-line bg-surface">
             <div>
-              <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Analytics</h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              <h3 className="text-sm font-medium text-fg">Analytics</h3>
+              <p className="text-xs text-fg-secondary mt-0.5">
                 Enable analytics tracking for Copilot interactions and performance metrics.
               </p>
             </div>
@@ -1221,8 +1221,8 @@ function SettingsView() {
                 className={cn(
                   "px-3 py-1.5 rounded text-xs font-medium transition-colors",
                   !analyticsEnabled
-                    ? "bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
-                    : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    ? "bg-active text-fg"
+                    : "text-fg-secondary hover:bg-muted"
                 )}
               >
                 Disable
@@ -1232,8 +1232,8 @@ function SettingsView() {
                 className={cn(
                   "px-3 py-1.5 rounded text-xs font-medium transition-colors",
                   analyticsEnabled
-                    ? "bg-emerald-500 text-white"
-                    : "text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    ? "bg-success text-on-inverse"
+                    : "text-fg-secondary hover:bg-muted"
                 )}
               >
                 Enable
@@ -1242,32 +1242,32 @@ function SettingsView() {
           </div>
 
           {/* Model Selection */}
-          <div className="flex items-center justify-between p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50">
+          <div className="flex items-center justify-between p-4 rounded-lg border border-line bg-surface">
             <div>
-              <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">AI Model</h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              <h3 className="text-sm font-medium text-fg">AI Model</h3>
+              <p className="text-xs text-fg-secondary mt-0.5">
                 Choose the AI model for Copilot responses.
               </p>
             </div>
-            <select className="pl-3 pr-8 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-medium text-neutral-900 dark:text-neutral-100 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22%236b7280%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M5.23%207.21a.75.75%200%20011.06.02L10%2011.168l3.71-3.938a.75.75%200%20111.08%201.04l-4.25%204.5a.75.75%200%2001-1.08%200l-4.25-4.5a.75.75%200%2001.02-1.06z%22%20clip-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.5rem_center] bg-[length:1.25rem_1.25rem]">
+            <select className="pl-3 pr-8 py-1.5 rounded border border-line bg-surface text-xs font-medium text-fg appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22%236b7280%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M5.23%207.21a.75.75%200%20011.06.02L10%2011.168l3.71-3.938a.75.75%200%20111.08%201.04l-4.25%204.5a.75.75%200%2001-1.08%200l-4.25-4.5a.75.75%200%2001.02-1.06z%22%20clip-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.5rem_center] bg-[length:1.25rem_1.25rem]">
               <option>Claude Sonnet 4.6</option>
               <option>Claude Haiku 4.5</option>
             </select>
           </div>
 
           {/* Chat History */}
-          <div className="flex items-center justify-between p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50">
+          <div className="flex items-center justify-between p-4 rounded-lg border border-line bg-surface">
             <div>
-              <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">Chat History</h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              <h3 className="text-sm font-medium text-fg">Chat History</h3>
+              <p className="text-xs text-fg-secondary mt-0.5">
                 Automatically save chat conversations for future reference.
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 px-3 py-1.5 rounded text-xs font-medium transition-colors">
+              <button className="text-fg-secondary hover:bg-muted px-3 py-1.5 rounded text-xs font-medium transition-colors">
                 Disable
               </button>
-              <button className="bg-emerald-500 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors">
+              <button className="bg-success text-on-inverse px-3 py-1.5 rounded text-xs font-medium transition-colors">
                 Enable
               </button>
             </div>
@@ -1277,7 +1277,7 @@ function SettingsView() {
           <div className="flex justify-end pt-4">
             <button
               onClick={() => toast.success("Settings saved")}
-              className="px-4 py-2 rounded bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors"
+              className="px-4 py-2 rounded bg-inverse text-on-inverse text-sm font-medium hover:bg-inverse transition-colors"
             >
               Save
             </button>

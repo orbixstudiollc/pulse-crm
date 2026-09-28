@@ -84,13 +84,13 @@ const typeIcons: Record<
 };
 
 const typeColors: Record<ActivityType, string> = {
-  call: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  call: "bg-accent-surface text-accent-on-surface",
   meeting:
-    "bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400",
-  task: "bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400",
+    "bg-accent-surface text-accent-on-surface",
+  task: "bg-success-surface text-success",
   email:
-    "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  note: "bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400",
+    "bg-warning-surface text-warning",
+  note: "bg-muted text-fg-secondary",
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -292,7 +292,7 @@ export function ActivityPageClient({
   };
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 flex flex-col gap-6 min-h-full">
+    <div className="py-6 px-4 sm:px-6 lg:px-6 flex flex-col gap-6 min-h-full">
       {/* Header */}
       <PageHeader title="Activities">
         <Button
@@ -305,31 +305,31 @@ export function ActivityPageClient({
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <div className="rounded-lg border border-line bg-surface p-4">
+          <p className="text-sm text-fg-secondary">
             Total Activities
           </p>
-          <p className="mt-1 text-2xl font-serif font-medium text-neutral-950 dark:text-neutral-50">
+          <p className="mt-1 text-2xl font-semibold text-fg">
             {stats.total}
           </p>
         </div>
-        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <div className="rounded-lg border border-line bg-surface p-4">
+          <p className="text-sm text-fg-secondary">
             Calls
           </p>
-          <p className="mt-1 text-2xl font-serif font-medium text-neutral-950 dark:text-neutral-50">
+          <p className="mt-1 text-2xl font-semibold text-fg">
             {stats.calls}
           </p>
         </div>
-        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <div className="rounded-lg border border-line bg-surface p-4">
+          <p className="text-sm text-fg-secondary">
             Meetings
           </p>
-          <p className="mt-1 text-2xl font-serif font-medium text-neutral-950 dark:text-neutral-50">
+          <p className="mt-1 text-2xl font-semibold text-fg">
             {stats.meetings}
           </p>
           {stats.scheduledMeetings > 0 && (
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+            <p className="text-xs text-fg-muted mt-1">
               {stats.scheduledMeetings} upcoming
             </p>
           )}
@@ -388,10 +388,10 @@ export function ActivityPageClient({
       </div>
 
       {/* Activity List */}
-      <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden flex-1">
+      <div className="rounded-lg border border-line bg-surface overflow-hidden flex-1">
         {paginatedActivities.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4">
-            <p className="text-neutral-500 dark:text-neutral-400 text-sm">
+            <p className="text-fg-secondary text-sm">
               No activities found
             </p>
             <Button
@@ -403,7 +403,7 @@ export function ActivityPageClient({
             </Button>
           </div>
         ) : (
-          <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+          <div className="divide-y divide-row">
             {paginatedActivities.map((activity) => (
               <ActivityRow
                 key={activity.id}
@@ -427,7 +427,7 @@ export function ActivityPageClient({
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          <p className="text-sm text-fg-secondary">
             Showing {(currentPage - 1) * rowsPerPage + 1}–
             {Math.min(currentPage * rowsPerPage, filteredActivities.length)} of{" "}
             {filteredActivities.length}
@@ -448,8 +448,8 @@ export function ActivityPageClient({
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded text-sm font-medium transition-colors",
                   page === currentPage
-                    ? "bg-neutral-950 dark:bg-neutral-50 text-white dark:text-neutral-950"
-                    : "text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800",
+                    ? "bg-inverse text-on-inverse"
+                    : "text-fg-secondary hover:bg-muted",
                 )}
               >
                 {page}
@@ -587,7 +587,7 @@ function ActivityRow({
 
   return (
     <div
-      className="flex items-center gap-4 px-5 py-4 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors cursor-pointer"
+      className="flex items-center gap-4 px-5 py-4 hover:bg-muted transition-colors cursor-pointer"
       onClick={onClick}
     >
       {/* Type Icon */}
@@ -603,7 +603,7 @@ function ActivityRow({
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+          <p className="text-sm font-medium text-fg truncate">
             {activity.title}
           </p>
           {status && (
@@ -613,15 +613,15 @@ function ActivityRow({
           )}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+          <span className="text-xs text-fg-secondary">
             {typeLabels[activity.type] || activity.type}
           </span>
           {activity.relatedTo && (
             <>
-              <span className="text-neutral-300 dark:text-neutral-600">
+              <span className="text-fg-disabled">
                 &middot;
               </span>
-              <span className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+              <span className="text-xs text-fg-secondary truncate">
                 {activity.relatedTo.name}
               </span>
             </>
@@ -631,11 +631,11 @@ function ActivityRow({
 
       {/* Date */}
       <div className="hidden sm:block text-right shrink-0">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="text-sm text-fg-secondary">
           {formatActivityDate(activity.date)}
         </p>
         {activity.time && (
-          <p className="text-xs text-neutral-400 dark:text-neutral-500">
+          <p className="text-xs text-fg-muted">
             {activity.time}
           </p>
         )}
@@ -648,33 +648,33 @@ function ActivityRow({
             e.stopPropagation();
             onToggleMenu();
           }}
-          className="flex h-8 w-8 items-center justify-center rounded text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded text-fg-muted hover:bg-muted hover:text-fg-secondary transition-colors"
         >
           <DotsThreeIcon size={20} weight="bold" />
         </button>
 
         {actionMenuOpen && (
           <div
-            className="absolute right-0 top-full mt-1 w-40 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg z-20"
+            className="absolute right-0 top-full mt-1 w-40 rounded-md border border-line bg-surface shadow-dropdown z-20"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={onEdit}
-              className="w-full px-4 py-2.5 text-left text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 first:rounded-t-lg"
+              className="w-full px-4 py-2.5 text-left text-sm text-fg hover:bg-muted first:rounded-t-lg"
             >
               Edit
             </button>
             {activity.status !== "completed" && (
               <button
                 onClick={onMarkComplete}
-                className="w-full px-4 py-2.5 text-left text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                className="w-full px-4 py-2.5 text-left text-sm text-fg hover:bg-muted"
               >
                 Mark Complete
               </button>
             )}
             <button
               onClick={onDelete}
-              className="w-full px-4 py-2.5 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 last:rounded-b-lg"
+              className="w-full px-4 py-2.5 text-left text-sm text-danger hover:bg-danger-surface last:rounded-b-lg"
             >
               Delete
             </button>

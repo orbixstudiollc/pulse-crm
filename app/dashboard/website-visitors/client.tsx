@@ -246,7 +246,7 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
   const hasScripts = scripts.length > 0;
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
+    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
       <PageHeader title="Website Visitors">
         <Button variant="outline" size="sm" onClick={() => setShowSetup(true)} leftIcon={<GlobeIcon size={16} />}>
           Setup Tracking
@@ -255,25 +255,25 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="Today" value={stats.visitorsToday} icon={<CursorClickIcon size={20} className="text-neutral-950 dark:text-neutral-50" />} />
-        <StatCard label="This Week" value={stats.visitorsThisWeek} icon={<ChartBarIcon size={20} className="text-neutral-950 dark:text-neutral-50" />} />
-        <StatCard label="This Month" value={stats.visitorsThisMonth} icon={<UsersIcon size={20} className="text-neutral-950 dark:text-neutral-50" />} />
-        <StatCard label="Companies" value={stats.companiesIdentified} icon={<GlobeIcon size={20} className="text-neutral-950 dark:text-neutral-50" />} />
-        <StatCard label="Hot Visitors" value={stats.hotVisitors} icon={<FireIcon size={20} className="text-neutral-950 dark:text-neutral-50" />} />
-        <StatCard label="Converted" value={stats.convertedToLeads} icon={<LightningIcon size={20} className="text-neutral-950 dark:text-neutral-50" />} />
+        <StatCard label="Today" value={stats.visitorsToday} icon={<CursorClickIcon size={20} className="text-fg" />} />
+        <StatCard label="This Week" value={stats.visitorsThisWeek} icon={<ChartBarIcon size={20} className="text-fg" />} />
+        <StatCard label="This Month" value={stats.visitorsThisMonth} icon={<UsersIcon size={20} className="text-fg" />} />
+        <StatCard label="Companies" value={stats.companiesIdentified} icon={<GlobeIcon size={20} className="text-fg" />} />
+        <StatCard label="Hot Visitors" value={stats.hotVisitors} icon={<FireIcon size={20} className="text-fg" />} />
+        <StatCard label="Converted" value={stats.convertedToLeads} icon={<LightningIcon size={20} className="text-fg" />} />
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-neutral-200 dark:border-neutral-800">
+      <div className="flex gap-1 border-b border-line">
         <button
           onClick={() => setActiveTab("visitors")}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === "visitors" ? "border-neutral-900 dark:border-white text-neutral-900 dark:text-white" : "border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"}`}
+          className={`px-4 py-2.5 text-sm font-medium border-b transition-colors ${activeTab === "visitors" ? "border-inverse text-fg" : "border-transparent text-fg-secondary hover:text-fg"}`}
         >
           Visitors ({total})
         </button>
         <button
           onClick={() => setActiveTab("scripts")}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === "scripts" ? "border-neutral-900 dark:border-white text-neutral-900 dark:text-white" : "border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"}`}
+          className={`px-4 py-2.5 text-sm font-medium border-b transition-colors ${activeTab === "scripts" ? "border-inverse text-fg" : "border-transparent text-fg-secondary hover:text-fg"}`}
         >
           Tracking Scripts ({scripts.length})
         </button>
@@ -315,43 +315,43 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
               actions={!hasScripts ? [{ label: "Setup Tracking", onClick: () => setShowSetup(true) }] : undefined}
             />
           ) : (
-            <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
+            <div className="rounded-lg border border-line bg-surface overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-neutral-200 dark:border-neutral-800 text-left">
-                      <th className="px-4 py-3 font-medium text-neutral-500 dark:text-neutral-400">Visitor</th>
-                      <th className="px-4 py-3 font-medium text-neutral-500 dark:text-neutral-400">Location</th>
-                      <th className="px-4 py-3 font-medium text-neutral-500 dark:text-neutral-400">Pages</th>
-                      <th className="px-4 py-3 font-medium text-neutral-500 dark:text-neutral-400">Visits</th>
-                      <th className="px-4 py-3 font-medium text-neutral-500 dark:text-neutral-400">Duration</th>
-                      <th className="px-4 py-3 font-medium text-neutral-500 dark:text-neutral-400">Last Seen</th>
-                      <th className="px-4 py-3 font-medium text-neutral-500 dark:text-neutral-400">Status</th>
-                      <th className="px-4 py-3 font-medium text-neutral-500 dark:text-neutral-400">Actions</th>
+                    <tr className="border-b border-line text-left">
+                      <th className="px-4 py-3 font-medium text-fg-secondary">Visitor</th>
+                      <th className="px-4 py-3 font-medium text-fg-secondary">Location</th>
+                      <th className="px-4 py-3 font-medium text-fg-secondary">Pages</th>
+                      <th className="px-4 py-3 font-medium text-fg-secondary">Visits</th>
+                      <th className="px-4 py-3 font-medium text-fg-secondary">Duration</th>
+                      <th className="px-4 py-3 font-medium text-fg-secondary">Last Seen</th>
+                      <th className="px-4 py-3 font-medium text-fg-secondary">Status</th>
+                      <th className="px-4 py-3 font-medium text-fg-secondary">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {visitors.map((v) => (
-                      <tr key={v.id} className="border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors">
+                      <tr key={v.id} className="border-b border-row hover:bg-muted transition-colors">
                         <td className="px-4 py-3">
                           <div>
-                            <div className="font-medium text-neutral-900 dark:text-neutral-100">
+                            <div className="font-medium text-fg">
                               {v.company_name || v.ip_address || "Unknown"}
                             </div>
                             {v.company_domain && (
-                              <div className="text-xs text-neutral-500">{v.company_domain}</div>
+                              <div className="text-xs text-fg-secondary">{v.company_domain}</div>
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-neutral-600 dark:text-neutral-400">
+                        <td className="px-4 py-3 text-fg-secondary">
                           {[v.city, v.country_code].filter(Boolean).join(", ") || "—"}
                         </td>
-                        <td className="px-4 py-3 text-neutral-600 dark:text-neutral-400">{v.page_count}</td>
-                        <td className="px-4 py-3 text-neutral-600 dark:text-neutral-400">{v.visit_count}</td>
-                        <td className="px-4 py-3 text-neutral-600 dark:text-neutral-400">
+                        <td className="px-4 py-3 text-fg-secondary">{v.page_count}</td>
+                        <td className="px-4 py-3 text-fg-secondary">{v.visit_count}</td>
+                        <td className="px-4 py-3 text-fg-secondary">
                           {v.total_duration > 0 ? `${Math.round(v.total_duration / 60)}m` : "—"}
                         </td>
-                        <td className="px-4 py-3 text-neutral-600 dark:text-neutral-400">
+                        <td className="px-4 py-3 text-fg-secondary">
                           {new Date(v.last_seen).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                         </td>
                         <td className="px-4 py-3">
@@ -361,7 +361,7 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => handleViewVisitor(v)}
-                              className="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+                              className="p-1.5 rounded-md hover:bg-muted text-fg-secondary hover:text-fg transition-colors"
                               title="View details"
                             >
                               <EyeIcon size={16} />
@@ -369,7 +369,7 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
                             {v.status !== "converted" && v.status !== "ignored" && (
                               <button
                                 onClick={() => handleConvert(v.id)}
-                                className="p-1.5 rounded-md hover:bg-green-50 dark:hover:bg-green-900/20 text-neutral-500 hover:text-green-600 transition-colors"
+                                className="p-1.5 rounded-md hover:bg-success-surface text-fg-secondary hover:text-success transition-colors"
                                 title="Convert to lead"
                               >
                                 <ArrowRightIcon size={16} />
@@ -383,7 +383,7 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
                 </table>
               </div>
               {total > 50 && (
-                <div className="px-4 py-3 border-t border-neutral-200 dark:border-neutral-800 text-sm text-neutral-500">
+                <div className="px-4 py-3 border-t border-line text-sm text-fg-secondary">
                   Showing {visitors.length} of {total} visitors
                 </div>
               )}
@@ -420,12 +420,12 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
               {scripts.map((script) => (
                 <div
                   key={script.id}
-                  className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5"
+                  className="rounded-lg border border-line bg-surface p-4"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className={`w-2.5 h-2.5 rounded-full ${script.is_active ? "bg-green-500" : "bg-neutral-300 dark:bg-neutral-600"}`} />
-                      <span className="font-medium text-neutral-900 dark:text-neutral-100">{script.domain}</span>
+                      <div className={`w-2.5 h-2.5 rounded-full ${script.is_active ? "bg-success" : "bg-active"}`} />
+                      <span className="font-medium text-fg">{script.domain}</span>
                       <Badge variant={script.is_active ? "success" : "neutral"}>{script.is_active ? "Active" : "Paused"}</Badge>
                     </div>
                     <div className="flex items-center gap-2">
@@ -440,20 +440,20 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteScript(script.id)}
-                        className="text-neutral-400 hover:text-red-500"
+                        className="text-fg-muted hover:text-danger"
                       >
                         <TrashIcon size={16} />
                       </Button>
                     </div>
                   </div>
 
-                  <div className="text-xs text-neutral-500 mb-3">
+                  <div className="text-xs text-fg-secondary mb-3">
                     Created {new Date(script.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                   </div>
 
                   {/* Script Snippet */}
                   <div className="relative">
-                    <pre className="p-3 rounded bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs text-neutral-600 dark:text-neutral-400 overflow-x-auto">
+                    <pre className="p-3 rounded bg-subtle border border-line text-xs text-fg-secondary overflow-x-auto">
 {`<script>
 (function(){var s='${appUrl}/api/tracking';
 var k='${script.script_key}';
@@ -468,13 +468,13 @@ body:JSON.stringify(d),keepalive:true});
                     </pre>
                     <button
                       onClick={() => copyScript(script.script_key)}
-                      className="absolute top-2 right-2 p-1.5 rounded-md bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+                      className="absolute top-2 right-2 p-1.5 rounded-md bg-surface border border-line hover:bg-muted transition-colors"
                       title="Copy script"
                     >
                       {copiedKey === script.script_key ? (
-                        <CheckIcon size={14} className="text-green-500" />
+                        <CheckIcon size={14} className="text-success" />
                       ) : (
-                        <CopyIcon size={14} className="text-neutral-500" />
+                        <CopyIcon size={14} className="text-fg-secondary" />
                       )}
                     </button>
                   </div>
@@ -489,12 +489,12 @@ body:JSON.stringify(d),keepalive:true});
       {selectedVisitor && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-black/30" onClick={() => setSelectedVisitor(null)} />
-          <div className="relative w-full max-w-lg bg-white dark:bg-neutral-950 border-l border-neutral-200 dark:border-neutral-800 overflow-y-auto">
-            <div className="sticky top-0 z-10 bg-white dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Visitor Details</h3>
+          <div className="relative w-full max-w-lg bg-surface border-l border-line overflow-y-auto">
+            <div className="sticky top-0 z-10 bg-surface border-b border-line px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-fg">Visitor Details</h3>
               <button
                 onClick={() => setSelectedVisitor(null)}
-                className="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500"
+                className="p-1.5 rounded-md hover:bg-muted text-fg-secondary"
               >
                 <XIcon size={18} />
               </button>
@@ -504,48 +504,48 @@ body:JSON.stringify(d),keepalive:true});
               {/* Visitor Info */}
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                    <GlobeIcon size={24} className="text-neutral-500" />
+                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+                    <GlobeIcon size={24} className="text-fg-secondary" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    <h4 className="font-semibold text-fg">
                       {selectedVisitor.company_name || selectedVisitor.ip_address || "Unknown Visitor"}
                     </h4>
                     {selectedVisitor.company_domain && (
-                      <p className="text-sm text-neutral-500">{selectedVisitor.company_domain}</p>
+                      <p className="text-sm text-fg-secondary">{selectedVisitor.company_domain}</p>
                     )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded bg-neutral-50 dark:bg-neutral-900">
-                    <div className="text-xs text-neutral-500 mb-1">Status</div>
+                  <div className="p-3 rounded bg-subtle">
+                    <div className="text-xs text-fg-secondary mb-1">Status</div>
                     <Badge variant={statusVariant(selectedVisitor.status)}>{selectedVisitor.status}</Badge>
                   </div>
-                  <div className="p-3 rounded bg-neutral-50 dark:bg-neutral-900">
-                    <div className="text-xs text-neutral-500 mb-1">Visits</div>
-                    <div className="font-semibold text-neutral-900 dark:text-neutral-100">{selectedVisitor.visit_count}</div>
+                  <div className="p-3 rounded bg-subtle">
+                    <div className="text-xs text-fg-secondary mb-1">Visits</div>
+                    <div className="font-semibold text-fg">{selectedVisitor.visit_count}</div>
                   </div>
-                  <div className="p-3 rounded bg-neutral-50 dark:bg-neutral-900">
-                    <div className="text-xs text-neutral-500 mb-1">Pages Viewed</div>
-                    <div className="font-semibold text-neutral-900 dark:text-neutral-100">{selectedVisitor.page_count}</div>
+                  <div className="p-3 rounded bg-subtle">
+                    <div className="text-xs text-fg-secondary mb-1">Pages Viewed</div>
+                    <div className="font-semibold text-fg">{selectedVisitor.page_count}</div>
                   </div>
-                  <div className="p-3 rounded bg-neutral-50 dark:bg-neutral-900">
-                    <div className="text-xs text-neutral-500 mb-1">Total Duration</div>
-                    <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+                  <div className="p-3 rounded bg-subtle">
+                    <div className="text-xs text-fg-secondary mb-1">Total Duration</div>
+                    <div className="font-semibold text-fg">
                       {selectedVisitor.total_duration > 0 ? `${Math.round(selectedVisitor.total_duration / 60)}m` : "—"}
                     </div>
                   </div>
                 </div>
 
                 {(selectedVisitor.city || selectedVisitor.country) && (
-                  <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                  <div className="flex items-center gap-2 text-sm text-fg-secondary">
                     <MapPinIcon size={16} />
                     {[selectedVisitor.city, selectedVisitor.region, selectedVisitor.country].filter(Boolean).join(", ")}
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                <div className="flex items-center gap-2 text-sm text-fg-secondary">
                   <ClockIcon size={16} />
                   First seen: {new Date(selectedVisitor.first_seen).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                 </div>
@@ -566,21 +566,21 @@ body:JSON.stringify(d),keepalive:true});
 
               {/* Page History */}
               <div>
-                <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-3">Page History</h4>
+                <h4 className="text-sm font-semibold text-fg mb-3">Page History</h4>
                 {visitorVisits.length === 0 ? (
-                  <p className="text-sm text-neutral-500">No page visits recorded yet.</p>
+                  <p className="text-sm text-fg-secondary">No page visits recorded yet.</p>
                 ) : (
                   <div className="space-y-2">
                     {visitorVisits.map((visit) => (
                       <div
                         key={visit.id}
-                        className="p-3 rounded border border-neutral-100 dark:border-neutral-800"
+                        className="p-3 rounded border border-row"
                       >
-                        <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                        <div className="text-sm font-medium text-fg truncate">
                           {visit.page_title || visit.page_url}
                         </div>
-                        <div className="text-xs text-neutral-500 truncate mt-0.5">{visit.page_url}</div>
-                        <div className="flex items-center gap-3 mt-1.5 text-xs text-neutral-400">
+                        <div className="text-xs text-fg-secondary truncate mt-0.5">{visit.page_url}</div>
+                        <div className="flex items-center gap-3 mt-1.5 text-xs text-fg-muted">
                           <span>{new Date(visit.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                           {visit.duration && visit.duration > 0 && <span>{Math.round(visit.duration / 60)}m on page</span>}
                           {visit.referrer && <span className="truncate max-w-[150px]">from {visit.referrer}</span>}
@@ -599,18 +599,18 @@ body:JSON.stringify(d),keepalive:true});
       {showSetup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowSetup(false)} />
-          <div className="relative w-full max-w-md bg-white dark:bg-neutral-950 rounded-2xl border border-neutral-200 dark:border-neutral-800 p-6 shadow-2xl">
+          <div className="relative w-full max-w-md bg-surface rounded-lg border border-line p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Setup Website Tracking</h3>
+              <h3 className="text-lg font-semibold text-fg">Setup Website Tracking</h3>
               <button
                 onClick={() => setShowSetup(false)}
-                className="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500"
+                className="p-1.5 rounded-md hover:bg-muted text-fg-secondary"
               >
                 <XIcon size={18} />
               </button>
             </div>
 
-            <p className="text-sm text-neutral-500 mb-4">
+            <p className="text-sm text-fg-secondary mb-4">
               Add your domain, then copy the tracking script and paste it before the closing {'</body>'} tag on your website.
             </p>
 
@@ -636,16 +636,16 @@ body:JSON.stringify(d),keepalive:true});
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                <CheckIcon size={16} className="text-green-500" />
+              <div className="flex items-center gap-2 text-sm text-fg-secondary">
+                <CheckIcon size={16} className="text-success" />
                 Automatic visitor identification
               </div>
-              <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                <CheckIcon size={16} className="text-green-500" />
+              <div className="flex items-center gap-2 text-sm text-fg-secondary">
+                <CheckIcon size={16} className="text-success" />
                 Page tracking & session recording
               </div>
-              <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                <CheckIcon size={16} className="text-green-500" />
+              <div className="flex items-center gap-2 text-sm text-fg-secondary">
+                <CheckIcon size={16} className="text-success" />
                 Convert visitors to leads instantly
               </div>
             </div>

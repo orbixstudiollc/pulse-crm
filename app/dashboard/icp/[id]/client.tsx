@@ -184,12 +184,12 @@ const weightLabels: Record<keyof ICPWeights, string> = {
 };
 
 const weightColors: Record<keyof ICPWeights, string> = {
-  industry: "bg-blue-500",
-  size: "bg-emerald-500",
-  revenue: "bg-amber-500",
-  title: "bg-violet-500",
-  geography: "bg-rose-500",
-  tech: "bg-cyan-500",
+  industry: "bg-accent-strong",
+  size: "bg-success",
+  revenue: "bg-warning",
+  title: "bg-accent-strong",
+  geography: "bg-danger",
+  tech: "bg-accent-strong",
 };
 
 // ── Edit Modal ────────────────────────────────────────────────────────────────
@@ -282,7 +282,7 @@ function EditProfileModal({
   return (
     <Modal open={open} onClose={onClose} className="max-w-2xl">
       <div className="p-6">
-        <h2 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50 mb-6">
+        <h2 className="text-lg font-semibold text-fg mb-6">
           Edit ICP Profile
         </h2>
 
@@ -304,7 +304,7 @@ function EditProfileModal({
             />
 
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              <label className="block text-sm font-medium text-fg">
                 Color
               </label>
               <div className="flex items-center gap-2">
@@ -314,9 +314,9 @@ function EditProfileModal({
                     type="button"
                     onClick={() => setColor(c)}
                     className={cn(
-                      "h-7 w-7 rounded-full border-2 transition-all",
+                      "h-7 w-7 rounded-full border transition-all",
                       color === c
-                        ? "border-neutral-950 dark:border-neutral-50 scale-110"
+                        ? "border-inverse scale-110"
                         : "border-transparent hover:scale-105",
                     )}
                     style={{ backgroundColor: c }}
@@ -334,7 +334,7 @@ function EditProfileModal({
 
           {/* Firmographic */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-fg">
               Firmographic Criteria
             </h3>
             <TagInput
@@ -344,7 +344,7 @@ function EditProfileModal({
               placeholder="e.g. SaaS, FinTech..."
             />
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              <label className="block text-sm font-medium text-fg">
                 Company Sizes
               </label>
               <div className="flex flex-wrap gap-3">
@@ -374,7 +374,7 @@ function EditProfileModal({
 
           {/* Budget */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-fg">
               Budget Criteria
             </h3>
             <div className="grid grid-cols-2 gap-4">
@@ -405,15 +405,15 @@ function EditProfileModal({
           {/* Weights */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 uppercase tracking-wide">
+              <h3 className="text-sm font-semibold text-fg">
                 Weights
               </h3>
               <span
                 className={cn(
                   "text-xs font-medium px-2 py-0.5 rounded-full",
                   weightsTotal === 100
-                    ? "bg-green-100 dark:bg-green-400/15 text-green-600 dark:text-green-400"
-                    : "bg-amber-100 dark:bg-amber-400/15 text-amber-600 dark:text-amber-400",
+                    ? "bg-success-surface text-success"
+                    : "bg-warning-surface text-warning",
                 )}
               >
                 Total: {weightsTotal}%
@@ -431,10 +431,10 @@ function EditProfileModal({
             ).map(({ key, label }) => (
               <div key={key} className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm text-neutral-600 dark:text-neutral-400">
+                  <label className="text-sm text-fg-secondary">
                     {label}
                   </label>
-                  <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                  <span className="text-sm font-medium text-fg">
                     {weights[key]}%
                   </span>
                 </div>
@@ -444,14 +444,14 @@ function EditProfileModal({
                   max={100}
                   value={weights[key]}
                   onChange={(e) => updateWeight(key, Number(e.target.value))}
-                  className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-full appearance-none cursor-pointer accent-neutral-950 dark:accent-neutral-50"
+                  className="w-full h-1.5 bg-active rounded-full appearance-none cursor-pointer accent-accent"
                 />
               </div>
             ))}
           </div>
         </div>
 
-        <div className="flex gap-3 mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+        <div className="flex gap-3 mt-6 pt-4 border-t border-line">
           <Button variant="outline" className="flex-1" onClick={onClose} disabled={isPending}>
             Cancel
           </Button>
@@ -486,7 +486,7 @@ function CriteriaSection({
 
   return (
     <div className="space-y-3">
-      <h4 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 uppercase tracking-wide">
+      <h4 className="text-sm font-semibold text-fg">
         {title}
       </h4>
       <div className="space-y-2">
@@ -494,7 +494,7 @@ function CriteriaSection({
           (item) =>
             item.values.length > 0 && (
               <div key={item.label} className="flex flex-wrap items-center gap-2">
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 min-w-[80px]">
+                <span className="text-xs text-fg-secondary min-w-[80px]">
                   {item.label}:
                 </span>
                 {item.values.map((v) => (
@@ -538,7 +538,7 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
       <div className="flex flex-col gap-4">
         <Link
           href="/dashboard/icp"
-          className="inline-flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors w-fit"
+          className="inline-flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg transition-colors w-fit"
         >
           <ArrowLeftIcon size={14} />
           Back to ICP Profiles
@@ -572,13 +572,13 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
       </div>
 
       {/* Profile Header Card */}
-      <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
+      <div className="rounded-lg border border-line bg-surface p-4">
         <div className="flex items-center gap-4 mb-4">
           <div
             className="h-4 w-4 rounded-full"
             style={{ backgroundColor: profile.color ?? "#6366f1" }}
           />
-          <h2 className="text-xl font-semibold text-neutral-950 dark:text-neutral-50">
+          <h2 className="text-xl font-semibold text-fg">
             {profile.name}
           </h2>
           {profile.is_primary && (
@@ -588,7 +588,7 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
           )}
         </div>
         {profile.description && (
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+          <p className="text-sm text-fg-secondary">
             {profile.description}
           </p>
         )}
@@ -598,8 +598,8 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Criteria */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-            <h3 className="text-base font-semibold text-neutral-950 dark:text-neutral-50 mb-6">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <h3 className="text-base font-semibold text-fg mb-6">
               Criteria
             </h3>
             <div className="space-y-6">
@@ -676,22 +676,22 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
 
         {/* Right: Weights */}
         <div className="space-y-6">
-          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-            <h3 className="text-base font-semibold text-neutral-950 dark:text-neutral-50 mb-6">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <h3 className="text-base font-semibold text-fg mb-6">
               Weight Distribution
             </h3>
             <div className="space-y-4">
               {(Object.keys(weights) as Array<keyof ICPWeights>).map((key) => (
                 <div key={key} className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                    <span className="text-sm text-fg-secondary">
                       {weightLabels[key]}
                     </span>
-                    <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                    <span className="text-sm font-medium text-fg">
                       {weights[key]}%
                     </span>
                   </div>
-                  <div className="h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div
                       className={cn("h-full rounded-full transition-all", weightColors[key])}
                       style={{ width: `${weights[key]}%` }}
@@ -703,24 +703,24 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
           </div>
 
           {/* Quick Stats */}
-          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-            <h3 className="text-base font-semibold text-neutral-950 dark:text-neutral-50 mb-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <h3 className="text-base font-semibold text-fg mb-4">
               Match Summary
             </h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                <span className="text-sm text-fg-secondary">
                   Total Matched
                 </span>
-                <span className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+                <span className="text-sm font-semibold text-fg">
                   {matchedLeads.length}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                <span className="text-sm text-fg-secondary">
                   Avg Score
                 </span>
-                <span className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+                <span className="text-sm font-semibold text-fg">
                   {matchedLeads.length > 0
                     ? `${Math.round(
                         matchedLeads.reduce(
@@ -732,10 +732,10 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                <span className="text-sm text-fg-secondary">
                   A+ Leads
                 </span>
-                <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                <span className="text-sm font-semibold text-success">
                   {matchedLeads.filter((l) => (l.icp_match_score ?? 0) >= 90).length}
                 </span>
               </div>
@@ -745,9 +745,9 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
       </div>
 
       {/* Matched Leads Table */}
-      <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
-        <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
-          <h3 className="text-base font-semibold text-neutral-950 dark:text-neutral-50">
+      <div className="rounded-lg border border-line bg-surface overflow-hidden">
+        <div className="px-6 py-4 border-b border-line">
+          <h3 className="text-base font-semibold text-fg">
             Matched Leads ({matchedLeads.length})
           </h3>
         </div>
@@ -756,23 +756,23 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-neutral-200 dark:border-neutral-800">
-                  <th className="text-left text-xs font-medium uppercase text-neutral-500 dark:text-neutral-400 px-6 py-3">
+                <tr className="border-b border-line">
+                  <th className="text-left text-xs font-medium text-fg-secondary px-6 py-3">
                     Name
                   </th>
-                  <th className="text-left text-xs font-medium uppercase text-neutral-500 dark:text-neutral-400 px-6 py-3">
+                  <th className="text-left text-xs font-medium text-fg-secondary px-6 py-3">
                     Company
                   </th>
-                  <th className="text-left text-xs font-medium uppercase text-neutral-500 dark:text-neutral-400 px-6 py-3">
+                  <th className="text-left text-xs font-medium text-fg-secondary px-6 py-3">
                     Match Score
                   </th>
-                  <th className="text-left text-xs font-medium uppercase text-neutral-500 dark:text-neutral-400 px-6 py-3">
+                  <th className="text-left text-xs font-medium text-fg-secondary px-6 py-3">
                     Industry
                   </th>
-                  <th className="text-left text-xs font-medium uppercase text-neutral-500 dark:text-neutral-400 px-6 py-3">
+                  <th className="text-left text-xs font-medium text-fg-secondary px-6 py-3">
                     Employees
                   </th>
-                  <th className="text-right text-xs font-medium uppercase text-neutral-500 dark:text-neutral-400 px-6 py-3">
+                  <th className="text-right text-xs font-medium text-fg-secondary px-6 py-3">
                     Value
                   </th>
                 </tr>
@@ -786,36 +786,36 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
                   return (
                     <tr
                       key={lead.id}
-                      className="border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors"
+                      className="border-b border-row hover:bg-muted transition-colors"
                     >
                       <td className="px-6 py-3">
                         <div>
-                          <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                          <p className="text-sm font-medium text-fg">
                             {lead.name}
                           </p>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          <p className="text-xs text-fg-secondary">
                             {lead.email}
                           </p>
                         </div>
                       </td>
-                      <td className="px-6 py-3 text-sm text-neutral-600 dark:text-neutral-400">
+                      <td className="px-6 py-3 text-sm text-fg-secondary">
                         {lead.company || "--"}
                       </td>
                       <td className="px-6 py-3">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+                          <span className="text-sm font-semibold text-fg">
                             {score}%
                           </span>
                           <Badge variant={gradeVariant}>{grade}</Badge>
                         </div>
                       </td>
-                      <td className="px-6 py-3 text-sm text-neutral-600 dark:text-neutral-400">
+                      <td className="px-6 py-3 text-sm text-fg-secondary">
                         {lead.industry || "--"}
                       </td>
-                      <td className="px-6 py-3 text-sm text-neutral-600 dark:text-neutral-400">
+                      <td className="px-6 py-3 text-sm text-fg-secondary">
                         {lead.employees || "--"}
                       </td>
-                      <td className="px-6 py-3 text-right text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                      <td className="px-6 py-3 text-right text-sm font-medium text-fg">
                         {formatCurrency(lead.estimated_value)}
                       </td>
                     </tr>
@@ -826,7 +826,7 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
           </div>
         ) : (
           <div className="py-12 text-center">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            <p className="text-sm text-fg-secondary">
               No leads matched to this profile yet. Run &ldquo;Recalculate Matches&rdquo; to score
               leads against this profile.
             </p>

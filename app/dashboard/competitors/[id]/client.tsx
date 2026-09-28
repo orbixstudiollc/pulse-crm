@@ -95,19 +95,19 @@ function EditableTagSection({
 
   const tagColorClasses: Record<string, string> = {
     green:
-      "border-green-200 dark:border-green-400/30 bg-green-100 dark:bg-green-400/15 text-green-600 dark:text-green-400",
-    red: "border-red-200 dark:border-red-400/30 bg-red-100 dark:bg-red-400/15 text-red-600 dark:text-red-400",
-    blue: "border-blue-200 dark:border-blue-400/30 bg-blue-100 dark:bg-blue-400/15 text-blue-600 dark:text-blue-400",
+      "border-success bg-success-surface text-success",
+    red: "border-danger bg-danger-surface text-danger",
+    blue: "border-accent bg-accent-surface text-accent-on-surface",
     amber:
-      "border-amber-200 dark:border-amber-400/30 bg-amber-100 dark:bg-amber-400/15 text-amber-600 dark:text-amber-400",
+      "border-warning bg-warning-surface text-warning",
     neutral:
-      "border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300",
+      "border-line bg-muted text-fg-secondary",
   };
 
   return (
-    <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 space-y-3">
+    <div className="rounded-lg border border-line bg-surface p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+        <h3 className="text-sm font-semibold text-fg-secondary">
           {title}
         </h3>
         {!editing ? (
@@ -149,7 +149,7 @@ function EditableTagSection({
           </span>
         ))}
         {(editing ? localTags : tags).length === 0 && !editing && (
-          <p className="text-sm text-neutral-400 dark:text-neutral-500 italic">
+          <p className="text-sm text-fg-secondary italic">
             No items added yet
           </p>
         )}
@@ -218,9 +218,9 @@ function EditableListSection({
   };
 
   return (
-    <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 space-y-3">
+    <div className="rounded-lg border border-line bg-surface p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+        <h3 className="text-sm font-semibold text-fg-secondary">
           {title}
         </h3>
         {!editing ? (
@@ -243,17 +243,17 @@ function EditableListSection({
       <ul className="space-y-2">
         {(editing ? localItems : items).map((item, i) => (
           <li key={i} className="flex items-start gap-3 group">
-            <span className="mt-2 text-neutral-400 dark:text-neutral-500 text-xs font-mono">
+            <span className="mt-2 text-fg-muted text-xs font-mono">
               {i + 1}.
             </span>
-            <p className="text-sm text-neutral-700 dark:text-neutral-300 flex-1">
+            <p className="text-sm text-fg flex-1">
               {item}
             </p>
             {editing && (
               <button
                 type="button"
                 onClick={() => removeItem(i)}
-                className="mt-0.5 text-neutral-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                className="mt-0.5 text-fg-muted hover:text-danger transition-colors"
               >
                 <XIcon size={14} />
               </button>
@@ -261,7 +261,7 @@ function EditableListSection({
           </li>
         ))}
         {(editing ? localItems : items).length === 0 && !editing && (
-          <p className="text-sm text-neutral-400 dark:text-neutral-500 italic">
+          <p className="text-sm text-fg-secondary italic">
             No items added yet
           </p>
         )}
@@ -317,9 +317,9 @@ function EditableTextareaSection({
   };
 
   return (
-    <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 space-y-3">
+    <div className="rounded-lg border border-line bg-surface p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+        <h3 className="text-sm font-semibold text-fg-secondary">
           {title}
         </h3>
         {!editing ? (
@@ -346,9 +346,9 @@ function EditableTextareaSection({
           placeholder="Write your positioning statement..."
         />
       ) : (
-        <p className="text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap">
+        <p className="text-sm text-fg whitespace-pre-wrap">
           {value || (
-            <span className="text-neutral-400 dark:text-neutral-500 italic">
+            <span className="text-fg-muted italic">
               No positioning statement yet
             </span>
           )}
@@ -400,29 +400,29 @@ export function CompetitorDetailClient({
   };
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-6">
+    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-6">
       {/* Back link */}
       <Link
         href="/dashboard/competitors"
-        className="inline-flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg transition-colors"
       >
         <ArrowLeftIcon size={16} />
         Back to Competitors
       </Link>
 
       {/* Competitor Header */}
-      <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 space-y-4">
+      <div className="rounded-lg border border-line bg-surface p-4 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-line bg-subtle">
               <ShieldIcon
                 size={24}
-                className="text-neutral-950 dark:text-neutral-50"
+                className="text-fg"
               />
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-[28px] leading-[36px] tracking-[-0.56px] font-serif text-neutral-950 dark:text-neutral-50">
+                <h1 className="text-xl font-semibold text-fg">
                   {competitor.name}
                 </h1>
                 <Badge
@@ -443,7 +443,7 @@ export function CompetitorDetailClient({
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors mt-1"
+                  className="inline-flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg transition-colors mt-1"
                 >
                   <GlobeIcon size={14} />
                   {competitor.website}
@@ -455,7 +455,7 @@ export function CompetitorDetailClient({
 
         {/* Description */}
         {competitor.description && (
-          <p className="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed max-w-3xl">
+          <p className="text-sm text-fg-secondary leading-relaxed max-w-3xl">
             {competitor.description}
           </p>
         )}
@@ -463,7 +463,7 @@ export function CompetitorDetailClient({
 
       {/* Battle Card Sections */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+        <h2 className="text-lg font-semibold text-fg">
           Battle Card
         </h2>
 

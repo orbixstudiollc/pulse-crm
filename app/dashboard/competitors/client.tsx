@@ -227,7 +227,7 @@ export function CompetitorsPageClient({
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
+    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
       {/* Header */}
       <PageHeader title="Competitors">
         <Button
@@ -246,7 +246,7 @@ export function CompetitorsPageClient({
           icon={
             <ShieldIcon
               size={24}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
@@ -256,7 +256,7 @@ export function CompetitorsPageClient({
           icon={
             <ShieldIcon
               size={24}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
@@ -266,14 +266,14 @@ export function CompetitorsPageClient({
           icon={
             <ShieldIcon
               size={24}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
       </div>
 
       {/* Category Tabs */}
-      <div className="flex items-center gap-1 p-1 rounded bg-neutral-100 dark:bg-neutral-900 w-fit">
+      <div className="flex items-center gap-1 p-1 rounded bg-muted w-fit">
         {categoryTabs.map((tab) => (
           <button
             key={tab.value}
@@ -281,8 +281,8 @@ export function CompetitorsPageClient({
             className={cn(
               "px-4 py-2 text-sm font-medium rounded whitespace-nowrap transition-colors",
               activeTab === tab.value
-                ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
-                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                ? "bg-inverse text-on-inverse"
+                : "text-fg-secondary hover:text-fg hover:bg-muted"
             )}
           >
             {tab.label}
@@ -296,12 +296,12 @@ export function CompetitorsPageClient({
           {filteredCompetitors.map((competitor) => (
             <div
               key={competitor.id}
-              className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 flex flex-col gap-4"
+              className="rounded-lg border border-line bg-surface p-4 flex flex-col gap-4"
             >
               {/* Card Header */}
               <div className="flex items-start justify-between">
                 <div className="space-y-1.5 min-w-0">
-                  <h3 className="text-base font-semibold text-neutral-950 dark:text-neutral-50 truncate">
+                  <h3 className="text-base font-semibold text-fg truncate">
                     {competitor.name}
                   </h3>
                   {competitor.website && (
@@ -313,7 +313,7 @@ export function CompetitorsPageClient({
                       }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors truncate"
+                      className="flex items-center gap-1.5 text-xs text-fg-secondary hover:text-fg transition-colors truncate"
                     >
                       <GlobeIcon size={14} />
                       <span className="truncate">{competitor.website}</span>
@@ -373,14 +373,14 @@ export function CompetitorsPageClient({
               {/* Strengths */}
               {competitor.strengths && competitor.strengths.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-medium uppercase text-neutral-500 dark:text-neutral-400">
+                  <p className="text-xs font-medium text-fg-secondary">
                     Strengths
                   </p>
                   <ul className="space-y-1">
                     {competitor.strengths.slice(0, 3).map((s, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm">
-                        <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
-                        <span className="text-neutral-600 dark:text-neutral-300">
+                        <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-success shrink-0" />
+                        <span className="text-fg-secondary">
                           {s}
                         </span>
                       </li>
@@ -392,14 +392,14 @@ export function CompetitorsPageClient({
               {/* Weaknesses */}
               {competitor.weaknesses && competitor.weaknesses.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-medium uppercase text-neutral-500 dark:text-neutral-400">
+                  <p className="text-xs font-medium text-fg-secondary">
                     Weaknesses
                   </p>
                   <ul className="space-y-1">
                     {competitor.weaknesses.slice(0, 3).map((w, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm">
-                        <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" />
-                        <span className="text-neutral-600 dark:text-neutral-300">
+                        <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-danger shrink-0" />
+                        <span className="text-fg-secondary">
                           {w}
                         </span>
                       </li>
@@ -409,10 +409,10 @@ export function CompetitorsPageClient({
               )}
 
               {/* Card Footer */}
-              <div className="mt-auto pt-3 border-t border-neutral-200 dark:border-neutral-800">
+              <div className="mt-auto pt-3 border-t border-line">
                 <Link
                   href={`/dashboard/competitors/${competitor.id}`}
-                  className="text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:underline"
+                  className="text-sm font-medium text-fg hover:underline"
                 >
                   View Battle Card &rarr;
                 </Link>
@@ -421,7 +421,7 @@ export function CompetitorsPageClient({
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
+        <div className="rounded-lg border border-line bg-surface">
           <EmptyState
             icon={<ShieldIcon size={24} />}
             title={
@@ -447,16 +447,16 @@ export function CompetitorsPageClient({
         <div className="p-6 space-y-5">
           {/* Modal Header */}
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+            <h2 className="text-lg font-semibold text-fg">
               {editingCompetitor ? "Edit Competitor" : "Add Competitor"}
             </h2>
             <button
               onClick={closeModal}
-              className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="p-1 rounded hover:bg-muted transition-colors"
             >
               <XIcon
                 size={20}
-                className="text-neutral-500 dark:text-neutral-400"
+                className="text-fg-secondary"
               />
             </button>
           </div>
@@ -501,20 +501,20 @@ export function CompetitorsPageClient({
 
             {/* Strengths tag input */}
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              <label className="block text-sm font-medium text-fg">
                 Strengths
               </label>
               <div className="flex flex-wrap gap-2 mb-2">
                 {formStrengths.map((tag, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center gap-1 rounded-full border border-green-200 dark:border-green-400/30 bg-green-100 dark:bg-green-400/15 text-green-600 dark:text-green-400 px-2.5 py-1 text-xs font-medium"
+                    className="inline-flex items-center gap-1 rounded-full border border-success bg-success-surface text-success px-2.5 py-1 text-xs font-medium"
                   >
                     {tag}
                     <button
                       type="button"
                       onClick={() => removeStrength(i)}
-                      className="hover:text-green-800 dark:hover:text-green-200"
+                      className="hover:text-success"
                     >
                       <XIcon size={12} />
                     </button>
@@ -545,20 +545,20 @@ export function CompetitorsPageClient({
 
             {/* Weaknesses tag input */}
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              <label className="block text-sm font-medium text-fg">
                 Weaknesses
               </label>
               <div className="flex flex-wrap gap-2 mb-2">
                 {formWeaknesses.map((tag, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center gap-1 rounded-full border border-red-200 dark:border-red-400/30 bg-red-100 dark:bg-red-400/15 text-red-600 dark:text-red-400 px-2.5 py-1 text-xs font-medium"
+                    className="inline-flex items-center gap-1 rounded-full border border-danger bg-danger-surface text-danger px-2.5 py-1 text-xs font-medium"
                   >
                     {tag}
                     <button
                       type="button"
                       onClick={() => removeWeakness(i)}
-                      className="hover:text-red-800 dark:hover:text-red-200"
+                      className="hover:text-danger"
                     >
                       <XIcon size={12} />
                     </button>

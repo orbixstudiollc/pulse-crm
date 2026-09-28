@@ -311,7 +311,7 @@ function ICPProfileModal({
     <Modal open={open} onClose={onClose} className="max-w-2xl">
       <div className="p-6">
         {/* Header */}
-        <h2 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50 mb-6">
+        <h2 className="text-lg font-semibold text-fg mb-6">
           {editProfile ? "Edit ICP Profile" : "Create ICP Profile"}
         </h2>
 
@@ -334,7 +334,7 @@ function ICPProfileModal({
 
             {/* Color Picker */}
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              <label className="block text-sm font-medium text-fg">
                 Color
               </label>
               <div className="flex items-center gap-2">
@@ -344,9 +344,9 @@ function ICPProfileModal({
                     type="button"
                     onClick={() => setColor(c)}
                     className={cn(
-                      "h-7 w-7 rounded-full border-2 transition-all",
+                      "h-7 w-7 rounded-full border transition-all",
                       color === c
-                        ? "border-neutral-950 dark:border-neutral-50 scale-110"
+                        ? "border-inverse scale-110"
                         : "border-transparent hover:scale-105",
                     )}
                     style={{ backgroundColor: c }}
@@ -364,7 +364,7 @@ function ICPProfileModal({
 
           {/* Firmographic Criteria */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-fg">
               Firmographic Criteria
             </h3>
             <TagInput
@@ -374,7 +374,7 @@ function ICPProfileModal({
               placeholder="e.g. SaaS, FinTech..."
             />
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              <label className="block text-sm font-medium text-fg">
                 Company Sizes
               </label>
               <div className="flex flex-wrap gap-3">
@@ -404,7 +404,7 @@ function ICPProfileModal({
 
           {/* Budget Criteria */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-fg">
               Budget Criteria
             </h3>
             <div className="grid grid-cols-2 gap-4">
@@ -435,15 +435,15 @@ function ICPProfileModal({
           {/* Weights */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 uppercase tracking-wide">
+              <h3 className="text-sm font-semibold text-fg">
                 Weights
               </h3>
               <span
                 className={cn(
                   "text-xs font-medium px-2 py-0.5 rounded-full",
                   weightsTotal === 100
-                    ? "bg-green-100 dark:bg-green-400/15 text-green-600 dark:text-green-400"
-                    : "bg-amber-100 dark:bg-amber-400/15 text-amber-600 dark:text-amber-400",
+                    ? "bg-success-surface text-success"
+                    : "bg-warning-surface text-warning",
                 )}
               >
                 Total: {weightsTotal}%
@@ -461,10 +461,10 @@ function ICPProfileModal({
             ).map(({ key, label }) => (
               <div key={key} className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm text-neutral-600 dark:text-neutral-400">
+                  <label className="text-sm text-fg-secondary">
                     {label}
                   </label>
-                  <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                  <span className="text-sm font-medium text-fg">
                     {weights[key]}%
                   </span>
                 </div>
@@ -474,7 +474,7 @@ function ICPProfileModal({
                   max={100}
                   value={weights[key]}
                   onChange={(e) => updateWeight(key, Number(e.target.value))}
-                  className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-full appearance-none cursor-pointer accent-neutral-950 dark:accent-neutral-50"
+                  className="w-full h-1.5 bg-active rounded-full appearance-none cursor-pointer accent-accent"
                 />
               </div>
             ))}
@@ -482,7 +482,7 @@ function ICPProfileModal({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+        <div className="flex gap-3 mt-6 pt-4 border-t border-line">
           <Button variant="outline" className="flex-1" onClick={onClose} disabled={isPending}>
             Cancel
           </Button>
@@ -519,7 +519,7 @@ function ICPProfileCard({
   const { count, avgScore } = getDistributionForProfile(insights, profile.name);
 
   return (
-    <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
+    <div className="rounded-lg border border-line bg-surface overflow-hidden">
       {/* Header */}
       <div className="p-5">
         <div className="flex items-start justify-between mb-3">
@@ -528,7 +528,7 @@ function ICPProfileCard({
               className="h-3 w-3 rounded-full shrink-0"
               style={{ backgroundColor: profile.color ?? "#6366f1" }}
             />
-            <h3 className="text-base font-semibold text-neutral-950 dark:text-neutral-50">
+            <h3 className="text-base font-semibold text-fg">
               {profile.name}
             </h3>
             {profile.is_primary && (
@@ -539,19 +539,19 @@ function ICPProfileCard({
           </div>
           <div className="flex items-center gap-1">
             <Link href={`/dashboard/icp/${profile.id}`}>
-              <button className="p-1.5 rounded text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+              <button className="p-1.5 rounded text-fg-muted hover:text-fg hover:bg-muted transition-colors">
                 <EyeIcon size={16} />
               </button>
             </Link>
             <button
               onClick={onEdit}
-              className="p-1.5 rounded text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="p-1.5 rounded text-fg-muted hover:text-fg hover:bg-muted transition-colors"
             >
               <PencilSimpleIcon size={16} />
             </button>
             <button
               onClick={onDelete}
-              className="p-1.5 rounded text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+              className="p-1.5 rounded text-fg-muted hover:text-danger hover:bg-danger-surface transition-colors"
             >
               <TrashIcon size={16} />
             </button>
@@ -559,7 +559,7 @@ function ICPProfileCard({
         </div>
 
         {profile.description && (
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4 line-clamp-2">
+          <p className="text-sm text-fg-secondary mb-4 line-clamp-2">
             {profile.description}
           </p>
         )}
@@ -568,7 +568,7 @@ function ICPProfileCard({
         <div className="space-y-2">
           {criteria.firmographic.industries.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
-              <span className="text-xs text-neutral-500 dark:text-neutral-400 mr-1">
+              <span className="text-xs text-fg-secondary mr-1">
                 Industries:
               </span>
               {criteria.firmographic.industries.slice(0, 3).map((ind) => (
@@ -585,7 +585,7 @@ function ICPProfileCard({
           )}
           {criteria.firmographic.company_sizes.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
-              <span className="text-xs text-neutral-500 dark:text-neutral-400 mr-1">
+              <span className="text-xs text-fg-secondary mr-1">
                 Size:
               </span>
               {criteria.firmographic.company_sizes.map((s) => (
@@ -597,7 +597,7 @@ function ICPProfileCard({
           )}
           {criteria.firmographic.geography.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
-              <span className="text-xs text-neutral-500 dark:text-neutral-400 mr-1">
+              <span className="text-xs text-fg-secondary mr-1">
                 Geo:
               </span>
               {criteria.firmographic.geography.slice(0, 3).map((g) => (
@@ -616,15 +616,15 @@ function ICPProfileCard({
       </div>
 
       {/* Footer stats */}
-      <div className="border-t border-neutral-200 dark:border-neutral-800 px-5 py-3 flex items-center justify-between">
+      <div className="border-t border-line px-5 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Matched Leads</p>
-            <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">{count}</p>
+            <p className="text-xs text-fg-secondary">Matched Leads</p>
+            <p className="text-sm font-semibold text-fg">{count}</p>
           </div>
           <div>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Avg Score</p>
-            <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+            <p className="text-xs text-fg-secondary">Avg Score</p>
+            <p className="text-sm font-semibold text-fg">
               {avgScore > 0 ? `${avgScore}%` : "--"}
             </p>
           </div>
@@ -683,25 +683,25 @@ function SalesCycleDropdown({
 
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+      <label className="block text-sm font-medium text-fg">
         Typical sales cycle length
       </label>
       <div ref={ref} className="relative">
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="flex w-full items-center justify-between rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-neutral-50"
+          className="flex w-full items-center justify-between rounded-lg border border-line bg-surface px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-line"
         >
-          <span className={selected?.value ? "text-neutral-950 dark:text-neutral-50" : "text-neutral-400 dark:text-neutral-500"}>
+          <span className={selected?.value ? "text-fg" : "text-fg-muted"}>
             {selected?.label || "Select..."}
           </span>
           <CaretDownIcon
             size={14}
-            className={`text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
+            className={`text-fg-secondary transition-transform ${open ? "rotate-180" : ""}`}
           />
         </button>
         {open && (
-          <ul className="absolute z-50 mt-1 w-full overflow-auto rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 py-1 shadow-lg max-h-60">
+          <ul className="absolute z-50 mt-1 w-full overflow-auto rounded-lg border border-line bg-surface py-1 shadow-dropdown max-h-60">
             {salesCycleOptions
               .filter((o) => o.value !== "")
               .map((opt) => (
@@ -713,8 +713,8 @@ function SalesCycleDropdown({
                   }}
                   className={`cursor-pointer px-3 py-2 text-sm transition-colors ${
                     opt.value === value
-                      ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 font-medium"
-                      : "text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-900"
+                      ? "bg-muted text-fg font-medium"
+                      : "text-fg hover:bg-muted"
                   }`}
                 >
                   {opt.label}
@@ -870,10 +870,10 @@ function ICPWizardModal({
       <div className="p-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 rounded-xl bg-neutral-100 dark:bg-neutral-800">
-            <SparkleIcon size={20} className="text-neutral-600 dark:text-neutral-400" />
+          <div className="p-2 rounded-xl bg-muted">
+            <SparkleIcon size={20} className="text-fg-secondary" />
           </div>
-          <h2 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+          <h2 className="text-lg font-semibold text-fg">
             Create ICP with AI
           </h2>
         </div>
@@ -886,14 +886,14 @@ function ICPWizardModal({
                 className={cn(
                   "h-1.5 rounded-full flex-1 transition-colors",
                   i + 1 <= step
-                    ? "bg-neutral-950 dark:bg-neutral-50"
-                    : "bg-neutral-200 dark:bg-neutral-800",
+                    ? "bg-inverse"
+                    : "bg-active",
                 )}
               />
             </div>
           ))}
         </div>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-5">
+        <p className="text-sm text-fg-secondary mb-5">
           Step {step} of 5: {WIZARD_STEPS[step - 1]}
         </p>
 
@@ -937,7 +937,7 @@ function ICPWizardModal({
                 placeholder="e.g. SaaS, FinTech, Healthcare..."
               />
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <label className="block text-sm font-medium text-fg">
                   What company sizes do you typically sell to?
                 </label>
                 <div className="flex flex-wrap gap-3">
@@ -989,14 +989,14 @@ function ICPWizardModal({
           {/* Step 4: Deal Patterns */}
           {step === 4 && (
             <>
-              <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 p-4">
+              <div className="rounded-lg border border-line bg-subtle p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <SparkleIcon size={16} className="text-neutral-600 dark:text-neutral-400" />
-                  <p className="text-sm font-medium text-neutral-950 dark:text-neutral-200">
+                  <SparkleIcon size={16} className="text-fg-secondary" />
+                  <p className="text-sm font-medium text-fg">
                     AI Data Analysis
                   </p>
                 </div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                <p className="text-sm text-fg-secondary">
                   AI will automatically analyze your won deals and customer data to enrich the ICP profile with real patterns from your sales history.
                 </p>
               </div>
@@ -1015,16 +1015,16 @@ function ICPWizardModal({
             <>
               {isGenerating && (
                 <div className="flex flex-col items-center justify-center py-12 gap-4">
-                  <CircleNotchIcon size={32} className="animate-spin text-neutral-500" />
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  <CircleNotchIcon size={32} className="animate-spin text-fg-secondary" />
+                  <p className="text-sm text-fg-secondary">
                     Analyzing your answers and deal history...
                   </p>
                 </div>
               )}
 
               {generationError && !isGenerating && (
-                <div className="rounded-xl border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-950/30 p-4">
-                  <p className="text-sm text-red-700 dark:text-red-300">{generationError}</p>
+                <div className="rounded-lg border border-danger bg-danger-surface p-4">
+                  <p className="text-sm text-danger">{generationError}</p>
                   <Button
                     variant="outline"
                     size="sm"
@@ -1039,14 +1039,14 @@ function ICPWizardModal({
               {generatedProfile && !isGenerating && (
                 <div className="space-y-5">
                   {/* AI Reasoning */}
-                  <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 p-4">
+                  <div className="rounded-lg border border-line bg-subtle p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <SparkleIcon size={16} className="text-neutral-600 dark:text-neutral-400" />
-                      <p className="text-sm font-medium text-neutral-950 dark:text-neutral-200">
+                      <SparkleIcon size={16} className="text-fg-secondary" />
+                      <p className="text-sm font-medium text-fg">
                         AI Reasoning
                       </p>
                     </div>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    <p className="text-sm text-fg-secondary">
                       {generatedProfile.reasoning}
                     </p>
                   </div>
@@ -1073,9 +1073,9 @@ function ICPWizardModal({
                           type="button"
                           onClick={() => setEditColor(c)}
                           className={cn(
-                            "h-6 w-6 rounded-full border-2 transition-all",
+                            "h-6 w-6 rounded-full border transition-all",
                             editColor === c
-                              ? "border-neutral-950 dark:border-neutral-50 scale-110"
+                              ? "border-inverse scale-110"
                               : "border-transparent hover:scale-105",
                           )}
                           style={{ backgroundColor: c }}
@@ -1096,7 +1096,7 @@ function ICPWizardModal({
                     onChange={setEditIndustries}
                   />
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                    <label className="block text-sm font-medium text-fg">
                       Company Sizes
                     </label>
                     <div className="flex flex-wrap gap-3">
@@ -1125,15 +1125,15 @@ function ICPWizardModal({
                   {/* Weights */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 uppercase tracking-wide">
+                      <h3 className="text-sm font-semibold text-fg">
                         Weights
                       </h3>
                       <span
                         className={cn(
                           "text-xs font-medium px-2 py-0.5 rounded-full",
                           editWeightsTotal === 100
-                            ? "bg-green-100 dark:bg-green-400/15 text-green-600 dark:text-green-400"
-                            : "bg-amber-100 dark:bg-amber-400/15 text-amber-600 dark:text-amber-400",
+                            ? "bg-success-surface text-success"
+                            : "bg-warning-surface text-warning",
                         )}
                       >
                         Total: {editWeightsTotal}%
@@ -1151,10 +1151,10 @@ function ICPWizardModal({
                     ).map(({ key, label }) => (
                       <div key={key} className="space-y-1">
                         <div className="flex items-center justify-between">
-                          <label className="text-sm text-neutral-600 dark:text-neutral-400">
+                          <label className="text-sm text-fg-secondary">
                             {label}
                           </label>
-                          <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                          <span className="text-sm font-medium text-fg">
                             {editWeights[key]}%
                           </span>
                         </div>
@@ -1166,7 +1166,7 @@ function ICPWizardModal({
                           onChange={(e) =>
                             setEditWeights((prev) => ({ ...prev, [key]: Number(e.target.value) }))
                           }
-                          className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-full appearance-none cursor-pointer accent-neutral-950 dark:accent-neutral-50"
+                          className="w-full h-1.5 bg-active rounded-full appearance-none cursor-pointer accent-accent"
                         />
                       </div>
                     ))}
@@ -1175,15 +1175,15 @@ function ICPWizardModal({
                   {/* Buyer Personas Preview */}
                   {generatedProfile.buyer_personas.length > 0 && (
                     <div className="space-y-2">
-                      <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 uppercase tracking-wide">
+                      <h3 className="text-sm font-semibold text-fg">
                         Buyer Personas
                       </h3>
                       {generatedProfile.buyer_personas.map((persona, i) => (
                         <div
                           key={i}
-                          className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-3"
+                          className="rounded-lg border border-line p-3"
                         >
-                          <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-1">
+                          <p className="text-sm font-medium text-fg mb-1">
                             {persona.role}
                           </p>
                           <div className="flex flex-wrap gap-1.5">
@@ -1205,7 +1205,7 @@ function ICPWizardModal({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+        <div className="flex gap-3 mt-6 pt-4 border-t border-line">
           {step === 1 ? (
             <Button variant="outline" className="flex-1" onClick={onClose}>
               Cancel
@@ -1312,7 +1312,7 @@ export function ICPClient({ profiles, insights }: ICPClientProps) {
   };
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-8">
+    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-8">
       {/* Page Header */}
       <PageHeader title="Ideal Customer Profiles">
         <Button
@@ -1356,7 +1356,7 @@ export function ICPClient({ profiles, insights }: ICPClientProps) {
             icon={
               <CrosshairIcon
                 size={24}
-                className="text-neutral-500 dark:text-neutral-400"
+                className="text-fg-secondary"
               />
             }
           />
@@ -1366,7 +1366,7 @@ export function ICPClient({ profiles, insights }: ICPClientProps) {
             icon={
               <CrosshairIcon
                 size={24}
-                className="text-neutral-500 dark:text-neutral-400"
+                className="text-fg-secondary"
               />
             }
             change={
@@ -1386,7 +1386,7 @@ export function ICPClient({ profiles, insights }: ICPClientProps) {
             icon={
               <CrosshairIcon
                 size={24}
-                className="text-neutral-500 dark:text-neutral-400"
+                className="text-fg-secondary"
               />
             }
           />

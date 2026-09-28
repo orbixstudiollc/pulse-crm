@@ -49,20 +49,20 @@ type ApifyRun = Database["public"]["Tables"]["apify_scraper_runs"]["Row"];
 type SourceTab = "all" | "google_places" | "instagram" | "linkedin" | "leads_finder";
 
 const SOURCE_TABS: { id: SourceTab; label: string; color: string }[] = [
-  { id: "all", label: "All Leads", color: "text-neutral-600 dark:text-neutral-400" },
-  { id: "google_places", label: "Google Maps", color: "text-green-600 dark:text-green-400" },
-  { id: "instagram", label: "Instagram", color: "text-pink-600 dark:text-pink-400" },
-  { id: "linkedin", label: "LinkedIn", color: "text-blue-600 dark:text-blue-400" },
-  { id: "leads_finder", label: "Leads Finder", color: "text-indigo-600 dark:text-indigo-400" },
+  { id: "all", label: "All Leads", color: "text-fg-secondary" },
+  { id: "google_places", label: "Google Maps", color: "text-success" },
+  { id: "instagram", label: "Instagram", color: "text-danger" },
+  { id: "linkedin", label: "LinkedIn", color: "text-accent-strong" },
+  { id: "leads_finder", label: "Leads Finder", color: "text-accent-strong" },
 ];
 
 const SOURCE_BADGE_STYLES: Record<string, string> = {
-  google_places: "border-green-200 dark:border-green-400/30 bg-green-100 text-green-700 dark:bg-green-400/15 dark:text-green-400",
-  instagram: "border-pink-200 dark:border-pink-400/30 bg-pink-100 text-pink-700 dark:bg-pink-400/15 dark:text-pink-400",
-  linkedin: "border-blue-200 dark:border-blue-400/30 bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-400",
-  leads_finder: "border-indigo-200 dark:border-indigo-400/30 bg-indigo-100 text-indigo-700 dark:bg-indigo-400/15 dark:text-indigo-400",
-  csv_upload: "border-neutral-200 dark:border-neutral-700 bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
-  search: "border-neutral-200 dark:border-neutral-700 bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400",
+  google_places: "border-success bg-success-surface text-success",
+  instagram: "border-danger bg-danger-surface text-danger",
+  linkedin: "border-accent bg-accent-surface text-accent-on-surface",
+  leads_finder: "border-accent bg-accent-surface text-accent-on-surface",
+  csv_upload: "border-line bg-muted text-fg-secondary",
+  search: "border-line bg-muted text-fg-secondary",
 };
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -176,13 +176,13 @@ function CSVUploadModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/40 dark:bg-black/60" onClick={onClose} />
-      <div className="relative bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+      <div className="fixed inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-surface border border-line rounded-lg p-4 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+          <h3 className="text-lg font-semibold text-fg">
             {step === "upload" ? "Upload CSV" : "Map Columns"}
           </h3>
-          <button onClick={onClose} className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"><XIcon className="w-5 h-5" /></button>
+          <button onClick={onClose} className="text-fg-secondary hover:text-fg"><XIcon className="w-5 h-5" /></button>
         </div>
 
         {step === "upload" && (
@@ -190,11 +190,11 @@ function CSVUploadModal({
             onClick={() => fileRef.current?.click()}
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-            className="border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl p-12 text-center cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-600 transition-colors"
+            className="border border-dashed border-line rounded-lg p-12 text-center cursor-pointer hover:border-fg-muted transition-colors"
           >
-            <UploadIcon className="w-10 h-10 text-neutral-400 dark:text-neutral-500 mx-auto mb-3" />
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">Drag & drop a CSV file here, or click to browse</p>
-            <p className="text-xs text-neutral-400 dark:text-neutral-500">Supports .csv files with headers</p>
+            <UploadIcon className="w-10 h-10 text-fg-muted mx-auto mb-3" />
+            <p className="text-sm text-fg-secondary mb-1">Drag & drop a CSV file here, or click to browse</p>
+            <p className="text-xs text-fg-muted">Supports .csv files with headers</p>
             <input ref={fileRef} type="file" accept=".csv" className="hidden"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
           </div>
@@ -202,21 +202,21 @@ function CSVUploadModal({
 
         {step === "map" && (
           <div>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">Map your CSV columns to lead fields. Found {csvRows.length} rows.</p>
+            <p className="text-sm text-fg-secondary mb-4">Map your CSV columns to lead fields. Found {csvRows.length} rows.</p>
             <div className="space-y-3 mb-6">
               {CSV_FIELDS.map((field) => (
                 <div key={field.key} className="flex items-center gap-3">
-                  <span className="text-sm text-neutral-700 dark:text-neutral-300 w-32">{field.label}</span>
+                  <span className="text-sm text-fg w-32">{field.label}</span>
                   <select value={mapping[field.key] ?? ""} onChange={(e) => setMapping((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                    className="flex-1 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none">
+                    className="flex-1 px-3 py-1.5 bg-muted border border-line rounded text-sm text-fg focus:outline-none">
                     <option value="">— Skip —</option>
                     {csvHeaders.map((h) => <option key={h} value={h}>{h}</option>)}
                   </select>
                 </div>
               ))}
             </div>
-            <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-4 mb-4">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">Preview (first 3 rows):</p>
+            <div className="bg-muted rounded p-4 mb-4">
+              <p className="text-xs text-fg-secondary mb-2">Preview (first 3 rows):</p>
               <div className="space-y-2">
                 {csvRows.slice(0, 3).map((row, i) => {
                   const mapped = CSV_FIELDS.reduce((acc, f) => {
@@ -224,14 +224,14 @@ function CSVUploadModal({
                     if (header) { const idx = csvHeaders.indexOf(header); if (idx >= 0 && row[idx]) acc[f.label] = row[idx]; }
                     return acc;
                   }, {} as Record<string, string>);
-                  return <div key={i} className="text-xs text-neutral-700 dark:text-neutral-300">{Object.entries(mapped).map(([k, v]) => `${k}: ${v}`).join(" | ") || "No fields mapped"}</div>;
+                  return <div key={i} className="text-xs text-fg">{Object.entries(mapped).map(([k, v]) => `${k}: ${v}`).join(" | ") || "No fields mapped"}</div>;
                 })}
               </div>
             </div>
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setStep("upload")} className="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50">Back</button>
+              <button onClick={() => setStep("upload")} className="px-4 py-2 text-sm text-fg-secondary hover:text-fg">Back</button>
               <button onClick={handleImport} disabled={isPending || Object.values(mapping).filter(Boolean).length === 0}
-                className="px-4 py-2 text-sm bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 rounded disabled:opacity-50">
+                className="px-4 py-2 text-sm bg-inverse hover:bg-inverse text-on-inverse rounded disabled:opacity-50">
                 {isPending ? "Importing..." : `Import ${csvRows.length} Rows`}
               </button>
             </div>
@@ -254,15 +254,15 @@ function SaveSearchModal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/40 dark:bg-black/60" onClick={onClose} />
-      <div className="relative bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-md w-full mx-4">
-        <h3 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50 mb-4">Save Search</h3>
+      <div className="fixed inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-surface border border-line rounded-lg p-4 max-w-md w-full mx-4">
+        <h3 className="text-lg font-semibold text-fg mb-4">Save Search</h3>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Search name..."
-          className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600 mb-4" />
+          className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent mb-4" />
         <div className="flex gap-3 justify-end">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-fg-secondary hover:text-fg">Cancel</button>
           <button onClick={() => { if (!name.trim()) return; startTransition(async () => { await saveSearch(name.trim(), filters, resultCount); toast.success("Search saved"); setName(""); onClose(); onSaved(); }); }} disabled={isPending}
-            className="px-4 py-2 text-sm bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 rounded disabled:opacity-50">
+            className="px-4 py-2 text-sm bg-inverse hover:bg-inverse text-on-inverse rounded disabled:opacity-50">
             {isPending ? "Saving..." : "Save"}
           </button>
         </div>
@@ -273,7 +273,7 @@ function SaveSearchModal({
 
 // ── Source-specific Filter Panels ────────────────────────────────────────────
 
-const inputClass = "w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600";
+const inputClass = "w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent";
 
 function GoogleMapsPanel({
   onScrape, isPending, icpLoading, onAlignICP,
@@ -298,25 +298,25 @@ function GoogleMapsPanel({
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Search Terms</label>
+        <label className="block text-xs text-fg-secondary mb-1">Search Terms</label>
         <input value={searchTerms} onChange={(e) => setSearchTerms(e.target.value)} placeholder="e.g. SaaS companies, restaurants" className={inputClass} />
       </div>
       <div>
-        <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Location</label>
+        <label className="block text-xs text-fg-secondary mb-1">Location</label>
         <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. New York, USA" className={inputClass} />
       </div>
       <div>
-        <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Max Results</label>
+        <label className="block text-xs text-fg-secondary mb-1">Max Results</label>
         <input value={maxResults} onChange={(e) => setMaxResults(e.target.value)} type="number" placeholder="20" className={inputClass} />
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={handleAlignICP} disabled={icpLoading} className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-neutral-200 dark:border-neutral-800 rounded text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50">
+        <button onClick={handleAlignICP} disabled={icpLoading} className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-line rounded text-fg-secondary hover:bg-muted disabled:opacity-50">
           {icpLoading ? <CircleNotchIcon className="w-3 h-3 animate-spin" /> : <SparkleIcon className="w-3 h-3" />} Align with ICP
         </button>
-        {icpAligned && <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-400/15 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-400/30">ICP Aligned</span>}
+        {icpAligned && <span className="text-xs px-2 py-0.5 rounded bg-accent-surface text-accent-on-surface border border-accent">ICP Aligned</span>}
       </div>
       <button onClick={() => onScrape({ searchTerms, location, maxResults: parseInt(maxResults) || 20 })} disabled={isPending || !searchTerms}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded disabled:opacity-50">
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm font-medium rounded disabled:opacity-50">
         {isPending ? <><CircleNotchIcon className="w-4 h-4 animate-spin" /> Starting...</> : <><GlobeIcon className="w-4 h-4" /> Start Scrape</>}
       </button>
     </div>
@@ -338,28 +338,28 @@ function InstagramPanel({
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-1 p-0.5 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
-        <button onClick={() => setMode("usernames")} className={`flex-1 text-xs py-1.5 rounded-md font-medium transition-colors ${mode === "usernames" ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-sm" : "text-neutral-500 dark:text-neutral-400"}`}>
+      <div className="flex gap-1 p-0.5 bg-muted rounded-lg">
+        <button onClick={() => setMode("usernames")} className={`flex-1 text-xs py-1.5 rounded-md font-medium transition-colors ${mode === "usernames" ? "bg-surface text-fg" : "text-fg-secondary"}`}>
           By Username
         </button>
-        <button onClick={() => setMode("search")} className={`flex-1 text-xs py-1.5 rounded-md font-medium transition-colors ${mode === "search" ? "bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-sm" : "text-neutral-500 dark:text-neutral-400"}`}>
+        <button onClick={() => setMode("search")} className={`flex-1 text-xs py-1.5 rounded-md font-medium transition-colors ${mode === "search" ? "bg-surface text-fg" : "text-fg-secondary"}`}>
           Search
         </button>
       </div>
       {mode === "usernames" ? (
         <div>
-          <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Usernames or URLs (one per line)</label>
+          <label className="block text-xs text-fg-secondary mb-1">Usernames or URLs (one per line)</label>
           <textarea value={usernames} onChange={(e) => setUsernames(e.target.value)} placeholder={"@username1\nhttps://instagram.com/username2"} rows={4}
             className={inputClass + " resize-none"} />
         </div>
       ) : (
         <>
           <div>
-            <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Search Query</label>
+            <label className="block text-xs text-fg-secondary mb-1">Search Query</label>
             <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="e.g. fitness coach, bakery" className={inputClass} />
           </div>
           <div>
-            <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Search Type</label>
+            <label className="block text-xs text-fg-secondary mb-1">Search Type</label>
             <select value={searchType} onChange={(e) => setSearchType(e.target.value)} className={inputClass}>
               <option value="user">Users / Profiles</option>
               <option value="hashtag">Hashtags</option>
@@ -369,7 +369,7 @@ function InstagramPanel({
         </>
       )}
       <div>
-        <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Results Limit</label>
+        <label className="block text-xs text-fg-secondary mb-1">Results Limit</label>
         <input value={resultsLimit} onChange={(e) => setResultsLimit(e.target.value)} type="number" placeholder="20" className={inputClass} />
       </div>
       <button onClick={() => {
@@ -380,7 +380,7 @@ function InstagramPanel({
         }
       }}
         disabled={isPending || !canStart}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded disabled:opacity-50">
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm font-medium rounded disabled:opacity-50">
         {isPending ? <><CircleNotchIcon className="w-4 h-4 animate-spin" /> Starting...</> : <><GlobeIcon className="w-4 h-4" /> Start Scrape</>}
       </button>
     </div>
@@ -397,12 +397,12 @@ function LinkedInPanel({
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Profile URLs (one per line)</label>
+        <label className="block text-xs text-fg-secondary mb-1">Profile URLs (one per line)</label>
         <textarea value={profileUrls} onChange={(e) => setProfileUrls(e.target.value)} placeholder={"https://linkedin.com/in/user1\nhttps://linkedin.com/in/user2"} rows={4}
           className={inputClass + " resize-none"} />
       </div>
       <div>
-        <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Mode</label>
+        <label className="block text-xs text-fg-secondary mb-1">Mode</label>
         <select value={mode} onChange={(e) => setMode(e.target.value)}
           className={inputClass}>
           <option value="short">Short (Basic Info)</option>
@@ -411,7 +411,7 @@ function LinkedInPanel({
       </div>
       <button onClick={() => onScrape({ profileUrls: profileUrls.split("\n").map((u) => u.trim()).filter(Boolean), mode })}
         disabled={isPending || !profileUrls.trim()}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded disabled:opacity-50">
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm font-medium rounded disabled:opacity-50">
         {isPending ? <><CircleNotchIcon className="w-4 h-4 animate-spin" /> Starting...</> : <><GlobeIcon className="w-4 h-4" /> Start Scrape</>}
       </button>
     </div>
@@ -443,29 +443,29 @@ function LeadsFinderPanel({
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Job Title</label>
+        <label className="block text-xs text-fg-secondary mb-1">Job Title</label>
         <input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="e.g. VP Sales, CTO" className={inputClass} />
       </div>
       <div>
-        <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Location</label>
+        <label className="block text-xs text-fg-secondary mb-1">Location</label>
         <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. San Francisco, US" className={inputClass} />
       </div>
       <div>
-        <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Industry</label>
+        <label className="block text-xs text-fg-secondary mb-1">Industry</label>
         <input value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="e.g. SaaS, FinTech" className={inputClass} />
       </div>
       <div>
-        <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Number of Leads</label>
+        <label className="block text-xs text-fg-secondary mb-1">Number of Leads</label>
         <input value={numLeads} onChange={(e) => setNumLeads(e.target.value)} type="number" placeholder="25" className={inputClass} />
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={handleAlignICP} disabled={icpLoading} className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-neutral-200 dark:border-neutral-800 rounded text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50">
+        <button onClick={handleAlignICP} disabled={icpLoading} className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-line rounded text-fg-secondary hover:bg-muted disabled:opacity-50">
           {icpLoading ? <CircleNotchIcon className="w-3 h-3 animate-spin" /> : <SparkleIcon className="w-3 h-3" />} Align with ICP
         </button>
-        {icpAligned && <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-400/15 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-400/30">ICP Aligned</span>}
+        {icpAligned && <span className="text-xs px-2 py-0.5 rounded bg-accent-surface text-accent-on-surface border border-accent">ICP Aligned</span>}
       </div>
       <button onClick={() => onScrape({ jobTitle, location, industry, numLeads: parseInt(numLeads) || 25 })} disabled={isPending || !jobTitle}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded disabled:opacity-50">
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm font-medium rounded disabled:opacity-50">
         {isPending ? <><CircleNotchIcon className="w-4 h-4 animate-spin" /> Starting...</> : <><GlobeIcon className="w-4 h-4" /> Start Scrape</>}
       </button>
     </div>
@@ -756,18 +756,18 @@ export function LeadScraperPageClient({
   const isScraperTab = activeTab !== "all";
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
+    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[28px] leading-[36px] tracking-[-0.56px] font-serif text-neutral-950 dark:text-neutral-50">Lead Finder</h1>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Search, scrape, and import leads into your CRM</p>
+          <h1 className="text-xl font-semibold text-fg">Lead Finder</h1>
+          <p className="text-sm text-fg-secondary mt-1">Search, scrape, and import leads into your CRM</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={handleExport} className="flex items-center gap-2 px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 border border-neutral-200 dark:border-neutral-800 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800">
+          <button onClick={handleExport} className="flex items-center gap-2 px-3 py-2 text-sm text-fg-secondary hover:text-fg border border-line rounded hover:bg-muted">
             <ExportIcon className="w-4 h-4" /> Export CSV
           </button>
-          <button onClick={() => setShowCSVUpload(true)} className="flex items-center gap-2 px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 border border-neutral-200 dark:border-neutral-800 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800">
+          <button onClick={() => setShowCSVUpload(true)} className="flex items-center gap-2 px-3 py-2 text-sm text-fg-secondary hover:text-fg border border-line rounded hover:bg-muted">
             <UploadIcon className="w-4 h-4" /> Upload CSV
           </button>
         </div>
@@ -776,14 +776,14 @@ export function LeadScraperPageClient({
       {/* KPI Cards */}
       <div className="grid grid-cols-4 gap-4">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl">
+          <div key={kpi.label} className="bg-surface border border-line rounded-lg">
             <div className="flex items-start justify-between p-5">
               <div className="space-y-2">
-                <p className="text-xs font-normal uppercase leading-5 text-neutral-500 dark:text-neutral-400">{kpi.label}</p>
-                <p className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif text-neutral-950 dark:text-neutral-50">{kpi.value.toLocaleString()}</p>
+                <p className="text-xs font-normal leading-5 text-fg-secondary">{kpi.label}</p>
+                <p className="text-[22px] font-semibold text-fg">{kpi.value.toLocaleString()}</p>
               </div>
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-neutral-200 dark:border-neutral-800">
-                <kpi.icon className="w-6 h-6 text-neutral-950 dark:text-neutral-50" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-line">
+                <kpi.icon className="w-6 h-6 text-fg" />
               </div>
             </div>
           </div>
@@ -791,13 +791,13 @@ export function LeadScraperPageClient({
       </div>
 
       {/* Source Tabs */}
-      <div className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-900 p-1 rounded w-fit">
+      <div className="flex items-center gap-1 bg-muted p-1 rounded w-fit">
         {SOURCE_TABS.map((tab) => (
           <button key={tab.id} onClick={() => handleTabChange(tab.id)}
             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
               activeTab === tab.id
-                ? "bg-white dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 shadow-sm"
-                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
+                ? "bg-surface text-fg"
+                : "text-fg-secondary hover:text-fg"
             }`}>
             {tab.label}
           </button>
@@ -806,12 +806,12 @@ export function LeadScraperPageClient({
 
       {/* Active Runs Status Bar */}
       {activeRuns.length > 0 && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-400/10 border border-blue-200 dark:border-blue-400/20 rounded">
-          <CircleNotchIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin" />
-          <span className="text-sm text-blue-700 dark:text-blue-300">
+        <div className="flex items-center gap-3 px-4 py-3 bg-accent-surface border border-accent rounded">
+          <CircleNotchIcon className="w-4 h-4 text-accent-strong animate-spin" />
+          <span className="text-sm text-accent-strong">
             {activeRuns.length} scrape{activeRuns.length > 1 ? "s" : ""} running...
             {activeRuns.map((r) => (
-              <span key={r.id} className="ml-2 text-xs text-blue-500 dark:text-blue-400">
+              <span key={r.id} className="ml-2 text-xs text-accent-strong">
                 [{SOURCE_LABELS[r.source] || r.source}]
               </span>
             ))}
@@ -823,10 +823,10 @@ export function LeadScraperPageClient({
       <div className="flex gap-6">
         {/* Left: Search & Filters */}
         <div className="w-80 shrink-0">
-          <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-4 sticky top-6">
+          <div className="bg-surface border border-line rounded-lg p-4 sticky top-6">
             {isScraperTab ? (
               <>
-                <h3 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-4">
+                <h3 className="text-sm font-medium text-fg mb-4">
                   {SOURCE_TABS.find((t) => t.id === activeTab)?.label} Scraper
                 </h3>
                 {activeTab === "google_places" && (
@@ -844,26 +844,26 @@ export function LeadScraperPageClient({
               </>
             ) : (
               <>
-                <h3 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-4">Search Filters</h3>
+                <h3 className="text-sm font-medium text-fg mb-4">Search Filters</h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Job Title / Keywords</label>
+                    <label className="block text-xs text-fg-secondary mb-1">Job Title / Keywords</label>
                     <input value={filterTitle} onChange={(e) => setFilterTitle(e.target.value)} placeholder="e.g. VP Sales, CTO" className={inputClass} />
                   </div>
                   <div>
-                    <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Company</label>
+                    <label className="block text-xs text-fg-secondary mb-1">Company</label>
                     <input value={filterCompany} onChange={(e) => setFilterCompany(e.target.value)} placeholder="e.g. Acme Corp" className={inputClass} />
                   </div>
                   <div>
-                    <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Location</label>
+                    <label className="block text-xs text-fg-secondary mb-1">Location</label>
                     <input value={filterLocation} onChange={(e) => setFilterLocation(e.target.value)} placeholder="e.g. San Francisco, US" className={inputClass} />
                   </div>
                   <div>
-                    <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Industry</label>
+                    <label className="block text-xs text-fg-secondary mb-1">Industry</label>
                     <input value={filterIndustry} onChange={(e) => setFilterIndustry(e.target.value)} placeholder="e.g. SaaS, FinTech" className={inputClass} />
                   </div>
                   <div>
-                    <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">Source</label>
+                    <label className="block text-xs text-fg-secondary mb-1">Source</label>
                     <select value={filterSource} onChange={(e) => setFilterSource(e.target.value)} className={inputClass}>
                       <option value="">All Sources</option>
                       <option value="google_places">Google Maps</option>
@@ -876,11 +876,11 @@ export function LeadScraperPageClient({
                   </div>
                   <div className="flex gap-2 pt-2">
                     <button onClick={handleSearch} disabled={isPending}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded disabled:opacity-50">
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm font-medium rounded disabled:opacity-50">
                       <MagnifyingGlassIcon className="w-4 h-4" /> Search
                     </button>
                     <button onClick={() => setShowSaveSearch(true)}
-                      className="px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 border border-neutral-200 dark:border-neutral-800 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800">
+                      className="px-3 py-2 text-sm text-fg-secondary hover:text-fg border border-line rounded hover:bg-muted">
                       <StarIcon className="w-4 h-4" />
                     </button>
                   </div>
@@ -888,18 +888,18 @@ export function LeadScraperPageClient({
 
                 {/* Saved Searches */}
                 {searches.length > 0 && (
-                  <div className="mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-800">
-                    <h4 className="text-xs text-neutral-500 dark:text-neutral-400 font-medium mb-3">Saved Searches</h4>
+                  <div className="mt-6 pt-4 border-t border-line">
+                    <h4 className="text-xs text-fg-secondary font-medium mb-3">Saved Searches</h4>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {searches.map((s) => (
-                        <div key={s.id} className="flex items-center justify-between py-2 px-3 bg-neutral-100 dark:bg-neutral-800 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 cursor-pointer transition-colors"
+                        <div key={s.id} className="flex items-center justify-between py-2 px-3 bg-muted rounded hover:bg-active cursor-pointer transition-colors"
                           onClick={() => handleLoadSearch(s)}>
                           <div>
-                            <span className="text-sm text-neutral-950 dark:text-neutral-50 block">{s.name}</span>
-                            <span className="text-[10px] text-neutral-400 dark:text-neutral-500">{s.result_count} results</span>
+                            <span className="text-sm text-fg block">{s.name}</span>
+                            <span className="text-xs text-fg-muted">{s.result_count} results</span>
                           </div>
                           <button onClick={(e) => { e.stopPropagation(); handleDeleteSearch(s.id); }}
-                            className="text-neutral-400 dark:text-neutral-500 hover:text-red-600 dark:hover:text-red-400"><TrashIcon className="w-3.5 h-3.5" /></button>
+                            className="text-fg-muted hover:text-danger"><TrashIcon className="w-3.5 h-3.5" /></button>
                         </div>
                       ))}
                     </div>
@@ -915,13 +915,13 @@ export function LeadScraperPageClient({
           {/* Results header */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-              <span className="text-sm text-neutral-500 dark:text-neutral-400">{totalCount.toLocaleString()} leads found</span>
+              <span className="text-sm text-fg-secondary">{totalCount.toLocaleString()} leads found</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-neutral-400 dark:text-neutral-500">Per page:</span>
+              <span className="text-xs text-fg-muted">Per page:</span>
               {[25, 50, 100].map((n) => (
                 <button key={n} onClick={() => { setPerPage(n); setPage(0); refresh(); }}
-                  className={`px-2 py-0.5 text-xs rounded ${perPage === n ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"}`}>
+                  className={`px-2 py-0.5 text-xs rounded ${perPage === n ? "bg-inverse text-on-inverse" : "text-fg-secondary hover:text-fg"}`}>
                   {n}
                 </button>
               ))}
@@ -929,36 +929,36 @@ export function LeadScraperPageClient({
           </div>
 
           {/* Results table */}
-          <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
+          <div className="bg-surface border border-line rounded-lg overflow-hidden">
             {/* Bulk Actions Bar */}
             {selectedRows.size > 0 && (
-              <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-                <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-line bg-subtle">
+                <span className="text-sm font-medium text-fg">
                   {selectedRows.size} item{selectedRows.size !== 1 ? "s" : ""} selected
                 </span>
                 <div className="flex items-center gap-4">
                   <button onClick={handleImportSelected} disabled={isPending}
-                    className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors disabled:opacity-50">
+                    className="text-sm text-fg-secondary hover:text-fg transition-colors disabled:opacity-50">
                     Import to CRM
                   </button>
                   <button onClick={handleVerifySelected} disabled={isPending}
-                    className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors disabled:opacity-50">
+                    className="text-sm text-fg-secondary hover:text-fg transition-colors disabled:opacity-50">
                     Verify
                   </button>
                   <button onClick={handleScoreICP} disabled={isPending}
-                    className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors disabled:opacity-50">
+                    className="text-sm text-fg-secondary hover:text-fg transition-colors disabled:opacity-50">
                     Score ICP
                   </button>
                   <button onClick={handleAIValidate} disabled={isPending}
-                    className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors disabled:opacity-50">
+                    className="text-sm text-fg-secondary hover:text-fg transition-colors disabled:opacity-50">
                     AI Validate
                   </button>
                   <button onClick={handleDeleteSelected} disabled={isPending}
-                    className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors disabled:opacity-50">
+                    className="text-sm text-danger hover:text-danger transition-colors disabled:opacity-50">
                     Delete
                   </button>
                   <button onClick={() => setSelectedRows(new Set())}
-                    className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
+                    className="text-sm text-fg-secondary hover:text-fg transition-colors">
                     Clear selection
                   </button>
                 </div>
@@ -966,63 +966,63 @@ export function LeadScraperPageClient({
             )}
             {leads.length === 0 ? (
               <div className="p-12 text-center">
-                <MagnifyingGlassIcon className="w-10 h-10 text-neutral-400 dark:text-neutral-500 mx-auto mb-3" />
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-2">No leads found</p>
-                <p className="text-xs text-neutral-400 dark:text-neutral-500">Upload a CSV, run a scraper, or adjust your filters</p>
+                <MagnifyingGlassIcon className="w-10 h-10 text-fg-muted mx-auto mb-3" />
+                <p className="text-sm text-fg-secondary mb-2">No leads found</p>
+                <p className="text-xs text-fg-muted">Upload a CSV, run a scraper, or adjust your filters</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-neutral-200 dark:border-neutral-800">
+                    <tr className="border-b border-line">
                       <th className="w-10 px-4 py-3">
                         <input type="checkbox" checked={selectedRows.size === leads.length && leads.length > 0} onChange={toggleSelectAll}
-                          className="rounded border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50" />
+                          className="rounded border-line bg-muted text-fg" />
                       </th>
-                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Name</th>
-                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Title</th>
-                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Company</th>
-                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Location</th>
-                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Email</th>
-                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Phone</th>
-                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Website</th>
-                      <th className="text-center text-xs text-neutral-400 dark:text-neutral-500 font-medium px-3 py-3">Source</th>
-                      <th className="text-center text-xs text-neutral-400 dark:text-neutral-500 font-medium px-3 py-3">ICP</th>
-                      <th className="text-center text-xs text-neutral-400 dark:text-neutral-500 font-medium px-3 py-3">Quality</th>
-                      <th className="text-center text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Status</th>
+                      <th className="text-left text-xs text-fg-muted font-medium px-4 py-3">Name</th>
+                      <th className="text-left text-xs text-fg-muted font-medium px-4 py-3">Title</th>
+                      <th className="text-left text-xs text-fg-muted font-medium px-4 py-3">Company</th>
+                      <th className="text-left text-xs text-fg-muted font-medium px-4 py-3">Location</th>
+                      <th className="text-left text-xs text-fg-muted font-medium px-4 py-3">Email</th>
+                      <th className="text-left text-xs text-fg-muted font-medium px-4 py-3">Phone</th>
+                      <th className="text-left text-xs text-fg-muted font-medium px-4 py-3">Website</th>
+                      <th className="text-center text-xs text-fg-muted font-medium px-3 py-3">Source</th>
+                      <th className="text-center text-xs text-fg-muted font-medium px-3 py-3">ICP</th>
+                      <th className="text-center text-xs text-fg-muted font-medium px-3 py-3">Quality</th>
+                      <th className="text-center text-xs text-fg-muted font-medium px-4 py-3">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {leads.map((lead) => (
-                      <tr key={lead.id} className="border-b border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                      <tr key={lead.id} className="border-b border-line hover:bg-muted transition-colors">
                         <td className="px-4 py-3">
                           <input type="checkbox" checked={selectedRows.has(lead.id)} onChange={() => toggleSelect(lead.id)}
-                            className="rounded border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50" />
+                            className="rounded border-line bg-muted text-fg" />
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-sm text-neutral-950 dark:text-neutral-50">{[lead.first_name, lead.last_name].filter(Boolean).join(" ") || "—"}</span>
+                          <span className="text-sm text-fg">{[lead.first_name, lead.last_name].filter(Boolean).join(" ") || "—"}</span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400 max-w-[140px] truncate">{lead.title || "—"}</td>
+                        <td className="px-4 py-3 text-sm text-fg-secondary max-w-[140px] truncate">{lead.title || "—"}</td>
                         <td className="px-4 py-3">
                           <div>
-                            <span className="text-sm text-neutral-700 dark:text-neutral-300">{lead.company || "—"}</span>
-                            {lead.company_size && <span className="text-[10px] text-neutral-400 dark:text-neutral-500 ml-1">({lead.company_size})</span>}
+                            <span className="text-sm text-fg">{lead.company || "—"}</span>
+                            {lead.company_size && <span className="text-xs text-fg-muted ml-1">({lead.company_size})</span>}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400 max-w-[120px] truncate">{lead.location || "—"}</td>
-                        <td className="px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400 max-w-[160px] truncate">{lead.email || "—"}</td>
-                        <td className="px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400 max-w-[120px] truncate">{lead.phone || "—"}</td>
+                        <td className="px-4 py-3 text-sm text-fg-secondary max-w-[120px] truncate">{lead.location || "—"}</td>
+                        <td className="px-4 py-3 text-sm text-fg-secondary max-w-[160px] truncate">{lead.email || "—"}</td>
+                        <td className="px-4 py-3 text-sm text-fg-secondary max-w-[120px] truncate">{lead.phone || "—"}</td>
                         <td className="px-4 py-3 text-sm max-w-[140px] truncate">
                           {lead.company_website ? (
-                            <a href={lead.company_website.startsWith("http") ? lead.company_website : `https://${lead.company_website}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-400 hover:underline">{lead.company_website.replace(/^https?:\/\/(www\.)?/, "")}</a>
+                            <a href={lead.company_website.startsWith("http") ? lead.company_website : `https://${lead.company_website}`} target="_blank" rel="noopener noreferrer" className="text-accent-strong hover:text-accent-strong hover:underline">{lead.company_website.replace(/^https?:\/\/(www\.)?/, "")}</a>
                           ) : "—"}
                         </td>
                         <td className="px-3 py-3 text-center">
                           {lead.source ? (
-                            <span className={`inline-block px-1.5 py-0.5 border-[0.5px] rounded text-[10px] whitespace-nowrap ${SOURCE_BADGE_STYLES[lead.source] || SOURCE_BADGE_STYLES.search}`}>
+                            <span className={`inline-block px-1.5 py-0.5 border rounded text-xs whitespace-nowrap ${SOURCE_BADGE_STYLES[lead.source] || SOURCE_BADGE_STYLES.search}`}>
                               {SOURCE_LABELS[lead.source] || lead.source}
                             </span>
-                          ) : <span className="text-xs text-neutral-400 dark:text-neutral-500">—</span>}
+                          ) : <span className="text-xs text-fg-muted">—</span>}
                         </td>
                         <td className="px-3 py-3 text-center">
                           <ScoreBadge score={lead.icp_match_score} />
@@ -1033,13 +1033,13 @@ export function LeadScraperPageClient({
                         <td className="px-4 py-3 text-center">
                           <div className="flex items-center justify-center gap-1">
                             {lead.verified && (
-                              <span className="px-1.5 py-0.5 border-[0.5px] border-green-200 dark:border-green-400/30 bg-green-100 text-green-600 dark:bg-green-400/15 dark:text-green-400 rounded text-[10px]">Verified</span>
+                              <span className="px-1.5 py-0.5 border border-success bg-success-surface text-success rounded text-xs">Verified</span>
                             )}
                             {lead.imported && (
-                              <span className="px-1.5 py-0.5 border-[0.5px] border-indigo-200 dark:border-indigo-400/30 bg-indigo-100 text-indigo-600 dark:bg-indigo-400/15 dark:text-indigo-400 rounded text-[10px]">Imported</span>
+                              <span className="px-1.5 py-0.5 border border-accent bg-accent-surface text-accent-on-surface rounded text-xs">Imported</span>
                             )}
                             {!lead.verified && !lead.imported && (
-                              <span className="text-xs text-neutral-400 dark:text-neutral-500">New</span>
+                              <span className="text-xs text-fg-muted">New</span>
                             )}
                           </div>
                         </td>
@@ -1052,13 +1052,13 @@ export function LeadScraperPageClient({
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-200 dark:border-neutral-800">
-                <span className="text-xs text-neutral-400 dark:text-neutral-500">Page {page + 1} of {totalPages}</span>
+              <div className="flex items-center justify-between px-4 py-3 border-t border-line">
+                <span className="text-xs text-fg-muted">Page {page + 1} of {totalPages}</span>
                 <div className="flex gap-2">
                   <button onClick={() => { setPage(Math.max(0, page - 1)); refresh(); }} disabled={page === 0}
-                    className="px-3 py-1 text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 border border-neutral-200 dark:border-neutral-800 rounded disabled:opacity-30">Previous</button>
+                    className="px-3 py-1 text-xs text-fg-secondary hover:text-fg border border-line rounded disabled:opacity-30">Previous</button>
                   <button onClick={() => { setPage(Math.min(totalPages - 1, page + 1)); refresh(); }} disabled={page >= totalPages - 1}
-                    className="px-3 py-1 text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 border border-neutral-200 dark:border-neutral-800 rounded disabled:opacity-30">Next</button>
+                    className="px-3 py-1 text-xs text-fg-secondary hover:text-fg border border-line rounded disabled:opacity-30">Next</button>
                 </div>
               </div>
             )}
@@ -1093,13 +1093,13 @@ export function LeadScraperPageClient({
 // ── Score Badge ──────────────────────────────────────────────────────────────
 
 function ScoreBadge({ score }: { score: number | null | undefined }) {
-  if (score == null) return <span className="text-xs text-neutral-400 dark:text-neutral-500">—</span>;
-  let style = "border-neutral-200 dark:border-neutral-700 bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400";
-  if (score >= 75) style = "border-green-200 dark:border-green-400/30 bg-green-100 text-green-700 dark:bg-green-400/15 dark:text-green-400";
-  else if (score >= 50) style = "border-amber-200 dark:border-amber-400/30 bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-400";
-  else if (score > 0) style = "border-red-200 dark:border-red-400/30 bg-red-100 text-red-700 dark:bg-red-400/15 dark:text-red-400";
+  if (score == null) return <span className="text-xs text-fg-muted">—</span>;
+  let style = "border-line bg-muted text-fg-secondary";
+  if (score >= 75) style = "border-success bg-success-surface text-success";
+  else if (score >= 50) style = "border-warning bg-warning-surface text-warning";
+  else if (score > 0) style = "border-danger bg-danger-surface text-danger";
   return (
-    <span className={`inline-block px-1.5 py-0.5 border-[0.5px] rounded text-[10px] font-medium ${style}`}>
+    <span className={`inline-block px-1.5 py-0.5 border rounded text-xs font-medium ${style}`}>
       {score}
     </span>
   );
