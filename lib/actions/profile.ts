@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUserProfile } from "./helpers";
 import { revalidatePath } from "next/cache";
 import type { Database, Json } from "@/types/database";
+import { pickProfileUpdates } from "@/lib/profile/allowlist";
 
 type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
@@ -33,9 +34,12 @@ export async function updateProfile(updates: Record<string, unknown>) {
   const supabase = await createClient();
   const { user } = await getCurrentUserProfile();
 
+  const safe = pickProfileUpdates(updates);
+  if (Object.keys(safe).length === 0) return { error: "No updatable fields provided" };
+
   const { data, error } = await supabase
     .from("profiles")
-    .update(updates as ProfileUpdate)
+    .update(safe as ProfileUpdate)
     .eq("id", user.id)
     .select()
     .single();
@@ -121,9 +125,12 @@ export async function updatePreferences(preferences: Record<string, unknown>) {
   if (preferences.time_format !== undefined) updates.time_format = preferences.time_format;
   if (preferences.language !== undefined) updates.language = preferences.language;
 
+  const safe = pickProfileUpdates(updates);
+  if (Object.keys(safe).length === 0) return { error: "No updatable fields provided" };
+
   const { data, error } = await supabase
     .from("profiles")
-    .update(updates as ProfileUpdate)
+    .update(safe as ProfileUpdate)
     .eq("id", user.id)
     .select()
     .single();
