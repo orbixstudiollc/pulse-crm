@@ -5,6 +5,7 @@ import { getOrgId, getCurrentUserProfile } from "./helpers";
 import { revalidatePath } from "next/cache";
 import type { Database, Json } from "@/types/database";
 import { escapePostgrestLike } from "@/lib/security";
+import { allIdsBelongToOrg } from "@/lib/tenancy/guards";
 
 type EmailAccountInsert = Database["public"]["Tables"]["email_accounts"]["Insert"];
 type EmailAccountUpdate = Database["public"]["Tables"]["email_accounts"]["Update"];
@@ -533,12 +534,18 @@ export async function launchCampaignRun(id: string) {
     return { error: fetchErr?.message ?? "Campaign not found" };
   }
 
+  if (campaign.organization_id !== orgId) return { error: "Campaign not found" };
+
   if (campaign.status !== "draft" && campaign.status !== "paused") {
     return { error: "Campaign must be in draft or paused status to launch" };
   }
 
   if (!campaign.sequence_id) {
     return { error: "Campaign must have a sequence assigned" };
+  }
+
+  if (!(await allIdsBelongToOrg(supabase, "sequences", orgId, [campaign.sequence_id]))) {
+    return { error: "Sequence does not belong to this organization" };
   }
 
   // Resolve audience
@@ -565,9 +572,17 @@ export async function launchCampaignRun(id: string) {
     return { error: "No leads in audience" };
   }
 
+  if (campaign.audience_type !== "filter" && !(await allIdsBelongToOrg(supabase, "leads", orgId, leadIds))) {
+    return { error: "One or more leads do not belong to this organization" };
+  }
+
+  const accountIds = campaign.email_account_ids ?? [];
+  if (!(await allIdsBelongToOrg(supabase, "email_accounts", orgId, accountIds))) {
+    return { error: "One or more email accounts do not belong to this organization" };
+  }
+
   // Enroll leads in sequence
   let enrolled = 0;
-  const accountIds = campaign.email_account_ids ?? [];
 
   for (const leadId of leadIds) {
     const { data: existing } = await supabase

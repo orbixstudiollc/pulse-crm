@@ -5,6 +5,8 @@ import { getOrgId, getCurrentUserProfile } from "./helpers";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
 import { escapePostgrestLike } from "@/lib/security";
+import { allIdsBelongToOrg } from "@/lib/tenancy/guards";
+import { SequenceSettingsSchema } from "@/lib/security/sequence-settings";
 
 type SequenceInsert = Database["public"]["Tables"]["sequences"]["Insert"];
 type SequenceUpdate = Database["public"]["Tables"]["sequences"]["Update"];
@@ -252,6 +254,10 @@ export async function getSequenceEnrollments(sequenceId: string) {
 
 export async function enrollLead(sequenceId: string, leadId: string) {
   const supabase = await createClient();
+  const orgId = await getOrgId();
+
+  if (!(await allIdsBelongToOrg(supabase, "sequences", orgId, [sequenceId]))) return { error: "Sequence not found" };
+  if (!(await allIdsBelongToOrg(supabase, "leads", orgId, [leadId]))) return { error: "Lead not found" };
 
   const { data, error } = await supabase
     .from("sequence_enrollments")
@@ -285,8 +291,25 @@ export async function enrollLead(sequenceId: string, leadId: string) {
   return { data };
 }
 
-export async function enrollLeadsBulk(sequenceId: string, leadIds: string[]) {
+export async function enrollLeadsBulk(
+  sequenceId: string,
+  leadIds: string[],
+): Promise<{ enrolled: number; errors: number; total: number; error?: string }> {
   const supabase = await createClient();
+  const orgId = await getOrgId();
+
+  if (!(await allIdsBelongToOrg(supabase, "sequences", orgId, [sequenceId]))) {
+    return { enrolled: 0, errors: leadIds.length, total: leadIds.length, error: "Sequence not found" };
+  }
+  if (!(await allIdsBelongToOrg(supabase, "leads", orgId, leadIds))) {
+    return {
+      enrolled: 0,
+      errors: leadIds.length,
+      total: leadIds.length,
+      error: "One or more leads do not belong to this organization",
+    };
+  }
+
   let enrolled = 0;
   let duplicates = 0;
 
@@ -796,12 +819,23 @@ export async function updateSequenceSettings(
   settings: Record<string, unknown>,
 ): Promise<{ error?: string }> {
   const supabase = await createClient();
-  await getOrgId();
+  const orgId = await getOrgId();
+
+  const parsed = SequenceSettingsSchema.safeParse(settings);
+  if (!parsed.success) return { error: "Invalid sequence settings" };
+
+  const accountIds = parsed.data.email_account_ids;
+  if (accountIds && accountIds.length > 0) {
+    if (!(await allIdsBelongToOrg(supabase, "email_accounts", orgId, accountIds))) {
+      return { error: "One or more email accounts do not belong to this organization" };
+    }
+  }
 
   const { error } = await supabase
     .from("sequences")
-    .update({ settings } as SequenceUpdate)
-    .eq("id", id);
+    .update({ settings: parsed.data } as SequenceUpdate)
+    .eq("id", id)
+    .eq("organization_id", orgId);
 
   if (error) return { error: error.message };
 
