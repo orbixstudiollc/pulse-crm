@@ -146,15 +146,15 @@ function getCampaignKpis(p: Personalization | null) {
 // ── Status styles ──────────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<string, string> = {
-  new: "text-blue-400 bg-blue-400/10",
-  enriching: "text-amber-400 bg-amber-400/10",
-  enriched: "text-green-400 bg-green-400/10",
-  qualified: "text-green-400 bg-green-400/10",
-  converted: "text-violet-400 bg-violet-400/10",
-  disqualified: "text-red-400 bg-red-400/10",
-  declined: "text-red-400 bg-red-400/10",
-  archived: "text-neutral-400 bg-neutral-400/10",
-  error: "text-red-400 bg-red-400/10",
+  new: "text-accent-strong bg-accent-surface",
+  enriching: "text-warning bg-warning-surface",
+  enriched: "text-success bg-success-surface",
+  qualified: "text-success bg-success-surface",
+  converted: "text-accent-strong bg-accent-surface",
+  disqualified: "text-danger bg-danger-surface",
+  declined: "text-danger bg-danger-surface",
+  archived: "text-fg-muted bg-muted",
+  error: "text-danger bg-danger-surface",
 };
 
 const ALL_STATUSES = ["new", "enriching", "enriched", "qualified", "converted", "disqualified", "declined", "archived"];
@@ -176,21 +176,21 @@ function CollapsibleSection({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
+    <div className="bg-surface border border-line rounded-lg overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between p-4 text-left"
       >
-        <span className="flex items-center gap-2 text-sm font-semibold text-neutral-50">
-          {Icon && <Icon size={14} className="text-neutral-400" />}
+        <span className="flex items-center gap-2 text-sm font-semibold text-fg">
+          {Icon && <Icon size={14} className="text-fg-muted" />}
           {title}
         </span>
         <div className="flex items-center gap-2">
           {action && open && <div onClick={(e) => e.stopPropagation()}>{action}</div>}
           {open ? (
-            <CaretDownIcon size={14} className="text-neutral-400" />
+            <CaretDownIcon size={14} className="text-fg-muted" />
           ) : (
-            <CaretRightIcon size={14} className="text-neutral-400" />
+            <CaretRightIcon size={14} className="text-fg-muted" />
           )}
         </div>
       </button>
@@ -215,23 +215,23 @@ function InfoRow({
   const strVal = typeof value === "string" ? value : null;
   return (
     <div className="flex items-start gap-3 py-2">
-      {Icon && <Icon size={14} className="text-neutral-400 mt-0.5 shrink-0" />}
-      <span className="text-xs text-neutral-400 w-28 shrink-0 mt-0.5">{label}</span>
+      {Icon && <Icon size={14} className="text-fg-muted mt-0.5 shrink-0" />}
+      <span className="text-xs text-fg-muted w-28 shrink-0 mt-0.5">{label}</span>
       {value ? (
         link && strVal ? (
           <a
             href={strVal.startsWith("http") ? strVal : `https://${strVal}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-blue-400 hover:underline min-w-0 break-all"
+            className="text-sm text-accent-strong hover:underline min-w-0 break-all"
           >
             {strVal}
           </a>
         ) : (
-          <span className="text-sm text-neutral-50 min-w-0 break-all">{value}</span>
+          <span className="text-sm text-fg min-w-0 break-all">{value}</span>
         )
       ) : (
-        <span className="text-sm text-neutral-500 italic">Not set</span>
+        <span className="text-sm text-fg-secondary italic">Not set</span>
       )}
     </div>
   );
@@ -254,8 +254,8 @@ function EditableRow({
 }) {
   return (
     <div className="flex items-start gap-3 py-1">
-      {Icon && <Icon size={14} className="text-neutral-400 mt-2.5 shrink-0" />}
-      <span className="text-xs text-neutral-400 w-28 shrink-0 mt-2">{label}</span>
+      {Icon && <Icon size={14} className="text-fg-muted mt-2.5 shrink-0" />}
+      <span className="text-xs text-fg-muted w-28 shrink-0 mt-2">{label}</span>
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -284,17 +284,17 @@ function RawDataBlock({
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <p className="text-xs font-medium text-neutral-400">{title}</p>
+        <p className="text-xs font-medium text-fg-muted">{title}</p>
         <div className="flex gap-1">
-          <button onClick={copyToClipboard} className="rounded p-1 text-neutral-400 hover:bg-neutral-800 transition-colors" title="Copy JSON">
+          <button onClick={copyToClipboard} className="rounded p-1 text-fg-muted hover:bg-muted transition-colors" title="Copy JSON">
             <CopyIcon size={14} />
           </button>
-          <button onClick={() => onExpand({ title, data })} className="rounded p-1 text-neutral-400 hover:bg-neutral-800 transition-colors" title="Expand">
+          <button onClick={() => onExpand({ title, data })} className="rounded p-1 text-fg-muted hover:bg-muted transition-colors" title="Expand">
             <ArrowSquareOutIcon size={14} />
           </button>
         </div>
       </div>
-      <pre className="max-h-64 overflow-auto rounded-lg bg-neutral-950 border border-neutral-800 p-3 text-xs text-neutral-300">
+      <pre className="max-h-64 overflow-auto rounded-lg bg-subtle border border-line p-3 text-xs text-fg-secondary">
         {json}
       </pre>
     </div>
@@ -314,16 +314,16 @@ function JsonModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
       <div
-        className="bg-neutral-900 border border-neutral-800 rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col"
+        className="bg-surface border border-line rounded-lg shadow-modal w-full max-w-2xl max-h-[80vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
-          <h3 className="text-sm font-semibold text-neutral-50">{dialog.title}</h3>
-          <button onClick={onClose} className="p-1 rounded text-neutral-400 hover:bg-neutral-800 transition-colors">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-divider">
+          <h3 className="text-sm font-semibold text-fg">{dialog.title}</h3>
+          <button onClick={onClose} className="p-1 rounded text-fg-muted hover:bg-muted transition-colors">
             <XIcon size={16} />
           </button>
         </div>
-        <pre className="overflow-auto p-5 text-xs text-neutral-300 flex-1">
+        <pre className="overflow-auto p-4 text-xs text-fg-secondary flex-1">
           {JSON.stringify(dialog.data, null, 2)}
         </pre>
       </div>
@@ -562,10 +562,10 @@ export default function LeadDetailPage() {
 
   if (loading) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-6 lg:p-6">
         <LeadFinderSubNav />
         <div className="flex items-center justify-center h-64">
-          <CircleNotchIcon size={32} className="animate-spin text-neutral-400" />
+          <CircleNotchIcon size={32} className="animate-spin text-fg-muted" />
         </div>
       </div>
     );
@@ -573,11 +573,11 @@ export default function LeadDetailPage() {
 
   if (!lead) {
     return (
-      <div className="p-6 lg:p-8">
+      <div className="p-6 lg:p-6">
         <LeadFinderSubNav />
         <div className="flex flex-col items-center justify-center h-64">
-          <p className="text-neutral-400 mb-4">Lead not found</p>
-          <Link href="/dashboard/lead-finder/leads" className="text-sm text-blue-400 hover:underline">
+          <p className="text-fg-muted mb-4">Lead not found</p>
+          <Link href="/dashboard/lead-finder/leads" className="text-sm text-accent-strong hover:underline">
             Back to leads
           </Link>
         </div>
@@ -628,7 +628,7 @@ export default function LeadDetailPage() {
   // ── Render ────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-6 lg:p-6">
       <LeadFinderSubNav />
 
       {/* Header */}
@@ -636,18 +636,18 @@ export default function LeadDetailPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.back()}
-            className="p-2 rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-neutral-50 transition-colors"
+            className="p-2 rounded-md bg-surface border border-line text-fg-secondary hover:bg-muted hover:text-fg transition-colors"
           >
             <ArrowLeftIcon size={16} />
           </button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-neutral-50">
+              <h1 className="text-xl font-semibold text-fg">
                 {ld.displayName || "Unknown Lead"}
               </h1>
               <ScoreBadge score={ld.score} />
             </div>
-            <p className="text-sm text-neutral-400 mt-0.5">
+            <p className="text-sm text-fg-secondary mt-0.5">
               Source: {ld.source?.replace(/_/g, " ") || "Unknown"} | Created:{" "}
               {ld.createdAt ? new Date(ld.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "--"}
             </p>
@@ -663,21 +663,21 @@ export default function LeadDetailPage() {
               size="sm"
               onClick={() => setStatusMenuOpen(!statusMenuOpen)}
               rightIcon={<CaretDownIcon size={12} />}
-              className={`rounded-full capitalize ${STATUS_STYLES[lead.status] || "text-neutral-400 bg-neutral-800"}`}
+              className={`rounded-full capitalize ${STATUS_STYLES[lead.status] || "text-fg-secondary bg-muted"}`}
             >
               {lead.status}
             </Button>
             {statusMenuOpen && (
-              <div className="absolute right-0 mt-1 w-44 bg-neutral-900 border border-neutral-800 rounded-lg shadow-lg z-30 py-1">
+              <div className="absolute right-0 mt-1 w-44 bg-surface border border-line rounded-lg shadow-dropdown z-30 py-1">
                 {ALL_STATUSES.map((s) => (
                   <button
                     key={s}
                     onClick={() => handleStatusChange(s)}
                     disabled={s === lead.status}
-                    className="w-full text-left px-3 py-2 text-sm capitalize hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-default transition-colors flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 text-sm capitalize hover:bg-muted disabled:opacity-40 disabled:cursor-default transition-colors flex items-center gap-2"
                   >
-                    <span className={`inline-block w-2 h-2 rounded-full ${STATUS_STYLES[s]?.split(" ")[0]?.replace("text-", "bg-") || "bg-neutral-500"}`} />
-                    <span className="text-neutral-50">{s}</span>
+                    <span className={`inline-block w-2 h-2 rounded-full ${STATUS_STYLES[s]?.split(" ")[0]?.replace("text-", "bg-") || "bg-fg-muted"}`} />
+                    <span className="text-fg">{s}</span>
                   </button>
                 ))}
               </div>
@@ -722,27 +722,27 @@ export default function LeadDetailPage() {
                   <button
                     onClick={() => setActorMenuOpen(!actorMenuOpen)}
                     disabled={isEnrichingState}
-                    className="inline-flex items-center p-2 rounded-lg bg-neutral-800 text-neutral-50 hover:bg-neutral-700 disabled:opacity-50 transition-colors"
+                    className="inline-flex h-7 items-center px-1.5 rounded-md bg-accent-strong text-on-inverse hover:opacity-90 disabled:opacity-50 transition-colors"
                   >
                     <CaretDownIcon size={14} />
                   </button>
                   {actorMenuOpen && (
-                    <div className="absolute right-0 mt-1 w-56 bg-neutral-900 border border-neutral-800 rounded-lg shadow-lg z-30 py-1">
+                    <div className="absolute right-0 mt-1 w-56 bg-surface border border-line rounded-lg shadow-dropdown z-30 py-1">
                       <button
                         onClick={() => { setActorMenuOpen(false); handleEnrich(); }}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-800 transition-colors flex items-center gap-2 text-neutral-50"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2 text-fg"
                       >
-                        <ArrowPathIcon size={14} className="text-neutral-400" />
+                        <ArrowPathIcon size={14} className="text-fg-muted" />
                         All actors
                       </button>
-                      <div className="border-t border-neutral-800 my-1" />
+                      <div className="border-t border-line my-1" />
                       {ld.enrichActorIds.map((actorId) => (
                         <button
                           key={actorId}
                           onClick={() => { setActorMenuOpen(false); handleEnrich([actorId]); }}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-neutral-800 transition-colors flex items-center gap-2 text-neutral-50"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2 text-fg"
                         >
-                          <LightningIcon size={14} className="text-neutral-400" />
+                          <LightningIcon size={14} className="text-fg-muted" />
                           {actorId}
                         </button>
                       ))}
@@ -771,9 +771,9 @@ export default function LeadDetailPage() {
         {/* Left column (2/3) */}
         <div className="lg:col-span-2 space-y-6">
           {/* Contact Information */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5">
+          <div className="bg-surface border border-line rounded-lg p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-neutral-50">Contact Information</h3>
+              <h3 className="text-sm font-semibold text-fg">Contact Information</h3>
               {isEditingContact ? (
                 <div className="flex items-center gap-1">
                   <Button
@@ -807,7 +807,7 @@ export default function LeadDetailPage() {
               )}
             </div>
 
-            <div className="space-y-0 divide-y divide-neutral-800/50">
+            <div className="space-y-0 divide-y divide-row">
               {isEditingContact ? (
                 <>
                   <EditableRow icon={EnvelopeIcon} label="Email" value={editContactValues.email || ""} onChange={(v) => setEditContactValues({ ...editContactValues, email: v })} placeholder="email@example.com" />
@@ -848,9 +848,9 @@ export default function LeadDetailPage() {
             </div>
 
             {/* Score in contact card */}
-            <div className="mt-4 pt-4 border-t border-neutral-800">
+            <div className="mt-4 pt-4 border-t border-line">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-neutral-400">Lead Score</span>
+                <span className="text-xs text-fg-muted">Lead Score</span>
                 <ScoreBadge score={ld.score} />
               </div>
             </div>
@@ -858,70 +858,70 @@ export default function LeadDetailPage() {
 
           {/* Personalization Insights */}
           {p && (
-            <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-neutral-50 mb-4 flex items-center gap-2">
-                <SparkleIcon size={14} className="text-neutral-400" />
+            <div className="bg-surface border border-line rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-fg mb-4 flex items-center gap-2">
+                <SparkleIcon size={14} className="text-fg-muted" />
                 Personalization Insights
               </h3>
               <div className="space-y-4">
                 {persSum && (
                   <div>
-                    <p className="text-xs text-neutral-400 mb-1">Summary</p>
-                    <p className="text-sm text-neutral-200 leading-relaxed whitespace-pre-wrap">{persSum}</p>
+                    <p className="text-xs text-fg-muted mb-1">Summary</p>
+                    <p className="text-sm text-fg leading-relaxed whitespace-pre-wrap">{persSum}</p>
                   </div>
                 )}
                 {p.companyDescription && (
                   <div>
-                    <p className="text-xs text-neutral-400 mb-1">About</p>
-                    <p className="text-sm text-neutral-200">{p.companyDescription}</p>
+                    <p className="text-xs text-fg-muted mb-1">About</p>
+                    <p className="text-sm text-fg">{p.companyDescription}</p>
                   </div>
                 )}
                 {painPoints.length > 0 && (
                   <div>
-                    <p className="text-xs text-neutral-400 mb-2">Pain Points</p>
+                    <p className="text-xs text-fg-muted mb-2">Pain Points</p>
                     <div className="flex flex-wrap gap-1.5">
                       {painPoints.map((pp, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded-md bg-red-400/10 text-red-400 text-xs">{pp}</span>
+                        <span key={i} className="px-2 py-0.5 rounded-md bg-danger-surface text-danger text-xs">{pp}</span>
                       ))}
                     </div>
                   </div>
                 )}
                 {techStack.length > 0 && (
                   <div>
-                    <p className="text-xs text-neutral-400 mb-2">Tech Stack</p>
+                    <p className="text-xs text-fg-muted mb-2">Tech Stack</p>
                     <div className="flex flex-wrap gap-1.5">
                       {techStack.map((t, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded-md bg-blue-400/10 text-blue-400 text-xs">{t}</span>
+                        <span key={i} className="px-2 py-0.5 rounded-md bg-accent-surface text-accent-strong text-xs">{t}</span>
                       ))}
                     </div>
                   </div>
                 )}
                 {(p.hasChatbot || p.hasBookingSystem) && (
                   <div>
-                    <p className="text-xs text-neutral-400 mb-2">Detections</p>
+                    <p className="text-xs text-fg-muted mb-2">Detections</p>
                     <div className="flex flex-wrap gap-1.5">
                       {p.hasChatbot && (
-                        <span className="px-2 py-0.5 rounded-md bg-violet-400/10 text-violet-400 text-xs">Chatbot Detected</span>
+                        <span className="px-2 py-0.5 rounded-md bg-accent-surface text-accent-strong text-xs">Chatbot Detected</span>
                       )}
                       {p.hasBookingSystem && (
-                        <span className="px-2 py-0.5 rounded-md bg-violet-400/10 text-violet-400 text-xs">Booking System Detected</span>
+                        <span className="px-2 py-0.5 rounded-md bg-accent-surface text-accent-strong text-xs">Booking System Detected</span>
                       )}
                     </div>
                   </div>
                 )}
                 {p.lastBlogPost && (
                   <div>
-                    <p className="text-xs text-neutral-400 mb-1">Last Blog Post</p>
-                    <p className="text-sm text-neutral-200">{p.lastBlogPost}</p>
+                    <p className="text-xs text-fg-muted mb-1">Last Blog Post</p>
+                    <p className="text-sm text-fg">{p.lastBlogPost}</p>
                   </div>
                 )}
                 {/* Enrichment actors */}
                 {p.enrichment_actors && p.enrichment_actors.length > 0 && (
                   <div>
-                    <p className="text-xs text-neutral-400 mb-2">Enrichment Actors Used</p>
+                    <p className="text-xs text-fg-muted mb-2">Enrichment Actors Used</p>
                     <div className="flex flex-wrap gap-1.5">
                       {p.enrichment_actors.map((actor, i) => (
-                        <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-400 text-xs">
+                        <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-fg-secondary text-xs">
                           <LightningIcon size={10} />
                           {actor}
                         </span>
@@ -959,20 +959,20 @@ export default function LeadDetailPage() {
                     {kpi.type === "boolean" ? (
                       <div className="flex items-center justify-between w-full">
                         <div>
-                          <p className="text-sm text-neutral-50">{kpi.label}</p>
-                          {kpi.description && <p className="text-xs text-neutral-500">{kpi.description}</p>}
+                          <p className="text-sm text-fg">{kpi.label}</p>
+                          {kpi.description && <p className="text-xs text-fg-secondary">{kpi.description}</p>}
                         </div>
                         <button
                           onClick={() => updateKpiValue(kpi.id, kpiValues[kpi.id] !== true)}
-                          className={`relative w-10 h-5 rounded-full transition-colors ${kpiValues[kpi.id] === true ? "bg-green-500" : "bg-neutral-700"}`}
+                          className={`relative w-10 h-5 rounded-full transition-colors ${kpiValues[kpi.id] === true ? "bg-success" : "bg-active"}`}
                         >
-                          <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${kpiValues[kpi.id] === true ? "translate-x-5" : ""}`} />
+                          <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-surface transition-transform ${kpiValues[kpi.id] === true ? "translate-x-5" : ""}`} />
                         </button>
                       </div>
                     ) : (
                       <div className="w-full space-y-1">
-                        <p className="text-sm text-neutral-50">{kpi.label}</p>
-                        {kpi.description && <p className="text-xs text-neutral-500">{kpi.description}</p>}
+                        <p className="text-sm text-fg">{kpi.label}</p>
+                        {kpi.description && <p className="text-xs text-fg-secondary">{kpi.description}</p>}
                         <Input
                           value={typeof kpiValues[kpi.id] === "string" ? (kpiValues[kpi.id] as string) : ""}
                           onChange={(e) => updateKpiValue(kpi.id, e.target.value)}
@@ -989,23 +989,23 @@ export default function LeadDetailPage() {
 
           {/* KPI values from personalization (read-only, when no kpiDefinitions) */}
           {ld.kpiDefinitions.length === 0 && Object.keys(campaignKpis).length > 0 && (
-            <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-neutral-50 mb-4 flex items-center gap-2">
-                <ChartBarIcon size={14} className="text-neutral-400" />
+            <div className="bg-surface border border-line rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-fg mb-4 flex items-center gap-2">
+                <ChartBarIcon size={14} className="text-fg-muted" />
                 KPI Values
               </h3>
               <div className="space-y-1">
                 {Object.entries(campaignKpis).map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between py-2 border-b border-neutral-800/30 last:border-0">
-                    <span className="text-xs text-neutral-400 capitalize">{key.replace(/_/g, " ")}</span>
+                  <div key={key} className="flex items-center justify-between py-2 border-b border-line/30 last:border-0">
+                    <span className="text-xs text-fg-muted capitalize">{key.replace(/_/g, " ")}</span>
                     {typeof value === "boolean" ? (
                       value ? (
-                        <CheckCircleIcon size={16} className="text-green-400" />
+                        <CheckCircleIcon size={16} className="text-success" />
                       ) : (
-                        <XCircleIcon size={16} className="text-red-400" />
+                        <XCircleIcon size={16} className="text-danger" />
                       )
                     ) : (
-                      <span className="text-xs text-neutral-50">{String(value)}</span>
+                      <span className="text-xs text-fg">{String(value)}</span>
                     )}
                   </div>
                 ))}
@@ -1018,16 +1018,16 @@ export default function LeadDetailPage() {
             {ld.mappedData && Object.keys(ld.mappedData).length > 0 ? (
               <div className="space-y-1">
                 {Object.entries(ld.mappedData).map(([key, value]) => (
-                  <div key={key} className="flex items-start justify-between py-1.5 border-b border-neutral-800/30 last:border-0">
-                    <span className="text-xs text-neutral-400 capitalize">{key.replace(/_/g, " ")}</span>
-                    <span className="text-xs text-neutral-50 text-right max-w-[60%] break-all">
+                  <div key={key} className="flex items-start justify-between py-1.5 border-b border-line/30 last:border-0">
+                    <span className="text-xs text-fg-muted capitalize">{key.replace(/_/g, " ")}</span>
+                    <span className="text-xs text-fg text-right max-w-[60%] break-all">
                       {typeof value === "object" ? JSON.stringify(value) : String(value ?? "")}
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-neutral-400">No mapped data available.</p>
+              <p className="text-xs text-fg-muted">No mapped data available.</p>
             )}
           </CollapsibleSection>
         </div>
@@ -1036,38 +1036,38 @@ export default function LeadDetailPage() {
         <div className="space-y-6">
           {/* Cost Breakdown */}
           {totalCost > 0 && (
-            <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-neutral-50 mb-4 flex items-center gap-2">
-                <CurrencyDollarIcon size={14} className="text-neutral-400" />
+            <div className="bg-surface border border-line rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-fg mb-4 flex items-center gap-2">
+                <CurrencyDollarIcon size={14} className="text-fg-muted" />
                 Cost Breakdown
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-baseline">
-                  <span className="text-sm font-medium text-neutral-50">Total Cost</span>
-                  <span className="text-lg font-bold tabular-nums text-neutral-50">${totalCost.toFixed(4)}</span>
+                  <span className="text-sm font-medium text-fg">Total Cost</span>
+                  <span className="text-lg font-semibold tabular-nums text-fg">${totalCost.toFixed(4)}</span>
                 </div>
-                <div className="border-t border-neutral-800" />
+                <div className="border-t border-line" />
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-neutral-400">Discovery</p>
+                  <p className="text-xs font-medium text-fg-muted">Discovery</p>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                    <span className="text-neutral-400">LLM</span>
-                    <span className="text-right tabular-nums text-neutral-50">${discoveryLlm.toFixed(4)}</span>
-                    <span className="text-neutral-400">Apify</span>
-                    <span className="text-right tabular-nums text-neutral-50">${discoveryApify.toFixed(4)}</span>
-                    <span className="font-medium text-neutral-50">Subtotal</span>
-                    <span className="text-right font-medium tabular-nums text-neutral-50">${discoveryCost.toFixed(4)}</span>
+                    <span className="text-fg-muted">LLM</span>
+                    <span className="text-right tabular-nums text-fg">${discoveryLlm.toFixed(4)}</span>
+                    <span className="text-fg-muted">Apify</span>
+                    <span className="text-right tabular-nums text-fg">${discoveryApify.toFixed(4)}</span>
+                    <span className="font-medium text-fg">Subtotal</span>
+                    <span className="text-right font-medium tabular-nums text-fg">${discoveryCost.toFixed(4)}</span>
                   </div>
                 </div>
                 {isEnrichedStatus && enrichmentCost > 0 && (
                   <div className="space-y-2">
-                    <p className="text-xs font-medium text-neutral-400">Enrichment</p>
+                    <p className="text-xs font-medium text-fg-muted">Enrichment</p>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                      <span className="text-neutral-400">LLM</span>
-                      <span className="text-right tabular-nums text-neutral-50">${enrichmentLlm.toFixed(4)}</span>
-                      <span className="text-neutral-400">Apify</span>
-                      <span className="text-right tabular-nums text-neutral-50">${enrichmentApify.toFixed(4)}</span>
-                      <span className="font-medium text-neutral-50">Subtotal</span>
-                      <span className="text-right font-medium tabular-nums text-neutral-50">${enrichmentCost.toFixed(4)}</span>
+                      <span className="text-fg-muted">LLM</span>
+                      <span className="text-right tabular-nums text-fg">${enrichmentLlm.toFixed(4)}</span>
+                      <span className="text-fg-muted">Apify</span>
+                      <span className="text-right tabular-nums text-fg">${enrichmentApify.toFixed(4)}</span>
+                      <span className="font-medium text-fg">Subtotal</span>
+                      <span className="text-right font-medium tabular-nums text-fg">${enrichmentCost.toFixed(4)}</span>
                     </div>
                   </div>
                 )}
@@ -1076,13 +1076,13 @@ export default function LeadDetailPage() {
           )}
 
           {/* Raw Data */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
+          <div className="bg-surface border border-line rounded-lg overflow-hidden">
             <button
               onClick={() => setShowRaw(!showRaw)}
               className="w-full flex items-center justify-between p-4 text-left"
             >
-              <span className="text-sm font-semibold text-neutral-50">Raw Data</span>
-              <span className="text-xs text-neutral-400">{showRaw ? "Hide" : "Show"}</span>
+              <span className="text-sm font-semibold text-fg">Raw Data</span>
+              <span className="text-xs text-fg-muted">{showRaw ? "Hide" : "Show"}</span>
             </button>
             {showRaw && (
               <div className="px-4 pb-4 space-y-3">
@@ -1105,22 +1105,22 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Source & Created meta */}
-          <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 space-y-3">
+          <div className="bg-surface border border-line rounded-lg p-4 space-y-3">
             <div>
-              <p className="text-xs text-neutral-400">Source</p>
+              <p className="text-xs text-fg-muted">Source</p>
               <a
                 href={`https://apify.com/${ld.source}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm text-blue-400 hover:underline"
+                className="inline-flex items-center gap-1.5 text-sm text-accent-strong hover:underline"
               >
                 {ld.source}
                 <ArrowSquareOutIcon size={12} />
               </a>
             </div>
             <div>
-              <p className="text-xs text-neutral-400">Created</p>
-              <p className="text-sm text-neutral-50">
+              <p className="text-xs text-fg-muted">Created</p>
+              <p className="text-sm text-fg">
                 {ld.createdAt
                   ? new Date(ld.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
                   : "--"}

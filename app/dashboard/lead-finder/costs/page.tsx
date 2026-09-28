@@ -28,6 +28,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { axisTick, chartAccent, chartGrid, chartSeries, chartTooltipStyle, chartWarning } from "@/lib/design-system/chart-colors";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -63,13 +64,11 @@ interface CostData {
   recentRuns: RecentRun[];
 }
 
-const CHART_COLORS = ["#818cf8", "#34d399", "#f97316", "#f472b6", "#60a5fa", "#a78bfa", "#fbbf24", "#2dd4bf"];
-
 const RUN_STATUS: Record<string, { icon: typeof CheckCircleIcon; color: string }> = {
-  succeeded: { icon: CheckCircleIcon, color: "text-green-600 dark:text-green-400" },
-  failed: { icon: XCircleIcon, color: "text-red-600 dark:text-red-400" },
-  running: { icon: CircleNotchIcon, color: "text-amber-600 dark:text-amber-400" },
-  ready: { icon: ClockIcon, color: "text-blue-600 dark:text-blue-400" },
+  succeeded: { icon: CheckCircleIcon, color: "text-success" },
+  failed: { icon: XCircleIcon, color: "text-danger" },
+  running: { icon: CircleNotchIcon, color: "text-warning" },
+  ready: { icon: ClockIcon, color: "text-accent-strong" },
 };
 
 function timeAgo(ts: string) {
@@ -86,10 +85,10 @@ function timeAgo(ts: string) {
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 shadow-lg">
-      <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">{label}</p>
+    <div className="rounded-md border border-line bg-surface px-3 py-2 shadow-dropdown">
+      <p className="text-xs font-medium text-fg-secondary mb-1">{label}</p>
       {payload.map((e, i) => (
-        <p key={i} className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">${e.value.toFixed(4)} <span className="font-normal text-neutral-500">{e.name}</span></p>
+        <p key={i} className="text-sm font-semibold text-fg">${e.value.toFixed(4)} <span className="font-normal text-fg-secondary">{e.name}</span></p>
       ))}
     </div>
   );
@@ -139,13 +138,13 @@ export default function CostsPage() {
   }, [data]);
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-6 lg:p-6 space-y-6">
       <PageHeader title="Lead Finder" />
       <LeadFinderSubNav />
 
       {loading && (
         <div className="flex items-center justify-center py-24">
-          <CircleNotchIcon size={28} className="animate-spin text-neutral-400" />
+          <CircleNotchIcon size={28} className="animate-spin text-fg-muted" />
         </div>
       )}
 
@@ -153,60 +152,60 @@ export default function CostsPage() {
         <>
           {/* KPI Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Total Cost" value={`$${(data.totalCost ?? 0).toFixed(4)}`} icon={<CurrencyDollarIcon size={20} className="text-neutral-500 dark:text-neutral-400" />} />
-            <StatCard label="Apify Cost" value={`$${(data.totalApifyCost ?? 0).toFixed(4)}`} icon={<LightningIcon size={20} className="text-neutral-500 dark:text-neutral-400" />} />
-            <StatCard label="LLM Cost" value={`$${(data.totalLlmCost ?? 0).toFixed(4)}`} icon={<SparkleIcon size={20} className="text-neutral-500 dark:text-neutral-400" />} />
-            <StatCard label="Avg Cost / Lead" value={`$${avgCostPerLead.toFixed(4)}`} icon={<UsersIcon size={20} className="text-neutral-500 dark:text-neutral-400" />} />
+            <StatCard label="Total Cost" value={`$${(data.totalCost ?? 0).toFixed(4)}`} icon={<CurrencyDollarIcon size={20} className="text-fg-secondary" />} />
+            <StatCard label="Apify Cost" value={`$${(data.totalApifyCost ?? 0).toFixed(4)}`} icon={<LightningIcon size={20} className="text-fg-secondary" />} />
+            <StatCard label="LLM Cost" value={`$${(data.totalLlmCost ?? 0).toFixed(4)}`} icon={<SparkleIcon size={20} className="text-fg-secondary" />} />
+            <StatCard label="Avg Cost / Lead" value={`$${avgCostPerLead.toFixed(4)}`} icon={<UsersIcon size={20} className="text-fg-secondary" />} />
           </div>
 
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5">
+            <div className="rounded-lg border border-line bg-surface p-4">
               <div className="flex items-center gap-2 mb-4">
-                <ChartBarIcon size={14} className="text-neutral-400 dark:text-neutral-500" />
-                <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Cost by Campaign</h3>
+                <ChartBarIcon size={14} className="text-fg-muted" />
+                <h3 className="text-sm font-semibold text-fg">Cost by Campaign</h3>
               </div>
               {campaignBarData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={campaignBarData} margin={{ top: 0, right: 0, bottom: 0, left: -10 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="text-neutral-200 dark:text-neutral-800" stroke="currentColor" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fill: "currentColor", fontSize: 11 }} className="text-neutral-500 dark:text-neutral-400" tickLine={false} />
-                    <YAxis tick={{ fill: "currentColor", fontSize: 11 }} className="text-neutral-500 dark:text-neutral-400" tickLine={false} tickFormatter={(v) => `$${v}`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} vertical={false} />
+                    <XAxis dataKey="name" tick={axisTick} tickLine={false} />
+                    <YAxis tick={axisTick} tickLine={false} tickFormatter={(v) => `$${v}`} />
                     <Tooltip content={<ChartTooltip />} />
-                    <Bar dataKey="Apify" stackId="cost" fill="#f97316" />
-                    <Bar dataKey="LLM" stackId="cost" fill="#818cf8" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Apify" stackId="cost" fill={chartWarning} />
+                    <Bar dataKey="LLM" stackId="cost" fill={chartAccent} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-[280px] text-sm text-neutral-400 dark:text-neutral-500">No campaign cost data yet</div>
+                <div className="flex items-center justify-center h-[280px] text-sm text-fg-secondary">No campaign cost data yet</div>
               )}
             </div>
 
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5">
+            <div className="rounded-lg border border-line bg-surface p-4">
               <div className="flex items-center gap-2 mb-4">
-                <SparkleIcon size={14} className="text-neutral-400 dark:text-neutral-500" />
-                <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">LLM Cost by Operation</h3>
+                <SparkleIcon size={14} className="text-fg-muted" />
+                <h3 className="text-sm font-semibold text-fg">LLM Cost by Operation</h3>
               </div>
               {operationPieData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={280}>
                   <PieChart>
                     <Pie data={operationPieData} cx="50%" cy="45%" innerRadius={55} outerRadius={90} paddingAngle={2} dataKey="value">
-                      {operationPieData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                      {operationPieData.map((_, i) => <Cell key={i} fill={chartSeries[i % chartSeries.length]} />)}
                     </Pie>
-                    <Tooltip formatter={(v: number | undefined) => [`$${(v ?? 0).toFixed(4)}`, "Cost"]} contentStyle={{ background: "var(--color-bg)", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12 }} />
+                    <Tooltip formatter={(v: number | undefined) => [`$${(v ?? 0).toFixed(4)}`, "Cost"]} contentStyle={chartTooltipStyle} />
                     <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-[280px] text-sm text-neutral-400 dark:text-neutral-500">No LLM cost data yet</div>
+                <div className="flex items-center justify-center h-[280px] text-sm text-fg-secondary">No LLM cost data yet</div>
               )}
             </div>
           </div>
 
           {/* Per-model token breakdown */}
           {data.llmCostByModel && Object.keys(data.llmCostByModel).length > 0 && (
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5">
-              <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 mb-4">LLM Model Breakdown</h3>
+            <div className="rounded-lg border border-line bg-surface p-4">
+              <h3 className="text-sm font-semibold text-fg mb-4">LLM Model Breakdown</h3>
               <div className="space-y-4">
                 {Object.entries(data.llmCostByModel).sort(([, a], [, b]) => b.totalCost - a.totalCost).map(([model, info]) => {
                   const pct = Math.round((info.totalCost / maxModelCost) * 100);
@@ -214,15 +213,15 @@ export default function CostsPage() {
                     <div key={model}>
                       <div className="flex items-center justify-between text-xs mb-1.5">
                         <div className="flex items-center gap-2">
-                          <span className="text-neutral-950 dark:text-neutral-50 font-medium">{model}</span>
-                          <span className="text-neutral-500 dark:text-neutral-400 px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 capitalize text-[11px]">{info.provider}</span>
+                          <span className="text-fg font-medium">{model}</span>
+                          <span className="text-fg-secondary px-1.5 py-0.5 rounded bg-muted capitalize text-xs">{info.provider}</span>
                         </div>
-                        <span className="text-neutral-950 dark:text-neutral-50 font-medium">${info.totalCost.toFixed(4)}</span>
+                        <span className="text-fg font-medium">${info.totalCost.toFixed(4)}</span>
                       </div>
-                      <div className="h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden mb-1.5">
-                        <div className="h-full bg-violet-500 rounded-full" style={{ width: `${pct}%` }} />
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-1.5">
+                        <div className="h-full bg-accent-strong rounded-full" style={{ width: `${pct}%` }} />
                       </div>
-                      <div className="flex items-center gap-4 text-[11px] text-neutral-500 dark:text-neutral-400">
+                      <div className="flex items-center gap-4 text-xs text-fg-secondary">
                         <span>{info.inputTokens.toLocaleString()} input tokens</span>
                         <span>{info.outputTokens.toLocaleString()} output tokens</span>
                         <span>{info.count} call{info.count !== 1 ? "s" : ""}</span>
@@ -235,44 +234,44 @@ export default function CostsPage() {
           )}
 
           {/* Campaign cost table */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden">
-            <div className="px-5 py-4 border-b border-neutral-200 dark:border-neutral-800">
-              <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Campaign Cost Breakdown</h3>
+          <div className="rounded-lg border border-line bg-surface overflow-hidden">
+            <div className="px-4 py-3 border-b border-divider">
+              <h3 className="text-sm font-semibold text-fg">Campaign Cost Breakdown</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-neutral-200 dark:border-neutral-800">
+                  <tr className="border-b border-line">
                     {["Campaign", "Leads", "Apify Cost", "LLM Cost", "Total Cost", "Avg/Lead"].map((h, i) => (
-                      <th key={h} className={`py-3 px-4 font-medium text-neutral-500 dark:text-neutral-400 ${i > 0 ? "text-right" : "text-left"}`}>{h}</th>
+                      <th key={h} className={`py-3 px-4 font-medium text-fg-secondary ${i > 0 ? "text-right" : "text-left"}`}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {Object.entries(data.costByCampaign).length === 0 ? (
-                    <tr><td colSpan={6} className="py-10 text-center text-sm text-neutral-400 dark:text-neutral-500">No cost data yet</td></tr>
+                    <tr><td colSpan={6} className="py-10 text-center text-sm text-fg-secondary">No cost data yet</td></tr>
                   ) : (
                     Object.entries(data.costByCampaign).sort(([, a], [, b]) => b.totalCost - a.totalCost).map(([id, info]) => (
-                      <tr key={id} className="border-b border-neutral-100 dark:border-neutral-800/50 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
-                        <td className="py-3 px-4 font-medium text-neutral-950 dark:text-neutral-50">{info.name}</td>
-                        <td className="py-3 px-4 text-right text-neutral-600 dark:text-neutral-400">{info.leadCount}</td>
-                        <td className="py-3 px-4 text-right text-orange-600 dark:text-orange-400">${info.apifyCost.toFixed(4)}</td>
-                        <td className="py-3 px-4 text-right text-violet-600 dark:text-violet-400">${info.llmCost.toFixed(4)}</td>
-                        <td className="py-3 px-4 text-right font-medium text-neutral-950 dark:text-neutral-50">${info.totalCost.toFixed(4)}</td>
-                        <td className="py-3 px-4 text-right text-neutral-600 dark:text-neutral-400">${info.leadCount > 0 ? (info.totalCost / info.leadCount).toFixed(4) : "0.0000"}</td>
+                      <tr key={id} className="border-b border-row last:border-0 hover:bg-muted transition-colors">
+                        <td className="py-3 px-4 font-medium text-fg">{info.name}</td>
+                        <td className="py-3 px-4 text-right text-fg-secondary">{info.leadCount}</td>
+                        <td className="py-3 px-4 text-right text-warning">${info.apifyCost.toFixed(4)}</td>
+                        <td className="py-3 px-4 text-right text-accent-strong">${info.llmCost.toFixed(4)}</td>
+                        <td className="py-3 px-4 text-right font-medium text-fg">${info.totalCost.toFixed(4)}</td>
+                        <td className="py-3 px-4 text-right text-fg-secondary">${info.leadCount > 0 ? (info.totalCost / info.leadCount).toFixed(4) : "0.0000"}</td>
                       </tr>
                     ))
                   )}
                 </tbody>
                 {Object.keys(data.costByCampaign).length > 0 && (
                   <tfoot>
-                    <tr className="border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-                      <td className="py-3 px-4 font-semibold text-neutral-950 dark:text-neutral-50">Total</td>
-                      <td className="py-3 px-4 text-right font-medium text-neutral-950 dark:text-neutral-50">{Object.values(data.costByCampaign).reduce((s, c) => s + c.leadCount, 0)}</td>
-                      <td className="py-3 px-4 text-right font-medium text-orange-600 dark:text-orange-400">${data.totalApifyCost.toFixed(4)}</td>
-                      <td className="py-3 px-4 text-right font-medium text-violet-600 dark:text-violet-400">${data.totalLlmCost.toFixed(4)}</td>
-                      <td className="py-3 px-4 text-right font-bold text-neutral-950 dark:text-neutral-50">${data.totalCost.toFixed(4)}</td>
-                      <td className="py-3 px-4 text-right font-medium text-neutral-600 dark:text-neutral-400">${avgCostPerLead.toFixed(4)}</td>
+                    <tr className="border-t border-line bg-subtle">
+                      <td className="py-3 px-4 font-semibold text-fg">Total</td>
+                      <td className="py-3 px-4 text-right font-medium text-fg">{Object.values(data.costByCampaign).reduce((s, c) => s + c.leadCount, 0)}</td>
+                      <td className="py-3 px-4 text-right font-medium text-warning">${data.totalApifyCost.toFixed(4)}</td>
+                      <td className="py-3 px-4 text-right font-medium text-accent-strong">${data.totalLlmCost.toFixed(4)}</td>
+                      <td className="py-3 px-4 text-right font-semibold text-fg">${data.totalCost.toFixed(4)}</td>
+                      <td className="py-3 px-4 text-right font-medium text-fg-secondary">${avgCostPerLead.toFixed(4)}</td>
                     </tr>
                   </tfoot>
                 )}
@@ -282,27 +281,27 @@ export default function CostsPage() {
 
           {/* LLM by operation table */}
           {Object.keys(data.llmCostByOperation).length > 0 && (
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden">
-              <div className="px-5 py-4 border-b border-neutral-200 dark:border-neutral-800">
-                <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">LLM Cost by Operation</h3>
+            <div className="rounded-lg border border-line bg-surface overflow-hidden">
+              <div className="px-4 py-3 border-b border-divider">
+                <h3 className="text-sm font-semibold text-fg">LLM Cost by Operation</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-neutral-200 dark:border-neutral-800">
+                    <tr className="border-b border-line">
                       {["Operation", "Calls", "Input Tokens", "Output Tokens", "Cost"].map((h, i) => (
-                        <th key={h} className={`py-3 px-4 font-medium text-neutral-500 dark:text-neutral-400 ${i > 0 ? "text-right" : "text-left"}`}>{h}</th>
+                        <th key={h} className={`py-3 px-4 font-medium text-fg-secondary ${i > 0 ? "text-right" : "text-left"}`}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {Object.entries(data.llmCostByOperation).sort(([, a], [, b]) => b.totalCost - a.totalCost).map(([op, info]) => (
-                      <tr key={op} className="border-b border-neutral-100 dark:border-neutral-800/50 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
-                        <td className="py-3 px-4 text-neutral-950 dark:text-neutral-50 capitalize">{op.replace(/-/g, " ")}</td>
-                        <td className="py-3 px-4 text-right text-neutral-600 dark:text-neutral-400">{info.count}</td>
-                        <td className="py-3 px-4 text-right text-neutral-600 dark:text-neutral-400">{info.inputTokens.toLocaleString()}</td>
-                        <td className="py-3 px-4 text-right text-neutral-600 dark:text-neutral-400">{info.outputTokens.toLocaleString()}</td>
-                        <td className="py-3 px-4 text-right font-medium text-violet-600 dark:text-violet-400">${info.totalCost.toFixed(4)}</td>
+                      <tr key={op} className="border-b border-row last:border-0 hover:bg-muted transition-colors">
+                        <td className="py-3 px-4 text-fg capitalize">{op.replace(/-/g, " ")}</td>
+                        <td className="py-3 px-4 text-right text-fg-secondary">{info.count}</td>
+                        <td className="py-3 px-4 text-right text-fg-secondary">{info.inputTokens.toLocaleString()}</td>
+                        <td className="py-3 px-4 text-right text-fg-secondary">{info.outputTokens.toLocaleString()}</td>
+                        <td className="py-3 px-4 text-right font-medium text-accent-strong">${info.totalCost.toFixed(4)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -312,38 +311,38 @@ export default function CostsPage() {
           )}
 
           {/* Recent Apify Runs */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden">
-            <div className="px-5 py-4 border-b border-neutral-200 dark:border-neutral-800">
-              <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Recent Apify Runs</h3>
+          <div className="rounded-lg border border-line bg-surface overflow-hidden">
+            <div className="px-4 py-3 border-b border-divider">
+              <h3 className="text-sm font-semibold text-fg">Recent Apify Runs</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-neutral-200 dark:border-neutral-800">
+                  <tr className="border-b border-line">
                     {["Actor", "Campaign", "Status", "Results", "Cost", "When"].map((h, i) => (
-                      <th key={h} className={`py-3 px-4 font-medium text-neutral-500 dark:text-neutral-400 ${i >= 3 ? "text-right" : "text-left"}`}>{h}</th>
+                      <th key={h} className={`py-3 px-4 font-medium text-fg-secondary ${i >= 3 ? "text-right" : "text-left"}`}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {!data.recentRuns || data.recentRuns.length === 0 ? (
-                    <tr><td colSpan={6} className="py-10 text-center text-sm text-neutral-400 dark:text-neutral-500">No Apify runs yet</td></tr>
+                    <tr><td colSpan={6} className="py-10 text-center text-sm text-fg-secondary">No Apify runs yet</td></tr>
                   ) : (
                     data.recentRuns.map((run) => {
                       const statusInfo = RUN_STATUS[run.status] ?? RUN_STATUS["ready"];
                       const StatusIcon = statusInfo.icon;
                       return (
-                        <tr key={run.id} className="border-b border-neutral-100 dark:border-neutral-800/50 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
-                          <td className="py-3 px-4 font-mono text-xs text-neutral-950 dark:text-neutral-50">{run.actorId}</td>
-                          <td className="py-3 px-4 text-neutral-600 dark:text-neutral-400">{run.campaignName}</td>
+                        <tr key={run.id} className="border-b border-row last:border-0 hover:bg-muted transition-colors">
+                          <td className="py-3 px-4 font-mono text-xs text-fg">{run.actorId}</td>
+                          <td className="py-3 px-4 text-fg-secondary">{run.campaignName}</td>
                           <td className="py-3 px-4">
                             <span className={`flex items-center gap-1.5 text-xs font-medium ${statusInfo.color}`}>
                               <StatusIcon size={12} weight="fill" />{run.status}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-right text-neutral-600 dark:text-neutral-400">{run.resultCount}</td>
-                          <td className="py-3 px-4 text-right text-orange-600 dark:text-orange-400">${run.costUsd.toFixed(4)}</td>
-                          <td className="py-3 px-4 text-right text-neutral-500 dark:text-neutral-400">{timeAgo(run.startedAt)}</td>
+                          <td className="py-3 px-4 text-right text-fg-secondary">{run.resultCount}</td>
+                          <td className="py-3 px-4 text-right text-warning">${run.costUsd.toFixed(4)}</td>
+                          <td className="py-3 px-4 text-right text-fg-secondary">{timeAgo(run.startedAt)}</td>
                         </tr>
                       );
                     })

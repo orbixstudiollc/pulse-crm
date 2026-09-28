@@ -195,14 +195,14 @@ function resolveFieldValue(
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  new: "text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30",
-  enriching: "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 animate-pulse",
-  "awaiting enrichment": "text-neutral-600 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800",
-  qualified: "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30",
-  converted: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30",
-  disqualified: "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30",
-  declined: "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30",
-  archived: "text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800",
+  new: "text-accent-on-surface bg-accent-surface",
+  enriching: "text-warning bg-warning-surface animate-pulse",
+  "awaiting enrichment": "text-fg-secondary bg-muted",
+  qualified: "text-success bg-success-surface",
+  converted: "text-success bg-success-surface",
+  disqualified: "text-danger bg-danger-surface",
+  declined: "text-danger bg-danger-surface",
+  archived: "text-fg-secondary bg-muted",
 };
 
 // ── Main Component ───────────────────────────────────────────────────────────
@@ -345,8 +345,8 @@ export default function CampaignDetailPage() {
 
   if (loading || !campaign) {
     return (
-      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
-        <CircleNotchIcon size={32} className="animate-spin text-neutral-400" />
+      <div className="min-h-screen bg-subtle flex items-center justify-center">
+        <CircleNotchIcon size={32} className="animate-spin text-fg-muted" />
       </div>
     );
   }
@@ -657,7 +657,7 @@ export default function CampaignDetailPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 lg:p-8 space-y-5">
+    <div className="p-6 lg:p-6 space-y-5">
       <LeadFinderSubNav />
 
       <EnrichmentProgressBanner campaignId={id} />
@@ -665,71 +665,71 @@ export default function CampaignDetailPage() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/dashboard/lead-finder/campaigns" className="p-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
+          <Link href="/dashboard/lead-finder/campaigns" className="p-2 rounded-md bg-surface border border-line text-fg-secondary hover:bg-muted hover:text-fg transition-colors">
             <ArrowLeftIcon size={16} />
           </Link>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-neutral-950 dark:text-neutral-50">{campaign.name}</h1>
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${campaign.status === "active" ? "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30" : campaign.status === "paused" ? "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30" : "text-neutral-500 bg-neutral-100 dark:bg-neutral-800"}`}>
+              <h1 className="text-xl font-semibold text-fg">{campaign.name}</h1>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${campaign.status === "active" ? "text-success bg-success-surface" : campaign.status === "paused" ? "text-warning bg-warning-surface" : "text-fg-secondary bg-muted"}`}>
                 {campaign.status}
               </span>
             </div>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">{campaign.target_niche}</p>
+            <p className="text-sm text-fg-secondary mt-0.5">{campaign.target_niche}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => setShowClearLeadsConfirm(true)} disabled={campaign.leads.length === 0} variant="secondary" size="sm" leftIcon={<TrashIcon size={14} />} className="text-neutral-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30">
+          <Button onClick={() => setShowClearLeadsConfirm(true)} disabled={campaign.leads.length === 0} variant="secondary" size="sm" leftIcon={<TrashIcon size={14} />} className="text-fg-secondary hover:text-danger hover:bg-danger-surface">
             Clear Leads
           </Button>
-          <Button onClick={() => setShowDeleteConfirm(true)} variant="secondary" size="sm" className="w-9 px-0 text-neutral-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30" title="Delete Campaign">
+          <Button onClick={() => setShowDeleteConfirm(true)} variant="secondary" size="sm" className="w-9 px-0 text-fg-secondary hover:text-danger hover:bg-danger-surface" title="Delete Campaign">
             <TrashIcon size={15} />
           </Button>
           <Button onClick={openSettings} variant="secondary" size="sm" leftIcon={<GearIcon size={15} />}>
             Settings
           </Button>
-          <Button onClick={handleActivatePause} variant="outline" size="sm" className={campaign.status === "active" ? "bg-amber-400/10 text-amber-600 dark:text-amber-400 border-amber-400/20 hover:bg-amber-400/20" : "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/50"}>
+          <Button onClick={handleActivatePause} variant="outline" size="sm" className={campaign.status === "active" ? "bg-warning-surface text-warning border-warning hover:bg-warning-surface" : "bg-success-surface text-success border-success hover:bg-success-surface"}>
             {campaign.status === "active" ? <><PauseIcon size={14} /> Pause</> : <><PlayIcon size={14} /> Activate</>}
           </Button>
         </div>
       </div>
 
       {/* ── Stats bar ── */}
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl">
-        <div className="flex flex-wrap items-stretch divide-x divide-neutral-100 dark:divide-neutral-800">
+      <div className="bg-surface border border-line rounded-lg">
+        <div className="flex flex-wrap items-stretch divide-x divide-row">
           {[
             { label: "Leads", value: campaign.stats.totalLeads, icon: <UsersIcon size={12} /> },
             { label: "Enriched", value: campaign.stats.enrichedLeads, icon: <SparkleIcon size={12} /> },
             { label: "Avg Score", value: campaign.stats.avgScore, icon: <ChartBarIcon size={12} /> },
           ].map((s) => (
-            <div key={s.label} className="flex-1 min-w-[90px] px-4 py-3">
-              <div className="flex items-center gap-1 text-neutral-500 dark:text-neutral-400 mb-1">
+            <div key={s.label} className="flex-1 min-w-[90px] p-4">
+              <div className="flex items-center gap-1 text-fg-secondary mb-1">
                 {s.icon}
-                <span className="text-[10px] uppercase tracking-wider">{s.label}</span>
+                <span className="text-xs">{s.label}</span>
               </div>
-              <p className="text-lg font-bold text-neutral-950 dark:text-neutral-50">{s.value}</p>
+              <p className="text-[22px] leading-7 font-semibold text-fg">{s.value}</p>
             </div>
           ))}
-          <div className="relative flex-1 min-w-[120px] px-4 py-3 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors" onClick={() => setShowCostBreakdown((v) => !v)}>
-            <div className="flex items-center gap-1 text-neutral-500 dark:text-neutral-400 mb-1">
+          <div className="relative flex-1 min-w-[120px] p-4 cursor-pointer hover:bg-muted transition-colors" onClick={() => setShowCostBreakdown((v) => !v)}>
+            <div className="flex items-center gap-1 text-fg-secondary mb-1">
               <CurrencyDollarIcon size={12} />
-              <span className="text-[10px] uppercase tracking-wider">Total Cost</span>
+              <span className="text-xs">Total Cost</span>
               <InfoIcon size={10} className="ml-0.5" />
             </div>
-            <p className="text-lg font-bold text-neutral-950 dark:text-neutral-50">${campaign.stats.totalCost.toFixed(4)}</p>
+            <p className="text-[22px] leading-7 font-semibold text-fg">${campaign.stats.totalCost.toFixed(4)}</p>
             {showCostBreakdown && (
               <>
                 <div className="fixed inset-0 z-30" onClick={(e) => { e.stopPropagation(); setShowCostBreakdown(false); }} />
-                <div className="absolute left-0 top-full z-40 mt-1 w-52 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-xl p-3 space-y-2">
-                  <p className="text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400 font-medium">Cost Breakdown</p>
+                <div className="absolute left-0 top-full z-40 mt-1 w-52 bg-surface border border-line rounded-lg shadow-dropdown p-3 space-y-2">
+                  <p className="text-xs text-fg-secondary font-medium">Cost Breakdown</p>
                   {[
                     ["Avg / Lead", `$${campaign.stats.avgCostPerLead.toFixed(4)}`],
                     ["Apify", `$${campaign.stats.apifyCost.toFixed(4)}`],
                     ["LLM", `$${campaign.stats.llmCost.toFixed(4)}`],
                   ].map(([label, val]) => (
                     <div key={label} className="flex justify-between text-sm">
-                      <span className="text-neutral-500 dark:text-neutral-400">{label}</span>
-                      <span className="font-medium text-neutral-950 dark:text-neutral-50">{val}</span>
+                      <span className="text-fg-secondary">{label}</span>
+                      <span className="font-medium text-fg">{val}</span>
                     </div>
                   ))}
                 </div>
@@ -740,21 +740,21 @@ export default function CampaignDetailPage() {
       </div>
 
       {/* ── Discovery Configuration ── */}
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
+      <div className="bg-surface border border-line rounded-lg overflow-hidden">
+        <div className="px-4 py-3 border-b border-divider flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Discovery Configuration</h2>
+            <h2 className="text-sm font-semibold text-fg">Discovery Configuration</h2>
             {campaign.last_discovery_at && (
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              <p className="text-xs text-fg-secondary mt-0.5">
                 Last run: {new Date(campaign.last_discovery_at).toLocaleString()}
               </p>
             )}
           </div>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-fg-secondary bg-muted border border-line">
             <ClockIcon size={10} /> {campaign.schedule_frequency}
           </span>
         </div>
-        <div className="p-5 space-y-3">
+        <div className="p-4 space-y-3">
           {/* Find actors */}
           {findActors.map((actorId) => {
             const actor = getActorById(actorId);
@@ -762,27 +762,27 @@ export default function CampaignDetailPage() {
             const actorIsRunning = runningActor === actorId || latestRun?.status === "running";
             const anyRunning = runningActor !== null;
             return (
-              <div key={actorId} className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-3">
+              <div key={actorId} className="rounded-lg border border-line p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{actor?.name || actorId}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{actor?.description || ""}</p>
+                    <p className="text-sm font-medium text-fg">{actor?.name || actorId}</p>
+                    <p className="text-xs text-fg-secondary mt-0.5">{actor?.description || ""}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {actorIsRunning ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                      <span className="inline-flex items-center gap-1 text-xs text-warning">
                         <CircleNotchIcon size={12} className="animate-spin" /> Running
                       </span>
                     ) : latestRun?.status === "succeeded" ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-green-700 dark:text-green-400">
+                      <span className="inline-flex items-center gap-1 text-xs text-success">
                         <CheckCircleIcon size={12} /> {latestRun.result_count} results
                       </span>
                     ) : latestRun?.status === "failed" ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
+                      <span className="inline-flex items-center gap-1 text-xs text-danger">
                         <XCircleIcon size={12} /> Failed
                       </span>
                     ) : (
-                      <span className="text-xs text-neutral-400 dark:text-neutral-500">Not run yet</span>
+                      <span className="text-xs text-fg-muted">Not run yet</span>
                     )}
                     <Button
                       onClick={() => handleRunActor(actorId)}
@@ -796,12 +796,12 @@ export default function CampaignDetailPage() {
                   </div>
                 </div>
                 {lastActorResult?.actorId === actorId && (
-                  <p className="text-xs text-green-700 dark:text-green-400 mt-2">
+                  <p className="text-xs text-success mt-2">
                     Found {lastActorResult.total} results — {lastActorResult.inserted} new leads added
                   </p>
                 )}
                 {actorIsRunning && (
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+                  <p className="text-xs text-fg-secondary mt-2">
                     {discoveryProgress
                       ? `Processing lead ${discoveryProgress.current} of ${discoveryProgress.total}...`
                       : "Scraping in progress — this may take 1–2 minutes..."}
@@ -813,13 +813,13 @@ export default function CampaignDetailPage() {
 
           {/* Discovery error */}
           {discoveryError && (
-            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-400">
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-danger-surface border border-danger text-sm text-danger">
               <WarningCircleIcon size={16} className="shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium">Discovery Error</p>
                 <p className="text-xs mt-0.5">{discoveryError}</p>
               </div>
-              <Button onClick={() => setDiscoveryError(null)} variant="ghost" size="sm" className="ml-auto text-red-400 hover:text-red-600 px-1">
+              <Button onClick={() => setDiscoveryError(null)} variant="ghost" size="sm" className="ml-auto text-danger hover:text-danger px-1">
                 <XIcon size={14} />
               </Button>
             </div>
@@ -828,10 +828,10 @@ export default function CampaignDetailPage() {
           {/* Enrich actors */}
           {enrichActors.length > 0 && (
             <>
-              <div className="border-t border-neutral-100 dark:border-neutral-800 pt-3 flex items-center justify-between">
+              <div className="border-t border-row pt-3 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Lead Enrichment</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  <p className="text-sm font-semibold text-fg">Lead Enrichment</p>
+                  <p className="text-xs text-fg-secondary mt-0.5">
                     {isEnrichmentActive ? (
                       <span className="flex items-center gap-1"><CircleNotchIcon size={10} className="animate-spin" /> Enriching {unenrichedCount} leads...</span>
                     ) : hasUnenrichedLeads ? (
@@ -863,12 +863,12 @@ export default function CampaignDetailPage() {
                 {enrichActors.map((actorId) => {
                   const actor = getActorById(actorId);
                   return (
-                    <div key={actorId} className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-3 flex items-center justify-between gap-3">
+                    <div key={actorId} className="rounded-lg border border-line p-3 flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{actor?.name || actorId}</p>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{actor?.description || ""}</p>
+                        <p className="text-sm font-medium text-fg">{actor?.name || actorId}</p>
+                        <p className="text-xs text-fg-secondary mt-0.5">{actor?.description || ""}</p>
                       </div>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800">enrich</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-fg-secondary bg-muted">enrich</span>
                     </div>
                   );
                 })}
@@ -877,7 +877,7 @@ export default function CampaignDetailPage() {
           )}
 
           {findActors.length === 0 && enrichActors.length === 0 && (
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 py-4 text-center">
+            <p className="text-sm text-fg-secondary py-4 text-center">
               No actors configured. Open Settings to add actors.
             </p>
           )}
@@ -885,9 +885,9 @@ export default function CampaignDetailPage() {
       </div>
 
       {/* ── Leads Table ── */}
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
+      <div className="bg-surface border border-line rounded-lg overflow-hidden">
         {/* Table toolbar */}
-        <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between gap-3 flex-wrap">
+        <div className="px-4 py-3 border-b border-row flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
             <Input
               leftIcon={<MagnifyingGlassIcon size={14} />}
@@ -918,16 +918,16 @@ export default function CampaignDetailPage() {
             {/* Column toggle */}
             {fields.length > 0 && (
               <div className="relative">
-                <Button onClick={() => setShowColumnMenu((v) => !v)} variant="outline" size="sm" leftIcon={<SlidersHorizontalIcon size={13} />} className="h-8 text-xs text-neutral-600 dark:text-neutral-400">
+                <Button onClick={() => setShowColumnMenu((v) => !v)} variant="outline" size="sm" leftIcon={<SlidersHorizontalIcon size={13} />} className="h-8 text-xs text-fg-secondary">
                   Columns
                 </Button>
                 {showColumnMenu && (
                   <>
                     <div className="fixed inset-0 z-30" onClick={() => setShowColumnMenu(false)} />
-                    <div className="absolute left-0 top-full z-40 mt-1 w-48 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-xl py-1.5">
-                      <p className="px-3 py-1 text-[10px] uppercase tracking-wider font-medium text-neutral-400 dark:text-neutral-500">Toggle columns</p>
+                    <div className="absolute left-0 top-full z-40 mt-1 w-48 bg-surface border border-line rounded-lg shadow-dropdown py-1.5">
+                      <p className="px-3 py-1 text-xs font-medium text-fg-muted">Toggle columns</p>
                       {fields.map((f) => (
-                        <label key={f._id} className="flex items-center gap-2 px-3 py-1.5 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 cursor-pointer">
+                        <label key={f._id} className="flex items-center gap-2 px-3 py-1.5 text-sm text-fg hover:bg-muted cursor-pointer">
                           <input
                             type="checkbox"
                             checked={extraColumns.has(f._id)}
@@ -942,9 +942,9 @@ export default function CampaignDetailPage() {
                 )}
               </div>
             )}
-            <span className="text-xs text-neutral-400 dark:text-neutral-500">{filteredLeads.length} lead{filteredLeads.length !== 1 ? "s" : ""}</span>
+            <span className="text-xs text-fg-muted">{filteredLeads.length} lead{filteredLeads.length !== 1 ? "s" : ""}</span>
             {unenrichedCount > 0 && (
-              <span className="flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
+              <span className="flex items-center gap-1 text-xs text-fg-secondary">
                 {isEnrichmentActive && <CircleNotchIcon size={10} className="animate-spin" />}
                 {unenrichedCount} awaiting enrichment
               </span>
@@ -952,7 +952,7 @@ export default function CampaignDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             {selectedLeads.size > 0 && (
-              <Button onClick={handleImportToCRM} disabled={importing} variant="outline" size="sm" className="h-8 text-xs bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/50">
+              <Button onClick={handleImportToCRM} disabled={importing} variant="outline" size="sm" className="h-8 text-xs bg-success-surface text-success border-success hover:bg-success-surface">
                 {importing ? <CircleNotchIcon size={11} className="animate-spin" /> : <ArrowRightIcon size={11} />}
                 Import {selectedLeads.size} to CRM
               </Button>
@@ -967,24 +967,24 @@ export default function CampaignDetailPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-neutral-100 dark:border-neutral-800">
+              <tr className="border-b border-row">
                 <th className="p-3 w-9">
                   <input type="checkbox" checked={selectedLeads.size === filteredLeads.length && filteredLeads.length > 0} onChange={() => setSelectedLeads(selectedLeads.size === filteredLeads.length ? new Set() : new Set(filteredLeads.map((l) => l.id)))} className="rounded" />
                 </th>
-                <th className="p-3 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider whitespace-nowrap">Label</th>
+                <th className="p-3 text-xs font-medium text-fg-secondary whitespace-nowrap">Label</th>
                 {fields.filter((f) => extraColumns.has(f._id)).map((f) => (
-                  <th key={f._id} className="p-3 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider whitespace-nowrap">{f.label}</th>
+                  <th key={f._id} className="p-3 text-xs font-medium text-fg-secondary whitespace-nowrap">{f.label}</th>
                 ))}
-                <th className="p-3 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider whitespace-nowrap">Added</th>
-                <th className="p-3 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider whitespace-nowrap">Score</th>
-                <th className="p-3 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider whitespace-nowrap">Status</th>
+                <th className="p-3 text-xs font-medium text-fg-secondary whitespace-nowrap">Added</th>
+                <th className="p-3 text-xs font-medium text-fg-secondary whitespace-nowrap">Score</th>
+                <th className="p-3 text-xs font-medium text-fg-secondary whitespace-nowrap">Status</th>
                 <th className="p-3 w-20" />
               </tr>
             </thead>
             <tbody>
               {filteredLeads.length === 0 ? (
                 <tr>
-                  <td colSpan={6 + fields.filter((f) => extraColumns.has(f._id)).length} className="p-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
+                  <td colSpan={6 + fields.filter((f) => extraColumns.has(f._id)).length} className="p-12 text-center text-sm text-fg-secondary">
                     {campaign.leads.length === 0
                       ? runningActor ? <span className="flex items-center justify-center gap-2"><CircleNotchIcon size={14} className="animate-spin" /> Discovery running — leads will appear here shortly</span>
                       : "No leads yet. Run a scraper from Discovery Configuration above."
@@ -996,17 +996,17 @@ export default function CampaignDetailPage() {
                   const status = displayStatus(lead);
                   const isRe = reEnrichingLeads.has(lead.id);
                   return (
-                    <tr key={lead.id} className="border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors cursor-pointer" onClick={() => setDrawerLeadId(lead.id)}>
+                    <tr key={lead.id} className="border-b border-row hover:bg-muted transition-colors cursor-pointer" onClick={() => setDrawerLeadId(lead.id)}>
                       <td className="p-3" onClick={(e) => e.stopPropagation()}>
                         <input type="checkbox" checked={selectedLeads.has(lead.id)} onChange={() => setSelectedLeads((prev) => { const n = new Set(prev); if (n.has(lead.id)) n.delete(lead.id); else n.add(lead.id); return n; })} className="rounded" />
                       </td>
                       <td className="p-3 max-w-[200px]">
-                        <button type="button" onClick={(e) => { e.stopPropagation(); setDrawerLeadId(lead.id); }} className="text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:underline break-words line-clamp-2 text-left cursor-pointer">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setDrawerLeadId(lead.id); }} className="text-sm font-medium text-fg hover:underline break-words line-clamp-2 text-left cursor-pointer">
                           {lead.display_name || "Unknown"}
                         </button>
-                        {lead.email && <p className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1 mt-0.5"><EnvelopeIcon size={10} />{lead.email}</p>}
+                        {lead.email && <p className="text-xs text-fg-secondary flex items-center gap-1 mt-0.5"><EnvelopeIcon size={10} />{lead.email}</p>}
                         {lead.website && (
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-1 mt-0.5 truncate max-w-[180px]">
+                          <p className="text-xs text-fg-secondary flex items-center gap-1 mt-0.5 truncate max-w-[180px]">
                             <GlobeIcon size={10} />
                             <a href={lead.website} target="_blank" rel="noopener noreferrer" className="hover:underline" onClick={(e) => e.stopPropagation()}>
                               {lead.website.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}
@@ -1019,29 +1019,29 @@ export default function CampaignDetailPage() {
                         return (
                           <td key={f._id} className="p-3 text-xs max-w-[160px]">
                             {isUrl && display !== "—" ? (
-                              <a href={display} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline truncate block" onClick={(e) => e.stopPropagation()}>
+                              <a href={display} target="_blank" rel="noopener noreferrer" className="text-accent-strong hover:underline truncate block" onClick={(e) => e.stopPropagation()}>
                                 {display.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}
                               </a>
                             ) : (
-                              <span className="text-neutral-600 dark:text-neutral-400 truncate block">{display}</span>
+                              <span className="text-fg-secondary truncate block">{display}</span>
                             )}
                           </td>
                         );
                       })}
-                      <td className="p-3 text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap">{formatRelativeTime(lead.created_at)}</td>
+                      <td className="p-3 text-xs text-fg-secondary whitespace-nowrap">{formatRelativeTime(lead.created_at)}</td>
                       <td className="p-3">
                         {lead.status === "new" || lead.status === "enriching"
-                          ? <span className="text-xs text-neutral-400 dark:text-neutral-500">—</span>
+                          ? <span className="text-xs text-fg-muted">—</span>
                           : <ScoreBadge score={lead.score} />}
                       </td>
                       <td className="p-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium capitalize ${STATUS_STYLES[status] || "text-neutral-500 bg-neutral-100 dark:bg-neutral-800"}`}>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_STYLES[status] || "text-fg-secondary bg-muted"}`}>
                           {status}
                         </span>
                       </td>
                       <td className="p-3" onClick={(e) => e.stopPropagation()}>
                         {isRe ? (
-                          <CircleNotchIcon size={14} className="animate-spin text-neutral-400" />
+                          <CircleNotchIcon size={14} className="animate-spin text-fg-muted" />
                         ) : lead.status === "new" ? (
                           <div className="flex items-center gap-0.5">
                             <Button onClick={() => handleReEnrich(lead.id)} title="Enrich" variant="ghost" size="sm" className="p-1 h-auto">
@@ -1050,7 +1050,7 @@ export default function CampaignDetailPage() {
                             <Button onClick={() => handleSkip(lead.id)} title="Skip enrichment" variant="ghost" size="sm" className="p-1 h-auto">
                               <ArrowRightIcon size={14} />
                             </Button>
-                            <Button onClick={() => handleDeleteLead(lead.id)} title="Delete" variant="ghost" size="sm" className="p-1 h-auto text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30">
+                            <Button onClick={() => handleDeleteLead(lead.id)} title="Delete" variant="ghost" size="sm" className="p-1 h-auto text-fg-muted hover:text-danger hover:bg-danger-surface">
                               <TrashIcon size={13} />
                             </Button>
                           </div>
@@ -1059,7 +1059,7 @@ export default function CampaignDetailPage() {
                             <Button onClick={() => handleReEnrich(lead.id)} title="Re-enrich" variant="ghost" size="sm" className="p-1 h-auto">
                               <ArrowCounterClockwiseIcon size={14} />
                             </Button>
-                            <Button onClick={() => handleDeleteLead(lead.id)} title="Delete" variant="ghost" size="sm" className="p-1 h-auto text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30">
+                            <Button onClick={() => handleDeleteLead(lead.id)} title="Delete" variant="ghost" size="sm" className="p-1 h-auto text-fg-muted hover:text-danger hover:bg-danger-surface">
                               <TrashIcon size={13} />
                             </Button>
                           </div>
@@ -1076,16 +1076,16 @@ export default function CampaignDetailPage() {
 
       {/* ── Run History ── */}
       {campaign.runs.length > 0 && (
-        <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-neutral-100 dark:border-neutral-800">
-            <h2 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Run History</h2>
+        <div className="bg-surface border border-line rounded-lg overflow-hidden">
+          <div className="px-4 py-3 border-b border-divider">
+            <h2 className="text-sm font-semibold text-fg">Run History</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-neutral-100 dark:border-neutral-800">
+                <tr className="border-b border-row">
                   {["Actor", "Status", "Results", "Cost", "Started"].map((h) => (
-                    <th key={h} className="p-3 text-[10px] font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">{h}</th>
+                    <th key={h} className="p-3 text-xs font-medium text-fg-secondary">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -1093,17 +1093,17 @@ export default function CampaignDetailPage() {
                 {campaign.runs.slice(0, 5).map((run) => {
                   const actor = getActorById(run.actor_id);
                   return (
-                    <tr key={run.id} className="border-b border-neutral-100 dark:border-neutral-800/50">
-                      <td className="p-3 text-sm text-neutral-950 dark:text-neutral-50">{actor?.name || run.actor_id}</td>
+                    <tr key={run.id} className="border-b border-row">
+                      <td className="p-3 text-sm text-fg">{actor?.name || run.actor_id}</td>
                       <td className="p-3">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${run.status === "succeeded" ? "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30" : run.status === "running" ? "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30" : "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30"}`}>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${run.status === "succeeded" ? "text-success bg-success-surface" : run.status === "running" ? "text-warning bg-warning-surface" : "text-danger bg-danger-surface"}`}>
                           {run.status === "running" && <CircleNotchIcon size={10} className="animate-spin" />}
                           {run.status}
                         </span>
                       </td>
-                      <td className="p-3 text-sm text-neutral-600 dark:text-neutral-400">{run.result_count ?? "—"}</td>
-                      <td className="p-3 text-sm text-neutral-600 dark:text-neutral-400">{run.cost_usd != null ? `$${run.cost_usd.toFixed(4)}` : "—"}</td>
-                      <td className="p-3 text-xs text-neutral-500 dark:text-neutral-400">{new Date(run.started_at).toLocaleString()}</td>
+                      <td className="p-3 text-sm text-fg-secondary">{run.result_count ?? "—"}</td>
+                      <td className="p-3 text-sm text-fg-secondary">{run.cost_usd != null ? `$${run.cost_usd.toFixed(4)}` : "—"}</td>
+                      <td className="p-3 text-xs text-fg-secondary">{new Date(run.started_at).toLocaleString()}</td>
                     </tr>
                   );
                 })}
@@ -1117,18 +1117,18 @@ export default function CampaignDetailPage() {
       {showSettings && (
         <div className="fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowSettings(false)} />
-          <div className="relative ml-auto w-full max-w-xl bg-white dark:bg-neutral-900 border-l border-neutral-200 dark:border-neutral-800 shadow-2xl flex flex-col h-full">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 shrink-0">
+          <div className="relative ml-auto w-full max-w-xl bg-surface border-l border-line flex flex-col h-full">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-divider shrink-0">
               <div>
-                <h2 className="text-base font-semibold text-neutral-950 dark:text-neutral-50">Campaign Settings</h2>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Edit configuration for {campaign.name}</p>
+                <h2 className="text-heading-md text-fg">Campaign Settings</h2>
+                <p className="text-xs text-fg-secondary mt-0.5">Edit configuration for {campaign.name}</p>
               </div>
               <Button onClick={() => setShowSettings(false)} variant="ghost" size="sm" className="p-2">
                 <XIcon size={16} />
               </Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
               {editSettings && (
                 <>
                   {/* Basic settings */}
@@ -1145,9 +1145,9 @@ export default function CampaignDetailPage() {
                   </div>
 
                   {/* Actors */}
-                  <div className="border-t border-neutral-100 dark:border-neutral-800 pt-5 space-y-3">
+                  <div className="border-t border-row pt-5 space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Actors</p>
+                      <p className="text-sm font-semibold text-fg">Actors</p>
                       {(() => {
                         const used = new Set(editSettings.actorOrder);
                         const avFind = getActorsByPhase("find").filter((a) => !used.has(a.id));
@@ -1155,21 +1155,21 @@ export default function CampaignDetailPage() {
                         if (avFind.length === 0 && avEnrich.length === 0) return null;
                         return (
                           <div className="relative">
-                            <Button onClick={() => setAddActorOpen((v) => !v)} variant="outline" size="sm" leftIcon={<PlusIcon size={12} />} className="h-7 text-xs text-neutral-600 dark:text-neutral-400">
+                            <Button onClick={() => setAddActorOpen((v) => !v)} variant="outline" size="sm" leftIcon={<PlusIcon size={12} />} className="h-7 text-xs text-fg-secondary">
                               Add Actor
                             </Button>
                             {addActorOpen && (
                               <>
                                 <div className="fixed inset-0 z-10" onClick={() => setAddActorOpen(false)} />
-                                <div className="absolute right-0 top-full z-20 mt-1 w-64 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-xl py-1.5">
+                                <div className="absolute right-0 top-full z-20 mt-1 w-64 bg-surface border border-line rounded-lg shadow-dropdown py-1.5">
                                   {avFind.length > 0 && (
                                     <>
-                                      <p className="px-3 py-1 text-[10px] uppercase tracking-wider font-medium text-neutral-400 dark:text-neutral-500">Scraping</p>
+                                      <p className="px-3 py-1 text-xs font-medium text-fg-muted">Scraping</p>
                                       {avFind.map((a) => (
-                                        <button key={a.id} onClick={() => addActorToSettings(a.id)} className="flex w-full items-start gap-2 px-3 py-2 rounded text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                                        <button key={a.id} onClick={() => addActorToSettings(a.id)} className="flex w-full items-start gap-2 px-3 py-2 rounded text-left hover:bg-muted transition-colors">
                                           <div>
-                                            <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{a.name}</p>
-                                            <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1">{a.description}</p>
+                                            <p className="text-sm font-medium text-fg">{a.name}</p>
+                                            <p className="text-xs text-fg-secondary line-clamp-1">{a.description}</p>
                                           </div>
                                         </button>
                                       ))}
@@ -1177,13 +1177,13 @@ export default function CampaignDetailPage() {
                                   )}
                                   {avEnrich.length > 0 && (
                                     <>
-                                      {avFind.length > 0 && <div className="border-t border-neutral-100 dark:border-neutral-800 my-1" />}
-                                      <p className="px-3 py-1 text-[10px] uppercase tracking-wider font-medium text-neutral-400 dark:text-neutral-500">Enrichment</p>
+                                      {avFind.length > 0 && <div className="border-t border-row my-1" />}
+                                      <p className="px-3 py-1 text-xs font-medium text-fg-muted">Enrichment</p>
                                       {avEnrich.map((a) => (
-                                        <button key={a.id} onClick={() => addActorToSettings(a.id)} className="flex w-full items-start gap-2 px-3 py-2 rounded text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+                                        <button key={a.id} onClick={() => addActorToSettings(a.id)} className="flex w-full items-start gap-2 px-3 py-2 rounded text-left hover:bg-muted transition-colors">
                                           <div>
-                                            <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{a.name}</p>
-                                            <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1">{a.description}</p>
+                                            <p className="text-sm font-medium text-fg">{a.name}</p>
+                                            <p className="text-xs text-fg-secondary line-clamp-1">{a.description}</p>
                                           </div>
                                         </button>
                                       ))}
@@ -1196,9 +1196,9 @@ export default function CampaignDetailPage() {
                         );
                       })()}
                     </div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Drag the handle to reorder. Actors run top-to-bottom during discovery and enrichment.</p>
+                    <p className="text-xs text-fg-secondary">Drag the handle to reorder. Actors run top-to-bottom during discovery and enrichment.</p>
                     {editSettings.actorOrder.length === 0 ? (
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400 py-4 text-center border border-dashed border-neutral-200 dark:border-neutral-700 rounded-lg">No actors. Click &quot;Add Actor&quot; to get started.</p>
+                      <p className="text-sm text-fg-secondary py-4 text-center border border-dashed border-line rounded-lg">No actors. Click &quot;Add Actor&quot; to get started.</p>
                     ) : (
                       <SortableList
                         items={editSettings.actorOrder}
@@ -1214,24 +1214,24 @@ export default function CampaignDetailPage() {
                           const hasFields = def.phase !== "enrich" && Object.keys(def.inputFieldDescriptions || {}).length > 0;
                           const fieldVals = editSettings.actorConfigs[actorId] || {};
                           return (
-                            <div className="rounded-lg border border-neutral-200 dark:border-neutral-800">
+                            <div className="rounded-lg border border-line">
                               <div className="flex items-center">
-                                <button onClick={() => setCollapsedActors((prev) => { const n = new Set(prev); if (n.has(actorId)) n.delete(actorId); else n.add(actorId); return n; })} className="flex-1 flex items-center justify-between p-3 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors min-w-0">
+                                <button onClick={() => setCollapsedActors((prev) => { const n = new Set(prev); if (n.has(actorId)) n.delete(actorId); else n.add(actorId); return n; })} className="flex-1 flex items-center justify-between p-3 text-left hover:bg-muted transition-colors min-w-0">
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{def.name}</span>
-                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 capitalize">{def.phase}</span>
+                                      <span className="text-sm font-medium text-fg">{def.name}</span>
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-fg-secondary bg-muted border border-line capitalize">{def.phase}</span>
                                     </div>
-                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 truncate">{def.description}</p>
+                                    <p className="text-xs text-fg-secondary mt-0.5 truncate">{def.description}</p>
                                   </div>
-                                  {isCollapsed ? <CaretRightIcon size={14} className="shrink-0 text-neutral-400" /> : <ChevronDownIcon size={14} className="shrink-0 text-neutral-400" />}
+                                  {isCollapsed ? <CaretRightIcon size={14} className="shrink-0 text-fg-muted" /> : <ChevronDownIcon size={14} className="shrink-0 text-fg-muted" />}
                                 </button>
-                                <Button onClick={() => removeActorFromSettings(actorId)} variant="ghost" size="sm" className="p-2 mr-1 h-auto text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30" title="Remove actor">
+                                <Button onClick={() => removeActorFromSettings(actorId)} variant="ghost" size="sm" className="p-2 mr-1 h-auto text-fg-muted hover:text-danger hover:bg-danger-surface" title="Remove actor">
                                   <XIcon size={14} />
                                 </Button>
                               </div>
                               {!isCollapsed && (
-                                <div className="border-t border-neutral-100 dark:border-neutral-800 px-4 py-3">
+                                <div className="border-t border-row px-4 py-3">
                                   {hasFields ? (
                                     <div className="space-y-3">
                                       {Object.keys(def.inputFieldDescriptions || {}).map((fieldName) => {
@@ -1267,13 +1267,13 @@ export default function CampaignDetailPage() {
                                                 className="h-8"
                                               />
                                             )}
-                                            {desc?.helpText && <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{desc.helpText}</p>}
+                                            {desc?.helpText && <p className="text-xs text-fg-secondary mt-1">{desc.helpText}</p>}
                                           </div>
                                         );
                                       })}
                                     </div>
                                   ) : (
-                                    <p className="text-xs text-neutral-500 dark:text-neutral-400">No configurable fields — inputs filled from lead data during enrichment.</p>
+                                    <p className="text-xs text-fg-secondary">No configurable fields — inputs filled from lead data during enrichment.</p>
                                   )}
                                 </div>
                               )}
@@ -1285,23 +1285,23 @@ export default function CampaignDetailPage() {
                   </div>
 
                   {/* Lead Data Fields */}
-                  <div className="border-t border-neutral-100 dark:border-neutral-800 pt-5 space-y-3">
+                  <div className="border-t border-row pt-5 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <TagIcon size={14} className="text-neutral-500 dark:text-neutral-400" />
-                        <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Lead Data Fields</p>
+                        <TagIcon size={14} className="text-fg-secondary" />
+                        <p className="text-sm font-semibold text-fg">Lead Data Fields</p>
                       </div>
-                      <Button onClick={() => setEditLeadFields((prev) => [...prev, { id: `field_${Date.now()}`, label: "", type: "text" }])} variant="outline" size="sm" leftIcon={<PlusIcon size={12} />} className="h-7 text-xs text-neutral-600 dark:text-neutral-400">
+                      <Button onClick={() => setEditLeadFields((prev) => [...prev, { id: `field_${Date.now()}`, label: "", type: "text" }])} variant="outline" size="sm" leftIcon={<PlusIcon size={12} />} className="h-7 text-xs text-fg-secondary">
                         Add
                       </Button>
                     </div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Fields extracted from each lead during enrichment.</p>
+                    <p className="text-xs text-fg-secondary">Fields extracted from each lead during enrichment.</p>
                     {editLeadFields.length === 0 ? (
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400 py-3 text-center border border-dashed border-neutral-200 dark:border-neutral-700 rounded-lg">No custom fields. Click &quot;Add&quot; to track extra data per lead.</p>
+                      <p className="text-sm text-fg-secondary py-3 text-center border border-dashed border-line rounded-lg">No custom fields. Click &quot;Add&quot; to track extra data per lead.</p>
                     ) : (
                       <div className="space-y-2">
                         {editLeadFields.map((f) => (
-                          <div key={f.id} className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-3 space-y-2">
+                          <div key={f.id} className="rounded-lg border border-line p-3 space-y-2">
                             <div className="flex items-start gap-2">
                               <div className="flex-1 space-y-1.5 min-w-0">
                                 <Input value={f.label} onChange={(e) => setEditLeadFields((prev) => prev.map((x) => x.id === f.id ? { ...x, label: e.target.value } : x))} placeholder="Field label" className="h-8 font-medium" />
@@ -1313,7 +1313,7 @@ export default function CampaignDetailPage() {
                                     {icon}
                                   </Button>
                                 ))}
-                                <Button onClick={() => setEditLeadFields((prev) => prev.filter((x) => x.id !== f.id))} variant="ghost" size="sm" className="h-7 w-7 px-0 text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30">
+                                <Button onClick={() => setEditLeadFields((prev) => prev.filter((x) => x.id !== f.id))} variant="ghost" size="sm" className="h-7 w-7 px-0 text-fg-muted hover:text-danger hover:bg-danger-surface">
                                   <XIcon size={13} />
                                 </Button>
                               </div>
@@ -1325,23 +1325,23 @@ export default function CampaignDetailPage() {
                   </div>
 
                   {/* KPIs */}
-                  <div className="border-t border-neutral-100 dark:border-neutral-800 pt-5 space-y-3">
+                  <div className="border-t border-row pt-5 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <BarChartIcon size={14} className="text-neutral-500 dark:text-neutral-400" />
-                        <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">Tracked KPIs</p>
+                        <BarChartIcon size={14} className="text-fg-secondary" />
+                        <p className="text-sm font-semibold text-fg">Tracked KPIs</p>
                       </div>
-                      <Button onClick={() => setEditKpis((prev) => [...prev, { id: `kpi_${Date.now()}`, label: "", type: "boolean" }])} variant="outline" size="sm" leftIcon={<PlusIcon size={12} />} className="h-7 text-xs text-neutral-600 dark:text-neutral-400">
+                      <Button onClick={() => setEditKpis((prev) => [...prev, { id: `kpi_${Date.now()}`, label: "", type: "boolean" }])} variant="outline" size="sm" leftIcon={<PlusIcon size={12} />} className="h-7 text-xs text-fg-secondary">
                         Add
                       </Button>
                     </div>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">KPIs automatically filled by AI during enrichment.</p>
+                    <p className="text-xs text-fg-secondary">KPIs automatically filled by AI during enrichment.</p>
                     {editKpis.length === 0 ? (
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400 py-3 text-center border border-dashed border-neutral-200 dark:border-neutral-700 rounded-lg">No KPIs configured. Click &quot;Add&quot; to track custom metrics.</p>
+                      <p className="text-sm text-fg-secondary py-3 text-center border border-dashed border-line rounded-lg">No KPIs configured. Click &quot;Add&quot; to track custom metrics.</p>
                     ) : (
                       <div className="space-y-2">
                         {editKpis.map((k) => (
-                          <div key={k.id} className="rounded-lg border border-neutral-200 dark:border-neutral-800 p-3">
+                          <div key={k.id} className="rounded-lg border border-line p-3">
                             <div className="flex items-start gap-2">
                               <div className="flex-1 space-y-1.5 min-w-0">
                                 <Input value={k.label} onChange={(e) => setEditKpis((prev) => prev.map((x) => x.id === k.id ? { ...x, label: e.target.value } : x))} placeholder="KPI label" className="h-8 font-medium" />
@@ -1353,7 +1353,7 @@ export default function CampaignDetailPage() {
                                     {icon} {label}
                                   </Button>
                                 ))}
-                                <Button onClick={() => setEditKpis((prev) => prev.filter((x) => x.id !== k.id))} variant="ghost" size="sm" className="h-7 w-7 px-0 text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30">
+                                <Button onClick={() => setEditKpis((prev) => prev.filter((x) => x.id !== k.id))} variant="ghost" size="sm" className="h-7 w-7 px-0 text-fg-muted hover:text-danger hover:bg-danger-surface">
                                   <XIcon size={13} />
                                 </Button>
                               </div>
@@ -1367,7 +1367,7 @@ export default function CampaignDetailPage() {
               )}
             </div>
 
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-neutral-200 dark:border-neutral-800 shrink-0">
+            <div className="flex justify-end gap-3 px-4 py-3 border-t border-divider bg-subtle shrink-0">
               <Button onClick={() => setShowSettings(false)} variant="secondary" size="sm">Cancel</Button>
               <Button onClick={handleSaveSettings} disabled={savingSettings} variant="primary" size="sm">
                 {savingSettings ? <span className="flex items-center gap-2"><CircleNotchIcon size={14} className="animate-spin" /> Saving...</span> : "Save Changes"}
@@ -1381,14 +1381,14 @@ export default function CampaignDetailPage() {
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowDeleteConfirm(false)} />
-          <div className="relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-sm w-full mx-4">
-            <h3 className="text-base font-semibold text-neutral-950 dark:text-neutral-50 mb-2">Delete Campaign</h3>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-5">
-              This will permanently delete <span className="font-medium text-neutral-950 dark:text-neutral-50">{campaign.name}</span> and all its leads. This cannot be undone.
+          <div className="relative bg-surface border border-line rounded-lg shadow-modal p-4 max-w-sm w-full mx-4">
+            <h3 className="text-base font-semibold text-fg mb-2">Delete Campaign</h3>
+            <p className="text-sm text-fg-secondary mb-5">
+              This will permanently delete <span className="font-medium text-fg">{campaign.name}</span> and all its leads. This cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
               <Button onClick={() => setShowDeleteConfirm(false)} variant="secondary" size="sm">Cancel</Button>
-              <Button onClick={handleDeleteCampaign} disabled={deleting} variant="primary" size="sm" className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 dark:text-white">
+              <Button onClick={handleDeleteCampaign} disabled={deleting} variant="primary" size="sm" className="bg-danger text-on-inverse hover:opacity-90">
                 {deleting ? "Deleting..." : "Delete Campaign"}
               </Button>
             </div>
@@ -1400,14 +1400,14 @@ export default function CampaignDetailPage() {
       {showClearLeadsConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowClearLeadsConfirm(false)} />
-          <div className="relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-sm w-full mx-4">
-            <h3 className="text-base font-semibold text-neutral-950 dark:text-neutral-50 mb-2">Delete All Leads</h3>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-5">
-              This will permanently delete all <span className="font-medium text-neutral-950 dark:text-neutral-50">{campaign.leads.length} leads</span>. The campaign will remain. This cannot be undone.
+          <div className="relative bg-surface border border-line rounded-lg shadow-modal p-4 max-w-sm w-full mx-4">
+            <h3 className="text-base font-semibold text-fg mb-2">Delete All Leads</h3>
+            <p className="text-sm text-fg-secondary mb-5">
+              This will permanently delete all <span className="font-medium text-fg">{campaign.leads.length} leads</span>. The campaign will remain. This cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
               <Button onClick={() => setShowClearLeadsConfirm(false)} variant="secondary" size="sm">Cancel</Button>
-              <Button onClick={handleClearLeads} disabled={clearingLeads} variant="primary" size="sm" className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 dark:text-white">
+              <Button onClick={handleClearLeads} disabled={clearingLeads} variant="primary" size="sm" className="bg-danger text-on-inverse hover:opacity-90">
                 {clearingLeads ? "Deleting..." : "Delete All Leads"}
               </Button>
             </div>

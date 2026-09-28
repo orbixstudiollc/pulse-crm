@@ -92,22 +92,22 @@ function ApiKeyField({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-2">
-        <label className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+        <label className="text-sm font-medium text-fg">
           {label}
         </label>
         {hasValue ? (
-          <span className="inline-flex items-center gap-1 text-xs text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30 px-1.5 py-0.5 rounded-full">
+          <span className="inline-flex items-center gap-1 text-xs text-success bg-success-surface px-1.5 py-0.5 rounded-full">
             <CheckCircleIcon size={11} weight="fill" />
             Configured
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded-full">
+          <span className="inline-flex items-center gap-1 text-xs text-fg-secondary bg-muted px-1.5 py-0.5 rounded-full">
             Missing
           </span>
         )}
       </div>
       {description && (
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+        <p className="text-xs text-fg-secondary">
           {description}
         </p>
       )}
@@ -117,12 +117,12 @@ function ApiKeyField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={hasValue ? "Leave blank to keep current key" : placeholder}
-          className="w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus pr-10"
+          className="w-full bg-surface border border-line rounded px-3 py-2.5 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-line focus:shadow-focus pr-10"
         />
         <button
           type="button"
           onClick={() => setShow(!show)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-muted hover:text-fg-secondary transition-colors"
         >
           {show ? <EyeSlashIcon size={14} /> : <EyeIcon size={14} />}
         </button>
@@ -140,7 +140,7 @@ function SectionCard({
 }) {
   return (
     <div
-      className={`rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 ${className}`}
+      className={`rounded-lg border border-line bg-surface p-4 ${className}`}
     >
       {children}
     </div>
@@ -160,12 +160,12 @@ function SectionHeader({
     <div className="mb-4">
       <div className="flex items-center gap-2 mb-0.5">
         {icon}
-        <h2 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+        <h2 className="text-sm font-semibold text-fg">
           {title}
         </h2>
       </div>
       {subtitle && (
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+        <p className="text-xs text-fg-secondary">
           {subtitle}
         </p>
       )}
@@ -182,7 +182,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-sm font-medium text-neutral-950 dark:text-neutral-50 block">
+      <label className="text-sm font-medium text-fg block">
         {label}
       </label>
       {children}
@@ -191,7 +191,7 @@ function Field({
 }
 
 const inputCls =
-  "w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus";
+  "w-full bg-surface border border-line rounded px-3 py-2.5 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-line focus:shadow-focus";
 const textareaCls = `${inputCls} resize-none`;
 
 function TabButton({
@@ -206,10 +206,10 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+      className={`h-7 px-3 rounded-sm text-[13px] font-medium transition-colors whitespace-nowrap ${
         active
-          ? "bg-neutral-950 dark:bg-neutral-50 text-neutral-50 dark:text-neutral-950"
-          : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"
+          ? "bg-surface text-fg"
+          : "text-fg-secondary hover:text-fg"
       }`}
     >
       {children}
@@ -559,51 +559,51 @@ function LeadFinderSettingsPageInner() {
   );
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-6 lg:p-6 space-y-6">
       <PageHeader title="Lead Finder" />
       <LeadFinderSubNav />
 
       {loading && (
         <div className="flex items-center justify-center py-24">
-          <CircleNotchIcon size={28} className="animate-spin text-neutral-400" />
+          <CircleNotchIcon size={28} className="animate-spin text-fg-muted" />
         </div>
       )}
 
       {!loading && data && (
         <>
           <div
-            className={`flex items-start gap-3 p-4 rounded-xl border ${
+            className={`flex items-start gap-3 p-4 rounded-lg border ${
               allRequired
-                ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900"
-                : "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900"
+                ? "bg-success-surface border-success"
+                : "bg-warning-surface border-warning"
             }`}
           >
             {allRequired ? (
               <CheckCircleIcon
                 size={18}
                 weight="fill"
-                className="text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5"
+                className="text-success flex-shrink-0 mt-0.5"
               />
             ) : (
               <XCircleIcon
                 size={18}
                 weight="fill"
-                className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"
+                className="text-warning flex-shrink-0 mt-0.5"
               />
             )}
             <div>
               <p
                 className={`text-sm font-medium ${
                   allRequired
-                    ? "text-green-700 dark:text-green-400"
-                    : "text-amber-700 dark:text-amber-400"
+                    ? "text-success"
+                    : "text-warning"
                 }`}
               >
                 {allRequired
                   ? "All required keys configured"
                   : "Missing required API keys"}
               </p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              <p className="text-xs text-fg-secondary mt-0.5">
                 {allRequired
                   ? "Lead Finder is ready to discover and enrich leads."
                   : "Add your Apify token and at least one AI provider key below."}
@@ -612,8 +612,8 @@ function LeadFinderSettingsPageInner() {
           </div>
 
           {envStatus && (
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-3">
-              <p className="text-[11px] uppercase tracking-wide text-neutral-500 dark:text-neutral-400 mb-2">
+            <div className="rounded-lg border border-line bg-surface p-4">
+              <p className="text-xs text-fg-secondary mb-2">
                 Environment variables
               </p>
               <div className="flex flex-wrap items-center gap-2">
@@ -628,10 +628,10 @@ function LeadFinderSettingsPageInner() {
                   return (
                     <span
                       key={key}
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${
                         configured
-                          ? "border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
-                          : "border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950/40 text-neutral-500 dark:text-neutral-400"
+                          ? "border-success bg-success-surface text-success"
+                          : "border-line bg-subtle text-fg-secondary"
                       }`}
                     >
                       {configured ? (
@@ -647,7 +647,7 @@ function LeadFinderSettingsPageInner() {
             </div>
           )}
 
-          <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-1">
+          <div className="flex w-fit max-w-full items-center gap-0.5 overflow-x-auto rounded-md bg-muted p-0.5">
             {providerTabs.map((t) => (
               <TabButton
                 key={t.id}
@@ -662,7 +662,7 @@ function LeadFinderSettingsPageInner() {
           {tab === "providers" && (
             <SectionCard>
               <SectionHeader
-                icon={<LightningIcon size={15} className="text-orange-500" />}
+                icon={<LightningIcon size={15} className="text-warning" />}
                 title="AI Providers"
                 subtitle="Configure keys per provider. Pick a default provider and model."
               />
@@ -755,7 +755,7 @@ function LeadFinderSettingsPageInner() {
                     placeholder="http://localhost:11434"
                     className={inputCls}
                   />
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  <p className="text-xs text-fg-secondary mt-1">
                     Leave blank unless you self-host Ollama.
                   </p>
                 </Field>
@@ -781,7 +781,7 @@ function LeadFinderSettingsPageInner() {
             <SectionCard>
               <div className="flex items-start justify-between mb-4 gap-3">
                 <SectionHeader
-                  icon={<BuildingsIcon size={15} className="text-violet-500" />}
+                  icon={<BuildingsIcon size={15} className="text-accent-strong" />}
                   title="Agency Profile"
                   subtitle="Used for lead scoring, enrichment prompts and outreach personalisation."
                 />
@@ -887,7 +887,7 @@ function LeadFinderSettingsPageInner() {
                   />
                 </Field>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-neutral-200 dark:border-neutral-800">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-line">
                   <Field label="Sender First Name">
                     <input
                       type="text"
@@ -916,7 +916,7 @@ function LeadFinderSettingsPageInner() {
                     />
                   </Field>
                 </div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                <p className="text-xs text-fg-secondary">
                   Sender details are used to prefill outreach. A dedicated
                   persistence API will be enabled in a follow-up migration.
                 </p>
@@ -943,13 +943,13 @@ function LeadFinderSettingsPageInner() {
             <SectionCard>
               <div className="flex items-center justify-between mb-4">
                 <SectionHeader
-                  icon={<LightningIcon size={15} className="text-orange-500" />}
+                  icon={<LightningIcon size={15} className="text-warning" />}
                   title="Apify Actors"
                   subtitle="Discovery and enrichment scrapers. Add your own via Apify actor IDs."
                 />
                 <button
                   onClick={() => setShowAddActor((v) => !v)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-950 dark:bg-neutral-50 text-neutral-50 dark:text-neutral-950 hover:opacity-90 transition-opacity flex-shrink-0"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-inverse text-on-inverse hover:opacity-90 transition-opacity flex-shrink-0"
                 >
                   <PlusIcon size={12} />
                   Add Custom Actor
@@ -957,8 +957,8 @@ function LeadFinderSettingsPageInner() {
               </div>
 
               {showAddActor && (
-                <div className="mb-4 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 space-y-3">
-                  <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                <div className="mb-4 p-4 rounded-lg border border-line bg-subtle space-y-3">
+                  <p className="text-xs font-medium text-fg">
                     New Custom Actor
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -970,7 +970,7 @@ function LeadFinderSettingsPageInner() {
                         placeholder="e.g. apify/linkedin-scraper"
                         className={inputCls}
                       />
-                      <p className="text-xs text-neutral-400 mt-1">
+                      <p className="text-xs text-fg-muted mt-1">
                         Apify actor path
                       </p>
                     </div>
@@ -982,7 +982,7 @@ function LeadFinderSettingsPageInner() {
                         placeholder="Display name"
                         className={inputCls}
                       />
-                      <p className="text-xs text-neutral-400 mt-1">
+                      <p className="text-xs text-fg-muted mt-1">
                         Name shown in UI
                       </p>
                     </div>
@@ -997,7 +997,7 @@ function LeadFinderSettingsPageInner() {
                         <option value="find">Find</option>
                         <option value="enrich">Enrich</option>
                       </select>
-                      <p className="text-xs text-neutral-400 mt-1">Phase</p>
+                      <p className="text-xs text-fg-muted mt-1">Phase</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -1016,7 +1016,7 @@ function LeadFinderSettingsPageInner() {
                     </Button>
                     <button
                       onClick={() => setShowAddActor(false)}
-                      className="px-3 py-1.5 text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+                      className="px-3 py-1.5 text-xs text-fg-secondary hover:text-fg transition-colors"
                     >
                       Cancel
                     </button>
@@ -1024,9 +1024,9 @@ function LeadFinderSettingsPageInner() {
                 </div>
               )}
 
-              <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+              <div className="divide-y divide-row">
                 {actors.length === 0 && (
-                  <p className="text-sm text-neutral-400 py-4 text-center">
+                  <p className="text-sm text-fg-secondary py-4 text-center">
                     No actors loaded.
                   </p>
                 )}
@@ -1037,13 +1037,13 @@ function LeadFinderSettingsPageInner() {
                   >
                     <LockIcon
                       size={14}
-                      className="text-neutral-400 flex-shrink-0"
+                      className="text-fg-muted flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                      <p className="text-sm font-medium text-fg truncate">
                         {actor.name}
                       </p>
-                      <p className="text-xs text-neutral-400 truncate">
+                      <p className="text-xs text-fg-muted truncate">
                         {actor.id}
                         {actor.category ? ` · ${actor.category}` : ""}
                       </p>
@@ -1051,8 +1051,8 @@ function LeadFinderSettingsPageInner() {
                     <span
                       className={`text-xs font-semibold px-2.5 py-0.5 rounded-full flex-shrink-0 ${
                         actor.phase === "find"
-                          ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
-                          : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
+                          ? "bg-accent-surface text-accent-on-surface"
+                          : "bg-success-surface text-success"
                       }`}
                     >
                       {actor.phase === "find" ? "Find" : "Enrich"}
@@ -1073,7 +1073,7 @@ function LeadFinderSettingsPageInner() {
                     {actor.isCustom && actor.dbId && (
                       <button
                         onClick={() => deleteCustomActor(actor)}
-                        className="p-1 text-neutral-400 hover:text-red-500 dark:hover:text-red-400 transition-colors flex-shrink-0"
+                        className="p-1 text-fg-muted hover:text-danger transition-colors flex-shrink-0"
                         title="Remove actor"
                       >
                         <TrashIcon size={14} />
@@ -1088,7 +1088,7 @@ function LeadFinderSettingsPageInner() {
           {tab === "enrichment" && (
             <SectionCard>
               <SectionHeader
-                icon={<GearIcon size={15} className="text-blue-500" />}
+                icon={<GearIcon size={15} className="text-accent-strong" />}
                 title="Enrichment"
                 subtitle="How aggressively leads are enriched across campaigns."
               />
@@ -1103,7 +1103,7 @@ function LeadFinderSettingsPageInner() {
                     onChange={(e) => setParallelLimit(Number(e.target.value))}
                     className="w-full"
                   />
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  <p className="text-xs text-fg-secondary mt-1">
                     Concurrent enrichment workers. Higher values speed up runs
                     but consume more Apify credits.
                   </p>
@@ -1230,7 +1230,7 @@ function ObsidianSyncSection({
     <SectionCard>
       <div className="flex items-start justify-between gap-3 mb-4">
         <SectionHeader
-          icon={<FloppyDiskIcon size={15} className="text-emerald-500" />}
+          icon={<FloppyDiskIcon size={15} className="text-success" />}
           title="Obsidian Sync"
           subtitle="Daily observation files generated from your campaigns."
         />
@@ -1258,11 +1258,11 @@ function ObsidianSyncSection({
             placeholder="/Users/you/Obsidian/Vault"
             className={inputCls}
           />
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+          <p className="text-xs text-fg-secondary mt-1">
             Absolute server-side path to the Obsidian vault root.
           </p>
         </Field>
-        <label className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+        <label className="flex items-center gap-2 text-sm text-fg">
           <input
             type="checkbox"
             checked={enabled}
@@ -1285,33 +1285,33 @@ function ObsidianSyncSection({
         </Button>
       </div>
 
-      <p className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+      <p className="text-xs font-medium text-fg mb-2">
         Recent observation files
       </p>
 
       {error && (
-        <p className="text-xs text-red-600 dark:text-red-400 mb-3">{error}</p>
+        <p className="text-xs text-danger mb-3">{error}</p>
       )}
 
       {!error && files.length === 0 && !loading && (
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 py-4 text-center border border-dashed border-neutral-200 dark:border-neutral-700 rounded-lg">
+        <p className="text-sm text-fg-secondary py-4 text-center border border-dashed border-line rounded-lg">
           No observation files yet.
         </p>
       )}
 
       {files.length > 0 && (
-        <div className="divide-y divide-neutral-100 dark:divide-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-800">
+        <div className="divide-y divide-row rounded-lg border border-line">
           {files.map((file) => (
             <div
               key={file.date}
               className="flex items-center justify-between gap-3 px-3 py-2"
             >
               <div className="min-w-0">
-                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <p className="text-sm font-medium text-fg">
                   {file.date}
                 </p>
                 {file.path && (
-                  <p className="truncate text-xs text-neutral-500 dark:text-neutral-400">
+                  <p className="truncate text-xs text-fg-secondary">
                     {file.path}
                   </p>
                 )}
@@ -1329,9 +1329,9 @@ function ObsidianSyncSection({
       )}
 
       {previewDate && (
-        <div className="mt-4 rounded-lg border border-neutral-200 dark:border-neutral-800">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-200 dark:border-neutral-800">
-            <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+        <div className="mt-4 rounded-lg border border-line">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-line">
+            <p className="text-sm font-medium text-fg">
               {previewDate}
             </p>
             <Button
@@ -1347,12 +1347,12 @@ function ObsidianSyncSection({
           </div>
           <div className="max-h-80 overflow-auto p-3">
             {previewLoading ? (
-              <div className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+              <div className="flex items-center gap-2 text-sm text-fg-secondary">
                 <CircleNotchIcon size={14} className="animate-spin" />
                 Loading...
               </div>
             ) : (
-              <pre className="whitespace-pre-wrap text-xs text-neutral-700 dark:text-neutral-300">
+              <pre className="whitespace-pre-wrap text-xs text-fg">
                 {previewBody ?? ""}
               </pre>
             )}

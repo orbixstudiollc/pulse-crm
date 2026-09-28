@@ -81,16 +81,16 @@ function StepIndicator({ current }: { current: number }) {
           <div key={step.id} className="flex items-center gap-2">
             {i > 0 && (
               <div
-                className={`w-8 h-px ${isCompleted || isActive ? "bg-neutral-300 dark:bg-neutral-600" : "bg-neutral-100 dark:bg-neutral-800"}`}
+                className={`w-8 h-px ${isCompleted || isActive ? "bg-active" : "bg-muted"}`}
               />
             )}
             <div
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
+                  ? "bg-inverse text-on-inverse"
                   : isCompleted
-                    ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"
-                    : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
+                    ? "bg-success-surface text-success"
+                    : "bg-muted text-fg-secondary"
               }`}
             >
               {isCompleted ? (
@@ -123,9 +123,9 @@ function ActorConfigField({
 }) {
   return (
     <div>
-      <label className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+      <label className="flex items-center gap-1.5 text-xs text-fg-secondary mb-1">
         {desc.label}
-        <PencilSimpleIcon size={10} className="text-neutral-400 dark:text-neutral-500" />
+        <PencilSimpleIcon size={10} className="text-fg-muted" />
       </label>
       {desc.type === "boolean" ? (
         <Button
@@ -134,10 +134,10 @@ function ActorConfigField({
           onClick={() => onChange(value === "true" ? "false" : "true")}
           className={`text-xs ${
             value === "true"
-              ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
+              ? "bg-success-surface text-success border-success"
               : ""
           }`}
-          leftIcon={<span className={`w-1.5 h-1.5 rounded-full ${value === "true" ? "bg-green-500" : "bg-neutral-400"}`} />}
+          leftIcon={<span className={`w-1.5 h-1.5 rounded-full ${value === "true" ? "bg-success" : "bg-fg-muted"}`} />}
         >
           {value === "true" ? "Yes" : "No"}
         </Button>
@@ -159,7 +159,7 @@ function ActorConfigField({
         />
       )}
       {desc.helpText && (
-        <p className="mt-1 text-[10px] text-neutral-500 dark:text-neutral-500">{desc.helpText}</p>
+        <p className="mt-1 text-xs text-fg-secondary">{desc.helpText}</p>
       )}
     </div>
   );
@@ -177,15 +177,15 @@ function TypeToggle<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="inline-flex rounded border border-neutral-200 dark:border-neutral-700 overflow-hidden text-[10px]">
+    <div className="inline-flex rounded border border-line overflow-hidden text-xs">
       {options.map((opt) => (
         <Button
           key={opt.value}
           variant={value === opt.value ? "primary" : "ghost"}
           onClick={() => onChange(opt.value)}
-          className={`rounded-none h-auto px-2 py-1 text-[10px] gap-1 ${
+          className={`rounded-none h-auto px-2 py-1 text-xs gap-1 ${
             value !== opt.value
-              ? "bg-white dark:bg-neutral-900 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"
+              ? "bg-surface text-fg-secondary hover:text-fg"
               : ""
           }`}
           leftIcon={opt.icon}
@@ -564,10 +564,10 @@ export default function NewCampaignPage() {
     return (
       <div
         key={actor.id}
-        className={`rounded-lg border-2 transition-colors ${
+        className={`rounded-lg border transition-colors ${
           isSelected
-            ? "border-neutral-400 dark:border-neutral-500 bg-neutral-50 dark:bg-neutral-800/50"
-            : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700"
+            ? "border-fg-muted bg-subtle"
+            : "border-line hover:border-fg-muted"
         }`}
       >
         <div
@@ -575,32 +575,32 @@ export default function NewCampaignPage() {
           onClick={() => toggleActor(actor.id)}
         >
           <div
-            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors ${
+            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors ${
               isSelected
-                ? "border-neutral-950 dark:border-white bg-neutral-950 dark:bg-white"
-                : "border-neutral-300 dark:border-neutral-600"
+                ? "border-inverse bg-inverse"
+                : "border-line"
             }`}
           >
             {isSelected && (
-              <CheckCircleIcon size={12} weight="fill" className="text-white dark:text-neutral-950" />
+              <CheckCircleIcon size={12} weight="fill" className="text-on-inverse" />
             )}
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+            <p className="text-sm font-medium text-fg">
               {actor.name}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs text-fg-secondary">
               {actor.description}
             </p>
           </div>
-          <span className="px-2 py-0.5 rounded text-[10px] font-medium border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 capitalize">
+          <span className="px-2 py-0.5 rounded text-xs font-medium border border-line text-fg-secondary capitalize">
             {actor.category}
           </span>
         </div>
 
         {/* Show config fields when selected (only for find actors with input fields) */}
         {isSelected && fieldDescriptions.length > 0 && (
-          <div className="border-t border-neutral-200 dark:border-neutral-800 px-4 pb-4 pt-3 space-y-3">
+          <div className="border-t border-line px-4 pb-4 pt-3 space-y-3">
             {fieldDescriptions.map(([fieldName, desc]) => (
               <ActorConfigField
                 key={fieldName}
@@ -615,8 +615,8 @@ export default function NewCampaignPage() {
 
         {/* For enrichment actors, show auto-fill note */}
         {isSelected && fieldDescriptions.length === 0 && (
-          <div className="border-t border-neutral-200 dark:border-neutral-800 px-4 py-2.5">
-            <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
+          <div className="border-t border-line px-4 py-2.5">
+            <p className="text-xs text-fg-secondary">
               Inputs filled automatically from lead data during enrichment
             </p>
           </div>
@@ -628,20 +628,20 @@ export default function NewCampaignPage() {
   // ── Render ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 lg:p-8 space-y-6">
+    <div className="p-6 lg:p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Link
           href="/dashboard/lead-finder/campaigns"
-          className="p-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+          className="p-2 rounded-lg bg-surface border border-line text-fg-secondary hover:text-fg transition-colors"
         >
           <ArrowLeftIcon size={16} />
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-neutral-950 dark:text-neutral-50">
+          <h1 className="text-xl font-semibold text-fg">
             New Campaign
           </h1>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          <p className="text-sm text-fg-secondary">
             {step === 1
               ? "Describe what leads you want to find"
               : step === 2
@@ -659,7 +659,7 @@ export default function NewCampaignPage() {
       {/* ── Step 1: Describe + AI Plan ───────────────────────────────────── */}
       {step === 1 && (
         <div className="max-w-2xl">
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 space-y-5">
+          <div className="bg-surface border border-line rounded-lg p-4 space-y-5">
             <Input
               label="Campaign Name"
               type="text"
@@ -676,7 +676,7 @@ export default function NewCampaignPage() {
                 rows={6}
                 placeholder="Find dentists and orthodontists in Miami FL. I need their email addresses, phone numbers, and websites. Focus on practices with good ratings that might need help with their online presence."
               />
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1.5">
+              <p className="text-xs text-fg-secondary mt-1.5">
                 Describe in plain English what you are looking for. Be specific about the
                 business type, location, and what information you need. AI will generate
                 search terms, select actors, and configure the campaign for you.
@@ -711,16 +711,16 @@ export default function NewCampaignPage() {
         <div className="max-w-3xl space-y-6">
           {/* AI Reasoning / Plan summary */}
           {plan && (
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
-              <SparkleIcon size={16} className="text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-success-surface border border-success">
+              <SparkleIcon size={16} className="text-success mt-0.5 flex-shrink-0" />
               <div className="text-xs">
-                <p className="font-semibold text-green-700 dark:text-green-400 mb-0.5">
+                <p className="font-semibold text-success mb-0.5">
                   AI Recommendation
                 </p>
                 {plan.reasoning ? (
-                  <p className="text-green-700 dark:text-green-400 mb-2">{plan.reasoning}</p>
+                  <p className="text-success mb-2">{plan.reasoning}</p>
                 ) : (
-                  <p className="text-green-700 dark:text-green-400 mb-2">
+                  <p className="text-success mb-2">
                     Target niche: <strong>{plan.target_niche}</strong> &middot;{" "}
                     {plan.suggested_actors.length} actors suggested &middot;{" "}
                     {plan.suggested_search_terms.length} search terms
@@ -728,14 +728,14 @@ export default function NewCampaignPage() {
                 )}
                 {searchTerms.length > 0 && (
                   <div>
-                    <p className="text-green-600 dark:text-green-500 font-medium mb-1.5">
+                    <p className="text-success font-medium mb-1.5">
                       Suggested search terms (pre-filled in actors below):
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {searchTerms.map((term, i) => (
                         <span
                           key={i}
-                          className="px-2 py-0.5 rounded-md bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-300 text-[10px]"
+                          className="px-2 py-0.5 rounded-md bg-success-surface text-success text-xs"
                         >
                           {term}
                         </span>
@@ -748,9 +748,9 @@ export default function NewCampaignPage() {
           )}
 
           {/* Campaign Settings */}
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
-            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 mb-4 flex items-center gap-2">
-              <TargetIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
+          <div className="bg-surface border border-line rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-fg mb-4 flex items-center gap-2">
+              <TargetIcon size={16} className="text-fg-secondary" />
               Campaign Settings
             </h3>
             <div className="space-y-4">
@@ -763,14 +763,14 @@ export default function NewCampaignPage() {
               />
 
               <div>
-                <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5">
+                <label className="block text-xs font-medium text-fg-secondary mb-1.5">
                   Search Terms
                 </label>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {searchTerms.map((term, i) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 text-xs"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-muted text-fg text-xs"
                     >
                       {term}
                       <Button
@@ -779,7 +779,7 @@ export default function NewCampaignPage() {
                         onClick={() =>
                           setSearchTerms((prev) => prev.filter((_, j) => j !== i))
                         }
-                        className="p-0 h-auto text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400"
+                        className="p-0 h-auto text-fg-secondary hover:text-danger"
                       >
                         <XIcon size={10} />
                       </Button>
@@ -824,7 +824,7 @@ export default function NewCampaignPage() {
                   ))}
                 </Select>
                 <div>
-                  <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5">
+                  <label className="block text-xs font-medium text-fg-secondary mb-1.5">
                     Auto-Enrich Leads
                   </label>
                   <Button
@@ -833,12 +833,12 @@ export default function NewCampaignPage() {
                     onClick={() => setEditableAutoEnrich(!editableAutoEnrich)}
                     className={
                       editableAutoEnrich
-                        ? "bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/50"
+                        ? "bg-success-surface text-success border-success hover:bg-success-surface"
                         : ""
                     }
                     leftIcon={
                       <span
-                        className={`w-2 h-2 rounded-full flex-shrink-0 ${editableAutoEnrich ? "bg-green-500" : "bg-neutral-400"}`}
+                        className={`w-2 h-2 rounded-full flex-shrink-0 ${editableAutoEnrich ? "bg-success" : "bg-fg-muted"}`}
                       />
                     }
                   >
@@ -850,24 +850,24 @@ export default function NewCampaignPage() {
           </div>
 
           {/* Find Leads - Discovery Actors */}
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
-            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 mb-1 flex items-center gap-2">
-              <MagnifyingGlassIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
+          <div className="bg-surface border border-line rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-fg mb-1 flex items-center gap-2">
+              <MagnifyingGlassIcon size={16} className="text-fg-secondary" />
               Step 1 -- Find Leads
-              <span className="text-xs text-neutral-500 dark:text-neutral-400 font-normal">
+              <span className="text-xs text-fg-secondary font-normal">
                 ({[...selectedActors].filter((id) => {
                   const a = getActorById(id);
                   return a?.phase === "find";
                 }).length} selected)
               </span>
             </h3>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
+            <p className="text-xs text-fg-secondary mb-4">
               Select which tools to use for discovering leads. These run first to find
               businesses matching your criteria.
             </p>
 
             {allActors.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500 dark:text-neutral-400 text-sm">
+              <div className="text-center py-8 text-fg-secondary text-sm">
                 <CircleNotchIcon size={20} className="animate-spin mx-auto mb-2" />
                 Loading actors...
               </div>
@@ -881,18 +881,18 @@ export default function NewCampaignPage() {
           </div>
 
           {/* Enrich Leads - Enrichment Actors */}
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
-            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 mb-1 flex items-center gap-2">
-              <LightningIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
+          <div className="bg-surface border border-line rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-fg mb-1 flex items-center gap-2">
+              <LightningIcon size={16} className="text-fg-secondary" />
               Step 2 -- Enrich Leads
-              <span className="text-xs text-neutral-500 dark:text-neutral-400 font-normal">
+              <span className="text-xs text-fg-secondary font-normal">
                 ({[...selectedActors].filter((id) => {
                   const a = getActorById(id);
                   return a?.phase === "enrich";
                 }).length} selected)
               </span>
             </h3>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
+            <p className="text-xs text-fg-secondary mb-4">
               Select which tools to use for enriching leads with additional data.
               {editableAutoEnrich
                 ? " Enrichment runs automatically after discovery."
@@ -936,10 +936,10 @@ export default function NewCampaignPage() {
           </div>
 
           {/* Lead Data Fields */}
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
+          <div className="bg-surface border border-line rounded-lg p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 flex items-center gap-2">
-                <HardDrivesIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
+              <h3 className="text-sm font-semibold text-fg flex items-center gap-2">
+                <HardDrivesIcon size={16} className="text-fg-secondary" />
                 Lead Data Fields
               </h3>
               <Button
@@ -953,12 +953,12 @@ export default function NewCampaignPage() {
             </div>
 
             {suggestingFields ? (
-              <div className="flex items-center justify-center py-8 gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+              <div className="flex items-center justify-center py-8 gap-2 text-sm text-fg-secondary">
                 <CircleNotchIcon size={16} className="animate-spin" />
                 AI is analyzing your actors to suggest relevant fields...
               </div>
             ) : fieldDefinitions.length === 0 ? (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-6">
+              <p className="text-sm text-fg-secondary text-center py-6">
                 No additional lead fields configured. Click &quot;Add Field&quot; to track
                 extra data per lead.
               </p>
@@ -967,7 +967,7 @@ export default function NewCampaignPage() {
                 {fieldDefinitions.map((field, i) => (
                   <div
                     key={field.id}
-                    className="flex gap-3 items-start p-3 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
+                    className="flex gap-3 items-start p-3 rounded-lg bg-subtle border border-line"
                   >
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
@@ -1001,7 +1001,7 @@ export default function NewCampaignPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => removeField(i)}
-                      className="p-1 h-auto text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 mt-0.5"
+                      className="p-1 h-auto text-fg-secondary hover:text-danger mt-0.5"
                     >
                       <TrashIcon size={14} />
                     </Button>
@@ -1012,10 +1012,10 @@ export default function NewCampaignPage() {
           </div>
 
           {/* KPI Definitions */}
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
+          <div className="bg-surface border border-line rounded-lg p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50 flex items-center gap-2">
-                <ChartBarIcon size={16} className="text-neutral-500 dark:text-neutral-400" />
+              <h3 className="text-sm font-semibold text-fg flex items-center gap-2">
+                <ChartBarIcon size={16} className="text-fg-secondary" />
                 Lead KPIs to Track
               </h3>
               <Button
@@ -1028,13 +1028,13 @@ export default function NewCampaignPage() {
               </Button>
             </div>
 
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
+            <p className="text-xs text-fg-secondary mb-3">
               These KPIs will be automatically filled by AI during lead enrichment. You
               can edit them per-lead later.
             </p>
 
             {kpiDefinitions.length === 0 ? (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-6">
+              <p className="text-sm text-fg-secondary text-center py-6">
                 No KPIs configured. Click &quot;Add KPI&quot; to track custom metrics for
                 your leads.
               </p>
@@ -1043,7 +1043,7 @@ export default function NewCampaignPage() {
                 {kpiDefinitions.map((kpi, i) => (
                   <div
                     key={kpi.id}
-                    className="flex gap-3 items-start p-3 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
+                    className="flex gap-3 items-start p-3 rounded-lg bg-subtle border border-line"
                   >
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
@@ -1075,7 +1075,7 @@ export default function NewCampaignPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => removeKpi(i)}
-                      className="p-1 h-auto text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 mt-0.5"
+                      className="p-1 h-auto text-fg-secondary hover:text-danger mt-0.5"
                     >
                       <TrashIcon size={14} />
                     </Button>
@@ -1100,55 +1100,55 @@ export default function NewCampaignPage() {
       {/* ── Step 4: Review & Create ──────────────────────────────────────── */}
       {step === 4 && (
         <div className="max-w-3xl space-y-6">
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 space-y-5">
-            <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+          <div className="bg-surface border border-line rounded-lg p-4 space-y-5">
+            <h3 className="text-sm font-semibold text-fg">
               Campaign Summary
             </h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Name</p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">
+                <p className="text-xs text-fg-secondary mb-1">Name</p>
+                <p className="text-sm text-fg font-medium">
                   {name || "Untitled"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                <p className="text-xs text-fg-secondary mb-1">
                   Target Niche
                 </p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">
+                <p className="text-sm text-fg font-medium">
                   {editableNiche || "Not set"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                <p className="text-xs text-fg-secondary mb-1">
                   AI Provider
                 </p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium capitalize">
+                <p className="text-sm text-fg font-medium capitalize">
                   {aiProvider}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                <p className="text-xs text-fg-secondary mb-1">
                   Schedule
                 </p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium capitalize">
+                <p className="text-sm text-fg font-medium capitalize">
                   {editableSchedule}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                <p className="text-xs text-fg-secondary mb-1">
                   Auto-Enrich
                 </p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">
+                <p className="text-sm text-fg font-medium">
                   {editableAutoEnrich ? "Yes" : "No"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                <p className="text-xs text-fg-secondary mb-1">
                   Actors
                 </p>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50 font-medium">
+                <p className="text-sm text-fg font-medium">
                   {selectedActors.size} selected
                 </p>
               </div>
@@ -1157,14 +1157,14 @@ export default function NewCampaignPage() {
             {/* Search terms */}
             {searchTerms.length > 0 && (
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
+                <p className="text-xs text-fg-secondary mb-2">
                   Search Terms
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {searchTerms.map((term, i) => (
                     <span
                       key={i}
-                      className="px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50 text-xs"
+                      className="px-2 py-0.5 rounded-md bg-muted text-fg text-xs"
                     >
                       {term}
                     </span>
@@ -1176,7 +1176,7 @@ export default function NewCampaignPage() {
             {/* Actors list */}
             {selectedActors.size > 0 && (
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
+                <p className="text-xs text-fg-secondary mb-2">
                   Selected Actors
                 </p>
                 <div className="space-y-1.5">
@@ -1185,16 +1185,16 @@ export default function NewCampaignPage() {
                     return (
                       <div
                         key={id}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-subtle border border-line"
                       >
                         <LightningIcon
                           size={12}
-                          className="text-neutral-500 dark:text-neutral-400"
+                          className="text-fg-secondary"
                         />
-                        <span className="text-xs text-neutral-950 dark:text-neutral-50">
+                        <span className="text-xs text-fg">
                           {actor?.name || id}
                         </span>
-                        <span className="text-[10px] text-neutral-500 dark:text-neutral-400 capitalize">
+                        <span className="text-xs text-fg-secondary capitalize">
                           ({actor?.phase})
                         </span>
                       </div>
@@ -1207,7 +1207,7 @@ export default function NewCampaignPage() {
             {/* KPIs */}
             {kpiDefinitions.filter((k) => k.label).length > 0 && (
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
+                <p className="text-xs text-fg-secondary mb-2">
                   KPIs ({kpiDefinitions.filter((k) => k.label).length})
                 </p>
                 <div className="space-y-1">
@@ -1216,12 +1216,12 @@ export default function NewCampaignPage() {
                     .map((kpi, i) => (
                       <div
                         key={i}
-                        className="flex items-center justify-between px-3 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
+                        className="flex items-center justify-between px-3 py-2 rounded-lg bg-subtle border border-line"
                       >
-                        <span className="text-xs text-neutral-950 dark:text-neutral-50">
+                        <span className="text-xs text-fg">
                           {kpi.label}
                         </span>
-                        <span className="text-[10px] text-neutral-500 dark:text-neutral-400 uppercase">
+                        <span className="text-xs text-fg-secondary">
                           {kpi.type}
                         </span>
                       </div>
@@ -1233,7 +1233,7 @@ export default function NewCampaignPage() {
             {/* Fields */}
             {fieldDefinitions.filter((f) => f.label).length > 0 && (
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
+                <p className="text-xs text-fg-secondary mb-2">
                   Custom Fields ({fieldDefinitions.filter((f) => f.label).length})
                 </p>
                 <div className="space-y-1">
@@ -1242,12 +1242,12 @@ export default function NewCampaignPage() {
                     .map((field, i) => (
                       <div
                         key={i}
-                        className="flex items-center justify-between px-3 py-2 rounded-lg bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800"
+                        className="flex items-center justify-between px-3 py-2 rounded-lg bg-subtle border border-line"
                       >
-                        <span className="text-xs text-neutral-950 dark:text-neutral-50">
+                        <span className="text-xs text-fg">
                           {field.label}
                         </span>
-                        <span className="text-[10px] text-neutral-500 dark:text-neutral-400 capitalize">
+                        <span className="text-xs text-fg-secondary capitalize">
                           {field.type}
                         </span>
                       </div>
