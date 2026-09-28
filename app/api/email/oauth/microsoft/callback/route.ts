@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { sealOAuthTokens } from "@/lib/email/oauth-tokens";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -73,12 +74,12 @@ export async function GET(request: Request) {
       email_address: emailAddress,
       display_name: msProfile.displayName || emailAddress,
       status: "active",
-      oauth_tokens: {
+      oauth_tokens: sealOAuthTokens({
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
         expires_at: Date.now() + tokens.expires_in * 1000,
         scope: tokens.scope,
-      },
+      }),
     },
     { onConflict: "organization_id,email_address" },
   );

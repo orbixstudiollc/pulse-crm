@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUserProfile, getOrgId } from "./helpers";
 import { revalidatePath } from "next/cache";
 import { encrypt } from "@/lib/utils/encryption";
+import { openOAuthTokens } from "@/lib/email/oauth-tokens";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -23,6 +24,13 @@ interface CustomAccountConfig {
   daily_send_limit?: number;
 }
 
+// OAuth tokens (sealed or legacy plaintext) must never reach the browser
+function withoutOAuthTokens<T extends { oauth_tokens?: unknown }>(row: T): Omit<T, "oauth_tokens"> {
+  const { oauth_tokens, ...rest } = row;
+  void oauth_tokens;
+  return rest;
+}
+
 // ── Read ────────────────────────────────────────────────────────────────────
 
 export async function getEmailAccounts() {
@@ -37,7 +45,7 @@ export async function getEmailAccounts() {
     .order("created_at", { ascending: true });
 
   if (error) return { error: error.message };
-  return { data: data ?? [] };
+  return { data: (data ?? []).map(withoutOAuthTokens) };
 }
 
 export async function getEmailAccountById(id: string) {
@@ -52,7 +60,7 @@ export async function getEmailAccountById(id: string) {
     .single();
 
   if (error) return { error: error.message };
-  return { data };
+  return { data: withoutOAuthTokens(data) };
 }
 
 // ── Create Custom IMAP/SMTP Account ─────────────────────────────────────────
@@ -95,7 +103,7 @@ export async function addCustomEmailAccount(config: CustomAccountConfig) {
 
   if (error) return { error: error.message };
   revalidatePath("/dashboard/settings");
-  return { data };
+  return { data: withoutOAuthTokens(data) };
 }
 
 // ── Update ──────────────────────────────────────────────────────────────────
@@ -121,7 +129,7 @@ export async function updateEmailAccount(
 
   if (error) return { error: error.message };
   revalidatePath("/dashboard/settings");
-  return { data };
+  return { data: withoutOAuthTokens(data) };
 }
 
 // ── Set Default ─────────────────────────────────────────────────────────────
@@ -147,7 +155,7 @@ export async function setDefaultAccount(id: string) {
 
   if (error) return { error: error.message };
   revalidatePath("/dashboard/settings");
-  return { data };
+  return { data: withoutOAuthTokens(data) };
 }
 
 // ── Update Tracking Domain ───────────────────────────────────────────────────
@@ -242,9 +250,7 @@ export async function testEmailAccount(id: string) {
       return { success: true, message: "SMTP connection verified" };
     } else if (account.provider === "gmail") {
       // Test Gmail API connection
-      const tokens = account.oauth_tokens as {
-        access_token: string;
-      } | null;
+      const tokens = openOAuthTokens(account.oauth_tokens);
       if (!tokens?.access_token) {
         return { error: "No OAuth tokens found. Please reconnect." };
       }
@@ -270,9 +276,7 @@ export async function testEmailAccount(id: string) {
       revalidatePath("/dashboard/settings");
       return { success: true, message: "Gmail connection verified" };
     } else if (account.provider === "microsoft") {
-      const tokens = account.oauth_tokens as {
-        access_token: string;
-      } | null;
+      const tokens = openOAuthTokens(account.oauth_tokens);
       if (!tokens?.access_token) {
         return { error: "No OAuth tokens found. Please reconnect." };
       }

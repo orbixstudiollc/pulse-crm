@@ -4,10 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgId, getCurrentUserProfile } from "./helpers";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
-import { escapePostgrestLike } from "@/lib/security";
+import { escapePostgrestLike, pickSortColumn } from "@/lib/security";
 
 type DealInsert = Database["public"]["Tables"]["deals"]["Insert"];
 type DealUpdate = Database["public"]["Tables"]["deals"]["Update"];
+
+const SORTABLE = ["created_at", "updated_at", "name", "company", "value", "probability", "stage", "close_date", "last_activity"] as const;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -54,7 +56,7 @@ export async function getDeals(filters: DealFilters = {}) {
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
 
-  query = query.order(sortBy, { ascending: sortOrder === "asc" }).range(from, to);
+  query = query.order(pickSortColumn(sortBy, SORTABLE, "created_at"), { ascending: sortOrder === "asc" }).range(from, to);
 
   const { data, error, count } = await query;
 

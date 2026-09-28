@@ -319,22 +319,9 @@ export async function checkAIAccess(feature: AIFeature): Promise<{
       return { allowed: false, reason: `AI ${feature} is disabled in settings` };
     }
 
-    // Check daily token limit
-    const today = new Date().toDateString();
-    const lastResetDaily = new Date(settings.last_token_reset_daily).toDateString();
-    const todayTokens = today === lastResetDaily ? settings.tokens_used_today : 0;
-
-    if (settings.daily_token_limit > 0 && todayTokens >= settings.daily_token_limit) {
-      return { allowed: false, reason: "Daily token limit reached" };
-    }
-
-    // Check monthly token limit
-    const thisMonth = new Date().getMonth();
-    const lastResetMonth = new Date(settings.last_token_reset_monthly).getMonth();
-    const monthTokens = thisMonth === lastResetMonth ? settings.tokens_used_month : 0;
-
-    if (settings.monthly_token_limit > 0 && monthTokens >= settings.monthly_token_limit) {
-      return { allowed: false, reason: "Monthly token limit reached" };
+    const limitReason = tokenLimitReason(settings);
+    if (limitReason) {
+      return { allowed: false, reason: limitReason };
     }
 
     return { allowed: true };
@@ -344,6 +331,38 @@ export async function checkAIAccess(feature: AIFeature): Promise<{
       reason: error instanceof Error ? error.message : "AI access check failed",
     };
   }
+}
+
+export function tokenLimitReason(
+  settings: Pick<
+    AISettings,
+    | "daily_token_limit"
+    | "monthly_token_limit"
+    | "tokens_used_today"
+    | "tokens_used_month"
+    | "last_token_reset_daily"
+    | "last_token_reset_monthly"
+  >
+): string | null {
+  // Check daily token limit
+  const today = new Date().toDateString();
+  const lastResetDaily = new Date(settings.last_token_reset_daily).toDateString();
+  const todayTokens = today === lastResetDaily ? settings.tokens_used_today : 0;
+
+  if (settings.daily_token_limit > 0 && todayTokens >= settings.daily_token_limit) {
+    return "Daily token limit reached";
+  }
+
+  // Check monthly token limit
+  const thisMonth = new Date().getMonth();
+  const lastResetMonth = new Date(settings.last_token_reset_monthly).getMonth();
+  const monthTokens = thisMonth === lastResetMonth ? settings.tokens_used_month : 0;
+
+  if (settings.monthly_token_limit > 0 && monthTokens >= settings.monthly_token_limit) {
+    return "Monthly token limit reached";
+  }
+
+  return null;
 }
 
 export async function logTokenUsage(params: {

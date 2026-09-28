@@ -4,10 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgId, getCurrentUserProfile } from "./helpers";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
-import { escapePostgrestLike } from "@/lib/security";
+import { escapePostgrestLike, pickSortColumn } from "@/lib/security";
 
 type CustomerInsert = Database["public"]["Tables"]["customers"]["Insert"];
 type CustomerUpdate = Database["public"]["Tables"]["customers"]["Update"];
+
+const SORTABLE = ["created_at", "updated_at", "first_name", "last_name", "email", "company", "status", "plan", "mrr", "health_score", "lifetime_value", "last_contact", "renewal_date"] as const;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -62,7 +64,7 @@ export async function getCustomers(filters: CustomerFilters = {}) {
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
 
-  query = query.order(sortBy, { ascending: sortOrder === "asc" }).range(from, to);
+  query = query.order(pickSortColumn(sortBy, SORTABLE, "created_at"), { ascending: sortOrder === "asc" }).range(from, to);
 
   const { data, error, count } = await query;
 

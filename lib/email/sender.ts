@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { createAdminClient } from "@/lib/supabase/server";
 import { decrypt } from "@/lib/utils/encryption";
+import { openOAuthTokens, sealOAuthTokens } from "@/lib/email/oauth-tokens";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -49,12 +50,12 @@ async function refreshGmailToken(account: {
   await supabase
     .from("email_accounts")
     .update({
-      oauth_tokens: {
+      oauth_tokens: sealOAuthTokens({
         access_token: tokens.access_token,
         refresh_token: account.oauth_tokens.refresh_token,
         expires_at: Date.now() + tokens.expires_in * 1000,
         scope: tokens.scope || account.oauth_tokens.scope,
-      },
+      }),
     })
     .eq("id", account.id);
 
@@ -87,12 +88,12 @@ async function refreshMicrosoftToken(account: {
   await supabase
     .from("email_accounts")
     .update({
-      oauth_tokens: {
+      oauth_tokens: sealOAuthTokens({
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token || account.oauth_tokens.refresh_token,
         expires_at: Date.now() + tokens.expires_in * 1000,
         scope: tokens.scope || account.oauth_tokens.scope,
-      },
+      }),
     })
     .eq("id", account.id);
 
@@ -104,30 +105,28 @@ async function refreshMicrosoftToken(account: {
 async function getValidAccessToken(account: {
   id: string;
   provider: string;
-  oauth_tokens: {
-    access_token: string;
-    refresh_token: string;
-    expires_at: number;
-    scope?: string;
-  } | null;
+  oauth_tokens: unknown;
 }): Promise<string | null> {
-  if (!account.oauth_tokens) return null;
+  // Sealed or legacy plaintext; null when missing or a sealed value cannot be decrypted
+  const oauthTokens = openOAuthTokens(account.oauth_tokens);
+  if (!oauthTokens) return null;
 
   // If token is still valid (with 5 min buffer), use it
-  if (account.oauth_tokens.expires_at > Date.now() + 5 * 60 * 1000) {
-    return account.oauth_tokens.access_token;
+  if ((oauthTokens.expires_at ?? 0) > Date.now() + 5 * 60 * 1000) {
+    return oauthTokens.access_token;
   }
 
   // Refresh
+  if (!oauthTokens.refresh_token) return null;
+  const opened = {
+    id: account.id,
+    oauth_tokens: { refresh_token: oauthTokens.refresh_token, scope: oauthTokens.scope },
+  };
   if (account.provider === "gmail") {
-    return refreshGmailToken(
-      account as { id: string; oauth_tokens: { refresh_token: string; scope?: string } },
-    );
+    return refreshGmailToken(opened);
   }
   if (account.provider === "microsoft") {
-    return refreshMicrosoftToken(
-      account as { id: string; oauth_tokens: { refresh_token: string; scope?: string } },
-    );
+    return refreshMicrosoftToken(opened);
   }
 
   return null;

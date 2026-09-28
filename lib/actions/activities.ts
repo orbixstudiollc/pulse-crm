@@ -4,10 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgId, getCurrentUserProfile } from "./helpers";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
-import { escapePostgrestLike } from "@/lib/security";
+import { escapePostgrestLike, pickSortColumn } from "@/lib/security";
 
 type ActivityInsert = Database["public"]["Tables"]["activities"]["Insert"];
 type ActivityUpdate = Database["public"]["Tables"]["activities"]["Update"];
+
+const SORTABLE = ["date", "created_at", "updated_at", "type", "title", "status", "time"] as const;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -62,7 +64,7 @@ export async function getActivities(filters: ActivityFilters = {}) {
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
 
-  query = query.order(sortBy, { ascending: sortOrder === "asc" }).range(from, to);
+  query = query.order(pickSortColumn(sortBy, SORTABLE, "date"), { ascending: sortOrder === "asc" }).range(from, to);
 
   const { data, error, count } = await query;
 

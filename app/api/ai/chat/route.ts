@@ -4,13 +4,15 @@ import { streamText, tool, stepCountIs } from "ai";
 import { z } from "zod";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
 import { assembleContext, fetchEntityForChat } from "@/lib/ai/context";
-import { logTokenUsage } from "@/lib/ai/client";
+import { logTokenUsage, tokenLimitReason } from "@/lib/ai/client";
+import { checkRateLimit, acquireRateLimit } from "@/lib/ai/rate-limiter";
 import { PageContext } from "@/lib/ai/types";
 import { escapePostgrestLike } from "@/lib/security";
 
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  let releaseRateLimit: (() => void) | null = null;
   try {
     const supabase = await createClient();
     const {
@@ -34,12 +36,19 @@ export async function POST(req: Request) {
     // Get AI settings for API key
     const { data: settings } = await supabase
       .from("ai_settings")
-      .select("api_key, feature_chat, ai_provider, openrouter_api_key")
+      .select(
+        "api_key, feature_chat, ai_provider, openrouter_api_key, daily_token_limit, monthly_token_limit, tokens_used_today, tokens_used_month, last_token_reset_daily, last_token_reset_monthly"
+      )
       .eq("organization_id", profile.organization_id)
       .single();
 
     if (settings && !settings.feature_chat) {
       return new Response("AI Chat is disabled in settings", { status: 403 });
+    }
+
+    const limitReason = settings ? tokenLimitReason(settings) : null;
+    if (limitReason) {
+      return Response.json({ error: limitReason }, { status: 429 });
     }
 
     const provider = settings?.ai_provider || "anthropic";
@@ -52,6 +61,25 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    const orgId = profile.organization_id;
+    const rateCheck = checkRateLimit(orgId);
+    if (!rateCheck.allowed) {
+      const retryAfterSec = Math.ceil((rateCheck.retryAfterMs || 1000) / 1000);
+      return Response.json(
+        { error: `Rate limit exceeded. Please try again in ${retryAfterSec} seconds.` },
+        { status: 429, headers: { "Retry-After": String(retryAfterSec) } }
+      );
+    }
+    const release = acquireRateLimit(orgId);
+    let released = false;
+    const guardedRelease = () => {
+      if (released) return;
+      released = true;
+      release();
+    };
+    releaseRateLimit = guardedRelease;
+    req.signal.addEventListener("abort", guardedRelease);
 
     const { messages: rawMessages, data } = await req.json();
     const pageContext: PageContext | undefined = data?.pageContext;
@@ -294,128 +322,6 @@ ${lead.qualification_data ? `\nQualification: ${JSON.stringify(lead.qualificatio
 ${history?.length ? `\nScore History:\n${history.map((h) => `- ${h.score}/100 on ${new Date(h.scored_at).toLocaleDateString()}`).join("\n")}` : ""}`;
           },
         }),
-        createNewDeal: tool({
-          description:
-            "Create a new deal in the pipeline. Use this when the user asks to create or add a deal.",
-          inputSchema: z.object({
-            name: z.string().describe("Deal name"),
-            value: z.number().optional().describe("Deal value in dollars"),
-            stage: z
-              .enum(["discovery", "proposal", "negotiation"])
-              .optional()
-              .default("discovery"),
-            contact_name: z
-              .string()
-              .optional()
-              .describe("Contact name for the deal"),
-            company: z.string().optional().describe("Company name"),
-          }),
-          execute: async ({ name, value, stage, contact_name, company }) => {
-            const supabase = await createClient();
-            const {
-              data: { user: u },
-            } = await supabase.auth.getUser();
-            if (!u) return "Not authenticated.";
-            const { data: prof } = await supabase
-              .from("profiles")
-              .select("organization_id")
-              .eq("id", u.id)
-              .single();
-            if (!prof?.organization_id) return "No organization.";
-            const { data, error } = await supabase
-              .from("deals")
-              .insert({
-                organization_id: prof.organization_id,
-                owner_id: u.id,
-                name,
-                value: value || 0,
-                stage: stage || "discovery",
-                contact_name: contact_name || null,
-                company: company || null,
-                probability:
-                  stage === "discovery"
-                    ? 10
-                    : stage === "proposal"
-                      ? 30
-                      : 50,
-              })
-              .select("id, name, value, stage")
-              .single();
-            if (error) return `Failed to create deal: ${error.message}`;
-            return `**Deal Created Successfully**\nName: ${data.name}\nValue: $${(data.value || 0).toLocaleString()}\nStage: ${data.stage}\nID: ${data.id}`;
-          },
-        }),
-        logDealActivity: tool({
-          description:
-            "Log an activity (call, email, meeting, note, task) for a deal.",
-          inputSchema: z.object({
-            dealId: z
-              .string()
-              .describe("The deal ID to log activity for"),
-            type: z
-              .enum(["call", "email", "meeting", "note", "task"])
-              .describe("Activity type"),
-            title: z.string().describe("Activity title/summary"),
-            description: z
-              .string()
-              .optional()
-              .describe("Detailed description"),
-          }),
-          execute: async ({ dealId, type, title, description }) => {
-            const supabase = await createClient();
-            const {
-              data: { user: u },
-            } = await supabase.auth.getUser();
-            if (!u) return "Not authenticated.";
-            const { data: prof } = await supabase
-              .from("profiles")
-              .select("organization_id")
-              .eq("id", u.id)
-              .single();
-            if (!prof?.organization_id) return "No organization.";
-            const { error } = await supabase
-              .from("deal_activities")
-              .insert({
-                deal_id: dealId,
-                organization_id: prof.organization_id,
-                user_id: u.id,
-                type,
-                title,
-                description: description || null,
-              });
-            if (error) return `Failed to log activity: ${error.message}`;
-            return `**Activity Logged**\nType: ${type}\nTitle: ${title}\nDeal: ${dealId}`;
-          },
-        }),
-        addDealNote: tool({
-          description: "Add a note to a deal.",
-          inputSchema: z.object({
-            dealId: z.string().describe("The deal ID"),
-            content: z.string().describe("Note content"),
-          }),
-          execute: async ({ dealId, content }) => {
-            const supabase = await createClient();
-            const {
-              data: { user: u },
-            } = await supabase.auth.getUser();
-            if (!u) return "Not authenticated.";
-            const { data: prof } = await supabase
-              .from("profiles")
-              .select("organization_id, first_name, last_name")
-              .eq("id", u.id)
-              .single();
-            if (!prof?.organization_id) return "No organization.";
-            const authorName = [prof.first_name, prof.last_name].filter(Boolean).join(" ") || u.email || "Unknown";
-            const { error } = await supabase.from("deal_notes").insert({
-              deal_id: dealId,
-              author_id: u.id,
-              author_name: authorName,
-              content,
-            });
-            if (error) return `Failed to add note: ${error.message}`;
-            return `**Note Added**\nDeal: ${dealId}\nContent: ${content}`;
-          },
-        }),
         getAnalyticsSummary: tool({
           description:
             "Get a summary of sales analytics including conversion rates, revenue trends, and activity metrics.",
@@ -492,7 +398,12 @@ ${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByTy
         }),
       },
       stopWhen: stepCountIs(3),
+      onError: ({ error }) => {
+        guardedRelease();
+        console.error("AI Chat stream error:", error);
+      },
       onFinish: async ({ totalUsage }) => {
+        guardedRelease();
         const durationMs = Date.now() - startTime;
         await logTokenUsage({
           orgId: profile.organization_id!,
@@ -509,6 +420,7 @@ ${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByTy
 
     return result.toUIMessageStreamResponse();
   } catch (error) {
+    releaseRateLimit?.();
     console.error("AI Chat error:", error);
     return new Response(
       error instanceof Error ? error.message : "Internal server error",

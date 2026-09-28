@@ -6,10 +6,12 @@ import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
 import { calculateLeadScore } from "./scoring";
 import { calculateICPMatch } from "./icp";
-import { escapePostgrestLike } from "@/lib/security";
+import { escapePostgrestLike, pickSortColumn } from "@/lib/security";
 
 type LeadInsert = Database["public"]["Tables"]["leads"]["Insert"];
 type LeadUpdate = Database["public"]["Tables"]["leads"]["Update"];
+
+const SORTABLE = ["created_at", "updated_at", "name", "email", "company", "status", "source", "score", "estimated_value", "last_contacted_at", "next_followup"] as const;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -71,7 +73,7 @@ export async function getLeads(filters: LeadFilters = {}) {
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
 
-  query = query.order(sortBy, { ascending: sortOrder === "asc" }).range(from, to);
+  query = query.order(pickSortColumn(sortBy, SORTABLE, "created_at"), { ascending: sortOrder === "asc" }).range(from, to);
 
   const { data, error, count } = await query;
 

@@ -297,6 +297,21 @@ async function executeAutomationActions(
             sequenceId = seq.id;
           }
 
+          const { data: ownedSeq } = await admin
+            .from("sequences")
+            .select("id")
+            .eq("id", sequenceId)
+            .eq("organization_id", organizationId)
+            .maybeSingle();
+          if (!ownedSeq) {
+            actionsExecuted.push({
+              type: "enroll_sequence",
+              success: false,
+              error: "Sequence not found in this organization",
+            });
+            break;
+          }
+
           // Check if already enrolled
           const { data: existing } = await admin
             .from("sequence_enrollments")

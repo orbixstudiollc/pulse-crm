@@ -4,6 +4,7 @@
  */
 
 import { createAdminClient } from "@/lib/supabase/server";
+import { substituteVariables } from "./substitute";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -212,16 +213,6 @@ function evaluateSimpleCondition(condition: string, context: MergeContext): bool
   return val != null && val !== "" && val !== 0;
 }
 
-// ─── Variable Substitution ───────────────────────────────────────────────────
-
-function substituteVariables(template: string, context: MergeContext): string {
-  return template.replace(/\{\{(\w+(?:\.\w+)*)\}\}/g, (_match, key: string) => {
-    const value = context[key];
-    if (value == null || value === "") return "";
-    return String(value);
-  });
-}
-
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 /**
@@ -232,6 +223,7 @@ export async function resolveMergeFields(
   template: string,
   leadId: string,
   accountId?: string,
+  opts?: { html?: boolean },
 ): Promise<string> {
   if (!template) return template;
 
@@ -241,7 +233,7 @@ export async function resolveMergeFields(
   let result = parseConditionals(template, context);
 
   // Step 2: Substitute variables
-  result = substituteVariables(result, context);
+  result = substituteVariables(result, context, opts);
 
   return result;
 }
