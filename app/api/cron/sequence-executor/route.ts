@@ -317,6 +317,7 @@ export async function GET(request: Request) {
               .from("leads")
               .select("phone, name, company")
               .eq("id", enrollment.lead_id)
+              .eq("organization_id", sequence.organization_id)
               .single();
 
             if (!waLead?.phone) {
@@ -328,7 +329,7 @@ export async function GET(request: Request) {
             let waBody = (channelConfig.body_text as string) || currentStep.body || "";
             try {
               const { resolveMergeFields } = await import("@/lib/personalization/merge-engine");
-              waBody = await resolveMergeFields(waBody, enrollment.lead_id, undefined);
+              waBody = await resolveMergeFields(waBody, enrollment.lead_id, sequence.organization_id);
             } catch {
               const mergeFields: Record<string, string> = {
                 "{{name}}": waLead.name || "",
@@ -377,6 +378,7 @@ export async function GET(request: Request) {
               .from("leads")
               .select("linkedin, name")
               .eq("id", enrollment.lead_id)
+              .eq("organization_id", sequence.organization_id)
               .single();
 
             if (!liLead?.linkedin) {
@@ -392,7 +394,7 @@ export async function GET(request: Request) {
             if (connectionNote) {
               try {
                 const { resolveMergeFields } = await import("@/lib/personalization/merge-engine");
-                connectionNote = await resolveMergeFields(connectionNote, enrollment.lead_id, undefined);
+                connectionNote = await resolveMergeFields(connectionNote, enrollment.lead_id, sequence.organization_id);
               } catch {
                 connectionNote = connectionNote
                   .replace(/\{\{name\}\}/gi, liLead.name || "");
@@ -427,6 +429,7 @@ export async function GET(request: Request) {
               .from("leads")
               .select("linkedin, name, company")
               .eq("id", enrollment.lead_id)
+              .eq("organization_id", sequence.organization_id)
               .single();
 
             if (!liMsgLead?.linkedin) {
@@ -440,7 +443,7 @@ export async function GET(request: Request) {
             let msgBody = (channelConfig.message_body as string) || currentStep.body || "";
             try {
               const { resolveMergeFields } = await import("@/lib/personalization/merge-engine");
-              msgBody = await resolveMergeFields(msgBody, enrollment.lead_id, undefined);
+              msgBody = await resolveMergeFields(msgBody, enrollment.lead_id, sequence.organization_id);
             } catch {
               msgBody = msgBody
                 .replace(/\{\{name\}\}/gi, liMsgLead.name || "")
@@ -472,6 +475,7 @@ export async function GET(request: Request) {
               .from("leads")
               .select("linkedin")
               .eq("id", enrollment.lead_id)
+              .eq("organization_id", sequence.organization_id)
               .single();
 
             if (!liViewLead?.linkedin) {
@@ -502,6 +506,7 @@ export async function GET(request: Request) {
               .from("leads")
               .select("linkedin")
               .eq("id", enrollment.lead_id)
+              .eq("organization_id", sequence.organization_id)
               .single();
 
             if (!liEndorseLead?.linkedin) {
@@ -660,6 +665,7 @@ async function processEmailStep(
       .from("email_accounts")
       .select("id")
       .eq("id", selectedAccountId)
+      .eq("organization_id", sequence.organization_id)
       .eq("status", "active")
       .single();
 
@@ -684,6 +690,7 @@ async function processEmailStep(
     .from("leads")
     .select("email, name, company")
     .eq("id", enrollment.lead_id)
+    .eq("organization_id", sequence.organization_id)
     .single();
 
   if (!lead?.email) return { success: false, error: "No lead email" };
@@ -695,8 +702,8 @@ async function processEmailStep(
   try {
     const { resolveMergeFields } = await import("@/lib/personalization/merge-engine");
     [subject, html] = await Promise.all([
-      resolveMergeFields(subject, enrollment.lead_id, accountId),
-      resolveMergeFields(html, enrollment.lead_id, accountId, { html: true }),
+      resolveMergeFields(subject, enrollment.lead_id, sequence.organization_id, accountId),
+      resolveMergeFields(html, enrollment.lead_id, sequence.organization_id, accountId, { html: true }),
     ]);
   } catch {
     const mergeFields: Record<string, string> = {
@@ -751,7 +758,7 @@ async function processEmailStep(
     const bookingCtaHtml = `<div style="margin:24px 0;text-align:center"><a href="{{booking_link}}" style="display:inline-block;padding:12px 28px;background:#4f46e5;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px">Book a Call &rarr;</a></div>`;
     try {
       const { resolveMergeFields } = await import("@/lib/personalization/merge-engine");
-      const resolvedCta = await resolveMergeFields(bookingCtaHtml, enrollment.lead_id, accountId, { html: true });
+      const resolvedCta = await resolveMergeFields(bookingCtaHtml, enrollment.lead_id, sequence.organization_id, accountId, { html: true });
       html = html + resolvedCta;
     } catch { /* skip */ }
   }

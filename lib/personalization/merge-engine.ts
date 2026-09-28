@@ -71,6 +71,7 @@ function getICPGrade(score: number | null): string {
 
 async function buildMergeContext(
   leadId: string,
+  orgId: string,
   accountId?: string,
 ): Promise<MergeContext> {
   const admin = createAdminClient();
@@ -81,6 +82,7 @@ async function buildMergeContext(
     .from("leads")
     .select("*")
     .eq("id", leadId)
+    .eq("organization_id", orgId)
     .single();
 
   if (lead) {
@@ -146,6 +148,7 @@ async function buildMergeContext(
       .from("email_accounts")
       .select("display_name, email_address")
       .eq("id", accountId)
+      .eq("organization_id", orgId)
       .single();
 
     if (account) {
@@ -222,12 +225,13 @@ function evaluateSimpleCondition(condition: string, context: MergeContext): bool
 export async function resolveMergeFields(
   template: string,
   leadId: string,
+  orgId: string,
   accountId?: string,
   opts?: { html?: boolean },
 ): Promise<string> {
   if (!template) return template;
 
-  const context = await buildMergeContext(leadId, accountId);
+  const context = await buildMergeContext(leadId, orgId, accountId);
 
   // Step 1: Process conditionals
   let result = parseConditionals(template, context);
