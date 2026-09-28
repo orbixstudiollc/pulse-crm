@@ -147,7 +147,7 @@ export function NewAuditClient() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6 lg:p-8">
+    <div className="flex flex-col gap-6 p-6 lg:p-6">
       <PageHeader title="New Marketing Audit">
         <Button variant="ghost" onClick={() => router.push("/dashboard/marketing")}>
           <ArrowLeftIcon className="h-4 w-4 mr-2" weight="bold" />
@@ -163,34 +163,34 @@ export function NewAuditClient() {
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             className="mb-6"
           >
-            <SparkleIcon className="h-12 w-12 text-indigo-500" weight="fill" />
+            <SparkleIcon className="h-12 w-12 text-accent-strong" weight="fill" />
           </motion.div>
-          <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+          <h2 className="text-xl font-semibold text-fg">
             Analyzing {businessName || url}
           </h2>
-          <p className="mt-2 text-sm text-neutral-500">
+          <p className="mt-2 text-sm text-fg-secondary">
             {auditType === "full" ? "Running 6-dimension analysis..." : "Quick snapshot in progress..."}
           </p>
 
           <div className="mt-6 w-full max-w-md">
-            <div className="h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+            <div className="h-2 bg-active rounded-full overflow-hidden">
               <motion.div
-                className="h-full bg-indigo-500 rounded-full"
+                className="h-full bg-accent-strong rounded-full"
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.5 }}
               />
             </div>
-            <p className="mt-2 text-center text-sm text-neutral-400">{progress}%</p>
+            <p className="mt-2 text-center text-sm text-fg-secondary">{progress}%</p>
           </div>
 
           {auditType === "full" && (
-            <div className="mt-6 space-y-1 text-xs text-neutral-400">
-              <p className={progress >= 14 ? "text-green-500" : ""}>Content & Messaging {progress >= 14 ? "✓" : "..."}</p>
-              <p className={progress >= 28 ? "text-green-500" : ""}>Conversion Optimization {progress >= 28 ? "✓" : "..."}</p>
-              <p className={progress >= 42 ? "text-green-500" : ""}>SEO & Discoverability {progress >= 42 ? "✓" : "..."}</p>
-              <p className={progress >= 56 ? "text-green-500" : ""}>Competitive Positioning {progress >= 56 ? "✓" : "..."}</p>
-              <p className={progress >= 70 ? "text-green-500" : ""}>Brand & Trust {progress >= 70 ? "✓" : "..."}</p>
-              <p className={progress >= 85 ? "text-green-500" : ""}>Growth & Strategy {progress >= 85 ? "✓" : "..."}</p>
+            <div className="mt-6 space-y-1 text-xs text-fg-muted">
+              <p className={progress >= 14 ? "text-success" : ""}>Content & Messaging {progress >= 14 ? "✓" : "..."}</p>
+              <p className={progress >= 28 ? "text-success" : ""}>Conversion Optimization {progress >= 28 ? "✓" : "..."}</p>
+              <p className={progress >= 42 ? "text-success" : ""}>SEO & Discoverability {progress >= 42 ? "✓" : "..."}</p>
+              <p className={progress >= 56 ? "text-success" : ""}>Competitive Positioning {progress >= 56 ? "✓" : "..."}</p>
+              <p className={progress >= 70 ? "text-success" : ""}>Brand & Trust {progress >= 70 ? "✓" : "..."}</p>
+              <p className={progress >= 85 ? "text-success" : ""}>Growth & Strategy {progress >= 85 ? "✓" : "..."}</p>
             </div>
           )}
         </div>
@@ -199,11 +199,11 @@ export function NewAuditClient() {
         <form onSubmit={handleSubmit} className="mx-auto w-full max-w-lg space-y-5">
           {/* URL */}
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
-              Website URL <span className="text-red-500 ml-0.5">*</span>
+            <label className="block text-sm font-medium text-fg">
+              Website URL <span className="text-danger ml-0.5">*</span>
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted">
                 <GlobeIcon className="h-4 w-4" weight="regular" />
               </span>
               <input
@@ -211,7 +211,7 @@ export function NewAuditClient() {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="example.com"
-                className="w-full rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 pl-10 pr-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 transition-shadow focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
+                className="w-full rounded border border-line bg-surface pl-10 pr-3 py-2.5 text-sm text-fg placeholder:text-fg-muted transition-shadow focus:outline-none focus:border-line focus:shadow-focus"
                 required
               />
             </div>
@@ -219,22 +219,22 @@ export function NewAuditClient() {
 
           {/* Business Name */}
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+            <label className="block text-sm font-medium text-fg">
               Business Name
-              <span className="text-neutral-400 dark:text-neutral-500 font-normal ml-1">(optional)</span>
+              <span className="text-fg-muted font-normal ml-1">(optional)</span>
             </label>
             <input
               type="text"
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
               placeholder="Acme Inc."
-              className="w-full rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 transition-shadow focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-700 focus:shadow-focus"
+              className="w-full rounded border border-line bg-surface px-3 py-2.5 text-sm text-fg placeholder:text-fg-muted transition-shadow focus:outline-none focus:border-line focus:shadow-focus"
             />
           </div>
 
           {/* Audit Type */}
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+            <label className="block text-sm font-medium text-fg">
               Audit Type
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -246,13 +246,13 @@ export function NewAuditClient() {
                   className={cn(
                     "rounded border p-3 text-left transition-all",
                     auditType === type.id
-                      ? "border-neutral-950 dark:border-neutral-50 bg-neutral-50 dark:bg-neutral-900 shadow-focus"
-                      : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700",
+                      ? "border-inverse bg-subtle shadow-focus"
+                      : "border-line hover:border-fg-muted",
                   )}
                 >
-                  <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{type.label}</p>
-                  <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">{type.description}</p>
-                  <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">{type.time}</p>
+                  <p className="text-sm font-medium text-fg">{type.label}</p>
+                  <p className="mt-0.5 text-xs text-fg-secondary">{type.description}</p>
+                  <p className="mt-1 text-xs text-fg-muted">{type.time}</p>
                 </button>
               ))}
             </div>

@@ -212,7 +212,7 @@ export function TemplatesPageClient({
   };
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
+    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
       {/* Header */}
       <PageHeader title="Email Templates">
         <Button
@@ -231,7 +231,7 @@ export function TemplatesPageClient({
           icon={
             <EnvelopeIcon
               size={24}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
@@ -241,14 +241,14 @@ export function TemplatesPageClient({
           icon={
             <EyeIcon
               size={24}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
       </div>
 
       {/* Category Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-1.5">
+      <div className="flex items-center gap-1 overflow-x-auto rounded-lg border border-line bg-surface p-1.5">
         {categoryTabs.map((tab) => (
           <button
             key={tab.value}
@@ -259,8 +259,8 @@ export function TemplatesPageClient({
             className={cn(
               "px-4 py-2 text-sm font-medium rounded whitespace-nowrap transition-colors",
               activeTab === tab.value
-                ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
-                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                ? "bg-inverse text-on-inverse"
+                : "text-fg-secondary hover:text-fg hover:bg-muted"
             )}
           >
             {tab.label}
@@ -269,7 +269,7 @@ export function TemplatesPageClient({
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
+      <div className="rounded-lg border border-line bg-surface overflow-hidden">
         <TableHeader
           title="All Templates"
           rowsPerPage={rowsPerPage}
@@ -284,23 +284,23 @@ export function TemplatesPageClient({
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3">
+                  <tr className="bg-muted">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Name
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Subject
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Category
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Merge Fields
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Used
                     </th>
-                    <th className="text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 px-3 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary">
                       Actions
                     </th>
                   </tr>
@@ -309,49 +309,49 @@ export function TemplatesPageClient({
                   {paginatedTemplates.map((template) => (
                     <tr
                       key={template.id}
-                      className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                      className="hover:bg-muted transition-colors"
                     >
-                      <td className="px-5 py-4">
-                        <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                      <td className="px-3 py-2 border-t border-row">
+                        <p className="text-sm font-medium text-fg">
                           {template.name}
                         </p>
                       </td>
-                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-1 max-w-[250px]">
+                      <td className="px-3 py-2 border-t border-row">
+                        <p className="text-sm text-fg-secondary line-clamp-1 max-w-[250px]">
                           {template.subject}
                         </p>
                       </td>
-                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                      <td className="px-3 py-2 border-t border-row">
+                        <span className="text-sm text-fg-secondary">
                           {categoryConfig[template.category] ||
                             template.category}
                         </span>
                       </td>
-                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                      <td className="px-3 py-2 border-t border-row">
                         <div className="flex flex-wrap gap-1">
                           {(template.merge_fields || [])
                             .slice(0, 3)
                             .map((field) => (
                               <span
                                 key={field}
-                                className="inline-flex px-1.5 py-0.5 text-[10px] font-mono rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
+                                className="inline-flex px-1.5 py-0.5 text-xs font-mono rounded bg-muted text-fg-secondary"
                               >
                                 {field}
                               </span>
                             ))}
                           {(template.merge_fields || []).length > 3 && (
-                            <span className="text-[10px] text-neutral-400">
+                            <span className="text-xs text-fg-muted">
                               +{template.merge_fields.length - 3}
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                        <span className="text-sm font-medium font-serif text-neutral-950 dark:text-neutral-50">
+                      <td className="px-3 py-2 border-t border-row">
+                        <span className="text-sm font-medium font-semibold text-fg">
                           {template.usage_count || 0}
                         </span>
                       </td>
-                      <td className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                      <td className="px-3 py-2 border-t border-row">
                         <div className="flex justify-center">
                           <ActionMenu
                             items={[
@@ -416,14 +416,14 @@ export function TemplatesPageClient({
       <Modal open={showModal} onClose={() => setShowModal(false)}>
         <div className="p-6 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-serif text-neutral-950 dark:text-neutral-50">
+            <h2 className="text-lg font-semibold text-fg">
               {editingTemplate ? "Edit Template" : "Create Template"}
             </h2>
             <button
               onClick={() => setShowModal(false)}
-              className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded hover:bg-muted transition-colors"
             >
-              <XIcon size={20} className="text-neutral-500" />
+              <XIcon size={20} className="text-fg-secondary" />
             </button>
           </div>
 
@@ -463,7 +463,7 @@ export function TemplatesPageClient({
                 rows={8}
               />
               <div className="mt-2 flex flex-wrap gap-1">
-                <span className="text-xs text-neutral-500 mr-1 py-1">
+                <span className="text-xs text-fg-secondary mr-1 py-1">
                   Insert:
                 </span>
                 {mergeFieldOptions.map((field) => (
@@ -471,7 +471,7 @@ export function TemplatesPageClient({
                     key={field}
                     type="button"
                     onClick={() => insertMergeField(field)}
-                    className="inline-flex px-2 py-1 text-[11px] font-mono rounded border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                    className="inline-flex px-2 py-1 text-xs font-mono rounded border border-line bg-subtle text-fg-secondary hover:bg-muted transition-colors"
                   >
                     {field}
                   </button>
@@ -511,32 +511,32 @@ export function TemplatesPageClient({
         {previewTemplate && (
           <div className="p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-serif text-neutral-950 dark:text-neutral-50">
+              <h2 className="text-lg font-semibold text-fg">
                 {previewTemplate.name}
               </h2>
               <button
                 onClick={() => setPreviewTemplate(null)}
-                className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded hover:bg-muted transition-colors"
               >
-                <XIcon size={20} className="text-neutral-500" />
+                <XIcon size={20} className="text-fg-secondary" />
               </button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                <label className="text-xs font-medium text-fg-secondary">
                   Subject
                 </label>
-                <p className="text-sm text-neutral-950 dark:text-neutral-50 mt-1">
+                <p className="text-sm text-fg mt-1">
                   {previewTemplate.subject}
                 </p>
               </div>
               <div>
-                <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                <label className="text-xs font-medium text-fg-secondary">
                   Body
                 </label>
-                <div className="mt-1 p-4 rounded bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-800">
-                  <pre className="text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap font-sans">
+                <div className="mt-1 p-4 rounded bg-subtle border border-line">
+                  <pre className="text-sm text-fg whitespace-pre-wrap font-sans">
                     {previewTemplate.body}
                   </pre>
                 </div>
@@ -544,14 +544,14 @@ export function TemplatesPageClient({
               {previewTemplate.merge_fields &&
                 previewTemplate.merge_fields.length > 0 && (
                   <div>
-                    <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                    <label className="text-xs font-medium text-fg-secondary">
                       Merge Fields
                     </label>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {previewTemplate.merge_fields.map((field) => (
                         <span
                           key={field}
-                          className="inline-flex px-2 py-1 text-[11px] font-mono rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
+                          className="inline-flex px-2 py-1 text-xs font-mono rounded bg-muted text-fg-secondary"
                         >
                           {field}
                         </span>

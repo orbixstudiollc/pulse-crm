@@ -88,29 +88,29 @@ type TabId = (typeof TABS)[number]["id"];
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function scoreColor(score: number | null): string {
-  if (!score) return "text-neutral-400";
-  if (score >= 85) return "text-green-600 dark:text-green-400";
-  if (score >= 70) return "text-blue-600 dark:text-blue-400";
-  if (score >= 55) return "text-amber-600 dark:text-amber-400";
-  if (score >= 40) return "text-orange-600 dark:text-orange-400";
-  return "text-red-600 dark:text-red-400";
+  if (!score) return "text-fg-muted";
+  if (score >= 85) return "text-success";
+  if (score >= 70) return "text-accent-strong";
+  if (score >= 55) return "text-warning";
+  if (score >= 40) return "text-warning";
+  return "text-danger";
 }
 
 function scoreBg(score: number | null): string {
-  if (!score) return "bg-neutral-100 dark:bg-neutral-800";
-  if (score >= 85) return "bg-green-50 dark:bg-green-950/30";
-  if (score >= 70) return "bg-blue-50 dark:bg-blue-950/30";
-  if (score >= 55) return "bg-amber-50 dark:bg-amber-950/30";
-  if (score >= 40) return "bg-orange-50 dark:bg-orange-950/30";
-  return "bg-red-50 dark:bg-red-950/30";
+  if (!score) return "bg-muted";
+  if (score >= 85) return "bg-success-surface";
+  if (score >= 70) return "bg-accent-surface";
+  if (score >= 55) return "bg-warning-surface";
+  if (score >= 40) return "bg-warning-surface";
+  return "bg-danger-surface";
 }
 
 function statusBadge(status: string) {
   const map: Record<string, { label: string; className: string }> = {
-    pending: { label: "Pending", className: "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400" },
-    running: { label: "Running", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
-    completed: { label: "Completed", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
-    failed: { label: "Failed", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
+    pending: { label: "Pending", className: "bg-muted text-fg-secondary" },
+    running: { label: "Running", className: "bg-accent-surface text-accent-on-surface" },
+    completed: { label: "Completed", className: "bg-success-surface text-success" },
+    failed: { label: "Failed", className: "bg-danger-surface text-danger" },
   };
   const info = map[status] || map.pending;
   return (
@@ -122,10 +122,10 @@ function statusBadge(status: string) {
 
 function priorityBadge(priority: string) {
   const map: Record<string, string> = {
-    critical: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    high: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-    medium: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    low: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    critical: "bg-danger-surface text-danger",
+    high: "bg-warning-surface text-warning",
+    medium: "bg-warning-surface text-warning",
+    low: "bg-accent-surface text-accent-on-surface",
   };
   return (
     <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize", map[priority] || map.medium)}>
@@ -144,7 +144,7 @@ function contentTypeBadge(type: string) {
     brand_voice: "Brand Voice",
   };
   return (
-    <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 px-2 py-0.5 text-xs font-medium">
+    <span className="inline-flex items-center rounded-full bg-accent-surface text-accent-on-surface px-2 py-0.5 text-xs font-medium">
       {labels[type] || type}
     </span>
   );
@@ -165,7 +165,7 @@ function ScoreGauge({ score, size = 56 }: { score: number | null; size?: number 
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="currentColor" strokeWidth={4} className="text-neutral-200 dark:text-neutral-700" />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="currentColor" strokeWidth={4} className="text-fg-disabled" />
         <motion.circle
           cx={size / 2} cy={size / 2} r={radius} fill="none" strokeWidth={4}
           strokeLinecap="round"
@@ -178,7 +178,7 @@ function ScoreGauge({ score, size = 56 }: { score: number | null; size?: number 
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className={cn("text-sm font-bold", scoreColor(score))}>{score ?? "—"}</span>
+        <span className={cn("text-sm font-semibold", scoreColor(score))}>{score ?? "—"}</span>
       </div>
     </div>
   );
@@ -225,9 +225,9 @@ export function MarketingPageClient({
     if (initialAudits.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <ChartBarIcon className="h-12 w-12 text-neutral-300 dark:text-neutral-600 mb-4" weight="regular" />
-          <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">No marketing audits yet</h3>
-          <p className="mt-1 text-sm text-neutral-500">Run your first audit to analyze a website&apos;s marketing effectiveness.</p>
+          <ChartBarIcon className="h-12 w-12 text-fg-disabled mb-4" weight="regular" />
+          <h3 className="text-lg font-medium text-fg">No marketing audits yet</h3>
+          <p className="mt-1 text-sm text-fg-secondary">Run your first audit to analyze a website&apos;s marketing effectiveness.</p>
           <Button className="mt-4" onClick={() => router.push("/dashboard/marketing/new")}>
             <PlusIcon className="h-4 w-4 mr-2" weight="bold" />
             New Audit
@@ -241,45 +241,45 @@ export function MarketingPageClient({
         {initialAudits.map((audit) => (
           <div
             key={audit.id}
-            className="flex items-center gap-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors cursor-pointer"
+            className="flex items-center gap-4 rounded-lg border border-line bg-surface p-4 hover:border-fg-muted transition-colors cursor-pointer"
             onClick={() => router.push(`/dashboard/marketing/${audit.id}`)}
           >
             <ScoreGauge score={audit.overall_score} />
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <p className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                <p className="font-medium text-fg truncate">
                   {audit.business_name || audit.website_url}
                 </p>
                 {statusBadge(audit.status)}
               </div>
-              <p className="mt-0.5 text-sm text-neutral-500 truncate">{audit.website_url}</p>
-              <p className="mt-0.5 text-xs text-neutral-400">{formatDate(audit.created_at)} · {audit.audit_type} audit</p>
+              <p className="mt-0.5 text-sm text-fg-secondary truncate">{audit.website_url}</p>
+              <p className="mt-0.5 text-xs text-fg-muted">{formatDate(audit.created_at)} · {audit.audit_type} audit</p>
             </div>
 
             {audit.grade && (
-              <div className={cn("flex items-center justify-center w-10 h-10 rounded-lg text-lg font-bold", scoreBg(audit.overall_score), scoreColor(audit.overall_score))}>
+              <div className={cn("flex items-center justify-center w-10 h-10 rounded-lg text-lg font-semibold", scoreBg(audit.overall_score), scoreColor(audit.overall_score))}>
                 {audit.grade}
               </div>
             )}
 
             {audit.status === "running" && (
               <div className="w-20">
-                <div className="h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-active rounded-full overflow-hidden">
                   <motion.div
-                    className="h-full bg-blue-500 rounded-full"
+                    className="h-full bg-accent-strong rounded-full"
                     initial={{ width: 0 }}
                     animate={{ width: `${audit.progress}%` }}
                     transition={{ duration: 0.5 }}
                   />
                 </div>
-                <p className="text-xs text-neutral-400 mt-1 text-center">{audit.progress}%</p>
+                <p className="text-xs text-fg-muted mt-1 text-center">{audit.progress}%</p>
               </div>
             )}
 
             <button
               onClick={(e) => { e.stopPropagation(); handleDeleteAudit(audit.id); }}
-              className="p-2 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-red-500 transition-colors"
+              className="p-2 rounded hover:bg-muted text-fg-muted hover:text-danger transition-colors"
             >
               <TrashIcon className="h-4 w-4" weight="regular" />
             </button>
@@ -293,9 +293,9 @@ export function MarketingPageClient({
     if (initialContent.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <SparkleIcon className="h-12 w-12 text-neutral-300 dark:text-neutral-600 mb-4" weight="regular" />
-          <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">No generated content yet</h3>
-          <p className="mt-1 text-sm text-neutral-500">Run an audit first, then generate email sequences, social calendars, and more.</p>
+          <SparkleIcon className="h-12 w-12 text-fg-disabled mb-4" weight="regular" />
+          <h3 className="text-lg font-medium text-fg">No generated content yet</h3>
+          <p className="mt-1 text-sm text-fg-secondary">Run an audit first, then generate email sequences, social calendars, and more.</p>
         </div>
       );
     }
@@ -305,13 +305,13 @@ export function MarketingPageClient({
         {initialContent.map((item) => (
           <div
             key={item.id}
-            className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+            className="rounded-lg border border-line bg-surface p-4 hover:border-fg-muted transition-colors"
           >
             <div className="flex items-center justify-between mb-2">
               {contentTypeBadge(item.content_type)}
-              <span className="text-xs text-neutral-400">{formatDate(item.created_at)}</span>
+              <span className="text-xs text-fg-muted">{formatDate(item.created_at)}</span>
             </div>
-            <p className="font-medium text-neutral-900 dark:text-neutral-100 truncate">{item.title}</p>
+            <p className="font-medium text-fg truncate">{item.title}</p>
           </div>
         ))}
       </div>
@@ -322,9 +322,9 @@ export function MarketingPageClient({
     if (initialReports.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <FileTextIcon className="h-12 w-12 text-neutral-300 dark:text-neutral-600 mb-4" weight="regular" />
-          <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">No reports yet</h3>
-          <p className="mt-1 text-sm text-neutral-500">Generate reports from completed audits.</p>
+          <FileTextIcon className="h-12 w-12 text-fg-disabled mb-4" weight="regular" />
+          <h3 className="text-lg font-medium text-fg">No reports yet</h3>
+          <p className="mt-1 text-sm text-fg-secondary">Generate reports from completed audits.</p>
         </div>
       );
     }
@@ -332,11 +332,11 @@ export function MarketingPageClient({
     return (
       <div className="space-y-3">
         {initialReports.map((report) => (
-          <div key={report.id} className="flex items-center gap-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4">
-            <FileTextIcon className="h-8 w-8 text-indigo-500" weight="regular" />
+          <div key={report.id} className="flex items-center gap-4 rounded-lg border border-line bg-surface p-4">
+            <FileTextIcon className="h-8 w-8 text-accent-strong" weight="regular" />
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-neutral-900 dark:text-neutral-100">{report.title}</p>
-              <p className="text-xs text-neutral-400">{formatDate(report.created_at)} · {report.report_type.toUpperCase()}</p>
+              <p className="font-medium text-fg">{report.title}</p>
+              <p className="text-xs text-fg-muted">{formatDate(report.created_at)} · {report.report_type.toUpperCase()}</p>
             </div>
           </div>
         ))}
@@ -348,9 +348,9 @@ export function MarketingPageClient({
     if (initialActions.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <CheckCircleIcon className="h-12 w-12 text-neutral-300 dark:text-neutral-600 mb-4" weight="regular" />
-          <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">No action items yet</h3>
-          <p className="mt-1 text-sm text-neutral-500">Action items are generated from audit findings.</p>
+          <CheckCircleIcon className="h-12 w-12 text-fg-disabled mb-4" weight="regular" />
+          <h3 className="text-lg font-medium text-fg">No action items yet</h3>
+          <p className="mt-1 text-sm text-fg-secondary">Action items are generated from audit findings.</p>
         </div>
       );
     }
@@ -365,7 +365,7 @@ export function MarketingPageClient({
           if (items.length === 0) return null;
           return (
             <div key={tier}>
-              <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider mb-3">
+              <h3 className="text-sm font-semibold text-fg mb-3">
                 {tierLabels[tier]} ({items.length})
               </h3>
               <div className="space-y-2">
@@ -375,8 +375,8 @@ export function MarketingPageClient({
                     className={cn(
                       "flex items-start gap-3 rounded-lg border p-3 transition-colors",
                       item.status === "completed"
-                        ? "border-green-200 dark:border-green-800/30 bg-green-50/50 dark:bg-green-900/10"
-                        : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950",
+                        ? "border-success bg-success-surface"
+                        : "border-line bg-surface",
                     )}
                   >
                     <button
@@ -384,23 +384,23 @@ export function MarketingPageClient({
                       className={cn(
                         "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
                         item.status === "completed"
-                          ? "bg-green-500 border-green-500 text-white"
-                          : "border-neutral-300 dark:border-neutral-600 hover:border-neutral-400",
+                          ? "bg-success border-success text-on-inverse"
+                          : "border-line hover:border-fg-muted",
                       )}
                     >
                       {item.status === "completed" && <CheckCircleIcon className="h-3 w-3" weight="bold" />}
                     </button>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className={cn("text-sm font-medium", item.status === "completed" ? "line-through text-neutral-400" : "text-neutral-900 dark:text-neutral-100")}>
+                        <p className={cn("text-sm font-medium", item.status === "completed" ? "line-through text-fg-muted" : "text-fg")}>
                           {item.title}
                         </p>
                         {priorityBadge(item.priority)}
                       </div>
                       {item.description && (
-                        <p className="mt-0.5 text-xs text-neutral-500 line-clamp-2">{item.description}</p>
+                        <p className="mt-0.5 text-xs text-fg-secondary line-clamp-2">{item.description}</p>
                       )}
-                      <div className="mt-1 flex items-center gap-3 text-xs text-neutral-400">
+                      <div className="mt-1 flex items-center gap-3 text-xs text-fg-muted">
                         {item.impact_estimate && <span>Impact: {item.impact_estimate}</span>}
                         {item.effort && <span>Effort: {item.effort}</span>}
                         {item.category && <span className="capitalize">{item.category}</span>}
@@ -426,7 +426,7 @@ export function MarketingPageClient({
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 lg:p-8">
+    <div className="flex flex-col gap-6 p-6 lg:p-6">
       <PageHeader title="Marketing">
         <Button onClick={() => router.push("/dashboard/marketing/new")}>
           <PlusIcon className="h-4 w-4 mr-2" weight="bold" />
@@ -435,7 +435,7 @@ export function MarketingPageClient({
       </PageHeader>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-1 overflow-x-auto">
+      <div className="flex items-center gap-1 rounded border border-line bg-subtle p-1 overflow-x-auto">
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
@@ -445,14 +445,14 @@ export function MarketingPageClient({
               className={cn(
                 "relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded transition-colors whitespace-nowrap",
                 isActive
-                  ? "bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50 shadow-sm"
-                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50",
+                  ? "bg-surface text-fg"
+                  : "text-fg-secondary hover:text-fg",
               )}
             >
               <tab.icon className="h-4 w-4" weight="regular" />
               {tab.label}
               {tab.id === "audits" && initialAudits.length > 0 && (
-                <span className="ml-1 rounded-full bg-neutral-200 dark:bg-neutral-700 px-1.5 py-0.5 text-xs">
+                <span className="ml-1 rounded-full bg-active px-1.5 py-0.5 text-xs">
                   {initialAudits.length}
                 </span>
               )}

@@ -299,19 +299,19 @@ export function InboxClient() {
     switch (channel) {
       case "email":
         return (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-accent-surface text-accent-on-surface">
             <EnvelopeIcon size={10} /> Email
           </span>
         );
       case "whatsapp":
         return (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-success-surface text-success">
             <WhatsappLogoIcon size={10} /> WhatsApp
           </span>
         );
       case "linkedin":
         return (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-sky-50 text-sky-600 dark:bg-sky-950/30 dark:text-sky-400">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-accent-surface text-accent-on-surface">
             <LinkedinLogoIcon size={10} /> LinkedIn
           </span>
         );
@@ -320,9 +320,9 @@ export function InboxClient() {
 
   const channelIcon = (channel: "email" | "whatsapp" | "linkedin") => {
     switch (channel) {
-      case "email": return <EnvelopeIcon size={14} className="text-blue-500" />;
-      case "whatsapp": return <WhatsappLogoIcon size={14} className="text-emerald-500" />;
-      case "linkedin": return <LinkedinLogoIcon size={14} className="text-sky-500" />;
+      case "email": return <EnvelopeIcon size={14} className="text-accent-strong" />;
+      case "whatsapp": return <WhatsappLogoIcon size={14} className="text-success" />;
+      case "linkedin": return <LinkedinLogoIcon size={14} className="text-accent-strong" />;
     }
   };
 
@@ -339,21 +339,21 @@ export function InboxClient() {
   // ── Render ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-full bg-white dark:bg-neutral-950">
+    <div className="flex h-full bg-surface">
       {/* Thread List (left panel) */}
       <div
         className={cn(
-          "w-96 max-lg:w-80 shrink-0 border-r border-neutral-200 dark:border-neutral-800 flex flex-col",
+          "w-96 max-lg:w-80 shrink-0 border-r border-line flex flex-col",
           selectedThread ? "max-md:hidden" : "max-md:w-full",
         )}
       >
         {/* Inbox Header */}
-        <div className="px-4 py-4 border-b border-neutral-200 dark:border-neutral-800">
+        <div className="px-4 py-4 border-b border-line">
           <div className="flex items-center justify-between mb-3">
-            <h1 className="text-[28px] leading-[36px] tracking-[-0.56px] font-serif text-neutral-950 dark:text-neutral-50">
+            <h1 className="text-xl font-semibold text-fg">
               Inbox
               {stats.unread > 0 && (
-                <span className="ml-2 text-sm font-sans font-normal text-neutral-500">
+                <span className="ml-2 text-sm font-sans font-normal text-fg-secondary">
                   ({stats.unread} unread)
                 </span>
               )}
@@ -361,7 +361,7 @@ export function InboxClient() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => { setLoading(true); fetchThreads(); fetchStats(); }}
-                className="p-1.5 rounded text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="p-1.5 rounded text-fg-secondary hover:text-fg hover:bg-muted transition-colors"
               >
                 <ArrowPathIcon size={16} />
               </button>
@@ -387,11 +387,11 @@ export function InboxClient() {
                   "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-colors",
                   channelFilter === id
                     ? id === "whatsapp"
-                      ? "bg-emerald-600 text-white"
+                      ? "bg-success text-on-inverse"
                       : id === "linkedin"
-                        ? "bg-sky-600 text-white"
-                        : "bg-neutral-950 text-white dark:bg-white dark:text-neutral-950"
-                    : "text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800",
+                        ? "bg-accent-strong text-on-inverse"
+                        : "bg-inverse text-on-inverse"
+                    : "text-fg-secondary hover:text-fg hover:bg-muted",
                 )}
               >
                 {icon}
@@ -402,13 +402,13 @@ export function InboxClient() {
 
           {/* Search */}
           <div className="relative mb-3">
-            <MagnifyingGlassIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <MagnifyingGlassIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
             <input
               type="text"
               placeholder={isEmailView ? "Search emails..." : "Search conversations..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-500/30"
+              className="w-full pl-9 pr-3 py-2 text-sm rounded border border-line bg-surface text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-line"
             />
           </div>
 
@@ -422,8 +422,8 @@ export function InboxClient() {
                   className={cn(
                     "px-3 py-1.5 text-xs font-medium rounded transition-colors",
                     filterView === v
-                      ? "bg-neutral-950 text-white dark:bg-white dark:text-neutral-950"
-                      : "text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800",
+                      ? "bg-inverse text-on-inverse"
+                      : "text-fg-secondary hover:text-fg hover:bg-muted",
                   )}
                 >
                   {v.charAt(0).toUpperCase() + v.slice(1)}
@@ -436,15 +436,15 @@ export function InboxClient() {
         {/* Thread / Activity list */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
-            <div className="flex items-center justify-center py-12 text-neutral-400">
+            <div className="flex items-center justify-center py-12 text-fg-muted">
               <CircleNotchIcon size={24} className="animate-spin" />
             </div>
           ) : isEmailView ? (
             /* ── Email threads ── */
             threads.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-4">
-                <EnvelopeIcon size={40} className="text-neutral-300 dark:text-neutral-600 mb-3" />
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center">
+                <EnvelopeIcon size={40} className="text-fg-disabled mb-3" />
+                <p className="text-sm text-fg-secondary text-center">
                   {filterView === "unread" ? "No unread emails" :
                     filterView === "starred" ? "No starred emails" :
                       search ? "No emails match your search" :
@@ -457,16 +457,16 @@ export function InboxClient() {
                   key={thread.id}
                   onClick={() => openThread(thread)}
                   className={cn(
-                    "w-full text-left px-4 py-3 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors",
-                    selectedThread?.id === thread.id && "bg-neutral-100 dark:bg-neutral-800/50",
-                    !thread.is_read && "bg-blue-50/50 dark:bg-blue-950/10",
+                    "w-full text-left px-4 py-3 border-b border-row hover:bg-subtle transition-colors",
+                    selectedThread?.id === thread.id && "bg-muted",
+                    !thread.is_read && "bg-accent-surface",
                   )}
                 >
                   <div className="flex items-start gap-3">
                     {/* Unread dot */}
                     <div className="pt-1.5 w-2 shrink-0">
                       {!thread.is_read && (
-                        <span className="block w-2 h-2 rounded-full bg-blue-500" />
+                        <span className="block w-2 h-2 rounded-full bg-accent-strong" />
                       )}
                     </div>
 
@@ -474,31 +474,31 @@ export function InboxClient() {
                       <div className="flex items-center justify-between gap-2 mb-0.5">
                         <span className={cn(
                           "text-sm truncate",
-                          !thread.is_read ? "font-semibold text-neutral-950 dark:text-neutral-50" : "font-medium text-neutral-700 dark:text-neutral-300",
+                          !thread.is_read ? "font-semibold text-fg" : "font-medium text-fg",
                         )}>
                           {getThreadName(thread)}
                         </span>
-                        <span className="text-xs text-neutral-400 shrink-0">
+                        <span className="text-xs text-fg-muted shrink-0">
                           {formatDate(thread.last_message_at)}
                         </span>
                       </div>
                       <p className={cn(
                         "text-sm truncate",
-                        !thread.is_read ? "text-neutral-700 dark:text-neutral-300" : "text-neutral-500 dark:text-neutral-400",
+                        !thread.is_read ? "text-fg" : "text-fg-secondary",
                       )}>
                         {thread.subject || "No subject"}
                       </p>
                       {thread.snippet && (
-                        <p className="text-xs text-neutral-400 dark:text-neutral-500 truncate mt-0.5">
+                        <p className="text-xs text-fg-muted truncate mt-0.5">
                           {thread.snippet}
                         </p>
                       )}
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] text-neutral-400 uppercase">
+                        <span className="text-xs text-fg-muted">
                           {thread.email_accounts.provider}
                         </span>
                         {thread.message_count > 1 && (
-                          <span className="text-[10px] text-neutral-400">
+                          <span className="text-xs text-fg-muted">
                             {thread.message_count} messages
                           </span>
                         )}
@@ -514,7 +514,7 @@ export function InboxClient() {
                         size={14}
                         weight={thread.is_starred ? "fill" : "regular"}
                         className={cn(
-                          thread.is_starred ? "text-amber-500" : "text-neutral-300 dark:text-neutral-600 hover:text-amber-400",
+                          thread.is_starred ? "text-warning" : "text-fg-disabled hover:text-warning",
                         )}
                       />
                     </button>
@@ -527,13 +527,13 @@ export function InboxClient() {
             unifiedItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-4">
                 {channelFilter === "whatsapp" ? (
-                  <WhatsappLogoIcon size={40} className="text-emerald-300 dark:text-emerald-700 mb-3" />
+                  <WhatsappLogoIcon size={40} className="text-success mb-3" />
                 ) : channelFilter === "linkedin" ? (
-                  <LinkedinLogoIcon size={40} className="text-sky-300 dark:text-sky-700 mb-3" />
+                  <LinkedinLogoIcon size={40} className="text-accent-strong mb-3" />
                 ) : (
-                  <EnvelopeIcon size={40} className="text-neutral-300 dark:text-neutral-600 mb-3" />
+                  <EnvelopeIcon size={40} className="text-fg-disabled mb-3" />
                 )}
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center">
+                <p className="text-sm text-fg-secondary text-center">
                   {search
                     ? "No messages match your search"
                     : channelFilter === "whatsapp"
@@ -549,42 +549,42 @@ export function InboxClient() {
                   key={`${item.channel}-${item.id}`}
                   onClick={() => selectUnifiedItem(item)}
                   className={cn(
-                    "w-full text-left px-4 py-3 border-b border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors",
+                    "w-full text-left px-4 py-3 border-b border-row hover:bg-subtle transition-colors",
                     selectedUnifiedItem?.id === item.id && selectedUnifiedItem?.channel === item.channel &&
-                      "bg-neutral-100 dark:bg-neutral-800/50",
+                      "bg-muted",
                   )}
                 >
                   <div className="flex items-start gap-3">
                     {/* Channel icon */}
                     <div className={cn(
                       "mt-0.5 w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                      item.channel === "email" && "bg-blue-50 dark:bg-blue-950/30",
-                      item.channel === "whatsapp" && "bg-emerald-50 dark:bg-emerald-950/30",
-                      item.channel === "linkedin" && "bg-sky-50 dark:bg-sky-950/30",
+                      item.channel === "email" && "bg-accent-surface",
+                      item.channel === "whatsapp" && "bg-success-surface",
+                      item.channel === "linkedin" && "bg-accent-surface",
                     )}>
                       {channelIcon(item.channel)}
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-0.5">
-                        <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                        <span className="text-sm font-medium text-fg truncate">
                           {getUnifiedItemName(item)}
                         </span>
-                        <span className="text-xs text-neutral-400 shrink-0">
+                        <span className="text-xs text-fg-muted shrink-0">
                           {formatDate(item.created_at)}
                         </span>
                       </div>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400 truncate">
+                      <p className="text-sm text-fg-secondary truncate">
                         {item.preview}
                       </p>
                       <div className="flex items-center gap-2 mt-1.5">
                         {channelBadge(item.channel)}
                         {statusBadge(item.status)}
-                        <span className="text-[10px] text-neutral-400 capitalize">
+                        <span className="text-xs text-fg-muted capitalize">
                           {item.direction === "inbound" ? "↓ Inbound" : "↑ Outbound"}
                         </span>
                         {item.lead.company && (
-                          <span className="text-[10px] text-neutral-400 truncate">
+                          <span className="text-xs text-fg-muted truncate">
                             {item.lead.company}
                           </span>
                         )}
@@ -608,25 +608,25 @@ export function InboxClient() {
         {selectedThread ? (
           <>
             {/* Thread header */}
-            <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-3">
+            <div className="px-6 py-4 border-b border-line flex items-center gap-3">
               <button
                 onClick={() => { setSelectedThread(null); setMessages([]); }}
-                className="md:hidden p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                className="md:hidden p-1.5 rounded hover:bg-muted"
               >
                 <ArrowLeftIcon size={18} />
               </button>
               <div className="flex-1 min-w-0">
-                <h2 className="text-base font-semibold text-neutral-950 dark:text-neutral-50 truncate">
+                <h2 className="text-base font-semibold text-fg truncate">
                   {selectedThread.subject || "No subject"}
                 </h2>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                <p className="text-xs text-fg-secondary">
                   {getThreadName(selectedThread)} &middot; {selectedThread.message_count} message{selectedThread.message_count !== 1 ? "s" : ""}
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleArchive(selectedThread.id)}
-                  className="text-xs px-3 py-1.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                  className="text-xs px-3 py-1.5 rounded border border-line text-fg-secondary hover:bg-muted transition-colors"
                 >
                   Archive
                 </button>
@@ -638,7 +638,7 @@ export function InboxClient() {
                     fetchThreads();
                     fetchStats();
                   }}
-                  className="p-2 rounded hover:bg-red-50 dark:hover:bg-red-950/30 text-neutral-400 hover:text-red-500 transition-colors"
+                  className="p-2 rounded hover:bg-danger-surface text-fg-muted hover:text-danger transition-colors"
                   title="Delete"
                 >
                   <TrashIcon size={16} />
@@ -653,7 +653,7 @@ export function InboxClient() {
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               {loadingMessages ? (
                 <div className="flex items-center justify-center py-12">
-                  <CircleNotchIcon size={24} className="animate-spin text-neutral-400" />
+                  <CircleNotchIcon size={24} className="animate-spin text-fg-muted" />
                 </div>
               ) : (
                 messages.map((msg) => (
@@ -662,8 +662,8 @@ export function InboxClient() {
                     className={cn(
                       "rounded border p-4",
                       msg.direction === "outbound"
-                        ? "border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/50"
-                        : "border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900",
+                        ? "border-line bg-subtle"
+                        : "border-line bg-surface",
                     )}
                   >
                     {/* Message header */}
@@ -672,16 +672,16 @@ export function InboxClient() {
                         <div className={cn(
                           "w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold",
                           msg.direction === "outbound"
-                            ? "bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300"
-                            : "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
+                            ? "bg-active text-fg-secondary"
+                            : "bg-accent-surface text-accent-on-surface",
                         )}>
                           {(msg.from_address || "?")[0].toUpperCase()}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                          <p className="text-sm font-medium text-fg">
                             {msg.from_address || "Unknown"}
                           </p>
-                          <p className="text-xs text-neutral-400">
+                          <p className="text-xs text-fg-muted">
                             To: {msg.to_addresses.join(", ")}
                           </p>
                         </div>
@@ -689,11 +689,11 @@ export function InboxClient() {
                       <div className="flex items-center gap-2">
                         {statusBadge(msg.status)}
                         {msg.open_count > 0 && (
-                          <span className="text-xs text-neutral-400 flex items-center gap-1">
+                          <span className="text-xs text-fg-muted flex items-center gap-1">
                             <EyeIcon size={12} /> {msg.open_count}
                           </span>
                         )}
-                        <span className="text-xs text-neutral-400">
+                        <span className="text-xs text-fg-muted">
                           {msg.sent_at || msg.received_at
                             ? formatDate(msg.sent_at || msg.received_at || msg.created_at)
                             : formatDate(msg.created_at)}
@@ -703,7 +703,7 @@ export function InboxClient() {
 
                     {/* Message body */}
                     <div
-                      className="text-sm text-neutral-700 dark:text-neutral-300 prose prose-sm dark:prose-invert max-w-none"
+                      className="text-sm text-fg prose prose-sm dark:prose-invert max-w-none"
                       dangerouslySetInnerHTML={{ __html: msg.body_html || msg.body_text || "" }}
                     />
                   </div>
@@ -752,16 +752,16 @@ export function InboxClient() {
               {isUnifiedView ? (
                 <>
                   <div className="flex items-center justify-center gap-3 mb-3">
-                    <EnvelopeIcon size={32} className="text-blue-300 dark:text-blue-700" />
-                    <WhatsappLogoIcon size={32} className="text-emerald-300 dark:text-emerald-700" />
-                    <LinkedinLogoIcon size={32} className="text-sky-300 dark:text-sky-700" />
+                    <EnvelopeIcon size={32} className="text-accent-strong" />
+                    <WhatsappLogoIcon size={32} className="text-success" />
+                    <LinkedinLogoIcon size={32} className="text-accent-strong" />
                   </div>
-                  <p className="text-neutral-500 dark:text-neutral-400">Select an activity to view details</p>
+                  <p className="text-fg-secondary">Select an activity to view details</p>
                 </>
               ) : (
                 <>
-                  <EnvelopeIcon size={48} className="mx-auto text-neutral-300 dark:text-neutral-600 mb-3" />
-                  <p className="text-neutral-500 dark:text-neutral-400">Select a conversation to view</p>
+                  <EnvelopeIcon size={48} className="mx-auto text-fg-disabled mb-3" />
+                  <p className="text-fg-secondary">Select a conversation to view</p>
                 </>
               )}
             </div>
@@ -807,29 +807,29 @@ function UnifiedItemDetail({
 }) {
   const [deleting, setDeleting] = useState(false);
   const channelColors = {
-    email: { bg: "bg-blue-50 dark:bg-blue-950/20", border: "border-blue-200 dark:border-blue-800", accent: "text-blue-600 dark:text-blue-400", icon: <EnvelopeIcon size={20} className="text-blue-500" /> },
-    whatsapp: { bg: "bg-emerald-50 dark:bg-emerald-950/20", border: "border-emerald-200 dark:border-emerald-800", accent: "text-emerald-600 dark:text-emerald-400", icon: <WhatsappLogoIcon size={20} className="text-emerald-500" /> },
-    linkedin: { bg: "bg-sky-50 dark:bg-sky-950/20", border: "border-sky-200 dark:border-sky-800", accent: "text-sky-600 dark:text-sky-400", icon: <LinkedinLogoIcon size={20} className="text-sky-500" /> },
+    email: { bg: "bg-accent-surface", border: "border-accent", accent: "text-accent-strong", icon: <EnvelopeIcon size={20} className="text-accent-strong" /> },
+    whatsapp: { bg: "bg-success-surface", border: "border-success", accent: "text-success", icon: <WhatsappLogoIcon size={20} className="text-success" /> },
+    linkedin: { bg: "bg-accent-surface", border: "border-accent", accent: "text-accent-strong", icon: <LinkedinLogoIcon size={20} className="text-accent-strong" /> },
   };
   const colors = channelColors[item.channel];
 
   return (
     <div className="flex-1 flex flex-col">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-3">
+      <div className="px-6 py-4 border-b border-line flex items-center gap-3">
         <button
           onClick={onBack}
-          className="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
+          className="p-1.5 rounded hover:bg-muted"
         >
-          <ArrowLeftIcon size={18} className="text-neutral-500" />
+          <ArrowLeftIcon size={18} className="text-fg-secondary" />
         </button>
         <div className="flex-1 min-w-0">
-          <h2 className="text-base font-semibold text-neutral-950 dark:text-neutral-50 truncate">
+          <h2 className="text-base font-semibold text-fg truncate">
             {item.lead.name || item.lead.email || "Unknown Lead"}
           </h2>
           <div className="flex items-center gap-2 mt-0.5">
             {channelBadge(item.channel)}
-            <span className="text-xs text-neutral-400">
+            <span className="text-xs text-fg-muted">
               {formatDate(item.created_at)}
             </span>
           </div>
@@ -841,7 +841,7 @@ function UnifiedItemDetail({
             setDeleting(false);
           }}
           disabled={deleting}
-          className="p-2 rounded hover:bg-red-50 dark:hover:bg-red-950/30 text-neutral-400 hover:text-red-500 transition-colors"
+          className="p-2 rounded hover:bg-danger-surface text-fg-muted hover:text-danger transition-colors"
           title="Delete"
         >
           {deleting ? (
@@ -855,7 +855,7 @@ function UnifiedItemDetail({
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
         {/* Lead info card */}
-        <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 p-4 mb-6">
+        <div className="rounded-lg border border-line p-4 mb-6">
           <div className="flex items-center gap-3">
             <div className={cn(
               "w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold",
@@ -864,21 +864,21 @@ function UnifiedItemDetail({
               {(item.lead.name || item.lead.email || "?")[0].toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              <p className="text-sm font-medium text-fg">
                 {item.lead.name || "Unknown"}
               </p>
               {item.lead.email && (
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">{item.lead.email}</p>
+                <p className="text-xs text-fg-secondary">{item.lead.email}</p>
               )}
               {item.lead.company && (
-                <p className="text-xs text-neutral-400">{item.lead.company}</p>
+                <p className="text-xs text-fg-muted">{item.lead.company}</p>
               )}
             </div>
           </div>
         </div>
 
         {/* Message detail card */}
-        <div className={cn("rounded-lg border p-5", colors.border, colors.bg)}>
+        <div className={cn("rounded-lg border p-4", colors.border, colors.bg)}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               {colors.icon}
@@ -892,20 +892,20 @@ function UnifiedItemDetail({
             </div>
             <div className="flex items-center gap-2">
               {statusBadge(item.status)}
-              <span className="text-xs text-neutral-400">
+              <span className="text-xs text-fg-muted">
                 {item.direction === "inbound" ? "↓ Inbound" : "↑ Outbound"}
               </span>
             </div>
           </div>
 
           {/* Preview content */}
-          <div className="rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4">
-            <p className="text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <p className="text-sm text-fg whitespace-pre-wrap">
               {item.preview}
             </p>
           </div>
 
-          <div className="mt-4 text-xs text-neutral-400">
+          <div className="mt-4 text-xs text-fg-muted">
             {new Date(item.created_at).toLocaleString([], {
               weekday: "long",
               year: "numeric",
@@ -958,7 +958,7 @@ function ReplyBox({
   };
 
   return (
-    <div className="border-t border-neutral-200 dark:border-neutral-800 px-6 py-4 bg-neutral-50 dark:bg-neutral-900/50">
+    <div className="border-t border-line px-6 py-4 bg-subtle">
       <div className="flex items-center gap-3 mb-3">
         <Input
           placeholder="To"
@@ -970,7 +970,7 @@ function ReplyBox({
           <select
             value={selectedAccount}
             onChange={(e) => setSelectedAccount(e.target.value)}
-            className="text-sm rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-neutral-700 dark:text-neutral-300"
+            className="text-sm rounded border border-line bg-surface px-3 py-2 text-fg"
           >
             {accounts.map((a) => (
               <option key={a.id} value={a.id}>{a.email_address}</option>
@@ -982,7 +982,7 @@ function ReplyBox({
         value={html}
         onChange={(e) => setHtml(e.target.value)}
         placeholder="Write your reply..."
-        className="w-full min-h-[100px] text-sm rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-500/30 resize-y"
+        className="w-full min-h-[100px] text-sm rounded border border-line bg-surface text-fg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-line resize-y"
       />
       <div className="flex justify-end gap-2 mt-3">
         <Button variant="secondary" size="sm" onClick={onCancel}>Cancel</Button>
@@ -1031,13 +1031,13 @@ function ComposeModal({
 
   if (accounts.length === 0) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 dark:bg-black/50">
-        <div className="bg-white dark:bg-neutral-900 rounded shadow-xl p-6 max-w-md w-full mx-4">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+        <div className="rounded-lg border border-line bg-surface shadow-modal p-4 max-w-md w-full mx-4">
           <div className="flex items-center gap-3 mb-4">
-            <WarningIcon size={24} className="text-amber-500" />
-            <h3 className="text-base font-semibold text-neutral-950 dark:text-neutral-50">No Email Accounts</h3>
+            <WarningIcon size={24} className="text-warning" />
+            <h3 className="text-base font-semibold text-fg">No Email Accounts</h3>
           </div>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+          <p className="text-sm text-fg-secondary mb-4">
             Connect an email account in Settings before composing emails.
           </p>
           <Button onClick={onClose}>Close</Button>
@@ -1047,13 +1047,13 @@ function ComposeModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30 dark:bg-black/50">
-      <div className="bg-white dark:bg-neutral-900 rounded-t-lg sm:rounded shadow-xl w-full max-w-2xl mx-0 sm:mx-4 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30">
+      <div className="rounded-t-lg sm:rounded-lg border border-line bg-surface shadow-modal w-full max-w-2xl mx-0 sm:mx-4 max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-200 dark:border-neutral-800">
-          <h3 className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">New Email</h3>
-          <button onClick={onClose} className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800">
-            <XIcon size={16} className="text-neutral-500" />
+        <div className="flex items-center justify-between px-5 py-3 border-b border-line">
+          <h3 className="text-sm font-semibold text-fg">New Email</h3>
+          <button onClick={onClose} className="p-1 rounded hover:bg-muted">
+            <XIcon size={16} className="text-fg-secondary" />
           </button>
         </div>
 
@@ -1061,11 +1061,11 @@ function ComposeModal({
         <div className="flex-1 overflow-y-auto p-5 space-y-3">
           {accounts.length > 1 && (
             <div>
-              <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1 block">From</label>
+              <label className="text-xs font-medium text-fg-secondary mb-1 block">From</label>
               <select
                 value={selectedAccount}
                 onChange={(e) => setSelectedAccount(e.target.value)}
-                className="w-full text-sm rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-neutral-700 dark:text-neutral-300"
+                className="w-full text-sm rounded border border-line bg-surface px-3 py-2 text-fg"
               >
                 {accounts.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -1078,18 +1078,18 @@ function ComposeModal({
           <Input label="To" value={to} onChange={(e) => setTo(e.target.value)} placeholder="recipient@example.com" />
           <Input label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Email subject" />
           <div>
-            <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1 block">Body</label>
+            <label className="text-xs font-medium text-fg-secondary mb-1 block">Body</label>
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Write your email..."
-              className="w-full min-h-[200px] text-sm rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-neutral-500/30 resize-y"
+              className="w-full min-h-[200px] text-sm rounded border border-line bg-surface text-fg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-line resize-y"
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 px-5 py-3 border-t border-neutral-200 dark:border-neutral-800">
+        <div className="flex justify-end gap-2 px-5 py-3 border-t border-line">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSend} disabled={sending || !to.trim() || !subject.trim()}>
             {sending ? <CircleNotchIcon size={14} className="animate-spin mr-1.5" /> : <PaperPlaneTiltIcon size={14} className="mr-1.5" />}

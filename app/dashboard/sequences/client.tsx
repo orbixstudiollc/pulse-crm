@@ -50,6 +50,7 @@ import {
   getSequencePerformanceSummary,
 } from "@/lib/actions/sequences";
 import type { SequenceWithKPIs, PerformanceSummary } from "@/lib/actions/sequences";
+import { chartAccent, chartSuccess, chartTooltipStyle } from "@/lib/design-system/chart-colors";
 import { cn } from "@/lib/utils";
 
 // ── Config ───────────────────────────────────────────────────────────────────
@@ -108,19 +109,19 @@ function DeleteConfirmModal({
     <Modal open={open} onClose={onClose}>
       <div className="p-6 space-y-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-            <TrashIcon size={20} className="text-red-600 dark:text-red-400" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-danger-surface">
+            <TrashIcon size={20} className="text-danger" />
           </div>
           <div>
-            <h3 className="text-base font-serif text-neutral-950 dark:text-neutral-50">
+            <h3 className="text-base font-semibold text-fg">
               Delete Sequence
             </h3>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
+            <p className="text-sm text-fg-secondary mt-0.5">
               This action cannot be undone.
             </p>
           </div>
         </div>
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+        <p className="text-sm text-fg-secondary">
           Are you sure you want to delete <span className="font-medium">&quot;{sequenceName}&quot;</span>?
           All steps, enrollments, and events associated with this sequence will be permanently removed.
         </p>
@@ -129,7 +130,7 @@ function DeleteConfirmModal({
             Cancel
           </Button>
           <Button
-            className="flex-1 !bg-red-600 hover:!bg-red-700 !text-white"
+            className="flex-1 !bg-danger hover:!bg-danger !text-on-inverse"
             onClick={onConfirm}
             disabled={isPending}
           >
@@ -160,7 +161,7 @@ function StatusToggle({
           onToggle();
         }}
         disabled={isPending}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border border-accent bg-accent-surface text-accent-on-surface hover:bg-accent-surface transition-colors disabled:opacity-50"
       >
         <CheckCircleIcon size={14} />
         Activate
@@ -179,12 +180,12 @@ function StatusToggle({
       disabled={isPending}
       className="group relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50"
       style={{
-        backgroundColor: isActive ? "#22c55e" : "#d1d5db",
+        backgroundColor: isActive ? "var(--success-fill)" : "var(--active)",
       }}
     >
       <span
         className={cn(
-          "inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform",
+          "inline-block h-4 w-4 transform rounded-full bg-surface transition-transform",
           isActive ? "translate-x-6" : "translate-x-1",
         )}
       />
@@ -395,16 +396,16 @@ export function SequencesPageClient({
   }, []);
 
   const eventLabels: Record<string, { label: string; color: string }> = {
-    email_sent: { label: "Sent", color: "text-blue-600 dark:text-blue-400" },
-    email_opened: { label: "Opened", color: "text-green-600 dark:text-green-400" },
-    link_clicked: { label: "Clicked", color: "text-violet-600 dark:text-violet-400" },
-    email_replied: { label: "Replied", color: "text-emerald-600 dark:text-emerald-400" },
-    email_bounced: { label: "Bounced", color: "text-red-600 dark:text-red-400" },
-    unsubscribed: { label: "Unsubscribed", color: "text-orange-600 dark:text-orange-400" },
+    email_sent: { label: "Sent", color: "text-accent-strong" },
+    email_opened: { label: "Opened", color: "text-success" },
+    link_clicked: { label: "Clicked", color: "text-accent-strong" },
+    email_replied: { label: "Replied", color: "text-success" },
+    email_bounced: { label: "Bounced", color: "text-danger" },
+    unsubscribed: { label: "Unsubscribed", color: "text-warning" },
   };
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
+    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
       {/* Header */}
       <PageHeader title="Sequences">
         <Button
@@ -420,37 +421,37 @@ export function SequencesPageClient({
         <StatCard
           label="Total Sequences"
           value={animTotalSeq.toString()}
-          icon={<EnvelopeIcon size={24} className="text-neutral-950 dark:text-neutral-50" />}
+          icon={<EnvelopeIcon size={24} className="text-fg" />}
         />
         <StatCard
           label="Active"
           value={animActiveSeq.toString()}
-          icon={<CheckCircleIcon size={24} className="text-neutral-950 dark:text-neutral-50" />}
+          icon={<CheckCircleIcon size={24} className="text-fg" />}
         />
         <StatCard
           label="Total Sent"
           value={animTotalSent.toLocaleString()}
-          icon={<PaperPlaneTiltIcon size={24} className="text-neutral-950 dark:text-neutral-50" />}
+          icon={<PaperPlaneTiltIcon size={24} className="text-fg" />}
         />
         <StatCard
           label="Avg Open Rate"
           value={`${animOpenRate}%`}
-          icon={<ChartBarIcon size={24} className="text-neutral-950 dark:text-neutral-50" />}
+          icon={<ChartBarIcon size={24} className="text-fg" />}
         />
         <StatCard
           label="Avg Click Rate"
           value={`${animClickRate}%`}
-          icon={<CursorClickIcon size={24} className="text-neutral-950 dark:text-neutral-50" />}
+          icon={<CursorClickIcon size={24} className="text-fg" />}
         />
         <StatCard
           label="Avg Reply Rate"
           value={`${animReplyRate}%`}
-          icon={<ChatCircleIcon size={24} className="text-neutral-950 dark:text-neutral-50" />}
+          icon={<ChatCircleIcon size={24} className="text-fg" />}
         />
       </div>
 
       {/* Category Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-1.5">
+      <div className="flex items-center gap-1 overflow-x-auto rounded-lg border border-line bg-surface p-1.5">
         {categoryTabs.map((tab) => (
           <button
             key={tab.value}
@@ -461,8 +462,8 @@ export function SequencesPageClient({
             className={cn(
               "px-4 py-2 text-sm font-medium rounded whitespace-nowrap transition-colors",
               activeTab === tab.value
-                ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
-                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800",
+                ? "bg-inverse text-on-inverse"
+                : "text-fg-secondary hover:text-fg hover:bg-muted",
             )}
           >
             {tab.label}
@@ -476,7 +477,7 @@ export function SequencesPageClient({
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.15 }}
-        className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden"
+        className="rounded-lg border border-line bg-surface overflow-hidden"
       >
         <TableHeader
           title="All Sequences"
@@ -492,26 +493,26 @@ export function SequencesPageClient({
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3">
+                  <tr className="bg-muted">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Name
                     </th>
-                    <th className="text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary">
                       Status
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Progress
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Sent
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Open Rate
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Reply Rate
                     </th>
-                    <th className="text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 px-3 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary">
                       Actions
                     </th>
                   </tr>
@@ -535,17 +536,17 @@ export function SequencesPageClient({
                             `/dashboard/sequences/${seq.id}`,
                           )
                         }
-                        className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer"
+                        className="hover:bg-muted transition-colors cursor-pointer"
                       >
                         {/* Name + Description + Category — inline editing */}
-                        <td className="px-5 py-4">
+                        <td className="px-3 py-2 border-t border-row">
                           <div>
                             {editingName?.id === seq.id ? (
                               <input
                                 ref={editNameRef}
                                 autoFocus
                                 defaultValue={editingName.value}
-                                className="text-sm font-medium text-neutral-950 dark:text-neutral-50 bg-transparent border-b-2 border-neutral-950 dark:border-white outline-none w-full"
+                                className="text-sm font-medium text-fg bg-transparent border-b border-inverse outline-none w-full"
                                 onClick={(e) => e.stopPropagation()}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter") handleInlineNameSave(seq.id, e.currentTarget.value);
@@ -555,7 +556,7 @@ export function SequencesPageClient({
                               />
                             ) : (
                               <p
-                                className="text-sm font-medium text-neutral-950 dark:text-neutral-50 cursor-text"
+                                className="text-sm font-medium text-fg cursor-text"
                                 onDoubleClick={(e) => {
                                   e.stopPropagation();
                                   setEditingName({ id: seq.id, value: seq.name });
@@ -566,12 +567,12 @@ export function SequencesPageClient({
                             )}
                             <div className="flex items-center gap-2 mt-0.5">
                               {seq.description && (
-                                <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1">
+                                <p className="text-xs text-fg-secondary line-clamp-1">
                                   {seq.description}
                                 </p>
                               )}
                               {seq.category && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-fg-secondary whitespace-nowrap">
                                   {categoryConfig[seq.category] || seq.category}
                                 </span>
                               )}
@@ -579,7 +580,7 @@ export function SequencesPageClient({
                           </div>
                         </td>
                         {/* Inline Status Toggle */}
-                        <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                        <td className="px-3 py-2 border-t border-row">
                           <div className="flex justify-center">
                             <StatusToggle
                               status={seq.status}
@@ -591,9 +592,9 @@ export function SequencesPageClient({
                           </div>
                         </td>
                         {/* Progress bar — enrolled vs replied */}
-                        <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                        <td className="px-3 py-2 border-t border-row">
                           <div className="min-w-[100px]">
-                            <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400 mb-1">
+                            <div className="flex items-center justify-between text-xs text-fg-secondary mb-1">
                               <span>{enrolled} enrolled</span>
                               <span>{progressPct}%</span>
                             </div>
@@ -605,36 +606,36 @@ export function SequencesPageClient({
                           </div>
                         </td>
                         {/* Sent */}
-                        <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                          <span className="text-sm font-medium font-serif text-neutral-950 dark:text-neutral-50">
+                        <td className="px-3 py-2 border-t border-row">
+                          <span className="text-sm font-medium font-semibold text-fg">
                             {(seq.total_sent || 0).toLocaleString()}
                           </span>
                         </td>
                         {/* Open Rate */}
-                        <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                        <td className="px-3 py-2 border-t border-row">
                           <span
                             className={cn(
-                              "text-sm font-medium font-serif",
+                              "text-sm font-medium font-semibold",
                               (seq.open_rate || 0) >= 50
-                                ? "text-green-600 dark:text-green-400"
+                                ? "text-success"
                                 : (seq.open_rate || 0) >= 25
-                                  ? "text-amber-600 dark:text-amber-400"
-                                  : "text-neutral-950 dark:text-neutral-50",
+                                  ? "text-warning"
+                                  : "text-fg",
                             )}
                           >
                             {seq.open_rate || 0}%
                           </span>
                         </td>
                         {/* Reply Rate */}
-                        <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                        <td className="px-3 py-2 border-t border-row">
                           <span
                             className={cn(
-                              "text-sm font-medium font-serif",
+                              "text-sm font-medium font-semibold",
                               (seq.reply_rate || 0) >= 10
-                                ? "text-green-600 dark:text-green-400"
+                                ? "text-success"
                                 : (seq.reply_rate || 0) >= 5
-                                  ? "text-amber-600 dark:text-amber-400"
-                                  : "text-neutral-950 dark:text-neutral-50",
+                                  ? "text-warning"
+                                  : "text-fg",
                             )}
                           >
                             {seq.reply_rate || 0}%
@@ -642,7 +643,7 @@ export function SequencesPageClient({
                         </td>
                         {/* Actions */}
                         <td
-                          className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800"
+                          className="px-3 py-2 border-t border-row"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <div className="flex justify-center">
@@ -728,14 +729,14 @@ export function SequencesPageClient({
         <div className="p-6 space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-serif text-neutral-950 dark:text-neutral-50">
+            <h2 className="text-lg font-semibold text-fg">
               Create Sequence
             </h2>
             <button
               onClick={() => setShowCreateModal(false)}
-              className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded hover:bg-muted transition-colors"
             >
-              <XIcon size={20} className="text-neutral-500" />
+              <XIcon size={20} className="text-fg-secondary" />
             </button>
           </div>
 
@@ -819,15 +820,15 @@ export function SequencesPageClient({
             {/* Skeleton for funnel */}
             <div className="space-y-3">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-8 rounded bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
+                <div key={i} className="h-8 rounded bg-muted animate-pulse" />
               ))}
             </div>
             {/* Skeleton for sparkline */}
-            <div className="h-32 rounded bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
+            <div className="h-32 rounded bg-muted animate-pulse" />
             {/* Skeleton for events */}
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-10 rounded bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
+                <div key={i} className="h-10 rounded bg-muted animate-pulse" />
               ))}
             </div>
           </div>
@@ -835,7 +836,7 @@ export function SequencesPageClient({
           <div className="space-y-6">
             {/* Mini Funnel Bars */}
             <div>
-              <h4 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-3">
+              <h4 className="text-sm font-medium text-fg mb-3">
                 Funnel Overview
               </h4>
               <div className="space-y-2">
@@ -843,17 +844,17 @@ export function SequencesPageClient({
                   const f = perfDrawer.data.funnel;
                   const maxVal = Math.max(f.sent, 1);
                   const bars = [
-                    { label: "Sent", value: f.sent, color: "bg-blue-500" },
-                    { label: "Opened", value: f.opened, color: "bg-green-500" },
-                    { label: "Clicked", value: f.clicked, color: "bg-violet-500" },
-                    { label: "Replied", value: f.replied, color: "bg-emerald-500" },
+                    { label: "Sent", value: f.sent, color: "bg-accent-strong" },
+                    { label: "Opened", value: f.opened, color: "bg-success" },
+                    { label: "Clicked", value: f.clicked, color: "bg-accent-strong" },
+                    { label: "Replied", value: f.replied, color: "bg-success" },
                   ];
                   return bars.map((bar) => (
                     <div key={bar.label} className="flex items-center gap-3">
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400 w-16">
+                      <span className="text-xs text-fg-secondary w-16">
                         {bar.label}
                       </span>
-                      <div className="flex-1 h-6 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                      <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
                         <div
                           className={cn("h-full rounded-full transition-all", bar.color)}
                           style={{
@@ -861,7 +862,7 @@ export function SequencesPageClient({
                           }}
                         />
                       </div>
-                      <span className="text-xs font-medium text-neutral-950 dark:text-neutral-50 w-10 text-right">
+                      <span className="text-xs font-medium text-fg w-10 text-right">
                         {bar.value}
                       </span>
                     </div>
@@ -872,42 +873,36 @@ export function SequencesPageClient({
 
             {/* 14-day Sparkline */}
             <div>
-              <h4 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-3">
+              <h4 className="text-sm font-medium text-fg mb-3">
                 14-Day Activity
               </h4>
-              <div className="h-32 rounded border border-neutral-200 dark:border-neutral-800 p-2">
+              <div className="h-32 rounded border border-line p-2">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={perfDrawer.data.sparkline}>
                     <defs>
                       <linearGradient id="perfSent" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                        <stop offset="0%" stopColor={chartAccent} stopOpacity={0.3} />
+                        <stop offset="100%" stopColor={chartAccent} stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="perfReplied" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#22c55e" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
+                        <stop offset="0%" stopColor={chartSuccess} stopOpacity={0.3} />
+                        <stop offset="100%" stopColor={chartSuccess} stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <RechartsTooltip
-                      contentStyle={{
-                        backgroundColor: "var(--color-neutral-950)",
-                        border: "none",
-                        borderRadius: "8px",
-                        fontSize: "12px",
-                        color: "#fff",
-                      }}
+                      contentStyle={chartTooltipStyle}
                     />
                     <Area
                       type="monotone"
                       dataKey="sent"
-                      stroke="#3b82f6"
+                      stroke={chartAccent}
                       fill="url(#perfSent)"
                       strokeWidth={2}
                     />
                     <Area
                       type="monotone"
                       dataKey="replied"
-                      stroke="#22c55e"
+                      stroke={chartSuccess}
                       fill="url(#perfReplied)"
                       strokeWidth={2}
                     />
@@ -919,16 +914,16 @@ export function SequencesPageClient({
             {/* Top Step */}
             {perfDrawer.data.topStep && (
               <div>
-                <h4 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-2">
+                <h4 className="text-sm font-medium text-fg mb-2">
                   Top Performing Step
                 </h4>
-                <div className="p-3 rounded border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+                <div className="p-3 rounded border border-success bg-success-surface">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-green-700 dark:text-green-400 font-medium">
+                      <p className="text-xs text-success font-medium">
                         Step {perfDrawer.data.topStep.stepOrder}
                       </p>
-                      <p className="text-sm text-neutral-950 dark:text-neutral-50 mt-0.5 line-clamp-1">
+                      <p className="text-sm text-fg mt-0.5 line-clamp-1">
                         {perfDrawer.data.topStep.subject || "Untitled"}
                       </p>
                     </div>
@@ -942,22 +937,22 @@ export function SequencesPageClient({
 
             {/* Recent Events */}
             <div>
-              <h4 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-2">
+              <h4 className="text-sm font-medium text-fg mb-2">
                 Recent Activity
               </h4>
               {perfDrawer.data.recentEvents.length > 0 ? (
                 <div className="space-y-1">
                   {perfDrawer.data.recentEvents.map((evt, i) => {
-                    const info = eventLabels[evt.eventType] || { label: evt.eventType, color: "text-neutral-500" };
+                    const info = eventLabels[evt.eventType] || { label: evt.eventType, color: "text-fg-secondary" };
                     return (
                       <div
                         key={i}
-                        className="flex items-center justify-between py-2 px-3 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                        className="flex items-center justify-between py-2 px-3 rounded hover:bg-muted"
                       >
                         <span className={cn("text-xs font-medium", info.color)}>
                           {info.label}
                         </span>
-                        <span className="text-[11px] text-neutral-400">
+                        <span className="text-xs text-fg-muted">
                           {new Date(evt.createdAt).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
@@ -970,14 +965,14 @@ export function SequencesPageClient({
                   })}
                 </div>
               ) : (
-                <p className="text-xs text-neutral-400 py-3 text-center">
+                <p className="text-xs text-fg-muted py-3 text-center">
                   No recent activity
                 </p>
               )}
             </div>
           </div>
         ) : (
-          <p className="text-sm text-neutral-400 text-center py-8">
+          <p className="text-sm text-fg-secondary text-center py-8">
             No data available
           </p>
         )}

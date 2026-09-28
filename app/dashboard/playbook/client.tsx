@@ -205,7 +205,7 @@ export function PlaybookPageClient({
   };
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
+    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
       {/* Header */}
       <PageHeader title="Objection Playbook">
         <Button
@@ -231,7 +231,7 @@ export function PlaybookPageClient({
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             >
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
@@ -241,27 +241,27 @@ export function PlaybookPageClient({
           label="Pricing"
           value={(categoryCounts.pricing || 0).toString()}
           icon={
-            <div className="h-3 w-3 rounded-full bg-green-500" />
+            <div className="h-3 w-3 rounded-full bg-success" />
           }
         />
         <StatCard
           label="Competition"
           value={(categoryCounts.competition || 0).toString()}
           icon={
-            <div className="h-3 w-3 rounded-full bg-amber-500" />
+            <div className="h-3 w-3 rounded-full bg-warning" />
           }
         />
         <StatCard
           label="Authority"
           value={(categoryCounts.authority || 0).toString()}
           icon={
-            <div className="h-3 w-3 rounded-full bg-red-500" />
+            <div className="h-3 w-3 rounded-full bg-danger" />
           }
         />
       </div>
 
       {/* Category Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-1.5">
+      <div className="flex items-center gap-1 overflow-x-auto rounded-lg border border-line bg-surface p-1.5">
         {categoryTabs.map((tab) => (
           <button
             key={tab.value}
@@ -269,8 +269,8 @@ export function PlaybookPageClient({
             className={cn(
               "px-4 py-2 text-sm font-medium rounded whitespace-nowrap transition-colors",
               activeTab === tab.value
-                ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
-                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800",
+                ? "bg-inverse text-on-inverse"
+                : "text-fg-secondary hover:text-fg hover:bg-muted",
             )}
           >
             {tab.label}
@@ -289,14 +289,14 @@ export function PlaybookPageClient({
             return (
               <div
                 key={obj.id}
-                className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden"
+                className="rounded-lg border border-line bg-surface overflow-hidden"
               >
                 {/* Header (always visible) */}
                 <button
                   onClick={() =>
                     setExpandedId(isExpanded ? null : obj.id)
                   }
-                  className="w-full flex items-start justify-between p-5 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                  className="w-full flex items-start justify-between p-5 text-left hover:bg-muted transition-colors"
                 >
                   <div className="flex-1 min-w-0 space-y-1.5">
                     <div className="flex items-center gap-2">
@@ -304,11 +304,11 @@ export function PlaybookPageClient({
                         {cat.label}
                       </Badge>
                     </div>
-                    <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                    <p className="text-sm font-medium text-fg">
                       &ldquo;{obj.objection_text}&rdquo;
                     </p>
                     {obj.hidden_meaning && (
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      <p className="text-xs text-fg-secondary">
                         Hidden meaning: {obj.hidden_meaning}
                       </p>
                     )}
@@ -346,14 +346,14 @@ export function PlaybookPageClient({
 
                 {/* Expanded content */}
                 {isExpanded && (
-                  <div className="border-t border-neutral-200 dark:border-neutral-800 p-5 space-y-4">
+                  <div className="border-t border-line p-5 space-y-4">
                     {/* FFR Response */}
                     {obj.ffr_response && (
                       <div>
-                        <h4 className="text-[10px] uppercase tracking-wider text-neutral-400 dark:text-neutral-500 mb-1.5">
+                        <h4 className="text-xs text-fg-muted mb-1.5">
                           Feel-Felt-Found Response
                         </h4>
-                        <p className="text-sm text-neutral-700 dark:text-neutral-300 bg-green-50 dark:bg-green-950/20 rounded p-3 border border-green-100 dark:border-green-900/30">
+                        <p className="text-sm text-fg bg-success-surface rounded p-3 border border-success">
                           {obj.ffr_response}
                         </p>
                       </div>
@@ -362,10 +362,10 @@ export function PlaybookPageClient({
                     {/* ABC Response */}
                     {obj.abc_response && (
                       <div>
-                        <h4 className="text-[10px] uppercase tracking-wider text-neutral-400 dark:text-neutral-500 mb-1.5">
+                        <h4 className="text-xs text-fg-muted mb-1.5">
                           Acknowledge-Bridge-Close Response
                         </h4>
-                        <p className="text-sm text-neutral-700 dark:text-neutral-300 bg-blue-50 dark:bg-blue-950/20 rounded p-3 border border-blue-100 dark:border-blue-900/30">
+                        <p className="text-sm text-fg bg-accent-surface rounded p-3 border border-accent">
                           {obj.abc_response}
                         </p>
                       </div>
@@ -375,10 +375,10 @@ export function PlaybookPageClient({
                       {/* Follow-up Question */}
                       {obj.follow_up_question && (
                         <div>
-                          <h4 className="text-[10px] uppercase tracking-wider text-neutral-400 dark:text-neutral-500 mb-1.5">
+                          <h4 className="text-xs text-fg-muted mb-1.5">
                             Follow-Up Question
                           </h4>
-                          <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                          <p className="text-sm text-fg">
                             {obj.follow_up_question}
                           </p>
                         </div>
@@ -387,10 +387,10 @@ export function PlaybookPageClient({
                       {/* Proof Point */}
                       {obj.proof_point && (
                         <div>
-                          <h4 className="text-[10px] uppercase tracking-wider text-neutral-400 dark:text-neutral-500 mb-1.5">
+                          <h4 className="text-xs text-fg-muted mb-1.5">
                             Proof Point
                           </h4>
-                          <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                          <p className="text-sm text-fg">
                             {obj.proof_point}
                           </p>
                         </div>
@@ -400,10 +400,10 @@ export function PlaybookPageClient({
                     {/* Walk Away Criteria */}
                     {obj.walk_away_criteria && (
                       <div>
-                        <h4 className="text-[10px] uppercase tracking-wider text-red-400 dark:text-red-500 mb-1.5">
+                        <h4 className="text-xs text-danger mb-1.5">
                           Walk Away If...
                         </h4>
-                        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 rounded p-3 border border-red-100 dark:border-red-900/30">
+                        <p className="text-sm text-danger bg-danger-surface rounded p-3 border border-danger">
                           {obj.walk_away_criteria}
                         </p>
                       </div>
@@ -415,7 +415,7 @@ export function PlaybookPageClient({
           })}
         </div>
       ) : (
-        <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
+        <div className="rounded-lg border border-line bg-surface overflow-hidden">
           <EmptyState
             icon={
               <svg
@@ -458,14 +458,14 @@ export function PlaybookPageClient({
         <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-serif text-neutral-950 dark:text-neutral-50">
+            <h2 className="text-lg font-semibold text-fg">
               {editingObjection ? "Edit Objection" : "Add Objection"}
             </h2>
             <button
               onClick={() => setShowModal(false)}
-              className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded hover:bg-muted transition-colors"
             >
-              <XIcon size={20} className="text-neutral-500" />
+              <XIcon size={20} className="text-fg-secondary" />
             </button>
           </div>
 

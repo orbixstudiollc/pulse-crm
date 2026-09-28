@@ -99,23 +99,23 @@ function DeleteConfirmModal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/40 dark:bg-black/60 dark:bg-black/60" onClick={onClose} />
-      <div className="relative bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-md w-full mx-4">
+      <div className="fixed inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative rounded-lg border border-line bg-surface shadow-modal p-4 max-w-md w-full mx-4">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-red-100 dark:bg-red-400/15 rounded">
-            <WarningIcon className="w-5 h-5 text-red-400" />
+          <div className="p-2 bg-danger-surface rounded">
+            <WarningIcon className="w-5 h-5 text-danger" />
           </div>
-          <h3 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">{title}</h3>
+          <h3 className="text-lg font-semibold text-fg">{title}</h3>
         </div>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">{message}</p>
+        <p className="text-sm text-fg-secondary mb-6">{message}</p>
         <div className="flex gap-3 justify-end">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-fg-secondary hover:text-fg transition-colors">
             Cancel
           </button>
           <button
             onClick={onConfirm}
             disabled={isPending}
-            className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm bg-danger hover:bg-danger text-on-inverse rounded transition-colors disabled:opacity-50"
           >
             {isPending ? "Deleting..." : "Delete"}
           </button>
@@ -148,11 +148,11 @@ function TagManagerModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/40 dark:bg-black/60 dark:bg-black/60" onClick={onClose} />
-      <div className="relative bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-md w-full mx-4">
+      <div className="fixed inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative rounded-lg border border-line bg-surface shadow-modal p-4 max-w-md w-full mx-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">Manage Tags</h3>
-          <button onClick={onClose} className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"><XIcon className="w-5 h-5" /></button>
+          <h3 className="text-lg font-semibold text-fg">Manage Tags</h3>
+          <button onClick={onClose} className="text-fg-secondary hover:text-fg"><XIcon className="w-5 h-5" /></button>
         </div>
 
         <div className="flex gap-2 mb-4">
@@ -160,7 +160,7 @@ function TagManagerModal({
             value={newTagName}
             onChange={(e) => setNewTagName(e.target.value)}
             placeholder="Tag name..."
-            className="flex-1 px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+            className="flex-1 px-3 py-2 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent"
           />
           <button
             onClick={() => {
@@ -172,7 +172,7 @@ function TagManagerModal({
               });
             }}
             disabled={isPending}
-            className="px-3 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm rounded"
+            className="px-3 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm rounded"
           >
             Add
           </button>
@@ -183,7 +183,7 @@ function TagManagerModal({
             <button
               key={c}
               onClick={() => setNewTagColor(c)}
-              className={`w-6 h-6 rounded-full border-2 ${newTagColor === c ? "border-white" : "border-transparent"}`}
+              className={`w-6 h-6 rounded-full border ${newTagColor === c ? "border-white" : "border-transparent"}`}
               style={{ backgroundColor: c }}
             />
           ))}
@@ -191,10 +191,10 @@ function TagManagerModal({
 
         <div className="space-y-2 max-h-60 overflow-y-auto">
           {tags.map((tag) => (
-            <div key={tag.id} className="flex items-center justify-between py-2 px-3 bg-neutral-100 dark:bg-neutral-800 rounded">
+            <div key={tag.id} className="flex items-center justify-between py-2 px-3 bg-muted rounded">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: tag.color }} />
-                <span className="text-sm text-neutral-950 dark:text-neutral-50">{tag.name}</span>
+                <span className="text-sm text-fg">{tag.name}</span>
               </div>
               <button
                 onClick={() => {
@@ -203,13 +203,13 @@ function TagManagerModal({
                     onRefresh();
                   });
                 }}
-                className="text-neutral-400 dark:text-neutral-500 hover:text-red-600 dark:hover:text-red-400"
+                className="text-fg-muted hover:text-danger"
               >
                 <TrashIcon className="w-4 h-4" />
               </button>
             </div>
           ))}
-          {tags.length === 0 && <p className="text-sm text-neutral-400 dark:text-neutral-500 text-center py-4">No tags yet</p>}
+          {tags.length === 0 && <p className="text-sm text-fg-secondary text-center py-4">No tags yet</p>}
         </div>
       </div>
     </div>
@@ -240,28 +240,28 @@ function AddAccountModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/40 dark:bg-black/60 dark:bg-black/60" onClick={onClose} />
-      <div className="relative bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 max-w-lg w-full mx-4">
+      <div className="fixed inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative rounded-lg border border-line bg-surface shadow-modal p-4 max-w-lg w-full mx-4">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">Add Email Account</h3>
-          <button onClick={onClose} className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"><XIcon className="w-5 h-5" /></button>
+          <h3 className="text-lg font-semibold text-fg">Add Email Account</h3>
+          <button onClick={onClose} className="text-fg-secondary hover:text-fg"><XIcon className="w-5 h-5" /></button>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-neutral-500 dark:text-neutral-400 mb-1">Email Address</label>
+            <label className="block text-sm text-fg-secondary mb-1">Email Address</label>
             <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com"
-              className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600" />
+              className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent" />
           </div>
           <div>
-            <label className="block text-sm text-neutral-500 dark:text-neutral-400 mb-1">Display Name</label>
+            <label className="block text-sm text-fg-secondary mb-1">Display Name</label>
             <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="John Doe"
-              className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600" />
+              className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent" />
           </div>
           <div>
-            <label className="block text-sm text-neutral-500 dark:text-neutral-400 mb-1">Provider</label>
+            <label className="block text-sm text-fg-secondary mb-1">Provider</label>
             <select value={provider} onChange={(e) => setProvider(e.target.value as "gmail" | "microsoft" | "custom_imap")}
-              className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600">
+              className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg focus:outline-none focus:border-accent">
               <option value="gmail">Google Workspace</option>
               <option value="microsoft">Microsoft Outlook</option>
               <option value="custom_imap">Custom SMTP/IMAP</option>
@@ -270,35 +270,35 @@ function AddAccountModal({
           {provider === "custom_imap" && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm text-neutral-500 dark:text-neutral-400 mb-1">SMTP Host</label>
+                <label className="block text-sm text-fg-secondary mb-1">SMTP Host</label>
                 <input value={smtpHost} onChange={(e) => setSmtpHost(e.target.value)} placeholder="smtp.example.com"
-                  className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600" />
+                  className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent" />
               </div>
               <div>
-                <label className="block text-sm text-neutral-500 dark:text-neutral-400 mb-1">Port</label>
+                <label className="block text-sm text-fg-secondary mb-1">Port</label>
                 <input value={smtpPort} onChange={(e) => setSmtpPort(e.target.value)} placeholder="587"
-                  className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600" />
+                  className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent" />
               </div>
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm text-neutral-500 dark:text-neutral-400 mb-1">Daily Send Limit</label>
+              <label className="block text-sm text-fg-secondary mb-1">Daily Send Limit</label>
               <input value={dailyLimit} onChange={(e) => setDailyLimit(e.target.value)} type="number"
-                className="w-full px-3 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600" />
+                className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg focus:outline-none focus:border-accent" />
             </div>
             <div className="flex items-end pb-1">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={warmup} onChange={(e) => setWarmup(e.target.checked)}
-                  className="rounded border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50" />
-                <span className="text-sm text-neutral-500 dark:text-neutral-400">Enable Warmup</span>
+                  className="rounded border-line bg-muted text-fg" />
+                <span className="text-sm text-fg-secondary">Enable Warmup</span>
               </label>
             </div>
           </div>
         </div>
 
         <div className="flex gap-3 justify-end mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-fg-secondary hover:text-fg">Cancel</button>
           <button
             onClick={() => {
               if (!email.trim()) return;
@@ -318,7 +318,7 @@ function AddAccountModal({
               });
             }}
             disabled={isPending}
-            className="px-4 py-2 text-sm bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 rounded disabled:opacity-50"
+            className="px-4 py-2 text-sm bg-inverse hover:bg-inverse text-on-inverse rounded disabled:opacity-50"
           >
             {isPending ? "Adding..." : "Add Account"}
           </button>
@@ -341,35 +341,35 @@ function PerformanceDrawer({
   if (!campaign) return null;
 
   const metrics = [
-    { label: "Sent", value: campaign.total_sent, icon: EnvelopeIcon, color: "text-blue-400" },
-    { label: "Opened", value: campaign.total_opened, icon: EyeIcon, color: "text-green-400" },
-    { label: "Clicked", value: campaign.total_clicked, icon: CursorClickIcon, color: "text-amber-400" },
-    { label: "Replied", value: campaign.total_replied, icon: PaperPlaneTiltIcon, color: "text-indigo-400" },
-    { label: "Bounced", value: campaign.total_bounced, icon: WarningIcon, color: "text-red-400" },
+    { label: "Sent", value: campaign.total_sent, icon: EnvelopeIcon, color: "text-accent-strong" },
+    { label: "Opened", value: campaign.total_opened, icon: EyeIcon, color: "text-success" },
+    { label: "Clicked", value: campaign.total_clicked, icon: CursorClickIcon, color: "text-warning" },
+    { label: "Replied", value: campaign.total_replied, icon: PaperPlaneTiltIcon, color: "text-accent-strong" },
+    { label: "Bounced", value: campaign.total_bounced, icon: WarningIcon, color: "text-danger" },
   ];
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="fixed inset-0 bg-black/40 dark:bg-black/60" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/40" onClick={onClose} />
       <motion.div
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
-        className="relative w-full max-w-md bg-white dark:bg-neutral-900 border-l border-neutral-200 dark:border-neutral-800 h-full overflow-y-auto"
+        className="relative w-full max-w-md bg-surface border-l border-line h-full overflow-y-auto"
       >
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">{campaign.name}</h3>
-            <button onClick={onClose} className="text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"><XIcon className="w-5 h-5" /></button>
+            <h3 className="text-lg font-semibold text-fg">{campaign.name}</h3>
+            <button onClick={onClose} className="text-fg-secondary hover:text-fg"><XIcon className="w-5 h-5" /></button>
           </div>
 
           {/* Status + Tags */}
           <div className="flex items-center gap-2 mb-6">
             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-              campaign.status === "active" ? "border-[0.5px] border-green-200 dark:border-green-400/30 bg-green-100 text-green-600 dark:bg-green-400/15 dark:text-green-400" :
-              campaign.status === "paused" ? "border-[0.5px] border-amber-200 dark:border-amber-400/30 bg-amber-100 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400" :
-              "bg-zinc-500/10 text-neutral-500 dark:text-neutral-400"
+              campaign.status === "active" ? "border border-success bg-success-surface text-success" :
+              campaign.status === "paused" ? "border border-warning bg-warning-surface text-warning" :
+              "bg-muted text-fg-secondary"
             }`}>{campaign.status}</span>
             {campaign.tags.map((t) => (
               <span key={t.id} className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: t.color + "20", color: t.color }}>
@@ -381,36 +381,36 @@ function PerformanceDrawer({
           {/* Metrics */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             {metrics.map((m) => (
-              <div key={m.label} className="bg-neutral-100 dark:bg-neutral-800 rounded p-3">
+              <div key={m.label} className="bg-muted rounded p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <m.icon className={`w-4 h-4 ${m.color}`} />
-                  <span className="text-xs text-neutral-500 dark:text-neutral-400">{m.label}</span>
+                  <span className="text-xs text-fg-secondary">{m.label}</span>
                 </div>
-                <span className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">{m.value.toLocaleString()}</span>
+                <span className="text-lg font-semibold text-fg">{m.value.toLocaleString()}</span>
               </div>
             ))}
-            <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-3">
+            <div className="bg-muted rounded p-3">
               <div className="flex items-center gap-2 mb-1">
-                <UsersIcon className="w-4 h-4 text-cyan-400" />
-                <span className="text-xs text-neutral-500 dark:text-neutral-400">Enrolled</span>
+                <UsersIcon className="w-4 h-4 text-accent-strong" />
+                <span className="text-xs text-fg-secondary">Enrolled</span>
               </div>
-              <span className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">{campaign.total_enrolled.toLocaleString()}</span>
+              <span className="text-lg font-semibold text-fg">{campaign.total_enrolled.toLocaleString()}</span>
             </div>
           </div>
 
           {/* Rates */}
           <div className="space-y-3 mb-6">
             {[
-              { label: "Open Rate", value: campaign.open_rate, color: "bg-green-500" },
-              { label: "Click Rate", value: campaign.click_rate, color: "bg-amber-500" },
-              { label: "Reply Rate", value: campaign.reply_rate, color: "bg-indigo-500" },
+              { label: "Open Rate", value: campaign.open_rate, color: "bg-success" },
+              { label: "Click Rate", value: campaign.click_rate, color: "bg-warning" },
+              { label: "Reply Rate", value: campaign.reply_rate, color: "bg-accent-strong" },
             ].map((r) => (
               <div key={r.label}>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-neutral-500 dark:text-neutral-400">{r.label}</span>
-                  <span className="text-neutral-950 dark:text-neutral-50 font-medium">{r.value.toFixed(1)}%</span>
+                  <span className="text-fg-secondary">{r.label}</span>
+                  <span className="text-fg font-medium">{r.value.toFixed(1)}%</span>
                 </div>
-                <div className="h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div className={`h-full ${r.color} rounded-full transition-all`} style={{ width: `${Math.min(r.value, 100)}%` }} />
                 </div>
               </div>
@@ -418,29 +418,29 @@ function PerformanceDrawer({
           </div>
 
           {/* Quick Info */}
-          <div className="bg-neutral-100 dark:bg-neutral-800 rounded p-4 mb-6 space-y-2">
+          <div className="bg-muted rounded p-4 mb-6 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-neutral-500 dark:text-neutral-400">Steps</span>
-              <span className="text-neutral-950 dark:text-neutral-50">{campaign.total_steps}</span>
+              <span className="text-fg-secondary">Steps</span>
+              <span className="text-fg">{campaign.total_steps}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-neutral-500 dark:text-neutral-400">Category</span>
-              <span className="text-neutral-950 dark:text-neutral-50">{campaign.category.replace(/_/g, " ")}</span>
+              <span className="text-fg-secondary">Category</span>
+              <span className="text-fg">{campaign.category.replace(/_/g, " ")}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-neutral-500 dark:text-neutral-400">Priority</span>
-              <span className="text-neutral-950 dark:text-neutral-50 capitalize">{campaign.priority ?? "normal"}</span>
+              <span className="text-fg-secondary">Priority</span>
+              <span className="text-fg capitalize">{campaign.priority ?? "normal"}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-neutral-500 dark:text-neutral-400">Email Accounts</span>
-              <span className="text-neutral-950 dark:text-neutral-50">{campaign.emailAccountCount}</span>
+              <span className="text-fg-secondary">Email Accounts</span>
+              <span className="text-fg">{campaign.emailAccountCount}</span>
             </div>
           </div>
 
           {/* Actions */}
           <button
             onClick={() => router.push(`/dashboard/sequences/${campaign.id}`)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-inverse hover:bg-inverse text-on-inverse text-sm font-medium rounded transition-colors"
           >
             Edit Campaign <ArrowRightIcon className="w-4 h-4" />
           </button>
@@ -607,27 +607,27 @@ export function CampaignsPageClient({
   // ── KPI Cards ─────────────────────────────────────────────────────────
 
   const kpis = [
-    { label: "Active Campaigns", value: animActive, icon: LightningIcon, color: "text-green-600 dark:text-green-400", bg: "bg-green-100 dark:bg-green-400/15" },
-    { label: "Leads in Campaigns", value: animEnrolled, icon: UsersIcon, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-400/15" },
-    { label: "Sent Today", value: animSentToday, icon: EnvelopeIcon, color: "text-cyan-400", bg: "bg-cyan-500/10" },
-    { label: "Avg Reply Rate", value: `${animReplyRate}%`, icon: PaperPlaneTiltIcon, color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-100 dark:bg-indigo-400/15" },
-    { label: "Active Accounts", value: animAccounts, icon: PlugsConnectedIcon, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-400/15" },
+    { label: "Active Campaigns", value: animActive, icon: LightningIcon, color: "text-success", bg: "bg-success-surface" },
+    { label: "Leads in Campaigns", value: animEnrolled, icon: UsersIcon, color: "text-accent-strong", bg: "bg-accent-surface" },
+    { label: "Sent Today", value: animSentToday, icon: EnvelopeIcon, color: "text-accent-strong", bg: "bg-accent-surface" },
+    { label: "Avg Reply Rate", value: `${animReplyRate}%`, icon: PaperPlaneTiltIcon, color: "text-accent-strong", bg: "bg-accent-surface" },
+    { label: "Active Accounts", value: animAccounts, icon: PlugsConnectedIcon, color: "text-warning", bg: "bg-warning-surface" },
   ];
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
+    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[28px] leading-[36px] tracking-[-0.56px] font-serif text-neutral-950 dark:text-neutral-50">Campaigns</h1>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Manage your outreach campaigns, email accounts, and send schedules</p>
+          <h1 className="text-xl font-semibold text-fg">Campaigns</h1>
+          <p className="text-sm text-fg-secondary mt-1">Manage your outreach campaigns, email accounts, and send schedules</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => setShowTagManager(true)} className="px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 border border-neutral-200 dark:border-neutral-800 rounded hover:bg-neutral-100 dark:bg-neutral-800 transition-colors">
+          <button onClick={() => setShowTagManager(true)} className="px-3 py-2 text-sm text-fg-secondary hover:text-fg border border-line rounded hover:bg-muted transition-colors">
             Tags
           </button>
           <button onClick={handleNewCampaign} disabled={isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm font-medium rounded transition-colors disabled:opacity-50">
+            className="flex items-center gap-2 px-4 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm font-medium rounded transition-colors disabled:opacity-50">
             <PlusIcon className="w-4 h-4" /> New Campaign
           </button>
         </div>
@@ -636,14 +636,14 @@ export function CampaignsPageClient({
       {/* KPI Cards */}
       <div className="grid grid-cols-5 gap-4">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl">
-            <div className="flex items-start justify-between p-5">
+          <div key={kpi.label} className="rounded-lg border border-line bg-surface">
+            <div className="flex items-start justify-between p-4">
               <div className="space-y-2">
-                <p className="text-xs font-normal uppercase leading-5 text-neutral-500 dark:text-neutral-400">{kpi.label}</p>
-                <p className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif text-neutral-950 dark:text-neutral-50">{typeof kpi.value === "number" ? kpi.value.toLocaleString() : kpi.value}</p>
+                <p className="text-xs font-normal leading-5 text-fg-secondary">{kpi.label}</p>
+                <p className="text-[22px] font-semibold text-fg">{typeof kpi.value === "number" ? kpi.value.toLocaleString() : kpi.value}</p>
               </div>
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-neutral-200 dark:border-neutral-800">
-                <kpi.icon className="w-6 h-6 text-neutral-950 dark:text-neutral-50" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line">
+                <kpi.icon className="w-4 h-4 text-fg-secondary" />
               </div>
             </div>
           </div>
@@ -652,13 +652,13 @@ export function CampaignsPageClient({
 
       {/* Tabs + Search */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 rounded p-1">
+        <div className="flex items-center gap-1 bg-muted rounded p-1">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => { setActiveTab(tab.key); setSelectedRows(new Set()); }}
               className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                activeTab === tab.key ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950" : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"
+                activeTab === tab.key ? "bg-inverse text-on-inverse" : "text-fg-secondary hover:text-fg"
               }`}
             >
               {tab.label} <span className="text-xs opacity-70">({tab.count})</span>
@@ -672,7 +672,7 @@ export function CampaignsPageClient({
               <select
                 value={selectedTag ?? ""}
                 onChange={(e) => setSelectedTag(e.target.value || null)}
-                className="px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 focus:outline-none"
+                className="px-3 py-1.5 bg-muted border border-line rounded text-sm text-fg focus:outline-none"
               >
                 <option value="">All Tags</option>
                 {tags.map((t) => (
@@ -681,12 +681,12 @@ export function CampaignsPageClient({
               </select>
             )}
             <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search campaigns..."
-                className="pl-9 pr-3 py-1.5 w-64 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-600"
+                className="pl-9 pr-3 py-1.5 w-64 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent"
               />
             </div>
           </div>
@@ -698,98 +698,98 @@ export function CampaignsPageClient({
         {activeTab === "accounts" ? (
           <motion.div key="accounts" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.15 }}>
             {/* Accounts Tab */}
-            <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
-              <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-800">
+            <div className="rounded-lg border border-line bg-surface overflow-x-auto">
+              <div className="flex items-center justify-between p-4 border-b border-line">
                 <div className="flex items-center gap-4">
-                  <h3 className="text-sm font-medium text-neutral-950 dark:text-neutral-50">Email Accounts</h3>
-                  <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-                    <span className="px-2 py-0.5 border-[0.5px] border-green-200 dark:border-green-400/30 bg-green-100 text-green-600 dark:bg-green-400/15 dark:text-green-400 rounded-full">
+                  <h3 className="text-sm font-medium text-fg">Email Accounts</h3>
+                  <div className="flex items-center gap-2 text-xs text-fg-secondary">
+                    <span className="px-2 py-0.5 border border-success bg-success-surface text-success rounded-full">
                       {accounts.filter((a) => a.status === "active").length} active
                     </span>
-                    <span className="px-2 py-0.5 border-[0.5px] border-amber-200 dark:border-amber-400/30 bg-amber-100 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400 rounded-full">
+                    <span className="px-2 py-0.5 border border-warning bg-warning-surface text-warning rounded-full">
                       {accounts.filter((a) => a.status === "warming_up").length} warming
                     </span>
                   </div>
                 </div>
                 <button onClick={() => setShowAddAccount(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm rounded">
+                  className="flex items-center gap-2 px-3 py-1.5 bg-inverse hover:bg-inverse text-on-inverse text-sm rounded">
                   <PlusIcon className="w-4 h-4" /> Add Account
                 </button>
               </div>
 
               {accounts.length === 0 ? (
                 <div className="p-12 text-center">
-                  <PlugsConnectedIcon className="w-10 h-10 text-neutral-400 dark:text-neutral-500 mx-auto mb-3" />
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">No email accounts connected yet</p>
+                  <PlugsConnectedIcon className="w-10 h-10 text-fg-muted mx-auto mb-3" />
+                  <p className="text-sm text-fg-secondary mb-4">No email accounts connected yet</p>
                   <button onClick={() => setShowAddAccount(true)}
-                    className="px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm rounded">
+                    className="px-4 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm rounded">
                     Add Your First Account
                   </button>
                 </div>
               ) : (
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-neutral-200 dark:border-neutral-800">
-                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Email</th>
-                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Provider</th>
-                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Status</th>
-                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Daily Limit</th>
-                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Reputation</th>
-                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Warmup</th>
-                      <th className="text-right text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Actions</th>
+                    <tr className="bg-muted">
+                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Email</th>
+                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Provider</th>
+                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Status</th>
+                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Daily Limit</th>
+                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Reputation</th>
+                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Warmup</th>
+                      <th className="px-3 py-2 text-right text-[13px] font-medium text-fg-secondary">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {accounts.map((acc) => (
-                      <tr key={acc.id} className="border-b border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
-                        <td className="px-4 py-3">
+                      <tr key={acc.id} className="hover:bg-muted transition-colors">
+                        <td className="px-3 py-2 border-t border-row">
                           <div className="flex items-center gap-2">
-                            {acc.provider === "gmail" ? <GoogleLogoIcon className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> :
-                             acc.provider === "microsoft" ? <MicrosoftOutlookLogoIcon className="w-4 h-4 text-neutral-500 dark:text-neutral-400" /> :
-                             <EnvelopeIcon className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />}
+                            {acc.provider === "gmail" ? <GoogleLogoIcon className="w-4 h-4 text-fg-secondary" /> :
+                             acc.provider === "microsoft" ? <MicrosoftOutlookLogoIcon className="w-4 h-4 text-fg-secondary" /> :
+                             <EnvelopeIcon className="w-4 h-4 text-fg-secondary" />}
                             <div>
-                              <span className="text-sm text-neutral-950 dark:text-neutral-50">{acc.email_address}</span>
-                              {acc.display_name && <span className="text-xs text-neutral-400 dark:text-neutral-500 ml-2">{acc.display_name}</span>}
+                              <span className="text-sm text-fg">{acc.email_address}</span>
+                              {acc.display_name && <span className="text-xs text-fg-muted ml-2">{acc.display_name}</span>}
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400 capitalize">{acc.provider}</td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2 text-[13px] text-fg-secondary capitalize border-t border-row">{acc.provider}</td>
+                        <td className="px-3 py-2 border-t border-row">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            acc.status === "active" ? "border-[0.5px] border-green-200 dark:border-green-400/30 bg-green-100 text-green-600 dark:bg-green-400/15 dark:text-green-400" :
-                            acc.status === "warming_up" ? "border-[0.5px] border-amber-200 dark:border-amber-400/30 bg-amber-100 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400" :
-                            acc.status === "error" ? "border-[0.5px] border-red-200 dark:border-red-400/30 bg-red-100 text-red-600 dark:bg-red-400/15 dark:text-red-400" :
-                            "bg-zinc-500/10 text-neutral-500 dark:text-neutral-400"
+                            acc.status === "active" ? "border border-success bg-success-surface text-success" :
+                            acc.status === "warming_up" ? "border border-warning bg-warning-surface text-warning" :
+                            acc.status === "error" ? "border border-danger bg-danger-surface text-danger" :
+                            "bg-muted text-fg-secondary"
                           }`}>{acc.status}</span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2 border-t border-row">
                           <div className="flex items-center gap-2">
-                            <div className="w-20 h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
-                              <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min((acc.daily_sent_count / acc.daily_send_limit) * 100, 100)}%` }} />
+                            <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div className="h-full bg-accent-strong rounded-full" style={{ width: `${Math.min((acc.daily_sent_count / acc.daily_send_limit) * 100, 100)}%` }} />
                             </div>
-                            <span className="text-xs text-neutral-500 dark:text-neutral-400">{acc.daily_sent_count}/{acc.daily_send_limit}</span>
+                            <span className="text-xs text-fg-secondary">{acc.daily_sent_count}/{acc.daily_send_limit}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2 border-t border-row">
                           <div className="flex items-center gap-2">
-                            <div className="w-16 h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
-                              <div className={`h-full rounded-full ${Number(acc.reputation_score) >= 80 ? "bg-emerald-500" : Number(acc.reputation_score) >= 50 ? "bg-amber-500" : "bg-red-500"}`}
+                            <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full ${Number(acc.reputation_score) >= 80 ? "bg-success" : Number(acc.reputation_score) >= 50 ? "bg-warning" : "bg-danger"}`}
                                 style={{ width: `${acc.reputation_score}%` }} />
                             </div>
-                            <span className="text-xs text-neutral-500 dark:text-neutral-400">{Math.round(Number(acc.reputation_score))}</span>
+                            <span className="text-xs text-fg-secondary">{Math.round(Number(acc.reputation_score))}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2 border-t border-row">
                           {acc.warmup_enabled ? (
-                            <span className="px-2 py-0.5 border-[0.5px] border-amber-200 dark:border-amber-400/30 bg-amber-100 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400 rounded-full text-xs">
+                            <span className="px-2 py-0.5 border border-warning bg-warning-surface text-warning rounded-full text-xs">
                               {acc.warmup_limit}/day
                             </span>
                           ) : (
-                            <span className="text-xs text-neutral-400 dark:text-neutral-500">Off</span>
+                            <span className="text-xs text-fg-muted">Off</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-right">
-                          <button onClick={() => handleDeleteAccount(acc.id)} className="text-neutral-400 dark:text-neutral-500 hover:text-red-600 dark:hover:text-red-400">
+                        <td className="px-3 py-2 text-right border-t border-row">
+                          <button onClick={() => handleDeleteAccount(acc.id)} className="text-fg-muted hover:text-danger">
                             <TrashIcon className="w-4 h-4" />
                           </button>
                         </td>
@@ -804,22 +804,22 @@ export function CampaignsPageClient({
           <motion.div key="campaigns" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.15 }}>
             {/* Bulk actions */}
             {selectedRows.size > 0 && (
-              <div className="flex items-center gap-3 mb-3 px-4 py-2 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 rounded">
-                <span className="text-sm text-neutral-700 dark:text-neutral-300">{selectedRows.size} selected</span>
-                <button onClick={() => setSelectedRows(new Set())} className="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50">Clear</button>
+              <div className="flex items-center gap-3 mb-3 px-4 py-2 bg-muted border border-line rounded">
+                <span className="text-sm text-fg">{selectedRows.size} selected</span>
+                <button onClick={() => setSelectedRows(new Set())} className="text-xs text-fg-secondary hover:text-fg">Clear</button>
               </div>
             )}
 
             {/* Campaign Table */}
-            <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-visible">
+            <div className="rounded-lg border border-line bg-surface overflow-visible">
               {filtered.length === 0 ? (
                 <div className="p-12 text-center">
-                  <PaperPlaneTiltIcon className="w-10 h-10 text-neutral-400 dark:text-neutral-500 mx-auto mb-3" />
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+                  <PaperPlaneTiltIcon className="w-10 h-10 text-fg-muted mx-auto mb-3" />
+                  <p className="text-sm text-fg-secondary mb-4">
                     {searchQuery || selectedTag ? "No campaigns match your filters" : "No campaigns yet"}
                   </p>
                   {!searchQuery && !selectedTag && (
-                    <button onClick={handleNewCampaign} className="px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-sm rounded">
+                    <button onClick={handleNewCampaign} className="px-4 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm rounded">
                       Create Your First Campaign
                     </button>
                   )}
@@ -827,89 +827,89 @@ export function CampaignsPageClient({
               ) : (
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-neutral-200 dark:border-neutral-800">
-                      <th className="w-10 px-4 py-3">
+                    <tr className="bg-muted">
+                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary w-10">
                         <input type="checkbox" checked={selectedRows.size === filtered.length && filtered.length > 0} onChange={toggleSelectAll}
-                          className="rounded border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50" />
+                          className="rounded border-line bg-muted text-fg" />
                       </th>
-                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Campaign</th>
-                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Status</th>
-                      <th className="text-left text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Tags</th>
-                      <th className="text-right text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Enrolled</th>
-                      <th className="text-right text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Sent</th>
-                      <th className="text-right text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Opened</th>
-                      <th className="text-right text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Replied</th>
-                      <th className="text-right text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Reply Rate</th>
-                      <th className="text-right text-xs text-neutral-400 dark:text-neutral-500 font-medium px-4 py-3">Actions</th>
+                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Campaign</th>
+                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Status</th>
+                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Tags</th>
+                      <th className="px-3 py-2 text-right text-[13px] font-medium text-fg-secondary">Enrolled</th>
+                      <th className="px-3 py-2 text-right text-[13px] font-medium text-fg-secondary">Sent</th>
+                      <th className="px-3 py-2 text-right text-[13px] font-medium text-fg-secondary">Opened</th>
+                      <th className="px-3 py-2 text-right text-[13px] font-medium text-fg-secondary">Replied</th>
+                      <th className="px-3 py-2 text-right text-[13px] font-medium text-fg-secondary">Reply Rate</th>
+                      <th className="px-3 py-2 text-right text-[13px] font-medium text-fg-secondary">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.map((campaign) => (
-                      <tr key={campaign.id} className="border-b border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer"
+                      <tr key={campaign.id} className="hover:bg-muted transition-colors cursor-pointer"
                         onClick={() => setDrawerCampaign(campaign)}>
-                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <td className="px-3 py-2 border-t border-row" onClick={(e) => e.stopPropagation()}>
                           <input type="checkbox" checked={selectedRows.has(campaign.id)} onChange={() => toggleSelect(campaign.id)}
-                            className="rounded border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-950 dark:text-neutral-50" />
+                            className="rounded border-line bg-muted text-fg" />
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2 border-t border-row">
                           <div>
-                            <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{campaign.name}</span>
-                            {campaign.description && <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5 truncate max-w-[200px]">{campaign.description}</p>}
+                            <span className="text-sm font-medium text-fg">{campaign.name}</span>
+                            {campaign.description && <p className="text-xs text-fg-muted mt-0.5 truncate max-w-[200px]">{campaign.description}</p>}
                           </div>
                         </td>
-                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <td className="px-3 py-2 border-t border-row" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => handleToggleStatus(campaign.id, campaign.status)}
                             className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
-                              campaign.status === "active" ? "border-[0.5px] border-green-200 dark:border-green-400/30 bg-green-100 text-green-600 dark:bg-green-400/15 dark:text-green-400 hover:bg-emerald-500/20" :
-                              campaign.status === "paused" ? "border-[0.5px] border-amber-200 dark:border-amber-400/30 bg-amber-100 text-amber-600 dark:bg-amber-400/15 dark:text-amber-400 hover:bg-amber-500/20" :
-                              "bg-zinc-500/10 text-neutral-500 dark:text-neutral-400"
+                              campaign.status === "active" ? "border border-success bg-success-surface text-success hover:bg-success-surface" :
+                              campaign.status === "paused" ? "border border-warning bg-warning-surface text-warning hover:bg-warning-surface" :
+                              "bg-muted text-fg-secondary"
                             }`}
                           >
                             {campaign.status}
                           </button>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2 border-t border-row">
                           <div className="flex items-center gap-1">
                             {campaign.tags.slice(0, 3).map((t) => (
-                              <span key={t.id} className="px-1.5 py-0.5 rounded text-[10px] font-medium"
+                              <span key={t.id} className="px-1.5 py-0.5 rounded text-xs font-medium"
                                 style={{ backgroundColor: t.color + "20", color: t.color }}>
                                 {t.name}
                               </span>
                             ))}
                             {campaign.tags.length > 3 && (
-                              <span className="text-[10px] text-neutral-400 dark:text-neutral-500">+{campaign.tags.length - 3}</span>
+                              <span className="text-xs text-fg-muted">+{campaign.tags.length - 3}</span>
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-right text-sm text-neutral-700 dark:text-neutral-300">{campaign.total_enrolled.toLocaleString()}</td>
-                        <td className="px-4 py-3 text-right text-sm text-neutral-700 dark:text-neutral-300">{campaign.total_sent.toLocaleString()}</td>
-                        <td className="px-4 py-3 text-right text-sm text-neutral-700 dark:text-neutral-300">{campaign.total_opened.toLocaleString()}</td>
-                        <td className="px-4 py-3 text-right text-sm text-neutral-700 dark:text-neutral-300">{campaign.total_replied.toLocaleString()}</td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-3 py-2 text-right text-[13px] text-fg border-t border-row">{campaign.total_enrolled.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right text-[13px] text-fg border-t border-row">{campaign.total_sent.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right text-[13px] text-fg border-t border-row">{campaign.total_opened.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right text-[13px] text-fg border-t border-row">{campaign.total_replied.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right border-t border-row">
                           <span className={`text-sm font-medium ${
-                            campaign.reply_rate >= 10 ? "text-emerald-400" :
-                            campaign.reply_rate >= 5 ? "text-amber-400" : "text-neutral-500 dark:text-neutral-400"
+                            campaign.reply_rate >= 10 ? "text-success" :
+                            campaign.reply_rate >= 5 ? "text-warning" : "text-fg-secondary"
                           }`}>{campaign.reply_rate.toFixed(1)}%</span>
                         </td>
-                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                        <td className="px-3 py-2 text-right border-t border-row" onClick={(e) => e.stopPropagation()}>
                           <div className="relative">
                             <button onClick={() => setActionMenuId(actionMenuId === campaign.id ? null : campaign.id)}
-                              className="text-neutral-400 dark:text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 p-1">
+                              className="text-fg-muted hover:text-fg p-1">
                               <DotsThreeVerticalIcon className="w-4 h-4" />
                             </button>
                             {actionMenuId === campaign.id && (
-                              <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded shadow-xl z-30 py-1">
+                              <div className="absolute right-0 top-full mt-1 w-44 rounded-lg border border-line bg-surface shadow-dropdown z-30 py-1">
                                 <button onClick={() => { router.push(`/dashboard/sequences/${campaign.id}`); setActionMenuId(null); }}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:bg-neutral-800">
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted">
                                   <PencilSimpleIcon className="w-4 h-4" /> Edit
                                 </button>
                                 <button onClick={() => handleClone(campaign.id)}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:bg-neutral-800">
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted">
                                   <CopyIcon className="w-4 h-4" /> Clone
                                 </button>
                                 <button onClick={() => { setDeleteTarget({ id: campaign.id, name: campaign.name }); setActionMenuId(null); }}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-neutral-100 dark:bg-neutral-800">
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-muted">
                                   <TrashIcon className="w-4 h-4" /> Delete
                                 </button>
                               </div>

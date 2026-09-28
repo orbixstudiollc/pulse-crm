@@ -325,7 +325,7 @@ export function ProposalsPageClient({
   // ── Render ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
+    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
       {/* Header */}
       <PageHeader title="Proposals">
         <Button
@@ -351,7 +351,7 @@ export function ProposalsPageClient({
           icon={
             <FileTextIcon
               size={24}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
@@ -361,7 +361,7 @@ export function ProposalsPageClient({
           icon={
             <FileTextIcon
               size={24}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
@@ -371,7 +371,7 @@ export function ProposalsPageClient({
           icon={
             <ClockIcon
               size={24}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
@@ -381,14 +381,14 @@ export function ProposalsPageClient({
           icon={
             <CheckCircleIcon
               size={24}
-              className="text-neutral-950 dark:text-neutral-50"
+              className="text-fg"
             />
           }
         />
       </div>
 
       {/* Status Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-1.5">
+      <div className="flex items-center gap-1 overflow-x-auto rounded-lg border border-line bg-surface p-1.5">
         {statusTabs.map((tab) => (
           <button
             key={tab.value}
@@ -399,8 +399,8 @@ export function ProposalsPageClient({
             className={cn(
               "px-4 py-2 text-sm font-medium rounded whitespace-nowrap transition-colors",
               activeTab === tab.value
-                ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
-                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                ? "bg-inverse text-on-inverse"
+                : "text-fg-secondary hover:text-fg hover:bg-muted"
             )}
           >
             {tab.label}
@@ -409,7 +409,7 @@ export function ProposalsPageClient({
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
+      <div className="rounded-lg border border-line bg-surface overflow-hidden">
         <TableHeader
           title="All Proposals"
           rowsPerPage={rowsPerPage}
@@ -424,20 +424,20 @@ export function ProposalsPageClient({
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3">
+                  <tr className="bg-muted">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Title
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Status
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Valid Until
                     </th>
-                    <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                       Created
                     </th>
-                    <th className="text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 px-3 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                    <th className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary">
                       Actions
                     </th>
                   </tr>
@@ -455,20 +455,20 @@ export function ProposalsPageClient({
                             `/dashboard/proposals/${proposal.id}`
                           )
                         }
-                        className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer"
+                        className="hover:bg-muted transition-colors cursor-pointer"
                       >
-                        <td className="px-5 py-4">
-                          <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                        <td className="px-3 py-2 border-t border-row">
+                          <p className="text-sm font-medium text-fg">
                             {proposal.title}
                           </p>
                         </td>
-                        <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                        <td className="px-3 py-2 border-t border-row">
                           <Badge variant={status.variant} dot>
                             {status.label}
                           </Badge>
                         </td>
-                        <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                          <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                        <td className="px-3 py-2 border-t border-row">
+                          <span className="text-sm text-fg-secondary">
                             {proposal.valid_until
                               ? new Date(
                                   proposal.valid_until
@@ -476,15 +476,15 @@ export function ProposalsPageClient({
                               : "\u2014"}
                           </span>
                         </td>
-                        <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                          <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                        <td className="px-3 py-2 border-t border-row">
+                          <span className="text-sm text-fg-secondary">
                             {new Date(
                               proposal.created_at
                             ).toLocaleDateString()}
                           </span>
                         </td>
                         <td
-                          className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800"
+                          className="px-3 py-2 border-t border-row"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <div className="flex justify-center">
@@ -591,16 +591,16 @@ export function ProposalsPageClient({
         <div className="p-6 space-y-5">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+            <h2 className="text-lg font-semibold text-fg">
               {editingProposal ? "Edit Proposal" : "New Proposal"}
             </h2>
             <button
               onClick={closeModal}
-              className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="p-1 rounded hover:bg-muted transition-colors"
             >
               <XIcon
                 size={20}
-                className="text-neutral-500 dark:text-neutral-400"
+                className="text-fg-secondary"
               />
             </button>
           </div>
@@ -646,7 +646,7 @@ export function ProposalsPageClient({
 
             {/* Pricing Tiers */}
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              <label className="block text-sm font-medium text-fg">
                 Pricing Tiers
               </label>
 
@@ -655,13 +655,13 @@ export function ProposalsPageClient({
                   {formTiers.map((tier, i) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1 rounded-full border border-neutral-200 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 px-2.5 py-1 text-xs font-medium"
+                      className="inline-flex items-center gap-1 rounded-full border border-line bg-muted text-fg px-2.5 py-1 text-xs font-medium"
                     >
                       {tier.name}: {tier.price}
                       <button
                         type="button"
                         onClick={() => removeTier(i)}
-                        className="hover:text-neutral-950 dark:hover:text-neutral-50"
+                        className="hover:text-fg"
                       >
                         <XIcon size={12} />
                       </button>
@@ -780,11 +780,11 @@ export function ProposalsPageClient({
       {/* Deal Selector for AI - shown when AI modal opens without a pre-selected deal */}
       {aiProposalOpen && !selectedDealIdForAI && deals.length > 0 && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-2xl border border-neutral-200 dark:border-neutral-700 p-6 w-full max-w-md mx-4 z-[61]">
-            <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
+          <div className="rounded-lg border border-line bg-surface shadow-modal p-4 w-full max-w-md mx-4 z-[61]">
+            <h3 className="text-sm font-semibold text-fg mb-3">
               Select a Deal
             </h3>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
+            <p className="text-xs text-fg-secondary mb-4">
               Choose a deal to generate the proposal for
             </p>
             <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -792,12 +792,12 @@ export function ProposalsPageClient({
                 <button
                   key={deal.id}
                   onClick={() => setSelectedDealIdForAI(deal.id)}
-                  className="w-full text-left px-4 py-3 rounded border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                  className="w-full text-left px-4 py-3 rounded border border-line hover:bg-muted transition-colors"
                 >
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                  <p className="text-sm font-medium text-fg">
                     {deal.name}
                   </p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  <p className="text-xs text-fg-secondary">
                     {deal.stage} {deal.value ? `\u00B7 $${deal.value.toLocaleString()}` : ""}
                   </p>
                 </button>
@@ -809,7 +809,7 @@ export function ProposalsPageClient({
                   setAIProposalOpen(false);
                   setSelectedDealIdForAI(null);
                 }}
-                className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded transition-colors"
+                className="px-4 py-2 text-sm font-medium text-fg hover:bg-muted rounded transition-colors"
               >
                 Cancel
               </button>

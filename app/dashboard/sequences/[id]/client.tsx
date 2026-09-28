@@ -75,6 +75,7 @@ import type {
 import { aiGenerateEmail } from "@/lib/actions/ai-outreach";
 import { getEmailTemplates } from "@/lib/actions/email-templates";
 import { cn } from "@/lib/utils";
+import { chartAccent, chartSuccess, chartWarning, chartGrid, chartAxis, chartTooltipStyle, axisTick } from "@/lib/design-system/chart-colors";
 
 interface StepVariant {
   id: string;
@@ -177,63 +178,63 @@ const stepTypeConfig: Record<
 > = {
   email: {
     label: "Email",
-    color: "text-blue-600 dark:text-blue-400",
-    bgColor: "bg-blue-100 dark:bg-blue-400/15",
-    borderColor: "border-blue-200 dark:border-blue-400/30",
+    color: "text-accent-strong",
+    bgColor: "bg-accent-surface",
+    borderColor: "border-accent",
   },
   wait: {
     label: "Wait",
-    color: "text-neutral-600 dark:text-neutral-400",
-    bgColor: "bg-neutral-100 dark:bg-neutral-400/15",
-    borderColor: "border-neutral-200 dark:border-neutral-400/30",
+    color: "text-fg-secondary",
+    bgColor: "bg-muted",
+    borderColor: "border-line",
   },
   task: {
     label: "Task",
-    color: "text-amber-600 dark:text-amber-400",
-    bgColor: "bg-amber-100 dark:bg-amber-400/15",
-    borderColor: "border-amber-200 dark:border-amber-400/30",
+    color: "text-warning",
+    bgColor: "bg-warning-surface",
+    borderColor: "border-warning",
   },
   call: {
     label: "Call",
-    color: "text-green-600 dark:text-green-400",
-    bgColor: "bg-green-100 dark:bg-green-400/15",
-    borderColor: "border-green-200 dark:border-green-400/30",
+    color: "text-success",
+    bgColor: "bg-success-surface",
+    borderColor: "border-success",
   },
   linkedin: {
     label: "LinkedIn",
-    color: "text-violet-600 dark:text-violet-400",
-    bgColor: "bg-violet-100 dark:bg-violet-400/15",
-    borderColor: "border-violet-200 dark:border-violet-400/30",
+    color: "text-accent-strong",
+    bgColor: "bg-accent-surface",
+    borderColor: "border-accent",
   },
   whatsapp: {
     label: "WhatsApp",
-    color: "text-emerald-600 dark:text-emerald-400",
-    bgColor: "bg-emerald-100 dark:bg-emerald-400/15",
-    borderColor: "border-emerald-200 dark:border-emerald-400/30",
+    color: "text-success",
+    bgColor: "bg-success-surface",
+    borderColor: "border-success",
   },
   linkedin_connect: {
     label: "LinkedIn Connect",
-    color: "text-blue-600 dark:text-blue-400",
-    bgColor: "bg-blue-100 dark:bg-blue-400/15",
-    borderColor: "border-blue-200 dark:border-blue-400/30",
+    color: "text-accent-strong",
+    bgColor: "bg-accent-surface",
+    borderColor: "border-accent",
   },
   linkedin_message: {
     label: "LinkedIn Message",
-    color: "text-blue-600 dark:text-blue-400",
-    bgColor: "bg-blue-100 dark:bg-blue-400/15",
-    borderColor: "border-blue-200 dark:border-blue-400/30",
+    color: "text-accent-strong",
+    bgColor: "bg-accent-surface",
+    borderColor: "border-accent",
   },
   linkedin_view: {
     label: "Profile View",
-    color: "text-sky-600 dark:text-sky-400",
-    bgColor: "bg-sky-100 dark:bg-sky-400/15",
-    borderColor: "border-sky-200 dark:border-sky-400/30",
+    color: "text-accent-strong",
+    bgColor: "bg-accent-surface",
+    borderColor: "border-accent",
   },
   linkedin_endorse: {
     label: "Endorse",
-    color: "text-indigo-600 dark:text-indigo-400",
-    bgColor: "bg-indigo-100 dark:bg-indigo-400/15",
-    borderColor: "border-indigo-200 dark:border-indigo-400/30",
+    color: "text-accent-strong",
+    bgColor: "bg-accent-surface",
+    borderColor: "border-accent",
   },
 };
 
@@ -279,11 +280,11 @@ const enrollmentStatusConfig: Record<
 };
 
 const activityEventConfig: Record<string, { label: string; color: string }> = {
-  sent: { label: "Email sent to", color: "text-blue-500" },
-  opened: { label: "Email opened by", color: "text-green-500" },
-  clicked: { label: "Link clicked by", color: "text-violet-500" },
-  replied: { label: "Reply received from", color: "text-emerald-500" },
-  bounced: { label: "Email bounced for", color: "text-red-500" },
+  sent: { label: "Email sent to", color: "text-accent-strong" },
+  opened: { label: "Email opened by", color: "text-success" },
+  clicked: { label: "Link clicked by", color: "text-accent-strong" },
+  replied: { label: "Reply received from", color: "text-success" },
+  bounced: { label: "Email bounced for", color: "text-danger" },
 };
 
 // ── Count-Up Hook ─────────────────────────────────────────────────────────
@@ -327,21 +328,21 @@ function StepDeleteConfirmModal({
     <Modal open={open} onClose={onClose}>
       <div className="p-6 space-y-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-            <TrashIcon size={20} className="text-red-600 dark:text-red-400" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-danger-surface">
+            <TrashIcon size={20} className="text-danger" />
           </div>
           <div>
-            <h3 className="text-base font-serif text-neutral-950 dark:text-neutral-50">Delete Step</h3>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">This action cannot be undone.</p>
+            <h3 className="text-base font-semibold text-fg">Delete Step</h3>
+            <p className="text-sm text-fg-secondary mt-0.5">This action cannot be undone.</p>
           </div>
         </div>
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+        <p className="text-sm text-fg-secondary">
           Are you sure you want to delete <span className="font-medium">&quot;{stepLabel}&quot;</span>?
           All associated events will be permanently removed.
         </p>
         <div className="flex gap-3">
           <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
-          <Button className="flex-1 !bg-red-600 hover:!bg-red-700 !text-white" onClick={onConfirm} disabled={isPending}>
+          <Button className="flex-1 !bg-danger hover:!bg-danger !text-on-inverse" onClick={onConfirm} disabled={isPending}>
             {isPending ? "Deleting..." : "Delete Step"}
           </Button>
         </div>
@@ -369,21 +370,21 @@ function PauseConfirmModal({
     <Modal open={open} onClose={onClose}>
       <div className="p-6 space-y-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
-            <ClockIcon size={20} className="text-amber-600 dark:text-amber-400" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning-surface">
+            <ClockIcon size={20} className="text-warning" />
           </div>
           <div>
-            <h3 className="text-base font-serif text-neutral-950 dark:text-neutral-50">Pause Sequence</h3>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">Active enrollments will stop sending.</p>
+            <h3 className="text-base font-semibold text-fg">Pause Sequence</h3>
+            <p className="text-sm text-fg-secondary mt-0.5">Active enrollments will stop sending.</p>
           </div>
         </div>
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+        <p className="text-sm text-fg-secondary">
           This sequence has <span className="font-medium">{activeCount} active enrollment{activeCount !== 1 ? "s" : ""}</span>.
           Pausing will halt all scheduled emails. You can resume later.
         </p>
         <div className="flex gap-3">
           <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
-          <Button className="flex-1 !bg-amber-600 hover:!bg-amber-700 !text-white" onClick={onConfirm} disabled={isPending}>
+          <Button className="flex-1 !bg-warning hover:!bg-warning !text-on-inverse" onClick={onConfirm} disabled={isPending}>
             {isPending ? "Pausing..." : "Pause Sequence"}
           </Button>
         </div>
@@ -929,12 +930,12 @@ export function SequenceDetailClient({
   ];
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-8 space-y-4">
+    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
       {/* Back Link + Header */}
       <div className="space-y-3">
         <Link
           href="/dashboard/sequences"
-          className="inline-flex items-center gap-1.5 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg transition-colors"
         >
           <ArrowLeftIcon size={16} />
           Back to Sequences
@@ -942,11 +943,11 @@ export function SequenceDetailClient({
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <h1 className="text-[28px] leading-[36px] tracking-[-0.56px] font-serif text-neutral-950 dark:text-neutral-50">
+            <h1 className="text-xl font-semibold text-fg">
               {sequence.name}
             </h1>
             <Badge variant={status.variant} dot>{status.label}</Badge>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">{categoryLabel}</span>
+            <span className="text-sm text-fg-secondary">{categoryLabel}</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -967,7 +968,7 @@ export function SequenceDetailClient({
         </div>
 
         {sequence.description && (
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-2xl">{sequence.description}</p>
+          <p className="text-sm text-fg-secondary max-w-2xl">{sequence.description}</p>
         )}
       </div>
 
@@ -976,37 +977,37 @@ export function SequenceDetailClient({
         <StatCard
           label="Enrolled"
           value={animEnrolled.toString()}
-          icon={<CheckCircleIcon size={24} className="text-neutral-950 dark:text-neutral-50" />}
+          icon={<CheckCircleIcon size={24} className="text-fg" />}
         />
         <StatCard
           label="Sent"
           value={animSent.toLocaleString()}
-          icon={<PaperPlaneTiltIcon size={24} className="text-neutral-950 dark:text-neutral-50" />}
+          icon={<PaperPlaneTiltIcon size={24} className="text-fg" />}
         />
         <StatCard
           label="Opened"
           value={`${animOpened} (${kpis.openRate}%)`}
-          icon={<EnvelopeIcon size={24} className="text-neutral-950 dark:text-neutral-50" />}
+          icon={<EnvelopeIcon size={24} className="text-fg" />}
         />
         <StatCard
           label="Clicked"
           value={`${animClicked} (${kpis.clickRate}%)`}
-          icon={<CursorClickIcon size={24} className="text-neutral-950 dark:text-neutral-50" />}
+          icon={<CursorClickIcon size={24} className="text-fg" />}
         />
         <StatCard
           label="Replied"
           value={`${animReplied} (${kpis.replyRate}%)`}
-          icon={<ChatCircleIcon size={24} className="text-neutral-950 dark:text-neutral-50" />}
+          icon={<ChatCircleIcon size={24} className="text-fg" />}
         />
         <StatCard
           label="Bounced"
           value={`${animBounced} (${kpis.bounceRate}%)`}
-          icon={<ChartBarIcon size={24} className="text-neutral-950 dark:text-neutral-50" />}
+          icon={<ChartBarIcon size={24} className="text-fg" />}
         />
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-1.5 w-fit">
+      <div className="flex items-center gap-1 rounded-lg border border-line bg-surface p-1.5 w-fit">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -1014,8 +1015,8 @@ export function SequenceDetailClient({
             className={cn(
               "px-4 py-2 text-sm font-medium rounded transition-colors",
               activeTab === tab.id
-                ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
-                : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                ? "bg-inverse text-on-inverse"
+                : "text-fg-secondary hover:text-fg hover:bg-muted"
             )}
           >
             {tab.label}
@@ -1036,7 +1037,7 @@ export function SequenceDetailClient({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.15 }}
-          className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6"
+          className="rounded-lg border border-line bg-surface p-4"
         >
           {steps.length > 0 ? (
             <div className="space-y-0">
@@ -1053,7 +1054,7 @@ export function SequenceDetailClient({
                     transition={{ duration: 0.2, delay: index * 0.05 }}
                     className={cn(
                       "relative flex gap-4",
-                      dropIndex === index && "border-t-2 border-blue-500",
+                      dropIndex === index && "border-t border-accent",
                     )}
                     draggable
                     onDragStart={() => setDragIndex(index)}
@@ -1069,16 +1070,16 @@ export function SequenceDetailClient({
                   >
                     {/* Drag Handle */}
                     <div className="flex flex-col items-center pt-1 cursor-grab active:cursor-grabbing">
-                      <DotsSixVerticalIcon size={16} className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 mb-1" />
+                      <DotsSixVerticalIcon size={16} className="text-fg-muted hover:text-fg-secondary mb-1" />
                       <StepIcon type={step.step_type} />
-                      {!isLast && <div className="w-px flex-1 bg-neutral-200 dark:bg-neutral-800 my-1" />}
+                      {!isLast && <div className="w-px flex-1 bg-active my-1" />}
                     </div>
 
                     <div className={cn("flex-1 pb-6", isLast && "pb-0")}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase">
+                            <span className="text-xs font-medium text-fg-secondary">
                               Step {step.step_order}
                             </span>
                             <Badge
@@ -1103,7 +1104,7 @@ export function SequenceDetailClient({
                               <input
                                 autoFocus
                                 defaultValue={editingStepSubject.value}
-                                className="text-sm font-medium text-neutral-950 dark:text-neutral-50 bg-transparent border-b-2 border-neutral-950 dark:border-white outline-none w-full"
+                                className="text-sm font-medium text-fg bg-transparent border-b border-inverse outline-none w-full"
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter") handleInlineSubjectSave(step.id, e.currentTarget.value);
                                   if (e.key === "Escape") setEditingStepSubject(null);
@@ -1112,7 +1113,7 @@ export function SequenceDetailClient({
                               />
                             ) : (
                               <p
-                                className="text-sm font-medium text-neutral-950 dark:text-neutral-50 cursor-text"
+                                className="text-sm font-medium text-fg cursor-text"
                                 onDoubleClick={() => setEditingStepSubject({ id: step.id, value: step.subject! })}
                               >
                                 {step.subject}
@@ -1120,23 +1121,23 @@ export function SequenceDetailClient({
                             )
                           )}
                           {step.body && (
-                            <p className="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-2">{step.body}</p>
+                            <p className="text-sm text-fg-secondary line-clamp-2">{step.body}</p>
                           )}
 
                           {/* Per-step metrics inline */}
                           {metrics && (step.step_type === "email" || step.step_type === "linkedin_message" || step.step_type === "whatsapp") && (
                             <div className="flex items-center gap-3 mt-2 flex-wrap">
-                              <span className="text-xs text-neutral-400 dark:text-neutral-500">
-                                Sent: <span className="text-neutral-950 dark:text-neutral-50 font-medium">{metrics.sent}</span>
+                              <span className="text-xs text-fg-muted">
+                                Sent: <span className="text-fg font-medium">{metrics.sent}</span>
                               </span>
-                              <span className="text-xs text-neutral-400 dark:text-neutral-500">
-                                Opened: <span className="text-green-600 dark:text-green-400 font-medium">{metrics.opened} ({metrics.openRate}%)</span>
+                              <span className="text-xs text-fg-muted">
+                                Opened: <span className="text-success font-medium">{metrics.opened} ({metrics.openRate}%)</span>
                               </span>
-                              <span className="text-xs text-neutral-400 dark:text-neutral-500">
-                                Clicked: <span className="text-violet-600 dark:text-violet-400 font-medium">{metrics.clicked} ({metrics.clickRate}%)</span>
+                              <span className="text-xs text-fg-muted">
+                                Clicked: <span className="text-accent-strong font-medium">{metrics.clicked} ({metrics.clickRate}%)</span>
                               </span>
-                              <span className="text-xs text-neutral-400 dark:text-neutral-500">
-                                Replied: <span className="text-emerald-600 dark:text-emerald-400 font-medium">{metrics.replied} ({metrics.replyRate}%)</span>
+                              <span className="text-xs text-fg-muted">
+                                Replied: <span className="text-success font-medium">{metrics.replied} ({metrics.replyRate}%)</span>
                               </span>
                             </div>
                           )}
@@ -1150,24 +1151,24 @@ export function SequenceDetailClient({
                             const varAOpened = (metrics?.opened || 0) - (varB.opened || 0);
                             return (
                               <div className="mt-3 grid grid-cols-2 gap-2">
-                                <div className="p-2 rounded border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30">
+                                <div className="p-2 rounded border border-accent bg-accent-surface">
                                   <div className="flex items-center gap-1.5 mb-1">
                                     <Badge variant="info">A</Badge>
-                                    <span className="text-xs text-neutral-500 truncate">{step.subject}</span>
+                                    <span className="text-xs text-fg-secondary truncate">{step.subject}</span>
                                   </div>
-                                  <div className="flex gap-3 text-xs text-neutral-500">
-                                    <span>Sent: <span className="font-medium text-neutral-950 dark:text-neutral-50">{Math.max(0, varASent)}</span></span>
-                                    <span>Opens: <span className="font-medium text-green-600">{Math.max(0, varAOpened)}</span></span>
+                                  <div className="flex gap-3 text-xs text-fg-secondary">
+                                    <span>Sent: <span className="font-medium text-fg">{Math.max(0, varASent)}</span></span>
+                                    <span>Opens: <span className="font-medium text-success">{Math.max(0, varAOpened)}</span></span>
                                   </div>
                                 </div>
-                                <div className="p-2 rounded border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/30">
+                                <div className="p-2 rounded border border-accent bg-accent-surface">
                                   <div className="flex items-center gap-1.5 mb-1">
                                     <Badge variant="primary">B</Badge>
-                                    <span className="text-xs text-neutral-500 truncate">{varB.subject}</span>
+                                    <span className="text-xs text-fg-secondary truncate">{varB.subject}</span>
                                   </div>
-                                  <div className="flex gap-3 text-xs text-neutral-500">
-                                    <span>Sent: <span className="font-medium text-neutral-950 dark:text-neutral-50">{varB.sent || 0}</span></span>
-                                    <span>Opens: <span className="font-medium text-green-600">{varB.opened || 0}</span></span>
+                                  <div className="flex gap-3 text-xs text-fg-secondary">
+                                    <span>Sent: <span className="font-medium text-fg">{varB.sent || 0}</span></span>
+                                    <span>Opens: <span className="font-medium text-success">{varB.opened || 0}</span></span>
                                   </div>
                                 </div>
                               </div>
@@ -1178,15 +1179,15 @@ export function SequenceDetailClient({
                         <div className="flex items-center gap-1 shrink-0">
                           <button
                             onClick={() => openEditStep(step)}
-                            className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                            className="flex h-8 w-8 items-center justify-center rounded hover:bg-muted transition-colors"
                           >
-                            <PencilSimpleIcon size={16} className="text-neutral-500" />
+                            <PencilSimpleIcon size={16} className="text-fg-secondary" />
                           </button>
                           <button
                             onClick={() => setDeleteStepTarget({ id: step.id, label: step.subject || `Step ${step.step_order}` })}
-                            className="flex h-8 w-8 items-center justify-center rounded hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                            className="flex h-8 w-8 items-center justify-center rounded hover:bg-danger-surface transition-colors"
                           >
-                            <TrashIcon size={16} className="text-neutral-500 hover:text-red-500" />
+                            <TrashIcon size={16} className="text-fg-secondary hover:text-danger" />
                           </button>
                         </div>
                       </div>
@@ -1197,13 +1198,13 @@ export function SequenceDetailClient({
             </div>
           ) : (
             <div className="py-8 text-center">
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+              <p className="text-sm text-fg-secondary mb-4">
                 No steps added yet. Add your first step to build this sequence.
               </p>
             </div>
           )}
 
-          <div className="mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+          <div className="mt-6 pt-4 border-t border-line">
             <Button variant="outline" leftIcon={<PlusIcon size={18} weight="bold" />} onClick={openAddStep}>
               Add Step
             </Button>
@@ -1219,7 +1220,7 @@ export function SequenceDetailClient({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.15 }}
-          className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden"
+          className="rounded-lg border border-line bg-surface overflow-hidden"
         >
           <TableHeader
             title="Enrolled Leads"
@@ -1232,12 +1233,12 @@ export function SequenceDetailClient({
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-                      <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3">Lead</th>
-                      <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">Current Step</th>
-                      <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">Status</th>
-                      <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">Enrolled</th>
-                      <th className="text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 px-3 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">Actions</th>
+                    <tr className="bg-muted">
+                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Lead</th>
+                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Current Step</th>
+                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Status</th>
+                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Enrolled</th>
+                      <th className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1246,30 +1247,30 @@ export function SequenceDetailClient({
                       const enrollStatus = enrollmentStatusConfig[enrollment.status] || enrollmentStatusConfig.active;
 
                       return (
-                        <tr key={enrollment.id} className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
-                          <td className="px-5 py-4">
+                        <tr key={enrollment.id} className="hover:bg-muted transition-colors">
+                          <td className="px-3 py-2 border-t border-row">
                             <div className="flex items-center gap-3">
                               <Avatar name={lead?.name || "Unknown"} />
                               <div>
-                                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{lead?.name || "Unknown"}</p>
-                                <p className="text-xs text-neutral-500 dark:text-neutral-400">{lead?.email || "—"}</p>
+                                <p className="text-sm font-medium text-fg">{lead?.name || "Unknown"}</p>
+                                <p className="text-xs text-fg-secondary">{lead?.email || "—"}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                            <span className="text-sm font-medium font-serif text-neutral-950 dark:text-neutral-50">
+                          <td className="px-3 py-2 border-t border-row">
+                            <span className="text-sm font-medium font-semibold text-fg">
                               {enrollment.current_step} / {steps.length}
                             </span>
                           </td>
-                          <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                          <td className="px-3 py-2 border-t border-row">
                             <Badge variant={enrollStatus.variant} dot>{enrollStatus.label}</Badge>
                           </td>
-                          <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                            <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                          <td className="px-3 py-2 border-t border-row">
+                            <span className="text-sm text-fg-secondary">
                               {new Date(enrollment.enrolled_at).toLocaleDateString()}
                             </span>
                           </td>
-                          <td className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                          <td className="px-3 py-2 border-t border-row">
                             <div className="flex justify-center">
                               <ActionMenu
                                 items={[
@@ -1309,11 +1310,11 @@ export function SequenceDetailClient({
             </>
           ) : (
             <div className="py-16 flex flex-col items-center text-center">
-              <div className="w-12 h-12 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center mb-5">
-                <CheckCircleIcon size={24} className="text-neutral-950 dark:text-neutral-50" />
+              <div className="w-12 h-12 rounded border border-line bg-subtle flex items-center justify-center mb-5">
+                <CheckCircleIcon size={24} className="text-fg" />
               </div>
-              <h3 className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-2">No leads enrolled</h3>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-xs">
+              <h3 className="text-2xl font-semibold text-fg mb-2">No leads enrolled</h3>
+              <p className="text-sm text-fg-secondary max-w-xs">
                 Enroll leads from the Leads page to start this outreach sequence.
               </p>
             </div>
@@ -1329,13 +1330,13 @@ export function SequenceDetailClient({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.15 }}
-          className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6"
+          className="rounded-lg border border-line bg-surface p-4"
         >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <h3 className="text-sm font-medium text-neutral-950 dark:text-neutral-50">Activity Feed</h3>
+            <h3 className="text-sm font-medium text-fg">Activity Feed</h3>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <MagnifyingGlassIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+                <MagnifyingGlassIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-muted" />
                 <input
                   type="text"
                   placeholder="Search..."
@@ -1345,7 +1346,7 @@ export function SequenceDetailClient({
                     const types = activityFilter === "all" ? undefined : [activityFilter === "sent" ? "email_sent" : activityFilter === "opened" ? "email_opened" : activityFilter === "clicked" ? "link_clicked" : activityFilter === "replied" ? "email_replied" : "email_bounced"];
                     loadActivity(types, e.target.value);
                   }}
-                  className="w-44 pl-8 pr-3 py-1.5 text-xs rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400"
+                  className="w-44 pl-8 pr-3 py-1.5 text-xs rounded border border-line bg-surface text-fg placeholder:text-fg-muted"
                 />
               </div>
             </div>
@@ -1367,8 +1368,8 @@ export function SequenceDetailClient({
                 className={cn(
                   "px-3 py-1 text-xs font-medium rounded-full transition-colors",
                   activityFilter === f.id
-                    ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950"
-                    : "bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700",
+                    ? "bg-inverse text-on-inverse"
+                    : "bg-muted text-fg-secondary hover:bg-active",
                 )}
               >
                 {f.label}
@@ -1382,27 +1383,27 @@ export function SequenceDetailClient({
             return displayItems.length > 0 ? (
               <div className="space-y-3">
                 {displayItems.map((event) => {
-                  const config = activityEventConfig[event.eventType] || { label: event.eventType, color: "text-neutral-500" };
+                  const config = activityEventConfig[event.eventType] || { label: event.eventType, color: "text-fg-secondary" };
                   return (
                     <Link
                       key={event.id}
                       href={`/dashboard/leads/${event.id}`}
-                      className="flex items-center gap-3 py-2 border-b border-neutral-100 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 rounded px-2 -mx-2 transition-colors"
+                      className="flex items-center gap-3 py-2 border-b border-row last:border-b-0 hover:bg-muted rounded px-2 -mx-2 transition-colors"
                     >
                       <div className={cn("w-2 h-2 rounded-full shrink-0", config.color.replace("text-", "bg-"))} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-neutral-950 dark:text-neutral-50">
+                        <p className="text-sm text-fg">
                           <span className={cn("font-medium", config.color)}>{config.label}</span>{" "}
                           <span className="font-medium">{event.leadName}</span>
                           {event.stepOrder > 0 && (
-                            <span className="text-neutral-400 dark:text-neutral-500"> — Step {event.stepOrder}</span>
+                            <span className="text-fg-muted"> — Step {event.stepOrder}</span>
                           )}
                         </p>
                         {event.leadEmail && (
-                          <p className="text-xs text-neutral-400 dark:text-neutral-500 truncate">{event.leadEmail}</p>
+                          <p className="text-xs text-fg-muted truncate">{event.leadEmail}</p>
                         )}
                       </div>
-                      <span className="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">
+                      <span className="text-xs text-fg-muted shrink-0">
                         {relativeTime(event.createdAt)}
                       </span>
                     </Link>
@@ -1426,7 +1427,7 @@ export function SequenceDetailClient({
                 )}
               </div>
             ) : (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 py-8 text-center">
+              <p className="text-sm text-fg-secondary py-8 text-center">
                 {activityFilter !== "all" || activitySearch ? "No matching activity found." : "No activity yet. Events will appear here once the sequence starts sending."}
               </p>
             );
@@ -1459,35 +1460,35 @@ export function SequenceDetailClient({
               <StatCard
                 label="Avg Time to Reply"
                 value={`${timeToReply.avgHours.toFixed(1)}h`}
-                icon={<ClockIcon size={24} className="text-neutral-950 dark:text-neutral-50" />}
+                icon={<ClockIcon size={24} className="text-fg" />}
               />
               <StatCard
                 label="Median Time to Reply"
                 value={`${timeToReply.medianHours.toFixed(1)}h`}
-                icon={<ClockIcon size={24} className="text-neutral-950 dark:text-neutral-50" />}
+                icon={<ClockIcon size={24} className="text-fg" />}
               />
             </div>
           )}
 
           {/* Funnel Chart */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-            <h3 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-4">Conversion Funnel</h3>
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <h3 className="text-sm font-medium text-fg mb-4">Conversion Funnel</h3>
             <div className="space-y-3">
               {[
-                { label: "Sent", value: kpis.totalSent, color: "bg-blue-500" },
-                { label: "Opened", value: kpis.totalOpened, color: "bg-green-500" },
-                { label: "Clicked", value: kpis.totalClicked, color: "bg-violet-500" },
-                { label: "Replied", value: kpis.totalReplied, color: "bg-emerald-500" },
+                { label: "Sent", value: kpis.totalSent, color: "bg-accent-strong" },
+                { label: "Opened", value: kpis.totalOpened, color: "bg-success" },
+                { label: "Clicked", value: kpis.totalClicked, color: "bg-accent-strong" },
+                { label: "Replied", value: kpis.totalReplied, color: "bg-success" },
               ].map((item) => {
                 const maxVal = Math.max(kpis.totalSent, 1);
                 const pct = Math.round((item.value / maxVal) * 100);
                 return (
                   <div key={item.label} className="flex items-center gap-4">
-                    <div className="w-16 shrink-0 text-sm text-neutral-500 dark:text-neutral-400">{item.label}</div>
-                    <div className="flex-1 h-6 rounded bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+                    <div className="w-16 shrink-0 text-sm text-fg-secondary">{item.label}</div>
+                    <div className="flex-1 h-6 rounded bg-muted overflow-hidden">
                       <div className={cn("h-full rounded transition-all", item.color)} style={{ width: `${pct}%` }} />
                     </div>
-                    <span className="text-sm font-medium font-serif text-neutral-950 dark:text-neutral-50 w-16 text-right">
+                    <span className="text-sm font-medium font-semibold text-fg w-16 text-right">
                       {item.value} ({pct}%)
                     </span>
                   </div>
@@ -1498,40 +1499,35 @@ export function SequenceDetailClient({
 
           {/* Daily Volume Chart */}
           {dailyMetrics.length > 0 && (
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-              <h3 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-4">
+            <div className="rounded-lg border border-line bg-surface p-4">
+              <h3 className="text-sm font-medium text-fg mb-4">
                 Daily Volume (Last 14 Days)
               </h3>
               <ResponsiveContainer width="100%" height={280}>
                 <AreaChart data={dailyMetrics}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
                   <XAxis
                     dataKey="date"
                     tickFormatter={(v) => new Date(v).toLocaleDateString("en", { month: "short", day: "numeric" })}
-                    tick={{ fontSize: 12 }}
-                    stroke="#a3a3a3"
+                    tick={axisTick}
+                    stroke={chartAxis}
                   />
-                  <YAxis tick={{ fontSize: 12 }} stroke="#a3a3a3" />
+                  <YAxis tick={axisTick} stroke={chartAxis} />
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#fff",
-                      border: "1px solid #e5e5e5",
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
+                    contentStyle={chartTooltipStyle}
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Area type="monotone" dataKey="sent" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} name="Sent" />
-                  <Area type="monotone" dataKey="opened" stroke="#22c55e" fill="#22c55e" fillOpacity={0.1} name="Opened" />
-                  <Area type="monotone" dataKey="replied" stroke="#10b981" fill="#10b981" fillOpacity={0.1} name="Replied" />
+                  <Area type="monotone" dataKey="sent" stroke={chartAccent} fill={chartAccent} fillOpacity={0.1} name="Sent" />
+                  <Area type="monotone" dataKey="opened" stroke={chartSuccess} fill={chartSuccess} fillOpacity={0.1} name="Opened" />
+                  <Area type="monotone" dataKey="replied" stroke={chartWarning} fill={chartWarning} fillOpacity={0.1} name="Replied" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           )}
 
           {/* Status Breakdown */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-            <h3 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <h3 className="text-sm font-medium text-fg mb-4">
               Enrollment Status Breakdown
             </h3>
             {analytics?.statusCounts && Object.keys(analytics.statusCounts).length > 0 ? (
@@ -1545,48 +1541,48 @@ export function SequenceDetailClient({
                       <div className="w-28 shrink-0">
                         <Badge variant={config.variant} dot>{config.label}</Badge>
                       </div>
-                      <div className="flex-1 h-2 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+                      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                         <div
                           className={cn(
                             "h-full rounded-full transition-all",
-                            statusKey === "active" ? "bg-green-500"
-                              : statusKey === "paused" ? "bg-amber-500"
-                                : statusKey === "completed" ? "bg-blue-500"
-                                  : statusKey === "replied" ? "bg-green-400"
-                                    : statusKey === "bounced" ? "bg-red-500"
-                                      : "bg-neutral-400"
+                            statusKey === "active" ? "bg-success"
+                              : statusKey === "paused" ? "bg-warning"
+                                : statusKey === "completed" ? "bg-accent-strong"
+                                  : statusKey === "replied" ? "bg-success-fill"
+                                    : statusKey === "bounced" ? "bg-danger"
+                                      : "bg-fg-muted"
                           )}
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
-                      <span className="text-sm font-medium font-serif text-neutral-950 dark:text-neutral-50 w-12 text-right">{count}</span>
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400 w-10 text-right">{percentage}%</span>
+                      <span className="text-sm font-medium font-semibold text-fg w-12 text-right">{count}</span>
+                      <span className="text-xs text-fg-secondary w-10 text-right">{percentage}%</span>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">No enrollment data available yet.</p>
+              <p className="text-sm text-fg-secondary">No enrollment data available yet.</p>
             )}
           </div>
 
           {/* Best Send Time Heatmap */}
           {heatmapData.length > 0 && (
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-              <h3 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-4">Best Send Time (Replies)</h3>
+            <div className="rounded-lg border border-line bg-surface p-4">
+              <h3 className="text-sm font-medium text-fg mb-4">Best Send Time (Replies)</h3>
               <div className="overflow-x-auto">
                 <div className="grid gap-px" style={{ gridTemplateColumns: "auto repeat(24, 1fr)", minWidth: "700px" }}>
                   {/* Hour headers */}
                   <div />
                   {Array.from({ length: 24 }, (_, h) => (
-                    <div key={h} className="text-[10px] text-neutral-400 text-center pb-1">
+                    <div key={h} className="text-xs text-fg-muted text-center pb-1">
                       {h === 0 ? "12a" : h < 12 ? `${h}a` : h === 12 ? "12p" : `${h - 12}p`}
                     </div>
                   ))}
                   {/* Day rows */}
                   {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayLabel, dayIdx) => (
                     <>
-                      <div key={`label-${dayIdx}`} className="text-[10px] text-neutral-400 pr-2 flex items-center">{dayLabel}</div>
+                      <div key={`label-${dayIdx}`} className="text-xs text-fg-muted pr-2 flex items-center">{dayLabel}</div>
                       {Array.from({ length: 24 }, (_, h) => {
                         const cell = heatmapData.find((c) => c.day === dayIdx && c.hour === h);
                         const count = cell?.count || 0;
@@ -1614,37 +1610,37 @@ export function SequenceDetailClient({
 
           {/* A/B Comparison Panel */}
           {abComparison.length > 0 && (
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-              <h3 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-4">A/B Test Results</h3>
+            <div className="rounded-lg border border-line bg-surface p-4">
+              <h3 className="text-sm font-medium text-fg mb-4">A/B Test Results</h3>
               <div className="space-y-4">
                 {abComparison.map((s) => (
-                  <div key={s.stepOrder} className="border border-neutral-200 dark:border-neutral-700 rounded p-4">
-                    <p className="text-xs font-medium text-neutral-500 mb-3">Step {s.stepOrder}</p>
+                  <div key={s.stepOrder} className="border border-line rounded p-4">
+                    <p className="text-xs font-medium text-fg-secondary mb-3">Step {s.stepOrder}</p>
                     <div className="grid grid-cols-2 gap-3">
-                      <div className={cn("p-3 rounded border", s.winner === "A" ? "border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20" : "border-neutral-200 dark:border-neutral-700")}>
+                      <div className={cn("p-3 rounded border", s.winner === "A" ? "border-success bg-success-surface" : "border-line")}>
                         <div className="flex items-center gap-2 mb-2">
                           <Badge variant="info">A</Badge>
-                          {s.winner === "A" && <span className="text-xs text-green-600 dark:text-green-400 font-medium">Winner</span>}
+                          {s.winner === "A" && <span className="text-xs text-success font-medium">Winner</span>}
                         </div>
-                        <p className="text-xs text-neutral-500 truncate mb-2">{s.subjectA || "—"}</p>
+                        <p className="text-xs text-fg-secondary truncate mb-2">{s.subjectA || "—"}</p>
                         <div className="grid grid-cols-2 gap-1 text-xs">
-                          <span className="text-neutral-400">Sent: <span className="text-neutral-950 dark:text-neutral-50 font-medium">{s.variantA.sent}</span></span>
-                          <span className="text-neutral-400">Opens: <span className="text-green-600 font-medium">{s.variantA.sent > 0 ? Math.round((s.variantA.opened / s.variantA.sent) * 100) : 0}%</span></span>
-                          <span className="text-neutral-400">Clicks: <span className="text-violet-600 font-medium">{s.variantA.sent > 0 ? Math.round((s.variantA.clicked / s.variantA.sent) * 100) : 0}%</span></span>
-                          <span className="text-neutral-400">Replies: <span className="text-emerald-600 font-medium">{s.variantA.replyRate}%</span></span>
+                          <span className="text-fg-muted">Sent: <span className="text-fg font-medium">{s.variantA.sent}</span></span>
+                          <span className="text-fg-muted">Opens: <span className="text-success font-medium">{s.variantA.sent > 0 ? Math.round((s.variantA.opened / s.variantA.sent) * 100) : 0}%</span></span>
+                          <span className="text-fg-muted">Clicks: <span className="text-accent-strong font-medium">{s.variantA.sent > 0 ? Math.round((s.variantA.clicked / s.variantA.sent) * 100) : 0}%</span></span>
+                          <span className="text-fg-muted">Replies: <span className="text-success font-medium">{s.variantA.replyRate}%</span></span>
                         </div>
                       </div>
-                      <div className={cn("p-3 rounded border", s.winner === "B" ? "border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20" : "border-neutral-200 dark:border-neutral-700")}>
+                      <div className={cn("p-3 rounded border", s.winner === "B" ? "border-success bg-success-surface" : "border-line")}>
                         <div className="flex items-center gap-2 mb-2">
                           <Badge variant="primary">B</Badge>
-                          {s.winner === "B" && <span className="text-xs text-green-600 dark:text-green-400 font-medium">Winner</span>}
+                          {s.winner === "B" && <span className="text-xs text-success font-medium">Winner</span>}
                         </div>
-                        <p className="text-xs text-neutral-500 truncate mb-2">{s.subjectB}</p>
+                        <p className="text-xs text-fg-secondary truncate mb-2">{s.subjectB}</p>
                         <div className="grid grid-cols-2 gap-1 text-xs">
-                          <span className="text-neutral-400">Sent: <span className="text-neutral-950 dark:text-neutral-50 font-medium">{s.variantB.sent}</span></span>
-                          <span className="text-neutral-400">Opens: <span className="text-green-600 font-medium">{s.variantB.sent > 0 ? Math.round((s.variantB.opened / s.variantB.sent) * 100) : 0}%</span></span>
-                          <span className="text-neutral-400">Clicks: <span className="text-violet-600 font-medium">{s.variantB.sent > 0 ? Math.round((s.variantB.clicked / s.variantB.sent) * 100) : 0}%</span></span>
-                          <span className="text-neutral-400">Replies: <span className="text-emerald-600 font-medium">{s.variantB.replyRate}%</span></span>
+                          <span className="text-fg-muted">Sent: <span className="text-fg font-medium">{s.variantB.sent}</span></span>
+                          <span className="text-fg-muted">Opens: <span className="text-success font-medium">{s.variantB.sent > 0 ? Math.round((s.variantB.opened / s.variantB.sent) * 100) : 0}%</span></span>
+                          <span className="text-fg-muted">Clicks: <span className="text-accent-strong font-medium">{s.variantB.sent > 0 ? Math.round((s.variantB.clicked / s.variantB.sent) * 100) : 0}%</span></span>
+                          <span className="text-fg-muted">Replies: <span className="text-success font-medium">{s.variantB.replyRate}%</span></span>
                         </div>
                       </div>
                     </div>
@@ -1667,11 +1663,11 @@ export function SequenceDetailClient({
           className="space-y-4"
         >
           {/* Sending Schedule */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-            <h3 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-4">Sending Schedule</h3>
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <h3 className="text-sm font-medium text-fg mb-4">Sending Schedule</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-neutral-500 dark:text-neutral-400 mb-2">Active Days</label>
+                <label className="block text-sm text-fg-secondary mb-2">Active Days</label>
                 <div className="flex flex-wrap gap-2">
                   {["mon", "tue", "wed", "thu", "fri", "sat", "sun"].map((day) => (
                     <button
@@ -1680,8 +1676,8 @@ export function SequenceDetailClient({
                       className={cn(
                         "px-3 py-1.5 rounded text-sm font-medium transition-colors border",
                         settScheduleDays.includes(day)
-                          ? "bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 border-neutral-950 dark:border-white"
-                          : "bg-white dark:bg-neutral-950 text-neutral-500 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700 hover:border-neutral-400"
+                          ? "bg-inverse text-on-inverse border-inverse"
+                          : "bg-surface text-fg-secondary border-line hover:border-fg-muted"
                       )}
                     >
                       {day.charAt(0).toUpperCase() + day.slice(1)}
@@ -1717,8 +1713,8 @@ export function SequenceDetailClient({
           </div>
 
           {/* Sending Limits */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-            <h3 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-4">Sending Limits</h3>
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <h3 className="text-sm font-medium text-fg mb-4">Sending Limits</h3>
             <div className="grid grid-cols-2 gap-4">
               <Input
                 label="Daily Send Limit"
@@ -1738,9 +1734,9 @@ export function SequenceDetailClient({
           </div>
 
           {/* Email Accounts */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-            <h3 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-2">Email Accounts</h3>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <h3 className="text-sm font-medium text-fg mb-2">Email Accounts</h3>
+            <p className="text-xs text-fg-secondary mb-4">
               Select accounts to rotate between when sending. If none selected, the default org account is used.
             </p>
             {emailAccounts.length > 0 ? (
@@ -1751,34 +1747,34 @@ export function SequenceDetailClient({
                     className={cn(
                       "flex items-center gap-3 p-3 rounded border cursor-pointer transition-colors",
                       settAccountIds.includes(acc.id)
-                        ? "border-neutral-950 dark:border-white bg-neutral-50 dark:bg-neutral-800"
-                        : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-400"
+                        ? "border-inverse bg-subtle"
+                        : "border-line hover:border-fg-muted"
                     )}
                   >
                     <input
                       type="checkbox"
                       checked={settAccountIds.includes(acc.id)}
                       onChange={() => toggleAccount(acc.id)}
-                      className="rounded border-neutral-300 text-neutral-950 focus:ring-neutral-950"
+                      className="rounded border-line text-fg focus:ring-line"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{acc.email_address}</p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 capitalize">{acc.provider}</p>
+                      <p className="text-sm font-medium text-fg">{acc.email_address}</p>
+                      <p className="text-xs text-fg-secondary capitalize">{acc.provider}</p>
                     </div>
                     {acc.is_default && <Badge variant="neutral">Default</Badge>}
                   </label>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              <p className="text-sm text-fg-secondary">
                 No active email accounts found. Connect an account in Settings.
               </p>
             )}
           </div>
 
           {/* Stop Conditions */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-            <h3 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-4">Stop Conditions</h3>
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <h3 className="text-sm font-medium text-fg mb-4">Stop Conditions</h3>
             <div className="space-y-3">
               {[
                 { label: "Stop on reply", value: settStopOnReply, setter: setSettStopOnReply },
@@ -1790,17 +1786,17 @@ export function SequenceDetailClient({
                     type="checkbox"
                     checked={item.value}
                     onChange={(e) => item.setter(e.target.checked)}
-                    className="rounded border-neutral-300 text-neutral-950 focus:ring-neutral-950"
+                    className="rounded border-line text-fg focus:ring-line"
                   />
-                  <span className="text-sm text-neutral-950 dark:text-neutral-50">{item.label}</span>
+                  <span className="text-sm text-fg">{item.label}</span>
                 </label>
               ))}
             </div>
           </div>
 
           {/* Timezone */}
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6">
-            <h3 className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-4">Timezone</h3>
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <h3 className="text-sm font-medium text-fg mb-4">Timezone</h3>
             <Select
               label="Sending Timezone"
               value={settTimezone}
@@ -1857,14 +1853,14 @@ export function SequenceDetailClient({
       <Modal open={showStepModal} onClose={() => setShowStepModal(false)}>
         <div className="p-6 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-serif text-neutral-950 dark:text-neutral-50">
+            <h2 className="text-lg font-semibold text-fg">
               {editingStep ? "Edit Step" : "Add Step"}
             </h2>
             <button
               onClick={() => setShowStepModal(false)}
-              className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded hover:bg-muted transition-colors"
             >
-              <XIcon size={20} className="text-neutral-500" />
+              <XIcon size={20} className="text-fg-secondary" />
             </button>
           </div>
 
@@ -1874,7 +1870,7 @@ export function SequenceDetailClient({
 
             {/* Channel badge */}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-neutral-500 dark:text-neutral-400">Channel:</span>
+              <span className="text-xs text-fg-secondary">Channel:</span>
               <Badge variant={stepType === "whatsapp" ? "success" : stepType.startsWith("linkedin") ? "info" : stepType === "email" ? "neutral" : "warning"}>
                 {getChannelForStepType(stepType).charAt(0).toUpperCase() + getChannelForStepType(stepType).slice(1)}
               </Badge>
@@ -1892,18 +1888,18 @@ export function SequenceDetailClient({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1 flex-wrap">
                     {mergeFields.map((mf) => (
-                      <button key={mf.value} type="button" onClick={() => insertMergeField(mf.value, "subject")} className="px-2 py-0.5 text-[11px] rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
+                      <button key={mf.value} type="button" onClick={() => insertMergeField(mf.value, "subject")} className="px-2 py-0.5 text-xs rounded-full bg-muted text-fg-secondary hover:bg-active transition-colors">
                         {mf.label}
                       </button>
                     ))}
                   </div>
-                  <span className={cn("text-xs tabular-nums", stepSubject.length > 60 ? "text-red-500" : stepSubject.length > 50 ? "text-amber-500" : "text-neutral-400")}>
+                  <span className={cn("text-xs tabular-nums", stepSubject.length > 60 ? "text-danger" : stepSubject.length > 50 ? "text-warning" : "text-fg-muted")}>
                     {stepSubject.length}/60
                   </span>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">Body</label>
+                    <label className="block text-sm font-medium text-fg">Body</label>
                     <div className="flex items-center gap-2">
                       <Button variant="outline" size="sm" onClick={() => { setTemplateTarget("a"); loadTemplates(); setShowTemplatePicker(true); }}>Use Template</Button>
                       <Button variant="outline" size="sm" leftIcon={<SparkleIcon size={16} />} onClick={() => setAIWriteOpen(true)}>AI Write</Button>
@@ -1913,22 +1909,22 @@ export function SequenceDetailClient({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1 flex-wrap">
                       {mergeFields.map((mf) => (
-                        <button key={mf.value} type="button" onClick={() => insertMergeField(mf.value, "body")} className="px-2 py-0.5 text-[11px] rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
+                        <button key={mf.value} type="button" onClick={() => insertMergeField(mf.value, "body")} className="px-2 py-0.5 text-xs rounded-full bg-muted text-fg-secondary hover:bg-active transition-colors">
                           {mf.label}
                         </button>
                       ))}
                     </div>
-                    <button type="button" onClick={() => setShowPreview(!showPreview)} className="text-xs text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors flex items-center gap-1">
+                    <button type="button" onClick={() => setShowPreview(!showPreview)} className="text-xs text-fg-secondary hover:text-fg transition-colors flex items-center gap-1">
                       <EyeIcon size={14} /> {showPreview ? "Hide Preview" : "Preview"}
                     </button>
                   </div>
                   {showPreview && (
-                    <div className="rounded border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 p-4 space-y-2">
-                      <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Preview with sample data:</p>
-                      <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                    <div className="rounded border border-line bg-subtle p-4 space-y-2">
+                      <p className="text-xs font-medium text-fg-secondary">Preview with sample data:</p>
+                      <p className="text-sm font-medium text-fg">
                         {stepSubject.replace(/\{\{first_name\}\}/gi, "John").replace(/\{\{name\}\}/gi, "John Smith").replace(/\{\{company\}\}/gi, "Acme Corp").replace(/\{\{email\}\}/gi, "john@acme.com")}
                       </p>
-                      <div className="text-sm text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap">
+                      <div className="text-sm text-fg whitespace-pre-wrap">
                         {stepBody.replace(/\{\{first_name\}\}/gi, "John").replace(/\{\{name\}\}/gi, "John Smith").replace(/\{\{company\}\}/gi, "Acme Corp").replace(/\{\{email\}\}/gi, "john@acme.com")}
                       </div>
                     </div>
@@ -1936,28 +1932,28 @@ export function SequenceDetailClient({
                 </div>
                 {/* A/B Variant B */}
                 {!showVariantB ? (
-                  <button type="button" onClick={() => setShowVariantB(true)} className="flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
+                  <button type="button" onClick={() => setShowVariantB(true)} className="flex items-center gap-2 text-sm text-fg-secondary hover:text-fg transition-colors">
                     <PlusIcon size={16} weight="bold" /> Add Variant B (A/B Test)
                   </button>
                 ) : (
-                  <div className="border border-dashed border-neutral-300 dark:border-neutral-700 rounded p-4 space-y-4">
+                  <div className="border border-dashed border-line rounded p-4 space-y-4">
                     <div className="flex items-center justify-between">
                       <Badge variant="primary">Variant B ({100 - variantAWeight}%)</Badge>
-                      <button type="button" onClick={() => { setShowVariantB(false); setVariantBSubject(""); setVariantBBody(""); }} className="flex h-6 w-6 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
-                        <XIcon size={14} className="text-neutral-500" />
+                      <button type="button" onClick={() => { setShowVariantB(false); setVariantBSubject(""); setVariantBBody(""); }} className="flex h-6 w-6 items-center justify-center rounded hover:bg-muted transition-colors">
+                        <XIcon size={14} className="text-fg-secondary" />
                       </button>
                     </div>
                     <Input label="Subject B" placeholder="Alternative subject line..." value={variantBSubject} onChange={(e) => setVariantBSubject(e.target.value)} />
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">Body B</label>
+                        <label className="block text-sm font-medium text-fg">Body B</label>
                         <Button variant="outline" size="sm" onClick={() => { setTemplateTarget("b"); loadTemplates(); setShowTemplatePicker(true); }}>Use Template</Button>
                       </div>
                       <Textarea placeholder="Alternative email body..." value={variantBBody} onChange={(e) => setVariantBBody(e.target.value)} />
                     </div>
                     <div className="space-y-2">
-                      <label className="block text-xs font-medium text-neutral-500 dark:text-neutral-400">Split: A {variantAWeight}% / B {100 - variantAWeight}%</label>
-                      <input type="range" min={10} max={90} value={variantAWeight} onChange={(e) => setVariantAWeight(parseInt(e.target.value))} className="w-full accent-neutral-950 dark:accent-white" />
+                      <label className="block text-xs font-medium text-fg-secondary">Split: A {variantAWeight}% / B {100 - variantAWeight}%</label>
+                      <input type="range" min={10} max={90} value={variantAWeight} onChange={(e) => setVariantAWeight(parseInt(e.target.value))} className="w-full accent-accent" />
                     </div>
                   </div>
                 )}
@@ -1966,9 +1962,9 @@ export function SequenceDetailClient({
 
             {/* ─── WhatsApp Step Fields ─── */}
             {stepType === "whatsapp" && (
-              <div className="space-y-4 border border-emerald-200 dark:border-emerald-900/50 rounded p-4 bg-emerald-50/50 dark:bg-emerald-900/10">
-                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">WhatsApp Message</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <div className="space-y-4 border border-success rounded p-4 bg-success-surface">
+                <p className="text-xs font-medium text-success">WhatsApp Message</p>
+                <p className="text-xs text-fg-secondary">
                   Business-initiated messages require pre-approved Meta templates. Free-text is only available within 24h of a customer reply.
                 </p>
                 <Input
@@ -1984,7 +1980,7 @@ export function SequenceDetailClient({
                 />
                 <div className="flex items-center gap-1 flex-wrap">
                   {mergeFields.map((mf) => (
-                    <button key={mf.value} type="button" onClick={() => insertMergeField(mf.value, "body")} className="px-2 py-0.5 text-[11px] rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-800 transition-colors">
+                    <button key={mf.value} type="button" onClick={() => insertMergeField(mf.value, "body")} className="px-2 py-0.5 text-xs rounded-full bg-success-surface text-success hover:bg-success-surface transition-colors">
                       {mf.label}
                     </button>
                   ))}
@@ -1994,8 +1990,8 @@ export function SequenceDetailClient({
 
             {/* ─── LinkedIn Connect Step ─── */}
             {stepType === "linkedin_connect" && (
-              <div className="space-y-4 border border-blue-200 dark:border-blue-900/50 rounded p-4 bg-blue-50/50 dark:bg-blue-900/10">
-                <p className="text-xs font-medium text-blue-700 dark:text-blue-400 uppercase tracking-wider">Connection Request</p>
+              <div className="space-y-4 border border-accent rounded p-4 bg-accent-surface">
+                <p className="text-xs font-medium text-accent-strong">Connection Request</p>
                 <div className="space-y-2">
                   <Input
                     label="Connection Note (optional, 300 char max)"
@@ -2006,12 +2002,12 @@ export function SequenceDetailClient({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1 flex-wrap">
                       {mergeFields.map((mf) => (
-                        <button key={mf.value} type="button" onClick={() => setChannelConfig({ ...channelConfig, connection_note: ((channelConfig.connection_note as string) || "") + ` ${mf.value}` })} className="px-2 py-0.5 text-[11px] rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
+                        <button key={mf.value} type="button" onClick={() => setChannelConfig({ ...channelConfig, connection_note: ((channelConfig.connection_note as string) || "") + ` ${mf.value}` })} className="px-2 py-0.5 text-xs rounded-full bg-accent-surface text-accent-on-surface hover:bg-accent-surface transition-colors">
                           {mf.label}
                         </button>
                       ))}
                     </div>
-                    <span className={cn("text-xs tabular-nums", ((channelConfig.connection_note as string) || "").length > 280 ? "text-red-500" : "text-neutral-400")}>
+                    <span className={cn("text-xs tabular-nums", ((channelConfig.connection_note as string) || "").length > 280 ? "text-danger" : "text-fg-muted")}>
                       {((channelConfig.connection_note as string) || "").length}/300
                     </span>
                   </div>
@@ -2021,16 +2017,16 @@ export function SequenceDetailClient({
 
             {/* ─── LinkedIn Message Step ─── */}
             {stepType === "linkedin_message" && (
-              <div className="space-y-4 border border-blue-200 dark:border-blue-900/50 rounded p-4 bg-blue-50/50 dark:bg-blue-900/10">
-                <p className="text-xs font-medium text-blue-700 dark:text-blue-400 uppercase tracking-wider">LinkedIn Message</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <div className="space-y-4 border border-accent rounded p-4 bg-accent-surface">
+                <p className="text-xs font-medium text-accent-strong">LinkedIn Message</p>
+                <p className="text-xs text-fg-secondary">
                   Lead must be a 1st-degree connection. If not connected, a connection request will be sent first.
                 </p>
                 <Input label="Subject" placeholder="Quick question about {{company}}" value={stepSubject} onChange={(e) => setStepSubject(e.target.value)} />
                 <Textarea placeholder="Write your LinkedIn message..." value={stepBody} onChange={(e) => setStepBody(e.target.value)} />
                 <div className="flex items-center gap-1 flex-wrap">
                   {mergeFields.map((mf) => (
-                    <button key={mf.value} type="button" onClick={() => insertMergeField(mf.value, "body")} className="px-2 py-0.5 text-[11px] rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
+                    <button key={mf.value} type="button" onClick={() => insertMergeField(mf.value, "body")} className="px-2 py-0.5 text-xs rounded-full bg-accent-surface text-accent-on-surface hover:bg-accent-surface transition-colors">
                       {mf.label}
                     </button>
                   ))}
@@ -2040,9 +2036,9 @@ export function SequenceDetailClient({
 
             {/* ─── LinkedIn Profile View ─── */}
             {stepType === "linkedin_view" && (
-              <div className="space-y-3 border border-blue-200 dark:border-blue-900/50 rounded p-4 bg-blue-50/50 dark:bg-blue-900/10">
-                <p className="text-xs font-medium text-blue-700 dark:text-blue-400 uppercase tracking-wider">Profile View</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <div className="space-y-3 border border-accent rounded p-4 bg-accent-surface">
+                <p className="text-xs font-medium text-accent-strong">Profile View</p>
+                <p className="text-xs text-fg-secondary">
                   Views the lead&apos;s LinkedIn profile to warm them up before a connection request. The lead will see your profile in their &quot;Who viewed your profile&quot; section.
                 </p>
                 <Textarea placeholder="Optional notes for this step..." value={stepBody} onChange={(e) => setStepBody(e.target.value)} />
@@ -2051,9 +2047,9 @@ export function SequenceDetailClient({
 
             {/* ─── LinkedIn Endorse ─── */}
             {stepType === "linkedin_endorse" && (
-              <div className="space-y-4 border border-blue-200 dark:border-blue-900/50 rounded p-4 bg-blue-50/50 dark:bg-blue-900/10">
-                <p className="text-xs font-medium text-blue-700 dark:text-blue-400 uppercase tracking-wider">Skill Endorsement</p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <div className="space-y-4 border border-accent rounded p-4 bg-accent-surface">
+                <p className="text-xs font-medium text-accent-strong">Skill Endorsement</p>
+                <p className="text-xs text-fg-secondary">
                   Endorses a skill on the lead&apos;s profile to increase visibility and build rapport.
                 </p>
                 <Input
@@ -2069,7 +2065,7 @@ export function SequenceDetailClient({
             {/* ─── Call / Task / Wait Steps ─── */}
             {(stepType === "call" || stepType === "task" || stepType === "wait") && (
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <label className="block text-sm font-medium text-fg">
                   {stepType === "wait" ? "Notes" : stepType === "task" ? "Task Description" : "Call Script"}
                 </label>
                 <Textarea
@@ -2127,12 +2123,12 @@ export function SequenceDetailClient({
       <Modal open={showTemplatePicker} onClose={() => setShowTemplatePicker(false)}>
         <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-serif text-neutral-950 dark:text-neutral-50">Select Template</h2>
+            <h2 className="text-lg font-semibold text-fg">Select Template</h2>
             <button
               onClick={() => setShowTemplatePicker(false)}
-              className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded hover:bg-muted transition-colors"
             >
-              <XIcon size={20} className="text-neutral-500" />
+              <XIcon size={20} className="text-fg-secondary" />
             </button>
           </div>
           {templates.length > 0 ? (
@@ -2151,18 +2147,18 @@ export function SequenceDetailClient({
                     setShowTemplatePicker(false);
                     toast.success(`Template "${tpl.name}" applied`);
                   }}
-                  className="w-full text-left p-3 rounded border border-neutral-200 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors"
+                  className="w-full text-left p-3 rounded border border-line hover:border-fg-muted transition-colors"
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{tpl.name}</p>
+                    <p className="text-sm font-medium text-fg">{tpl.name}</p>
                     <Badge variant="neutral">{tpl.category}</Badge>
                   </div>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1">{tpl.subject}</p>
+                  <p className="text-xs text-fg-secondary line-clamp-1">{tpl.subject}</p>
                 </button>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-8">
+            <p className="text-sm text-fg-secondary text-center py-8">
               No templates found. Create templates in the email section first.
             </p>
           )}
@@ -2176,7 +2172,7 @@ export function SequenceDetailClient({
         title="Enroll Leads"
         footer={
           <div className="flex items-center justify-between gap-2">
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
+            <span className="text-sm text-fg-secondary">
               {enrollSelectedIds.size} selected · {enrollTotalCount} total matching
             </span>
             <div className="flex gap-2">
@@ -2202,13 +2198,13 @@ export function SequenceDetailClient({
         <div className="space-y-4">
           {/* Search */}
           <div className="relative">
-            <MagnifyingGlassIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+            <MagnifyingGlassIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
             <input
               type="text"
               placeholder="Search leads by name, email, or company..."
               value={enrollSearchQuery}
               onChange={(e) => handleEnrollSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400"
+              className="w-full pl-9 pr-3 py-2 text-sm rounded border border-line bg-surface text-fg placeholder:text-fg-muted"
             />
           </div>
 
@@ -2217,7 +2213,7 @@ export function SequenceDetailClient({
             <select
               value={enrollStatusFilter}
               onChange={(e) => handleEnrollFilterChange("status", e.target.value)}
-              className="flex-1 px-2 py-1.5 text-xs rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50"
+              className="flex-1 px-2 py-1.5 text-xs rounded border border-line bg-surface text-fg"
             >
               <option value="all">All Status</option>
               <option value="hot">Hot</option>
@@ -2228,7 +2224,7 @@ export function SequenceDetailClient({
             <select
               value={enrollScoreFilter}
               onChange={(e) => handleEnrollFilterChange("score", e.target.value)}
-              className="flex-1 px-2 py-1.5 text-xs rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50"
+              className="flex-1 px-2 py-1.5 text-xs rounded border border-line bg-surface text-fg"
             >
               <option value="all">Any Score</option>
               <option value="90">90+</option>
@@ -2239,7 +2235,7 @@ export function SequenceDetailClient({
             <select
               value={enrollSourceFilter}
               onChange={(e) => handleEnrollFilterChange("source", e.target.value)}
-              className="flex-1 px-2 py-1.5 text-xs rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50"
+              className="flex-1 px-2 py-1.5 text-xs rounded border border-line bg-surface text-fg"
             >
               <option value="all">All Sources</option>
               <option value="Website">Website</option>
@@ -2261,7 +2257,7 @@ export function SequenceDetailClient({
                   setEnrollSelectedIds(new Set(enrollLeadsList.map((l) => l.id)));
                 }
               }}
-              className="text-xs font-medium text-neutral-500 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+              className="text-xs font-medium text-fg-secondary hover:text-fg transition-colors"
             >
               {enrollSelectedIds.size === enrollLeadsList.length ? "Deselect All" : `Select All (${enrollLeadsList.length})`}
             </button>
@@ -2271,7 +2267,7 @@ export function SequenceDetailClient({
           {enrollLoading ? (
             <div className="space-y-2">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-14 rounded bg-neutral-100 dark:bg-neutral-800 animate-pulse" />
+                <div key={i} className="h-14 rounded bg-muted animate-pulse" />
               ))}
             </div>
           ) : enrollLeadsList.length > 0 ? (
@@ -2282,8 +2278,8 @@ export function SequenceDetailClient({
                   className={cn(
                     "flex items-center gap-3 p-3 rounded border cursor-pointer transition-colors",
                     enrollSelectedIds.has(lead.id)
-                      ? "border-neutral-950 dark:border-white bg-neutral-50 dark:bg-neutral-800"
-                      : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-400",
+                      ? "border-inverse bg-subtle"
+                      : "border-line hover:border-fg-muted",
                   )}
                 >
                   <input
@@ -2297,11 +2293,11 @@ export function SequenceDetailClient({
                         return next;
                       });
                     }}
-                    className="rounded border-neutral-300 text-neutral-950 focus:ring-neutral-950"
+                    className="rounded border-line text-fg focus:ring-line"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{lead.name}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{lead.email}</p>
+                    <p className="text-sm font-medium text-fg">{lead.name}</p>
+                    <p className="text-xs text-fg-secondary truncate">{lead.email}</p>
                   </div>
                   {lead.score != null && (
                     <Badge variant={lead.score >= 70 ? "success" : lead.score >= 40 ? "warning" : "neutral"}>
@@ -2312,7 +2308,7 @@ export function SequenceDetailClient({
               ))}
             </div>
           ) : (
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-8">
+            <p className="text-sm text-fg-secondary text-center py-8">
               {enrollSearchQuery ? "No matching leads found." : "No leads available to enroll."}
             </p>
           )}

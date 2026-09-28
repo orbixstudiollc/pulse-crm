@@ -18,6 +18,7 @@ import {
 } from "@/components/ui";
 import { PageHeader } from "@/components/dashboard";
 import { cn } from "@/lib/utils";
+import { chartAccent, chartGrid, axisTick } from "@/lib/design-system/chart-colors";
 import { updateMarketingActionItem } from "@/lib/actions/marketing";
 import {
   aiGenerateEmailSequence,
@@ -101,19 +102,19 @@ type TabId = (typeof TABS)[number]["id"];
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function scoreColor(score: number | null): string {
-  if (!score) return "text-neutral-400";
-  if (score >= 85) return "text-green-600 dark:text-green-400";
-  if (score >= 70) return "text-blue-600 dark:text-blue-400";
-  if (score >= 55) return "text-amber-600 dark:text-amber-400";
-  return "text-red-600 dark:text-red-400";
+  if (!score) return "text-fg-muted";
+  if (score >= 85) return "text-success";
+  if (score >= 70) return "text-accent-strong";
+  if (score >= 55) return "text-warning";
+  return "text-danger";
 }
 
 function severityColor(severity: string) {
   const map: Record<string, string> = {
-    Critical: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-    High: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-    Medium: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
-    Low: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    Critical: "bg-danger-surface text-danger",
+    High: "bg-warning-surface text-warning",
+    Medium: "bg-warning-surface text-warning",
+    Low: "bg-accent-surface text-accent-on-surface",
   };
   return map[severity] || map.Medium;
 }
@@ -125,14 +126,14 @@ function ScoreBar({ label, score, weight }: { label: string; score: number | nul
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-sm">
-        <span className="font-medium text-neutral-700 dark:text-neutral-300">{label}</span>
-        <span className={cn("font-bold", scoreColor(score))}>{score ?? "—"}/100 <span className="font-normal text-neutral-400 text-xs">({weight})</span></span>
+        <span className="font-medium text-fg">{label}</span>
+        <span className={cn("font-semibold", scoreColor(score))}>{score ?? "—"}/100 <span className="font-normal text-fg-muted text-xs">({weight})</span></span>
       </div>
-      <div className="h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+      <div className="h-2 bg-active rounded-full overflow-hidden">
         <motion.div
           className={cn(
             "h-full rounded-full",
-            s >= 85 ? "bg-green-500" : s >= 70 ? "bg-blue-500" : s >= 55 ? "bg-amber-500" : s >= 40 ? "bg-orange-500" : "bg-red-500",
+            s >= 85 ? "bg-success" : s >= 70 ? "bg-accent-strong" : s >= 55 ? "bg-warning" : s >= 40 ? "bg-warning" : "bg-danger",
           )}
           initial={{ width: 0 }}
           animate={{ width: `${s}%` }}
@@ -156,7 +157,7 @@ function LargeScoreGauge({ score, grade }: { score: number | null; grade: string
     <div className="relative flex flex-col items-center">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90">
-          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="currentColor" strokeWidth={6} className="text-neutral-200 dark:text-neutral-700" />
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="currentColor" strokeWidth={6} className="text-fg-disabled" />
           <motion.circle
             cx={size / 2} cy={size / 2} r={radius} fill="none" strokeWidth={6}
             strokeLinecap="round"
@@ -169,7 +170,7 @@ function LargeScoreGauge({ score, grade }: { score: number | null; grade: string
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={cn("text-3xl font-bold", scoreColor(score))}>{score ?? "—"}</span>
+          <span className={cn("text-xl font-semibold", scoreColor(score))}>{score ?? "—"}</span>
           {grade && <span className={cn("text-sm font-semibold", scoreColor(score))}>{grade}</span>}
         </div>
       </div>
@@ -269,26 +270,26 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Score + Radar */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 flex flex-col items-center">
+          <div className="rounded-lg border border-line bg-surface p-4 flex flex-col items-center">
             <LargeScoreGauge score={audit.overall_score} grade={audit.grade} />
-            <p className="mt-4 text-sm text-center text-neutral-500">{audit.summary}</p>
+            <p className="mt-4 text-sm text-center text-fg-secondary">{audit.summary}</p>
           </div>
 
-          <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4">
+          <div className="rounded-lg border border-line bg-surface p-4">
             <ResponsiveContainer width="100%" height={250}>
               <RadarChart data={radarData}>
-                <PolarGrid stroke="#374151" strokeOpacity={0.2} />
-                <PolarAngleAxis dataKey="dimension" tick={{ fill: "#9ca3af", fontSize: 11 }} />
+                <PolarGrid stroke={chartGrid} />
+                <PolarAngleAxis dataKey="dimension" tick={axisTick} />
                 <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                <Radar name="Score" dataKey="score" stroke="#6366f1" fill="#6366f1" fillOpacity={0.2} strokeWidth={2} />
+                <Radar name="Score" dataKey="score" stroke={chartAccent} fill={chartAccent} fillOpacity={0.2} strokeWidth={2} />
               </RadarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Dimension Scores */}
-        <div className="lg:col-span-2 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-6 space-y-4">
-          <h3 className="font-semibold text-neutral-900 dark:text-neutral-100">Score Breakdown</h3>
+        <div className="lg:col-span-2 rounded-lg border border-line bg-surface p-4 space-y-4">
+          <h3 className="font-semibold text-fg">Score Breakdown</h3>
           <ScoreBar label="Content & Messaging" score={audit.content_score} weight="25%" />
           <ScoreBar label="Conversion Optimization" score={audit.conversion_score} weight="20%" />
           <ScoreBar label="SEO & Discoverability" score={audit.seo_score} weight="20%" />
@@ -303,7 +304,7 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
   function renderFindings() {
     if (allFindings.length === 0) {
       return (
-        <div className="text-center py-20 text-neutral-400">
+        <div className="text-center py-20 text-fg-muted">
           <WarningIcon className="h-12 w-12 mx-auto mb-4" weight="regular" />
           <p>No findings available. Run a full audit to see detailed findings.</p>
         </div>
@@ -318,19 +319,19 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
     return (
       <div className="space-y-3">
         {sorted.map((f, i) => (
-          <div key={i} className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4">
+          <div key={i} className="rounded-lg border border-line bg-surface p-4">
             <div className="flex items-center gap-2 mb-2">
               <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", severityColor(f.severity))}>
                 {f.severity}
               </span>
-              <span className="text-xs text-neutral-400 capitalize">{f.category}</span>
+              <span className="text-xs text-fg-muted capitalize">{f.category}</span>
             </div>
-            <p className="font-medium text-neutral-900 dark:text-neutral-100">{f.finding}</p>
-            {f.evidence && <p className="mt-1 text-sm text-neutral-500">{f.evidence}</p>}
+            <p className="font-medium text-fg">{f.finding}</p>
+            {f.evidence && <p className="mt-1 text-sm text-fg-secondary">{f.evidence}</p>}
             {f.recommendation && (
-              <div className="mt-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-800/30 p-3">
-                <p className="text-sm text-indigo-700 dark:text-indigo-300"><strong>Recommendation:</strong> {f.recommendation}</p>
-                {f.impact_estimate && <p className="mt-1 text-xs text-indigo-500">Estimated impact: {f.impact_estimate}</p>}
+              <div className="mt-2 rounded-lg bg-accent-surface border border-accent p-3">
+                <p className="text-sm text-accent-strong"><strong>Recommendation:</strong> {f.recommendation}</p>
+                {f.impact_estimate && <p className="mt-1 text-xs text-accent-strong">Estimated impact: {f.impact_estimate}</p>}
               </div>
             )}
           </div>
@@ -342,7 +343,7 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
   function renderActions() {
     if (actionItems.length === 0) {
       return (
-        <div className="text-center py-20 text-neutral-400">
+        <div className="text-center py-20 text-fg-muted">
           <CheckCircleIcon className="h-12 w-12 mx-auto mb-4" weight="regular" />
           <p>No action items yet.</p>
         </div>
@@ -359,7 +360,7 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
           if (items.length === 0) return null;
           return (
             <div key={tier}>
-              <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 uppercase tracking-wider mb-3">
+              <h3 className="text-sm font-semibold text-fg mb-3">
                 {tierLabels[tier]} ({items.length})
               </h3>
               <div className="space-y-2">
@@ -369,8 +370,8 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
                     className={cn(
                       "flex items-start gap-3 rounded-lg border p-3",
                       item.status === "completed"
-                        ? "border-green-200 dark:border-green-800/30 bg-green-50/50 dark:bg-green-900/10"
-                        : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950",
+                        ? "border-success bg-success-surface"
+                        : "border-line bg-surface",
                     )}
                   >
                     <button
@@ -378,17 +379,17 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
                       className={cn(
                         "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
                         item.status === "completed"
-                          ? "bg-green-500 border-green-500 text-white"
-                          : "border-neutral-300 dark:border-neutral-600",
+                          ? "bg-success border-success text-on-inverse"
+                          : "border-line",
                       )}
                     >
                       {item.status === "completed" && <CheckCircleIcon className="h-3 w-3" weight="bold" />}
                     </button>
                     <div className="flex-1">
-                      <p className={cn("text-sm font-medium", item.status === "completed" && "line-through text-neutral-400")}>
+                      <p className={cn("text-sm font-medium", item.status === "completed" && "line-through text-fg-muted")}>
                         {item.title}
                       </p>
-                      {item.description && <p className="mt-0.5 text-xs text-neutral-500">{item.description}</p>}
+                      {item.description && <p className="mt-0.5 text-xs text-fg-secondary">{item.description}</p>}
                     </div>
                   </div>
                 ))}
@@ -403,7 +404,7 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
   function renderContent() {
     if (content.length === 0 && reports.length === 0) {
       return (
-        <div className="text-center py-20 text-neutral-400">
+        <div className="text-center py-20 text-fg-muted">
           <SparkleIcon className="h-12 w-12 mx-auto mb-4" weight="regular" />
           <p>No generated content yet. Use the Generate tab to create content.</p>
         </div>
@@ -413,18 +414,18 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
     return (
       <div className="space-y-4">
         {reports.map((r) => (
-          <div key={r.id} className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4">
+          <div key={r.id} className="rounded-lg border border-line bg-surface p-4">
             <div className="flex items-center gap-3">
-              <FileTextIcon className="h-6 w-6 text-indigo-500" weight="regular" />
+              <FileTextIcon className="h-6 w-6 text-accent-strong" weight="regular" />
               <div>
-                <p className="font-medium text-neutral-900 dark:text-neutral-100">{r.title}</p>
-                <p className="text-xs text-neutral-400">{r.report_type.toUpperCase()} · {new Date(r.created_at).toLocaleDateString()}</p>
+                <p className="font-medium text-fg">{r.title}</p>
+                <p className="text-xs text-fg-muted">{r.report_type.toUpperCase()} · {new Date(r.created_at).toLocaleDateString()}</p>
               </div>
             </div>
             {r.content && (
               <details className="mt-3">
-                <summary className="text-sm text-indigo-500 cursor-pointer">View Report</summary>
-                <div className="mt-2 prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-sm text-neutral-600 dark:text-neutral-400 max-h-96 overflow-y-auto rounded-lg bg-neutral-50 dark:bg-neutral-800 p-4">
+                <summary className="text-sm text-accent-strong cursor-pointer">View Report</summary>
+                <div className="mt-2 prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-sm text-fg-secondary max-h-96 overflow-y-auto rounded-lg bg-subtle p-4">
                   {r.content}
                 </div>
               </details>
@@ -432,17 +433,17 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
           </div>
         ))}
         {content.map((c) => (
-          <div key={c.id} className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4">
+          <div key={c.id} className="rounded-lg border border-line bg-surface p-4">
             <div className="flex items-center gap-3">
-              <SparkleIcon className="h-6 w-6 text-amber-500" weight="regular" />
+              <SparkleIcon className="h-6 w-6 text-warning" weight="regular" />
               <div>
-                <p className="font-medium text-neutral-900 dark:text-neutral-100">{c.title}</p>
-                <p className="text-xs text-neutral-400">{c.content_type.replace(/_/g, " ")} · {new Date(c.created_at).toLocaleDateString()}</p>
+                <p className="font-medium text-fg">{c.title}</p>
+                <p className="text-xs text-fg-muted">{c.content_type.replace(/_/g, " ")} · {new Date(c.created_at).toLocaleDateString()}</p>
               </div>
             </div>
             <details className="mt-3">
-              <summary className="text-sm text-indigo-500 cursor-pointer">View Content</summary>
-              <pre className="mt-2 text-xs text-neutral-600 dark:text-neutral-400 max-h-96 overflow-y-auto rounded-lg bg-neutral-50 dark:bg-neutral-800 p-4 whitespace-pre-wrap">
+              <summary className="text-sm text-accent-strong cursor-pointer">View Content</summary>
+              <pre className="mt-2 text-xs text-fg-secondary max-h-96 overflow-y-auto rounded-lg bg-subtle p-4 whitespace-pre-wrap">
                 {JSON.stringify(c.content, null, 2)}
               </pre>
             </details>
@@ -469,15 +470,15 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
             onClick={() => handleGenerate(gen.id)}
             disabled={generating !== null}
             className={cn(
-              "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 text-left hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors",
-              generating === gen.id && "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-900/10",
+              "rounded-lg border border-line bg-surface p-4 text-left hover:border-accent transition-colors",
+              generating === gen.id && "border-accent bg-accent-surface",
             )}
           >
-            <gen.icon className="h-8 w-8 text-indigo-500 mb-3" weight="regular" />
-            <p className="font-medium text-neutral-900 dark:text-neutral-100">{gen.label}</p>
-            <p className="mt-1 text-sm text-neutral-500">{gen.description}</p>
+            <gen.icon className="h-8 w-8 text-accent-strong mb-3" weight="regular" />
+            <p className="font-medium text-fg">{gen.label}</p>
+            <p className="mt-1 text-sm text-fg-secondary">{gen.description}</p>
             {generating === gen.id && (
-              <div className="mt-3 flex items-center gap-2 text-sm text-indigo-500">
+              <div className="mt-3 flex items-center gap-2 text-sm text-accent-strong">
                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
                   <SparkleIcon className="h-4 w-4" weight="fill" />
                 </motion.div>
@@ -501,7 +502,7 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 lg:p-8">
+    <div className="flex flex-col gap-6 p-6 lg:p-6">
       <PageHeader title={audit.business_name || audit.website_url}>
         <Button variant="ghost" onClick={() => router.push("/dashboard/marketing")}>
           <ArrowLeftIcon className="h-4 w-4 mr-2" weight="bold" />
@@ -510,8 +511,8 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
       </PageHeader>
 
       {/* URL + meta */}
-      <div className="flex items-center gap-3 text-sm text-neutral-500">
-        <a href={audit.website_url} target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">
+      <div className="flex items-center gap-3 text-sm text-fg-secondary">
+        <a href={audit.website_url} target="_blank" rel="noopener noreferrer" className="text-accent-strong hover:underline">
           {audit.website_url}
         </a>
         <span>·</span>
@@ -521,7 +522,7 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-1 overflow-x-auto">
+      <div className="flex items-center gap-1 rounded border border-line bg-subtle p-1 overflow-x-auto">
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
@@ -531,8 +532,8 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
               className={cn(
                 "relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded transition-colors whitespace-nowrap",
                 isActive
-                  ? "bg-white dark:bg-neutral-950 text-neutral-950 dark:text-neutral-50 shadow-sm"
-                  : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50",
+                  ? "bg-surface text-fg"
+                  : "text-fg-secondary hover:text-fg",
               )}
             >
               {tab.label}
