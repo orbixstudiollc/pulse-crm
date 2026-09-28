@@ -197,48 +197,43 @@ export async function scrapeWebsiteForMemory(url: string): Promise<{
   siteName?: string;
   error?: string;
 }> {
+  await getOrgId();
   try {
     // Validate & normalize URL, then guard against SSRF (private IPs, non-http(s) schemes)
     let normalizedUrl = url.trim();
     if (!normalizedUrl.match(/^https?:\/\//i)) {
       normalizedUrl = "https://" + normalizedUrl;
     }
-    const { assertSafeFetchUrl } = await import("@/lib/security");
-    let safeUrl: URL;
+    const { assertSafeFetchTarget } = await import("@/lib/security/fetch-target");
+    let target;
     try {
-      safeUrl = assertSafeFetchUrl(normalizedUrl);
+      target = await assertSafeFetchTarget(normalizedUrl);
     } catch {
       return { error: "Invalid URL. Only public http(s) URLs are allowed." };
     }
 
-    // Fetch with timeout
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    // Fetch with timeout, pinned to the DNS-checked addresses (no redirects)
+    const { fetchPinnedText } = await import("@/lib/security/safe-fetch");
+    const headers = {
+      "User-Agent": "Mozilla/5.0 (compatible; PulseCRM/1.0; +https://pulse-crm.com)",
+      "Accept": "text/html,application/xhtml+xml",
+    };
 
-    let response: Response;
+    let response: { status: number; ok: boolean; text: string };
     try {
-      response = await fetch(safeUrl.toString(), {
-        signal: controller.signal,
-        redirect: "manual",
-        headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; PulseCRM/1.0; +https://pulse-crm.com)",
-          "Accept": "text/html,application/xhtml+xml",
-        },
-      });
+      response = await fetchPinnedText(target, { timeoutMs: 10000, headers });
     } catch (err: unknown) {
-      clearTimeout(timeout);
-      if (err instanceof Error && err.name === "AbortError") {
+      if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
         return { error: "Website took too long to respond. Please try again." };
       }
       return { error: "Could not reach the website. Please check the URL and try again." };
     }
-    clearTimeout(timeout);
 
     if (!response.ok) {
       return { error: `Website returned an error (${response.status}). Please check the URL.` };
     }
 
-    const html = await response.text();
+    const html = response.text;
     const text = htmlToText(html);
 
     if (text.length < 50) {

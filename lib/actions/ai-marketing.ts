@@ -5,6 +5,7 @@ import { getAIClient, callAIWithFallback } from "@/lib/ai/client";
 import { getModelForFeature } from "@/lib/ai/models";
 import { revalidatePath } from "next/cache";
 import type { Json } from "@/types/database";
+import { getOrgId } from "./helpers";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -250,36 +251,34 @@ Return the full markdown content as a string.`,
 // ── Website Content Fetcher ──────────────────────────────────────────────────
 
 export async function fetchWebsiteContent(url: string): Promise<string> {
-  // SECURITY: refuse to fetch private/loopback/link-local hosts or non-http(s)
-  // schemes to prevent SSRF against internal services/metadata endpoints.
-  let safeUrl: URL;
+  await getOrgId(); // outside try: the auth redirect must not be swallowed
+  // SECURITY: refuse private/loopback/link-local hosts (after DNS resolution)
+  // or non-http(s) schemes to prevent SSRF against internal services.
+  let target;
   try {
-    const { assertSafeFetchUrl } = await import("@/lib/security");
-    safeUrl = assertSafeFetchUrl(url);
+    const { assertSafeFetchTarget } = await import("@/lib/security/fetch-target");
+    target = await assertSafeFetchTarget(url);
   } catch (err) {
     return `[Blocked: ${err instanceof Error ? err.message : "unsafe URL"}]`;
   }
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
-
-    const res = await fetch(safeUrl, {
-      signal: controller.signal,
-      redirect: "manual", // don't follow redirects to private hosts
+    // Connect only to the DNS-checked addresses; redirects are never followed.
+    const { fetchPinnedText } = await import("@/lib/security/safe-fetch");
+    const res = await fetchPinnedText(target, {
+      timeoutMs: 10000,
       headers: {
         "User-Agent": "Mozilla/5.0 (compatible; PulseCRM/1.0; Marketing Audit)",
         "Accept": "text/html,application/xhtml+xml",
       },
     });
-    clearTimeout(timeout);
 
     if (res.status >= 300 && res.status < 400) {
       return `[Blocked: redirect not followed]`;
     }
     if (!res.ok) return `[Failed to fetch: HTTP ${res.status}]`;
 
-    const html = await res.text();
+    const html = res.text;
 
     // Extract useful content from HTML (strip scripts, styles, keep text)
     const cleaned = html
