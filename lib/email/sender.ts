@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import nodemailer, { type SendMailOptions } from "nodemailer";
 import { createAdminClient } from "@/lib/supabase/server";
 import { decrypt } from "@/lib/utils/encryption";
 import { openOAuthTokens, sealOAuthTokens } from "@/lib/email/oauth-tokens";
@@ -290,7 +290,7 @@ async function sendViaSMTP(
     ? `"${account.display_name}" <${account.email_address}>`
     : account.email_address;
 
-  const mailOpts: nodemailer.SendMailOptions = {
+  const mailOpts: SendMailOptions = {
     from,
     to: opts.to,
     subject: opts.subject,
