@@ -83,14 +83,3 @@ export const corsHeaders = {
   "Access-Control-Allow-Headers":
     "x-api-key, x-organization-id, Content-Type",
 };
-
-/**
- * @deprecated Use `authenticatePublicRequest` instead — it also resolves the
- * org id and enforces a constant-time compare.
- */
-export function validateApiKey(request: NextRequest): boolean {
-  const expected = process.env.PULSE_CRM_API_KEY;
-  if (!expected) return false;
-  const apiKey = request.headers.get("x-api-key") ?? "";
-  return timingSafeEqualStr(apiKey, expected);
-}
