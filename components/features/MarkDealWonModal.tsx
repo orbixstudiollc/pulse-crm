@@ -37,20 +37,20 @@ export function MarkDealWonModal({
   return (
     <Modal open={open} onClose={onClose}>
       {/* Header */}
-      <div className="flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-800">
-        <h2 className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
+      <div className="flex h-12 items-center justify-between px-4 border-b border-divider">
+        <h2 className="text-heading-md text-fg">
           Mark Deal as Won
         </h2>
         <button
           onClick={onClose}
-          className="flex h-9 w-9 items-center justify-center rounded text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:bg-muted hover:text-fg transition-colors"
         >
           <X size={20} />
         </button>
       </div>
 
       {/* Body */}
-      <div className="p-5 space-y-5">
+      <div className="p-4 space-y-4">
         {/* Final Deal Value */}
         <Input
           label="Final Deal Value"
@@ -78,8 +78,8 @@ export function MarkDealWonModal({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end gap-3 p-5 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-        <Button variant="outline" onClick={onClose}>
+      <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-divider bg-subtle">
+        <Button variant="ghost" className="shrink-0" onClick={onClose}>
           Cancel
         </Button>
         <Button onClick={handleConfirm}>Confirm Won</Button>

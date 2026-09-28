@@ -51,7 +51,7 @@ function renderInline(text: string) {
       return (
         <code
           key={i}
-          className="px-1 py-0.5 rounded bg-neutral-200 dark:bg-neutral-700 text-xs font-mono"
+          className="px-1 py-0.5 rounded-sm bg-code text-xs font-mono"
         >
           {part.slice(1, -1)}
         </code>
@@ -95,7 +95,7 @@ function renderMarkdown(text: string) {
     if (trimmed.startsWith("- ")) {
       elements.push(
         <div key={lineIdx} className="flex gap-2 pl-1 my-0.5">
-          <span className="text-neutral-400 shrink-0 mt-0.5">•</span>
+          <span className="text-fg-muted shrink-0 mt-0.5">•</span>
           <span>{renderInline(trimmed.slice(2))}</span>
         </div>
       );
@@ -107,7 +107,7 @@ function renderMarkdown(text: string) {
     if (numMatch) {
       elements.push(
         <div key={lineIdx} className="flex gap-2 pl-1 my-0.5">
-          <span className="text-neutral-400 shrink-0 mt-0.5 text-xs w-4 text-right">
+          <span className="text-fg-muted shrink-0 mt-0.5 text-xs w-4 text-right">
             {numMatch[1]}.
           </span>
           <span>{renderInline(trimmed.slice(numMatch[0].length))}</span>
@@ -154,16 +154,16 @@ function ToolResultCard({ toolName, result }: { toolName: string; result: string
   const title = lines[0]?.replace(/^\*\*|\*\*$/g, "") || toolName;
 
   return (
-    <div className="my-1.5 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800/50 p-2.5 text-xs">
-      <div className="font-semibold text-neutral-900 dark:text-neutral-100 mb-1.5 text-[11px]">
+    <div className="my-1.5 rounded-md border border-line bg-surface p-2.5 text-xs">
+      <div className="font-semibold text-fg mb-1.5 text-xs">
         {title}
       </div>
-      <div className="space-y-0.5 text-neutral-600 dark:text-neutral-400">
+      <div className="space-y-0.5 text-fg-secondary">
         {lines.slice(1).map((line, i) => {
           if (line.startsWith("- ")) {
             return (
               <div key={i} className="flex gap-1.5 pl-1">
-                <span className="text-neutral-400 shrink-0">•</span>
+                <span className="text-fg-muted shrink-0">•</span>
                 <span>{line.slice(2)}</span>
               </div>
             );
@@ -173,8 +173,8 @@ function ToolResultCard({ toolName, result }: { toolName: string; result: string
             const val = rest.join(":").trim();
             return (
               <div key={i} className="flex justify-between gap-2">
-                <span className="text-neutral-500 shrink-0">{key}:</span>
-                <span className="text-neutral-900 dark:text-neutral-100 font-medium text-right">
+                <span className="text-fg-secondary shrink-0">{key}:</span>
+                <span className="text-fg font-medium text-right">
                   {val}
                 </span>
               </div>
@@ -182,7 +182,7 @@ function ToolResultCard({ toolName, result }: { toolName: string; result: string
           }
           if (line.trim()) {
             return (
-              <div key={i} className="text-neutral-700 dark:text-neutral-300">
+              <div key={i} className="text-fg">
                 {line}
               </div>
             );
@@ -217,19 +217,19 @@ export function AIChatMessages({
   if (messages.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-neutral-100 to-neutral-200 dark:from-neutral-800 dark:to-neutral-700 flex items-center justify-center mb-4 shadow-sm">
-          <SparkleIcon className="w-7 h-7 text-neutral-950 dark:text-neutral-50" />
+        <div className="w-10 h-10 rounded-md bg-accent-surface flex items-center justify-center mb-4">
+          <SparkleIcon className="w-5 h-5 text-accent-on-surface" />
         </div>
-        <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 mb-1">
+        <h3 className="text-heading-md text-fg mb-1">
           Pulse AI Copilot
         </h3>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-[260px] mb-1">
+        <p className="text-xs text-fg-secondary max-w-[260px] mb-1">
           Your intelligent sales assistant. Ask anything about your pipeline,
           leads, or deals.
         </p>
-        <p className="text-[10px] text-neutral-400 dark:text-neutral-500 mb-5">
+        <p className="text-xs text-fg-muted mb-5">
           Press{" "}
-          <kbd className="px-1 py-0.5 rounded bg-neutral-200 dark:bg-neutral-700 text-[9px] font-mono">
+          <kbd className="px-1 py-0.5 rounded-sm bg-code text-xs font-mono">
             /
           </kbd>{" "}
           for quick commands
@@ -239,9 +239,9 @@ export function AIChatMessages({
             <button
               key={suggestion}
               onClick={() => onSuggestionClick?.(suggestion)}
-              className="w-full flex items-center gap-2.5 text-left text-xs px-3.5 py-2.5 rounded border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-600 transition-all"
+              className="w-full flex items-center gap-2.5 text-left text-xs px-3 py-2 rounded-md border border-line text-fg-secondary hover:bg-muted hover:text-fg transition-colors"
             >
-              <SparkleIcon className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+              <SparkleIcon className="w-3.5 h-3.5 text-fg-muted shrink-0" />
               <span>{suggestion}</span>
             </button>
           ))}
@@ -266,14 +266,14 @@ export function AIChatMessages({
             }`}
           >
             {message.role === "assistant" && (
-              <div className="w-6 h-6 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center shrink-0 mt-1">
-                <SparkleIcon className="w-3.5 h-3.5 text-neutral-950 dark:text-neutral-50" />
+              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shrink-0 mt-1">
+                <SparkleIcon className="w-3.5 h-3.5 text-fg" />
               </div>
             )}
             <div
               className={`max-w-[80%] ${
                 message.role === "user"
-                  ? "rounded-xl px-3 py-2 text-sm bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
+                  ? "rounded-lg px-3 py-2 text-sm bg-accent-surface text-fg"
                   : ""
               }`}
             >
@@ -300,9 +300,9 @@ export function AIChatMessages({
                       return (
                         <div
                           key={tp.toolCallId}
-                          className="my-1 flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400"
+                          className="my-1 flex items-center gap-2 text-xs text-fg-secondary"
                         >
-                          <div className="w-3 h-3 border-2 border-neutral-400 border-t-transparent rounded-full animate-spin" />
+                          <div className="w-3 h-3 border border-fg-muted border-t-transparent rounded-full animate-spin" />
                           {getToolLoadingMessage(tp.toolName)}
                         </div>
                       );
@@ -313,7 +313,7 @@ export function AIChatMessages({
               )}
               {/* Text content */}
               {text && message.role === "assistant" && (
-                <div className="rounded-xl px-3 py-2 text-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100">
+                <div className="rounded-lg px-3 py-2 text-sm bg-muted text-fg">
                   <div className="whitespace-pre-wrap break-words leading-relaxed">
                     {renderMarkdown(text)}
                   </div>
@@ -326,8 +326,8 @@ export function AIChatMessages({
               )}
             </div>
             {message.role === "user" && (
-              <div className="w-6 h-6 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center shrink-0 mt-1">
-                <UserIcon className="w-3.5 h-3.5 text-neutral-600 dark:text-neutral-400" />
+              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shrink-0 mt-1">
+                <UserIcon className="w-3.5 h-3.5 text-fg-secondary" />
               </div>
             )}
           </div>
@@ -336,21 +336,21 @@ export function AIChatMessages({
 
       {isLoading && (
         <div className="flex gap-2 justify-start">
-          <div className="w-6 h-6 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center shrink-0">
-            <SparkleIcon className="w-3.5 h-3.5 text-neutral-950 dark:text-neutral-50 animate-pulse" />
+          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shrink-0">
+            <SparkleIcon className="w-3.5 h-3.5 text-fg animate-pulse" />
           </div>
-          <div className="bg-neutral-100 dark:bg-neutral-800 rounded-xl px-3 py-2">
+          <div className="bg-muted rounded-lg px-3 py-2">
             <div className="flex space-x-1">
               <div
-                className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"
+                className="w-2 h-2 bg-fg-muted rounded-full animate-bounce"
                 style={{ animationDelay: "0ms" }}
               />
               <div
-                className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"
+                className="w-2 h-2 bg-fg-muted rounded-full animate-bounce"
                 style={{ animationDelay: "150ms" }}
               />
               <div
-                className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"
+                className="w-2 h-2 bg-fg-muted rounded-full animate-bounce"
                 style={{ animationDelay: "300ms" }}
               />
             </div>

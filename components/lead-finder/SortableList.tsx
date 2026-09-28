@@ -83,7 +83,7 @@ function SortableRow({
           aria-label="Drag to reorder"
           {...attributes}
           {...listeners}
-          className="shrink-0 cursor-grab select-none rounded-md p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 dark:focus-visible:ring-neutral-50 active:cursor-grabbing"
+          className="shrink-0 cursor-grab select-none rounded-md p-1 text-fg-muted hover:bg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent active:cursor-grabbing"
         >
           <DotsSixVerticalIcon size={14} />
         </button>

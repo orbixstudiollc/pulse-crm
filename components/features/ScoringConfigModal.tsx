@@ -58,11 +58,11 @@ function SectionLabel({
 }) {
   return (
     <div className="mb-3">
-      <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+      <p className="text-sm font-medium text-fg">
         {children}
       </p>
       {description && (
-        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+        <p className="text-xs text-fg-secondary mt-0.5">
           {description}
         </p>
       )}
@@ -83,7 +83,7 @@ function WeightSlider({
 }) {
   return (
     <div className="flex items-center gap-4">
-      <label className="text-sm text-neutral-950 dark:text-neutral-50 w-32 shrink-0">
+      <label className="text-sm text-fg w-32 shrink-0">
         {label}
       </label>
       <input
@@ -93,9 +93,9 @@ function WeightSlider({
         step={5}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="flex-1 h-1.5 appearance-none rounded-full bg-neutral-200 dark:bg-neutral-700 accent-neutral-950 dark:accent-neutral-50 cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-neutral-950 dark:[&::-webkit-slider-thumb]:bg-neutral-50"
+        className="flex-1 h-1.5 appearance-none rounded-full bg-active accent-accent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-inverse"
       />
-      <span className="text-sm tabular-nums font-medium text-neutral-950 dark:text-neutral-50 w-10 text-right">
+      <span className="text-sm tabular-nums font-medium text-fg w-10 text-right">
         {value}%
       </span>
     </div>
@@ -115,7 +115,7 @@ function SourceSlider({
 }) {
   return (
     <div className="flex items-center gap-4">
-      <label className="text-sm text-neutral-950 dark:text-neutral-50 w-28 shrink-0">
+      <label className="text-sm text-fg w-28 shrink-0">
         {label}
       </label>
       <input
@@ -125,9 +125,9 @@ function SourceSlider({
         step={5}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="flex-1 h-1.5 appearance-none rounded-full bg-neutral-200 dark:bg-neutral-700 accent-neutral-950 dark:accent-neutral-50 cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-neutral-950 dark:[&::-webkit-slider-thumb]:bg-neutral-50"
+        className="flex-1 h-1.5 appearance-none rounded-full bg-active accent-accent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-inverse"
       />
-      <span className="text-sm tabular-nums text-neutral-500 dark:text-neutral-400 w-7 text-right">
+      <span className="text-sm tabular-nums text-fg-secondary w-7 text-right">
         {value}
       </span>
     </div>
@@ -238,30 +238,30 @@ export function ScoringConfigModal({
     <Modal open={open} onClose={onClose} className="sm:max-w-2xl">
       <div>
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 p-5">
+        <div className="flex items-center justify-between border-b border-divider px-4 py-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded bg-neutral-100 dark:bg-neutral-800">
-              <Faders size={18} className="text-neutral-600 dark:text-neutral-400" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
+              <Faders size={18} className="text-fg-secondary" />
             </div>
             <div>
-              <h2 className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
+              <h2 className="text-heading-md text-fg">
                 Scoring Configuration
               </h2>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="text-xs text-fg-secondary">
                 {profile?.name ?? "Default"} profile
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
           >
-            <XIcon size={20} className="text-neutral-500" />
+            <XIcon size={20} className="text-fg-secondary" />
           </button>
         </div>
 
         {/* Scrollable body */}
-        <div className="max-h-[60vh] overflow-y-auto p-5 space-y-6">
+        <div className="max-h-[60vh] overflow-y-auto p-4 space-y-6">
           {/* ── Weight Sliders ──────────────────────────────────── */}
           <div>
             <SectionLabel description="Weights must add up to 100%">
@@ -299,10 +299,10 @@ export function ScoringConfigModal({
             {/* Weight sum indicator */}
             <div
               className={cn(
-                "mt-3 flex items-center gap-2 rounded px-3 py-2 text-sm",
+                "mt-3 flex items-center gap-2 rounded-md px-3 py-2 text-sm",
                 isWeightValid
-                  ? "bg-green-50 dark:bg-green-400/10 text-green-700 dark:text-green-400"
-                  : "bg-red-50 dark:bg-red-400/10 text-red-700 dark:text-red-400",
+                  ? "bg-success-surface text-success"
+                  : "bg-danger-surface text-danger",
               )}
             >
               {!isWeightValid && <Warning size={16} weight="fill" />}
@@ -341,17 +341,17 @@ export function ScoringConfigModal({
                   type="button"
                   onClick={() => toggleCompanySize(size)}
                   className={cn(
-                    "flex items-center gap-2.5 rounded border px-3 py-2.5 text-sm text-left transition-colors",
+                    "flex items-center gap-2.5 rounded-md border px-3 py-2 text-sm text-left transition-colors",
                     targetCompanySizes.includes(size)
-                      ? "border-neutral-950 dark:border-neutral-50 bg-neutral-50 dark:bg-neutral-800"
-                      : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700",
+                      ? "border-inverse bg-subtle"
+                      : "border-line hover:border-fg-muted",
                   )}
                 >
                   <Checkbox
                     checked={targetCompanySizes.includes(size)}
                     onChange={() => toggleCompanySize(size)}
                   />
-                  <span className="text-neutral-950 dark:text-neutral-50">
+                  <span className="text-fg">
                     {size}
                   </span>
                 </button>
@@ -378,7 +378,7 @@ export function ScoringConfigModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 p-5">
+        <div className="flex items-center justify-end gap-2 border-t border-divider bg-subtle px-4 py-3">
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>

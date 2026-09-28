@@ -44,25 +44,25 @@ const DIMENSION_CONFIG: {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function scoreColor(score: number): string {
-  if (score >= 70) return "text-emerald-500";
-  if (score >= 40) return "text-amber-500";
-  return "text-red-500";
+  if (score >= 70) return "text-success";
+  if (score >= 40) return "text-warning";
+  return "text-danger";
 }
 
 function scoreRingColor(score: number): string {
-  if (score >= 70) return "stroke-emerald-500";
-  if (score >= 40) return "stroke-amber-500";
-  return "stroke-red-500";
+  if (score >= 70) return "stroke-success";
+  if (score >= 40) return "stroke-warning";
+  return "stroke-danger";
 }
 
 function scoreTrackColor(): string {
-  return "stroke-neutral-200 dark:stroke-neutral-700";
+  return "stroke-chart-grid";
 }
 
 function barColor(value: number): string {
-  if (value >= 70) return "bg-emerald-500";
-  if (value >= 40) return "bg-amber-500";
-  return "bg-red-500";
+  if (value >= 70) return "bg-success-fill";
+  if (value >= 40) return "bg-warning";
+  return "bg-danger";
 }
 
 // ── Score Circle ─────────────────────────────────────────────────────────────
@@ -99,14 +99,14 @@ function ScoreCircle({ score }: { score: number }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <motion.span
-          className={`text-3xl font-bold ${scoreColor(score)}`}
+          className={`text-xl font-semibold ${scoreColor(score)}`}
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3, duration: 0.4 }}
         >
           {score}
         </motion.span>
-        <span className="text-xs text-neutral-500 dark:text-neutral-400">
+        <span className="text-xs text-fg-secondary">
           / 100
         </span>
       </div>
@@ -120,14 +120,14 @@ function DimensionBar({ label, value }: { label: string; value: number }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+        <span className="text-sm text-fg-secondary">
           {label}
         </span>
-        <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+        <span className="text-sm font-medium text-fg">
           {value}
         </span>
       </div>
-      <div className="h-2 w-full rounded-full bg-neutral-200 dark:bg-neutral-700">
+      <div className="h-2 w-full rounded-full bg-active">
         <motion.div
           className={`h-2 rounded-full ${barColor(value)}`}
           initial={{ width: 0 }}
@@ -151,14 +151,14 @@ function LoadingSpinner({ leadName }: { leadName: string }) {
         <SparkleIcon
           size={36}
           weight="fill"
-          className="text-violet-500"
+          className="text-accent-strong"
         />
       </motion.div>
       <div className="text-center">
-        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+        <p className="text-sm font-medium text-fg">
           Analyzing {leadName}...
         </p>
-        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+        <p className="mt-1 text-xs text-fg-secondary">
           AI is evaluating lead data and scoring dimensions
         </p>
       </div>
@@ -217,7 +217,7 @@ export function AIScoreDrawer({
         <>
           {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 z-40 bg-black/50"
+            className="fixed inset-0 z-40 bg-black/40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -226,34 +226,34 @@ export function AIScoreDrawer({
 
           {/* Drawer */}
           <motion.aside
-            className="fixed right-0 top-0 z-50 flex h-full w-[420px] max-w-full flex-col border-l border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
+            className="fixed right-0 top-0 z-50 flex h-full w-[420px] max-w-full flex-col border-l border-line bg-surface"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-700">
+            <div className="flex h-12 shrink-0 items-center justify-between border-b border-divider px-4">
               <div className="flex items-center gap-2">
                 <SparkleIcon
                   size={20}
                   weight="fill"
-                  className="text-violet-500"
+                  className="text-accent-strong"
                 />
-                <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                <h2 className="text-heading-md text-fg">
                   AI Lead Score
                 </h2>
               </div>
               <button
                 onClick={onClose}
-                className="rounded p-1.5 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary transition-colors hover:bg-muted hover:text-fg"
               >
                 <XIcon size={18} />
               </button>
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto px-6 py-5">
+            <div className="flex-1 overflow-y-auto p-4">
               {/* Loading */}
               {state.status === "loading" && (
                 <LoadingSpinner leadName={leadName} />
@@ -262,23 +262,23 @@ export function AIScoreDrawer({
               {/* Error */}
               {state.status === "error" && (
                 <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-danger-surface">
                     <WarningIcon
                       size={24}
-                      className="text-red-500"
+                      className="text-danger"
                     />
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                    <p className="text-sm font-medium text-fg">
                       Scoring Failed
                     </p>
-                    <p className="mt-1 max-w-[280px] text-xs text-neutral-500 dark:text-neutral-400">
+                    <p className="mt-1 max-w-[280px] text-xs text-fg-secondary">
                       {state.message}
                     </p>
                   </div>
                   <button
                     onClick={runScoring}
-                    className="mt-2 rounded bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-700"
+                    className="mt-2 h-8 rounded-md bg-accent-strong px-3 text-sm font-medium text-on-inverse transition-opacity hover:opacity-90"
                   >
                     Retry
                   </button>
@@ -296,19 +296,19 @@ export function AIScoreDrawer({
                   {/* Lead name + badge */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                      <p className="text-sm text-fg-secondary">
                         Lead
                       </p>
-                      <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                      <p className="text-base font-semibold text-fg">
                         {leadName}
                       </p>
                     </div>
                     {currentScore != null && (
                       <div className="text-right">
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                        <p className="text-xs text-fg-secondary">
                           Previous
                         </p>
-                        <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
+                        <p className="text-sm font-medium text-fg-secondary">
                           {currentScore}
                         </p>
                       </div>
@@ -322,18 +322,18 @@ export function AIScoreDrawer({
 
                   {/* Score applied badge */}
                   <div className="flex justify-center">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-success-surface px-2 py-0.5 text-xs font-medium text-success">
                       <CheckCircleIcon size={14} weight="fill" />
                       Score Applied
                     </span>
                   </div>
 
                   {/* Divider */}
-                  <div className="border-t border-neutral-200 dark:border-neutral-700" />
+                  <div className="border-t border-divider" />
 
                   {/* Dimension breakdown */}
                   <div>
-                    <h3 className="mb-3 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    <h3 className="mb-3 text-heading-sm text-fg">
                       Score Breakdown
                     </h3>
                     <div className="space-y-3">
@@ -348,15 +348,15 @@ export function AIScoreDrawer({
                   </div>
 
                   {/* Divider */}
-                  <div className="border-t border-neutral-200 dark:border-neutral-700" />
+                  <div className="border-t border-divider" />
 
                   {/* Reasoning */}
                   {state.result.reasoning && (
                     <div>
-                      <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                      <h3 className="mb-2 text-heading-sm text-fg">
                         AI Reasoning
                       </h3>
-                      <p className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+                      <p className="text-sm leading-relaxed text-fg-secondary">
                         {state.result.reasoning}
                       </p>
                     </div>
@@ -365,14 +365,14 @@ export function AIScoreDrawer({
                   {/* Recommendations */}
                   {state.result.recommendations.length > 0 && (
                     <div>
-                      <h3 className="mb-2 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                      <h3 className="mb-2 text-heading-sm text-fg">
                         Recommendations
                       </h3>
                       <ul className="space-y-2">
                         {state.result.recommendations.map((rec, i) => (
                           <li key={i} className="flex items-start gap-2">
-                            <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-violet-500" />
-                            <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                            <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-accent-strong" />
+                            <span className="text-sm text-fg-secondary">
                               {rec}
                             </span>
                           </li>

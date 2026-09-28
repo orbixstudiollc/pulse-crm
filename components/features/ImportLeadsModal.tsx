@@ -467,14 +467,14 @@ export function ImportLeadsModal({
 
   return (
     <Modal open={open} onClose={handleClose} className="max-w-2xl">
-      <div className="p-6">
+      <div className="p-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+            <h2 className="text-heading-md text-fg">
               Import Leads
             </h2>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
+            <p className="text-sm text-fg-secondary mt-0.5">
               {step === "upload" && "Upload a CSV file to import leads"}
               {step === "mapping" && "Map CSV columns to lead fields"}
               {step === "preview" && "Review data before importing"}
@@ -485,14 +485,14 @@ export function ImportLeadsModal({
           </div>
           <button
             onClick={handleClose}
-            className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
           >
-            <XIcon size={20} className="text-neutral-400" />
+            <XIcon size={20} className="text-fg-secondary" />
           </button>
         </div>
 
         {/* Step Indicator */}
-        <div className="flex items-center gap-2 mb-6">
+        <div className="flex items-center gap-2 mb-4">
           {["Upload", "Map Fields", "Import", "AI Process"].map((label, i) => {
             const stepIndex =
               step === "upload"
@@ -507,10 +507,10 @@ export function ImportLeadsModal({
                 <div
                   className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
                     i < stepIndex
-                      ? "bg-emerald-500 text-white"
+                      ? "bg-success-fill text-on-inverse"
                       : i === stepIndex
-                        ? "bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900"
-                        : "bg-neutral-100 dark:bg-neutral-800 text-neutral-400"
+                        ? "bg-inverse text-on-inverse"
+                        : "bg-muted text-fg-muted"
                   }`}
                 >
                   {i < stepIndex ? (
@@ -524,14 +524,14 @@ export function ImportLeadsModal({
                 <span
                   className={`text-xs font-medium ${
                     i <= stepIndex
-                      ? "text-neutral-950 dark:text-neutral-50"
-                      : "text-neutral-400"
+                      ? "text-fg"
+                      : "text-fg-muted"
                   }`}
                 >
                   {label}
                 </span>
                 {i < 3 && (
-                  <div className="w-6 h-px bg-neutral-200 dark:bg-neutral-700" />
+                  <div className="w-6 h-px bg-active" />
                 )}
               </div>
             );
@@ -542,10 +542,10 @@ export function ImportLeadsModal({
         {step === "upload" && (
           <div className="space-y-4">
             <div
-              className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
+              className={`relative border border-dashed rounded-lg p-8 text-center transition-colors ${
                 dragActive
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
-                  : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+                  ? "border-accent bg-accent-surface"
+                  : "border-line hover:border-fg-muted"
               }`}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -563,19 +563,19 @@ export function ImportLeadsModal({
                 className="hidden"
               />
               <div className="flex flex-col items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
                   <UploadIcon
                     size={24}
-                    className="text-neutral-400 dark:text-neutral-500"
+                    className="text-fg-muted"
                   />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                  <p className="text-sm font-medium text-fg">
                     {isPending
                       ? "Processing..."
                       : "Drop your CSV file here, or click to browse"}
                   </p>
-                  <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+                  <p className="text-xs text-fg-muted mt-1">
                     CSV files up to 25MB
                   </p>
                 </div>
@@ -583,13 +583,13 @@ export function ImportLeadsModal({
             </div>
 
             {/* Template Download */}
-            <div className="flex items-center justify-between p-3 rounded bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-800">
+            <div className="flex items-center justify-between p-3 rounded-md bg-subtle border border-line">
               <div className="flex items-center gap-2">
                 <FileTextIcon
                   size={18}
-                  className="text-neutral-400 dark:text-neutral-500"
+                  className="text-fg-muted"
                 />
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                <span className="text-sm text-fg-secondary">
                   Need a template?
                 </span>
               </div>
@@ -598,7 +598,7 @@ export function ImportLeadsModal({
                   e.stopPropagation();
                   handleDownloadTemplate();
                 }}
-                className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                className="text-sm font-medium text-accent-strong hover:underline flex items-center gap-1"
               >
                 <DownloadIcon size={14} />
                 Download CSV Template
@@ -611,10 +611,10 @@ export function ImportLeadsModal({
         {step === "mapping" && (
           <div className="space-y-4">
             {/* File info + AI Map button */}
-            <div className="flex items-center justify-between p-3 rounded bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-100 dark:border-neutral-800">
+            <div className="flex items-center justify-between p-3 rounded-md bg-subtle border border-line">
               <div className="flex items-center gap-2">
-                <FileTextIcon size={18} className="text-neutral-500" />
-                <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                <FileTextIcon size={18} className="text-fg-secondary" />
+                <span className="text-sm font-medium text-fg">
                   {fileName}
                 </span>
                 <Badge variant="info">{totalRows} rows</Badge>
@@ -622,7 +622,7 @@ export function ImportLeadsModal({
               <button
                 onClick={handleAIMapFields}
                 disabled={isAiMapping}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-blue-600 text-white text-xs font-medium hover:from-violet-700 hover:to-blue-700 disabled:opacity-50 transition-all"
+                className="flex h-7 items-center gap-1.5 px-2.5 rounded-md bg-inverse text-on-inverse text-xs font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
               >
                 {isAiMapping ? (
                   <CircleNotchIcon size={14} className="animate-spin" />
@@ -638,19 +638,19 @@ export function ImportLeadsModal({
               {headers.map((header) => (
                 <div
                   key={header}
-                  className="flex items-center gap-3 p-3 rounded bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800"
+                  className="flex items-center gap-3 p-3 rounded-md bg-surface border border-line"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                    <p className="text-sm font-medium text-fg truncate">
                       {header}
                     </p>
-                    <p className="text-xs text-neutral-400 mt-0.5 truncate">
+                    <p className="text-xs text-fg-muted mt-0.5 truncate">
                       e.g. {preview[0]?.[headers.indexOf(header)] || "—"}
                     </p>
                   </div>
                   <ArrowRightIcon
                     size={16}
-                    className="text-neutral-300 dark:text-neutral-600 flex-shrink-0"
+                    className="text-fg-disabled flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
                     <Select
@@ -672,11 +672,11 @@ export function ImportLeadsModal({
 
             {/* Mapping summary */}
             <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-500">
+              <span className="text-fg-secondary">
                 {getMappedFieldCount()} of {headers.length} columns mapped
               </span>
               {!hasRequiredField() && (
-                <span className="text-red-500 flex items-center gap-1">
+                <span className="text-danger flex items-center gap-1">
                   <WarningIcon size={14} />
                   Map Name or Email
                 </span>
@@ -686,22 +686,22 @@ export function ImportLeadsModal({
             {/* Preview Table */}
             {preview.length > 0 && (
               <div>
-                <p className="text-xs font-medium text-neutral-500 mb-2">
+                <p className="text-xs font-medium text-fg-secondary mb-2">
                   Preview (first {Math.min(preview.length, 3)} rows)
                 </p>
-                <div className="overflow-x-auto rounded border border-neutral-100 dark:border-neutral-800">
+                <div className="overflow-x-auto rounded-md border border-line">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
+                      <tr className="border-b border-row bg-muted">
                         {headers.map((h) => {
                           const mapped = fieldMapping[h];
                           return (
                             <th
                               key={h}
-                              className="px-3 py-2 text-left font-medium text-neutral-500 whitespace-nowrap"
+                              className="px-3 py-2 text-left font-medium text-fg-secondary whitespace-nowrap"
                             >
                               {mapped && mapped !== "__skip__" ? (
-                                <span className="text-emerald-600 dark:text-emerald-400">
+                                <span className="text-success">
                                   {
                                     LEAD_FIELD_OPTIONS.find(
                                       (o) => o.value === mapped
@@ -709,7 +709,7 @@ export function ImportLeadsModal({
                                   }
                                 </span>
                               ) : (
-                                <span className="text-neutral-300 dark:text-neutral-600 line-through">
+                                <span className="text-fg-disabled line-through">
                                   {h}
                                 </span>
                               )}
@@ -722,7 +722,7 @@ export function ImportLeadsModal({
                       {preview.slice(0, 3).map((row, ri) => (
                         <tr
                           key={ri}
-                          className="border-b border-neutral-50 dark:border-neutral-800/50 last:border-0"
+                          className="border-b border-row last:border-0"
                         >
                           {row.map((cell, ci) => {
                             const mapped = fieldMapping[headers[ci]];
@@ -731,8 +731,8 @@ export function ImportLeadsModal({
                                 key={ci}
                                 className={`px-3 py-1.5 whitespace-nowrap ${
                                   mapped && mapped !== "__skip__"
-                                    ? "text-neutral-700 dark:text-neutral-300"
-                                    : "text-neutral-300 dark:text-neutral-600"
+                                    ? "text-fg"
+                                    : "text-fg-disabled"
                                 }`}
                               >
                                 {cell || "—"}
@@ -778,13 +778,13 @@ export function ImportLeadsModal({
           <div className="flex flex-col items-center justify-center py-12 gap-4">
             <CircleNotchIcon
               size={40}
-              className="text-blue-500 animate-spin"
+              className="text-accent-strong animate-spin"
             />
             <div className="text-center">
-              <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              <p className="text-sm font-medium text-fg">
                 Importing leads...
               </p>
-              <p className="text-xs text-neutral-400 mt-1">
+              <p className="text-xs text-fg-muted mt-1">
                 This may take a moment for large files.
               </p>
             </div>
@@ -795,17 +795,17 @@ export function ImportLeadsModal({
         {step === "ai_processing" && aiProcessing && (
           <div className="space-y-6 py-4">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-14 h-14 rounded-full bg-violet-50 dark:bg-violet-950/30 flex items-center justify-center">
+              <div className="w-14 h-14 rounded-full bg-accent-surface flex items-center justify-center">
                 <BrainIcon
                   size={28}
-                  className="text-violet-500 animate-pulse"
+                  className="text-accent-strong animate-pulse"
                 />
               </div>
               <div className="text-center">
-                <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+                <p className="text-sm font-semibold text-fg">
                   AI Processing Imported Leads
                 </p>
-                <p className="text-xs text-neutral-400 mt-1">
+                <p className="text-xs text-fg-muted mt-1">
                   {importResult?.imported} leads being analyzed...
                 </p>
               </div>
@@ -828,25 +828,25 @@ export function ImportLeadsModal({
                 return (
                   <div
                     key={s}
-                    className={`flex items-center gap-3 p-3 rounded border transition-colors ${
+                    className={`flex items-center gap-3 p-3 rounded-md border transition-colors ${
                       isActive
-                        ? "border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/20"
+                        ? "border-accent bg-accent-surface"
                         : isDone
-                          ? "border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-950/20"
-                          : "border-neutral-100 dark:border-neutral-800 opacity-50"
+                          ? "border-success bg-success-surface"
+                          : "border-row opacity-50"
                     }`}
                   >
                     <div className="w-6 h-6 flex items-center justify-center">
                       {isActive ? (
-                        <CircleNotchIcon size={18} className="text-violet-500 animate-spin" />
+                        <CircleNotchIcon size={18} className="text-accent-strong animate-spin" />
                       ) : isDone ? (
-                        <CheckCircleIcon size={18} weight="fill" className="text-emerald-500" />
+                        <CheckCircleIcon size={18} weight="fill" className="text-success" />
                       ) : (
-                        <div className="w-4 h-4 rounded-full border-2 border-neutral-200 dark:border-neutral-700" />
+                        <div className="w-4 h-4 rounded-full border border-line" />
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                      <p className="text-sm font-medium text-fg">
                         {aiStepLabels[s]}
                       </p>
                     </div>
@@ -864,20 +864,20 @@ export function ImportLeadsModal({
         {step === "done" && importResult && (
           <div className="space-y-4">
             <div className="flex flex-col items-center justify-center py-6 gap-3">
-              <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center">
+              <div className="w-14 h-14 rounded-full bg-success-surface flex items-center justify-center">
                 <CheckCircleIcon
                   size={32}
                   weight="fill"
-                  className="text-emerald-500"
+                  className="text-success"
                 />
               </div>
               <div className="text-center">
-                <p className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+                <p className="text-heading-md text-fg">
                   {importResult.imported} Lead
                   {importResult.imported !== 1 ? "s" : ""} Imported
                 </p>
                 {importResult.errors.length > 0 && (
-                  <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
+                  <p className="text-sm text-warning mt-1">
                     {importResult.errors.length} row
                     {importResult.errors.length !== 1 ? "s" : ""} had issues
                   </p>
@@ -887,21 +887,21 @@ export function ImportLeadsModal({
 
             {/* AI Processing Summary */}
             {aiProcessing && aiProcessing.currentStep === "complete" && (
-              <div className="rounded border border-violet-200 dark:border-violet-800/50 bg-violet-50/50 dark:bg-violet-950/20 p-4 space-y-2">
-                <p className="text-sm font-medium text-violet-900 dark:text-violet-200 flex items-center gap-1.5">
+              <div className="rounded-lg bg-accent-surface p-4 space-y-2">
+                <p className="text-sm font-medium text-accent-on-surface flex items-center gap-1.5">
                   <BrainIcon size={16} /> AI Processing Summary
                 </p>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="text-xs text-violet-700 dark:text-violet-300">
+                  <div className="text-xs text-accent-on-surface">
                     Enriched: <span className="font-semibold">{aiProcessing.enriched}</span> leads
                   </div>
-                  <div className="text-xs text-violet-700 dark:text-violet-300">
+                  <div className="text-xs text-accent-on-surface">
                     Scored: <span className="font-semibold">{aiProcessing.scored}</span> leads
                   </div>
-                  <div className="text-xs text-violet-700 dark:text-violet-300">
+                  <div className="text-xs text-accent-on-surface">
                     Qualified: <span className="font-semibold">{aiProcessing.qualified}</span> leads
                   </div>
-                  <div className="text-xs text-violet-700 dark:text-violet-300">
+                  <div className="text-xs text-accent-on-surface">
                     ICP Matched: <span className="font-semibold">{aiProcessing.matched}</span> leads
                   </div>
                 </div>
@@ -916,7 +916,7 @@ export function ImportLeadsModal({
                   const res = await getSequences();
                   setSequences((res.data ?? []).map((s) => ({ id: s.id, name: s.name, status: s.status })));
                 }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                className="w-full flex h-8 items-center justify-center gap-2 px-3 text-sm font-medium rounded-md border border-line bg-surface text-fg hover:bg-muted transition-colors"
               >
                 <PaperPlaneTiltIcon size={16} />
                 Add to Sequence
@@ -924,12 +924,12 @@ export function ImportLeadsModal({
             )}
 
             {showSequenceEnroll && (
-              <div className="rounded border border-neutral-200 dark:border-neutral-700 p-3 space-y-3">
-                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">Enroll in Sequence</p>
+              <div className="rounded-lg border border-line bg-surface p-3 space-y-3">
+                <p className="text-sm font-medium text-fg">Enroll in Sequence</p>
                 <select
                   value={selectedSequenceId ?? ""}
                   onChange={(e) => setSelectedSequenceId(e.target.value || null)}
-                  className="w-full px-3 py-2 text-sm rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-50"
+                  className="w-full h-8 px-2.5 text-sm rounded-md border border-line bg-surface text-fg"
                 >
                   <option value="">Select a sequence...</option>
                   {sequences.filter((s) => s.status === "active").map((s) => (
@@ -939,14 +939,14 @@ export function ImportLeadsModal({
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowSequenceEnroll(false)}
-                    className="flex-1 px-3 py-1.5 text-xs text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                    className="flex-1 h-7 px-2.5 text-xs font-medium text-fg-secondary rounded-md hover:bg-muted hover:text-fg"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleSequenceEnroll}
                     disabled={!selectedSequenceId || enrolling}
-                    className="flex-1 px-3 py-1.5 text-xs font-medium bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 rounded hover:bg-neutral-800 dark:hover:bg-neutral-100 disabled:opacity-50"
+                    className="flex-1 h-7 px-2.5 text-xs font-medium bg-inverse text-on-inverse rounded-md hover:opacity-90 disabled:opacity-50"
                   >
                     {enrolling ? "Enrolling..." : `Enroll ${importResult.importedIds.length} Leads`}
                   </button>
@@ -956,17 +956,17 @@ export function ImportLeadsModal({
 
             {/* Errors list */}
             {importResult.errors.length > 0 && (
-              <div className="max-h-[120px] overflow-y-auto rounded border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/20 p-3 space-y-1">
+              <div className="max-h-[120px] overflow-y-auto rounded-md bg-warning-surface p-3 space-y-1">
                 {importResult.errors.slice(0, 20).map((err, i) => (
                   <p
                     key={i}
-                    className="text-xs text-amber-700 dark:text-amber-300"
+                    className="text-xs text-warning"
                   >
                     {err}
                   </p>
                 ))}
                 {importResult.errors.length > 20 && (
-                  <p className="text-xs text-amber-500 mt-1">
+                  <p className="text-xs text-warning mt-1">
                     ...and {importResult.errors.length - 20} more
                   </p>
                 )}

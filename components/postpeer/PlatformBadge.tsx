@@ -13,22 +13,22 @@ interface PlatformBadgeProps {
 
 const STATUS_STYLES = {
   connected: {
-    bg: "bg-green-100 dark:bg-green-400/15",
-    border: "border-green-200 dark:border-green-400/30",
-    text: "text-green-700 dark:text-green-400",
-    dot: "bg-green-500",
+    bg: "bg-success-surface",
+    border: "border-success",
+    text: "text-success",
+    dot: "bg-success-fill",
   },
   error: {
-    bg: "bg-red-100 dark:bg-red-400/15",
-    border: "border-red-200 dark:border-red-400/30",
-    text: "text-red-700 dark:text-red-400",
-    dot: "bg-red-500",
+    bg: "bg-danger-surface",
+    border: "border-danger",
+    text: "text-danger",
+    dot: "bg-danger",
   },
   pending: {
-    bg: "bg-amber-100 dark:bg-amber-400/15",
-    border: "border-amber-200 dark:border-amber-400/30",
-    text: "text-amber-700 dark:text-amber-400",
-    dot: "bg-amber-500",
+    bg: "bg-warning-surface",
+    border: "border-warning",
+    text: "text-warning",
+    dot: "bg-warning",
   },
 };
 

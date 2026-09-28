@@ -36,7 +36,7 @@ export function ConnectionCard({
   return (
     <Card
       className={cn(
-        "p-4 hover:shadow-md transition-shadow",
+        "p-4 transition-colors",
         className,
       )}
     >
@@ -48,10 +48,10 @@ export function ConnectionCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="min-w-0">
-              <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 capitalize">
+              <h3 className="text-heading-md text-fg capitalize">
                 {connection.platform}
               </h3>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400 truncate">
+              <p className="text-sm text-fg-secondary truncate">
                 @{connection.username}
               </p>
             </div>
@@ -61,7 +61,7 @@ export function ConnectionCard({
           </div>
 
           {connection.displayName && (
-            <p className="text-sm text-neutral-700 dark:text-neutral-300 mb-3">
+            <p className="text-sm text-fg mb-3">
               {connection.displayName}
             </p>
           )}
@@ -70,30 +70,30 @@ export function ConnectionCard({
             <div className="flex gap-4 mb-3">
               {connection.stats.followers !== undefined && (
                 <div className="text-xs">
-                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                  <span className="font-semibold text-fg">
                     {connection.stats.followers.toLocaleString()}
                   </span>
-                  <span className="text-neutral-500 dark:text-neutral-400 ml-1">
+                  <span className="text-fg-secondary ml-1">
                     followers
                   </span>
                 </div>
               )}
               {connection.stats.following !== undefined && (
                 <div className="text-xs">
-                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                  <span className="font-semibold text-fg">
                     {connection.stats.following.toLocaleString()}
                   </span>
-                  <span className="text-neutral-500 dark:text-neutral-400 ml-1">
+                  <span className="text-fg-secondary ml-1">
                     following
                   </span>
                 </div>
               )}
               {connection.stats.posts !== undefined && (
                 <div className="text-xs">
-                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                  <span className="font-semibold text-fg">
                     {connection.stats.posts.toLocaleString()}
                   </span>
-                  <span className="text-neutral-500 dark:text-neutral-400 ml-1">
+                  <span className="text-fg-secondary ml-1">
                     posts
                   </span>
                 </div>
@@ -102,7 +102,7 @@ export function ConnectionCard({
           )}
 
           <div className="flex items-center justify-between gap-2">
-            <div className="text-xs text-neutral-500 dark:text-neutral-400">
+            <div className="text-xs text-fg-secondary">
               {connection.lastUsed ? (
                 <>Last used {new Date(connection.lastUsed).toLocaleDateString()}</>
               ) : (
@@ -115,7 +115,7 @@ export function ConnectionCard({
                 variant="ghost"
                 size="sm"
                 onClick={() => onDisconnect(connection.id)}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                className="text-danger hover:text-danger hover:bg-danger-surface"
               >
                 Disconnect
               </Button>
@@ -123,8 +123,8 @@ export function ConnectionCard({
           </div>
 
           {connection.error && (
-            <div className="mt-3 p-2 rounded bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
-              <p className="text-xs text-red-700 dark:text-red-400">
+            <div className="mt-3 p-2 rounded-md bg-danger-surface">
+              <p className="text-xs text-danger">
                 {connection.error}
               </p>
             </div>

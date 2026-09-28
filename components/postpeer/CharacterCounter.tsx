@@ -32,17 +32,17 @@ export function CharacterCounter({
   return (
     <div className={cn("space-y-2", className)}>
       <div className="flex items-center justify-between">
-        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+        <span className="text-sm text-fg-secondary">
           Character count
         </span>
         <span
           className={cn(
             "text-sm font-medium",
             isError
-              ? "text-red-600 dark:text-red-400"
+              ? "text-danger"
               : isWarning
-                ? "text-amber-600 dark:text-amber-400"
-                : "text-neutral-700 dark:text-neutral-300",
+                ? "text-warning"
+                : "text-fg",
           )}
         >
           {textLength} / {minLimit}
@@ -57,18 +57,18 @@ export function CharacterCounter({
 
             return (
               <div key={platform} className="flex items-center gap-2">
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 w-20 capitalize">
+                <span className="text-xs text-fg-secondary w-20 capitalize">
                   {platform}
                 </span>
-                <div className="flex-1 h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
+                <div className="flex-1 h-1.5 bg-active rounded-full overflow-hidden">
                   <div
                     className={cn(
                       "h-full transition-all",
                       isOverLimit
-                        ? "bg-red-500"
+                        ? "bg-danger"
                         : percentage > 90
-                          ? "bg-amber-500"
-                          : "bg-green-500",
+                          ? "bg-warning"
+                          : "bg-success-fill",
                     )}
                     style={{ width: `${Math.min(percentage, 100)}%` }}
                   />
@@ -77,8 +77,8 @@ export function CharacterCounter({
                   className={cn(
                     "text-xs font-medium w-16 text-right",
                     isOverLimit
-                      ? "text-red-600 dark:text-red-400"
-                      : "text-neutral-600 dark:text-neutral-400",
+                      ? "text-danger"
+                      : "text-fg-secondary",
                   )}
                 >
                   {limit}
@@ -90,12 +90,12 @@ export function CharacterCounter({
       )}
 
       {isError && (
-        <p className="text-xs text-red-600 dark:text-red-400">
+        <p className="text-xs text-danger">
           Text exceeds the character limit for one or more platforms
         </p>
       )}
       {!isError && isWarning && (
-        <p className="text-xs text-amber-600 dark:text-amber-400">
+        <p className="text-xs text-warning">
           Approaching character limit
         </p>
       )}

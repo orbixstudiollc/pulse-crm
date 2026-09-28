@@ -32,8 +32,8 @@ interface ActivityDetailDrawerProps {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between py-3">
-      <p className="text-sm text-neutral-500 dark:text-neutral-400">{label}</p>
-      <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+      <p className="text-sm text-fg-secondary">{label}</p>
+      <p className="text-sm font-medium text-fg">
         {value}
       </p>
     </div>
@@ -52,7 +52,7 @@ function BadgeRow({
 }) {
   return (
     <div className="flex items-center justify-between py-3">
-      <p className="text-sm text-neutral-500 dark:text-neutral-400">{label}</p>
+      <p className="text-sm text-fg-secondary">{label}</p>
       <Badge variant={badgeVariant}>{badgeLabel}</Badge>
     </div>
   );
@@ -61,7 +61,7 @@ function BadgeRow({
 // ── Section header ──────────────────────────────────────────────────────────
 function SectionHeader({ children }: { children: string }) {
   return (
-    <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+    <p className="text-xs font-medium text-fg-secondary mb-4">
       {children}
     </p>
   );
@@ -72,8 +72,8 @@ function DescriptionBlock({ label, text }: { label: string; text: string }) {
   return (
     <div className="mb-6">
       <SectionHeader>{label}</SectionHeader>
-      <div className="rounded bg-neutral-50 dark:bg-neutral-800/50 p-4">
-        <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+      <div className="rounded-md bg-subtle p-4">
+        <p className="text-sm text-fg-secondary leading-relaxed">
           {text}
         </p>
       </div>
@@ -98,7 +98,7 @@ function MeetingDetails({
     <>
       <div className="mb-6">
         <SectionHeader>Details</SectionHeader>
-        <div className="divide-y-[0.5px] divide-neutral-200 dark:divide-neutral-800">
+        <div className="divide-y divide-row">
           {activity.badge && (
             <BadgeRow
               label="Status"
@@ -121,12 +121,12 @@ function MeetingDetails({
       {!isCompleted && (
         <div>
           <SectionHeader>Add to Calendar</SectionHeader>
-          <div className="flex flex-wrap gap-3">
-            <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+          <div className="flex flex-wrap gap-2">
+            <button className="inline-flex h-8 items-center gap-2 px-3 rounded-md border border-line bg-surface text-sm font-medium text-fg hover:bg-muted transition-colors">
               <CalendarBlankIcon size={16} />
               Google Calendar
             </button>
-            <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
+            <button className="inline-flex h-8 items-center gap-2 px-3 rounded-md border border-line bg-surface text-sm font-medium text-fg hover:bg-muted transition-colors">
               <CalendarBlankIcon size={16} />
               Apple Calendar
             </button>
@@ -142,7 +142,7 @@ function TaskDetails({ activity }: { activity: ActivityDetail }) {
     <>
       <div className="mb-6">
         <SectionHeader>Details</SectionHeader>
-        <div className="divide-y-[0.5px] divide-neutral-200 dark:divide-neutral-800">
+        <div className="divide-y divide-row">
           {activity.meta && (
             <DetailRow label="Due Date" value={activity.meta} />
           )}
@@ -162,7 +162,7 @@ function DealDetails({ activity }: { activity: ActivityDetail }) {
     <>
       <div className="mb-6">
         <SectionHeader>Details</SectionHeader>
-        <div className="divide-y-[0.5px] divide-neutral-200 dark:divide-neutral-800">
+        <div className="divide-y divide-row">
           {activity.meta && <DetailRow label="Value" value={activity.meta} />}
           {activity.badge && (
             <DetailRow label="Stage" value={activity.badge.label} />
@@ -182,7 +182,7 @@ function InvoiceDetails({ activity }: { activity: ActivityDetail }) {
     <>
       <div className="mb-6">
         <SectionHeader>Details</SectionHeader>
-        <div className="divide-y-[0.5px] divide-neutral-200 dark:divide-neutral-800">
+        <div className="divide-y divide-row">
           {activity.meta && <DetailRow label="Amount" value={activity.meta} />}
           {activity.badge && (
             <DetailRow label="Status" value={activity.badge.label} />
@@ -202,7 +202,7 @@ function GenericDetails({ activity }: { activity: ActivityDetail }) {
     <>
       <div className="mb-6">
         <SectionHeader>Details</SectionHeader>
-        <div className="divide-y-[0.5px] divide-neutral-200 dark:divide-neutral-800">
+        <div className="divide-y divide-row">
           {activity.badge && (
             <BadgeRow
               label="Status"
@@ -234,7 +234,7 @@ function getFooter(
         activity.badge?.label === "Cancelled";
       if (isCompleted) return undefined;
       return (
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={props.onReschedule}>
             Reschedule
           </Button>
@@ -244,7 +244,7 @@ function getFooter(
     }
     case "deal":
       return (
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={props.onEditDeal}>
             Edit Deal
           </Button>
@@ -253,7 +253,7 @@ function getFooter(
       );
     case "task":
       return (
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={props.onEditTask}>
             Edit Task
           </Button>
@@ -262,7 +262,7 @@ function getFooter(
       );
     case "invoice":
       return (
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={props.onDownloadPdf}>
             Download PDF
           </Button>

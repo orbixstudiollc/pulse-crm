@@ -96,10 +96,10 @@ function StageProgress({ currentStage }: { currentStage: PipelineStage }) {
             className={cn(
               "h-2 flex-1 rounded-full transition-colors",
               isFilled
-                ? "bg-neutral-950 dark:bg-neutral-50"
+                ? "bg-inverse"
                 : isLostFilled
-                  ? "bg-red-500"
-                  : "bg-neutral-200 dark:bg-neutral-700",
+                  ? "bg-danger"
+                  : "bg-active",
             )}
           />
         );
@@ -113,10 +113,10 @@ function StageProgress({ currentStage }: { currentStage: PipelineStage }) {
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between py-3">
-      <span className="text-sm text-neutral-500 dark:text-neutral-400">
+      <span className="text-sm text-fg-secondary">
         {label}
       </span>
-      <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+      <span className="text-sm font-medium text-fg">
         {value}
       </span>
     </div>
@@ -127,7 +127,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 function SectionHeader({ children }: { children: string }) {
   return (
-    <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+    <p className="text-xs font-medium text-fg-secondary mb-4">
       {children}
     </p>
   );
@@ -236,11 +236,11 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
         onClose={onClose}
         title="Deal Details"
         footer={
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             {!isClosed && (
               <Button
                 variant="outline"
-                className="flex-1 border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-300 dark:hover:border-red-500/40"
+                className="flex-1 text-danger hover:bg-danger-surface"
                 onClick={() => setShowLostModal(true)}
               >
                 Mark Lost
@@ -260,14 +260,14 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
         {/* Deal Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-4">
           <div>
-            <h3 className="text-2xl font-serif text-neutral-950 dark:text-neutral-50">
+            <h3 className="text-heading-lg text-fg">
               {deal.name}
             </h3>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            <p className="text-sm text-fg-secondary">
               {deal.company}
             </p>
           </div>
-          <p className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 sm:shrink-0">
+          <p className="text-[22px] font-semibold text-fg sm:shrink-0">
             {formatDealCurrency(deal.value)}
           </p>
         </div>
@@ -275,10 +275,10 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
         {/* Stage Progress */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+            <span className="text-xs font-medium text-fg-secondary">
               Stage
             </span>
-            <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+            <span className="text-sm font-medium text-fg">
               {getStageLabel(deal.stage)}
             </span>
           </div>
@@ -304,7 +304,7 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
                 variant="outline"
                 onClick={() => handleMoveStage("closed_won")}
                 disabled={isPending}
-                className="border-green-200 dark:border-green-500/30 text-green-600 dark:text-green-400"
+                className="text-success"
               >
                 Mark Won
               </Button>
@@ -322,21 +322,21 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
         )}
 
         {/* Tabs */}
-        <div className="flex border-b border-neutral-200 dark:border-neutral-800 mb-4">
+        <div className="flex border-b border-divider mb-4">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px",
+                "flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b transition-colors -mb-px",
                 activeTab === tab.id
-                  ? "border-neutral-950 dark:border-neutral-50 text-neutral-950 dark:text-neutral-50"
-                  : "border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300",
+                  ? "border-inverse text-fg"
+                  : "border-transparent text-fg-secondary hover:text-fg",
               )}
             >
               {tab.label}
               {tab.count !== undefined && tab.count > 0 && (
-                <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-neutral-200 dark:bg-neutral-700 px-1 text-[10px] font-semibold">
+                <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-active px-1 text-xs font-semibold">
                   {tab.count}
                 </span>
               )}
@@ -350,7 +350,7 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
             {/* Deal Information */}
             <div>
               <SectionHeader>Deal Information</SectionHeader>
-              <div className="divide-y-[0.5px] divide-neutral-200 dark:divide-neutral-800">
+              <div className="divide-y divide-row">
                 <InfoRow label="Probability" value={`${deal.probability}%`} />
                 <InfoRow label="Expected Close" value={deal.closeDate} />
                 <InfoRow label="Created" value={deal.createdDate} />
@@ -361,9 +361,9 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
             {/* Contact */}
             <div>
               <SectionHeader>Contact</SectionHeader>
-              <div className="flex items-center justify-between rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+              <div className="flex items-center justify-between rounded-lg border border-line bg-surface p-4">
                 <div className="flex items-center gap-3">
-                  <div className="relative h-10 w-10 rounded-full overflow-hidden border border-neutral-200 dark:border-neutral-700">
+                  <div className="relative h-10 w-10 rounded-full overflow-hidden border border-line">
                     <Image
                       src={deal.contact.avatar}
                       alt={deal.contact.name}
@@ -372,15 +372,15 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
                     />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                    <p className="text-sm font-medium text-fg">
                       {deal.contact.name}
                     </p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    <p className="text-xs text-fg-secondary">
                       {deal.contact.email}
                     </p>
                   </div>
                 </div>
-                <button className="text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">
+                <button className="text-sm font-medium text-fg hover:text-fg-secondary transition-colors">
                   View
                 </button>
               </div>
@@ -390,8 +390,8 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
             {deal.notes && (
               <div>
                 <SectionHeader>Notes</SectionHeader>
-                <div className="rounded-xl bg-neutral-50 dark:bg-neutral-800/50 p-4">
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                <div className="rounded-md bg-subtle p-4">
+                  <p className="text-sm text-fg-secondary leading-relaxed">
                     {deal.notes}
                   </p>
                 </div>
@@ -404,29 +404,29 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
           <div className="space-y-1">
             {isLoadingData ? (
               <div className="flex items-center justify-center py-8">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-600" />
+                <div className="h-5 w-5 animate-spin rounded-full border border-line border-t-fg" />
               </div>
             ) : activities.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                <p className="text-sm text-fg-secondary">
                   No activity recorded yet
                 </p>
               </div>
             ) : (
               <div className="relative">
                 {/* Timeline line */}
-                <div className="absolute left-[15px] top-2 bottom-2 w-px bg-neutral-200 dark:bg-neutral-800" />
+                <div className="absolute left-[15px] top-2 bottom-2 w-px bg-active" />
                 <div className="space-y-4">
                   {activities.map((activity) => {
                     const Icon = activityIcons[activity.type] || ClockIcon;
                     return (
                       <div key={activity.id} className="flex gap-3 relative">
-                        <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
-                          <Icon size={14} className="text-neutral-500 dark:text-neutral-400" />
+                        <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted border border-line">
+                          <Icon size={14} className="text-fg-secondary" />
                         </div>
                         <div className="flex-1 min-w-0 pt-0.5">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                            <p className="text-sm font-medium text-fg truncate">
                               {activity.title}
                             </p>
                             {activity.badge_label && (
@@ -438,11 +438,11 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
                             )}
                           </div>
                           {activity.description && (
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 truncate">
+                            <p className="text-xs text-fg-secondary mt-0.5 truncate">
                               {activity.description}
                             </p>
                           )}
-                          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+                          <p className="text-xs text-fg-muted mt-1">
                             {new Date(activity.created_at).toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
@@ -469,7 +469,7 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
                 onChange={(e) => setNewNote(e.target.value)}
                 placeholder="Add a note..."
                 rows={2}
-                className="flex-1 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 px-3 py-2 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-950 dark:focus:ring-neutral-50 resize-none"
+                className="flex-1 rounded-md border border-line bg-surface px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-accent resize-none"
               />
               <Button
                 size="sm"
@@ -485,11 +485,11 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
             {/* Notes List */}
             {isLoadingData ? (
               <div className="flex items-center justify-center py-8">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-600" />
+                <div className="h-5 w-5 animate-spin rounded-full border border-line border-t-fg" />
               </div>
             ) : notes.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                <p className="text-sm text-fg-secondary">
                   No notes yet. Add one above.
                 </p>
               </div>
@@ -498,13 +498,13 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
                 {notes.map((note) => (
                   <div
                     key={note.id}
-                    className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4"
+                    className="rounded-lg border border-line bg-surface p-4"
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-medium text-neutral-950 dark:text-neutral-50">
+                      <p className="text-xs font-medium text-fg">
                         {note.author_name}
                       </p>
-                      <p className="text-xs text-neutral-400 dark:text-neutral-500">
+                      <p className="text-xs text-fg-muted">
                         {new Date(note.created_at).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
@@ -513,7 +513,7 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
                         })}
                       </p>
                     </div>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                    <p className="text-sm text-fg-secondary leading-relaxed">
                       {note.content}
                     </p>
                   </div>

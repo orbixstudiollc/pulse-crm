@@ -36,7 +36,7 @@ import type {
 // ─── Shared Styles ──────────────────────────────────────────────────────────
 
 const selectClass =
-  "rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 pl-3 pr-8 py-2 text-sm text-neutral-950 dark:text-neutral-50 appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22%236b7280%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M5.23%207.21a.75.75%200%20011.06.02L10%2011.168l3.71-3.938a.75.75%200%20111.08%201.04l-4.25%204.5a.75.75%200%2001-1.08%200l-4.25-4.5a.75.75%200%2001.02-1.06z%22%20clip-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.5rem_center] bg-[length:1.25rem_1.25rem]";
+  "rounded-md border border-line bg-surface pl-3 pr-8 py-2 text-sm text-fg appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22%236b7280%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M5.23%207.21a.75.75%200%20011.06.02L10%2011.168l3.71-3.938a.75.75%200%20111.08%201.04l-4.25%204.5a.75.75%200%2001-1.08%200l-4.25-4.5a.75.75%200%2001.02-1.06z%22%20clip-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_0.5rem_center] bg-[length:1.25rem_1.25rem]";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -182,10 +182,10 @@ export function AutomationSection() {
       {/* Header */}
       <div className="flex flex-row items-center justify-between gap-4 max-sm:flex-col max-sm:items-start">
         <div>
-          <h2 className="text-[28px] leading-[36px] tracking-[-0.56px] font-serif text-neutral-950 dark:text-neutral-50">
+          <h2 className="text-heading-md text-fg">
             Automation Rules
           </h2>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+          <p className="text-sm text-fg-secondary mt-1">
             Automate lead management with trigger-based rules.
           </p>
         </div>
@@ -193,50 +193,50 @@ export function AutomationSection() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
-          <div className="flex items-start justify-between p-5">
+        <div className="rounded-lg border border-line bg-surface overflow-hidden">
+          <div className="flex items-start justify-between p-4">
             <div className="space-y-2">
-              <p className="text-xs font-normal uppercase leading-5 text-neutral-500 dark:text-neutral-400">Total Rules</p>
-              <p className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif text-neutral-950 dark:text-neutral-50">{stats.totalRules}</p>
+              <p className="text-xs font-normal leading-5 text-fg-secondary">Total Rules</p>
+              <p className="text-[22px] font-semibold text-fg">{stats.totalRules}</p>
             </div>
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-neutral-200 dark:border-neutral-800">
-              <LightningIcon size={20} className="text-neutral-950 dark:text-neutral-50" />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line">
+              <LightningIcon size={16} className="text-fg" />
             </div>
           </div>
         </div>
-        <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
-          <div className="flex items-start justify-between p-5">
+        <div className="rounded-lg border border-line bg-surface overflow-hidden">
+          <div className="flex items-start justify-between p-4">
             <div className="space-y-2">
-              <p className="text-xs font-normal uppercase leading-5 text-neutral-500 dark:text-neutral-400">Active</p>
-              <p className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif text-[#00a63e] dark:text-green-400">{stats.activeRules}</p>
+              <p className="text-xs font-normal leading-5 text-fg-secondary">Active</p>
+              <p className="text-[22px] font-semibold text-success">{stats.activeRules}</p>
             </div>
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-neutral-200 dark:border-neutral-800">
-              <CheckIcon size={20} className="text-[#00a63e] dark:text-green-400" />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line">
+              <CheckIcon size={16} className="text-success" />
             </div>
           </div>
         </div>
-        <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden">
-          <div className="flex items-start justify-between p-5">
+        <div className="rounded-lg border border-line bg-surface overflow-hidden">
+          <div className="flex items-start justify-between p-4">
             <div className="space-y-2">
-              <p className="text-xs font-normal uppercase leading-5 text-neutral-500 dark:text-neutral-400">Executions</p>
-              <p className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif text-neutral-950 dark:text-neutral-50">{stats.totalExecutions}</p>
+              <p className="text-xs font-normal leading-5 text-fg-secondary">Executions</p>
+              <p className="text-[22px] font-semibold text-fg">{stats.totalExecutions}</p>
             </div>
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-neutral-200 dark:border-neutral-800">
-              <CircleNotchIcon size={20} className="text-neutral-950 dark:text-neutral-50" />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line">
+              <CircleNotchIcon size={16} className="text-fg" />
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-neutral-200 dark:border-neutral-800">
+      <div className="flex items-center gap-2 border-b border-divider">
         <button
           onClick={() => setActiveView("rules")}
           className={cn(
-            "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
+            "px-3 py-2 text-sm font-medium border-b -mb-px transition-colors",
             activeView === "rules"
-              ? "border-neutral-950 dark:border-neutral-50 text-neutral-950 dark:text-neutral-50"
-              : "border-transparent text-neutral-500 hover:text-neutral-700",
+              ? "border-inverse text-fg"
+              : "border-transparent text-fg-secondary hover:text-fg",
           )}
         >
           Rules
@@ -247,10 +247,10 @@ export function AutomationSection() {
             loadExecutions();
           }}
           className={cn(
-            "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
+            "px-3 py-2 text-sm font-medium border-b -mb-px transition-colors",
             activeView === "log"
-              ? "border-neutral-950 dark:border-neutral-50 text-neutral-950 dark:text-neutral-50"
-              : "border-transparent text-neutral-500 hover:text-neutral-700",
+              ? "border-inverse text-fg"
+              : "border-transparent text-fg-secondary hover:text-fg",
           )}
         >
           Execution Log
@@ -270,7 +270,7 @@ export function AutomationSection() {
           {/* Rules List */}
           <div className="space-y-3">
             {rules.length === 0 ? (
-              <div className="text-center py-12 text-neutral-500">
+              <div className="text-center py-12 text-fg-secondary">
                 <LightningIcon size={40} className="mx-auto mb-3 opacity-40" />
                 <p className="text-sm">No automation rules yet.</p>
                 <p className="text-xs mt-1">Create your first rule to automate lead management.</p>
@@ -279,7 +279,7 @@ export function AutomationSection() {
               rules.map((rule) => (
                 <div
                   key={rule.id}
-                  className="flex items-center justify-between p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg border border-line bg-surface hover:bg-muted transition-colors"
                 >
                   <div className="flex items-center gap-4 flex-1 min-w-0">
                     <Toggle
@@ -288,23 +288,23 @@ export function AutomationSection() {
                     />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                        <p className="text-sm font-medium text-fg truncate">
                           {rule.name}
                         </p>
                         <Badge variant={rule.is_active ? "success" : "neutral"}>
                           {rule.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </div>
-                      <p className="text-xs text-neutral-500 mt-0.5 truncate">
+                      <p className="text-xs text-fg-secondary mt-0.5 truncate">
                         {rule.description || TRIGGER_OPTIONS.find((t) => t.value === rule.trigger_type)?.description || rule.trigger_type}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4 shrink-0">
                     <div className="text-right">
-                      <p className="text-xs text-neutral-500">{rule.execution_count} runs</p>
+                      <p className="text-xs text-fg-secondary">{rule.execution_count} runs</p>
                       {rule.last_executed_at && (
-                        <p className="text-xs text-neutral-400">
+                        <p className="text-xs text-fg-muted">
                           Last: {new Date(rule.last_executed_at).toLocaleDateString()}
                         </p>
                       )}
@@ -333,28 +333,28 @@ export function AutomationSection() {
         /* Execution Log */
         <div className="space-y-2">
           {executions.length === 0 ? (
-            <p className="text-center py-8 text-sm text-neutral-500">No executions yet.</p>
+            <p className="text-center py-8 text-sm text-fg-secondary">No executions yet.</p>
           ) : (
             executions.map((exec) => (
               <div
                 key={exec.id as string}
-                className="flex items-center justify-between p-3 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-sm"
+                className="flex items-center justify-between p-3 rounded-lg border border-line bg-surface text-sm"
               >
                 <div className="flex items-center gap-3">
                   <div
                     className={cn(
                       "h-2 w-2 rounded-full",
-                      exec.success ? "bg-green-500" : "bg-red-500",
+                      exec.success ? "bg-success" : "bg-danger",
                     )}
                   />
-                  <span className="text-neutral-950 dark:text-neutral-50">
+                  <span className="text-fg">
                     {(exec.automation_rules as Record<string, unknown>)?.name as string || "Rule"}
                   </span>
                   <Badge variant="neutral">{exec.trigger_type as string}</Badge>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-neutral-500">
+                <div className="flex items-center gap-3 text-xs text-fg-secondary">
                   {exec.error_message ? (
-                    <span className="text-red-500 truncate max-w-[200px]">{String(exec.error_message)}</span>
+                    <span className="text-danger truncate max-w-[200px]">{String(exec.error_message)}</span>
                   ) : null}
                   <span>{new Date(exec.created_at as string).toLocaleString()}</span>
                 </div>
@@ -385,10 +385,10 @@ export function AutomationSection() {
         <div className="fixed bottom-4 right-4 z-50">
           <div
             className={cn(
-              "px-4 py-2 rounded text-sm font-medium shadow-lg",
+              "px-4 py-2 rounded-md text-sm font-medium",
               toast.type === "success"
-                ? "bg-green-600 text-white"
-                : "bg-red-600 text-white",
+                ? "bg-success text-on-inverse"
+                : "bg-danger text-on-inverse",
             )}
           >
             {toast.message}
@@ -481,18 +481,18 @@ function RuleEditor({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto mx-4">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
-          <h3 className="text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-surface rounded-lg border border-line shadow-modal w-full max-w-2xl max-h-[85vh] overflow-y-auto mx-4">
+        <div className="flex h-12 items-center justify-between px-4 border-b border-divider">
+          <h3 className="text-heading-md text-fg">
             {rule ? "Edit Rule" : "Create Automation Rule"}
           </h3>
-          <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600">
+          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:bg-muted hover:text-fg transition-colors">
             <XIcon size={20} />
           </button>
         </div>
 
-        <div className="px-6 py-5 space-y-5">
+        <div className="p-4 space-y-4">
           {/* Name & Description */}
           <div className="space-y-3">
             <Input
@@ -511,7 +511,7 @@ function RuleEditor({
 
           {/* Trigger */}
           <div>
-            <label className="block text-xs font-medium text-neutral-500 mb-2">
+            <label className="block text-xs font-medium text-fg-secondary mb-2">
               TRIGGER — When should this rule fire?
             </label>
             <select
@@ -550,7 +550,7 @@ function RuleEditor({
 
             {triggerType === "icp_graded" && (
               <div className="mt-3">
-                <p className="text-xs text-neutral-500 mb-1">Trigger for grades:</p>
+                <p className="text-xs text-fg-secondary mb-1">Trigger for grades:</p>
                 <div className="flex gap-2">
                   {["A+", "A", "B", "C", "D"].map((g) => (
                     <button
@@ -563,10 +563,10 @@ function RuleEditor({
                         setTriggerConfig({ ...triggerConfig, grades: updated });
                       }}
                       className={cn(
-                        "px-3 py-1 rounded text-xs font-medium border transition-colors",
+                        "h-7 px-2.5 rounded-md text-xs font-medium border transition-colors",
                         ((triggerConfig.grades as string[]) || []).includes(g)
-                          ? "bg-neutral-950 text-white border-neutral-950 dark:bg-neutral-50 dark:text-neutral-950"
-                          : "border-neutral-200 dark:border-neutral-700 text-neutral-500",
+                          ? "bg-inverse text-on-inverse border-inverse"
+                          : "border-line text-fg-secondary",
                       )}
                     >
                       {g}
@@ -587,7 +587,7 @@ function RuleEditor({
                   <option value="warm">Warm</option>
                   <option value="hot">Hot</option>
                 </select>
-                <span className="text-sm text-neutral-500">for</span>
+                <span className="text-sm text-fg-secondary">for</span>
                 <Input
                   type="number"
                   placeholder="Days"
@@ -595,7 +595,7 @@ function RuleEditor({
                   onChange={(e) => setTriggerConfig({ ...triggerConfig, days: Number(e.target.value) || undefined })}
                   className="w-24"
                 />
-                <span className="text-sm text-neutral-500">days</span>
+                <span className="text-sm text-fg-secondary">days</span>
               </div>
             )}
           </div>
@@ -603,7 +603,7 @@ function RuleEditor({
           {/* Conditions */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-medium text-neutral-500">
+              <label className="text-xs font-medium text-fg-secondary">
                 CONDITIONS — Additional filters (all must match)
               </label>
               <Button variant="ghost" size="sm" onClick={addCondition}>
@@ -640,13 +640,13 @@ function RuleEditor({
                       placeholder="Value"
                     />
                   )}
-                  <button onClick={() => removeCondition(i)} className="text-neutral-400 hover:text-red-500">
+                  <button onClick={() => removeCondition(i)} className="text-fg-muted hover:text-danger">
                     <XIcon size={16} />
                   </button>
                 </div>
               ))}
               {conditions.length === 0 && (
-                <p className="text-xs text-neutral-400 italic">No conditions — rule fires for all matching triggers.</p>
+                <p className="text-xs text-fg-muted italic">No conditions — rule fires for all matching triggers.</p>
               )}
             </div>
           </div>
@@ -654,7 +654,7 @@ function RuleEditor({
           {/* Actions */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-medium text-neutral-500">
+              <label className="text-xs font-medium text-fg-secondary">
                 ACTIONS — What should happen?
               </label>
               <Button variant="ghost" size="sm" onClick={addAction}>
@@ -714,7 +714,7 @@ function RuleEditor({
                     </>
                   )}
 
-                  <button onClick={() => removeAction(i)} className="text-neutral-400 hover:text-red-500">
+                  <button onClick={() => removeAction(i)} className="text-fg-muted hover:text-danger">
                     <XIcon size={16} />
                   </button>
                 </div>
@@ -724,8 +724,8 @@ function RuleEditor({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-neutral-200 dark:border-neutral-800">
-          <Button variant="outline" onClick={onClose}>
+        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-divider">
+          <Button variant="ghost" className="shrink-0" onClick={onClose}>
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={!name.trim() || saving}>

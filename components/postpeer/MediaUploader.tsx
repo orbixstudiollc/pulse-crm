@@ -143,21 +143,21 @@ export function MediaUploader({
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           className={cn(
-            "relative border-2 border-dashed rounded-lg p-8 transition-colors",
+            "relative border border-dashed rounded-lg p-8 transition-colors",
             isDragging
-              ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/20"
-              : "border-neutral-300 dark:border-neutral-700",
+              ? "border-accent bg-accent-surface"
+              : "border-line",
           )}
         >
           <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-              <ImageIcon className="w-6 h-6 text-neutral-600 dark:text-neutral-400" />
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+              <ImageIcon className="w-6 h-6 text-fg-secondary" />
             </div>
             <div className="text-center space-y-1">
-              <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+              <p className="text-sm font-medium text-fg">
                 Drop files here or click to upload
               </p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="text-xs text-fg-secondary">
                 Max {maxFiles} files · Images and videos
               </p>
             </div>
@@ -186,8 +186,8 @@ export function MediaUploader({
       )}
 
       {error && (
-        <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
-          <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+        <div className="p-3 rounded-md bg-danger-surface">
+          <p className="text-sm text-danger">{error}</p>
         </div>
       )}
 
@@ -196,7 +196,7 @@ export function MediaUploader({
           {media.map((item) => (
             <div
               key={item.id}
-              className="relative group aspect-square rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800"
+              className="relative group aspect-square rounded-lg overflow-hidden bg-muted"
             >
               {item.type === "image" ? (
                 <img

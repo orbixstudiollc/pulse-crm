@@ -56,23 +56,23 @@ export function CompleteMeetingModal({
   return (
     <Modal open={open} onClose={onClose}>
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-800">
-        <h2 className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
+      <div className="flex h-12 items-center justify-between px-4 border-b border-divider">
+        <h2 className="text-heading-md text-fg">
           Complete Meeting
         </h2>
         <button
           onClick={onClose}
-          className="p-1 rounded text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:bg-muted hover:text-fg transition-colors"
         >
           <XIcon size={20} />
         </button>
       </div>
 
       {/* Body */}
-      <div className="p-6 space-y-5">
+      <div className="p-4 space-y-4">
         {/* Sentiment */}
         <div>
-          <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-3">
+          <label className="block text-sm font-medium text-fg mb-3">
             How did it go?
           </label>
           <div className="grid grid-cols-3 gap-3">
@@ -83,14 +83,14 @@ export function CompleteMeetingModal({
                   key={option.value}
                   onClick={() => setSentiment(option.value)}
                   className={cn(
-                    "flex flex-col items-center gap-2 py-4 px-3 rounded-xl border-2 transition-all",
+                    "flex flex-col items-center gap-2 py-4 px-3 rounded-lg border transition-colors",
                     sentiment === option.value
                       ? option.value === "positive"
-                        ? "border-green-400 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400"
+                        ? "border-success bg-success-surface text-success"
                         : option.value === "negative"
-                          ? "border-red-400 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400"
-                          : "border-neutral-400 bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
-                      : "border-neutral-200 dark:border-neutral-800 text-neutral-400 dark:text-neutral-500 hover:border-neutral-300 dark:hover:border-neutral-700",
+                          ? "border-danger bg-danger-surface text-danger"
+                          : "border-fg-muted bg-subtle text-fg-secondary"
+                      : "border-line text-fg-secondary hover:border-fg-muted",
                   )}
                 >
                   <Icon size={24} />
@@ -150,8 +150,8 @@ export function CompleteMeetingModal({
       </div>
 
       {/* Footer */}
-      <div className="flex justify-end gap-3 p-6 border-t border-neutral-200 dark:border-neutral-800">
-        <Button variant="outline" onClick={onClose}>
+      <div className="flex justify-end gap-2 px-4 py-3 border-t border-divider">
+        <Button variant="ghost" className="shrink-0" onClick={onClose}>
           Cancel
         </Button>
         <Button onClick={handleComplete}>Complete Meeting</Button>

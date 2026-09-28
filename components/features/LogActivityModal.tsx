@@ -186,23 +186,23 @@ export function LogActivityModal({
   return (
     <Modal open={open} onClose={onClose}>
       {/* Header */}
-      <div className="flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-800">
-        <h2 className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
+      <div className="flex h-12 items-center justify-between px-4 border-b border-divider">
+        <h2 className="text-heading-md text-fg">
           {labels[variant].title}
         </h2>
         <button
           onClick={onClose}
-          className="flex h-9 w-9 items-center justify-center rounded text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:bg-muted hover:text-fg transition-colors"
         >
           <XIcon size={20} />
         </button>
       </div>
 
       {/* Body */}
-      <div className="p-5 space-y-5 max-h-[60vh] overflow-y-auto">
+      <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
         {/* Activity Type */}
         <div>
-          <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-2">
+          <label className="block text-sm font-medium text-fg mb-2">
             Activity Type
           </label>
           <div className="flex flex-wrap gap-2">
@@ -215,10 +215,10 @@ export function LogActivityModal({
                   type="button"
                   onClick={() => setActivityType(type.id)}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2.5 rounded border text-sm font-medium transition-colors",
+                    "flex h-8 items-center gap-2 px-3 rounded-md border text-sm font-medium transition-colors",
                     isSelected
-                      ? "border-neutral-950 dark:border-neutral-50 bg-neutral-950 dark:bg-neutral-50 text-white dark:text-neutral-950"
-                      : "border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:border-neutral-300 dark:hover:border-neutral-600",
+                      ? "border-inverse bg-inverse text-on-inverse"
+                      : "border-line text-fg-secondary hover:border-fg-muted",
                   )}
                 >
                   <Icon size={18} />
@@ -240,30 +240,30 @@ export function LogActivityModal({
 
         {/* Related To */}
         <div ref={searchRef}>
-          <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-2">
+          <label className="block text-sm font-medium text-fg mb-2">
             Related To
           </label>
 
           {relatedTo ? (
             // Selected entity chip
-            <div className="flex items-center gap-3 p-3 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900">
-              <div className="w-9 h-9 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                <UsersThreeIcon size={18} className="text-neutral-500" />
+            <div className="flex items-center gap-3 p-3 rounded-md border border-line bg-surface">
+              <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
+                <UsersThreeIcon size={18} className="text-fg-secondary" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <p className="text-sm font-medium text-fg">
                   {relatedTo.name}
                 </p>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                <p className="text-xs text-fg-secondary">
                   {getTypeLabel(relatedTo.type)}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setRelatedTo(null)}
-                className="p-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="p-1 rounded-md hover:bg-muted transition-colors"
               >
-                <XIcon size={18} className="text-neutral-400" />
+                <XIcon size={18} className="text-fg-muted" />
               </button>
             </div>
           ) : (
@@ -281,7 +281,7 @@ export function LogActivityModal({
 
               {/* Search Results Dropdown */}
               {showResults && searchQuery && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded shadow-lg z-10 max-h-60 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-line rounded-lg shadow-dropdown z-10 max-h-60 overflow-y-auto">
                   {filteredEntities.length > 0 ? (
                     filteredEntities.map((entity) => (
                       <button
@@ -292,26 +292,26 @@ export function LogActivityModal({
                           setSearchQuery("");
                           setShowResults(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-left"
+                        className="w-full flex items-center gap-3 px-3 py-2 hover:bg-muted transition-colors text-left"
                       >
-                        <div className="w-9 h-9 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
                           <UsersThreeIcon
                             size={18}
-                            className="text-neutral-500"
+                            className="text-fg-secondary"
                           />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                          <p className="text-sm font-medium text-fg">
                             {entity.name}
                           </p>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                          <p className="text-xs text-fg-secondary">
                             {getTypeLabel(entity.type)}
                           </p>
                         </div>
                       </button>
                     ))
                   ) : (
-                    <div className="px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400">
+                    <div className="px-4 py-3 text-sm text-fg-secondary">
                       No results found
                     </div>
                   )}
@@ -324,7 +324,7 @@ export function LogActivityModal({
         {/* Date & Time */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-2">
+            <label className="block text-sm font-medium text-fg mb-2">
               Date
             </label>
             <div className="relative">
@@ -336,12 +336,12 @@ export function LogActivityModal({
               />
               <CalendarBlankIcon
                 size={18}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-muted pointer-events-none"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-2">
+            <label className="block text-sm font-medium text-fg mb-2">
               Time
             </label>
             <div className="relative">
@@ -353,7 +353,7 @@ export function LogActivityModal({
               />
               <ClockIcon
                 size={18}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-muted pointer-events-none"
               />
             </div>
           </div>
@@ -383,8 +383,8 @@ export function LogActivityModal({
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-end gap-3 p-5 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-        <Button variant="outline" onClick={onClose}>
+      <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-divider bg-subtle">
+        <Button variant="ghost" className="shrink-0" onClick={onClose}>
           Cancel
         </Button>
         <Button onClick={handleSubmit} disabled={!title}>

@@ -280,22 +280,22 @@ export function EnrichmentProgressBanner({
 
   return (
     <div
-      className={`rounded-xl border bg-white dark:bg-neutral-900 p-4 ${
+      className={`rounded-lg border bg-surface p-4 ${
         status.status === "cancelled"
-          ? "border-amber-300 dark:border-amber-800"
+          ? "border-warning"
           : status.status === "done"
-            ? "border-green-300 dark:border-green-800"
-            : "border-blue-300 dark:border-blue-800"
+            ? "border-success"
+            : "border-line"
       } ${className ?? ""}`}
     >
       <div className="flex items-start gap-3">
         <div
           className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
             status.status === "cancelled"
-              ? "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
+              ? "bg-warning-surface text-warning"
               : status.status === "done"
-                ? "bg-green-50 dark:bg-green-950/40 text-green-600 dark:text-green-400"
-                : "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400"
+                ? "bg-success-surface text-success"
+                : "bg-accent-surface text-accent-on-surface"
           }`}
         >
           {isActive ? (
@@ -308,10 +308,10 @@ export function EnrichmentProgressBanner({
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+              <p className="text-sm font-semibold text-fg">
                 {title}
               </p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="text-xs text-fg-secondary">
                 {done} of {total} done{failed > 0 ? ` — ${failed} failed` : ""}
                 {running > 0 ? ` — ${running} running` : ""}
                 {queued > 0 ? ` — ${queued} queued` : ""}

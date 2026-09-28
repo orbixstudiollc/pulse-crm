@@ -24,7 +24,7 @@ export function PostPreview({
 
   if (selectedPlatforms.length === 0) {
     return (
-      <div className={cn("text-center py-8 text-neutral-500", className)}>
+      <div className={cn("text-center py-8 text-fg-secondary", className)}>
         Select platforms to preview your post
       </div>
     );
@@ -35,16 +35,16 @@ export function PostPreview({
   return (
     <div className={cn("space-y-4", className)}>
       {selectedPlatforms.length > 1 && (
-        <div className="flex gap-2 border-b border-neutral-200 dark:border-neutral-800">
+        <div className="flex gap-2 border-b border-divider">
           {selectedPlatforms.map((platform) => (
             <button
               key={platform}
               onClick={() => setActivePlatform(platform)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
+                "flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors border-b -mb-px",
                 activePlatform === platform
-                  ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
-                  : "border-transparent text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200",
+                  ? "border-inverse text-fg"
+                  : "border-transparent text-fg-secondary hover:text-fg",
               )}
             >
               <PlatformIcon platform={platform} size="sm" />
@@ -54,7 +54,7 @@ export function PostPreview({
         </div>
       )}
 
-      <div className="rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4">
+      <div className="rounded-lg border border-line bg-surface p-4">
         {renderPlatformPreview(currentPlatform, text, media)}
       </div>
     </div>
@@ -73,21 +73,21 @@ function renderPlatformPreview(
       return (
         <div className="space-y-3">
           <div className="flex gap-3">
-            <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+            <div className="w-10 h-10 rounded-full bg-active" />
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                <span className="font-semibold text-fg">
                   Your Name
                 </span>
-                <span className="text-neutral-500">@username</span>
-                <span className="text-neutral-500">·</span>
-                <span className="text-neutral-500">now</span>
+                <span className="text-fg-secondary">@username</span>
+                <span className="text-fg-secondary">·</span>
+                <span className="text-fg-secondary">now</span>
               </div>
-              <p className="text-neutral-900 dark:text-neutral-100 whitespace-pre-wrap">
+              <p className="text-fg whitespace-pre-wrap">
                 {text || "Your post text will appear here..."}
               </p>
               {hasMedia && (
-                <div className="grid grid-cols-2 gap-2 rounded-xl overflow-hidden">
+                <div className="grid grid-cols-2 gap-2 rounded-lg overflow-hidden">
                   {media.slice(0, 4).map((item) => (
                     <img
                       key={item.id}
@@ -107,19 +107,19 @@ function renderPlatformPreview(
       return (
         <div className="space-y-3">
           <div className="flex gap-3">
-            <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+            <div className="w-10 h-10 rounded-full bg-active" />
             <div className="flex-1">
-              <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+              <div className="font-semibold text-fg">
                 Your Name
               </div>
-              <div className="text-xs text-neutral-500">Just now · 🌎</div>
+              <div className="text-xs text-fg-secondary">Just now · 🌎</div>
             </div>
           </div>
-          <p className="text-neutral-900 dark:text-neutral-100 whitespace-pre-wrap">
+          <p className="text-fg whitespace-pre-wrap">
             {text || "Your post text will appear here..."}
           </p>
           {hasMedia && (
-            <div className="rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-800">
+            <div className="rounded-lg overflow-hidden border border-line">
               {media.slice(0, 1).map((item) => (
                 <img
                   key={item.id}
@@ -137,13 +137,13 @@ function renderPlatformPreview(
       return (
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-neutral-200 dark:bg-neutral-700" />
-            <span className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+            <div className="w-8 h-8 rounded-full bg-active" />
+            <span className="font-semibold text-sm text-fg">
               your_username
             </span>
           </div>
           {hasMedia && (
-            <div className="aspect-square rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+            <div className="aspect-square rounded-lg overflow-hidden bg-muted">
               {media.slice(0, 1).map((item) => (
                 <img
                   key={item.id}
@@ -154,7 +154,7 @@ function renderPlatformPreview(
               ))}
             </div>
           )}
-          <p className="text-sm text-neutral-900 dark:text-neutral-100">
+          <p className="text-sm text-fg">
             <span className="font-semibold">your_username</span>{" "}
             {text || "Your caption will appear here..."}
           </p>
@@ -165,21 +165,21 @@ function renderPlatformPreview(
       return (
         <div className="space-y-3">
           <div className="flex gap-3">
-            <div className="w-12 h-12 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+            <div className="w-12 h-12 rounded-full bg-active" />
             <div className="flex-1">
-              <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+              <div className="font-semibold text-fg">
                 Your Name
               </div>
-              <div className="text-xs text-neutral-500">
+              <div className="text-xs text-fg-secondary">
                 Your Title · Just now · 🌎
               </div>
             </div>
           </div>
-          <p className="text-sm text-neutral-900 dark:text-neutral-100 whitespace-pre-wrap">
+          <p className="text-sm text-fg whitespace-pre-wrap">
             {text || "Your post text will appear here..."}
           </p>
           {hasMedia && (
-            <div className="rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-800">
+            <div className="rounded-lg overflow-hidden border border-line">
               {media.slice(0, 1).map((item) => (
                 <img
                   key={item.id}
@@ -197,18 +197,18 @@ function renderPlatformPreview(
       return (
         <div className="space-y-3">
           <div className="flex gap-3">
-            <div className="w-9 h-9 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+            <div className="w-9 h-9 rounded-full bg-active" />
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+                <span className="font-semibold text-sm text-fg">
                   your_username
                 </span>
               </div>
-              <p className="text-sm text-neutral-900 dark:text-neutral-100 whitespace-pre-wrap">
+              <p className="text-sm text-fg whitespace-pre-wrap">
                 {text || "Your thread will appear here..."}
               </p>
               {hasMedia && (
-                <div className="rounded-xl overflow-hidden">
+                <div className="rounded-lg overflow-hidden">
                   {media.slice(0, 1).map((item) => (
                     <img
                       key={item.id}
@@ -228,15 +228,15 @@ function renderPlatformPreview(
       return (
         <div className="space-y-3">
           <div className="flex gap-3">
-            <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+            <div className="w-10 h-10 rounded-full bg-active" />
             <div className="flex-1">
-              <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+              <div className="font-semibold text-fg">
                 Your Name
               </div>
-              <div className="text-xs text-neutral-500">Just now</div>
+              <div className="text-xs text-fg-secondary">Just now</div>
             </div>
           </div>
-          <p className="text-neutral-900 dark:text-neutral-100 whitespace-pre-wrap">
+          <p className="text-fg whitespace-pre-wrap">
             {text || "Your post text will appear here..."}
           </p>
           {hasMedia && (

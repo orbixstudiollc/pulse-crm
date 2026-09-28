@@ -53,25 +53,25 @@ function RadioOption({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 w-full rounded border px-4 py-3 text-sm text-left transition-colors",
+        "flex items-center gap-3 w-full rounded-md border px-3 py-2 text-sm text-left transition-colors",
         selected
-          ? "border-neutral-950 dark:border-neutral-50 bg-neutral-50 dark:bg-neutral-800"
-          : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700",
+          ? "border-inverse bg-subtle"
+          : "border-line hover:border-fg-muted",
       )}
     >
       <div
         className={cn(
-          "flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors shrink-0",
+          "flex h-5 w-5 items-center justify-center rounded-full border transition-colors shrink-0",
           selected
-            ? "border-neutral-950 dark:border-neutral-50"
-            : "border-neutral-300 dark:border-neutral-600",
+            ? "border-inverse"
+            : "border-line",
         )}
       >
         {selected && (
-          <div className="h-2.5 w-2.5 rounded-full bg-neutral-950 dark:bg-neutral-50" />
+          <div className="h-2.5 w-2.5 rounded-full bg-inverse" />
         )}
       </div>
-      <span className="text-neutral-950 dark:text-neutral-50">{label}</span>
+      <span className="text-fg">{label}</span>
     </button>
   );
 }
@@ -92,14 +92,14 @@ function CheckboxOption({
       type="button"
       onClick={onChange}
       className={cn(
-        "flex items-center gap-3 w-full rounded border px-4 py-3 text-sm text-left transition-colors",
+        "flex items-center gap-3 w-full rounded-md border px-3 py-2 text-sm text-left transition-colors",
         checked
-          ? "border-neutral-950 dark:border-neutral-50 bg-neutral-50 dark:bg-neutral-800"
-          : "border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700",
+          ? "border-inverse bg-subtle"
+          : "border-line hover:border-fg-muted",
       )}
     >
       <Checkbox checked={checked} onChange={onChange} />
-      <span className="text-neutral-950 dark:text-neutral-50">{label}</span>
+      <span className="text-fg">{label}</span>
     </button>
   );
 }
@@ -108,7 +108,7 @@ function CheckboxOption({
 
 function SectionLabel({ children }: { children: string }) {
   return (
-    <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 mb-3">
+    <p className="text-sm font-medium text-fg mb-3">
       {children}
     </p>
   );
@@ -153,19 +153,19 @@ export function FilterDealsModal({
     <Modal open={open} onClose={onClose} className="sm:max-w-2xl">
       <div>
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 p-5">
-          <h2 className="text-xl font-serif text-neutral-950 dark:text-neutral-50">
+        <div className="flex h-12 items-center justify-between border-b border-divider px-4">
+          <h2 className="text-heading-md text-fg">
             Filter Deals
           </h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
           >
-            <XIcon size={20} className="text-neutral-500" />
+            <XIcon size={20} className="text-fg-secondary" />
           </button>
         </div>
         {/* Filter Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6 p-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6 p-4">
           {/* Close Date - Radio */}
           <div>
             <SectionLabel>Close Date</SectionLabel>
@@ -267,7 +267,7 @@ export function FilterDealsModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50 p-5">
+        <div className="flex items-center justify-end gap-2 border-t border-divider bg-subtle px-4 py-3">
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>

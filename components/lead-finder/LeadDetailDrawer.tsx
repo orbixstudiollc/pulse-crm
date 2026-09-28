@@ -147,15 +147,15 @@ function getCampaignKpis(p: Personalization | null) {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  new: "text-blue-400 bg-blue-400/10",
-  enriching: "text-amber-400 bg-amber-400/10",
-  enriched: "text-green-400 bg-green-400/10",
-  qualified: "text-green-400 bg-green-400/10",
-  converted: "text-violet-400 bg-violet-400/10",
-  disqualified: "text-red-400 bg-red-400/10",
-  declined: "text-red-400 bg-red-400/10",
-  archived: "text-neutral-400 bg-neutral-400/10",
-  error: "text-red-400 bg-red-400/10",
+  new: "text-accent-strong bg-accent-surface",
+  enriching: "text-warning bg-warning-surface",
+  enriched: "text-success bg-success-surface",
+  qualified: "text-success bg-success-surface",
+  converted: "text-accent-strong bg-accent-surface",
+  disqualified: "text-danger bg-danger-surface",
+  declined: "text-danger bg-danger-surface",
+  archived: "text-fg-muted bg-muted",
+  error: "text-danger bg-danger-surface",
 };
 
 const ALL_STATUSES = ["new", "enriching", "enriched", "qualified", "converted", "disqualified", "declined", "archived"];
@@ -197,21 +197,21 @@ function Section({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border border-neutral-800 rounded-lg overflow-hidden">
+    <div className="border border-line rounded-lg overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-neutral-800/30 transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-muted transition-colors"
       >
-        <span className="flex items-center gap-1.5 text-xs font-semibold text-neutral-50">
-          {Icon && <Icon size={12} className="text-neutral-400" />}
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-fg">
+          {Icon && <Icon size={12} className="text-fg-muted" />}
           {title}
         </span>
         <div className="flex items-center gap-1.5">
           {action && open && <div onClick={(e) => e.stopPropagation()}>{action}</div>}
           {open ? (
-            <CaretDownIcon size={12} className="text-neutral-400" />
+            <CaretDownIcon size={12} className="text-fg-muted" />
           ) : (
-            <CaretRightIcon size={12} className="text-neutral-400" />
+            <CaretRightIcon size={12} className="text-fg-muted" />
           )}
         </div>
       </button>
@@ -236,23 +236,23 @@ function InfoRow({
   const strVal = typeof value === "string" ? value : null;
   return (
     <div className="flex items-start gap-2 py-1.5">
-      {Icon && <Icon size={12} className="text-neutral-400 mt-0.5 shrink-0" />}
-      <span className="text-[11px] text-neutral-400 w-20 shrink-0 mt-0.5">{label}</span>
+      {Icon && <Icon size={12} className="text-fg-muted mt-0.5 shrink-0" />}
+      <span className="text-xs text-fg-muted w-20 shrink-0 mt-0.5">{label}</span>
       {value ? (
         link && strVal ? (
           <a
             href={strVal.startsWith("http") ? strVal : `https://${strVal}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-blue-400 hover:underline min-w-0 break-all"
+            className="text-xs text-accent-strong hover:underline min-w-0 break-all"
           >
             {strVal}
           </a>
         ) : (
-          <span className="text-xs text-neutral-50 min-w-0 break-all">{value}</span>
+          <span className="text-xs text-fg min-w-0 break-all">{value}</span>
         )
       ) : (
-        <span className="text-xs text-neutral-500 italic">Not set</span>
+        <span className="text-xs text-fg-secondary italic">Not set</span>
       )}
     </div>
   );
@@ -275,8 +275,8 @@ function EditableRow({
 }) {
   return (
     <div className="flex items-start gap-2 py-1">
-      {Icon && <Icon size={12} className="text-neutral-400 mt-2 shrink-0" />}
-      <span className="text-[11px] text-neutral-400 w-20 shrink-0 mt-1.5">{label}</span>
+      {Icon && <Icon size={12} className="text-fg-muted mt-2 shrink-0" />}
+      <span className="text-xs text-fg-muted w-20 shrink-0 mt-1.5">{label}</span>
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -559,7 +559,7 @@ export function LeadDetailDrawer({ open, onClose, leadId, campaignId }: LeadDeta
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/60 z-40"
+            className="fixed inset-0 bg-black/40 z-40"
             onClick={onClose}
           />
 
@@ -568,20 +568,20 @@ export function LeadDetailDrawer({ open, onClose, leadId, campaignId }: LeadDeta
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 h-[85vh] bg-neutral-950 border-t border-neutral-800 rounded-t-2xl shadow-2xl z-50 flex flex-col"
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="fixed bottom-0 left-0 right-0 h-[85vh] bg-surface border-t border-line rounded-t-lg z-50 flex flex-col"
           >
             {/* ── Loading state ─────────────────────────────────────────── */}
             {loading && (
               <div className="flex-1 flex items-center justify-center">
-                <CircleNotchIcon size={28} className="animate-spin text-neutral-400" />
+                <CircleNotchIcon size={28} className="animate-spin text-fg-muted" />
               </div>
             )}
 
             {/* ── Error state ──────────────────────────────────────────── */}
             {!loading && !lead && (
               <div className="flex-1 flex flex-col items-center justify-center gap-2">
-                <p className="text-sm text-neutral-400">Lead not found</p>
+                <p className="text-sm text-fg-secondary">Lead not found</p>
                 <Button variant="ghost" size="sm" onClick={onClose}>Close</Button>
               </div>
             )}
@@ -590,11 +590,11 @@ export function LeadDetailDrawer({ open, onClose, leadId, campaignId }: LeadDeta
             {!loading && lead && ld && (
               <>
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-3.5 border-b border-neutral-800 shrink-0">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-divider shrink-0">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h2 className="text-base font-bold text-neutral-50 truncate">
+                        <h2 className="text-heading-md text-fg truncate">
                           {ld.displayName || "Unknown Lead"}
                         </h2>
                         <ScoreBadge score={ld.score} />
@@ -602,29 +602,29 @@ export function LeadDetailDrawer({ open, onClose, leadId, campaignId }: LeadDeta
                         <div className="relative" ref={statusMenuRef}>
                           <button
                             onClick={() => setStatusMenuOpen(!statusMenuOpen)}
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium capitalize ${STATUS_STYLES[lead.status] || "text-neutral-400 bg-neutral-800"}`}
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_STYLES[lead.status] || "text-fg-secondary bg-muted"}`}
                           >
                             {lead.status}
                             <CaretDownIcon size={10} />
                           </button>
                           {statusMenuOpen && (
-                            <div className="absolute left-0 mt-1 w-40 bg-neutral-900 border border-neutral-800 rounded-lg shadow-lg z-30 py-1">
+                            <div className="absolute left-0 mt-1 w-40 bg-surface border border-line rounded-lg shadow-dropdown z-30 p-1">
                               {ALL_STATUSES.map((s) => (
                                 <button
                                   key={s}
                                   onClick={() => handleStatusChange(s)}
                                   disabled={s === lead.status}
-                                  className="w-full text-left px-3 py-1.5 text-xs capitalize hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-default transition-colors flex items-center gap-2"
+                                  className="w-full text-left px-2 py-1.5 rounded-md text-xs capitalize hover:bg-muted disabled:opacity-40 disabled:cursor-default transition-colors flex items-center gap-2"
                                 >
-                                  <span className={`inline-block w-1.5 h-1.5 rounded-full ${STATUS_STYLES[s]?.split(" ")[0]?.replace("text-", "bg-") || "bg-neutral-500"}`} />
-                                  <span className="text-neutral-50">{s}</span>
+                                  <span className={`inline-block w-1.5 h-1.5 rounded-full ${STATUS_STYLES[s]?.split(" ")[0]?.replace("text-", "bg-") || "bg-fg-muted"}`} />
+                                  <span className="text-fg">{s}</span>
                                 </button>
                               ))}
                             </div>
                           )}
                         </div>
                       </div>
-                      <p className="text-[11px] text-neutral-400 mt-0.5">
+                      <p className="text-xs text-fg-muted mt-0.5">
                         {ld.source?.replace(/_/g, " ") || "Unknown source"} | {ld.createdAt ? new Date(ld.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "--"}
                       </p>
                     </div>
@@ -669,15 +669,15 @@ export function LeadDetailDrawer({ open, onClose, leadId, campaignId }: LeadDeta
                     {/* Close */}
                     <button
                       onClick={onClose}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-neutral-800 transition-colors"
+                      className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted transition-colors"
                     >
-                      <XIcon size={16} className="text-neutral-400" />
+                      <XIcon size={16} className="text-fg-secondary" />
                     </button>
                   </div>
                 </div>
 
                 {/* Scrollable content */}
-                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
                   {/* ── Contact Information ──────────────────────────────── */}
                   <Section
                     title="Contact Information"
@@ -700,7 +700,7 @@ export function LeadDetailDrawer({ open, onClose, leadId, campaignId }: LeadDeta
                       )
                     }
                   >
-                    <div className="space-y-0 divide-y divide-neutral-800/50">
+                    <div className="space-y-0 divide-y divide-row">
                       {isEditingContact ? (
                         <>
                           <EditableRow icon={EnvelopeIcon} label="Email" value={editContactValues.email || ""} onChange={(v) => setEditContactValues({ ...editContactValues, email: v })} placeholder="email@example.com" />
@@ -747,57 +747,57 @@ export function LeadDetailDrawer({ open, onClose, leadId, campaignId }: LeadDeta
                       <div className="space-y-3">
                         {persSum && (
                           <div>
-                            <p className="text-[11px] text-neutral-400 mb-0.5">Summary</p>
-                            <p className="text-xs text-neutral-200 leading-relaxed whitespace-pre-wrap">{persSum}</p>
+                            <p className="text-xs text-fg-muted mb-0.5">Summary</p>
+                            <p className="text-xs text-fg-secondary leading-relaxed whitespace-pre-wrap">{persSum}</p>
                           </div>
                         )}
                         {p.companyDescription && (
                           <div>
-                            <p className="text-[11px] text-neutral-400 mb-0.5">About</p>
-                            <p className="text-xs text-neutral-200">{p.companyDescription}</p>
+                            <p className="text-xs text-fg-muted mb-0.5">About</p>
+                            <p className="text-xs text-fg-secondary">{p.companyDescription}</p>
                           </div>
                         )}
                         {painPoints.length > 0 && (
                           <div>
-                            <p className="text-[11px] text-neutral-400 mb-1">Pain Points</p>
+                            <p className="text-xs text-fg-muted mb-1">Pain Points</p>
                             <div className="flex flex-wrap gap-1">
                               {painPoints.map((pp, i) => (
-                                <span key={i} className="px-1.5 py-0.5 rounded bg-red-400/10 text-red-400 text-[11px]">{pp}</span>
+                                <span key={i} className="px-1.5 py-0.5 rounded-full bg-danger-surface text-danger text-xs">{pp}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {techStack.length > 0 && (
                           <div>
-                            <p className="text-[11px] text-neutral-400 mb-1">Tech Stack</p>
+                            <p className="text-xs text-fg-muted mb-1">Tech Stack</p>
                             <div className="flex flex-wrap gap-1">
                               {techStack.map((t, i) => (
-                                <span key={i} className="px-1.5 py-0.5 rounded bg-blue-400/10 text-blue-400 text-[11px]">{t}</span>
+                                <span key={i} className="px-1.5 py-0.5 rounded-full bg-accent-surface text-accent-on-surface text-xs">{t}</span>
                               ))}
                             </div>
                           </div>
                         )}
                         {(p.hasChatbot || p.hasBookingSystem) && (
                           <div>
-                            <p className="text-[11px] text-neutral-400 mb-1">Detections</p>
+                            <p className="text-xs text-fg-muted mb-1">Detections</p>
                             <div className="flex flex-wrap gap-1">
-                              {p.hasChatbot && <span className="px-1.5 py-0.5 rounded bg-violet-400/10 text-violet-400 text-[11px]">Chatbot</span>}
-                              {p.hasBookingSystem && <span className="px-1.5 py-0.5 rounded bg-violet-400/10 text-violet-400 text-[11px]">Booking System</span>}
+                              {p.hasChatbot && <span className="px-1.5 py-0.5 rounded-full bg-accent-surface text-accent-on-surface text-xs">Chatbot</span>}
+                              {p.hasBookingSystem && <span className="px-1.5 py-0.5 rounded-full bg-accent-surface text-accent-on-surface text-xs">Booking System</span>}
                             </div>
                           </div>
                         )}
                         {p.lastBlogPost && (
                           <div>
-                            <p className="text-[11px] text-neutral-400 mb-0.5">Last Blog Post</p>
-                            <p className="text-xs text-neutral-200">{p.lastBlogPost}</p>
+                            <p className="text-xs text-fg-muted mb-0.5">Last Blog Post</p>
+                            <p className="text-xs text-fg-secondary">{p.lastBlogPost}</p>
                           </div>
                         )}
                         {p.enrichment_actors && p.enrichment_actors.length > 0 && (
                           <div>
-                            <p className="text-[11px] text-neutral-400 mb-1">Enrichment Actors</p>
+                            <p className="text-xs text-fg-muted mb-1">Enrichment Actors</p>
                             <div className="flex flex-wrap gap-1">
                               {p.enrichment_actors.map((actor, i) => (
-                                <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 text-[11px]">
+                                <span key={i} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-muted text-fg-secondary text-xs">
                                   <LightningIcon size={9} />
                                   {actor}
                                 </span>
@@ -835,20 +835,20 @@ export function LeadDetailDrawer({ open, onClose, leadId, campaignId }: LeadDeta
                             {kpi.type === "boolean" ? (
                               <div className="flex items-center justify-between w-full">
                                 <div>
-                                  <p className="text-xs text-neutral-50">{kpi.label}</p>
-                                  {kpi.description && <p className="text-[11px] text-neutral-500">{kpi.description}</p>}
+                                  <p className="text-xs text-fg">{kpi.label}</p>
+                                  {kpi.description && <p className="text-xs text-fg-secondary">{kpi.description}</p>}
                                 </div>
                                 <button
                                   onClick={() => updateKpiValue(kpi.id, kpiValues[kpi.id] !== true)}
-                                  className={`relative w-9 h-[18px] rounded-full transition-colors ${kpiValues[kpi.id] === true ? "bg-green-500" : "bg-neutral-700"}`}
+                                  className={`relative w-9 h-[18px] rounded-full transition-colors ${kpiValues[kpi.id] === true ? "bg-success-fill" : "bg-active"}`}
                                 >
-                                  <span className={`absolute top-[2px] left-[2px] w-[14px] h-[14px] rounded-full bg-white transition-transform ${kpiValues[kpi.id] === true ? "translate-x-[18px]" : ""}`} />
+                                  <span className={`absolute top-[2px] left-[2px] w-[14px] h-[14px] rounded-full bg-surface transition-transform ${kpiValues[kpi.id] === true ? "translate-x-[18px]" : ""}`} />
                                 </button>
                               </div>
                             ) : (
                               <div className="w-full space-y-0.5">
-                                <p className="text-xs text-neutral-50">{kpi.label}</p>
-                                {kpi.description && <p className="text-[11px] text-neutral-500">{kpi.description}</p>}
+                                <p className="text-xs text-fg">{kpi.label}</p>
+                                {kpi.description && <p className="text-xs text-fg-secondary">{kpi.description}</p>}
                                 <Input
                                   value={typeof kpiValues[kpi.id] === "string" ? (kpiValues[kpi.id] as string) : ""}
                                   onChange={(e) => updateKpiValue(kpi.id, e.target.value)}
@@ -868,12 +868,12 @@ export function LeadDetailDrawer({ open, onClose, leadId, campaignId }: LeadDeta
                     <Section title="KPI Values" icon={ChartBarIcon} defaultOpen={true}>
                       <div className="space-y-0.5">
                         {Object.entries(campaignKpis).map(([key, value]) => (
-                          <div key={key} className="flex items-center justify-between py-1.5 border-b border-neutral-800/30 last:border-0">
-                            <span className="text-[11px] text-neutral-400 capitalize">{key.replace(/_/g, " ")}</span>
+                          <div key={key} className="flex items-center justify-between py-1.5 border-b border-row last:border-0">
+                            <span className="text-xs text-fg-muted capitalize">{key.replace(/_/g, " ")}</span>
                             {typeof value === "boolean" ? (
-                              value ? <CheckCircleIcon size={14} className="text-green-400" /> : <XCircleIcon size={14} className="text-red-400" />
+                              value ? <CheckCircleIcon size={14} className="text-success" /> : <XCircleIcon size={14} className="text-danger" />
                             ) : (
-                              <span className="text-[11px] text-neutral-50">{String(value)}</span>
+                              <span className="text-xs text-fg">{String(value)}</span>
                             )}
                           </div>
                         ))}
@@ -886,9 +886,9 @@ export function LeadDetailDrawer({ open, onClose, leadId, campaignId }: LeadDeta
                     <Section title="Dynamic Fields" icon={TagIcon} defaultOpen={false}>
                       <div className="space-y-0.5">
                         {Object.entries(ld.mappedData).map(([key, value]) => (
-                          <div key={key} className="flex items-start justify-between py-1 border-b border-neutral-800/30 last:border-0">
-                            <span className="text-[11px] text-neutral-400 capitalize">{key.replace(/_/g, " ")}</span>
-                            <span className="text-[11px] text-neutral-50 text-right max-w-[60%] break-all">
+                          <div key={key} className="flex items-start justify-between py-1 border-b border-row last:border-0">
+                            <span className="text-xs text-fg-muted capitalize">{key.replace(/_/g, " ")}</span>
+                            <span className="text-xs text-fg text-right max-w-[60%] break-all">
                               {typeof value === "object" ? JSON.stringify(value) : String(value ?? "")}
                             </span>
                           </div>
@@ -902,31 +902,31 @@ export function LeadDetailDrawer({ open, onClose, leadId, campaignId }: LeadDeta
                     <Section title="Cost Breakdown" icon={CurrencyDollarIcon} defaultOpen={false}>
                       <div className="space-y-2">
                         <div className="flex justify-between items-baseline">
-                          <span className="text-xs font-medium text-neutral-50">Total Cost</span>
-                          <span className="text-sm font-bold tabular-nums text-neutral-50">${totalCost.toFixed(4)}</span>
+                          <span className="text-xs font-medium text-fg">Total Cost</span>
+                          <span className="text-sm font-semibold tabular-nums text-fg">${totalCost.toFixed(4)}</span>
                         </div>
-                        <div className="border-t border-neutral-800" />
+                        <div className="border-t border-divider" />
                         <div className="space-y-1.5">
-                          <p className="text-[11px] font-medium text-neutral-400">Discovery</p>
+                          <p className="text-xs font-medium text-fg-muted">Discovery</p>
                           <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
-                            <span className="text-neutral-400">LLM</span>
-                            <span className="text-right tabular-nums text-neutral-50">${discoveryLlm.toFixed(4)}</span>
-                            <span className="text-neutral-400">Apify</span>
-                            <span className="text-right tabular-nums text-neutral-50">${discoveryApify.toFixed(4)}</span>
-                            <span className="font-medium text-neutral-50">Subtotal</span>
-                            <span className="text-right font-medium tabular-nums text-neutral-50">${discoveryCost.toFixed(4)}</span>
+                            <span className="text-fg-muted">LLM</span>
+                            <span className="text-right tabular-nums text-fg">${discoveryLlm.toFixed(4)}</span>
+                            <span className="text-fg-muted">Apify</span>
+                            <span className="text-right tabular-nums text-fg">${discoveryApify.toFixed(4)}</span>
+                            <span className="font-medium text-fg">Subtotal</span>
+                            <span className="text-right font-medium tabular-nums text-fg">${discoveryCost.toFixed(4)}</span>
                           </div>
                         </div>
                         {isEnrichedStatus && enrichmentCost > 0 && (
                           <div className="space-y-1.5">
-                            <p className="text-[11px] font-medium text-neutral-400">Enrichment</p>
+                            <p className="text-xs font-medium text-fg-muted">Enrichment</p>
                             <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs">
-                              <span className="text-neutral-400">LLM</span>
-                              <span className="text-right tabular-nums text-neutral-50">${enrichmentLlm.toFixed(4)}</span>
-                              <span className="text-neutral-400">Apify</span>
-                              <span className="text-right tabular-nums text-neutral-50">${enrichmentApify.toFixed(4)}</span>
-                              <span className="font-medium text-neutral-50">Subtotal</span>
-                              <span className="text-right font-medium tabular-nums text-neutral-50">${enrichmentCost.toFixed(4)}</span>
+                              <span className="text-fg-muted">LLM</span>
+                              <span className="text-right tabular-nums text-fg">${enrichmentLlm.toFixed(4)}</span>
+                              <span className="text-fg-muted">Apify</span>
+                              <span className="text-right tabular-nums text-fg">${enrichmentApify.toFixed(4)}</span>
+                              <span className="font-medium text-fg">Subtotal</span>
+                              <span className="text-right font-medium tabular-nums text-fg">${enrichmentCost.toFixed(4)}</span>
                             </div>
                           </div>
                         )}
@@ -940,16 +940,16 @@ export function LeadDetailDrawer({ open, onClose, leadId, campaignId }: LeadDeta
                       {ld.rawData && (
                         <div>
                           <div className="flex items-center justify-between mb-1">
-                            <p className="text-[11px] font-medium text-neutral-400">Source Data</p>
+                            <p className="text-xs font-medium text-fg-muted">Source Data</p>
                             <button
                               onClick={() => navigator.clipboard.writeText(JSON.stringify(ld.rawData, null, 2)).then(() => toast.success("Copied"))}
-                              className="rounded p-0.5 text-neutral-400 hover:bg-neutral-800 transition-colors"
+                              className="rounded-md p-0.5 text-fg-muted hover:bg-muted transition-colors"
                               title="Copy JSON"
                             >
                               <CopyIcon size={12} />
                             </button>
                           </div>
-                          <pre className="max-h-40 overflow-auto rounded bg-neutral-950 border border-neutral-800 p-2 text-[11px] text-neutral-300">
+                          <pre className="max-h-40 overflow-auto rounded-md bg-code border border-line p-2 text-xs text-fg-secondary">
                             {JSON.stringify(ld.rawData, null, 2)}
                           </pre>
                         </div>
@@ -957,16 +957,16 @@ export function LeadDetailDrawer({ open, onClose, leadId, campaignId }: LeadDeta
                       {p?.rawEnrichmentData && Object.keys(p.rawEnrichmentData).length > 0 && (
                         <div>
                           <div className="flex items-center justify-between mb-1">
-                            <p className="text-[11px] font-medium text-neutral-400">Enrichment Data</p>
+                            <p className="text-xs font-medium text-fg-muted">Enrichment Data</p>
                             <button
                               onClick={() => navigator.clipboard.writeText(JSON.stringify(p.rawEnrichmentData, null, 2)).then(() => toast.success("Copied"))}
-                              className="rounded p-0.5 text-neutral-400 hover:bg-neutral-800 transition-colors"
+                              className="rounded-md p-0.5 text-fg-muted hover:bg-muted transition-colors"
                               title="Copy JSON"
                             >
                               <CopyIcon size={12} />
                             </button>
                           </div>
-                          <pre className="max-h-40 overflow-auto rounded bg-neutral-950 border border-neutral-800 p-2 text-[11px] text-neutral-300">
+                          <pre className="max-h-40 overflow-auto rounded-md bg-code border border-line p-2 text-xs text-fg-secondary">
                             {JSON.stringify(p.rawEnrichmentData, null, 2)}
                           </pre>
                         </div>
@@ -975,8 +975,8 @@ export function LeadDetailDrawer({ open, onClose, leadId, campaignId }: LeadDeta
                   </Section>
 
                   {/* ── Source & Meta ───────────────────────────────────── */}
-                  <div className="flex items-center gap-4 text-[11px] text-neutral-400 pt-1 pb-2">
-                    <span>Source: <a href={`https://apify.com/${ld.source}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">{ld.source} <ArrowSquareOutIcon size={10} className="inline" /></a></span>
+                  <div className="flex items-center gap-4 text-xs text-fg-muted pt-1 pb-2">
+                    <span>Source: <a href={`https://apify.com/${ld.source}`} target="_blank" rel="noopener noreferrer" className="text-accent-strong hover:underline">{ld.source} <ArrowSquareOutIcon size={10} className="inline" /></a></span>
                     <span>Created: {ld.createdAt ? new Date(ld.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "--"}</span>
                   </div>
                 </div>

@@ -79,7 +79,7 @@ export function SlashCommandMenu({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 8 }}
         transition={{ duration: 0.15 }}
-        className="absolute bottom-full left-0 right-0 mb-2 max-h-[240px] overflow-y-auto rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg z-50"
+        className="absolute bottom-full left-0 right-0 mb-2 max-h-[240px] overflow-y-auto rounded-lg border border-line bg-surface shadow-dropdown z-50"
       >
         <div className="p-1">
           {commands.map((cmd, i) => {
@@ -89,23 +89,23 @@ export function SlashCommandMenu({
                 key={cmd.id}
                 onClick={() => onSelect(cmd)}
                 onMouseEnter={() => setSelectedIndex(i)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded text-left transition-colors ${
+                className={`w-full flex items-center gap-3 px-2 py-1.5 rounded-md text-left transition-colors ${
                   i === selectedIndex
-                    ? "bg-neutral-100 dark:bg-neutral-800"
-                    : "hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+                    ? "bg-muted"
+                    : "hover:bg-muted"
                 }`}
               >
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-neutral-100 dark:bg-neutral-800">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted">
                   <IconComp
                     size={14}
-                    className="text-neutral-500 dark:text-neutral-400"
+                    className="text-fg-secondary"
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                  <p className="text-sm font-medium text-fg truncate">
                     {cmd.label}
                   </p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                  <p className="text-xs text-fg-secondary truncate">
                     {cmd.description}
                   </p>
                 </div>

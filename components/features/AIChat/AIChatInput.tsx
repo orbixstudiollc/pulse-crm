@@ -75,11 +75,11 @@ export function AIChatInput({
   };
 
   return (
-    <div className="border-t border-neutral-200 dark:border-neutral-700 p-3">
+    <div className="border-t border-divider p-3">
       {contextLabel && (
         <div className="mb-2 flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-neutral-950 dark:bg-neutral-50" />
-          <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+          <div className="w-1.5 h-1.5 rounded-full bg-inverse" />
+          <span className="text-xs text-fg-secondary">
             Context: {contextLabel}
           </span>
         </div>
@@ -99,18 +99,18 @@ export function AIChatInput({
           onKeyDown={handleKeyDown}
           placeholder='Ask Pulse AI... (type "/" for commands)'
           rows={1}
-          className="flex-1 resize-none bg-neutral-100 dark:bg-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-500/50 max-h-[120px]"
+          className="flex-1 resize-none bg-surface border border-line rounded-md px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-accent max-h-[120px]"
           disabled={isLoading}
         />
         <button
           type="submit"
           disabled={!input.trim() || isLoading}
-          className="shrink-0 w-8 h-8 rounded bg-neutral-950 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 disabled:bg-neutral-300 dark:disabled:bg-neutral-700 flex items-center justify-center transition-colors"
+          className="shrink-0 w-8 h-8 rounded-md bg-inverse hover:opacity-90 disabled:opacity-50 flex items-center justify-center transition-opacity"
         >
-          <PaperPlaneTiltIcon className="w-4 h-4 text-white" />
+          <PaperPlaneTiltIcon className="w-4 h-4 text-on-inverse" />
         </button>
       </form>
-      <p className="mt-1.5 text-[10px] text-neutral-400 dark:text-neutral-500 text-center">
+      <p className="mt-1.5 text-xs text-fg-muted text-center">
         Pulse AI can make mistakes. Verify important info.
       </p>
     </div>

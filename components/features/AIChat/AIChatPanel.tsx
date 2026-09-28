@@ -123,10 +123,10 @@ export function AIChatPanel() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={toggleChat}
-            className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-neutral-950 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 shadow-lg shadow-neutral-950/25 flex items-center justify-center transition-colors"
+            className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-inverse hover:opacity-90 flex items-center justify-center transition-opacity"
             title="Open Pulse AI (Ctrl+J)"
           >
-            <SparkleIcon className="w-5 h-5 text-white dark:text-neutral-950" weight="fill" />
+            <SparkleIcon className="w-5 h-5 text-on-inverse" weight="fill" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -138,24 +138,24 @@ export function AIChatPanel() {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className={`fixed z-50 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden ${
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className={`fixed z-50 bg-surface border border-line rounded-lg shadow-modal flex flex-col overflow-hidden ${
               isExpanded
                 ? "bottom-4 right-4 w-[600px] h-[80vh]"
                 : "bottom-6 right-6 w-[380px] h-[520px]"
             }`}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
+            <div className="flex h-12 shrink-0 items-center justify-between px-3 border-b border-divider">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center">
-                  <SparkleIcon className="w-4 h-4 text-neutral-950 dark:text-neutral-50" weight="fill" />
+                <div className="w-7 h-7 rounded-md bg-muted flex items-center justify-center">
+                  <SparkleIcon className="w-4 h-4 text-fg" weight="fill" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                  <h3 className="text-heading-sm text-fg">
                     Pulse AI
                   </h3>
-                  <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                  <p className="text-xs text-fg-secondary">
                     {pageContext.entityName
                       ? `${pageContext.entityType ? pageContext.entityType.charAt(0).toUpperCase() + pageContext.entityType.slice(1) : ''}: ${pageContext.entityName}`
                       : pageContext.page} &bull; Ready
@@ -166,29 +166,29 @@ export function AIChatPanel() {
                 {messages.length > 0 && (
                   <button
                     onClick={() => setMessages([])}
-                    className="w-7 h-7 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 flex items-center justify-center transition-colors"
+                    className="w-7 h-7 rounded-md hover:bg-muted flex items-center justify-center transition-colors"
                     title="Clear chat"
                   >
-                    <span className="text-xs text-neutral-500">Clear</span>
+                    <span className="text-xs text-fg-secondary">Clear</span>
                   </button>
                 )}
                 <button
                   onClick={isExpanded ? collapseChat : expandChat}
-                  className="w-7 h-7 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 flex items-center justify-center transition-colors"
+                  className="w-7 h-7 rounded-md hover:bg-muted flex items-center justify-center transition-colors"
                   title={isExpanded ? "Collapse" : "Expand"}
                 >
                   {isExpanded ? (
-                    <ArrowDownIcon className="w-3.5 h-3.5 text-neutral-500" />
+                    <ArrowDownIcon className="w-3.5 h-3.5 text-fg-secondary" />
                   ) : (
-                    <ArrowUpRightIcon className="w-3.5 h-3.5 text-neutral-500" />
+                    <ArrowUpRightIcon className="w-3.5 h-3.5 text-fg-secondary" />
                   )}
                 </button>
                 <button
                   onClick={closeChat}
-                  className="w-7 h-7 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 flex items-center justify-center transition-colors"
+                  className="w-7 h-7 rounded-md hover:bg-muted flex items-center justify-center transition-colors"
                   title="Close (Esc)"
                 >
-                  <XIcon className="w-3.5 h-3.5 text-neutral-500" />
+                  <XIcon className="w-3.5 h-3.5 text-fg-secondary" />
                 </button>
               </div>
             </div>

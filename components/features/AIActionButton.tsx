@@ -38,11 +38,11 @@ export function AIActionButton({
 
   const variantClasses = {
     primary:
-      "bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900",
+      "bg-inverse hover:opacity-90 text-on-inverse",
     secondary:
-      "bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700",
+      "bg-muted hover:bg-active text-fg border border-line",
     ghost:
-      "hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-400",
+      "hover:bg-muted text-fg-secondary",
   };
 
   return (

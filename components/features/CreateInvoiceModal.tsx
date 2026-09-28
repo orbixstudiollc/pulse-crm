@@ -42,20 +42,20 @@ export function CreateInvoiceModal({
   return (
     <Modal open={open} onClose={onClose}>
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-800">
-        <h2 className="text-lg font-serif text-neutral-950 dark:text-neutral-50">
+      <div className="flex h-12 items-center justify-between px-4 border-b border-divider">
+        <h2 className="text-heading-md text-fg">
           Create Invoice
         </h2>
         <button
           onClick={onClose}
-          className="p-1 rounded text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:bg-muted hover:text-fg transition-colors"
         >
           <XIcon size={20} />
         </button>
       </div>
 
       {/* Body */}
-      <div className="p-6 space-y-5">
+      <div className="p-4 space-y-4">
         {/* Invoice Number */}
         <Input
           label="Invoice Number"
@@ -137,8 +137,8 @@ export function CreateInvoiceModal({
       </div>
 
       {/* Footer */}
-      <div className="flex justify-end gap-3 p-6 border-t border-neutral-200 dark:border-neutral-800">
-        <Button variant="outline" onClick={onClose}>
+      <div className="flex justify-end gap-2 px-4 py-3 border-t border-divider">
+        <Button variant="ghost" className="shrink-0" onClick={onClose}>
           Cancel
         </Button>
         <Button onClick={handleCreate}>Create Invoice</Button>

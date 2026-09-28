@@ -27,15 +27,15 @@ interface ScoreBreakdownProps {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function getScoreColor(score: number) {
-  if (score >= 75) return "text-green-600 dark:text-green-400";
-  if (score >= 50) return "text-amber-600 dark:text-amber-400";
-  return "text-red-600 dark:text-red-400";
+  if (score >= 75) return "text-success";
+  if (score >= 50) return "text-warning";
+  return "text-danger";
 }
 
 function getScoreBg(score: number) {
-  if (score >= 75) return "bg-green-50 dark:bg-green-400/10";
-  if (score >= 50) return "bg-amber-50 dark:bg-amber-400/10";
-  return "bg-red-50 dark:bg-red-400/10";
+  if (score >= 75) return "bg-success-surface";
+  if (score >= 50) return "bg-warning-surface";
+  return "bg-danger-surface";
 }
 
 function getProgressColor(score: number): "green" | "amber" | "red" {
@@ -57,7 +57,7 @@ const factors = [
 export function ScoreBreakdown({ breakdown, compact = false }: ScoreBreakdownProps) {
   if (!breakdown) {
     return (
-      <div className="flex items-center justify-center py-8 text-sm text-neutral-400 dark:text-neutral-500">
+      <div className="flex items-center justify-center py-8 text-sm text-fg-secondary">
         No score data available
       </div>
     );
@@ -70,13 +70,13 @@ export function ScoreBreakdown({ breakdown, compact = false }: ScoreBreakdownPro
         <div className="flex items-center gap-3">
           <span
             className={cn(
-              "text-2xl font-bold tabular-nums",
+              "text-2xl font-semibold tabular-nums",
               getScoreColor(breakdown.total),
             )}
           >
             {breakdown.total}
           </span>
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">/ 100</span>
+          <span className="text-xs text-fg-secondary">/ 100</span>
         </div>
 
         {/* Mini bars */}
@@ -90,7 +90,7 @@ export function ScoreBreakdown({ breakdown, compact = false }: ScoreBreakdownPro
                   size="sm"
                 />
               </div>
-              <span className="text-xs tabular-nums text-neutral-500 dark:text-neutral-400 w-7 text-right">
+              <span className="text-xs tabular-nums text-fg-secondary w-7 text-right">
                 {breakdown[factor.key]}
               </span>
             </div>
@@ -105,23 +105,23 @@ export function ScoreBreakdown({ breakdown, compact = false }: ScoreBreakdownPro
       {/* Overall score */}
       <div
         className={cn(
-          "flex items-center gap-4 rounded-xl p-4",
+          "flex items-center gap-4 rounded-lg p-4",
           getScoreBg(breakdown.total),
         )}
       >
         <span
           className={cn(
-            "text-4xl font-bold tabular-nums leading-none",
+            "text-2xl font-semibold tabular-nums leading-none",
             getScoreColor(breakdown.total),
           )}
         >
           {breakdown.total}
         </span>
         <div>
-          <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+          <p className="text-sm font-medium text-fg">
             Lead Score
           </p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="text-xs text-fg-secondary">
             {breakdown.total >= 75
               ? "High quality lead"
               : breakdown.total >= 50
@@ -140,11 +140,11 @@ export function ScoreBreakdown({ breakdown, compact = false }: ScoreBreakdownPro
           return (
             <div key={factor.key} className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <span className="text-sm font-medium text-fg">
                   {factor.label}
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                  <span className="text-xs text-fg-muted">
                     {weight}% weight
                   </span>
                   <span

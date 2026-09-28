@@ -84,10 +84,10 @@ export function SchedulePicker({
         <button
           onClick={() => setMode("now")}
           className={cn(
-            "flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+            "flex-1 h-8 px-3 rounded-md text-sm font-medium transition-colors",
             mode === "now"
-              ? "bg-indigo-600 text-white"
-              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700",
+              ? "bg-accent-strong text-on-inverse"
+              : "bg-muted text-fg hover:bg-active",
           )}
         >
           Post Now
@@ -95,10 +95,10 @@ export function SchedulePicker({
         <button
           onClick={() => setMode("schedule")}
           className={cn(
-            "flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+            "flex-1 h-8 px-3 rounded-md text-sm font-medium transition-colors",
             mode === "schedule"
-              ? "bg-indigo-600 text-white"
-              : "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700",
+              ? "bg-accent-strong text-on-inverse"
+              : "bg-muted text-fg hover:bg-active",
           )}
         >
           Schedule
@@ -109,7 +109,7 @@ export function SchedulePicker({
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              <label className="block text-sm font-medium text-fg mb-2">
                 <CalendarBlankIcon className="inline w-4 h-4 mr-1" />
                 Date
               </label>
@@ -118,12 +118,12 @@ export function SchedulePicker({
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 min={new Date().toISOString().split("T")[0]}
-                className="w-full px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="w-full h-8 px-3 rounded-md border border-line bg-surface text-sm text-fg focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              <label className="block text-sm font-medium text-fg mb-2">
                 <ClockIcon className="inline w-4 h-4 mr-1" />
                 Time
               </label>
@@ -131,19 +131,19 @@ export function SchedulePicker({
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                className="w-full h-8 px-3 rounded-md border border-line bg-surface text-sm text-fg focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            <label className="block text-sm font-medium text-fg mb-2">
               Timezone
             </label>
             <select
               value={selectedTimezone}
               onChange={(e) => handleTimezoneChange(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              className="w-full h-8 px-3 rounded-md border border-line bg-surface text-sm text-fg focus:outline-none focus:ring-2 focus:ring-accent"
             >
               {COMMON_TIMEZONES.map((tz) => (
                 <option key={tz.value} value={tz.value}>
@@ -154,8 +154,8 @@ export function SchedulePicker({
           </div>
 
           {date && time && !error && (
-            <div className="p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800">
-              <p className="text-sm text-indigo-700 dark:text-indigo-400">
+            <div className="p-3 rounded-md bg-accent-surface">
+              <p className="text-sm text-accent-on-surface">
                 Scheduled for{" "}
                 {new Date(`${date}T${time}`).toLocaleString(undefined, {
                   timeZone: selectedTimezone,
@@ -168,8 +168,8 @@ export function SchedulePicker({
           )}
 
           {error && (
-            <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
-              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+            <div className="p-3 rounded-md bg-danger-surface">
+              <p className="text-sm text-danger">{error}</p>
             </div>
           )}
         </div>
