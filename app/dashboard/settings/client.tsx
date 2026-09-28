@@ -98,7 +98,7 @@ import {
   getAIUsageDailyChart,
   getAIUsageLog,
 } from "@/lib/actions/ai-settings";
-import type { AISettings, AIUsageStats, AIUsageDailyPoint, AIUsageLogEntry } from "@/lib/ai/types";
+import type { PublicAISettings, AIUsageStats, AIUsageDailyPoint, AIUsageLogEntry } from "@/lib/ai/types";
 import type { BillingData } from "@/lib/actions/billing";
 import { AutomationSection } from "@/components/automation/AutomationSection";
 import {
@@ -140,7 +140,7 @@ interface IntegrationData {
   [key: string]: unknown;
 }
 
-type AISettingsData = AISettings;
+type AISettingsData = PublicAISettings;
 
 interface SettingsPageClientProps {
   initialProfile: ProfileData | null;
@@ -1527,11 +1527,11 @@ function AISettingsSection({
   settings: AISettingsData | null | undefined;
 }) {
   const [aiProvider, setAiProvider] = useState(settings?.ai_provider ?? "anthropic");
-  const [apiKey, setApiKey] = useState(settings?.api_key ?? "");
+  const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
-  const [openrouterKey, setOpenrouterKey] = useState(settings?.openrouter_api_key ?? "");
+  const [openrouterKey, setOpenrouterKey] = useState("");
   const [showOpenrouterKey, setShowOpenrouterKey] = useState(false);
-  const [apifyKey, setApifyKey] = useState(settings?.apify_api_key ?? "");
+  const [apifyKey, setApifyKey] = useState("");
   const [showApifyKey, setShowApifyKey] = useState(false);
   const [defaultModel, setDefaultModel] = useState(
     settings?.default_model ?? "sonnet"
@@ -1582,11 +1582,11 @@ function AISettingsSection({
     startTransition(async () => {
       const updates: Record<string, unknown> = {
         ai_provider: aiProvider || "anthropic",
-        api_key: apiKey || null,
-        openrouter_api_key: openrouterKey || null,
-        apify_api_key: apifyKey || null,
         default_model: defaultModel,
       };
+      if (apiKey.trim()) updates.api_key = apiKey.trim();
+      if (openrouterKey.trim()) updates.openrouter_api_key = openrouterKey.trim();
+      if (apifyKey.trim()) updates.apify_api_key = apifyKey.trim();
 
       // Feature toggles
       Object.entries(features).forEach(([key, val]) => {
@@ -1696,7 +1696,7 @@ function AISettingsSection({
                 type={showKey ? "text" : "password"}
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="sk-ant-..."
+                placeholder={settings?.has_api_key ? "Saved - enter a new key to replace" : "sk-ant-..."}
                 className="h-8 w-full rounded-md border border-line bg-surface px-3 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
               />
               <button
@@ -1735,7 +1735,7 @@ function AISettingsSection({
                 type={showOpenrouterKey ? "text" : "password"}
                 value={openrouterKey}
                 onChange={(e) => setOpenrouterKey(e.target.value)}
-                placeholder="sk-or-v1-..."
+                placeholder={settings?.has_openrouter_api_key ? "Saved - enter a new key to replace" : "sk-or-v1-..."}
                 className="h-8 w-full rounded-md border border-line bg-surface px-3 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
               />
               <button
@@ -1769,7 +1769,7 @@ function AISettingsSection({
               type={showApifyKey ? "text" : "password"}
               value={apifyKey}
               onChange={(e) => setApifyKey(e.target.value)}
-              placeholder="apify_api_..."
+              placeholder={settings?.has_apify_api_key ? "Saved - enter a new key to replace" : "apify_api_..."}
               className="h-8 w-full rounded-md border border-line bg-surface px-3 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
             />
             <button

@@ -2,9 +2,20 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { AISettings, AIUsageStats, AIUsageDailyPoint, AIUsageLogEntry } from "@/lib/ai/types";
+import { AISettings, PublicAISettings, AIUsageStats, AIUsageDailyPoint, AIUsageLogEntry } from "@/lib/ai/types";
+import { toPublicAISettings, omitBlankAISecrets } from "@/lib/ai/public-settings";
 
-export async function getAISettings(): Promise<AISettings | null> {
+const AI_SETTINGS_SELECT =
+  "id, organization_id, api_key, apify_api_key, ai_provider, openrouter_api_key, openrouter_oauth_token, " +
+  "openrouter_code_verifier, openrouter_expires_at, groq_api_key, ollama_base_url, obsidian_vault_path, " +
+  "obsidian_sync_enabled, openai_api_key, default_model, feature_lead_scoring, feature_icp_matching, " +
+  "feature_outreach, feature_proposals, feature_meetings, feature_analytics, feature_competitors, " +
+  "feature_objections, feature_chat, feature_marketing, autonomy_lead_scoring, autonomy_icp_matching, " +
+  "autonomy_outreach, autonomy_proposals, autonomy_meetings, autonomy_analytics, autonomy_competitors, " +
+  "autonomy_objections, tokens_used_today, tokens_used_month, daily_token_limit, monthly_token_limit, " +
+  "last_token_reset_daily, last_token_reset_monthly, parallel_enrichment_limit, created_at, updated_at";
+
+export async function getAISettings(): Promise<PublicAISettings | null> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -21,7 +32,7 @@ export async function getAISettings(): Promise<AISettings | null> {
 
   const { data, error } = await supabase
     .from("ai_settings")
-    .select("*")
+    .select(AI_SETTINGS_SELECT)
     .eq("organization_id", profile.organization_id)
     .single();
 
@@ -32,7 +43,7 @@ export async function getAISettings(): Promise<AISettings | null> {
       .insert({
         organization_id: profile.organization_id,
       })
-      .select()
+      .select(AI_SETTINGS_SELECT)
       .single();
 
     if (insertError) {
@@ -40,7 +51,7 @@ export async function getAISettings(): Promise<AISettings | null> {
       return null;
     }
 
-    return newSettings as AISettings;
+    return toPublicAISettings(newSettings as unknown as AISettings);
   }
 
   if (error) {
@@ -48,7 +59,7 @@ export async function getAISettings(): Promise<AISettings | null> {
     return null;
   }
 
-  return data as AISettings;
+  return toPublicAISettings(data as unknown as AISettings);
 }
 
 export async function updateAISettings(
@@ -68,9 +79,11 @@ export async function updateAISettings(
 
   if (!profile?.organization_id) return { success: false, error: "No organization" };
 
+  const clean = omitBlankAISecrets(updates);
+
   const { error } = await supabase
     .from("ai_settings")
-    .update(updates)
+    .update(clean)
     .eq("organization_id", profile.organization_id);
 
   if (error) {

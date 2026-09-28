@@ -58,6 +58,27 @@ export interface AISettings {
   updated_at: string;
 }
 
+export const AI_SETTINGS_SECRET_COLUMNS = [
+  "api_key",
+  "openai_api_key",
+  "openrouter_api_key",
+  "groq_api_key",
+  "apify_api_key",
+  "openrouter_oauth_token",
+  "openrouter_code_verifier",
+] as const;
+
+export type PublicAISettings = Omit<
+  AISettings,
+  "api_key" | "openai_api_key" | "openrouter_api_key" | "apify_api_key"
+> & {
+  has_api_key: boolean;
+  has_openai_api_key: boolean;
+  has_openrouter_api_key: boolean;
+  has_groq_api_key: boolean;
+  has_apify_api_key: boolean;
+};
+
 export interface AIResult<T> {
   success: boolean;
   data?: T;
