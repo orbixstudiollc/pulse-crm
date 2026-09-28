@@ -5,6 +5,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { timingSafeEqual } from "node:crypto";
+import { BlockList, isIP } from "node:net";
 
 // ── Timing-safe string compare ────────────────────────────────────────────
 
@@ -121,8 +122,42 @@ export function isSafeExternalUrl(raw: string | null | undefined): boolean {
 
 // ── SSRF guards ───────────────────────────────────────────────────────────
 
+// One BlockList per family: Node's BlockList checks IPv4 addresses against
+// IPv6 rules via their mapped form, so a shared list containing
+// ::ffff:0:0/96 would match every IPv4 address.
+const PRIVATE_BLOCKLIST = { ipv4: new BlockList(), ipv6: new BlockList() };
+for (const [net4, prefix] of [
+  ["0.0.0.0", 8],
+  ["10.0.0.0", 8],
+  ["100.64.0.0", 10],
+  ["127.0.0.0", 8],
+  ["169.254.0.0", 16],
+  ["172.16.0.0", 12],
+  ["192.0.0.0", 24],
+  ["192.168.0.0", 16],
+  ["198.18.0.0", 15],
+  ["224.0.0.0", 3],
+] as const) {
+  PRIVATE_BLOCKLIST.ipv4.addSubnet(net4, prefix, "ipv4");
+}
+for (const [net6, prefix] of [
+  ["::", 128],
+  ["::1", 128],
+  // All IPv4-mapped literals (dotted or hex) are rejected outright.
+  ["::ffff:0:0", 96],
+  ["64:ff9b::", 96],
+  ["fc00::", 7],
+  ["fe80::", 10],
+] as const) {
+  PRIVATE_BLOCKLIST.ipv6.addSubnet(net6, prefix, "ipv6");
+}
+
 export function isPrivateHostname(hostname: string): boolean {
-  const host = hostname.toLowerCase();
+  let host = hostname.toLowerCase();
+  if (host.startsWith("[") && host.endsWith("]")) host = host.slice(1, -1);
+  const zone = host.indexOf("%");
+  if (zone !== -1) host = host.slice(0, zone);
+  if (host.endsWith(".")) host = host.slice(0, -1);
 
   if (
     host === "localhost" ||
@@ -134,25 +169,10 @@ export function isPrivateHostname(hostname: string): boolean {
     return true;
   }
 
-  if (host === "::1" || host === "[::1]") return true;
-
-  // IPv4 literal
-  const ipv4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
-  if (ipv4) {
-    const [, a, b] = ipv4.map(Number);
-    if (a === 10) return true;
-    if (a === 127) return true;
-    if (a === 0) return true;
-    if (a === 169 && b === 254) return true;
-    if (a === 172 && b >= 16 && b <= 31) return true;
-    if (a === 192 && b === 168) return true;
-    if (a >= 224) return true;
-    if (a === 100 && b >= 64 && b <= 127) return true;
-  }
-
-  // IPv6 unique-local / link-local shorthand
-  if (host.startsWith("fc") || host.startsWith("fd") || host.startsWith("fe80:")) {
-    return true;
+  const family = isIP(host);
+  if (family) {
+    const type = family === 4 ? "ipv4" : "ipv6";
+    return PRIVATE_BLOCKLIST[type].check(host, type);
   }
 
   return false;
