@@ -37,11 +37,11 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
       title="Lead Details"
       footer={
         lead ? (
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <Button
               variant="outline"
               className="flex-1"
-              leftIcon={<PencilSimpleIcon size={18} />}
+              leftIcon={<PencilSimpleIcon size={16} />}
               onClick={() => {
                 onClose();
                 onEdit?.();
@@ -51,7 +51,7 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
             </Button>
 
             <Link href={`/dashboard/leads/${lead.id}`} className="flex-1">
-              <Button className="w-full" leftIcon={<EyeIcon size={18} />}>
+              <Button className="w-full" leftIcon={<EyeIcon size={16} />}>
                 View Full Details
               </Button>
             </Link>
@@ -62,18 +62,18 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
       {lead ? (
         <>
           {/* Profile Header */}
-          <div className="flex items-center gap-4 mb-6">
-            <Avatar name={lead.name} size="xl" />
+          <div className="flex items-center gap-3 mb-6">
+            <Avatar name={lead.name} size="lg" />
             <div>
-              <h3 className="text-2xl font-serif text-neutral-950 dark:text-neutral-50">
+              <h3 className="text-heading-lg text-fg">
                 {lead.name}
               </h3>
               {lead.title && (
-                <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                <p className="text-sm text-fg-secondary">
                   {lead.title}
                 </p>
               )}
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              <p className="text-sm text-fg-secondary">
                 {lead.company}
               </p>
             </div>
@@ -81,42 +81,42 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-1">
+            <div className="rounded-lg border border-line bg-subtle p-3">
+              <p className="text-xs text-fg-secondary mb-1">
                 Est. Value
               </p>
-              <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
+              <p className="text-[22px] leading-7 font-semibold text-fg">
                 ${lead.estimatedValue.toLocaleString()}
               </p>
             </div>
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-1">
+            <div className="rounded-lg border border-line bg-subtle p-3">
+              <p className="text-xs text-fg-secondary mb-1">
                 Health Score
               </p>
               <p className={cn(
-                "text-3xl font-serif",
+                "text-[22px] leading-7 font-semibold",
                 lead.score >= 75
-                  ? "text-green-600 dark:text-green-400"
+                  ? "text-success"
                   : lead.score >= 50
-                    ? "text-amber-600 dark:text-amber-400"
-                    : "text-red-600 dark:text-red-400",
+                    ? "text-warning"
+                    : "text-danger",
               )}>
                 {lead.score}
               </p>
             </div>
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-1">
+            <div className="rounded-lg border border-line bg-subtle p-3">
+              <p className="text-xs text-fg-secondary mb-1">
                 Win Probability
               </p>
-              <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
+              <p className="text-[22px] leading-7 font-semibold text-fg">
                 {lead.winProbability}%
               </p>
             </div>
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-1">
+            <div className="rounded-lg border border-line bg-subtle p-3">
+              <p className="text-xs text-fg-secondary mb-1">
                 Days in Pipeline
               </p>
-              <p className="text-3xl font-serif text-neutral-950 dark:text-neutral-50">
+              <p className="text-[22px] leading-7 font-semibold text-fg">
                 {lead.daysInPipeline}
               </p>
             </div>
@@ -125,10 +125,10 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
           {/* Score Breakdown */}
           {lead.scoreBreakdown && (
             <div className="mb-6">
-              <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-3">
+              <h4 className="text-xs font-medium text-fg-secondary mb-2">
                 Score Breakdown
               </h4>
-              <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+              <div className="rounded-lg border border-line bg-subtle p-3">
                 <ScoreBreakdown
                   breakdown={
                     typeof lead.scoreBreakdown === "string"
@@ -144,10 +144,10 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
           {/* Qualification Scorecard */}
           {lead.qualificationData && (
             <div className="mb-6">
-              <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-3">
+              <h4 className="text-xs font-medium text-fg-secondary mb-2">
                 Qualification
               </h4>
-              <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
+              <div className="rounded-lg border border-line bg-subtle p-3">
                 <QualificationScorecard
                   data={
                     typeof lead.qualificationData === "string"
@@ -164,31 +164,31 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
 
           {/* Lead Information */}
           <div className="mb-6">
-            <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+            <h4 className="text-xs font-medium text-fg-secondary mb-2">
               Lead Information
             </h4>
-            <div className="divide-y-[0.5px] divide-neutral-200 dark:divide-neutral-800">
-              <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">
+            <div className="divide-y divide-row">
+              <div className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
+                <span className="text-sm text-fg-secondary">
                   Status
                 </span>
                 <Badge variant={leadStatusConfig[lead.status].variant}>
                   {leadQualificationConfig[lead.status].label}
                 </Badge>
               </div>
-              <div className="flex items-center justify-between py-3 last:pb-0">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">
+              <div className="flex items-center justify-between py-2.5 last:pb-0">
+                <span className="text-sm text-fg-secondary">
                   Source
                 </span>
-                <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <span className="text-sm font-medium text-fg">
                   {lead.source}
                 </span>
               </div>
-              <div className="flex items-center justify-between py-3 last:pb-0">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">
+              <div className="flex items-center justify-between py-2.5 last:pb-0">
+                <span className="text-sm text-fg-secondary">
                   Company
                 </span>
-                <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <span className="text-sm font-medium text-fg">
                   {lead.company}
                 </span>
               </div>
@@ -197,38 +197,38 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
 
           {/* Contact Details */}
           <div className="mb-6">
-            <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+            <h4 className="text-xs font-medium text-fg-secondary mb-2">
               Contact Details
             </h4>
-            <div className="divide-y-[0.5px] divide-neutral-200 dark:divide-neutral-800">
-              <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">
+            <div className="divide-y divide-row">
+              <div className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
+                <span className="text-sm text-fg-secondary">
                   Email
                 </span>
-                <a href={`mailto:${lead.email}`} className="text-sm font-medium text-neutral-950 dark:text-neutral-50 hover:underline">
+                <a href={`mailto:${lead.email}`} className="text-sm font-medium text-fg hover:underline">
                   {lead.email}
                 </a>
               </div>
               {lead.phone && (
-                <div className="flex items-center justify-between py-3 last:pb-0">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                <div className="flex items-center justify-between py-2.5 last:pb-0">
+                  <span className="text-sm text-fg-secondary">
                     Phone
                   </span>
-                  <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                  <span className="text-sm font-medium text-fg">
                     {lead.phone}
                   </span>
                 </div>
               )}
               {lead.website && (
-                <div className="flex items-center justify-between py-3 last:pb-0">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                <div className="flex items-center justify-between py-2.5 last:pb-0">
+                  <span className="text-sm text-fg-secondary">
                     Website
                   </span>
                   <a
                     href={lead.website.startsWith("http") ? lead.website : `https://${lead.website}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[200px]"
+                    className="text-sm font-medium text-accent-strong hover:underline truncate max-w-[200px]"
                   >
                     {lead.website.replace(/^https?:\/\//, "")}
                   </a>
@@ -240,65 +240,65 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
           {/* Social Profiles */}
           {(lead.linkedin || lead.twitter || lead.instagram || lead.facebook) && (
             <div>
-              <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+              <h4 className="text-xs font-medium text-fg-secondary mb-2">
                 Social Profiles
               </h4>
-              <div className="divide-y-[0.5px] divide-neutral-200 dark:divide-neutral-800">
+              <div className="divide-y divide-row">
                 {lead.linkedin && (
-                  <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                  <div className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
+                    <span className="text-sm text-fg-secondary">
                       LinkedIn
                     </span>
                     <a
                       href={lead.linkedin.startsWith("http") ? lead.linkedin : `https://linkedin.com/in/${lead.linkedin}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[200px]"
+                      className="text-sm font-medium text-accent-strong hover:underline truncate max-w-[200px]"
                     >
                       {lead.linkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, "")}
                     </a>
                   </div>
                 )}
                 {lead.twitter && (
-                  <div className="flex items-center justify-between py-3 last:pb-0">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                  <div className="flex items-center justify-between py-2.5 last:pb-0">
+                    <span className="text-sm text-fg-secondary">
                       X / Twitter
                     </span>
                     <a
                       href={lead.twitter.startsWith("http") ? lead.twitter : `https://x.com/${lead.twitter.replace("@", "")}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[200px]"
+                      className="text-sm font-medium text-accent-strong hover:underline truncate max-w-[200px]"
                     >
                       {lead.twitter.startsWith("@") ? lead.twitter : `@${lead.twitter.replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//, "")}`}
                     </a>
                   </div>
                 )}
                 {lead.instagram && (
-                  <div className="flex items-center justify-between py-3 last:pb-0">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                  <div className="flex items-center justify-between py-2.5 last:pb-0">
+                    <span className="text-sm text-fg-secondary">
                       Instagram
                     </span>
                     <a
                       href={lead.instagram.startsWith("http") ? lead.instagram : `https://instagram.com/${lead.instagram.replace("@", "")}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[200px]"
+                      className="text-sm font-medium text-accent-strong hover:underline truncate max-w-[200px]"
                     >
                       {lead.instagram.startsWith("@") ? lead.instagram : `@${lead.instagram.replace(/^https?:\/\/(www\.)?instagram\.com\//, "")}`}
                     </a>
                   </div>
                 )}
                 {lead.facebook && (
-                  <div className="flex items-center justify-between py-3 last:pb-0">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                  <div className="flex items-center justify-between py-2.5 last:pb-0">
+                    <span className="text-sm text-fg-secondary">
                       Facebook
                     </span>
                     <a
                       href={lead.facebook.startsWith("http") ? lead.facebook : `https://facebook.com/${lead.facebook}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[200px]"
+                      className="text-sm font-medium text-accent-strong hover:underline truncate max-w-[200px]"
                     >
                       {lead.facebook.replace(/^https?:\/\/(www\.)?facebook\.com\//, "")}
                     </a>
@@ -311,32 +311,32 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
           {/* Personalization */}
           {(lead.painPoints || lead.triggerEvent || lead.personalNote || lead.referredBy) && (
             <div className="mb-6">
-              <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+              <h4 className="text-xs font-medium text-fg-secondary mb-2">
                 Personalization
               </h4>
-              <div className="divide-y-[0.5px] divide-neutral-200 dark:divide-neutral-800">
+              <div className="divide-y divide-row">
                 {lead.painPoints && (
-                  <div className="py-3 first:pt-0 last:pb-0">
-                    <span className="text-xs text-neutral-500 dark:text-neutral-400">Pain Points</span>
-                    <p className="text-sm text-neutral-950 dark:text-neutral-50 mt-1">{lead.painPoints}</p>
+                  <div className="py-2.5 first:pt-0 last:pb-0">
+                    <span className="text-xs text-fg-secondary">Pain Points</span>
+                    <p className="text-sm text-fg mt-1">{lead.painPoints}</p>
                   </div>
                 )}
                 {lead.triggerEvent && (
-                  <div className="flex items-center justify-between py-3 last:pb-0">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Trigger Event</span>
-                    <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50 text-right max-w-[200px]">{lead.triggerEvent}</span>
+                  <div className="flex items-center justify-between py-2.5 last:pb-0">
+                    <span className="text-sm text-fg-secondary">Trigger Event</span>
+                    <span className="text-sm font-medium text-fg text-right max-w-[200px]">{lead.triggerEvent}</span>
                   </div>
                 )}
                 {lead.referredBy && (
-                  <div className="flex items-center justify-between py-3 last:pb-0">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Referred By</span>
-                    <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{lead.referredBy}</span>
+                  <div className="flex items-center justify-between py-2.5 last:pb-0">
+                    <span className="text-sm text-fg-secondary">Referred By</span>
+                    <span className="text-sm font-medium text-fg">{lead.referredBy}</span>
                   </div>
                 )}
                 {lead.personalNote && (
-                  <div className="py-3 last:pb-0">
-                    <span className="text-xs text-neutral-500 dark:text-neutral-400">Personal Note</span>
-                    <p className="text-sm text-neutral-950 dark:text-neutral-50 mt-1">{lead.personalNote}</p>
+                  <div className="py-2.5 last:pb-0">
+                    <span className="text-xs text-fg-secondary">Personal Note</span>
+                    <p className="text-sm text-fg mt-1">{lead.personalNote}</p>
                   </div>
                 )}
               </div>
@@ -346,37 +346,37 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
           {/* Company Details */}
           {(lead.revenueRange || lead.techStack || lead.fundingStage || lead.currentSolution || lead.decisionRole) && (
             <div className="mb-6">
-              <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-4">
+              <h4 className="text-xs font-medium text-fg-secondary mb-2">
                 Company Details
               </h4>
-              <div className="divide-y-[0.5px] divide-neutral-200 dark:divide-neutral-800">
+              <div className="divide-y divide-row">
                 {lead.revenueRange && (
-                  <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Revenue</span>
-                    <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{lead.revenueRange}</span>
+                  <div className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
+                    <span className="text-sm text-fg-secondary">Revenue</span>
+                    <span className="text-sm font-medium text-fg">{lead.revenueRange}</span>
                   </div>
                 )}
                 {lead.fundingStage && (
-                  <div className="flex items-center justify-between py-3 last:pb-0">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Funding</span>
-                    <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{lead.fundingStage}</span>
+                  <div className="flex items-center justify-between py-2.5 last:pb-0">
+                    <span className="text-sm text-fg-secondary">Funding</span>
+                    <span className="text-sm font-medium text-fg">{lead.fundingStage}</span>
                   </div>
                 )}
                 {lead.techStack && (
-                  <div className="flex items-center justify-between py-3 last:pb-0">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Tech Stack</span>
-                    <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50 text-right max-w-[200px]">{lead.techStack}</span>
+                  <div className="flex items-center justify-between py-2.5 last:pb-0">
+                    <span className="text-sm text-fg-secondary">Tech Stack</span>
+                    <span className="text-sm font-medium text-fg text-right max-w-[200px]">{lead.techStack}</span>
                   </div>
                 )}
                 {lead.currentSolution && (
-                  <div className="flex items-center justify-between py-3 last:pb-0">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Current Solution</span>
-                    <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">{lead.currentSolution}</span>
+                  <div className="flex items-center justify-between py-2.5 last:pb-0">
+                    <span className="text-sm text-fg-secondary">Current Solution</span>
+                    <span className="text-sm font-medium text-fg">{lead.currentSolution}</span>
                   </div>
                 )}
                 {lead.decisionRole && (
-                  <div className="flex items-center justify-between py-3 last:pb-0">
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">Decision Role</span>
+                  <div className="flex items-center justify-between py-2.5 last:pb-0">
+                    <span className="text-sm text-fg-secondary">Decision Role</span>
                     <Badge variant="neutral">{lead.decisionRole}</Badge>
                   </div>
                 )}
@@ -387,7 +387,7 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
           {/* Tags */}
           {lead.tags && lead.tags.length > 0 && (
             <div className="mb-6">
-              <h4 className="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-3">
+              <h4 className="text-xs font-medium text-fg-secondary mb-2">
                 Tags
               </h4>
               <div className="flex flex-wrap gap-2">

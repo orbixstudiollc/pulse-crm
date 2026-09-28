@@ -39,13 +39,13 @@ export function ActiveDeals({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden",
+        "rounded-lg border border-line bg-surface overflow-hidden",
         className,
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-800">
-        <h3 className="text-xl font-serif tracking-[-0.2px] text-neutral-950 dark:text-neutral-50">
+      <div className="flex h-12 items-center justify-between px-4 border-b border-divider">
+        <h3 className="text-heading-md text-fg">
           Active Deals
         </h3>
 
@@ -56,13 +56,13 @@ export function ActiveDeals({
       </div>
 
       {/* Content */}
-      <div className="px-5 py-5 space-y-4">
+      <div className="p-4 space-y-4">
         {/* Total */}
         <div className="space-y-1">
-          <p className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif text-neutral-950 dark:text-neutral-50">
+          <p className="text-[22px] leading-7 font-semibold text-fg">
             {formatCurrency(total)}
           </p>
-          <p className="text-sm leading-[22px] text-neutral-500 dark:text-neutral-400">
+          <p className="text-[13px] text-fg-secondary">
             {dealCount} deal{dealCount !== 1 ? "s" : ""} in pipeline
           </p>
         </div>
@@ -70,7 +70,7 @@ export function ActiveDeals({
         {stages.length > 0 ? (
           <>
             {/* Pipeline Bar */}
-            <div className="flex gap-1 h-8">
+            <div className="flex gap-1 h-2">
               {stages.map((stage) => {
                 const percentage = (stage.value / totalValue) * 100;
                 const isHovered = hoveredStage === stage.name;
@@ -82,7 +82,7 @@ export function ActiveDeals({
                     key={stage.name}
                     className={cn(
                       stage.color,
-                      "rounded transition-all duration-200 cursor-pointer",
+                      "rounded-full transition-all duration-200 cursor-pointer",
                       isHovered && "scale-y-110 brightness-110",
                       isOtherHovered && "opacity-40",
                     )}
@@ -95,7 +95,7 @@ export function ActiveDeals({
             </div>
 
             {/* Legend */}
-            <div className="pt-2">
+            <div className="pt-1">
               {stages.map((stage, index) => {
                 const isHovered = hoveredStage === stage.name;
                 const isOtherHovered =
@@ -105,11 +105,11 @@ export function ActiveDeals({
                   <div
                     key={stage.name}
                     className={cn(
-                      "flex items-center justify-between transition-opacity duration-200 cursor-pointer py-3",
+                      "flex items-center justify-between transition-opacity duration-200 cursor-pointer py-2",
                       index < stages.length - 1 &&
-                        "border-b-[0.5px] border-neutral-200 dark:border-neutral-800",
+                        "border-b border-row",
                       index === 0 &&
-                        "border-t-[0.5px] border-neutral-200 dark:border-neutral-800",
+                        "border-t border-row",
                       isOtherHovered && "opacity-40",
                     )}
                     onMouseEnter={() => setHoveredStage(stage.name)}
@@ -118,20 +118,20 @@ export function ActiveDeals({
                     <div className="flex items-center gap-2">
                       <div
                         className={cn(
-                          "h-2 w-4 rounded-full transition-transform duration-200",
+                          "h-2 w-2 rounded-full transition-transform duration-200",
                           stage.color,
                           isHovered && "scale-125",
                         )}
                       />
-                      <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                      <span className="text-[13px] text-fg">
                         {stage.name}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                      <span className="text-[13px] font-medium text-fg">
                         {formatCurrency(stage.value)}
                       </span>
-                      <span className="text-sm text-neutral-400 dark:text-neutral-500">
+                      <span className="text-[13px] text-fg-secondary">
                         ({stage.count})
                       </span>
                     </div>
@@ -141,11 +141,11 @@ export function ActiveDeals({
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-sm text-fg-secondary">
               No active deals yet
             </p>
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+            <p className="text-xs text-fg-secondary mt-1">
               Create deals to see pipeline breakdown
             </p>
           </div>

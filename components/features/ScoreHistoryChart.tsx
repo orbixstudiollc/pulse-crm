@@ -7,6 +7,7 @@ import {
   ResponsiveContainer,
   YAxis,
 } from "recharts";
+import { chartSuccess, chartSurface } from "@/lib/design-system/chart-colors";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -41,11 +42,11 @@ function SparklineTooltip({ active, payload }: CustomTooltipProps) {
   const { score, scored_at } = payload[0].payload;
 
   return (
-    <div className="rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-3 py-2 shadow-lg">
-      <p className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+    <div className="rounded-md border border-line bg-surface shadow-dropdown px-2 py-1.5">
+      <p className="text-sm font-semibold text-fg">
         {score}
       </p>
-      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+      <p className="text-xs text-fg-secondary">
         {formatDate(scored_at)}
       </p>
     </div>
@@ -62,7 +63,7 @@ export function ScoreHistoryChart({
   if (!history || history.length === 0) {
     return (
       <div
-        className="flex items-center justify-center text-xs text-neutral-400 dark:text-neutral-500"
+        className="flex items-center justify-center text-xs text-fg-secondary"
         style={{ height }}
       >
         No score history
@@ -81,8 +82,8 @@ export function ScoreHistoryChart({
         <AreaChart data={sorted} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
           <defs>
             <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#22c55e" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#22c55e" stopOpacity={0.05} />
+              <stop offset="0%" stopColor={chartSuccess} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={chartSuccess} stopOpacity={0.05} />
             </linearGradient>
           </defs>
 
@@ -96,7 +97,7 @@ export function ScoreHistoryChart({
           <Area
             type="monotone"
             dataKey="score"
-            stroke="#22c55e"
+            stroke={chartSuccess}
             strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -104,12 +105,11 @@ export function ScoreHistoryChart({
             dot={false}
             activeDot={{
               r: 4,
-              fill: "#22c55e",
-              stroke: "#fff",
+              fill: chartSuccess,
+              stroke: chartSurface,
               strokeWidth: 2,
-              className: "stroke-white dark:stroke-neutral-950",
             }}
-            animationDuration={800}
+            animationDuration={200}
             animationEasing="ease-out"
             isAnimationActive={true}
           />

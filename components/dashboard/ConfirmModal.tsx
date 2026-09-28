@@ -43,60 +43,60 @@ export function ConfirmModal({
 
   const confirmColors =
     variant === "danger"
-      ? "bg-red-600 hover:bg-red-700 text-white"
+      ? "bg-danger text-on-inverse hover:opacity-90"
       : variant === "warning"
-        ? "bg-amber-500 hover:bg-amber-600 text-white"
-        : "bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-900";
+        ? "bg-warning text-on-inverse hover:opacity-90"
+        : "bg-inverse text-on-inverse hover:opacity-90";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative w-full max-w-sm mx-4 bg-white dark:bg-neutral-950 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        <div className="p-6">
-          <div className="flex items-start gap-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
+      <div className="relative w-full max-w-sm mx-4 bg-surface rounded-lg border border-line shadow-modal overflow-hidden animate-in fade-in duration-200">
+        <div className="p-4">
+          <div className="flex items-start gap-3">
             <div
-              className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
+              className={`flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center ${
                 variant === "danger"
-                  ? "bg-red-50 dark:bg-red-950"
+                  ? "bg-danger-surface"
                   : variant === "warning"
-                    ? "bg-amber-50 dark:bg-amber-950"
-                    : "bg-neutral-100 dark:bg-neutral-800"
+                    ? "bg-warning-surface"
+                    : "bg-muted"
               }`}
             >
               <WarningIcon
-                size={20}
+                size={16}
                 className={
                   variant === "danger"
-                    ? "text-red-500"
+                    ? "text-danger"
                     : variant === "warning"
-                      ? "text-amber-500"
-                      : "text-neutral-500"
+                      ? "text-warning"
+                      : "text-fg-secondary"
                 }
               />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">{title}</h3>
-              <p className="mt-1.5 text-sm text-neutral-500 dark:text-neutral-400">{message}</p>
+              <h3 className="text-heading-md text-fg">{title}</h3>
+              <p className="mt-1 text-sm text-fg-secondary">{message}</p>
             </div>
             <button
               onClick={onCancel}
-              className="flex-shrink-0 p-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+              className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-md text-fg-secondary hover:bg-muted hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <XIcon size={16} />
             </button>
           </div>
         </div>
-        <div className="px-6 pb-5 flex items-center justify-end gap-2">
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-divider">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            className="h-8 px-3 text-sm font-medium rounded-md text-fg-secondary hover:bg-muted hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             {cancelLabel}
           </button>
           <button
             ref={confirmRef}
             onClick={onConfirm}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${confirmColors}`}
+            className={`h-8 px-3 text-sm font-medium rounded-md transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${confirmColors}`}
           >
             {confirmLabel}
           </button>

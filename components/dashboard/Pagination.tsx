@@ -46,16 +46,16 @@ export function Pagination({
       <button
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className="flex h-9 w-9 items-center justify-center rounded border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="flex h-7 w-7 items-center justify-center rounded-md border border-line text-fg-secondary hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
-        <CaretLeftIcon size={16} />
+        <CaretLeftIcon size={14} />
       </button>
 
       {getPageNumbers().map((page, index) =>
         page === "..." ? (
           <span
             key={`ellipsis-${index}`}
-            className="flex h-9 w-9 items-center justify-center text-neutral-400"
+            className="flex h-7 w-7 items-center justify-center text-[13px] text-fg-secondary"
           >
             ...
           </span>
@@ -64,10 +64,10 @@ export function Pagination({
             key={page}
             onClick={() => onPageChange(page as number)}
             className={cn(
-              "flex h-9 w-9 items-center justify-center rounded text-sm font-medium transition-colors",
+              "flex h-7 w-7 items-center justify-center rounded-md text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
               currentPage === page
-                ? "bg-neutral-950 dark:bg-neutral-50 text-white dark:text-neutral-950"
-                : "border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800",
+                ? "bg-inverse text-on-inverse"
+                : "border border-line text-fg-secondary hover:bg-muted hover:text-fg",
             )}
           >
             {page}
@@ -78,9 +78,9 @@ export function Pagination({
       <button
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
-        className="flex h-9 w-9 items-center justify-center rounded border border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="flex h-7 w-7 items-center justify-center rounded-md border border-line text-fg-secondary hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
-        <CaretRightIcon size={16} />
+        <CaretRightIcon size={14} />
       </button>
     </div>
   );

@@ -14,17 +14,17 @@ const tabs = [
 export function LeadFinderSubNav() {
   const pathname = usePathname();
   return (
-    <div className="flex gap-0 border-b border-neutral-200 dark:border-neutral-800 mb-6 -mx-6 lg:-mx-8 px-6 lg:px-8">
+    <div className="inline-flex h-8 items-center gap-0.5 rounded-md bg-muted p-0.5 mb-6 max-w-full overflow-x-auto">
       {tabs.map((tab) => {
         const isActive = pathname.startsWith(tab.href);
         return (
           <Link
             key={tab.href}
             href={tab.href}
-            className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
+            className={`inline-flex h-7 items-center rounded-sm px-3 text-[13px] font-medium transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
               isActive
-                ? "border-neutral-950 dark:border-white text-neutral-950 dark:text-white"
-                : "border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50"
+                ? "bg-surface text-fg"
+                : "text-fg-secondary hover:text-fg"
             }`}
           >
             {tab.name}

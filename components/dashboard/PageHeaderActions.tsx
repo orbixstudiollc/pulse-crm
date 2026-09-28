@@ -16,7 +16,7 @@ export function PageHeaderActions() {
         onChange={setDateRange}
       />
       <Button
-        leftIcon={<PlusIcon size={20} weight="bold" />}
+        leftIcon={<PlusIcon size={16} weight="bold" />}
         onClick={() => setShowAddLead(true)}
       >
         Add Lead

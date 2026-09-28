@@ -27,34 +27,31 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      className={cn("py-16 flex flex-col items-center text-center", className)}
+      className={cn("py-12 flex flex-col items-center text-center", className)}
     >
       {/* Icon Container */}
-      <div className="w-12 h-12 rounded border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center mb-5">
-        <div className="text-neutral-950 dark:text-neutral-50">{icon}</div>
+      <div className="h-10 w-10 rounded-md border border-line bg-subtle text-fg-secondary flex items-center justify-center mb-4">
+        {icon}
       </div>
 
       {/* Title */}
-      <h3 className="text-2xl font-serif text-neutral-950 dark:text-neutral-50 mb-2">
+      <h3 className="text-heading-md text-fg mb-1">
         {title}
       </h3>
 
       {/* Description */}
-      <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-xs mb-6">
+      <p className="text-sm text-fg-secondary max-w-xs mb-4">
         {description}
       </p>
 
       {/* Actions */}
       {actions.length > 0 && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {actions.map((action, index) => {
-            const buttonVariant =
-              action.variant === "outline" ? "outline" : "primary";
-
             if (action.href) {
               return (
                 <a key={index} href={action.href}>
-                  <Button variant={buttonVariant} leftIcon={action.icon}>
+                  <Button variant="outline" leftIcon={action.icon}>
                     {action.label}
                   </Button>
                 </a>
@@ -64,7 +61,7 @@ export function EmptyState({
             return (
               <Button
                 key={index}
-                variant={buttonVariant}
+                variant="outline"
                 leftIcon={action.icon}
                 onClick={action.onClick}
               >

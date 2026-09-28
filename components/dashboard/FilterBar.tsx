@@ -84,74 +84,65 @@ export function FilterBar({
   return (
     <div
       className={cn(
-        "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950",
+        "flex flex-wrap items-center gap-2 py-2",
         className,
       )}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-neutral-800">
-        <div className="flex items-center gap-2 text-neutral-950 dark:text-neutral-50">
-          <FunnelIcon size={18} />
-          <span className="text-sm font-medium">Filters</span>
-        </div>
-        <button
-          onClick={handleClearAll}
-          className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
-        >
-          Clear all
-        </button>
+      {/* Label */}
+      <div className="flex items-center gap-1.5 text-fg-secondary">
+        <FunnelIcon size={16} />
+        <span className="text-sm font-medium">Filters</span>
       </div>
 
-      {/* Filters */}
-      <div className="p-5 space-y-4">
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Search */}
-          <Input
-            leftIcon={<MagnifyingGlassIcon size={18} />}
-            value={searchValue}
-            onChange={handleSearchChange}
-            placeholder={searchPlaceholder}
-            className="w-full sm:w-60"
-          />
+      {/* Search */}
+      <Input
+        leftIcon={<MagnifyingGlassIcon size={16} />}
+        value={searchValue}
+        onChange={handleSearchChange}
+        placeholder={searchPlaceholder}
+        className="h-8 w-full sm:w-60"
+      />
 
-          {/* Filter Dropdowns */}
-          {filters.map((filter) => (
-            <Dropdown
-              key={filter.key}
-              options={filter.options}
-              value={filterValues[filter.key]}
-              onChange={(value) => handleFilterChange(filter.key, value)}
-              icon={null}
+      {/* Filter Dropdowns */}
+      {filters.map((filter) => (
+        <Dropdown
+          key={filter.key}
+          options={filter.options}
+          value={filterValues[filter.key]}
+          onChange={(value) => handleFilterChange(filter.key, value)}
+          icon={null}
+          size="md"
+        />
+      ))}
+
+      {/* Active Filter Tags */}
+      {activeFilters.map((filter) => {
+        const selectedOption = filter.options.find(
+          (opt) => opt.value === filterValues[filter.key],
+        );
+        return (
+          <button
+            key={filter.key}
+            onClick={() => clearFilter(filter.key)}
+            className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs text-fg hover:bg-active transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            <span>
+              {filter.label}: {selectedOption?.label.toLowerCase()}
+            </span>
+            <XIcon
+              size={12}
+              className="text-fg-secondary"
             />
-          ))}
-        </div>
+          </button>
+        );
+      })}
 
-        {/* Active Filter Tags */}
-        {activeFilters.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            {activeFilters.map((filter) => {
-              const selectedOption = filter.options.find(
-                (opt) => opt.value === filterValues[filter.key],
-              );
-              return (
-                <button
-                  key={filter.key}
-                  onClick={() => clearFilter(filter.key)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-sm text-neutral-950 dark:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
-                >
-                  <span>
-                    {filter.label}: {selectedOption?.label.toLowerCase()}
-                  </span>
-                  <XIcon
-                    size={14}
-                    className="text-neutral-500 dark:text-neutral-400"
-                  />
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      <button
+        onClick={handleClearAll}
+        className="ml-auto text-sm text-fg-secondary hover:text-fg transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      >
+        Clear all
+      </button>
     </div>
   );
 }

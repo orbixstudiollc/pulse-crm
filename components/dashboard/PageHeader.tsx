@@ -7,11 +7,11 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, children }: PageHeaderProps) {
   return (
-    <div className="flex flex-row items-center justify-between gap-4 max-sm:flex-col max-sm:items-start">
-      <h1 className="text-[28px] leading-[36px] tracking-[-0.56px] font-serif text-neutral-950 dark:text-neutral-50">
+    <div className="flex items-center justify-between gap-4 h-8 max-sm:h-auto max-sm:flex-col max-sm:items-start">
+      <h1 className="text-xl font-semibold text-fg">
         {title}
       </h1>
-      {children && <div className="flex items-center gap-3">{children}</div>}
+      {children && <div className="flex items-center gap-2">{children}</div>}
     </div>
   );
 }

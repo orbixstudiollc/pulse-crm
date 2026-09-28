@@ -117,30 +117,30 @@ export function ActivityRow({
   return (
     <div
       className={cn(
-        "flex items-start gap-4 py-4 px-5 hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors group",
+        "flex items-start gap-3 py-3 px-4 hover:bg-subtle transition-colors group",
         showBorder &&
-          "border-b border-neutral-100 dark:border-neutral-800 last:border-b-0",
+          "border-b border-row last:border-b-0",
         className,
       )}
     >
       {/* Icon */}
-      <div className="w-9 h-9 rounded-full border-[0.5px] border-neutral-200 dark:border-neutral-400/30 bg-neutral-100 dark:bg-neutral-400/15 flex items-center justify-center shrink-0">
-        <Icon size={18} className="text-neutral-500 dark:text-neutral-400" />
+      <div className="w-7 h-7 rounded-md border border-line bg-subtle flex items-center justify-center shrink-0">
+        <Icon size={14} className="text-fg-secondary" />
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+        <p className="text-[13px] font-medium text-fg">
           {title}
         </p>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-1">
+        <p className="text-[13px] text-fg-secondary line-clamp-1">
           {description}
         </p>
         {(badge || meta) && (
-          <div className="flex items-center gap-2 mt-1.5">
+          <div className="flex items-center gap-2 mt-1">
             {badge && <Badge variant={badge.variant}>{badge.label}</Badge>}
             {meta && (
-              <span className="text-xs text-neutral-400 dark:text-neutral-500">
+              <span className="text-xs text-fg-secondary">
                 · {meta}
               </span>
             )}
@@ -150,7 +150,7 @@ export function ActivityRow({
 
       {/* Actions */}
       {actionItems.length > 0 && (
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
           <ActionMenu items={actionItems} />
         </div>
       )}

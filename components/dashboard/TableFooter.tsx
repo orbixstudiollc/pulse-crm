@@ -29,17 +29,17 @@ export function TableFooter({
   return (
     <div
       className={cn(
-        "flex items-center justify-between p-5 border-t border-neutral-200 dark:border-neutral-800",
+        "flex items-center justify-between px-4 py-3 border-t border-divider text-sm text-fg-secondary",
         className,
       )}
     >
-      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+      <p>
         Showing{" "}
-        <span className="font-medium text-neutral-950 dark:text-neutral-50">
+        <span className="font-medium text-fg">
           {startIndex}–{endIndex}
         </span>{" "}
         of{" "}
-        <span className="font-medium text-neutral-950 dark:text-neutral-50">
+        <span className="font-medium text-fg">
           {totalItems}
         </span>{" "}
         {itemLabel}

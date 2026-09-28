@@ -3,14 +3,14 @@
 export function ScoreBadge({ score }: { score: number }) {
   const color =
     score >= 80
-      ? "text-emerald-400 bg-emerald-400/10"
+      ? "text-success bg-success-surface"
       : score >= 60
-        ? "text-green-400 bg-green-400/10"
+        ? "text-success bg-success-surface"
         : score >= 40
-          ? "text-amber-400 bg-amber-400/10"
+          ? "text-warning bg-warning-surface"
           : score > 0
-            ? "text-red-400 bg-red-400/10"
-            : "text-[#a0a0a8] bg-[#232329]";
+            ? "text-danger bg-danger-surface"
+            : "bg-muted text-fg-secondary";
 
   return (
     <span

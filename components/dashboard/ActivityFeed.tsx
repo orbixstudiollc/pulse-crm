@@ -45,11 +45,11 @@ function getRelativeTime(dateStr: string): string {
 }
 
 const activityIcons: Record<ActivityType, ReactNode> = {
-  email: <EnvelopeIcon size={16} />,
-  call: <PhoneIcon size={16} />,
-  note: <NoteIcon size={16} />,
-  meeting: <CalendarCheckIcon size={16} />,
-  task: <CheckCircleIcon size={16} />,
+  email: <EnvelopeIcon size={14} />,
+  call: <PhoneIcon size={14} />,
+  note: <NoteIcon size={14} />,
+  meeting: <CalendarCheckIcon size={14} />,
+  task: <CheckCircleIcon size={14} />,
 };
 
 const statusConfig: Record<string, { label: string; variant: BadgeVariant }> = {
@@ -66,21 +66,21 @@ export function ActivityFeed({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden",
+        "rounded-lg border border-line bg-surface overflow-hidden",
         className,
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-800">
-        <h3 className="text-xl font-serif tracking-[-0.2px] text-neutral-950 dark:text-neutral-50">
+      <div className="flex h-12 items-center justify-between px-4 border-b border-divider">
+        <h3 className="text-heading-md text-fg">
           Activity Feed
         </h3>
 
         <IconButton
           icon={
             <ArrowUpRightIcon
-              size={20}
-              className="text-neutral-600 dark:text-neutral-400"
+              size={16}
+              className="text-fg-secondary"
             />
           }
           aria-label="View all activity"
@@ -96,36 +96,36 @@ export function ActivityFeed({
               <div
                 key={activity.id}
                 className={cn(
-                  "flex gap-3 px-5 py-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors",
+                  "flex gap-3 px-4 py-3 hover:bg-subtle transition-colors",
                   index !== activities.length - 1 &&
-                    "border-b-[0.5px] border-neutral-200 dark:border-neutral-800",
+                    "border-b border-row",
                 )}
               >
                 {/* Icon */}
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-[0.5px] border-neutral-200 dark:border-neutral-400/30 bg-neutral-100 text-neutral-600 dark:bg-neutral-400/15 dark:text-neutral-400">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-line bg-subtle text-fg-secondary">
                   {activityIcons[activity.type] || activityIcons.note}
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="space-y-0.5">
-                    <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50 truncate">
+                    <p className="text-[13px] font-medium text-fg truncate">
                       {activity.title}
                     </p>
-                    <p className="text-xs text-neutral-700 dark:text-neutral-400 truncate">
+                    <p className="text-xs text-fg-secondary truncate">
                       {activity.description || activity.related_name || ""}
                     </p>
                   </div>
 
                   {/* Status + Time */}
-                  <div className="flex items-center gap-2 mt-1.5">
+                  <div className="flex items-center gap-2 mt-1">
                     <Badge variant={status.variant}>
                       {status.label}
                     </Badge>
-                    <span className="text-xs text-neutral-400 dark:text-neutral-500">
+                    <span className="text-xs text-fg-muted">
                       •
                     </span>
-                    <span className="text-xs font-medium text-neutral-500 dark:text-neutral-500">
+                    <span className="text-xs text-fg-secondary">
                       {getRelativeTime(activity.created_at)}
                     </span>
                   </div>
@@ -134,11 +134,11 @@ export function ActivityFeed({
             );
           })
         ) : (
-          <div className="flex flex-col items-center justify-center py-10 text-center">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-sm text-fg-secondary">
               No recent activity
             </p>
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+            <p className="text-xs text-fg-secondary mt-1">
               Activities will appear here as you work
             </p>
           </div>

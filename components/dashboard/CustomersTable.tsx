@@ -87,33 +87,33 @@ export function CustomersTable({
   return (
     <div
       className={cn(
-        "rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden",
+        "rounded-lg border border-line bg-surface overflow-hidden",
         className,
       )}
     >
       {/* Bulk Actions Bar */}
       {selectedRows.length > 0 && (
-        <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-          <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-divider bg-subtle">
+          <span className="text-[13px] font-medium text-fg">
             {selectedRows.length} item{selectedRows.length > 1 ? "s" : ""}{" "}
             selected
           </span>
-          <div className="flex items-center gap-4">
-            <button className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
+          <div className="flex items-center gap-3">
+            <button className="text-[13px] text-fg-secondary hover:text-fg transition-colors">
               Email
             </button>
-            <button className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
+            <button className="text-[13px] text-fg-secondary hover:text-fg transition-colors">
               Edit
             </button>
-            <button className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors">
+            <button className="text-[13px] text-fg-secondary hover:text-fg transition-colors">
               Export
             </button>
-            <button className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors">
+            <button className="text-[13px] text-danger hover:opacity-80 transition-colors">
               Delete
             </button>
             <button
               onClick={() => setSelectedRows([])}
-              className="text-sm text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+              className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
             >
               Clear selection
             </button>
@@ -135,30 +135,30 @@ export function CustomersTable({
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
+            <tr className="bg-muted">
               {/* Checkbox */}
-              <th className="w-12 px-5 py-3">
+              <th className="w-10 px-3 py-2">
                 <Checkbox checked={isAllSelected} onChange={toggleSelectAll} />
               </th>
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                 Customer
               </th>
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                 Status
               </th>
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                 Plan
               </th>
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                 MRR
               </th>
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                 Health
               </th>
-              <th className="text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                 Last Contact
               </th>
-              <th className="text-center text-xs font-medium text-neutral-500 dark:text-neutral-400 px-3 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+              <th className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary">
                 Actions
               </th>
             </tr>
@@ -168,11 +168,11 @@ export function CustomersTable({
               <tr
                 key={customer.id}
                 onClick={() => handleViewDetails(customer)}
-                className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer"
+                className="hover:bg-subtle transition-colors cursor-pointer"
               >
                 {/* Checkbox */}
                 <td
-                  className="w-12 px-5 py-4"
+                  className="w-10 px-3 py-2 text-[13px] text-fg border-t border-row"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Checkbox
@@ -181,63 +181,63 @@ export function CustomersTable({
                   />
                 </td>
                 {/* Customer */}
-                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  <div className="flex items-center gap-3">
+                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                  <div className="flex items-center gap-3 [&>div:first-child>div]:size-8 [&>div:first-child>div]:text-xs">
                     <Avatar
                       src={customer.avatar}
                       name={customer.name}
                       size="lg"
                     />
                     <div>
-                      <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                      <p className="text-[13px] font-medium text-fg">
                         {customer.name}
                       </p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      <p className="text-xs text-fg-secondary">
                         {customer.email}
                       </p>
                     </div>
                   </div>
                 </td>
                 {/* Status */}
-                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
                   <Badge variant={statusConfig[customer.status].variant}>
                     {statusConfig[customer.status].label}
                   </Badge>
                 </td>
                 {/* Plan */}
-                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
                   <Badge variant={planConfig[customer.plan].variant}>
                     {planConfig[customer.plan].label}
                   </Badge>
                 </td>
                 {/* MRR */}
-                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                  <span className="text-[13px] font-medium text-fg">
                     {formatMRR(customer.mrr)}
                   </span>
                 </td>
                 {/* Health */}
-                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  <div className="flex items-center gap-3">
+                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                  <div className="flex items-center gap-2">
                     <Progress
                       value={customer.healthScore}
                       color="auto"
                       className="w-16"
                     />
-                    <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                    <span className="text-[13px] text-fg-secondary">
                       {customer.healthScore}
                     </span>
                   </div>
                 </td>
                 {/* Last Contact */}
-                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                  <span className="text-[13px] text-fg-secondary">
                     {customer.lastContact}
                   </span>
                 </td>
                 {/* Actions */}
                 <td
-                  className="px-3 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800"
+                  className="px-3 py-2 text-[13px] text-fg border-t border-row"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex justify-center">

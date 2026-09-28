@@ -31,17 +31,17 @@ export function TableHeader({
   return (
     <div
       className={cn(
-        "flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-800",
+        "flex h-12 items-center justify-between px-4 border-b border-divider",
         className,
       )}
     >
-      <h3 className="text-lg font-serif text-neutral-950 dark:text-neutral-50">
+      <h3 className="text-heading-md text-fg">
         {title}
       </h3>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {actions}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-neutral-500 dark:text-neutral-400">
+          <span className="text-sm text-fg-secondary">
             Show
           </span>
           <Dropdown
@@ -51,7 +51,7 @@ export function TableHeader({
             icon={null}
             size="md"
           />
-          <span className="text-sm text-neutral-500 dark:text-neutral-400">
+          <span className="text-sm text-fg-secondary">
             rows
           </span>
         </div>

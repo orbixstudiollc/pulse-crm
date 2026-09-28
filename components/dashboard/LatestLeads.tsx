@@ -38,13 +38,13 @@ export function LatestLeads({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden",
+        "rounded-lg border border-line bg-surface overflow-hidden",
         className,
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-800">
-        <h3 className="text-xl font-serif tracking-[-0.2px] text-neutral-950 dark:text-neutral-50">
+      <div className="flex h-12 items-center justify-between px-4 border-b border-divider">
+        <h3 className="text-heading-md text-fg">
           Latest Leads
         </h3>
 
@@ -59,7 +59,7 @@ export function LatestLeads({
             icon={
               <ArrowUpRightIcon
                 size={20}
-                className="text-neutral-600 dark:text-neutral-400"
+                className="size-4 text-fg-secondary"
               />
             }
             aria-label="View all leads"
@@ -71,23 +71,23 @@ export function LatestLeads({
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-800/50">
-              <th className="text-left text-sm font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 w-[200px]">
+            <tr className="bg-muted">
+              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary w-[200px]">
                 Lead
               </th>
-              <th className="text-left text-sm font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                 Status
               </th>
-              <th className="text-left text-sm font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                 Source
               </th>
-              <th className="text-left text-sm font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                 Score
               </th>
-              <th className="text-left text-sm font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
                 Contacted
               </th>
-              <th className="text-left text-sm font-medium text-neutral-500 dark:text-neutral-400 px-5 py-3 w-[88px]">
+              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary w-[88px]">
                 Actions
               </th>
             </tr>
@@ -96,17 +96,17 @@ export function LatestLeads({
             {leads.map((lead) => (
               <tr
                 key={lead.id}
-                className="border-b-[0.5px] border-neutral-200 dark:border-neutral-800 last:border-b-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                className="hover:bg-subtle transition-colors"
               >
                 {/* Lead */}
-                <td className="px-5 py-4">
+                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
                   <div className="flex items-center gap-3">
                     <Avatar name={lead.name} />
                     <div>
-                      <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                      <p className="text-[13px] font-medium text-fg">
                         {lead.name}
                       </p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      <p className="text-xs text-fg-secondary">
                         {lead.email}
                       </p>
                     </div>
@@ -114,24 +114,24 @@ export function LatestLeads({
                 </td>
 
                 {/* Status */}
-                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
                   <Badge variant={leadStatusConfig[lead.status].variant} dot>
                     {leadStatusConfig[lead.status].label}
                   </Badge>
                 </td>
 
                 {/* Source */}
-                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  <span className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                  <span className="text-[13px] text-fg">
                     {lead.source}
                   </span>
                 </td>
 
                 {/* Score */}
-                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
+                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
                   <div
                     className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-full border-[0.5px] text-xs font-medium",
+                      "flex h-7 w-7 items-center justify-center rounded-full border text-xs font-medium",
                       getLeadScoreStyle(lead.score),
                     )}
                   >
@@ -140,15 +140,15 @@ export function LatestLeads({
                 </td>
 
                 {/* Contacted */}
-                <td className="px-5 py-4 border-l-[0.5px] border-neutral-200 dark:border-neutral-800">
-                  <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                  <span className="text-[13px] text-fg-secondary">
                     {lead.createdDate}
                   </span>
                 </td>
 
                 {/* Actions */}
-                <td className="px-5 py-4 text-center w-[88px]">
-                  <button className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300">
+                <td className="px-3 py-2 text-[13px] text-fg border-t border-row text-center w-[88px]">
+                  <button className="inline-flex h-7 w-7 items-center justify-center rounded-sm text-fg-secondary hover:bg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [&_svg]:size-3.5">
                     <DotsThreeVertical size={20} weight="bold" />
                   </button>
                 </td>
@@ -159,14 +159,14 @@ export function LatestLeads({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between px-5 py-5">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+      <div className="flex items-center justify-between px-4 py-3 border-t border-divider">
+        <p className="text-sm text-fg-secondary">
           Showing{" "}
-          <span className="font-medium text-neutral-950 dark:text-neutral-50">
+          <span className="font-medium text-fg">
             {startIndex}&ndash;{endIndex}
           </span>{" "}
           of{" "}
-          <span className="font-medium text-neutral-950 dark:text-neutral-50">
+          <span className="font-medium text-fg">
             {totalLeads}
           </span>{" "}
           leads
@@ -175,7 +175,7 @@ export function LatestLeads({
         <div className="flex items-center gap-2">
           <button
             className={cn(
-              "rounded bg-neutral-100 dark:bg-neutral-800 px-2.5 py-2 text-xs font-medium text-neutral-950 dark:text-neutral-50",
+              "h-7 rounded-md border border-line bg-surface px-2.5 text-[13px] font-medium text-fg hover:bg-muted transition-colors",
               currentPage === 1 && "opacity-50 cursor-not-allowed",
             )}
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -185,7 +185,7 @@ export function LatestLeads({
           </button>
           <button
             className={cn(
-              "rounded bg-neutral-100 dark:bg-neutral-800 px-2.5 py-2 text-xs font-medium text-neutral-950 dark:text-neutral-50",
+              "h-7 rounded-md border border-line bg-surface px-2.5 text-[13px] font-medium text-fg hover:bg-muted transition-colors",
               endIndex >= totalLeads && "opacity-50 cursor-not-allowed",
             )}
             onClick={() => setCurrentPage((p) => p + 1)}

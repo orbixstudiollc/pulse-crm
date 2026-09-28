@@ -17,6 +17,7 @@ import {
   yearOptions,
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
+import { chartAccent, chartGrid, chartSurface, axisTick } from "@/lib/design-system/chart-colors";
 
 interface DataPoint {
   month: string;
@@ -62,15 +63,15 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="flex items-center gap-4 rounded bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 px-3 py-1 shadow-lg">
+    <div className="flex items-center gap-4 rounded-md border border-line bg-surface shadow-dropdown px-2 py-1.5">
       <div className="flex items-center gap-2">
-        <div className="h-2 w-2 rounded-xs bg-blue-500" />
-        <span className="text-sm text-neutral-500 dark:text-neutral-400">
+        <div className="h-2 w-2 rounded-xs bg-chart-1" />
+        <span className="text-xs text-fg-secondary">
           Revenue
         </span>
       </div>
 
-      <span className="text-sm font-semibold text-neutral-950 dark:text-neutral-50">
+      <span className="text-xs font-semibold text-fg">
         {formatCurrency(payload[0].value)}
       </span>
     </div>
@@ -86,13 +87,13 @@ export function RevenueChart({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 overflow-hidden",
+        "rounded-lg border border-line bg-surface overflow-hidden",
         className,
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-800">
-        <h3 className="text-xl font-serif tracking-[-0.2px] text-neutral-950 dark:text-neutral-50">
+      <div className="flex h-12 items-center justify-between px-4 border-b border-divider">
+        <h3 className="text-heading-md text-fg">
           Revenue Trend
         </h3>
 
@@ -106,7 +107,7 @@ export function RevenueChart({
       </div>
 
       {/* Chart */}
-      <div className="p-6 pt-6">
+      <div className="p-4">
         <ResponsiveContainer width="100%" height={320}>
           <AreaChart
             data={data}
@@ -116,12 +117,12 @@ export function RevenueChart({
               <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="0%"
-                  stopColor="hsl(217, 91%, 60%)"
+                  stopColor={chartAccent}
                   stopOpacity={0.3}
                 />
                 <stop
                   offset="95%"
-                  stopColor="hsl(217, 91%, 60%)"
+                  stopColor={chartAccent}
                   stopOpacity={0.05}
                 />
               </linearGradient>
@@ -130,15 +131,14 @@ export function RevenueChart({
             <CartesianGrid
               strokeDasharray="4 4"
               vertical={false}
-              stroke="hsl(0, 0%, 90%)"
-              className="stroke-neutral-200 dark:stroke-neutral-800"
+              stroke={chartGrid}
             />
 
             <XAxis
               dataKey="month"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12 }}
+              tick={axisTick}
               dy={10}
               tickMargin={8}
             />
@@ -146,7 +146,7 @@ export function RevenueChart({
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12 }}
+              tick={axisTick}
               tickFormatter={formatYAxis}
               domain={[0, 250000]}
               ticks={[0, 50000, 100000, 150000, 200000, 250000]}
@@ -159,14 +159,14 @@ export function RevenueChart({
               cursor={{
                 strokeWidth: 1,
                 strokeDasharray: "4 4",
-                className: "stroke-neutral-950 dark:stroke-white",
+                className: "stroke-chart-axis",
               }}
             />
 
             <Area
               type="natural"
               dataKey="revenue"
-              stroke="hsl(217, 91%, 60%)"
+              stroke={chartAccent}
               strokeWidth={2}
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -174,10 +174,9 @@ export function RevenueChart({
               dot={false}
               activeDot={{
                 r: 5,
-                fill: "hsl(217, 91%, 60%)",
-                stroke: "#fff",
+                fill: chartAccent,
+                stroke: chartSurface,
                 strokeWidth: 2,
-                className: "stroke-white dark:stroke-neutral-950",
               }}
               animationDuration={1200}
               animationEasing="ease-out"
