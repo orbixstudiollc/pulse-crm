@@ -3,6 +3,10 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/linkedin/client";
 import { revalidatePath } from "next/cache";
+import { openChannelToken, sealChannelToken } from "@/lib/utils/channel-token";
+
+const LINKEDIN_ACCOUNT_PUBLIC_COLUMNS =
+  "id, organization_id, user_id, linkedin_id, display_name, profile_url, avatar_url, token_expires_at, scopes, status, daily_connection_requests, daily_messages_sent, weekly_connection_requests, daily_profile_views, daily_endorsements, daily_connection_limit, daily_message_limit, weekly_connection_limit, daily_profile_view_limit, daily_endorsement_limit, last_error, is_default, created_at, updated_at";
 
 // ============================================================
 // Get LinkedIn Accounts for current org
@@ -24,7 +28,7 @@ export async function getLinkedInAccounts() {
 
   const { data, error } = await supabase
     .from("linkedin_accounts")
-    .select("*")
+    .select(LINKEDIN_ACCOUNT_PUBLIC_COLUMNS)
     .eq("organization_id", profile.organization_id)
     .order("created_at", { ascending: false });
 
@@ -71,6 +75,15 @@ export async function saveLinkedInAccount(params: {
 
   const isDefault = (count || 0) === 0;
 
+  let sealedAccessToken: string;
+  let sealedRefreshToken: string | null;
+  try {
+    sealedAccessToken = sealChannelToken(params.accessToken);
+    sealedRefreshToken = params.refreshToken ? sealChannelToken(params.refreshToken) : null;
+  } catch {
+    return { success: false, error: "ENCRYPTION_KEY is not configured" };
+  }
+
   const admin = createAdminClient();
   const tokenExpiresAt = params.expiresIn
     ? new Date(Date.now() + params.expiresIn * 1000).toISOString()
@@ -88,8 +101,8 @@ export async function saveLinkedInAccount(params: {
       profile_url: liProfile?.vanityName
         ? `https://www.linkedin.com/in/${liProfile.vanityName}`
         : null,
-      access_token_encrypted: params.accessToken,
-      refresh_token_encrypted: params.refreshToken || null,
+      access_token_encrypted: sealedAccessToken,
+      refresh_token_encrypted: sealedRefreshToken,
       token_expires_at: tokenExpiresAt,
       scopes: params.scopes || null,
       is_default: isDefault,
@@ -212,15 +225,16 @@ export async function testLinkedInConnection(accountId: string) {
   const supabase = await createClient();
   const { data: account } = await supabase
     .from("linkedin_accounts")
-    .select("*")
+    .select("id, organization_id, linkedin_id, access_token_encrypted")
     .eq("id", accountId)
     .single();
 
   if (!account) return { success: false, error: "Account not found" };
 
-  const { profile, error: profileError } = await getCurrentProfile(
-    account.access_token_encrypted
-  );
+  const token = openChannelToken(account.access_token_encrypted);
+  if (!token) return { success: false, error: "Stored LinkedIn token is unreadable; reconnect the account" };
+
+  const { profile, error: profileError } = await getCurrentProfile(token);
 
   if (profileError) {
     await supabase

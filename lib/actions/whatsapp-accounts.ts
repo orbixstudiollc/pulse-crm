@@ -3,6 +3,10 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getPhoneNumberDetails, fetchTemplates } from "@/lib/whatsapp/client";
 import { revalidatePath } from "next/cache";
+import { openChannelToken, sealChannelToken } from "@/lib/utils/channel-token";
+
+const WHATSAPP_ACCOUNT_PUBLIC_COLUMNS =
+  "id, organization_id, user_id, phone_number_id, waba_id, display_phone_number, verified_name, status, daily_send_limit, daily_sent_count, quality_rating, messaging_limit, last_error, is_default, created_at, updated_at";
 
 // ============================================================
 // Get WhatsApp Accounts for current org
@@ -24,7 +28,7 @@ export async function getWhatsAppAccounts() {
 
   const { data, error } = await supabase
     .from("whatsapp_accounts")
-    .select("*")
+    .select(WHATSAPP_ACCOUNT_PUBLIC_COLUMNS)
     .eq("organization_id", profile.organization_id)
     .order("created_at", { ascending: false });
 
@@ -74,6 +78,13 @@ export async function connectWhatsAppAccount(formData: {
 
   const isDefault = (count || 0) === 0;
 
+  let sealedToken: string;
+  try {
+    sealedToken = sealChannelToken(formData.accessToken);
+  } catch {
+    return { success: false, error: "ENCRYPTION_KEY is not configured" };
+  }
+
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("whatsapp_accounts")
@@ -82,7 +93,7 @@ export async function connectWhatsAppAccount(formData: {
       user_id: user.id,
       phone_number_id: formData.phoneNumberId,
       waba_id: formData.wabaId,
-      access_token_encrypted: formData.accessToken,
+      access_token_encrypted: sealedToken,
       display_phone_number: details.display_phone_number || formData.phoneNumberId,
       verified_name: details.verified_name || null,
       quality_rating: details.quality_rating || null,
@@ -181,15 +192,18 @@ export async function syncWhatsAppTemplates(accountId: string) {
   const supabase = await createClient();
   const { data: account } = await supabase
     .from("whatsapp_accounts")
-    .select("*")
+    .select("id, organization_id, phone_number_id, waba_id, access_token_encrypted")
     .eq("id", accountId)
     .single();
 
   if (!account) return { success: false, error: "Account not found" };
 
+  const token = openChannelToken(account.access_token_encrypted);
+  if (!token) return { success: false, error: "Stored WhatsApp token is unreadable; reconnect the account" };
+
   const { templates, error: fetchError } = await fetchTemplates(
     account.waba_id,
-    account.access_token_encrypted
+    token
   );
 
   if (fetchError) return { success: false, error: fetchError };
@@ -243,7 +257,9 @@ export async function getWhatsAppTemplates(accountId?: string) {
 
   let query = supabase
     .from("whatsapp_templates")
-    .select("*")
+    .select(
+      "id, organization_id, whatsapp_account_id, meta_template_id, name, language, category, status, components, header_type, body_text, footer_text, buttons, example_values, last_synced_at, created_at, updated_at"
+    )
     .order("name");
 
   if (accountId) {
@@ -262,15 +278,18 @@ export async function testWhatsAppConnection(accountId: string) {
   const supabase = await createClient();
   const { data: account } = await supabase
     .from("whatsapp_accounts")
-    .select("*")
+    .select("id, organization_id, phone_number_id, waba_id, access_token_encrypted")
     .eq("id", accountId)
     .single();
 
   if (!account) return { success: false, error: "Account not found" };
 
+  const token = openChannelToken(account.access_token_encrypted);
+  if (!token) return { success: false, error: "Stored WhatsApp token is unreadable; reconnect the account" };
+
   const details = await getPhoneNumberDetails(
     account.phone_number_id,
-    account.access_token_encrypted
+    token
   );
 
   if (details.error) {

@@ -5,6 +5,7 @@
  */
 
 import { createAdminClient } from "@/lib/supabase/server";
+import { openChannelToken } from "@/lib/utils/channel-token";
 import {
   sendConnectionRequest,
   sendMessage,
@@ -73,6 +74,9 @@ export async function sendLinkedIn(
     return { success: false, error: "No active LinkedIn account found" };
   }
 
+  const accessToken = openChannelToken(account.access_token_encrypted);
+  if (!accessToken) return { success: false, error: "Channel token unreadable" };
+
   // 2. Check rate limits
   const rateLimit = await canPerformAction(account.id, options.actionType);
   if (!rateLimit.allowed) {
@@ -115,7 +119,7 @@ export async function sendLinkedIn(
       }
 
       result = await sendConnectionRequest(
-        account.access_token_encrypted,
+        accessToken,
         options.targetLinkedInId,
         options.connectionNote
       );
@@ -130,7 +134,7 @@ export async function sendLinkedIn(
       }
 
       result = await sendMessage(
-        account.access_token_encrypted,
+        accessToken,
         account.linkedin_id || "",
         options.targetLinkedInId,
         options.messageBody
@@ -145,7 +149,7 @@ export async function sendLinkedIn(
       }
 
       result = await viewProfile(
-        account.access_token_encrypted,
+        accessToken,
         options.targetLinkedInUrl
       );
       break;
@@ -158,7 +162,7 @@ export async function sendLinkedIn(
       }
 
       result = await endorseSkill(
-        account.access_token_encrypted,
+        accessToken,
         options.targetLinkedInId,
         options.skillName
       );

@@ -6,6 +6,7 @@
  */
 
 import { createAdminClient } from "@/lib/supabase/server";
+import { openChannelToken } from "@/lib/utils/channel-token";
 import {
   sendTemplateMessage,
   sendTextMessage,
@@ -77,6 +78,9 @@ export async function sendWhatsApp(
     };
   }
 
+  const accessToken = openChannelToken(account.access_token_encrypted);
+  if (!accessToken) return { success: false, error: "Channel token unreadable" };
+
   // 2. Check daily send limit
   if (account.daily_sent_count >= account.daily_send_limit) {
     return {
@@ -131,7 +135,7 @@ export async function sendWhatsApp(
 
       result = await sendTemplateMessage(
         account.phone_number_id,
-        account.access_token_encrypted,
+        accessToken,
         options.to,
         options.templateName,
         options.templateLanguage,
@@ -148,7 +152,7 @@ export async function sendWhatsApp(
 
       result = await sendTextMessage(
         account.phone_number_id,
-        account.access_token_encrypted,
+        accessToken,
         options.to,
         options.bodyText
       );
@@ -173,7 +177,7 @@ export async function sendWhatsApp(
 
       result = await sendMediaMessage(
         account.phone_number_id,
-        account.access_token_encrypted,
+        accessToken,
         options.to,
         media
       );
