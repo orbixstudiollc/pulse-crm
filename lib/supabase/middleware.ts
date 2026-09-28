@@ -1,7 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isAuthPage, isOpenAccess } from "@/lib/auth/open-access";
+import { ensureGuestWorkspace } from "@/lib/auth/guest-workspace";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
+// A redirect must carry any session cookies set during this request (for
+// example right after an anonymous sign-in), or the next request is logged out.
+function redirectWithCookies(request: NextRequest, pathname: string, from: NextResponse) {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  const res = NextResponse.redirect(url);
+  for (const cookie of from.cookies.getAll()) res.cookies.set(cookie);
+  return res;
+}
 
 // API paths that authenticate via headers/body (not cookies) and therefore do
 // not need the same-origin CSRF guard. Keep this list small and explicit.
@@ -67,27 +79,36 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Refresh the auth token
-  const {
+  let {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Open-access mode (testing phase): no login or sign-up. A visitor without a
+  // session gets an anonymous user and a guest workspace of their own, and the
+  // auth pages send them straight to the dashboard.
+  const openAccess = isOpenAccess();
+  if (openAccess && !user && (isProtectedPath(pathname) || pathname === "/" || isAuthPage(pathname))) {
+    const { data, error } = await supabase.auth.signInAnonymously();
+    if (!error && data.user) {
+      user = data.user;
+      await ensureGuestWorkspace(data.user.id);
+    }
+  }
+  if (openAccess && user && isAuthPage(pathname)) {
+    // Only skip the auth pages when a workspace exists, so a failed
+    // provisioning cannot loop between /onboarding and the dashboard.
+    const orgId = await ensureGuestWorkspace(user.id);
+    if (orgId) return redirectWithCookies(request, "/dashboard/overview", supabaseResponse);
+  }
+
   // Protect dashboard routes — redirect unauthenticated users to login
-  if (!user && isProtectedPath(request.nextUrl.pathname)) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+  if (!user && isProtectedPath(pathname)) {
+    return redirectWithCookies(request, "/login", supabaseResponse);
   }
 
   // Redirect authenticated users away from auth pages
-  if (
-    user &&
-    (request.nextUrl.pathname === "/login" ||
-      request.nextUrl.pathname === "/signup" ||
-      request.nextUrl.pathname === "/")
-  ) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard/overview";
-    return NextResponse.redirect(url);
+  if (user && (pathname === "/login" || pathname === "/signup" || pathname === "/")) {
+    return redirectWithCookies(request, "/dashboard/overview", supabaseResponse);
   }
 
   return supabaseResponse;

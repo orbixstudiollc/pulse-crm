@@ -25,10 +25,13 @@ export function HeaderUserMenu() {
     getLeadCount().then((res) => setLeadCount(res.count));
   }, []);
 
+  // Testing phase: guests have no account to sign out of, and their synthetic
+  // email is not worth showing.
+  const openAccess = process.env.NEXT_PUBLIC_OPEN_ACCESS === "true";
   const displayName = profile
     ? `${profile.first_name || ""} ${profile.last_name || ""}`.trim() ||
-      profile.email
-    : "User";
+      (openAccess ? "Guest" : profile.email)
+    : openAccess ? "Guest" : "User";
 
   const orgName = displayName;
   const avatarUrl = profile?.avatar_url || "/images/avatars/user.jpg";
@@ -140,6 +143,7 @@ export function HeaderUserMenu() {
                 <GearIcon size={16} />
                 Settings
               </Link>
+              {!openAccess && (
               <button
                 onClick={handleSignOut}
                 className="flex w-full items-center gap-2.5 rounded-sm px-2.5 py-1.5 text-sm text-danger hover:bg-danger-surface transition-colors"
@@ -162,6 +166,7 @@ export function HeaderUserMenu() {
                 </svg>
                 Sign out
               </button>
+              )}
             </div>
           </motion.div>
         )}
