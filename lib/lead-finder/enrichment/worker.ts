@@ -417,7 +417,8 @@ async function failJob(
       last_error: reason.slice(0, 500),
       finished_at: new Date().toISOString(),
     })
-    .eq("id", job.id);
+    .eq("id", job.id)
+    .eq("status", "running");
 }
 
 async function retryJob(
@@ -435,7 +436,8 @@ async function retryJob(
       next_attempt_at: addMs(withJitter(delayMs)),
       last_error: reason.slice(0, 500),
     })
-    .eq("id", job.id);
+    .eq("id", job.id)
+    .eq("status", "running");
 }
 
 async function writeObsidianObservationForLead(
@@ -492,7 +494,6 @@ async function writeObsidianObservationForLead(
 async function processJob(
   job: ClaimedJob
 ): Promise<{ rateLimited: boolean }> {
-  const supabase = createAdminClient();
   const ctx = await loadJobContext(job);
   if (!ctx) {
     await failJob(job, (job.attempts ?? 0) + 1, "Lead not found");
@@ -509,12 +510,21 @@ async function processJob(
   }
 
   try {
-    await enrichSingleLead(job.lead_id, ctx.campaignId, job.organization_id, {
-      aiProvider: ctx.aiProvider,
-      enrichmentActors: ctx.enrichmentActors,
-      kpiDefinitions: ctx.kpiDefinitions,
-      leadFieldDefinitions: ctx.leadFieldDefinitions,
-    });
+    // The pipeline's compare-and-swap is the job's `done` write; if it did
+    // not persist (job cancelled/finished meanwhile), stop here.
+    const { persisted } = await enrichSingleLead(
+      job.lead_id,
+      ctx.campaignId,
+      job.organization_id,
+      {
+        aiProvider: ctx.aiProvider,
+        enrichmentActors: ctx.enrichmentActors,
+        kpiDefinitions: ctx.kpiDefinitions,
+        leadFieldDefinitions: ctx.leadFieldDefinitions,
+        jobId: job.id,
+      }
+    );
+    if (!persisted) return { rateLimited: false };
 
     // Best-effort Obsidian observation write (no-ops when disabled/unconfigured).
     // Never fail the job if the vault write errors — the worker has already
@@ -531,14 +541,6 @@ async function processJob(
         obsErr
       );
     }
-
-    await supabase
-      .from("lf_enrichment_jobs")
-      .update({
-        status: "done",
-        finished_at: new Date().toISOString(),
-      })
-      .eq("id", job.id);
 
     return { rateLimited: false };
   } catch (err) {

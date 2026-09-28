@@ -11,10 +11,10 @@ export default async function MarketingPage() {
 
   return (
     <MarketingPageClient
-      initialAudits={auditsRes.data as any}
-      initialContent={contentRes.data as any}
-      initialReports={reportsRes.data as any}
-      initialActions={actionsRes.data as any}
+      initialAudits={auditsRes.data.map((a) => ({ ...a, progress: a.progress ?? 0 }))}
+      initialContent={contentRes.data}
+      initialReports={reportsRes.data}
+      initialActions={actionsRes.data}
     />
   );
 }

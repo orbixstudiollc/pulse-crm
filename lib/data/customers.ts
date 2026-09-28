@@ -54,8 +54,7 @@ export interface Note {
 }
 
 export type DealStage =
-  | "prospecting"
-  | "qualification"
+  | "discovery"
   | "proposal"
   | "negotiation"
   | "closed_won"
@@ -80,8 +79,7 @@ export const stageConfig: Record<
     variant: BadgeVariant;
   }
 > = {
-  prospecting: { label: "Prospecting", variant: "neutral" },
-  qualification: { label: "Qualification", variant: "info" },
+  discovery: { label: "Discovery", variant: "info" },
   proposal: { label: "Proposal", variant: "primary" },
   negotiation: { label: "Negotiation", variant: "warning" },
   closed_won: { label: "Closed Won", variant: "success" },

@@ -19,27 +19,6 @@ import type {
 // Enrichment Pipeline – enriches discovered leads with website/social data + AI
 // =============================================================================
 
-// Cancellation tokens per (org, campaign). Keying by orgId in addition to
-// campaignId prevents a malicious tenant from flipping another tenant's flag
-// in-process, even if an upstream route handler forgets to enforce org scope.
-const activeCancellations = new Map<string, boolean>();
-
-function cancellationKey(campaignId: string, orgId: string): string {
-  return `${orgId}:${campaignId}`;
-}
-
-export function cancelEnrichment(campaignId: string, orgId: string): void {
-  activeCancellations.set(cancellationKey(campaignId, orgId), true);
-}
-
-function isCancelled(campaignId: string, orgId: string): boolean {
-  return activeCancellations.get(cancellationKey(campaignId, orgId)) === true;
-}
-
-function clearCancellation(campaignId: string, orgId: string): void {
-  activeCancellations.delete(cancellationKey(campaignId, orgId));
-}
-
 // ---------------------------------------------------------------------------
 // Enrich a single lead
 // ---------------------------------------------------------------------------
@@ -53,9 +32,12 @@ export async function enrichSingleLead(
     enrichmentActors?: string[];
     kpiDefinitions?: KpiDefinition[];
     leadFieldDefinitions?: LeadFieldDefinition[];
+    jobId?: string;
   }
-): Promise<void> {
-  const supabase = await createClient();
+): Promise<{ persisted: boolean }> {
+  // Admin client: this runs from the worker (cron / boot) with no user session.
+  // Every query below is explicitly scoped by organization_id or an org-checked lead_id.
+  const supabase = createAdminClient();
 
   // Load lead
   const { data: leadRows } = await supabase
@@ -144,45 +126,73 @@ export async function enrichSingleLead(
       campaignId
     );
 
-    // Upsert personalization record
-    const personalizationData = {
-        lead_id: leadId,
-        website_tech_stack: aiResult.techStack,
-        website_quality_score: aiResult.websiteQualityScore,
-        has_chatbot: aiResult.hasChatbot,
-        has_booking_system: aiResult.hasBookingSystem,
-        has_automation: aiResult.hasAutomation,
-        recent_news: aiResult.recentNews,
-        company_description: aiResult.companyDescription,
-        key_products: aiResult.keyProducts,
-        founders_info: aiResult.foundersInfo,
-        last_blog_post: aiResult.lastBlogPost,
-        social_media_presence: aiResult.socialMediaPresence,
-        pain_points: aiResult.painPoints,
-        personalization_summary: aiResult.personalizationSummary,
-        enrichment_actors: usedActors,
-        raw_enrichment_data: rawEnrichmentData,
-        campaign_kpis: aiResult.kpis,
-      };
-    await supabase.from("lf_lead_personalization").upsert(
-      personalizationData as never,
-      { onConflict: "lead_id" }
-    );
+    // Compare-and-swap the job to done BEFORE persisting. If the job was
+    // cancelled (or already finished/failed) while we were running, the CAS
+    // matches no row and the result is discarded. `retry` is accepted only
+    // because recoverStaleRunning can flip a still-executing job to retry.
+    if (options?.jobId) {
+      const { data: claimed } = await createAdminClient()
+        .from("lf_enrichment_jobs")
+        .update({ status: "done", finished_at: new Date().toISOString() })
+        .eq("id", options.jobId)
+        .in("status", ["running", "retry"])
+        .select("id");
+      if (!claimed || claimed.length === 0) {
+        return { persisted: false };
+      }
+    }
 
-    // Update lead score and status
-    const leadUpdateData = {
-        score: aiResult.score,
-        status: "qualified",
-        mapped_data: {
-          ...(typedLead.mapped_data || {}),
-          ...aiResult.extractedFields,
-        },
-      };
-    await supabase
-      .from("lf_leads")
-      .update(leadUpdateData as never)
-      .eq("id", leadId)
-      .eq("organization_id", orgId);
+    try {
+      // Upsert personalization record
+      const personalizationData = {
+          lead_id: leadId,
+          website_tech_stack: aiResult.techStack,
+          website_quality_score: aiResult.websiteQualityScore,
+          has_chatbot: aiResult.hasChatbot,
+          has_booking_system: aiResult.hasBookingSystem,
+          has_automation: aiResult.hasAutomation,
+          recent_news: aiResult.recentNews,
+          company_description: aiResult.companyDescription,
+          key_products: aiResult.keyProducts,
+          founders_info: aiResult.foundersInfo,
+          last_blog_post: aiResult.lastBlogPost,
+          social_media_presence: aiResult.socialMediaPresence,
+          pain_points: aiResult.painPoints,
+          personalization_summary: aiResult.personalizationSummary,
+          enrichment_actors: usedActors,
+          raw_enrichment_data: rawEnrichmentData,
+          campaign_kpis: aiResult.kpis,
+        };
+      const { error: upsertErr } = await supabase
+        .from("lf_lead_personalization")
+        .upsert(personalizationData as never, { onConflict: "lead_id" });
+      if (upsertErr) throw new Error(upsertErr.message);
+
+      // Update lead score and status
+      const leadUpdateData = {
+          score: aiResult.score,
+          status: "qualified",
+          mapped_data: {
+            ...(typedLead.mapped_data || {}),
+            ...aiResult.extractedFields,
+          },
+        };
+      const { error: leadUpdErr } = await supabase
+        .from("lf_leads")
+        .update(leadUpdateData as never)
+        .eq("id", leadId)
+        .eq("organization_id", orgId);
+      if (leadUpdErr) throw new Error(leadUpdErr.message);
+    } catch (err) {
+      if (options?.jobId) {
+        await createAdminClient()
+          .from("lf_enrichment_jobs")
+          .update({ status: "failed", last_error: String(err).slice(0, 500) })
+          .eq("id", options.jobId)
+          .eq("status", "done");
+      }
+      throw err;
+    }
 
     // Emit KPI event
     if (Object.keys(aiResult.kpis).length > 0) {
@@ -202,6 +212,8 @@ export async function enrichSingleLead(
       score: aiResult.score,
       status: "qualified",
     });
+
+    return { persisted: true };
   } catch (err) {
     // Revert to previous status on failure
     await supabase
@@ -230,7 +242,6 @@ export async function enrichCampaignLeads(
   batchId?: string;
 }> {
   const admin = createAdminClient();
-  clearCancellation(campaignId, orgId);
 
   // Reset any stale "enriching" leads (from previous crashed runs) to "new"
   await admin

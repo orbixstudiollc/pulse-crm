@@ -74,7 +74,7 @@ export function NewAuditClient() {
         return;
       }
 
-      const id = (result.data as any).id;
+      const id: string = result.data.id;
       setAuditId(id);
 
       if (auditType === "quick") {
@@ -82,7 +82,7 @@ export function NewAuditClient() {
         pollRef.current = setInterval(async () => {
           const { data } = await getMarketingAuditById(id);
           if (data) {
-            const d = data as any;
+            const d = data;
             setProgress(d.progress ?? 0);
             if (d.status === "completed") {
               if (pollRef.current) clearInterval(pollRef.current);
@@ -114,7 +114,7 @@ export function NewAuditClient() {
           { key: "growth", label: "Growth & Strategy", prompt: "Evaluate pricing strategy, acquisition channels, retention mechanisms, growth loops, and strategic scalability." },
         ];
 
-        const dimensionResults: Record<string, any> = {};
+        const dimensionResults: Parameters<typeof finalizeFullAudit>[1] = {};
 
         for (let i = 0; i < dimensions.length; i++) {
           const dim = dimensions[i];

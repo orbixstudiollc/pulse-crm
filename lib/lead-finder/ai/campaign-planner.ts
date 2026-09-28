@@ -131,7 +131,7 @@ Respond in JSON:
       suggestedActors:
         validSuggested.length > 0
           ? validSuggested
-          : ["apify/google-maps-scraper"],
+          : ["compass/crawler-google-places"],
       actorConfigs: parsed.actorConfigs ?? {},
       kpiDefinitions: parsed.kpiDefinitions ?? [],
       leadFieldDefinitions: parsed.leadFieldDefinitions ?? [],
@@ -198,7 +198,7 @@ function defaultCampaignPlan(targetNiche: string): CampaignPlan {
     name: `${targetNiche} Campaign`,
     description: `Lead discovery campaign targeting ${targetNiche}`,
     targetNiche,
-    suggestedActors: ["apify/google-maps-scraper"],
+    suggestedActors: ["compass/crawler-google-places"],
     actorConfigs: {},
     kpiDefinitions: [
       {

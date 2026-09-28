@@ -16,7 +16,7 @@ export async function getMarketingAudits(filters?: {
   const orgId = await getOrgId();
 
   let query = supabase
-    .from("marketing_audits" as any)
+    .from("marketing_audits")
     .select("*")
     .eq("organization_id", orgId)
     .order("created_at", { ascending: false });
@@ -36,7 +36,7 @@ export async function getMarketingAuditById(id: string) {
   await getOrgId();
 
   const { data, error } = await supabase
-    .from("marketing_audits" as any)
+    .from("marketing_audits")
     .select("*")
     .eq("id", id)
     .single();
@@ -58,7 +58,7 @@ export async function createMarketingAudit(auditData: {
   const { data: { user } } = await supabase.auth.getUser();
 
   const { data, error } = await supabase
-    .from("marketing_audits" as any)
+    .from("marketing_audits")
     .insert({
       organization_id: orgId,
       website_url: auditData.website_url,
@@ -88,7 +88,7 @@ export async function updateMarketingAudit(
   await getOrgId();
 
   const { data, error } = await supabase
-    .from("marketing_audits" as any)
+    .from("marketing_audits")
     .update(updates)
     .eq("id", id)
     .select()
@@ -105,7 +105,7 @@ export async function deleteMarketingAudit(id: string) {
   const supabase = await createClient();
   await getOrgId();
 
-  const { error } = await supabase.from("marketing_audits" as any).delete().eq("id", id);
+  const { error } = await supabase.from("marketing_audits").delete().eq("id", id);
 
   if (error) return { error: error.message };
 
@@ -123,7 +123,7 @@ export async function getMarketingContent(filters?: {
   const orgId = await getOrgId();
 
   let query = supabase
-    .from("marketing_content" as any)
+    .from("marketing_content")
     .select("*")
     .eq("organization_id", orgId)
     .order("created_at", { ascending: false });
@@ -142,7 +142,7 @@ export async function getMarketingContentById(id: string) {
   await getOrgId();
 
   const { data, error } = await supabase
-    .from("marketing_content" as any)
+    .from("marketing_content")
     .select("*")
     .eq("id", id)
     .single();
@@ -166,7 +166,7 @@ export async function createMarketingContent(contentData: {
   const { data: { user } } = await supabase.auth.getUser();
 
   const { data, error } = await supabase
-    .from("marketing_content" as any)
+    .from("marketing_content")
     .insert({
       organization_id: orgId,
       content_type: contentData.content_type,
@@ -193,7 +193,7 @@ export async function deleteMarketingContent(id: string) {
   const supabase = await createClient();
   await getOrgId();
 
-  const { error } = await supabase.from("marketing_content" as any).delete().eq("id", id);
+  const { error } = await supabase.from("marketing_content").delete().eq("id", id);
 
   if (error) return { error: error.message };
 
@@ -208,7 +208,7 @@ export async function getMarketingReports(auditId?: string) {
   const orgId = await getOrgId();
 
   let query = supabase
-    .from("marketing_reports" as any)
+    .from("marketing_reports")
     .select("*")
     .eq("organization_id", orgId)
     .order("created_at", { ascending: false });
@@ -233,7 +233,7 @@ export async function createMarketingReport(reportData: {
   const { data: { user } } = await supabase.auth.getUser();
 
   const { data, error } = await supabase
-    .from("marketing_reports" as any)
+    .from("marketing_reports")
     .insert({
       organization_id: orgId,
       audit_id: reportData.audit_id,
@@ -256,7 +256,7 @@ export async function deleteMarketingReport(id: string) {
   const supabase = await createClient();
   await getOrgId();
 
-  const { error } = await supabase.from("marketing_reports" as any).delete().eq("id", id);
+  const { error } = await supabase.from("marketing_reports").delete().eq("id", id);
 
   if (error) return { error: error.message };
 
@@ -271,7 +271,7 @@ export async function getMarketingActionItems(auditId?: string) {
   const orgId = await getOrgId();
 
   let query = supabase
-    .from("marketing_action_items" as any)
+    .from("marketing_action_items")
     .select("*")
     .eq("organization_id", orgId)
     .order("created_at", { ascending: false });
@@ -297,7 +297,7 @@ export async function updateMarketingActionItem(
   await getOrgId();
 
   const { data, error } = await supabase
-    .from("marketing_action_items" as any)
+    .from("marketing_action_items")
     .update(updates)
     .eq("id", id)
     .select()
@@ -338,7 +338,7 @@ export async function createMarketingActionItems(
   }));
 
   const { data, error } = await supabase
-    .from("marketing_action_items" as any)
+    .from("marketing_action_items")
     .insert(rows)
     .select();
 

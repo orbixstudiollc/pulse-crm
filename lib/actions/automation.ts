@@ -373,6 +373,37 @@ async function executeAutomationActions(
           break;
         }
 
+        case "add_tag": {
+          const tag = String(action.config.tag ?? "").trim();
+          if (!tag) {
+            actionsExecuted.push({ type: "add_tag", success: false, error: "No tag configured" });
+            break;
+          }
+          const { data: lead } = await admin
+            .from("leads")
+            .select("tags")
+            .eq("id", leadId)
+            .eq("organization_id", organizationId)
+            .maybeSingle();
+          if (!lead) {
+            actionsExecuted.push({
+              type: "add_tag",
+              success: false,
+              error: "Lead not found in this organization",
+            });
+            break;
+          }
+          const next = Array.from(new Set([...(lead.tags ?? []), tag]));
+          const { error: tagError } = await admin
+            .from("leads")
+            .update({ tags: next })
+            .eq("id", leadId)
+            .eq("organization_id", organizationId);
+          if (tagError) throw new Error(tagError.message);
+          actionsExecuted.push({ type: "add_tag", success: true });
+          break;
+        }
+
         default:
           actionsExecuted.push({
             type: action.type,

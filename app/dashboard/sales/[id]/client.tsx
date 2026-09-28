@@ -33,7 +33,7 @@ import { toast } from "sonner";
 
 // --- Types ---
 
-type DealStage = "discovery" | "qualification" | "proposal" | "negotiation" | "closed_won" | "closed_lost";
+type DealStage = "discovery" | "proposal" | "negotiation" | "closed_won" | "closed_lost";
 
 interface DealRow {
   id: string;
@@ -80,7 +80,6 @@ interface DealDetailClientProps {
 
 const pipelineStages: { id: DealStage; label: string }[] = [
   { id: "discovery", label: "Discovery" },
-  { id: "qualification", label: "Qualification" },
   { id: "proposal", label: "Proposal" },
   { id: "negotiation", label: "Negotiation" },
   { id: "closed_won", label: "Closed Won" },
@@ -89,7 +88,6 @@ const pipelineStages: { id: DealStage; label: string }[] = [
 
 const activeStageOrder: DealStage[] = [
   "discovery",
-  "qualification",
   "proposal",
   "negotiation",
   "closed_won",
@@ -97,7 +95,6 @@ const activeStageOrder: DealStage[] = [
 
 const stageLabels: Record<string, string> = {
   discovery: "Discovery",
-  qualification: "Qualification",
   proposal: "Proposal",
   negotiation: "Negotiation",
   closed_won: "Closed Won",
@@ -106,7 +103,6 @@ const stageLabels: Record<string, string> = {
 
 const stageColorMap: Record<string, string> = {
   discovery: "bg-blue-500",
-  qualification: "bg-amber-500",
   proposal: "bg-amber-500",
   negotiation: "bg-amber-500",
   closed_won: "bg-green-500",

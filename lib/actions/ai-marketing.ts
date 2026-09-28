@@ -368,17 +368,17 @@ export async function aiRunFullAudit(auditId: string): Promise<{ success: boolea
 
   // Get audit record
   const { data: auditRaw, error: fetchErr } = await supabase
-    .from("marketing_audits" as any)
+    .from("marketing_audits")
     .select("*")
     .eq("id", auditId)
     .single();
 
   if (fetchErr || !auditRaw) return { success: false, error: "Audit not found" };
-  const audit = auditRaw as any;
+  const audit = auditRaw;
 
   // Mark as running
   await supabase
-    .from("marketing_audits" as any)
+    .from("marketing_audits")
     .update({ status: "running", progress: 0 })
     .eq("id", auditId);
 
@@ -417,7 +417,7 @@ export async function aiRunFullAudit(auditId: string): Promise<{ success: boolea
       }
 
       await supabase
-        .from("marketing_audits" as any)
+        .from("marketing_audits")
         .update({ progress })
         .eq("id", auditId);
     }
@@ -452,7 +452,7 @@ export async function aiRunFullAudit(auditId: string): Promise<{ success: boolea
 
     // Save results
     await supabase
-      .from("marketing_audits" as any)
+      .from("marketing_audits")
       .update({
         status: "completed",
         progress: 100,
@@ -473,7 +473,7 @@ export async function aiRunFullAudit(auditId: string): Promise<{ success: boolea
     if (allActionItems.length > 0) {
       const orgId = audit.organization_id;
       await supabase
-        .from("marketing_action_items" as any)
+        .from("marketing_action_items")
         .insert(
           allActionItems.map((item) => ({
             organization_id: orgId,
@@ -496,7 +496,7 @@ export async function aiRunFullAudit(auditId: string): Promise<{ success: boolea
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Audit failed";
     await supabase
-      .from("marketing_audits" as any)
+      .from("marketing_audits")
       .update({ status: "failed", error_message: errorMessage })
       .eq("id", auditId);
 
@@ -521,7 +521,7 @@ export async function aiRunSingleDimension(
 
   // Update progress
   await supabase
-    .from("marketing_audits" as any)
+    .from("marketing_audits")
     .update({ progress })
     .eq("id", auditId);
 
@@ -540,13 +540,13 @@ export async function finalizeFullAudit(
 
   try {
     const { data: auditRaw } = await supabase
-      .from("marketing_audits" as any)
+      .from("marketing_audits")
       .select("website_url, organization_id")
       .eq("id", auditId)
       .single();
 
     if (!auditRaw) return { success: false, error: "Audit not found" };
-    const audit = auditRaw as any;
+    const audit = auditRaw;
 
     const weights = { content: 0.25, conversion: 0.20, seo: 0.20, competitive: 0.15, brand: 0.10, growth: 0.10 };
     const overallScore = Math.round(
@@ -571,7 +571,7 @@ export async function finalizeFullAudit(
     };
 
     await supabase
-      .from("marketing_audits" as any)
+      .from("marketing_audits")
       .update({
         status: "completed",
         progress: 100,
@@ -595,14 +595,14 @@ export async function finalizeFullAudit(
 
     if (allActionItems.length > 0) {
       await supabase
-        .from("marketing_action_items" as any)
+        .from("marketing_action_items")
         .insert(
           allActionItems.map((item) => ({
             organization_id: audit.organization_id,
             audit_id: auditId,
             title: item.title,
             description: item.description,
-            category: (item as any).category ?? null,
+            category: item.category ?? null,
             tier: item.tier,
             priority: item.priority,
             impact_estimate: item.impact_estimate,
@@ -618,7 +618,7 @@ export async function finalizeFullAudit(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Finalize failed";
     await supabase
-      .from("marketing_audits" as any)
+      .from("marketing_audits")
       .update({ status: "failed", error_message: errorMessage })
       .eq("id", auditId);
     return { success: false, error: errorMessage };
@@ -631,15 +631,15 @@ export async function aiRunQuickSnapshot(auditId: string): Promise<{ success: bo
   const supabase = await createClient();
 
   const { data: auditRaw } = await supabase
-    .from("marketing_audits" as any)
+    .from("marketing_audits")
     .select("*")
     .eq("id", auditId)
     .single();
 
   if (!auditRaw) return { success: false, error: "Audit not found" };
-  const audit = auditRaw as any;
+  const audit = auditRaw;
 
-  await supabase.from("marketing_audits" as any).update({ status: "running", progress: 10 }).eq("id", auditId);
+  await supabase.from("marketing_audits").update({ status: "running", progress: 10 }).eq("id", auditId);
 
   try {
     const { settings, orgId, userId } = await getAIClient();
@@ -668,7 +668,7 @@ export async function aiRunQuickSnapshot(auditId: string): Promise<{ success: bo
     const result = parseJSON<Record<string, unknown>>(text);
     const score = Number(result.overall_score) || 50;
 
-    await supabase.from("marketing_audits" as any).update({
+    await supabase.from("marketing_audits").update({
       status: "completed",
       progress: 100,
       overall_score: score,
@@ -680,7 +680,7 @@ export async function aiRunQuickSnapshot(auditId: string): Promise<{ success: bo
     revalidatePath("/dashboard/marketing");
     return { success: true };
   } catch (error) {
-    await supabase.from("marketing_audits" as any).update({
+    await supabase.from("marketing_audits").update({
       status: "failed",
       error_message: error instanceof Error ? error.message : "Quick snapshot failed",
     }).eq("id", auditId);
@@ -728,7 +728,7 @@ export async function aiGenerateEmailSequence(params: {
     const orgIdVal = (await import("./helpers")).getOrgId;
     const org = await orgIdVal();
 
-    await supabase.from("marketing_content" as any).insert({
+    await supabase.from("marketing_content").insert({
       organization_id: org,
       audit_id: params.auditId ?? null,
       customer_id: params.customerId ?? null,
@@ -783,7 +783,7 @@ export async function aiGenerateSocialCalendar(params: {
     const { getOrgId } = await import("./helpers");
     const org = await getOrgId();
 
-    await supabase.from("marketing_content" as any).insert({
+    await supabase.from("marketing_content").insert({
       organization_id: org,
       audit_id: params.auditId ?? null,
       content_type: "social_calendar",
@@ -837,7 +837,7 @@ export async function aiGenerateAdCampaign(params: {
     const { getOrgId } = await import("./helpers");
     const org = await getOrgId();
 
-    await supabase.from("marketing_content" as any).insert({
+    await supabase.from("marketing_content").insert({
       organization_id: org,
       audit_id: params.auditId ?? null,
       content_type: "ad_campaign",
@@ -892,7 +892,7 @@ export async function aiGenerateLaunchPlaybook(params: {
     const { getOrgId } = await import("./helpers");
     const org = await getOrgId();
 
-    await supabase.from("marketing_content" as any).insert({
+    await supabase.from("marketing_content").insert({
       organization_id: org,
       audit_id: params.auditId ?? null,
       content_type: "launch_playbook",
@@ -921,13 +921,13 @@ export async function aiGenerateClientProposal(params: {
 
     const supabase = await createClient();
     const { data: auditRaw } = await supabase
-      .from("marketing_audits" as any)
+      .from("marketing_audits")
       .select("*")
       .eq("id", params.auditId)
       .single();
 
     if (!auditRaw) return { error: "Audit not found" };
-    const audit = auditRaw as any;
+    const audit = auditRaw;
 
     const modelId = getModelForFeature("marketing", undefined, settings.ai_provider);
 
@@ -954,7 +954,7 @@ export async function aiGenerateClientProposal(params: {
     const { getOrgId } = await import("./helpers");
     const org = await getOrgId();
 
-    await supabase.from("marketing_content" as any).insert({
+    await supabase.from("marketing_content").insert({
       organization_id: org,
       audit_id: params.auditId,
       content_type: "client_proposal",
@@ -978,12 +978,12 @@ export async function aiGenerateMarketingReport(auditId: string): Promise<{ data
     if (settings.feature_marketing === false) return { error: "Marketing AI is disabled" };
 
     const supabase = await createClient();
-    const { data: auditRaw } = await supabase.from("marketing_audits" as any).select("*").eq("id", auditId).single();
+    const { data: auditRaw } = await supabase.from("marketing_audits").select("*").eq("id", auditId).single();
     if (!auditRaw) return { error: "Audit not found" };
-    const audit = auditRaw as any;
+    const audit = auditRaw;
 
-    const { data: actionItemsRaw } = await supabase.from("marketing_action_items" as any).select("*").eq("audit_id", auditId);
-    const actionItems = (actionItemsRaw || []) as any[];
+    const { data: actionItemsRaw } = await supabase.from("marketing_action_items").select("*").eq("audit_id", auditId);
+    const actionItems = actionItemsRaw || [];
 
     const modelId = getModelForFeature("marketing", undefined, settings.ai_provider);
 
@@ -1009,7 +1009,7 @@ export async function aiGenerateMarketingReport(auditId: string): Promise<{ data
     const { getOrgId } = await import("./helpers");
     const org = await getOrgId();
 
-    await supabase.from("marketing_reports" as any).insert({
+    await supabase.from("marketing_reports").insert({
       organization_id: org,
       audit_id: auditId,
       report_type: "markdown",

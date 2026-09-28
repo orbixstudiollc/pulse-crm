@@ -219,12 +219,11 @@ export async function PUT(req: NextRequest) {
         aiUpdates.groq_api_key = body.groq_api_key;
       if (body.ai_provider) aiUpdates.ai_provider = body.ai_provider;
       if (body.ai_model) aiUpdates.default_model = body.ai_model;
-      // Ollama-specific fields stored in default_model
+      // Provider-specific model overrides; the Ollama base URL has its own column
       if (body.anthropic_model)
         aiUpdates.default_model = body.anthropic_model;
       if (body.ollama_model) aiUpdates.default_model = body.ollama_model;
-      if (body.ollama_base_url)
-        aiUpdates.default_model = `ollama:${body.ollama_base_url}:${body.ollama_model || "qwen2.5-coder"}`;
+      if (body.ollama_base_url) aiUpdates.ollama_base_url = body.ollama_base_url;
 
       if (Object.keys(aiUpdates).length > 0) {
         const { data: updated, error: updateError } = await supabase

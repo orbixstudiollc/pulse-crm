@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/actions/helpers";
 import { isUuid } from "@/lib/security";
-import {
-  enrichCampaignLeads,
-  cancelEnrichment,
-} from "@/lib/lead-finder/enrichment/pipeline";
+import { enrichCampaignLeads } from "@/lib/lead-finder/enrichment/pipeline";
 
 export async function POST(
   _req: NextRequest,
@@ -69,9 +66,9 @@ export async function DELETE(
 
     const orgId = await getOrgId();
 
-    // SECURITY (IDOR): verify the campaign belongs to this org BEFORE calling
-    // cancelEnrichment. Otherwise a malicious tenant could flip the in-memory
-    // cancellation flag for another org's campaign (DoS against their run).
+    // SECURITY (IDOR): verify the campaign belongs to this org BEFORE
+    // cancelling. Otherwise a malicious tenant could cancel another org's
+    // enrichment run (DoS against their run).
     const { data: campRows } = await supabase
       .from("lf_campaigns")
       .select("id")
@@ -85,19 +82,54 @@ export async function DELETE(
       );
     }
 
-    cancelEnrichment(id, orgId);
+    const { data: batches, error: batchesErr } = await supabase
+      .from("lf_enrichment_batches")
+      .select("id")
+      .eq("campaign_id", id)
+      .eq("organization_id", orgId)
+      .in("status", ["queued", "running", "paused"]);
+    if (batchesErr) throw batchesErr;
+    const batchIds = (batches ?? []).map((b) => b.id as string);
 
-    const { count } = await supabase
+    let cancelledJobs = 0;
+    if (batchIds.length > 0) {
+      const nowIso = new Date().toISOString();
+      // Jobs before batches: a crash between the two never leaves a
+      // claimable job under an open batch.
+      const { count: jobCount, error: jobsErr } = await supabase
+        .from("lf_enrichment_jobs")
+        .update(
+          { status: "cancelled", finished_at: nowIso },
+          { count: "exact" }
+        )
+        .eq("organization_id", orgId)
+        .in("batch_id", batchIds)
+        .in("status", ["queued", "retry", "running"]);
+      if (jobsErr) throw jobsErr;
+      cancelledJobs = jobCount ?? 0;
+
+      const { error: batchUpdErr } = await supabase
+        .from("lf_enrichment_batches")
+        .update({ status: "cancelled", finished_at: nowIso })
+        .eq("organization_id", orgId)
+        .in("id", batchIds)
+        .in("status", ["queued", "running", "paused"]);
+      if (batchUpdErr) throw batchUpdErr;
+    }
+
+    const { count, error: leadsErr } = await supabase
       .from("lf_leads")
       .update({ status: "new" })
       .eq("campaign_id", id)
       .eq("organization_id", orgId)
       .eq("status", "enriching");
+    if (leadsErr) throw leadsErr;
 
     return NextResponse.json({
       success: true,
       message: "Enrichment cancelled",
       resetCount: count ?? 0,
+      cancelledJobs,
     });
   } catch (err) {
     console.error("[lead-finder/campaigns/:id/enrich] DELETE error", err);

@@ -215,7 +215,10 @@ export async function resolveProviderAndModel(
             ? "groq"
             : "openrouter");
 
-  const defaultModel = settings?.default_model ?? null;
+  // Rows written by the old settings route hold "ollama:<url>:<model>" here;
+  // ignore them so the provider default is used until settings are re-saved.
+  const raw = settings?.default_model ?? null;
+  const defaultModel = raw && raw.startsWith("ollama:") ? null : raw;
   let model = defaultModel ?? "";
   if (!model) {
     switch (provider) {

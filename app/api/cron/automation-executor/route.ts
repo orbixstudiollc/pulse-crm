@@ -161,6 +161,34 @@ export async function GET(request: Request) {
                 status: "completed",
               });
               actionsExecuted.push({ type: "add_activity", success: true });
+            } else if (action.type === "add_tag") {
+              const tag = String(action.config.tag ?? "").trim();
+              if (!tag) {
+                actionsExecuted.push({ type: "add_tag", success: false, error: "No tag configured" });
+                continue;
+              }
+              const { data: tagLead } = await admin
+                .from("leads")
+                .select("tags")
+                .eq("id", lead.id)
+                .eq("organization_id", rule.organization_id)
+                .maybeSingle();
+              if (!tagLead) {
+                actionsExecuted.push({
+                  type: "add_tag",
+                  success: false,
+                  error: "Lead not found in this organization",
+                });
+                continue;
+              }
+              const next = Array.from(new Set([...(tagLead.tags ?? []), tag]));
+              const { error: tagError } = await admin
+                .from("leads")
+                .update({ tags: next })
+                .eq("id", lead.id)
+                .eq("organization_id", rule.organization_id);
+              if (tagError) throw new Error(tagError.message);
+              actionsExecuted.push({ type: "add_tag", success: true });
             }
           } catch (err) {
             actionsExecuted.push({

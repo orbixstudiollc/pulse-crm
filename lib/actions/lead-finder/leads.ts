@@ -40,7 +40,7 @@ export async function getLFLeads(
     query = query.or(
       (() => {
         const q = escapePostgrestLike(filters.search);
-        return `display_name.ilike.%${q}%,email.ilike.%${q}%,company.ilike.%${q}%,headline.ilike.%${q}%`;
+        return `display_name.ilike.%${q}%,email.ilike.%${q}%,website.ilike.%${q}%,mapped_data->>company.ilike.%${q}%`;
       })()
     );
   }
