@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { tryGetApifyToken } from "@/lib/lead-finder/apify/token";
+import { resolveApifyCredential } from "@/lib/lead-finder/apify/token";
+import { evaluateActorPolicy } from "@/lib/lead-finder/apify/policy";
 
 const validateSchema = z.object({
   actorId: z
@@ -29,11 +30,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid body" }, { status: 400 });
     }
 
-    const apifyToken = await tryGetApifyToken();
-    if (!apifyToken) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("organization_id")
+      .eq("id", user.id)
+      .single();
+    if (!profile?.organization_id) {
+      return NextResponse.json({ error: "No organization" }, { status: 400 });
+    }
+
+    const cred = await resolveApifyCredential(profile.organization_id);
+    if (!cred) {
       return NextResponse.json(
         { error: "Apify token not configured" },
         { status: 503 }
+      );
+    }
+
+    const policy = evaluateActorPolicy([parsed.actorId], cred.source);
+    if (!policy.allowed) {
+      return NextResponse.json(
+        { error: "Custom actors require your own Apify API key" },
+        { status: 403 }
       );
     }
 
@@ -41,7 +59,7 @@ export async function POST(req: NextRequest) {
     // into access logs, APM traces, or Referer.
     const actorUrl = `https://api.apify.com/v2/acts/${encodeURIComponent(parsed.actorId)}`;
     const response = await fetch(actorUrl, {
-      headers: { Authorization: `Bearer ${apifyToken}` },
+      headers: { Authorization: `Bearer ${cred.token}` },
     });
 
     if (!response.ok) {

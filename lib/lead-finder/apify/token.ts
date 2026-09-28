@@ -1,6 +1,9 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+
+export type ApifyCredentialSource = "tenant" | "platform";
+export type ApifyCredential = { token: string; source: ApifyCredentialSource };
 
 /**
  * Canonical Apify token resolution.
@@ -27,8 +30,11 @@ export function getApifyTokenFromEnv(): string | undefined {
   );
 }
 
-async function loadTenantApifyKey(orgId: string): Promise<string | null> {
-  const supabase = await createClient();
+export async function loadTenantApifyKey(
+  orgId: string
+): Promise<string | null> {
+  // Admin client: cron/worker contexts have no cookie session; scoped by organization_id.
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from("ai_settings")
     .select("apify_api_key")
@@ -39,6 +45,22 @@ async function loadTenantApifyKey(orgId: string): Promise<string | null> {
 }
 
 /**
+ * Resolve the Apify credential together with where it came from. The tenant
+ * key (when `orgId` is given and one is stored) wins over the platform env
+ * token. Returns undefined when no token is configured anywhere.
+ */
+export async function resolveApifyCredential(
+  orgId?: string
+): Promise<ApifyCredential | undefined> {
+  if (orgId) {
+    const dbKey = await loadTenantApifyKey(orgId);
+    if (dbKey) return { token: dbKey, source: "tenant" };
+  }
+  const envToken = getApifyTokenFromEnv();
+  return envToken ? { token: envToken, source: "platform" } : undefined;
+}
+
+/**
  * Resolve the Apify token with tenant override. Returns undefined when no
  * token is configured. Pass `orgId` to include the per-tenant override from
  * `ai_settings.apify_api_key`; omit to consult env only.
@@ -46,11 +68,7 @@ async function loadTenantApifyKey(orgId: string): Promise<string | null> {
 export async function tryGetApifyToken(
   orgId?: string
 ): Promise<string | undefined> {
-  if (orgId) {
-    const dbKey = await loadTenantApifyKey(orgId);
-    if (dbKey) return dbKey;
-  }
-  return getApifyTokenFromEnv();
+  return (await resolveApifyCredential(orgId))?.token;
 }
 
 /**

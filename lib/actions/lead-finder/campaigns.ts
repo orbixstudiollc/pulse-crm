@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId, getCurrentUserProfile } from "../helpers";
 import { revalidatePath } from "next/cache";
+import { authorizeActors } from "@/lib/lead-finder/apify/policy-server";
 
 export async function getLFCampaigns() {
   const supabase = await createClient();
@@ -171,6 +172,15 @@ export async function createLFCampaign(data: {
   const orgId = await getOrgId();
   const { user } = await getCurrentUserProfile();
 
+  const actors = data.apify_actors ?? [];
+  if (actors.length > 0) {
+    try {
+      await authorizeActors(orgId, actors);
+    } catch (err) {
+      return { error: (err as Error).message, data: null };
+    }
+  }
+
   const insertData: Record<string, unknown> = {
     organization_id: orgId,
     created_by: user.id,
@@ -228,6 +238,20 @@ export async function updateLFCampaign(
 
   if (Object.keys(safeUpdates).length === 0) {
     return { error: "No valid fields to update", data: null };
+  }
+
+  if ("apify_actors" in safeUpdates) {
+    const actors = safeUpdates.apify_actors as string[];
+    if (!Array.isArray(actors)) {
+      return { error: "apify_actors must be an array", data: null };
+    }
+    if (actors.length > 0) {
+      try {
+        await authorizeActors(orgId, actors);
+      } catch (err) {
+        return { error: (err as Error).message, data: null };
+      }
+    }
   }
 
   const { data: rows, error } = await supabase

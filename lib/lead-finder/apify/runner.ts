@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
-import { getApifyToken } from "../ai-provider";
+import { authorizeActors } from "./policy-server";
 
 // =============================================================================
 // Apify Runner – starts actor runs, polls, and fetches results
@@ -133,7 +133,7 @@ export async function startActorRun(
   orgId: string,
   campaignId?: string
 ): Promise<{ runId: string; dbId: string }> {
-  const token = await getApifyToken(orgId);
+  const cred = await authorizeActors(orgId, [actorId]);
   const supabase = await createClient();
 
   // Insert DB record first
@@ -165,7 +165,7 @@ export async function startActorRun(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${cred.token}`,
       },
       body: JSON.stringify(input),
     }
@@ -205,7 +205,8 @@ export async function pollRunUntilDone(
   datasetId: string | null;
   costUsd: number | null;
 }> {
-  const token = await getApifyToken(orgId);
+  // No actor to authorize here; resolves the same tenant-first credential.
+  const { token } = await authorizeActors(orgId, []);
   const supabase = await createClient();
 
   for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
@@ -277,7 +278,8 @@ export async function fetchDatasetItems(
   orgId: string,
   limit = 1000
 ): Promise<Record<string, unknown>[]> {
-  const token = await getApifyToken(orgId);
+  // No actor to authorize here; resolves the same tenant-first credential.
+  const { token } = await authorizeActors(orgId, []);
 
   const res = await fetch(
     `${APIFY_BASE}/datasets/${datasetId}/items?limit=${limit}&format=json`,

@@ -2,7 +2,7 @@ import "server-only";
 
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import type { AIProvider, AIMessage, AIResponse } from "./types";
 import {
   getApifyToken as resolveApifyToken,
@@ -129,7 +129,8 @@ export type OrgAiSettings = {
 };
 
 async function loadOrgSettings(orgId: string): Promise<OrgAiSettings | null> {
-  const supabase = await createClient();
+  // Admin client: workers/cron have no cookie session; scoped by organization_id.
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from("ai_settings")
     .select(
