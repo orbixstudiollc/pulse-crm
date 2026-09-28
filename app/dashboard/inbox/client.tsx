@@ -34,6 +34,7 @@ import {
 } from "@/lib/actions/email-inbox";
 import { composeAndSendEmail, sendReply } from "@/lib/actions/email-send";
 import { getUnifiedInbox, deleteUnifiedItem } from "@/lib/actions/unified-inbox";
+import { sanitizeEmailHtml } from "@/lib/security/sanitize-html";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -702,10 +703,14 @@ export function InboxClient() {
                     </div>
 
                     {/* Message body */}
-                    <div
-                      className="text-sm text-fg prose prose-sm dark:prose-invert max-w-none"
-                      dangerouslySetInnerHTML={{ __html: msg.body_html || msg.body_text || "" }}
-                    />
+                    {msg.body_html ? (
+                      <div
+                        className="text-sm text-fg prose prose-sm dark:prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{ __html: sanitizeEmailHtml(msg.body_html) }}
+                      />
+                    ) : (
+                      <div className="text-sm text-fg whitespace-pre-wrap">{msg.body_text ?? ""}</div>
+                    )}
                   </div>
                 ))
               )}
