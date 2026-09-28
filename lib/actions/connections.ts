@@ -2,7 +2,7 @@
 
 import { postpeerClient } from "@/lib/postpeer/client";
 import { PlatformType, PlatformConnection } from "@/lib/postpeer/types";
-import { getOrgId } from "@/lib/actions/helpers";
+import { requirePostPeerOrg } from "@/lib/postpeer/tenant";
 
 /**
  * Get PostPeer API key from environment or database
@@ -33,8 +33,8 @@ export async function getConnections(): Promise<{
   data?: PlatformConnection[];
   error?: string;
 }> {
-  await getOrgId();
   try {
+    await requirePostPeerOrg();
     const client = await initClient();
     const connections = await client.getConnections();
 
@@ -61,8 +61,8 @@ export async function getOAuthUrl(
   url?: string;
   error?: string;
 }> {
-  await getOrgId();
   try {
+    await requirePostPeerOrg();
     // In a real implementation, this would call PostPeer's OAuth initiation endpoint
     // For now, we'll construct a mock URL
     const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/oauth/callback`;
@@ -95,8 +95,8 @@ export async function connectPlatform(
   data?: PlatformConnection;
   error?: string;
 }> {
-  await getOrgId();
   try {
+    await requirePostPeerOrg();
     const client = await initClient();
     const connection = await client.connectPlatform(platform, authCode);
 
@@ -122,8 +122,8 @@ export async function disconnectPlatform(
   success: boolean;
   error?: string;
 }> {
-  await getOrgId();
   try {
+    await requirePostPeerOrg();
     const client = await initClient();
     await client.disconnectPlatform(connectionId);
 
@@ -150,8 +150,8 @@ export async function reconnectPlatform(
   url?: string;
   error?: string;
 }> {
-  await getOrgId();
   try {
+    await requirePostPeerOrg();
     // First disconnect the old connection
     await disconnectPlatform(connectionId);
 
