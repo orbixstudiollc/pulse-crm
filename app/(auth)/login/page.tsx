@@ -50,20 +50,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-neutral-100 dark:bg-neutral-900">
+    <div className="flex min-h-screen bg-muted">
       {/* ── Left column: form ──────────────────────────────────────── */}
       <div className="relative flex w-full flex-col lg:w-1/2">
         {/* Header */}
         <header className="flex items-center justify-between px-8 pt-8">
           <Link
             href="/"
-            className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif italic text-neutral-950 dark:text-neutral-50"
+            className="text-xl font-semibold text-fg"
           >
             Pulse
           </Link>
           <Link
             href="#"
-            className="text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+            className="text-sm font-medium text-fg-secondary hover:text-fg transition-colors"
           >
             Need Help?
           </Link>
@@ -74,14 +74,14 @@ export default function LoginPage() {
           <div className="w-full max-w-[400px]">
             {/* Heading */}
             <div className="text-center mb-8">
-              <h1 className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">
+              <h1 className="text-[22px] font-semibold text-fg mb-2">
                 Welcome back
               </h1>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              <p className="text-sm text-fg-secondary">
                 Don&apos;t have an account?{" "}
                 <Link
                   href="/signup"
-                  className="font-medium text-neutral-950 dark:text-neutral-50 hover:underline"
+                  className="font-medium text-fg hover:underline"
                 >
                   Sign up
                 </Link>
@@ -90,7 +90,7 @@ export default function LoginPage() {
 
             {/* Error message */}
             {error && (
-              <div className="mb-4 rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+              <div className="mb-4 rounded-md border border-danger bg-danger-surface px-3 py-2 text-sm text-danger">
                 {error}
               </div>
             )}
@@ -103,7 +103,6 @@ export default function LoginPage() {
                 placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="dark:bg-neutral-800 dark:border-neutral-700"
               />
 
               <Input
@@ -117,7 +116,7 @@ export default function LoginPage() {
                     type="button"
                     tabIndex={-1}
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                    className="text-fg-muted hover:text-fg-secondary transition-colors"
                   >
                     {showPassword ? (
                       <EyeSlashIcon size={20} />
@@ -126,7 +125,6 @@ export default function LoginPage() {
                     )}
                   </button>
                 }
-                className="dark:bg-neutral-800 dark:border-neutral-700"
               />
 
               {/* Remember me + Forgot password */}
@@ -138,7 +136,7 @@ export default function LoginPage() {
                 />
                 <Link
                   href="/forgot-password"
-                  className="text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+                  className="text-sm font-medium text-fg-secondary hover:text-fg transition-colors"
                 >
                   Forgot Password?
                 </Link>
@@ -162,10 +160,10 @@ export default function LoginPage() {
             {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-neutral-200 dark:border-neutral-800" />
+                <div className="w-full border-t border-line" />
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-neutral-100 dark:bg-neutral-900 px-4 text-sm text-neutral-500 dark:text-neutral-400">
+                <span className="bg-muted px-4 text-sm text-fg-secondary">
                   or continue with
                 </span>
               </div>
@@ -176,10 +174,10 @@ export default function LoginPage() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={loading || googleLoading}
-              className="flex h-11 w-full items-center justify-center gap-3 rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-700 disabled:opacity-50"
+              className="flex h-8 w-full items-center justify-center gap-2 rounded-md border border-line bg-surface text-sm font-medium text-fg transition-colors hover:bg-muted disabled:opacity-50"
             >
               {googleLoading ? (
-                <CircleNotchIcon size={18} className="animate-spin text-neutral-500" />
+                <CircleNotchIcon size={18} className="animate-spin text-fg-secondary" />
               ) : (
                 <Image
                   src="/images/auth/google.svg"
@@ -189,7 +187,7 @@ export default function LoginPage() {
                   unoptimized
                 />
               )}
-              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              <span className="text-sm font-medium text-fg">
                 {googleLoading ? "Redirecting..." : "Continue with Google"}
               </span>
             </button>
@@ -198,20 +196,20 @@ export default function LoginPage() {
 
         {/* Footer */}
         <footer className="px-8 py-6">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center">
+          <p className="text-sm text-fg-secondary text-center">
             © 2025 Pulse CRM. All rights reserved.
           </p>
         </footer>
       </div>
 
       {/* ── Right column: hero panel ──────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col bg-gradient-to-b from-[#171717] to-neutral-950 dark:from-neutral-100 dark:to-neutral-50 overflow-hidden relative">
+      <div className="hidden lg:flex lg:w-1/2 flex-col bg-inverse text-on-inverse overflow-hidden relative">
         {/* Marketing copy */}
         <div className="relative z-10 max-w-[342px] pt-[88px] pl-[88px]">
-          <h2 className="text-[40px] font-onest font-medium text-neutral-50 dark:text-neutral-950 leading-[48px] tracking-[-0.8px] mb-4">
+          <h2 className="text-2xl font-semibold text-on-inverse mb-4">
             Manage your sales pipeline<br />with ease
           </h2>
-          <p className="text-sm leading-[22px] text-neutral-400 dark:text-neutral-500">
+          <p className="text-sm leading-[22px] text-on-inverse/70">
             Join thousands of sales teams who use Pulse to close more deals,
             faster.
           </p>

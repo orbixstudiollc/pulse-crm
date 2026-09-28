@@ -44,20 +44,20 @@ function Stepper({
             <div
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors ${
                 isCompleted
-                  ? "bg-blue-600 text-white"
+                  ? "bg-accent-strong text-white"
                   : isCurrent
-                    ? "bg-blue-600 text-white"
-                    : "border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400"
+                    ? "bg-accent-strong text-white"
+                    : "bg-muted text-fg-secondary"
               }`}
             >
               {isCompleted ? <CheckCircleIcon size={20} weight="fill" /> : step}
             </div>
             {step < totalSteps && (
               <div
-                className={`flex-1 border-t-2 border-dashed mx-4 ${
+                className={`flex-1 border-t border-dashed mx-4 ${
                   isCompleted
-                    ? "border-blue-600"
-                    : "border-neutral-300 dark:border-neutral-600"
+                    ? "border-accent"
+                    : "border-line"
                 }`}
               />
             )}
@@ -98,10 +98,10 @@ function ProfileSetup({
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">
-          Welcome to <span className="italic">Pulse</span>
+        <h1 className="text-[22px] font-semibold text-fg mb-2">
+          Welcome to <span className="font-semibold">Pulse</span>
         </h1>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="text-sm text-fg-secondary">
           Let&apos;s set up your account. This will only take a minute.
         </p>
       </div>
@@ -109,7 +109,7 @@ function ProfileSetup({
       <Stepper currentStep={1} totalSteps={4} />
 
       {error && (
-        <div className="mt-4 rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+        <div className="mt-4 rounded-md border border-danger bg-danger-surface px-3 py-2 text-sm text-danger">
           {error}
         </div>
       )}
@@ -120,14 +120,12 @@ function ProfileSetup({
           placeholder="Acme Corp"
           value={companyName}
           onChange={(e) => setCompanyName(e.target.value)}
-          className="dark:bg-neutral-800 dark:border-neutral-700"
         />
 
         <Select
           label="Company Size"
           value={companySize}
           onChange={(e) => setCompanySize(e.target.value)}
-          className="dark:bg-neutral-800 dark:border-neutral-700"
         >
           <option value="">Select size</option>
           {[
@@ -147,7 +145,6 @@ function ProfileSetup({
           label="Your Role"
           value={userRole}
           onChange={(e) => setUserRole(e.target.value)}
-          className="dark:bg-neutral-800 dark:border-neutral-700"
         >
           <option value="">Select role</option>
           {[
@@ -167,7 +164,6 @@ function ProfileSetup({
           label="What's your main goal with Pulse?"
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
-          className="dark:bg-neutral-800 dark:border-neutral-700"
         >
           <option value="">Select goal</option>
           {[
@@ -240,10 +236,10 @@ function InviteTeam({
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">
+        <h1 className="text-[22px] font-semibold text-fg mb-2">
           Invite your team
         </h1>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="text-sm text-fg-secondary">
           Collaborate with your team members. You can always add more later.
         </p>
       </div>
@@ -261,13 +257,13 @@ function InviteTeam({
                 onChange={(e) =>
                   updateMember(member.id, "email", e.target.value)
                 }
-                className="w-full rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2.5 text-sm text-neutral-950 dark:text-neutral-50 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-600 focus:shadow-focus transition-shadow"
+                className="h-8 w-full rounded-md border border-line bg-surface px-3 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-line focus:shadow-focus transition-shadow"
               />
             </div>
             <select
               value={member.role}
               onChange={(e) => updateMember(member.id, "role", e.target.value)}
-              className="appearance-none rounded border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2.5 pr-8 text-sm text-neutral-950 dark:text-neutral-50 cursor-pointer focus:outline-none focus:border-neutral-200 dark:focus:border-neutral-600 focus:shadow-focus transition-shadow"
+              className="h-8 appearance-none rounded-md border border-line bg-surface px-3 pr-8 text-sm text-fg cursor-pointer focus:outline-none focus:border-line focus:shadow-focus transition-shadow"
             >
               <option value="sales-rep">Sales Rep</option>
               <option value="sales-manager">Sales Manager</option>
@@ -276,7 +272,7 @@ function InviteTeam({
             <button
               type="button"
               onClick={() => removeMember(member.id)}
-              className="flex h-10 w-10 items-center justify-center rounded border border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-line text-fg-muted hover:text-fg-secondary hover:bg-muted transition-colors"
             >
               <XIcon size={16} />
             </button>
@@ -286,7 +282,7 @@ function InviteTeam({
         <button
           type="button"
           onClick={addMember}
-          className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-medium text-accent-strong hover:text-accent-strong transition-colors"
         >
           <PlusIcon size={16} />
           Add another
@@ -306,7 +302,7 @@ function InviteTeam({
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-fg-secondary hover:text-fg transition-colors"
           >
             <ArrowLeftIcon size={16} />
             Back
@@ -314,7 +310,7 @@ function InviteTeam({
           <button
             type="button"
             onClick={onSkip}
-            className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+            className="text-sm text-fg-secondary hover:text-fg transition-colors"
           >
             Skip for now
           </button>
@@ -340,10 +336,10 @@ function ImportData({
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">
+        <h1 className="text-[22px] font-semibold text-fg mb-2">
           Import your data
         </h1>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="text-sm text-fg-secondary">
           Bring in your existing contacts and deals to get started quickly.
         </p>
       </div>
@@ -354,37 +350,37 @@ function ImportData({
         <button
           type="button"
           onClick={() => setImportSource("hubspot")}
-          className={`w-full flex items-center justify-between rounded-xl border p-4 transition-colors text-left ${
+          className={`w-full flex items-center justify-between rounded-lg border bg-surface p-4 transition-colors text-left ${
             importSource === "hubspot"
-              ? "border-neutral-950 dark:border-neutral-50"
-              : "border-neutral-200 dark:border-neutral-700"
+              ? "border-inverse"
+              : "border-line"
           }`}
         >
           <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded bg-neutral-100 dark:bg-neutral-800">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
               <ClockIcon
                 size={20}
-                className="text-neutral-600 dark:text-neutral-400"
+                className="text-fg-secondary"
               />
             </div>
             <div>
-              <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              <p className="text-sm font-medium text-fg">
                 HubSpot
               </p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="text-xs text-fg-secondary">
                 Sync your HubSpot CRM data
               </p>
             </div>
           </div>
           <div
-            className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+            className={`h-5 w-5 rounded-full border flex items-center justify-center ${
               importSource === "hubspot"
-                ? "border-neutral-950 dark:border-neutral-50"
-                : "border-neutral-300 dark:border-neutral-600"
+                ? "border-inverse"
+                : "border-line"
             }`}
           >
             {importSource === "hubspot" && (
-              <div className="h-2.5 w-2.5 rounded-full bg-neutral-950 dark:bg-neutral-50" />
+              <div className="h-2.5 w-2.5 rounded-full bg-inverse" />
             )}
           </div>
         </button>
@@ -392,55 +388,55 @@ function ImportData({
         <button
           type="button"
           onClick={() => setImportSource("csv")}
-          className={`w-full flex items-center justify-between rounded-xl border p-4 transition-colors text-left ${
+          className={`w-full flex items-center justify-between rounded-lg border bg-surface p-4 transition-colors text-left ${
             importSource === "csv"
-              ? "border-neutral-950 dark:border-neutral-50"
-              : "border-neutral-200 dark:border-neutral-700"
+              ? "border-inverse"
+              : "border-line"
           }`}
         >
           <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded bg-neutral-100 dark:bg-neutral-800">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
               <FileTextIcon
                 size={20}
-                className="text-neutral-600 dark:text-neutral-400"
+                className="text-fg-secondary"
               />
             </div>
             <div>
-              <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+              <p className="text-sm font-medium text-fg">
                 CSV File
               </p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="text-xs text-fg-secondary">
                 Upload a spreadsheet with your data
               </p>
             </div>
           </div>
           <div
-            className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+            className={`h-5 w-5 rounded-full border flex items-center justify-center ${
               importSource === "csv"
-                ? "border-neutral-950 dark:border-neutral-50"
-                : "border-neutral-300 dark:border-neutral-600"
+                ? "border-inverse"
+                : "border-line"
             }`}
           >
             {importSource === "csv" && (
-              <div className="h-2.5 w-2.5 rounded-full bg-neutral-950 dark:bg-neutral-50" />
+              <div className="h-2.5 w-2.5 rounded-full bg-inverse" />
             )}
           </div>
         </button>
 
         {importSource === "csv" && (
-          <div className="rounded-xl border-2 border-dashed border-neutral-300 dark:border-neutral-600 p-8 text-center">
+          <div className="rounded-lg border border-dashed border-line p-8 text-center">
             <UploadIcon
               size={24}
-              className="mx-auto text-neutral-400 dark:text-neutral-500 mb-3"
+              className="mx-auto text-fg-muted mb-3"
             />
-            <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+            <p className="text-sm font-medium text-fg">
               Drag and drop your file here
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+            <p className="text-xs text-fg-secondary mt-1">
               or{" "}
               <button
                 type="button"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
+                className="text-accent-strong hover:underline"
               >
                 browse
               </button>{" "}
@@ -463,7 +459,7 @@ function ImportData({
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-fg-secondary hover:text-fg transition-colors"
           >
             <ArrowLeftIcon size={16} />
             Back
@@ -471,7 +467,7 @@ function ImportData({
           <button
             type="button"
             onClick={onSkip}
-            className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+            className="text-sm text-fg-secondary hover:text-fg transition-colors"
           >
             Skip for now
           </button>
@@ -514,10 +510,10 @@ function Complete() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif text-neutral-950 dark:text-neutral-50 mb-2">
+        <h1 className="text-[22px] font-semibold text-fg mb-2">
           You&apos;re all set!
         </h1>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="text-sm text-fg-secondary">
           Your workspace is ready. Here&apos;s what you can do next:
         </p>
       </div>
@@ -529,15 +525,15 @@ function Complete() {
           <Link
             key={action.title}
             href={action.href}
-            className="rounded-xl border border-neutral-200 dark:border-neutral-700 p-5 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors group"
+            className="rounded-lg border border-line bg-surface p-4 hover:bg-muted transition-colors group"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 mb-4 group-hover:bg-neutral-200 dark:group-hover:bg-neutral-700 transition-colors">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted text-fg-secondary mb-4 group-hover:bg-active transition-colors">
               {action.icon}
             </div>
-            <p className="text-sm font-medium text-neutral-950 dark:text-neutral-50">
+            <p className="text-sm font-medium text-fg">
               {action.title}
             </p>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+            <p className="text-xs text-fg-secondary mt-0.5">
               {action.description}
             </p>
           </Link>
@@ -644,19 +640,19 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-neutral-100 dark:bg-neutral-900">
+    <div className="flex min-h-screen bg-muted">
       {/* ── Left column ────────────────────────────────────────────── */}
       <div className="relative flex w-full flex-col lg:w-1/2">
         <header className="flex items-center justify-between px-8 pt-8">
           <Link
             href="/"
-            className="text-[32px] leading-[40px] tracking-[-0.64px] font-serif italic text-neutral-950 dark:text-neutral-50"
+            className="text-xl font-semibold text-fg"
           >
             Pulse
           </Link>
           <Link
             href="#"
-            className="text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-neutral-50 transition-colors"
+            className="text-sm font-medium text-fg-secondary hover:text-fg transition-colors"
           >
             Need Help?
           </Link>
@@ -667,20 +663,20 @@ export default function OnboardingPage() {
         </div>
 
         <footer className="px-8 py-6">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center">
+          <p className="text-sm text-fg-secondary text-center">
             © 2025 Pulse CRM. All rights reserved.
           </p>
         </footer>
       </div>
 
       {/* ── Right column: hero panel ──────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col bg-gradient-to-b from-[#171717] to-neutral-950 dark:from-neutral-100 dark:to-neutral-50 overflow-hidden relative">
+      <div className="hidden lg:flex lg:w-1/2 flex-col bg-inverse text-on-inverse overflow-hidden relative">
         <div className="relative z-10 w-[544px] pt-[88px] pl-[88px]">
-          <blockquote className="text-[28px] font-onest font-medium text-neutral-50 dark:text-neutral-950 leading-[36px] tracking-[-0.56px] mb-4">
+          <blockquote className="text-2xl font-semibold text-on-inverse mb-4">
             Pulse transformed how we manage our sales pipeline. We closed 40%
             more deals in the first quarter.
           </blockquote>
-          <p className="text-sm leading-[22px] text-neutral-400 dark:text-neutral-500">
+          <p className="text-sm leading-[22px] text-on-inverse/70">
             — Sarah Chen, Sales Director at TechCorp
           </p>
         </div>
