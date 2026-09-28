@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getOrgId } from "./helpers";
 import type { Json } from "@/types/database";
 import {
   evaluateConditions,
@@ -158,9 +159,11 @@ export async function getAutomationExecutions(options?: {
   limit?: number;
 }) {
   const supabase = await createClient();
+  const orgId = await getOrgId();
   let query = supabase
     .from("automation_executions")
-    .select("*, automation_rules(name)")
+    .select("*, automation_rules!inner(name, organization_id)")
+    .eq("automation_rules.organization_id", orgId)
     .order("created_at", { ascending: false })
     .limit(options?.limit ?? 50);
 
