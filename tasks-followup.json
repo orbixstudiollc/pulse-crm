@@ -301,5 +301,58 @@
       "T17"
     ],
     "model": "sonnet"
+  },
+  {
+    "id": "R1",
+    "title": "Review fix M1: resolve and pin the SMTP host at send and test time",
+    "files": [
+      "lib/email/account-validation.ts",
+      "lib/email/sender.ts",
+      "lib/actions/email-accounts.ts",
+      "tests/email-account-validation.test.ts"
+    ],
+    "interface": "lib/email/account-validation.ts adds `export async function resolveMailHost(host: unknown, port: unknown, kind: 'smtp' | 'imap', lookup?: LookupFn): Promise<{ address: string; servername: string } | null>`: returns null unless isSafeMailEndpoint(host, port, kind) passes; then resolves the hostname through the same DNS path assertSafeMailHost uses (assertSafeFetchTarget with the optional lookup), returning null when that throws, and otherwise `{ address: <first resolved public IP as a string>, servername: <the original hostname, lower-cased> }`. If the host is already an IP literal, address is that literal. lib/email/sender.ts sendViaSMTP: replace the isSafeMailEndpoint pre-check with `const resolved = await resolveMailHost(host, port, 'smtp')`; when null return the existing `{ success: false, error: 'Mail server not allowed' }`; create the transport with `host: resolved.address` and `tls: { servername: resolved.servername }` (keep port, secure, requireTLS and auth exactly as they are). lib/actions/email-accounts.ts testEmailAccount: same pattern (resolveMailHost then `host: resolved.address`, `tls: { servername: resolved.servername }`), keeping the existing generic 'Invalid mail server host or port' rejection when it returns null and the existing 'Connection failed' message on transport errors. isSafeMailEndpoint stays exported and unchanged. tests/email-account-validation.test.ts adds resolveMailHost cases with an injected lookup: a hostname resolving to 10.0.0.1 -> null; one resolving to 93.184.216.34 -> { address: '93.184.216.34', servername: 'mail.example.com' }; an IP literal '203.0.113.5' on 587 -> address '203.0.113.5'; a disallowed port -> null.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'export async function resolveMailHost' lib/email/account-validation.ts && grep -q 'resolveMailHost' lib/email/sender.ts && grep -q 'servername: resolved.servername' lib/email/sender.ts && grep -q 'host: resolved.address' lib/email/sender.ts && grep -q 'resolveMailHost' lib/actions/email-accounts.ts && grep -q 'servername: resolved.servername' lib/actions/email-accounts.ts && grep -q 'requireTLS' lib/email/sender.ts && grep -q 'export function isSafeMailEndpoint' lib/email/account-validation.ts && grep -q 'resolveMailHost' tests/email-account-validation.test.ts && npx vitest run tests/email-account-validation.test.ts && npx tsc --noEmit && git add -- 'lib/email/account-validation.ts' 'lib/email/sender.ts' 'lib/actions/email-accounts.ts' 'tests/email-account-validation.test.ts' && git commit -q -m 'fix(security): resolve and pin SMTP hosts at send and test time (review M1)' -m 'Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>' && echo R1-OK",
+    "depends_on": [],
+    "model": "opus"
+  },
+  {
+    "id": "R2",
+    "title": "Review fix M2: gate the parallel email-account writers and the lead-finder settings PUT",
+    "files": [
+      "lib/actions/campaigns.ts",
+      "app/api/lead-finder/settings/route.ts"
+    ],
+    "interface": "lib/actions/campaigns.ts: createEmailAccount, updateEmailAccount and deleteEmailAccount each start with the same `requireRole('admin', 'owner')` gate pattern updateBookingConfig in that file already uses (try/catch with unstable_rethrow, returning that function's existing error shape), and use the orgId it returns instead of a separate lookup where one exists. createEmailAccount and updateEmailAccount additionally validate any smtp_config / imap_config they receive: `isAllowedSmtpPort` / `isAllowedImapPort` on the ports and `await assertSafeMailHost(host)` on the hosts (all from '@/lib/email/account-validation'), returning the generic error 'Invalid mail server host or port' in that function's error shape when a check fails; a config that carries neither host nor port fields is not checked. app/api/lead-finder/settings/route.ts PUT: the existing profile lookup also selects `role`; after it, `if (!hasRequiredRole(profile.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })` (import hasRequiredRole from '@/lib/auth/roles'), before any write. GET is unchanged. No other behaviour changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && [ \"$(grep -c 'requireRole(' lib/actions/campaigns.ts)\" -ge 4 ] && grep -q 'assertSafeMailHost' lib/actions/campaigns.ts && grep -q 'isAllowedSmtpPort' lib/actions/campaigns.ts && grep -q 'Invalid mail server host or port' lib/actions/campaigns.ts && grep -q 'hasRequiredRole' app/api/lead-finder/settings/route.ts && grep -q 'status: 403' app/api/lead-finder/settings/route.ts && npx tsc --noEmit && git add -- 'lib/actions/campaigns.ts' 'app/api/lead-finder/settings/route.ts' && git commit -q -m 'fix(security): role-gate the campaigns email-account actions and the lead-finder settings PUT (review M2)' -m 'Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>' && echo R2-OK",
+    "depends_on": [],
+    "model": "opus"
+  },
+  {
+    "id": "R3",
+    "title": "Review fix M3: bucket the tracking limiter on validated scripts only and bound the store",
+    "files": [
+      "app/api/tracking/route.ts",
+      "lib/tracking/rate-limit.ts",
+      "tests/tracking.test.ts"
+    ],
+    "interface": "app/api/tracking/route.ts: move the tracking_scripts lookup (and its 404/400 rejection for an unknown or inactive script_key) ahead of the takeToken call, and key the bucket on the looked-up script row's id (`script.id`) instead of the raw script_key, so unknown keys never create buckets. lib/tracking/rate-limit.ts: add `export const TRACKING_MAX_BUCKETS = 10_000`; keep the existing idle eviction, and when the store is still above TRACKING_MAX_BUCKETS afterwards evict the entries with the oldest refill timestamp until it is at or below the cap, so the Map can never exceed TRACKING_MAX_BUCKETS + 1 entries. tests/tracking.test.ts adds: after calling takeToken for 10_050 distinct keys, `trackingBuckets.size <= TRACKING_MAX_BUCKETS + 1`; and a known key still throttles after its 60 tokens are spent (existing behaviour, keep any existing test for it).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && [ \"$(grep -n 'takeToken(' app/api/tracking/route.ts | head -1 | cut -d: -f1)\" -gt \"$(grep -n 'tracking_scripts' app/api/tracking/route.ts | head -1 | cut -d: -f1)\" ] && grep -q 'takeToken(script.id' app/api/tracking/route.ts && grep -q 'export const TRACKING_MAX_BUCKETS = 10_000' lib/tracking/rate-limit.ts && grep -q 'TRACKING_MAX_BUCKETS' tests/tracking.test.ts && npx vitest run tests/tracking.test.ts && npx tsc --noEmit && git add -- 'app/api/tracking/route.ts' 'lib/tracking/rate-limit.ts' 'tests/tracking.test.ts' && git commit -q -m 'fix(security): rate-limit tracking on validated scripts only and bound the bucket store (review M3)' -m 'Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>' && echo R3-OK",
+    "depends_on": [],
+    "model": "sonnet"
+  },
+  {
+    "id": "R4",
+    "title": "Review fixes L1, L2, L5 and the seed toast: log seed errors, drop orphan guest org, anchor bot regex, toast copy",
+    "files": [
+      "lib/auth/guest-workspace.ts",
+      "lib/auth/open-access.ts",
+      "tests/open-access.test.ts",
+      "app/dashboard/settings/client.tsx"
+    ],
+    "interface": "lib/auth/guest-workspace.ts provisionGuestWorkspace: (L1) after `await insertSeed(...)` capture its result and, when `result.errors.length > 0`, `console.error('[guest-seed]', orgId, result.errors)`; (L2) in the branch where the profile update returns profileError, delete the organizations row just created (`await admin.from('organizations').delete().eq('id', org.id)`, error ignored) before `return null`, so no orphan guest org is left. lib/auth/open-access.ts: BOT_UA_RE is tightened so it still matches 'Googlebot/2.1', 'bingbot/2.0', 'AhrefsBot', 'Slackbot-LinkExpanding', 'Twitterbot', 'facebookexternalhit/1.1' and does NOT match 'Mozilla/5.0 (Linux; Android 10; CUBOT X30) AppleWebKit/537.36' or 'Mozilla/5.0 (Windows NT 10.0) Chrome/120' (for example a word-boundary form such as /(^|[^a-z])bot([^a-z]|$)|[a-z]+bot(\\/|[\\s;)]|$)|crawler|spider|preview|facebookexternalhit|slackbot/i; the exact regex is yours to choose as long as the listed cases hold). tests/open-access.test.ts adds those positive and negative cases to the isBotUserAgent block (keep every existing test). app/dashboard/settings/client.tsx: the seed success toast becomes `Seeded ${total} records` (drop the 'across N tables' suffix); nothing else in that file changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && [ \"$(grep -c 'guest-seed' lib/auth/guest-workspace.ts)\" -ge 2 ] && grep -q 'result.errors' lib/auth/guest-workspace.ts && grep -q 'CUBOT' tests/open-access.test.ts && grep -q 'Twitterbot' tests/open-access.test.ts && ! grep -q 'across ' app/dashboard/settings/client.tsx && grep -q 'Seeded ${total} records' app/dashboard/settings/client.tsx && npx vitest run tests/open-access.test.ts && npx tsc --noEmit && node scripts/restyle/scan.mjs app components && git add -- 'lib/auth/guest-workspace.ts' 'lib/auth/open-access.ts' 'tests/open-access.test.ts' 'app/dashboard/settings/client.tsx' && git commit -q -m 'fix(open-access): log guest seed errors, drop orphan guest orgs, anchor bot regex, seed toast copy (review L1/L2/L5)' -m 'Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>' && echo R4-OK",
+    "depends_on": [],
+    "model": "sonnet"
   }
 ]
