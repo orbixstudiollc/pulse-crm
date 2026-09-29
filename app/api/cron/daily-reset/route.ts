@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { resetDailyCounters, resetWeeklyCounters } from "@/lib/linkedin/rate-limiter";
 import { NextResponse } from "next/server";
 import { verifyCronRequest } from "@/lib/security";
+import { purgeExpiredGuests } from "@/lib/auth/guest-cleanup";
 
 export const runtime = "nodejs";
 
@@ -54,6 +55,14 @@ export async function GET(request: Request) {
     .eq("status", "rate_limited");
 
   results.linkedin_reactivate = reactivateError ? reactivateError.message : "ok";
+
+  // 6. Purge expired anonymous guest workspaces (runs even when open access is
+  // off, so leftovers are cleaned up after the mode is switched off)
+  const purge = await purgeExpiredGuests(supabase);
+  results.guest_cleanup = purge.errors.length ? purge.errors.join("; ") : "ok";
+  console.log(
+    `[daily-reset] guest cleanup: scanned=${purge.scanned} deletedUsers=${purge.deletedUsers} deletedOrgs=${purge.deletedOrgs} skipped=${purge.skipped} errors=${purge.errors.length}`
+  );
 
   const hasErrors = Object.values(results).some(v => v !== "ok");
 
