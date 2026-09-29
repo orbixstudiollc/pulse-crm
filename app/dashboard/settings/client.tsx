@@ -2304,7 +2304,7 @@ function WhatsAppSection() {
             />
           </div>
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" onClick={() => setShowAddForm(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setShowAddForm(false)}>Cancel</Button>
             <Button onClick={handleConnect} disabled={isPending || !form.phoneNumberId || !form.wabaId || !form.accessToken}>
               {isPending ? <CircleNotchIcon size={16} className="animate-spin mr-2" /> : null}
               Connect Account
@@ -2757,7 +2757,7 @@ function LinkedInSection() {
                       LinkedIn aggressively bans accounts exceeding limits. Keep defaults unless you know what you&apos;re doing.
                     </p>
                     <div className="flex justify-end gap-3">
-                      <Button variant="secondary" size="sm" onClick={() => setEditingLimitsId(null)}>Cancel</Button>
+                      <Button variant="outline" size="sm" onClick={() => setEditingLimitsId(null)}>Cancel</Button>
                       <Button size="sm" onClick={saveLimits} disabled={isPending}>
                         {isPending ? <CircleNotchIcon size={14} className="animate-spin mr-1" /> : null}
                         Save Limits
@@ -3128,7 +3128,7 @@ function EmailAccountsSection() {
           />
 
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" onClick={() => setShowAddForm(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setShowAddForm(false)}>Cancel</Button>
             <Button onClick={handleAddCustom} disabled={isPending || !customForm.email_address || !customForm.smtp_host}>
               {isPending ? <CircleNotchIcon size={16} className="animate-spin mr-2" /> : null}
               Add Account

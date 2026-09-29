@@ -16,11 +16,10 @@ export function ThemedToaster() {
 
   return (
     <Toaster
-      position="bottom-center"
+      position="top-center"
       theme={resolvedTheme === "dark" ? "dark" : "light"}
       richColors
       closeButton
-      toastOptions={{ className: "rounded-lg border border-line text-sm" }}
     />
   );
 }

@@ -30,14 +30,15 @@ export function Toast({
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-max max-w-[calc(100vw-2rem)]">
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-max max-w-[calc(100vw-2rem)]">
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 8 }}
+          exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
           className={cn(
-            "flex items-center gap-2 rounded-full bg-inverse text-on-inverse px-4 py-2 text-sm shadow-dropdown",
+            "flex items-center gap-2 rounded-full border bg-inverse text-on-inverse px-4 py-2 text-sm shadow-dropdown",
+            variant === "success" ? "border-success" : "border-danger",
           )}
         >
           {variant === "success" ? (

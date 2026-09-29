@@ -1369,7 +1369,7 @@ export default function CampaignDetailPage() {
             </div>
 
             <div className="flex justify-end gap-3 px-4 py-3 border-t border-divider bg-subtle shrink-0">
-              <Button onClick={() => setShowSettings(false)} variant="secondary" size="sm">Cancel</Button>
+              <Button onClick={() => setShowSettings(false)} variant="outline" size="sm">Cancel</Button>
               <Button onClick={handleSaveSettings} disabled={savingSettings} variant="primary" size="sm">
                 {savingSettings ? <span className="flex items-center gap-2"><CircleNotchIcon size={14} className="animate-spin" /> Saving...</span> : "Save Changes"}
               </Button>
@@ -1388,7 +1388,7 @@ export default function CampaignDetailPage() {
               This will permanently delete <span className="font-medium text-fg">{campaign.name}</span> and all its leads. This cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
-              <Button onClick={() => setShowDeleteConfirm(false)} variant="secondary" size="sm">Cancel</Button>
+              <Button onClick={() => setShowDeleteConfirm(false)} variant="outline" size="sm">Cancel</Button>
               <Button onClick={handleDeleteCampaign} disabled={deleting} variant="primary" size="sm" className="bg-danger text-on-inverse hover:opacity-90">
                 {deleting ? "Deleting..." : "Delete Campaign"}
               </Button>
@@ -1407,7 +1407,7 @@ export default function CampaignDetailPage() {
               This will permanently delete all <span className="font-medium text-fg">{campaign.leads.length} leads</span>. The campaign will remain. This cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
-              <Button onClick={() => setShowClearLeadsConfirm(false)} variant="secondary" size="sm">Cancel</Button>
+              <Button onClick={() => setShowClearLeadsConfirm(false)} variant="outline" size="sm">Cancel</Button>
               <Button onClick={handleClearLeads} disabled={clearingLeads} variant="primary" size="sm" className="bg-danger text-on-inverse hover:opacity-90">
                 {clearingLeads ? "Deleting..." : "Delete All Leads"}
               </Button>

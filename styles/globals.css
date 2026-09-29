@@ -81,7 +81,7 @@
     --on-inverse: #0f0f0f;
     --code: #1f1f1f;
 
-    --line: #1f1f1f;
+    --line: #2a2a2a;
     --divider: #1f1f1f;
     --row: #1f1f1f;
 
@@ -110,6 +110,12 @@
     --ring-offset: #171717;
     --ring-danger: #FF6467;
     --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+[data-sonner-toast] {
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    font-size: 0.875rem;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

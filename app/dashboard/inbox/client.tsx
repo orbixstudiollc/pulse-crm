@@ -991,7 +991,7 @@ function ReplyBox({
         className="w-full min-h-[100px] text-sm rounded border border-line bg-surface text-fg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-line resize-y"
       />
       <div className="flex justify-end gap-2 mt-3">
-        <Button variant="secondary" size="sm" onClick={onCancel}>Cancel</Button>
+        <Button variant="outline" size="sm" onClick={onCancel}>Cancel</Button>
         <Button size="sm" onClick={handleSend} disabled={sending || !html.trim()}>
           {sending ? <CircleNotchIcon size={14} className="animate-spin mr-1.5" /> : <PaperPlaneTiltIcon size={14} className="mr-1.5" />}
           Send
@@ -1096,7 +1096,7 @@ function ComposeModal({
 
         {/* Footer */}
         <div className="flex justify-end gap-2 px-5 py-3 border-t border-line">
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSend} disabled={sending || !to.trim() || !subject.trim()}>
             {sending ? <CircleNotchIcon size={14} className="animate-spin mr-1.5" /> : <PaperPlaneTiltIcon size={14} className="mr-1.5" />}
             Send
