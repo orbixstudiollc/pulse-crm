@@ -30,3 +30,22 @@ export function guestWorkspaceSlug(userId: string, now: number = Date.now()): st
 export function isGuestEmail(email: string | null | undefined): boolean {
   return typeof email === "string" && email.endsWith("@" + GUEST_EMAIL_DOMAIN);
 }
+
+// Crawlers and link-preview fetchers must not mint anonymous users.
+export const BOT_UA_RE = /bot|crawler|spider|preview|facebookexternalhit|slackbot/i;
+
+export function isBotUserAgent(ua: string | null | undefined): boolean {
+  return typeof ua === "string" && BOT_UA_RE.test(ua);
+}
+
+export const GUEST_SIGNUPS_PER_HOUR_DEFAULT = 200;
+
+export function guestSignupsPerHour(env: string | undefined = process.env.GUEST_SIGNUPS_PER_HOUR): number {
+  const n = Number(env);
+  return Number.isInteger(n) && n > 0 ? n : GUEST_SIGNUPS_PER_HOUR_DEFAULT;
+}
+
+// Fails closed: an unavailable count (null) counts as the cap being reached.
+export function isGuestCapReached(recentCount: number | null, limit: number): boolean {
+  return recentCount === null || recentCount >= limit;
+}

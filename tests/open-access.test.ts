@@ -1,8 +1,11 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import {
+  guestSignupsPerHour,
   guestWorkspaceSlug,
   isAuthPage,
+  isBotUserAgent,
+  isGuestCapReached,
   isGuestEmail,
   isOpenAccess,
 } from "@/lib/auth/open-access";
@@ -44,5 +47,42 @@ describe("isGuestEmail", () => {
     expect(isGuestEmail("abc@guest.local")).toBe(true);
     expect(isGuestEmail("someone@example.com")).toBe(false);
     expect(isGuestEmail(null)).toBe(false);
+  });
+});
+
+describe("isBotUserAgent", () => {
+  it("recognises crawlers and link-preview fetchers", () => {
+    for (const ua of [
+      "Googlebot/2.1",
+      "Slackbot-LinkExpanding",
+      "facebookexternalhit/1.1",
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) LinkPreview",
+    ]) {
+      expect(isBotUserAgent(ua)).toBe(true);
+    }
+  });
+
+  it("lets browsers and missing user agents through", () => {
+    expect(
+      isBotUserAgent(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+      ),
+    ).toBe(false);
+    expect(isBotUserAgent(null)).toBe(false);
+  });
+});
+
+describe("isGuestCapReached", () => {
+  it("is reached at the limit and fails closed when the count is unavailable", () => {
+    expect(isGuestCapReached(200, 200)).toBe(true);
+    expect(isGuestCapReached(199, 200)).toBe(false);
+    expect(isGuestCapReached(null, 200)).toBe(true);
+  });
+});
+
+describe("guestSignupsPerHour", () => {
+  it("uses a positive integer setting, else the default", () => {
+    expect(guestSignupsPerHour("50")).toBe(50);
+    expect(guestSignupsPerHour("x")).toBe(200);
   });
 });

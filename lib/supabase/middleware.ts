@@ -1,7 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { isAuthPage, isOpenAccess } from "@/lib/auth/open-access";
+import {
+  guestSignupsPerHour,
+  isAuthPage,
+  isBotUserAgent,
+  isGuestCapReached,
+  isOpenAccess,
+} from "@/lib/auth/open-access";
 import { ensureGuestWorkspace } from "@/lib/auth/guest-workspace";
+import { countRecentGuestWorkspaces } from "@/lib/auth/guest-cap";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
@@ -87,11 +94,24 @@ export async function updateSession(request: NextRequest) {
   // session gets an anonymous user and a guest workspace of their own, and the
   // auth pages send them straight to the dashboard.
   const openAccess = isOpenAccess();
+  // /api/* never triggers a sign-in: this only matches protected paths, "/" and auth pages.
   if (openAccess && !user && (isProtectedPath(pathname) || pathname === "/" || isAuthPage(pathname))) {
-    const { data, error } = await supabase.auth.signInAnonymously();
-    if (!error && data.user) {
-      user = data.user;
-      await ensureGuestWorkspace(data.user.id);
+    const ua = request.headers.get("user-agent");
+    if (isBotUserAgent(ua)) {
+      // No session for bots; they fall through to the /login redirect.
+    } else if (
+      isGuestCapReached(await countRecentGuestWorkspaces(new Date(Date.now() - 3_600_000)), guestSignupsPerHour())
+    ) {
+      return NextResponse.rewrite(new URL("/try-later", request.url), {
+        status: 503,
+        headers: { "Retry-After": "3600" },
+      });
+    } else {
+      const { data, error } = await supabase.auth.signInAnonymously();
+      if (!error && data.user) {
+        user = data.user;
+        await ensureGuestWorkspace(data.user.id);
+      }
     }
   }
   if (openAccess && user && isAuthPage(pathname)) {
