@@ -3,6 +3,8 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getPhoneNumberDetails, fetchTemplates } from "@/lib/whatsapp/client";
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
+import { requireRole } from "./helpers";
 import { openChannelToken, sealChannelToken } from "@/lib/utils/channel-token";
 
 const WHATSAPP_ACCOUNT_PUBLIC_COLUMNS =
@@ -117,6 +119,12 @@ export async function connectWhatsAppAccount(formData: {
 // ============================================================
 
 export async function disconnectWhatsAppAccount(accountId: string) {
+  try {
+    await requireRole("admin", "owner");
+  } catch (err) {
+    unstable_rethrow(err);
+    return { success: false, error: err instanceof Error ? err.message : "Forbidden: admin role required" };
+  }
   const supabase = await createClient();
   const { error } = await supabase
     .from("whatsapp_accounts")
@@ -134,6 +142,12 @@ export async function disconnectWhatsAppAccount(accountId: string) {
 // ============================================================
 
 export async function deleteWhatsAppAccount(accountId: string) {
+  try {
+    await requireRole("admin", "owner");
+  } catch (err) {
+    unstable_rethrow(err);
+    return { success: false, error: err instanceof Error ? err.message : "Forbidden: admin role required" };
+  }
   const supabase = await createClient();
   const { error } = await supabase
     .from("whatsapp_accounts")

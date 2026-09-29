@@ -1,8 +1,9 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { getOrgId, getCurrentUserProfile } from "./helpers";
+import { getOrgId, getCurrentUserProfile, requireRole } from "./helpers";
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import type { Database } from "@/types/database";
 
 type CustomerInsert = Database["public"]["Tables"]["customers"]["Insert"];
@@ -623,7 +624,13 @@ export async function seedAllData(): Promise<{
 
 export async function clearAllSeedData(): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
-  const orgId = await getOrgId();
+  let orgId: string;
+  try {
+    ({ orgId } = await requireRole("admin", "owner"));
+  } catch (err) {
+    unstable_rethrow(err);
+    return { success: false, error: err instanceof Error ? err.message : "Forbidden: admin role required" };
+  }
 
   try {
     // Delete in correct order to respect foreign keys

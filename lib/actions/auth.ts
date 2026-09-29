@@ -175,6 +175,7 @@ export async function completeOnboardingStep1(formData: {
     .from("profiles")
     .update({
       organization_id: org.id,
+      role: "admin",
       job_title: formData.userRole || null,
     })
     .eq("id", user.id);

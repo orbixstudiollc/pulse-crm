@@ -1,8 +1,9 @@
 "use server";
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { getOrgId, getCurrentUserProfile } from "./helpers";
+import { getOrgId, getCurrentUserProfile, requireRole } from "./helpers";
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import type { Database, Json } from "@/types/database";
 import { escapePostgrestLike } from "@/lib/security";
 import { allIdsBelongToOrg } from "@/lib/tenancy/guards";
@@ -716,7 +717,13 @@ export async function updateBookingConfig(config: {
   booking_provider?: string;
 }) {
   const supabase = await createClient();
-  const orgId = await getOrgId();
+  let orgId: string;
+  try {
+    ({ orgId } = await requireRole("admin", "owner"));
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: err instanceof Error ? err.message : "Forbidden: admin role required" };
+  }
 
   const { error } = await supabase
     .from("organizations")

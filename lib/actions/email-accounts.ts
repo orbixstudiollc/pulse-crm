@@ -1,8 +1,9 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentUserProfile, getOrgId } from "./helpers";
+import { getOrgId, requireRole } from "./helpers";
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { encrypt } from "@/lib/utils/encryption";
 import { openOAuthTokens } from "@/lib/email/oauth-tokens";
 
@@ -67,8 +68,14 @@ export async function getEmailAccountById(id: string) {
 
 export async function addCustomEmailAccount(config: CustomAccountConfig) {
   const supabase = await createClient();
-  const { user } = await getCurrentUserProfile();
-  const orgId = await getOrgId();
+  let gate: Awaited<ReturnType<typeof requireRole>>;
+  try {
+    gate = await requireRole("admin", "owner");
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: err instanceof Error ? err.message : "Forbidden: admin role required" };
+  }
+  const { user, orgId } = gate;
 
   // Encrypt passwords before storing
   const encryptedImapPassword = encrypt(config.imap_password);
@@ -187,7 +194,13 @@ export async function updateTrackingDomain(accountId: string, trackingDomain: st
 
 export async function deleteEmailAccount(id: string) {
   const supabase = await createClient();
-  const orgId = await getOrgId();
+  let orgId: string;
+  try {
+    ({ orgId } = await requireRole("admin", "owner"));
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: err instanceof Error ? err.message : "Forbidden: admin role required" };
+  }
 
   const { error } = await supabase
     .from("email_accounts")

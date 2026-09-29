@@ -4,6 +4,7 @@ import { unstable_rethrow } from "next/navigation";
 import { postpeerClient } from "@/lib/postpeer/client";
 import { PlatformType, PlatformConnection } from "@/lib/postpeer/types";
 import { requirePostPeerOrg } from "@/lib/postpeer/tenant";
+import { requireRole } from "./helpers";
 
 /**
  * Get PostPeer API key from environment or database
@@ -127,6 +128,7 @@ export async function disconnectPlatform(
   error?: string;
 }> {
   try {
+    await requireRole("admin", "owner");
     await requirePostPeerOrg();
     const client = await initClient();
     await client.disconnectPlatform(connectionId);

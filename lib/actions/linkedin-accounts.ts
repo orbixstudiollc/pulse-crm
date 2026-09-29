@@ -3,6 +3,8 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/linkedin/client";
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
+import { requireRole } from "./helpers";
 import { openChannelToken, sealChannelToken } from "@/lib/utils/channel-token";
 
 const LINKEDIN_ACCOUNT_PUBLIC_COLUMNS =
@@ -124,6 +126,12 @@ export async function saveLinkedInAccount(params: {
 // ============================================================
 
 export async function disconnectLinkedInAccount(accountId: string) {
+  try {
+    await requireRole("admin", "owner");
+  } catch (err) {
+    unstable_rethrow(err);
+    return { success: false, error: err instanceof Error ? err.message : "Forbidden: admin role required" };
+  }
   const supabase = await createClient();
   const { error } = await supabase
     .from("linkedin_accounts")
@@ -141,6 +149,12 @@ export async function disconnectLinkedInAccount(accountId: string) {
 // ============================================================
 
 export async function deleteLinkedInAccount(accountId: string) {
+  try {
+    await requireRole("admin", "owner");
+  } catch (err) {
+    unstable_rethrow(err);
+    return { success: false, error: err instanceof Error ? err.message : "Forbidden: admin role required" };
+  }
   const supabase = await createClient();
   const { error } = await supabase
     .from("linkedin_accounts")
