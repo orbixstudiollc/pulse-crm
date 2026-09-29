@@ -10,7 +10,7 @@ import {
   assertSafeMailHost,
   isAllowedImapPort,
   isAllowedSmtpPort,
-  isSafeMailEndpoint,
+  resolveMailHost,
   sanitizeMailConfig,
 } from "@/lib/email/account-validation";
 
@@ -293,12 +293,14 @@ export async function testEmailAccount(id: string) {
         password_encrypted: string;
       };
 
-      if (!isSafeMailEndpoint(smtpConfig.host, smtpConfig.port, "smtp")) {
+      const resolved = await resolveMailHost(smtpConfig.host, smtpConfig.port, "smtp");
+      if (!resolved) {
         return { error: INVALID_MAIL_SERVER };
       }
 
       const transporter = nodemailer.default.createTransport({
-        host: smtpConfig.host,
+        host: resolved.address,
+        tls: { servername: resolved.servername },
         port: smtpConfig.port,
         secure: smtpConfig.secure,
         requireTLS: !smtpConfig.secure,

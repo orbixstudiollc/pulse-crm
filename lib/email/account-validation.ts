@@ -57,3 +57,24 @@ export function isSafeMailEndpoint(host: unknown, port: unknown, kind: "smtp" | 
   if (typeof host !== "string" || !isValidMailHostname(host)) return false;
   return kind === "smtp" ? isAllowedSmtpPort(port) : isAllowedImapPort(port);
 }
+
+/**
+ * Validates the endpoint, then resolves it once so the caller can connect to
+ * the checked address (pinning) while TLS still verifies the real hostname.
+ */
+export async function resolveMailHost(
+  host: unknown,
+  port: unknown,
+  kind: "smtp" | "imap",
+  lookup?: LookupFn
+): Promise<{ address: string; servername: string } | null> {
+  if (!isSafeMailEndpoint(host, port, kind)) return null;
+  const h = host as string;
+  const urlHost = isIP(h) === 6 ? `[${h}]` : h;
+  try {
+    const { addresses } = await assertSafeFetchTarget("https://" + urlHost, lookup);
+    return { address: addresses[0].address, servername: h.toLowerCase() };
+  } catch {
+    return null;
+  }
+}

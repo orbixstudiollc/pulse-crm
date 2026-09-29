@@ -6,6 +6,7 @@ import {
   isAllowedSmtpPort,
   isSafeMailEndpoint,
   isValidMailHostname,
+  resolveMailHost,
   sanitizeMailConfig,
 } from "@/lib/email/account-validation";
 import type { LookupFn } from "@/lib/security/fetch-target";
@@ -86,5 +87,30 @@ describe("isSafeMailEndpoint", () => {
 
   it("rejects a port not allowed for the kind", () => {
     expect(isSafeMailEndpoint("imap.gmail.com", 587, "imap")).toBe(false);
+  });
+});
+
+describe("resolveMailHost", () => {
+  it("returns null for a hostname resolving to a private address", async () => {
+    await expect(
+      resolveMailHost("mail.example.com", 587, "smtp", lookupTo("10.0.0.1"))
+    ).resolves.toBeNull();
+  });
+
+  it("returns the resolved public address and the lower-cased hostname", async () => {
+    await expect(
+      resolveMailHost("Mail.Example.com", 587, "smtp", lookupTo("93.184.216.34"))
+    ).resolves.toEqual({ address: "93.184.216.34", servername: "mail.example.com" });
+  });
+
+  it("returns an IP literal as the address", async () => {
+    const out = await resolveMailHost("203.0.113.5", 587, "smtp", lookupTo("93.184.216.34"));
+    expect(out?.address).toBe("203.0.113.5");
+  });
+
+  it("returns null for a disallowed port without resolving", async () => {
+    await expect(
+      resolveMailHost("mail.example.com", 8080, "smtp", lookupTo("93.184.216.34"))
+    ).resolves.toBeNull();
   });
 });

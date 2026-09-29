@@ -2,7 +2,7 @@ import nodemailer, { type SendMailOptions } from "nodemailer";
 import { createAdminClient } from "@/lib/supabase/server";
 import { decrypt } from "@/lib/utils/encryption";
 import { openOAuthTokens, sealOAuthTokens } from "@/lib/email/oauth-tokens";
-import { isSafeMailEndpoint } from "@/lib/email/account-validation";
+import { resolveMailHost } from "@/lib/email/account-validation";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -277,12 +277,14 @@ async function sendViaSMTP(
   },
   opts: SendEmailOptions,
 ): Promise<SendResult> {
-  if (!isSafeMailEndpoint(account.smtp_config.host, account.smtp_config.port, "smtp")) {
+  const resolved = await resolveMailHost(account.smtp_config.host, account.smtp_config.port, "smtp");
+  if (!resolved) {
     return { success: false, error: "Mail server not allowed" };
   }
 
   const transporter = nodemailer.createTransport({
-    host: account.smtp_config.host,
+    host: resolved.address,
+    tls: { servername: resolved.servername },
     port: account.smtp_config.port,
     secure: account.smtp_config.secure,
     requireTLS: !account.smtp_config.secure,
