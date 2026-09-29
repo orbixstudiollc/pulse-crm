@@ -5,7 +5,7 @@ export interface Bucket {
 
 export const TRACKING_BUCKET = { capacity: 60, refillPerSecond: 1 } as const;
 
-const MAX_ENTRIES = 10_000;
+export const TRACKING_MAX_BUCKETS = 10_000;
 const IDLE_EVICT_MS = 10 * 60 * 1000;
 
 export function takeToken(
@@ -14,9 +14,16 @@ export function takeToken(
   now: number,
   cfg: { capacity: number; refillPerSecond: number } = TRACKING_BUCKET
 ): boolean {
-  if (store.size > MAX_ENTRIES) {
+  if (store.size > TRACKING_MAX_BUCKETS) {
     for (const [k, b] of store) {
       if (now - b.updatedAt > IDLE_EVICT_MS) store.delete(k);
+    }
+  }
+  if (store.size > TRACKING_MAX_BUCKETS) {
+    const oldestFirst = [...store].sort(([, a], [, b]) => a.updatedAt - b.updatedAt);
+    for (const [k] of oldestFirst) {
+      if (store.size <= TRACKING_MAX_BUCKETS) break;
+      store.delete(k);
     }
   }
 

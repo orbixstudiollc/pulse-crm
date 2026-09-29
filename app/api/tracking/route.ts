@@ -77,13 +77,6 @@ export async function POST(req: NextRequest) {
     }
     const { script_key, session_id, page_url, page_title, referrer, duration, scroll_depth } = parsed.data;
 
-    if (!takeToken(trackingBuckets, script_key, Date.now())) {
-      return NextResponse.json(
-        { error: "Too many requests" },
-        { status: 429, headers: { ...corsHeaders, "Retry-After": "60" } }
-      );
-    }
-
     const supabase = createAdminClient();
 
     // Validate script_key and get org
@@ -95,6 +88,14 @@ export async function POST(req: NextRequest) {
 
     if (scriptErr || !script || !script.is_active) {
       return NextResponse.json({ error: "Invalid or inactive script" }, { status: 403, headers: corsHeaders });
+    }
+
+    // Bucket on the validated script id so unknown keys never create buckets.
+    if (!takeToken(trackingBuckets, script.id, Date.now())) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: { ...corsHeaders, "Retry-After": "60" } }
+      );
     }
 
     // Get IP and user agent from headers

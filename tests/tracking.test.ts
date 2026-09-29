@@ -5,7 +5,13 @@ import {
   clientIpFromHeaders,
   trackingEventSchema,
 } from "@/lib/tracking/schema";
-import { TRACKING_BUCKET, takeToken, type Bucket } from "@/lib/tracking/rate-limit";
+import {
+  TRACKING_BUCKET,
+  TRACKING_MAX_BUCKETS,
+  takeToken,
+  trackingBuckets,
+  type Bucket,
+} from "@/lib/tracking/rate-limit";
 
 const valid = {
   script_key: "abc123",
@@ -76,6 +82,12 @@ describe("takeToken", () => {
     for (let i = 0; i < TRACKING_BUCKET.capacity; i++) takeToken(store, "k", 0);
     expect(takeToken(store, "k", 0)).toBe(false);
     expect(takeToken(store, "k", 2000)).toBe(true);
+  });
+
+  it("keeps the shared store bounded across many distinct keys", () => {
+    for (let i = 0; i < 10_050; i++) takeToken(trackingBuckets, `key-${i}`, i);
+    expect(trackingBuckets.size).toBeLessThanOrEqual(TRACKING_MAX_BUCKETS + 1);
+    trackingBuckets.clear();
   });
 });
 
