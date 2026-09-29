@@ -35,6 +35,7 @@ import {
 import { composeAndSendEmail, sendReply } from "@/lib/actions/email-send";
 import { getUnifiedInbox, deleteUnifiedItem } from "@/lib/actions/unified-inbox";
 import { sanitizeEmailHtml } from "@/lib/security/sanitize-html";
+import { formatEnumLabel } from "@/lib/utils/format-enum-label";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -496,7 +497,7 @@ export function InboxClient() {
                       )}
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-fg-muted">
-                          {thread.email_accounts.provider}
+                          {formatEnumLabel(thread.email_accounts.provider)}
                         </span>
                         {thread.message_count > 1 && (
                           <span className="text-xs text-fg-muted">

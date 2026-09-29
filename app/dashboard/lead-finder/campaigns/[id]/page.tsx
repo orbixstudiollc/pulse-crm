@@ -49,6 +49,7 @@ import { EnrichmentProgressBanner, registerActiveBatch } from "@/components/lead
 import { SortableList } from "@/components/lead-finder/SortableList";
 import { useLeadEvents } from "@/hooks/use-lead-events";
 import { useLeadFinderActors } from "@/hooks/use-lead-finder-actors";
+import { formatEnumLabel } from "@/lib/utils/format-enum-label";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -751,7 +752,7 @@ export default function CampaignDetailPage() {
             )}
           </div>
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-fg-secondary bg-muted border border-line">
-            <ClockIcon size={10} /> {campaign.schedule_frequency}
+            <ClockIcon size={10} /> {formatEnumLabel(campaign.schedule_frequency)}
           </span>
         </div>
         <div className="p-4 space-y-3">

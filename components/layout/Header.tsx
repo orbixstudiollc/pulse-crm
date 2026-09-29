@@ -49,6 +49,8 @@ export function Header() {
               "lead-finder": "Lead Finder",
               "lead-scraper": "Lead Finder",
               "email-accounts": "Email Accounts",
+              icp: "ICP",
+              "website-visitors": "Website visitors",
             };
             const displayText =
               isIdSegment && config.breadcrumbLabel
