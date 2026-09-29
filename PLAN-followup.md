@@ -99,3 +99,16 @@ Executor rules: edit only declared files; no git state changes (the verify commi
 - Regenerating auth hero PNGs with Playwright: no dependency, pages unreachable in open-access mode.
 - `is_seed` marker columns across ~15 tables so clear-all deletes only seeded rows: the UI already says "Clear All Data"; the admin gate suffices for now.
 - Folding the lead-finder worker into the daily cron: one batch per day makes the lead-finder unusable for testing.
+
+## Execution record (2026-09-29)
+
+Run with `astra-fable-execute` on `tasks-followup.json`, 4 waves + 1 review-fix wave, 22 tasks, 25 commits on top of `9b31ee8` (not pushed at time of writing).
+
+- **Passed first attempt:** T1, T3, T4, T6, T7, T8, T10, T11, T12, T13, T14, T15, T16, T17, T18, R1, R2, R3, R4.
+- **Plan defects repaired mid-run (same executor, file added to the task):** T5 (`components/automation/AutomationSection.tsx` still imported `seedDefaultRules`; interface said 0 callers); T2 (`lib/actions/campaigns.ts` `updateBookingConfig` gated per the merge ruling); T9 (verify wanted 3 org filters but the interface produced 2: ruled for an ownership pre-check on set-default, which also closes a real gap where a foreign account id stripped the caller's default).
+- **Verify-authoring defects:** R3 and R4 greps were wrong (argument order; substring matching unrelated copy). Fixed in the plan, not in the code.
+- **Model escalations:** none. No Sonnet task needed the Opus retry.
+- **Scope drift:** none across all 25 commits.
+- **Judgment review (Opus, adversarial):** 0 CRITICAL, 0 HIGH, 3 MEDIUM (M1 SMTP send-time DNS, M2 ungated parallel writers, M3 tracking bucket keyed on unvalidated script_key), 6 LOW. M1-M3, L1, L2, L5 fixed in R1-R4.
+- **Open findings not fixed here:** L3 the `obsidian_vault_path` setting is still accepted by the UI/PUT but ignored by the observer (product decision: remove the field or surface the tenant path); L4 custom SMTP accounts on ports other than 25/465/587/2525, or relays without STARTTLS on 25/2525, now fail to send (intended trade-off, undocumented to users); L6 guest cleanup scans 200 profiles unordered and can stall on permanently skipped rows; RLS on email/whatsapp/linkedin accounts has no role predicate, so the requireRole gates hold only for server actions, not direct PostgREST calls (would need migration 031).
+- **Owner actions after deploy:** apply `supabase/migrations/030_followup.sql` in the same session as the deploy; add `CRON_SECRET` as a GitHub repository secret; optional `GUEST_RETENTION_DAYS`, `GUEST_SEED_DEMO_DATA`, `GUEST_SIGNUPS_PER_HOUR` on Vercel.
