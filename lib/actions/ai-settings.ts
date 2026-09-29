@@ -6,6 +6,7 @@ import { unstable_rethrow } from "next/navigation";
 import { AISettings, PublicAISettings, AIUsageStats, AIUsageDailyPoint, AIUsageLogEntry } from "@/lib/ai/types";
 import { toPublicAISettings, omitBlankAISecrets, pickWritableAISettings } from "@/lib/ai/public-settings";
 import { requireRole } from "./helpers";
+import { assertSafeFetchTarget } from "@/lib/security/fetch-target";
 
 export async function getAISettings(): Promise<PublicAISettings | null> {
   const supabase = await createClient();
@@ -69,6 +70,18 @@ export async function updateAISettings(
 
   const clean = omitBlankAISecrets(pickWritableAISettings(updates));
   if (Object.keys(clean).length === 0) return { success: false, error: "No writable fields" };
+
+  // SECURITY (SSRF): the Ollama base URL is fetched server-side; reject hosts
+  // that are private or resolve to private addresses before storing it.
+  // (ollama_base_url is an allowlisted column missing from the AISettings type.)
+  const ollamaBaseUrl = (clean as Record<string, unknown>).ollama_base_url;
+  if (typeof ollamaBaseUrl === "string" && ollamaBaseUrl.trim()) {
+    try {
+      await assertSafeFetchTarget(ollamaBaseUrl);
+    } catch {
+      return { success: false, error: "Ollama base URL is not allowed" };
+    }
+  }
 
   const { error } = await createAdminClient()
     .from("ai_settings")

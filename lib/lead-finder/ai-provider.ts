@@ -8,7 +8,8 @@ import {
   getApifyToken as resolveApifyToken,
   getApifyTokenFromEnv,
 } from "./apify/token";
-import { assertSafeFetchUrl } from "@/lib/security";
+import { assertSafeFetchTarget } from "@/lib/security/fetch-target";
+import { createPinnedFetch } from "@/lib/security/safe-fetch";
 
 // =============================================================================
 // Model Pricing (USD per 1M tokens)
@@ -316,28 +317,35 @@ export async function generateCompletion(
     // ai_settings.ollama_base_url. Although the settings route validates it,
     // re-assert at use time so the server never issues a request to private
     // networks / loopback / metadata hosts even if the DB is tampered with.
+    // The resolved addresses are pinned for the connection (no DNS rebinding).
+    let target;
     try {
-      assertSafeFetchUrl(baseURL);
+      target = await assertSafeFetchTarget(baseURL);
     } catch {
       throw new Error("Configured Ollama base URL is not allowed");
     }
-    const client = new OpenAI({ baseURL, apiKey: "ollama" });
-    const res = await client.chat.completions.create({
-      model,
-      messages,
-      temperature,
-      max_tokens: maxTokens,
-    });
-    const inputTokens = res.usage?.prompt_tokens ?? 0;
-    const outputTokens = res.usage?.completion_tokens ?? 0;
-    return {
-      content: res.choices[0]?.message?.content ?? "",
-      provider: "ollama",
-      model,
-      inputTokens,
-      outputTokens,
-      costUsd: 0,
-    };
+    const pinned = createPinnedFetch(target);
+    try {
+      const client = new OpenAI({ baseURL, apiKey: "ollama", fetch: pinned.fetch });
+      const res = await client.chat.completions.create({
+        model,
+        messages,
+        temperature,
+        max_tokens: maxTokens,
+      });
+      const inputTokens = res.usage?.prompt_tokens ?? 0;
+      const outputTokens = res.usage?.completion_tokens ?? 0;
+      return {
+        content: res.choices[0]?.message?.content ?? "",
+        provider: "ollama",
+        model,
+        inputTokens,
+        outputTokens,
+        costUsd: 0,
+      };
+    } finally {
+      await pinned.close();
+    }
   }
 
   // --- Groq ---

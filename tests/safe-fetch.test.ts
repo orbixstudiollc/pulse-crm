@@ -3,7 +3,11 @@ import http from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { fetch as undiciFetch } from "undici";
-import { SAFE_FETCH_MAX_BYTES, fetchPinnedText } from "@/lib/security/safe-fetch";
+import {
+  SAFE_FETCH_MAX_BYTES,
+  createPinnedFetch,
+  fetchPinnedText,
+} from "@/lib/security/safe-fetch";
 
 const BIG_BODY_BYTES = 3 * 1024 * 1024;
 
@@ -68,5 +72,28 @@ describe("fetchPinnedText", () => {
     const res = await fetchPinnedText(target("/redirect"));
     expect(res.status).toBe(302);
     expect(res.text).toBe("");
+  });
+});
+
+describe("createPinnedFetch", () => {
+  const exampleTarget = {
+    url: new URL("http://example.com"),
+    addresses: [{ address: "93.184.216.34", family: 4 as const }],
+  };
+
+  it("rejects a URL on a different host without touching the network", async () => {
+    const pinned = createPinnedFetch(exampleTarget);
+    try {
+      await expect(pinned.fetch("http://169.254.169.254/latest/meta-data")).rejects.toThrow(
+        "Pinned fetch: host mismatch"
+      );
+    } finally {
+      await pinned.close();
+    }
+  });
+
+  it("close() resolves", async () => {
+    const pinned = createPinnedFetch(exampleTarget);
+    await expect(pinned.close()).resolves.toBeUndefined();
   });
 });

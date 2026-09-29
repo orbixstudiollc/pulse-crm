@@ -5,18 +5,13 @@
  */
 
 import type { LookupFunction } from "node:net";
-import { Agent, fetch as undiciFetch } from "undici";
+import { Agent, fetch as undiciFetch, type RequestInit as UndiciRequestInit } from "undici";
 import type { SafeFetchTarget } from "./fetch-target";
 
 export const SAFE_FETCH_MAX_BYTES = 1_048_576;
 const DEFAULT_TIMEOUT_MS = 10_000;
 
-export async function fetchPinnedText(
-  target: SafeFetchTarget,
-  opts?: { headers?: Record<string, string>; timeoutMs?: number; maxBytes?: number }
-): Promise<{ status: number; ok: boolean; text: string }> {
-  const maxBytes = opts?.maxBytes ?? SAFE_FETCH_MAX_BYTES;
-
+function createPinnedAgent(target: SafeFetchTarget): Agent {
   // Node's net.connect calls lookup with `all: true` under autoSelectFamily;
   // both the list form and the single-address form must be supported.
   const lookup = ((_host, options, cb) =>
@@ -27,7 +22,47 @@ export async function fetchPinnedText(
         )
       : cb(null, target.addresses[0].address, target.addresses[0].family)) as LookupFunction;
 
-  const agent = new Agent({ connect: { lookup } });
+  return new Agent({ connect: { lookup } });
+}
+
+/**
+ * A fetch bound to one pinned target, for SDK clients that accept a custom
+ * fetch. Requests to any other host are refused; redirects are not followed.
+ * Call close() when done to release the agent's sockets.
+ */
+export function createPinnedFetch(target: SafeFetchTarget): {
+  fetch: typeof globalThis.fetch;
+  close: () => Promise<void>;
+} {
+  const agent = createPinnedAgent(target);
+  const pinnedFetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = new URL(input instanceof Request ? input.url : String(input));
+    if (url.host !== target.url.host) {
+      throw new Error("Pinned fetch: host mismatch");
+    }
+    const res = await undiciFetch(url, {
+      ...(init as UndiciRequestInit),
+      dispatcher: agent,
+      redirect: "manual",
+    });
+    return res as unknown as Response;
+  }) as typeof globalThis.fetch;
+
+  return {
+    fetch: pinnedFetch,
+    close: async () => {
+      await agent.close();
+    },
+  };
+}
+
+export async function fetchPinnedText(
+  target: SafeFetchTarget,
+  opts?: { headers?: Record<string, string>; timeoutMs?: number; maxBytes?: number }
+): Promise<{ status: number; ok: boolean; text: string }> {
+  const maxBytes = opts?.maxBytes ?? SAFE_FETCH_MAX_BYTES;
+
+  const agent = createPinnedAgent(target);
   try {
     const res = await undiciFetch(target.url, {
       dispatcher: agent,

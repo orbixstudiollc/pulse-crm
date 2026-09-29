@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { assertSafeFetchUrl } from "@/lib/security";
+import { assertSafeFetchTarget } from "@/lib/security/fetch-target";
 
 const AIProviderEnum = z.enum([
   "anthropic",
@@ -199,6 +200,19 @@ export async function PUT(req: NextRequest) {
       );
     }
     const body = parsed.data;
+
+    // SECURITY (SSRF): the zod refine only checks the literal host; also
+    // reject hostnames that resolve to private addresses.
+    if (body.section === "keys" && body.ollama_base_url) {
+      try {
+        await assertSafeFetchTarget(body.ollama_base_url);
+      } catch {
+        return NextResponse.json(
+          { error: "ollama_base_url is not allowed" },
+          { status: 400 }
+        );
+      }
+    }
 
     const admin = createAdminClient();
     const orgId = profile.organization_id;
