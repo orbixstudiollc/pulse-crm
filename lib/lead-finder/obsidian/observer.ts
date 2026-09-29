@@ -3,15 +3,16 @@ import "server-only";
 import fs from "fs";
 import path from "path";
 import { createAdminClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/security";
 
 // =============================================================================
 // Multi-tenant Obsidian observer
 // -----------------------------------------------------------------------------
 // Writes markdown observation files into a per-organization Obsidian vault.
-// Every path is validated against OBSIDIAN_ALLOWED_ROOT to avoid accidental
-// or malicious writes outside a controlled directory. When the env var is
-// unset, writes are disabled entirely (fail-closed) — we never trust a
-// vault path stored in the database without an allowlist.
+// Each organization's vault is OBSIDIAN_ALLOWED_ROOT/<orgId>, derived on the
+// server so no tenant can point writes at another tenant's (or any other)
+// directory. When the env var is unset, writes are disabled entirely
+// (fail-closed).
 // =============================================================================
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -31,22 +32,12 @@ function getAllowedRoot(): string | null {
 }
 
 /**
- * Validate that `candidate` resolves to a path underneath the configured
- * `OBSIDIAN_ALLOWED_ROOT`. Returns null when integration is disabled or the
- * path escapes the sandbox.
+ * The tenant-bound vault directory: `<allowedRoot>/<orgId>`. Throws when
+ * `orgId` is not a UUID so it can never inject path segments.
  */
-function safeResolveVaultPath(candidate: string): string | null {
-  const allowedRoot = getAllowedRoot();
-  if (!allowedRoot) return null;
-  if (!candidate || !candidate.trim()) return null;
-
-  const resolved = path.resolve(candidate);
-  // Ensure the resolved path is contained by allowedRoot. Using path.relative
-  // + checking for ".." handles symlink-free common cases; we do not follow
-  // symlinks here — callers must curate OBSIDIAN_ALLOWED_ROOT.
-  const rel = path.relative(allowedRoot, resolved);
-  if (rel.startsWith("..") || path.isAbsolute(rel)) return null;
-  return resolved;
+export function orgVaultPath(allowedRoot: string, orgId: string): string {
+  if (!isUuid(orgId)) throw new Error("Invalid organization id");
+  return path.join(allowedRoot, orgId);
 }
 
 interface OrgObsidianConfig {
@@ -65,7 +56,8 @@ async function loadOrgObsidianConfig(
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("ai_settings")
-    .select("obsidian_vault_path, obsidian_sync_enabled")
+    // The stored vault path column is legacy/display-only and never read here.
+    .select("obsidian_sync_enabled")
     .eq("organization_id", orgId)
     .maybeSingle();
 
@@ -74,8 +66,8 @@ async function loadOrgObsidianConfig(
   }
 
   const enabled = Boolean(data.obsidian_sync_enabled);
-  const rawPath = (data.obsidian_vault_path as string | null) ?? null;
-  const vaultPath = rawPath ? safeResolveVaultPath(rawPath) : null;
+  const allowedRoot = getAllowedRoot();
+  const vaultPath = allowedRoot ? orgVaultPath(allowedRoot, orgId) : null;
 
   return { enabled: enabled && vaultPath !== null, vaultPath };
 }

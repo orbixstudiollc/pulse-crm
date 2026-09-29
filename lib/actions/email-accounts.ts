@@ -6,6 +6,16 @@ import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import { encrypt } from "@/lib/utils/encryption";
 import { openOAuthTokens } from "@/lib/email/oauth-tokens";
+import {
+  assertSafeMailHost,
+  isAllowedImapPort,
+  isAllowedSmtpPort,
+  isSafeMailEndpoint,
+  sanitizeMailConfig,
+} from "@/lib/email/account-validation";
+
+const INVALID_MAIL_SERVER = "Invalid mail server host or port";
+const CONNECTION_FAILED = "Connection failed. Check host, port, TLS setting and credentials.";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -32,6 +42,29 @@ function withoutOAuthTokens<T extends { oauth_tokens?: unknown }>(row: T): Omit<
   return rest;
 }
 
+// Encrypted mail passwords must never reach the browser either
+function stripMailSecrets<T extends { oauth_tokens?: unknown; smtp_config?: unknown; imap_config?: unknown }>(row: T) {
+  return {
+    ...withoutOAuthTokens(row),
+    smtp_config: sanitizeMailConfig(row.smtp_config),
+    imap_config: sanitizeMailConfig(row.imap_config),
+  };
+}
+
+// Validates a smtp_config/imap_config value carried by an update
+async function isSafeMailConfigUpdate(cfg: unknown, kind: "smtp" | "imap"): Promise<boolean> {
+  if (!cfg || typeof cfg !== "object") return false;
+  const { host, port } = cfg as { host?: unknown; port?: unknown };
+  if (typeof host !== "string") return false;
+  if (!(kind === "smtp" ? isAllowedSmtpPort(port) : isAllowedImapPort(port))) return false;
+  try {
+    await assertSafeMailHost(host);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // ── Read ────────────────────────────────────────────────────────────────────
 
 export async function getEmailAccounts() {
@@ -46,7 +79,7 @@ export async function getEmailAccounts() {
     .order("created_at", { ascending: true });
 
   if (error) return { error: error.message };
-  return { data: (data ?? []).map(withoutOAuthTokens) };
+  return { data: (data ?? []).map(stripMailSecrets) };
 }
 
 export async function getEmailAccountById(id: string) {
@@ -61,7 +94,7 @@ export async function getEmailAccountById(id: string) {
     .single();
 
   if (error) return { error: error.message };
-  return { data: withoutOAuthTokens(data) };
+  return { data: stripMailSecrets(data) };
 }
 
 // ── Create Custom IMAP/SMTP Account ─────────────────────────────────────────
@@ -76,6 +109,16 @@ export async function addCustomEmailAccount(config: CustomAccountConfig) {
     return { error: err instanceof Error ? err.message : "Forbidden: admin role required" };
   }
   const { user, orgId } = gate;
+
+  if (!isAllowedImapPort(config.imap_port) || !isAllowedSmtpPort(config.smtp_port)) {
+    return { error: INVALID_MAIL_SERVER };
+  }
+  try {
+    await assertSafeMailHost(config.imap_host);
+    await assertSafeMailHost(config.smtp_host);
+  } catch {
+    return { error: INVALID_MAIL_SERVER };
+  }
 
   // Encrypt passwords before storing
   const encryptedImapPassword = encrypt(config.imap_password);
@@ -110,7 +153,7 @@ export async function addCustomEmailAccount(config: CustomAccountConfig) {
 
   if (error) return { error: error.message };
   revalidatePath("/dashboard/settings");
-  return { data: withoutOAuthTokens(data) };
+  return { data: stripMailSecrets(data) };
 }
 
 // ── Update ──────────────────────────────────────────────────────────────────
@@ -126,6 +169,15 @@ export async function updateEmailAccount(
   const supabase = await createClient();
   const orgId = await getOrgId();
 
+  // Server actions receive untyped input, so a mail config may still be present
+  const raw = updates as Record<string, unknown>;
+  if ("smtp_config" in raw && !(await isSafeMailConfigUpdate(raw.smtp_config, "smtp"))) {
+    return { error: INVALID_MAIL_SERVER };
+  }
+  if ("imap_config" in raw && !(await isSafeMailConfigUpdate(raw.imap_config, "imap"))) {
+    return { error: INVALID_MAIL_SERVER };
+  }
+
   const { data, error } = await supabase
     .from("email_accounts")
     .update(updates)
@@ -136,7 +188,7 @@ export async function updateEmailAccount(
 
   if (error) return { error: error.message };
   revalidatePath("/dashboard/settings");
-  return { data: withoutOAuthTokens(data) };
+  return { data: stripMailSecrets(data) };
 }
 
 // ── Set Default ─────────────────────────────────────────────────────────────
@@ -241,10 +293,15 @@ export async function testEmailAccount(id: string) {
         password_encrypted: string;
       };
 
+      if (!isSafeMailEndpoint(smtpConfig.host, smtpConfig.port, "smtp")) {
+        return { error: INVALID_MAIL_SERVER };
+      }
+
       const transporter = nodemailer.default.createTransport({
         host: smtpConfig.host,
         port: smtpConfig.port,
         secure: smtpConfig.secure,
+        requireTLS: !smtpConfig.secure,
         auth: {
           user: smtpConfig.username,
           pass: decrypt(smtpConfig.password_encrypted),
@@ -317,13 +374,14 @@ export async function testEmailAccount(id: string) {
 
     return { error: "Unknown provider" };
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Connection failed";
+    // The real error stays server-side: it would reveal how the host/port answered
+    console.error("[testEmailAccount] connection test failed:", err);
     await supabase
       .from("email_accounts")
-      .update({ status: "error", last_error: message })
+      .update({ status: "error", last_error: CONNECTION_FAILED })
       .eq("id", id);
 
     revalidatePath("/dashboard/settings");
-    return { error: message };
+    return { error: CONNECTION_FAILED };
   }
 }
