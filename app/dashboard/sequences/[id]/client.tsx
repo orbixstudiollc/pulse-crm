@@ -1258,7 +1258,7 @@ export function SequenceDetailClient({
                             </div>
                           </td>
                           <td className="px-3 py-2 border-t border-row">
-                            <span className="text-sm font-medium font-semibold text-fg">
+                            <span className="text-sm font-semibold text-fg">
                               {enrollment.current_step} / {steps.length}
                             </span>
                           </td>
@@ -1488,7 +1488,7 @@ export function SequenceDetailClient({
                     <div className="flex-1 h-6 rounded bg-muted overflow-hidden">
                       <div className={cn("h-full rounded transition-all", item.color)} style={{ width: `${pct}%` }} />
                     </div>
-                    <span className="text-sm font-medium font-semibold text-fg w-16 text-right">
+                    <span className="text-sm font-semibold text-fg w-16 text-right">
                       {item.value} ({pct}%)
                     </span>
                   </div>
@@ -1555,7 +1555,7 @@ export function SequenceDetailClient({
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
-                      <span className="text-sm font-medium font-semibold text-fg w-12 text-right">{count}</span>
+                      <span className="text-sm font-semibold text-fg w-12 text-right">{count}</span>
                       <span className="text-xs text-fg-secondary w-10 text-right">{percentage}%</span>
                     </div>
                   );

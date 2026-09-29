@@ -111,7 +111,7 @@ export function CopilotClient({ initialConversations, initialMemory, initialTask
   ];
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-surface">
+    <div className="flex h-full bg-surface">
       {/* Left Sidebar */}
       <div className="w-64 border-r border-line flex flex-col bg-subtle">
         {/* Header */}

@@ -231,7 +231,7 @@ function CSVUploadModal({
             <div className="flex gap-3 justify-end">
               <button onClick={() => setStep("upload")} className="px-4 py-2 text-sm text-fg-secondary hover:text-fg">Back</button>
               <button onClick={handleImport} disabled={isPending || Object.values(mapping).filter(Boolean).length === 0}
-                className="px-4 py-2 text-sm bg-inverse hover:bg-inverse text-on-inverse rounded disabled:opacity-50">
+                className="px-4 py-2 text-sm bg-inverse hover:opacity-90 text-on-inverse rounded disabled:opacity-50">
                 {isPending ? "Importing..." : `Import ${csvRows.length} Rows`}
               </button>
             </div>
@@ -262,7 +262,7 @@ function SaveSearchModal({
         <div className="flex gap-3 justify-end">
           <button onClick={onClose} className="px-4 py-2 text-sm text-fg-secondary hover:text-fg">Cancel</button>
           <button onClick={() => { if (!name.trim()) return; startTransition(async () => { await saveSearch(name.trim(), filters, resultCount); toast.success("Search saved"); setName(""); onClose(); onSaved(); }); }} disabled={isPending}
-            className="px-4 py-2 text-sm bg-inverse hover:bg-inverse text-on-inverse rounded disabled:opacity-50">
+            className="px-4 py-2 text-sm bg-inverse hover:opacity-90 text-on-inverse rounded disabled:opacity-50">
             {isPending ? "Saving..." : "Save"}
           </button>
         </div>
@@ -316,7 +316,7 @@ function GoogleMapsPanel({
         {icpAligned && <span className="text-xs px-2 py-0.5 rounded bg-accent-surface text-accent-on-surface border border-accent">ICP Aligned</span>}
       </div>
       <button onClick={() => onScrape({ searchTerms, location, maxResults: parseInt(maxResults) || 20 })} disabled={isPending || !searchTerms}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm font-medium rounded disabled:opacity-50">
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-inverse hover:opacity-90 text-on-inverse text-sm font-medium rounded disabled:opacity-50">
         {isPending ? <><CircleNotchIcon className="w-4 h-4 animate-spin" /> Starting...</> : <><GlobeIcon className="w-4 h-4" /> Start Scrape</>}
       </button>
     </div>
@@ -380,7 +380,7 @@ function InstagramPanel({
         }
       }}
         disabled={isPending || !canStart}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm font-medium rounded disabled:opacity-50">
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-inverse hover:opacity-90 text-on-inverse text-sm font-medium rounded disabled:opacity-50">
         {isPending ? <><CircleNotchIcon className="w-4 h-4 animate-spin" /> Starting...</> : <><GlobeIcon className="w-4 h-4" /> Start Scrape</>}
       </button>
     </div>
@@ -411,7 +411,7 @@ function LinkedInPanel({
       </div>
       <button onClick={() => onScrape({ profileUrls: profileUrls.split("\n").map((u) => u.trim()).filter(Boolean), mode })}
         disabled={isPending || !profileUrls.trim()}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm font-medium rounded disabled:opacity-50">
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-inverse hover:opacity-90 text-on-inverse text-sm font-medium rounded disabled:opacity-50">
         {isPending ? <><CircleNotchIcon className="w-4 h-4 animate-spin" /> Starting...</> : <><GlobeIcon className="w-4 h-4" /> Start Scrape</>}
       </button>
     </div>
@@ -465,7 +465,7 @@ function LeadsFinderPanel({
         {icpAligned && <span className="text-xs px-2 py-0.5 rounded bg-accent-surface text-accent-on-surface border border-accent">ICP Aligned</span>}
       </div>
       <button onClick={() => onScrape({ jobTitle, location, industry, numLeads: parseInt(numLeads) || 25 })} disabled={isPending || !jobTitle}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm font-medium rounded disabled:opacity-50">
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-inverse hover:opacity-90 text-on-inverse text-sm font-medium rounded disabled:opacity-50">
         {isPending ? <><CircleNotchIcon className="w-4 h-4 animate-spin" /> Starting...</> : <><GlobeIcon className="w-4 h-4" /> Start Scrape</>}
       </button>
     </div>
@@ -876,7 +876,7 @@ export function LeadScraperPageClient({
                   </div>
                   <div className="flex gap-2 pt-2">
                     <button onClick={handleSearch} disabled={isPending}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm font-medium rounded disabled:opacity-50">
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-inverse hover:opacity-90 text-on-inverse text-sm font-medium rounded disabled:opacity-50">
                       <MagnifyingGlassIcon className="w-4 h-4" /> Search
                     </button>
                     <button onClick={() => setShowSaveSearch(true)}

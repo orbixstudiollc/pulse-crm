@@ -347,7 +347,7 @@ export function TemplatesPageClient({
                         </div>
                       </td>
                       <td className="px-3 py-2 border-t border-row">
-                        <span className="text-sm font-medium font-semibold text-fg">
+                        <span className="text-sm font-semibold text-fg">
                           {template.usage_count || 0}
                         </span>
                       </td>

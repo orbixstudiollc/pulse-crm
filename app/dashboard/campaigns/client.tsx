@@ -115,7 +115,7 @@ function DeleteConfirmModal({
           <button
             onClick={onConfirm}
             disabled={isPending}
-            className="px-4 py-2 text-sm bg-danger hover:bg-danger text-on-inverse rounded transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm bg-danger hover:opacity-90 text-on-inverse rounded transition-colors disabled:opacity-50"
           >
             {isPending ? "Deleting..." : "Delete"}
           </button>
@@ -172,7 +172,7 @@ function TagManagerModal({
               });
             }}
             disabled={isPending}
-            className="px-3 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm rounded"
+            className="px-3 py-2 bg-inverse hover:opacity-90 text-on-inverse text-sm rounded"
           >
             Add
           </button>
@@ -318,7 +318,7 @@ function AddAccountModal({
               });
             }}
             disabled={isPending}
-            className="px-4 py-2 text-sm bg-inverse hover:bg-inverse text-on-inverse rounded disabled:opacity-50"
+            className="px-4 py-2 text-sm bg-inverse hover:opacity-90 text-on-inverse rounded disabled:opacity-50"
           >
             {isPending ? "Adding..." : "Add Account"}
           </button>
@@ -440,7 +440,7 @@ function PerformanceDrawer({
           {/* Actions */}
           <button
             onClick={() => router.push(`/dashboard/sequences/${campaign.id}`)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-inverse hover:bg-inverse text-on-inverse text-sm font-medium rounded transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-inverse hover:opacity-90 text-on-inverse text-sm font-medium rounded transition-colors"
           >
             Edit Campaign <ArrowRightIcon className="w-4 h-4" />
           </button>
@@ -627,7 +627,7 @@ export function CampaignsPageClient({
             Tags
           </button>
           <button onClick={handleNewCampaign} disabled={isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm font-medium rounded transition-colors disabled:opacity-50">
+            className="flex items-center gap-2 px-4 py-2 bg-inverse hover:opacity-90 text-on-inverse text-sm font-medium rounded transition-colors disabled:opacity-50">
             <PlusIcon className="w-4 h-4" /> New Campaign
           </button>
         </div>
@@ -712,7 +712,7 @@ export function CampaignsPageClient({
                   </div>
                 </div>
                 <button onClick={() => setShowAddAccount(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-inverse hover:bg-inverse text-on-inverse text-sm rounded">
+                  className="flex items-center gap-2 px-3 py-1.5 bg-inverse hover:opacity-90 text-on-inverse text-sm rounded">
                   <PlusIcon className="w-4 h-4" /> Add Account
                 </button>
               </div>
@@ -722,7 +722,7 @@ export function CampaignsPageClient({
                   <PlugsConnectedIcon className="w-10 h-10 text-fg-muted mx-auto mb-3" />
                   <p className="text-sm text-fg-secondary mb-4">No email accounts connected yet</p>
                   <button onClick={() => setShowAddAccount(true)}
-                    className="px-4 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm rounded">
+                    className="px-4 py-2 bg-inverse hover:opacity-90 text-on-inverse text-sm rounded">
                     Add Your First Account
                   </button>
                 </div>
@@ -819,7 +819,7 @@ export function CampaignsPageClient({
                     {searchQuery || selectedTag ? "No campaigns match your filters" : "No campaigns yet"}
                   </p>
                   {!searchQuery && !selectedTag && (
-                    <button onClick={handleNewCampaign} className="px-4 py-2 bg-inverse hover:bg-inverse text-on-inverse text-sm rounded">
+                    <button onClick={handleNewCampaign} className="px-4 py-2 bg-inverse hover:opacity-90 text-on-inverse text-sm rounded">
                       Create Your First Campaign
                     </button>
                   )}

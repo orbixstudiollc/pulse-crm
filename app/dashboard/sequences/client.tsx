@@ -607,7 +607,7 @@ export function SequencesPageClient({
                         </td>
                         {/* Sent */}
                         <td className="px-3 py-2 border-t border-row">
-                          <span className="text-sm font-medium font-semibold text-fg">
+                          <span className="text-sm font-semibold text-fg">
                             {(seq.total_sent || 0).toLocaleString()}
                           </span>
                         </td>
@@ -615,7 +615,7 @@ export function SequencesPageClient({
                         <td className="px-3 py-2 border-t border-row">
                           <span
                             className={cn(
-                              "text-sm font-medium font-semibold",
+                              "text-sm font-semibold",
                               (seq.open_rate || 0) >= 50
                                 ? "text-success"
                                 : (seq.open_rate || 0) >= 25
@@ -630,7 +630,7 @@ export function SequencesPageClient({
                         <td className="px-3 py-2 border-t border-row">
                           <span
                             className={cn(
-                              "text-sm font-medium font-semibold",
+                              "text-sm font-semibold",
                               (seq.reply_rate || 0) >= 10
                                 ? "text-success"
                                 : (seq.reply_rate || 0) >= 5
