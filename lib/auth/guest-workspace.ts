@@ -1,6 +1,7 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { GUEST_WORKSPACE_NAME, guestWorkspaceSlug } from "./open-access";
+import { insertSeed } from "@/lib/seed/insert";
 
 // Edge-safe (no next/headers): used from the middleware right after an
 // anonymous sign-in, and from getOrgId as a fallback. Uses the service role
@@ -21,7 +22,9 @@ function admin() {
  * the request that actually attached a new workspace; a concurrent request
  * that loses the race discards its org and returns the winner's id. Returns
  * null if the profile row does not exist or a write fails; callers fall back
- * to the normal onboarding redirect.
+ * to the normal onboarding redirect. The winning request also seeds demo
+ * data unless GUEST_SEED_DEMO_DATA is "false"; a seed failure never fails
+ * provisioning.
  */
 export async function provisionGuestWorkspace(
   userId: string,
@@ -59,6 +62,15 @@ export async function provisionGuestWorkspace(
       .eq("id", userId)
       .maybeSingle();
     return current?.organization_id ? { orgId: current.organization_id, created: false } : null;
+  }
+
+  // Only the request that won the attach seeds, so demo data lands once.
+  if (process.env.GUEST_SEED_DEMO_DATA !== "false") {
+    try {
+      await insertSeed(db, org.id);
+    } catch (e) {
+      console.error("[guest-seed]", e);
+    }
   }
 
   return { orgId: org.id, created: true };
