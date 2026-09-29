@@ -2,6 +2,7 @@
 // straight into SVG presentation attributes, so they follow the theme without
 // reading computed styles.
 export const chartSeries = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"] as const;
+export const chartSeriesExtended = [...chartSeries, "var(--fg-muted)", "var(--accent-on-surface)", "var(--warning)"] as const;
 export const chartAccent = chartSeries[0];
 export const chartSuccess = chartSeries[1];
 export const chartWarning = chartSeries[2];

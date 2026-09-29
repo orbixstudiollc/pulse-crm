@@ -28,7 +28,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { axisTick, chartAccent, chartGrid, chartSeries, chartTooltipStyle, chartWarning } from "@/lib/design-system/chart-colors";
+import { axisTick, chartAccent, chartGrid, chartSeriesExtended, chartTooltipStyle, chartWarning } from "@/lib/design-system/chart-colors";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -190,7 +190,7 @@ export default function CostsPage() {
                 <ResponsiveContainer width="100%" height={280}>
                   <PieChart>
                     <Pie data={operationPieData} cx="50%" cy="45%" innerRadius={55} outerRadius={90} paddingAngle={2} dataKey="value">
-                      {operationPieData.map((_, i) => <Cell key={i} fill={chartSeries[i % chartSeries.length]} />)}
+                      {operationPieData.map((_, i) => <Cell key={i} fill={chartSeriesExtended[i % chartSeriesExtended.length]} />)}
                     </Pie>
                     <Tooltip formatter={(v: number | undefined) => [`$${(v ?? 0).toFixed(4)}`, "Cost"]} contentStyle={chartTooltipStyle} />
                     <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />

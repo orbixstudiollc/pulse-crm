@@ -33,7 +33,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { axisTick, chartAccent, chartGrid, chartSeries, chartTooltipStyle } from "@/lib/design-system/chart-colors";
+import { axisTick, chartAccent, chartGrid, chartSeriesExtended, chartTooltipStyle } from "@/lib/design-system/chart-colors";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -276,7 +276,7 @@ export default function LeadFinderOverviewPage() {
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie data={sourceChartData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value">
-                      {sourceChartData.map((_, i) => <Cell key={i} fill={chartSeries[i % chartSeries.length]} />)}
+                      {sourceChartData.map((_, i) => <Cell key={i} fill={chartSeriesExtended[i % chartSeriesExtended.length]} />)}
                     </Pie>
                     <Tooltip formatter={(v: number | undefined) => [v ?? 0, "Leads"]} contentStyle={chartTooltipStyle} />
                     <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />

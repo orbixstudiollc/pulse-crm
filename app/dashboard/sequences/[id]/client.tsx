@@ -1477,8 +1477,8 @@ export function SequenceDetailClient({
               {[
                 { label: "Sent", value: kpis.totalSent, color: "bg-accent-strong" },
                 { label: "Opened", value: kpis.totalOpened, color: "bg-success" },
-                { label: "Clicked", value: kpis.totalClicked, color: "bg-accent-strong" },
-                { label: "Replied", value: kpis.totalReplied, color: "bg-success" },
+                { label: "Clicked", value: kpis.totalClicked, color: "bg-warning" },
+                { label: "Replied", value: kpis.totalReplied, color: "bg-inverse" },
               ].map((item) => {
                 const maxVal = Math.max(kpis.totalSent, 1);
                 const pct = Math.round((item.value / maxVal) * 100);
