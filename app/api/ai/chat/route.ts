@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { streamText, tool, stepCountIs } from "ai";
 import { z } from "zod";
@@ -33,8 +33,8 @@ export async function POST(req: Request) {
       return new Response("No organization found", { status: 400 });
     }
 
-    // Get AI settings for API key
-    const { data: settings } = await supabase
+    // Get AI settings for API key (secret columns are only readable with the service role)
+    const { data: settings } = await createAdminClient()
       .from("ai_settings")
       .select(
         "api_key, feature_chat, ai_provider, openrouter_api_key, daily_token_limit, monthly_token_limit, tokens_used_today, tokens_used_month, last_token_reset_daily, last_token_reset_monthly"

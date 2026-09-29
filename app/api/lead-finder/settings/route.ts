@@ -97,7 +97,7 @@ export async function GET() {
 
     const admin = createAdminClient();
 
-    const { data: aiRows } = await supabase
+    const { data: aiRows } = await admin
       .from("ai_settings")
       .select(
         "api_key, apify_api_key, openrouter_api_key, openrouter_oauth_token, openrouter_expires_at, openai_api_key, groq_api_key, ollama_base_url, obsidian_vault_path, obsidian_sync_enabled, default_model, ai_provider, parallel_enrichment_limit"

@@ -81,8 +81,9 @@ export async function getAIClient(): Promise<AIClientResult> {
 
   if (!profile?.organization_id) throw new Error("No organization found");
 
-  // Get AI settings
-  const { data: settings } = await supabase
+  // Get AI settings (secret columns are only readable with the service role)
+  const admin = createAdminClient();
+  const { data: settings } = await admin
     .from("ai_settings")
     .select("*")
     .eq("organization_id", profile.organization_id)

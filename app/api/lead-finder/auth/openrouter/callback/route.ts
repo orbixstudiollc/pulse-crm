@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/actions/helpers";
 import { timingSafeEqualStr } from "@/lib/security";
 
@@ -101,7 +101,8 @@ export async function GET(req: NextRequest) {
   }
 
   // Retrieve the code_verifier previously persisted by the initiator.
-  const { data: settingsRow, error: settingsErr } = await supabase
+  // The verifier column is only readable with the service role.
+  const { data: settingsRow, error: settingsErr } = await createAdminClient()
     .from("ai_settings")
     .select("openrouter_code_verifier")
     .eq("organization_id", orgId)

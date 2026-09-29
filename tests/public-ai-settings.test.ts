@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { omitBlankAISecrets, toPublicAISettings } from "@/lib/ai/public-settings";
+import { omitBlankAISecrets, pickWritableAISettings, toPublicAISettings } from "@/lib/ai/public-settings";
 import { AI_SETTINGS_SECRET_COLUMNS, type AISettings } from "@/lib/ai/types";
 
 function makeRow(secret: string | null): AISettings {
@@ -71,5 +71,24 @@ describe("omitBlankAISecrets", () => {
     expect(result).not.toBe(input);
     expect(input).toEqual(snapshot);
     expect(Object.keys(input)).toEqual(Object.keys(snapshot));
+  });
+});
+
+describe("pickWritableAISettings", () => {
+  it("keeps settings and secret columns and drops usage, limit and identity columns", () => {
+    const input: Record<string, unknown> = {
+      feature_chat: false,
+      ai_provider: "openrouter",
+      api_key: "sk-new-key",
+      tokens_used_today: 0,
+      daily_token_limit: 999999999,
+      organization_id: "other-org",
+      id: "settings-2",
+    };
+
+    const result = pickWritableAISettings(input);
+
+    expect(result).toEqual({ feature_chat: false, ai_provider: "openrouter", api_key: "sk-new-key" });
+    expect(result).not.toBe(input);
   });
 });

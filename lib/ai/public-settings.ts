@@ -37,3 +37,38 @@ export function omitBlankAISecrets<T extends Record<string, unknown>>(updates: T
     )
   ) as Partial<T>;
 }
+
+/** Columns a settings update may write. Usage counters, limits and row identity are excluded. */
+export const AI_SETTINGS_WRITABLE_COLUMNS = [
+  "ai_provider",
+  "default_model",
+  "ollama_base_url",
+  "obsidian_vault_path",
+  "obsidian_sync_enabled",
+  "parallel_enrichment_limit",
+  "feature_lead_scoring",
+  "feature_icp_matching",
+  "feature_outreach",
+  "feature_proposals",
+  "feature_meetings",
+  "feature_analytics",
+  "feature_competitors",
+  "feature_objections",
+  "feature_chat",
+  "feature_marketing",
+  "autonomy_lead_scoring",
+  "autonomy_icp_matching",
+  "autonomy_outreach",
+  "autonomy_proposals",
+  "autonomy_meetings",
+  "autonomy_analytics",
+  "autonomy_competitors",
+  "autonomy_objections",
+  ...AI_SETTINGS_SECRET_COLUMNS,
+] as const;
+
+/** Returns a copy of `updates` containing only keys in AI_SETTINGS_WRITABLE_COLUMNS. */
+export function pickWritableAISettings<T extends Record<string, unknown>>(updates: T): Partial<T> {
+  const writable = AI_SETTINGS_WRITABLE_COLUMNS as readonly string[];
+  return Object.fromEntries(Object.entries(updates).filter(([key]) => writable.includes(key))) as Partial<T>;
+}

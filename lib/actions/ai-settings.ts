@@ -1,19 +1,11 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { AISettings, PublicAISettings, AIUsageStats, AIUsageDailyPoint, AIUsageLogEntry } from "@/lib/ai/types";
-import { toPublicAISettings, omitBlankAISecrets } from "@/lib/ai/public-settings";
-
-const AI_SETTINGS_SELECT =
-  "id, organization_id, api_key, apify_api_key, ai_provider, openrouter_api_key, openrouter_oauth_token, " +
-  "openrouter_code_verifier, openrouter_expires_at, groq_api_key, ollama_base_url, obsidian_vault_path, " +
-  "obsidian_sync_enabled, openai_api_key, default_model, feature_lead_scoring, feature_icp_matching, " +
-  "feature_outreach, feature_proposals, feature_meetings, feature_analytics, feature_competitors, " +
-  "feature_objections, feature_chat, feature_marketing, autonomy_lead_scoring, autonomy_icp_matching, " +
-  "autonomy_outreach, autonomy_proposals, autonomy_meetings, autonomy_analytics, autonomy_competitors, " +
-  "autonomy_objections, tokens_used_today, tokens_used_month, daily_token_limit, monthly_token_limit, " +
-  "last_token_reset_daily, last_token_reset_monthly, parallel_enrichment_limit, created_at, updated_at";
+import { toPublicAISettings, omitBlankAISecrets, pickWritableAISettings } from "@/lib/ai/public-settings";
+import { requireRole } from "./helpers";
 
 export async function getAISettings(): Promise<PublicAISettings | null> {
   const supabase = await createClient();
@@ -30,20 +22,22 @@ export async function getAISettings(): Promise<PublicAISettings | null> {
 
   if (!profile?.organization_id) return null;
 
-  const { data, error } = await supabase
+  // Secret columns are only readable with the service role; they are stripped before returning.
+  const admin = createAdminClient();
+  const { data, error } = await admin
     .from("ai_settings")
-    .select(AI_SETTINGS_SELECT)
+    .select("*")
     .eq("organization_id", profile.organization_id)
     .single();
 
   // If no settings exist yet, create defaults
   if (error?.code === "PGRST116" || !data) {
-    const { data: newSettings, error: insertError } = await supabase
+    const { data: newSettings, error: insertError } = await admin
       .from("ai_settings")
       .insert({
         organization_id: profile.organization_id,
       })
-      .select(AI_SETTINGS_SELECT)
+      .select("*")
       .single();
 
     if (insertError) {
@@ -65,26 +59,21 @@ export async function getAISettings(): Promise<PublicAISettings | null> {
 export async function updateAISettings(
   updates: Partial<Omit<AISettings, "id" | "organization_id" | "created_at" | "updated_at">>
 ): Promise<{ success: boolean; error?: string }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "Not authenticated" };
+  let orgId: string;
+  try {
+    ({ orgId } = await requireRole("admin", "owner"));
+  } catch (err) {
+    unstable_rethrow(err);
+    return { success: false, error: err instanceof Error ? err.message : "Forbidden: admin role required" };
+  }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("organization_id")
-    .eq("id", user.id)
-    .single();
+  const clean = omitBlankAISecrets(pickWritableAISettings(updates));
+  if (Object.keys(clean).length === 0) return { success: false, error: "No writable fields" };
 
-  if (!profile?.organization_id) return { success: false, error: "No organization" };
-
-  const clean = omitBlankAISecrets(updates);
-
-  const { error } = await supabase
+  const { error } = await createAdminClient()
     .from("ai_settings")
     .update(clean)
-    .eq("organization_id", profile.organization_id);
+    .eq("organization_id", orgId);
 
   if (error) {
     console.error("Failed to update AI settings:", error);
