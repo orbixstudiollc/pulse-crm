@@ -1,6 +1,11 @@
 /**
  * In-memory rate limiter for AI API calls (per-organization).
  * Limits: MAX_REQUESTS_PER_MINUTE requests per minute, MAX_CONCURRENT concurrent requests.
+ *
+ * NOTE: The Map below is per-instance state, so limits are best-effort only.
+ * On Fluid compute (or any multi-instance deployment) each instance keeps its
+ * own counters and a cold start resets them. Replacing this with a shared
+ * store is out of scope here.
  */
 
 const MAX_REQUESTS_PER_MINUTE = 30;

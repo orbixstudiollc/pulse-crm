@@ -180,6 +180,14 @@ export async function setDefaultWhatsAppAccount(accountId: string) {
 
   const admin = createAdminClient();
 
+  const { data: account } = await admin
+    .from("whatsapp_accounts")
+    .select("id")
+    .eq("id", accountId)
+    .eq("organization_id", profile.organization_id)
+    .maybeSingle();
+  if (!account) return { success: false, error: "Account not found" };
+
   // Remove default from all accounts in org
   await admin
     .from("whatsapp_accounts")
@@ -190,7 +198,8 @@ export async function setDefaultWhatsAppAccount(accountId: string) {
   const { error } = await admin
     .from("whatsapp_accounts")
     .update({ is_default: true })
-    .eq("id", accountId);
+    .eq("id", accountId)
+    .eq("organization_id", profile.organization_id);
 
   if (error) return { success: false, error: error.message };
 

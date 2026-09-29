@@ -198,26 +198,6 @@ export function assertSafeFetchUrl(raw: string): URL {
   return url;
 }
 
-// ── CSRF / Origin ─────────────────────────────────────────────────────────
-
-const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
-
-/**
- * For cookie-authenticated JSON APIs, require that mutating requests come from
- * the same origin as the server. Returns null if OK, or a 403 response.
- */
-export function verifyOriginCsrf(req: NextRequest): NextResponse | null {
-  const method = req.method.toUpperCase();
-  if (SAFE_METHODS.has(method)) return null;
-
-  const requestOrigin = req.headers.get("origin");
-  const selfOrigin = req.nextUrl.origin;
-  if (!requestOrigin || requestOrigin !== selfOrigin) {
-    return NextResponse.json({ error: "Invalid origin" }, { status: 403 });
-  }
-  return null;
-}
-
 // ── PostgREST filter escaping ─────────────────────────────────────────────
 
 /**

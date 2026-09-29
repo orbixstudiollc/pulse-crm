@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "./helpers";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
-import { escapePostgrestLike } from "@/lib/security";
+import { escapePostgrestLike, pickSortColumn } from "@/lib/security";
+import { VISITOR_SORT_COLUMNS, DEFAULT_VISITOR_SORT } from "@/lib/tracking/visitor-sort";
 
 type TrackingScriptInsert = Database["public"]["Tables"]["tracking_scripts"]["Insert"];
 type VisitorRow = Database["public"]["Tables"]["website_visitors"]["Row"];
@@ -101,7 +102,7 @@ export async function getWebsiteVisitors(filters: VisitorFilters = {}) {
     search,
     status,
     dateRange = "30d",
-    sortBy = "last_seen",
+    sortBy,
     sortOrder = "desc",
     page = 1,
     perPage = 50,
@@ -142,7 +143,7 @@ export async function getWebsiteVisitors(filters: VisitorFilters = {}) {
   const to = from + perPage - 1;
 
   const { data, error, count } = await query
-    .order(sortBy, { ascending: sortOrder === "asc" })
+    .order(pickSortColumn(sortBy, VISITOR_SORT_COLUMNS, DEFAULT_VISITOR_SORT), { ascending: sortOrder === "asc" })
     .range(from, to);
 
   if (error) throw new Error(error.message);

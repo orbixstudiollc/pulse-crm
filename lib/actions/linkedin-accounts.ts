@@ -187,6 +187,14 @@ export async function setDefaultLinkedInAccount(accountId: string) {
 
   const admin = createAdminClient();
 
+  const { data: account } = await admin
+    .from("linkedin_accounts")
+    .select("id")
+    .eq("id", accountId)
+    .eq("organization_id", profile.organization_id)
+    .maybeSingle();
+  if (!account) return { success: false, error: "Account not found" };
+
   // Remove default from all accounts
   await admin
     .from("linkedin_accounts")
@@ -197,7 +205,8 @@ export async function setDefaultLinkedInAccount(accountId: string) {
   const { error } = await admin
     .from("linkedin_accounts")
     .update({ is_default: true })
-    .eq("id", accountId);
+    .eq("id", accountId)
+    .eq("organization_id", profile.organization_id);
 
   if (error) return { success: false, error: error.message };
 
