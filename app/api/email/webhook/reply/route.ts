@@ -136,7 +136,7 @@ export async function POST(request: Request) {
     const replyText = textBody || htmlBody || "";
     const hasMeetingIntent = detectMeetingIntent(replyText);
 
-    import("@/lib/actions/automation").then(({ evaluateLeadAgainstRules }) =>
+    import("@/lib/automation/runner").then(({ evaluateLeadAgainstRules }) =>
       evaluateLeadAgainstRules(leadId!, "email_replied", {
         message_id: originalMessage.id,
         has_meeting_intent: hasMeetingIntent,

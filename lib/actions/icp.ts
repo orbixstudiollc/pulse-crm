@@ -356,7 +356,7 @@ export async function calculateICPMatch(leadId: string) {
   // Fire automation rules for ICP grading
   if (bestScore != null) {
     const grade = bestScore >= 90 ? "A+" : bestScore >= 75 ? "A" : bestScore >= 60 ? "B" : bestScore >= 40 ? "C" : "D";
-    import("@/lib/actions/automation").then(({ evaluateLeadAgainstRules }) =>
+    import("@/lib/automation/runner").then(({ evaluateLeadAgainstRules }) =>
       evaluateLeadAgainstRules(leadId, "icp_graded", { grade }).catch(() => {}),
     );
   }

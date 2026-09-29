@@ -145,7 +145,7 @@ export async function createLead(leadData: Record<string, unknown>) {
     calculateLeadScore(data.id).catch(() => {});
     calculateICPMatch(data.id).catch(() => {});
     // Fire automation rules
-    import("@/lib/actions/automation").then(({ evaluateLeadAgainstRules }) =>
+    import("@/lib/automation/runner").then(({ evaluateLeadAgainstRules }) =>
       evaluateLeadAgainstRules(data.id, "lead_created", {}).catch(() => {}),
     );
   }
@@ -174,7 +174,7 @@ export async function updateLead(
   calculateLeadScore(id).catch(() => {});
   calculateICPMatch(id).catch(() => {});
   // Fire automation rules
-  import("@/lib/actions/automation").then(({ evaluateLeadAgainstRules }) =>
+  import("@/lib/automation/runner").then(({ evaluateLeadAgainstRules }) =>
     evaluateLeadAgainstRules(id, "lead_updated", {
       changed_fields: Object.keys(updates),
     }).catch(() => {}),

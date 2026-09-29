@@ -153,7 +153,7 @@ export async function recordTrackingEvent(
         };
         const triggerType = triggerMap[eventType] as import("@/lib/automation/engine").TriggerType | undefined;
         if (triggerType) {
-          import("@/lib/actions/automation").then(({ evaluateLeadAgainstRules }) =>
+          import("@/lib/automation/runner").then(({ evaluateLeadAgainstRules }) =>
             evaluateLeadAgainstRules(thread.lead_id!, triggerType, {
               message_id: messageId,
             }).catch(() => {}),

@@ -22,7 +22,6 @@ import {
   deleteAutomationRule,
   toggleAutomationRule,
   getAutomationExecutions,
-  seedDefaultRules,
   getAutomationStats,
 } from "@/lib/actions/automation";
 import type {

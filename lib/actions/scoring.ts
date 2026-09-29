@@ -302,7 +302,7 @@ export async function calculateLeadScore(leadId: string) {
   });
 
   // Fire automation rules for score change
-  import("@/lib/actions/automation").then(({ evaluateLeadAgainstRules }) =>
+  import("@/lib/automation/runner").then(({ evaluateLeadAgainstRules }) =>
     evaluateLeadAgainstRules(leadId, "score_changed", {
       old_score: lead.score,
       new_score: total,

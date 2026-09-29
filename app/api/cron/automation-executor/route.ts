@@ -7,6 +7,7 @@ import {
   type LeadForEvaluation,
   type TriggerConfig,
 } from "@/lib/automation/engine";
+import { executeAutomationActions } from "@/lib/automation/runner";
 import { verifyCronRequest } from "@/lib/security";
 
 /**
@@ -90,123 +91,24 @@ export async function GET(request: Request) {
         if (recentExec?.length) continue;
 
         // Execute actions
-        const actionsExecuted: Array<{ type: string; success: boolean; error?: string }> = [];
+        const results = await executeAutomationActions(admin, rule.organization_id, lead.id, actions, {
+          activityTitle: "Automation: Time-based trigger",
+          activityDescription: `Lead in ${targetStatus} for ${targetDays}+ days`,
+        });
 
-        for (const action of actions) {
-          try {
-            if (action.type === "change_status") {
-              await admin
-                .from("leads")
-                .update({
-                  status: action.config.status as "hot" | "warm" | "cold",
-                  status_changed_at: new Date().toISOString(),
-                })
-                .eq("id", lead.id);
-              actionsExecuted.push({ type: "change_status", success: true });
-            } else if (action.type === "enroll_sequence") {
-              let seqId = action.config.sequence_id as string;
-              if (seqId === "__FIRST_ACTIVE__") {
-                const { data: seq } = await admin
-                  .from("sequences")
-                  .select("id")
-                  .eq("organization_id", rule.organization_id)
-                  .eq("status", "active")
-                  .limit(1)
-                  .single();
-                if (seq) seqId = seq.id;
-                else continue;
-              } else {
-                // SECURITY: never enroll a lead in a sequence from a different
-                // organization, even if the rule's config points at one.
-                const { data: seqOwned } = await admin
-                  .from("sequences")
-                  .select("id")
-                  .eq("id", seqId)
-                  .eq("organization_id", rule.organization_id)
-                  .maybeSingle();
-                if (!seqOwned) {
-                  actionsExecuted.push({
-                    type: "enroll_sequence",
-                    success: false,
-                    error: "Sequence not found in this organization",
-                  });
-                  continue;
-                }
-              }
-
-              const { data: existing } = await admin
-                .from("sequence_enrollments")
-                .select("id")
-                .eq("sequence_id", seqId)
-                .eq("lead_id", lead.id)
-                .eq("status", "active")
-                .maybeSingle();
-
-              if (!existing) {
-                await admin.from("sequence_enrollments").insert({
-                  sequence_id: seqId,
-                  lead_id: lead.id,
-                  current_step: 0,
-                  status: "active",
-                });
-                actionsExecuted.push({ type: "enroll_sequence", success: true });
-              }
-            } else if (action.type === "add_activity") {
-              await admin.from("lead_activities").insert({
-                lead_id: lead.id,
-                organization_id: rule.organization_id,
-                type: "note",
-                title: (action.config.title as string) || "Automation: Time-based trigger",
-                description: (action.config.description as string) || `Lead in ${targetStatus} for ${targetDays}+ days`,
-                status: "completed",
-              });
-              actionsExecuted.push({ type: "add_activity", success: true });
-            } else if (action.type === "add_tag") {
-              const tag = String(action.config.tag ?? "").trim();
-              if (!tag) {
-                actionsExecuted.push({ type: "add_tag", success: false, error: "No tag configured" });
-                continue;
-              }
-              const { data: tagLead } = await admin
-                .from("leads")
-                .select("tags")
-                .eq("id", lead.id)
-                .eq("organization_id", rule.organization_id)
-                .maybeSingle();
-              if (!tagLead) {
-                actionsExecuted.push({
-                  type: "add_tag",
-                  success: false,
-                  error: "Lead not found in this organization",
-                });
-                continue;
-              }
-              const next = Array.from(new Set([...(tagLead.tags ?? []), tag]));
-              const { error: tagError } = await admin
-                .from("leads")
-                .update({ tags: next })
-                .eq("id", lead.id)
-                .eq("organization_id", rule.organization_id);
-              if (tagError) throw new Error(tagError.message);
-              actionsExecuted.push({ type: "add_tag", success: true });
-            }
-          } catch (err) {
-            actionsExecuted.push({
-              type: action.type,
-              success: false,
-              error: err instanceof Error ? err.message : "Error",
-            });
-          }
-        }
-
-        // Log execution
+        // Log execution (recorded even when every action failed, so dedupe stops retries)
         await admin.from("automation_executions").insert({
           rule_id: rule.id,
           lead_id: lead.id,
           trigger_type: "days_in_status",
           trigger_data: { status: targetStatus, days: targetDays },
-          actions_executed: actionsExecuted,
-          success: actionsExecuted.every((a) => a.success),
+          actions_executed: results,
+          success: results.every((r) => r.success),
+          error_message:
+            results
+              .filter((r) => !r.success)
+              .map((r) => r.error)
+              .join("; ") || null,
         });
 
         // Update rule stats

@@ -156,7 +156,7 @@ export async function GET(request: Request) {
           leadsImported++;
 
           // Fire automation rules for new lead
-          import("@/lib/actions/automation").then(({ evaluateLeadAgainstRules }) =>
+          import("@/lib/automation/runner").then(({ evaluateLeadAgainstRules }) =>
             evaluateLeadAgainstRules(newLead.id, "lead_created", {}).catch(() => {}),
           );
 
