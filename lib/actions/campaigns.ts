@@ -7,6 +7,7 @@ import { unstable_rethrow } from "next/navigation";
 import type { Database, Json } from "@/types/database";
 import { escapePostgrestLike } from "@/lib/security";
 import { allIdsBelongToOrg } from "@/lib/tenancy/guards";
+import { assertSafeMailHost, isAllowedImapPort, isAllowedSmtpPort } from "@/lib/email/account-validation";
 
 type EmailAccountInsert = Database["public"]["Tables"]["email_accounts"]["Insert"];
 type EmailAccountUpdate = Database["public"]["Tables"]["email_accounts"]["Update"];
@@ -17,6 +18,28 @@ function withoutSecrets<T extends { oauth_tokens?: unknown; smtp_config?: unknow
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { oauth_tokens, smtp_config, imap_config, ...rest } = row;
   return rest;
+}
+
+const INVALID_MAIL_SERVER = "Invalid mail server host or port";
+
+// A config carrying neither host nor port fields is not checked
+async function isSafeMailConfig(cfg: unknown, kind: "smtp" | "imap"): Promise<boolean> {
+  if (!cfg || typeof cfg !== "object" || (!("host" in cfg) && !("port" in cfg))) return true;
+  const { host, port } = cfg as { host?: unknown; port?: unknown };
+  if (typeof host !== "string") return false;
+  if (!(kind === "smtp" ? isAllowedSmtpPort(port) : isAllowedImapPort(port))) return false;
+  try {
+    await assertSafeMailHost(host);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Server actions receive untyped input, so either config may be present
+async function hasSafeMailConfigs(input: object): Promise<boolean> {
+  const raw = input as Record<string, unknown>;
+  return (await isSafeMailConfig(raw.smtp_config, "smtp")) && (await isSafeMailConfig(raw.imap_config, "imap"));
 }
 
 // ── Email Accounts ──────────────────────────────────────────────────────────
@@ -45,8 +68,16 @@ export async function createEmailAccount(account: {
   warmup_limit?: number;
 }) {
   const supabase = await createClient();
-  const orgId = await getOrgId();
-  const { user } = await getCurrentUserProfile();
+  let orgId: string;
+  let user: { id: string };
+  try {
+    ({ orgId, user } = await requireRole("admin", "owner"));
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: err instanceof Error ? err.message : "Forbidden: admin role required", data: null };
+  }
+
+  if (!(await hasSafeMailConfigs(account))) return { error: INVALID_MAIL_SERVER, data: null };
 
   const { data, error } = await supabase
     .from("email_accounts")
@@ -83,7 +114,14 @@ export async function updateEmailAccount(
   }
 ) {
   const supabase = await createClient();
-  await getOrgId();
+  try {
+    await requireRole("admin", "owner");
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: err instanceof Error ? err.message : "Forbidden: admin role required" };
+  }
+
+  if (!(await hasSafeMailConfigs(updates))) return { error: INVALID_MAIL_SERVER };
 
   const { error } = await supabase
     .from("email_accounts")
@@ -97,7 +135,12 @@ export async function updateEmailAccount(
 
 export async function deleteEmailAccount(id: string) {
   const supabase = await createClient();
-  await getOrgId();
+  try {
+    await requireRole("admin", "owner");
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: err instanceof Error ? err.message : "Forbidden: admin role required" };
+  }
 
   const { error } = await supabase
     .from("email_accounts")

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { assertSafeFetchUrl } from "@/lib/security";
 import { assertSafeFetchTarget } from "@/lib/security/fetch-target";
+import { hasRequiredRole } from "@/lib/auth/roles";
 
 const AIProviderEnum = z.enum([
   "anthropic",
@@ -178,12 +179,15 @@ export async function PUT(req: NextRequest) {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("organization_id")
+      .select("organization_id, role")
       .eq("id", user.id)
       .single();
 
     if (!profile?.organization_id)
       return NextResponse.json({ error: "No organization" }, { status: 400 });
+
+    if (!hasRequiredRole(profile.role))
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     let rawBody: unknown;
     try {
