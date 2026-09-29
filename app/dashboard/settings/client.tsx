@@ -419,7 +419,7 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
                 const result = await seedAllData();
                 if (result.success && result.counts) {
                   const total = Object.values(result.counts).reduce((a, b) => a + b, 0);
-                  setToastMessage(`Seeded ${total} records across ${Object.keys(result.counts).length} tables`);
+                  setToastMessage(`Seeded ${total} records`);
                   setShowToast(true);
                   router.refresh();
                 } else {

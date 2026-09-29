@@ -51,7 +51,10 @@ export async function provisionGuestWorkspace(
     .eq("id", userId)
     .is("organization_id", null)
     .select("id");
-  if (profileError) return null;
+  if (profileError) {
+    await db.from("organizations").delete().eq("id", org.id);
+    return null;
+  }
 
   if (!updated || updated.length === 0) {
     // A concurrent request attached its workspace first; drop ours.
@@ -67,7 +70,8 @@ export async function provisionGuestWorkspace(
   // Only the request that won the attach seeds, so demo data lands once.
   if (process.env.GUEST_SEED_DEMO_DATA !== "false") {
     try {
-      await insertSeed(db, org.id);
+      const result = await insertSeed(db, org.id);
+      if (result.errors.length > 0) console.error("[guest-seed]", org.id, result.errors);
     } catch (e) {
       console.error("[guest-seed]", e);
     }

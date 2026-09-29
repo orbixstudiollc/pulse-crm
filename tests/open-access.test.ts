@@ -54,6 +54,9 @@ describe("isBotUserAgent", () => {
   it("recognises crawlers and link-preview fetchers", () => {
     for (const ua of [
       "Googlebot/2.1",
+      "bingbot/2.0",
+      "AhrefsBot",
+      "Twitterbot",
       "Slackbot-LinkExpanding",
       "facebookexternalhit/1.1",
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) LinkPreview",
@@ -69,6 +72,15 @@ describe("isBotUserAgent", () => {
       ),
     ).toBe(false);
     expect(isBotUserAgent(null)).toBe(false);
+  });
+
+  it("does not flag user agents that merely contain the letters bot", () => {
+    for (const ua of [
+      "Mozilla/5.0 (Linux; Android 10; CUBOT X30) AppleWebKit/537.36",
+      "Mozilla/5.0 (Windows NT 10.0) Chrome/120",
+    ]) {
+      expect(isBotUserAgent(ua)).toBe(false);
+    }
   });
 });
 

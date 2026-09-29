@@ -31,8 +31,11 @@ export function isGuestEmail(email: string | null | undefined): boolean {
   return typeof email === "string" && email.endsWith("@" + GUEST_EMAIL_DOMAIN);
 }
 
-// Crawlers and link-preview fetchers must not mint anonymous users.
-export const BOT_UA_RE = /bot|crawler|spider|preview|facebookexternalhit|slackbot/i;
+// Crawlers and link-preview fetchers must not mint anonymous users. "bot" must
+// be a standalone word or a suffix ending the token (Googlebot/2.1, AhrefsBot),
+// so brand names that merely contain it (CUBOT phones) are not blocked.
+export const BOT_UA_RE =
+  /(^|[^a-z])bot([^a-z]|$)|[a-z]+(?<!\bcu)bot(\/|[\s;)-]|$)|crawler|spider|preview|facebookexternalhit|slackbot/i;
 
 export function isBotUserAgent(ua: string | null | undefined): boolean {
   return typeof ua === "string" && BOT_UA_RE.test(ua);
