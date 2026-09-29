@@ -1,14 +1,21 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import {
+  TRACKING_MAX_BODY_BYTES,
+  trackingEventSchema,
+  clientIpFromHeaders,
+} from "@/lib/tracking/schema";
+import { takeToken, trackingBuckets } from "@/lib/tracking/rate-limit";
 
-// CORS headers for cross-origin tracking script
+// CORS headers for cross-origin tracking script.
+// Origin is `*` on purpose: this is a public pixel embedded on customer sites.
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
-// Lookup IP geolocation and org info via ip-api.com (free, no key needed)
+// Lookup IP geolocation and org info via ipapi.co over HTTPS
 async function enrichIP(ip: string): Promise<{
   city?: string;
   region?: string;
@@ -17,37 +24,25 @@ async function enrichIP(ip: string): Promise<{
   company_name?: string;
   company_domain?: string;
 }> {
-  if (!ip || ip === "unknown" || ip === "127.0.0.1" || ip === "::1") return {};
   try {
-    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode,regionName,city,org,reverse`, {
+    const res = await fetch(`https://ipapi.co/${ip}/json/`, {
+      redirect: "error",
       signal: AbortSignal.timeout(3000),
     });
     if (!res.ok) return {};
     const data = await res.json();
-    if (data.status !== "success") return {};
+    if (data.error) return {};
 
-    // Try to extract company name from org field (ISP/org name)
-    let companyName = data.org || "";
-    // Clean up common ISP prefixes
-    companyName = companyName.replace(/^AS\d+\s+/, "");
-
-    // Try to get domain from reverse DNS
-    let companyDomain = "";
-    if (data.reverse) {
-      // Extract root domain from reverse DNS (e.g., "host.company.com" → "company.com")
-      const parts = data.reverse.split(".");
-      if (parts.length >= 2) {
-        companyDomain = parts.slice(-2).join(".");
-      }
-    }
+    // Clean up ASN prefix from the org field
+    const companyName = typeof data.org === "string" ? data.org.replace(/^AS\d+\s+/, "") : "";
 
     return {
       city: data.city || undefined,
-      region: data.regionName || undefined,
-      country: data.country || undefined,
-      country_code: data.countryCode || undefined,
+      region: data.region || undefined,
+      country: data.country_name || undefined,
+      country_code: data.country_code || undefined,
       company_name: companyName || undefined,
-      company_domain: companyDomain || undefined,
+      company_domain: undefined,
     };
   } catch {
     return {};
@@ -60,11 +55,33 @@ export async function OPTIONS() {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { script_key, session_id, page_url, page_title, referrer, duration, scroll_depth } = body;
+    const len = Number(req.headers.get("content-length") ?? 0);
+    if (len > TRACKING_MAX_BODY_BYTES) {
+      return NextResponse.json({ error: "Payload too large" }, { status: 413, headers: corsHeaders });
+    }
+    const raw = await req.text();
+    if (raw.length > TRACKING_MAX_BODY_BYTES) {
+      return NextResponse.json({ error: "Payload too large" }, { status: 413, headers: corsHeaders });
+    }
 
-    if (!script_key || !page_url) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400, headers: corsHeaders });
+    let body: unknown;
+    try {
+      body = JSON.parse(raw);
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400, headers: corsHeaders });
+    }
+
+    const parsed = trackingEventSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400, headers: corsHeaders });
+    }
+    const { script_key, session_id, page_url, page_title, referrer, duration, scroll_depth } = parsed.data;
+
+    if (!takeToken(trackingBuckets, script_key, Date.now())) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: { ...corsHeaders, "Retry-After": "60" } }
+      );
     }
 
     const supabase = createAdminClient();
@@ -81,12 +98,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Get IP and user agent from headers
-    const forwarded = req.headers.get("x-forwarded-for");
-    const ip = forwarded?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
+    const ip = clientIpFromHeaders((n) => req.headers.get(n));
     const userAgent = req.headers.get("user-agent") || "";
 
     // Find or create visitor by session_id + org
-    const sid = session_id || `anon_${ip}_${Date.now()}`;
+    const sid = session_id || `anon_${Date.now()}`;
 
     const { data: existingVisitor } = await supabase
       .from("website_visitors")
@@ -109,7 +125,7 @@ export async function POST(req: NextRequest) {
       };
 
       // Enrich with geo/company data if not already done
-      if (!existingVisitor.city) {
+      if (!existingVisitor.city && ip) {
         const enrichment = await enrichIP(ip);
         if (enrichment.city) updateData.city = enrichment.city;
         if (enrichment.region) updateData.region = enrichment.region;
@@ -125,7 +141,7 @@ export async function POST(req: NextRequest) {
         .eq("id", existingVisitor.id);
     } else {
       // Enrich new visitor with IP geolocation & company info
-      const enrichment = await enrichIP(ip);
+      const enrichment = ip ? await enrichIP(ip) : {};
 
       const { data: newVisitor, error: insertErr } = await supabase
         .from("website_visitors")
@@ -133,7 +149,7 @@ export async function POST(req: NextRequest) {
           organization_id: script.organization_id,
           script_id: script.id,
           session_id: sid,
-          ip_address: ip,
+          ip_address: ip ?? null,
           page_count: 1,
           status: "new",
           city: enrichment.city || null,
