@@ -473,6 +473,19 @@
     "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'Delete this activity' 'app/dashboard/customers/[id]/client.tsx' && grep -q 'Delete this activity' 'app/dashboard/leads/[id]/client.tsx' && grep -q 'Delete this activity' 'app/dashboard/sales/[id]/client.tsx' && npx tsc --noEmit && npx eslint 'app/dashboard/customers/[id]/client.tsx' 'app/dashboard/leads/[id]/client.tsx' 'app/dashboard/sales/[id]/client.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/dashboard/customers/[id]/client.tsx' 'app/dashboard/leads/[id]/client.tsx' 'app/dashboard/sales/[id]/client.tsx' && git commit -q -m 'fix(records): confirm before deleting an activity (review low)' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo V7-OK"
   },
   {
+    "id": "V8",
+    "model": "sonnet",
+    "depends_on": [
+      "F4"
+    ],
+    "title": "Stat card: no \"from last month\" suffix on non-numeric changes",
+    "files": [
+      "components/dashboard/StatCard.tsx"
+    ],
+    "interface": "Live check after deploy: new workspaces show \"New this month from last month\" because StatCard appends the suffix \"from last month\" to every change text, and monthOverMonth (lib/stats/period-delta.ts) returns the text \"New this month\" when last month was 0. In components/dashboard/StatCard.tsx render the suffix only when the change text starts with a sign or digit (regex /^[+-]?d/); otherwise render the change text alone. No other changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q '^[+-]' components/dashboard/StatCard.tsx && npx tsc --noEmit && npx eslint 'components/dashboard/StatCard.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'components/dashboard/StatCard.tsx' && git commit -q -m 'fix(stats): no from-last-month suffix on non-numeric changes' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo V8-OK"
+  },
+  {
     "id": "F20",
     "model": "sonnet",
     "depends_on": [
@@ -506,7 +519,8 @@
       "V4",
       "V5",
       "V6",
-      "V7"
+      "V7",
+      "V8"
     ],
     "title": "Final gate: lint, tests, build, restyle scan, contrast, audit",
     "files": [],
