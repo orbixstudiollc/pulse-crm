@@ -1,10 +1,18 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { streamText, tool, stepCountIs } from "ai";
+import {
+  streamText,
+  tool,
+  stepCountIs,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+} from "ai";
 import { z } from "zod";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
 import { assembleContext, fetchEntityForChat } from "@/lib/ai/context";
-import { logTokenUsage, tokenLimitReason } from "@/lib/ai/client";
+import { createAIMessagesClient, logTokenUsage, tokenLimitReason } from "@/lib/ai/client";
+import { getModelId } from "@/lib/ai/models";
+import { resolveAIProvider } from "@/lib/ai/provider-resolver";
 import { checkRateLimit, acquireRateLimit } from "@/lib/ai/rate-limiter";
 import { PageContext } from "@/lib/ai/types";
 import { escapePostgrestLike } from "@/lib/security";
@@ -37,7 +45,7 @@ export async function POST(req: Request) {
     const { data: settings } = await createAdminClient()
       .from("ai_settings")
       .select(
-        "api_key, feature_chat, ai_provider, openrouter_api_key, daily_token_limit, monthly_token_limit, tokens_used_today, tokens_used_month, last_token_reset_daily, last_token_reset_monthly"
+        "api_key, feature_chat, ai_provider, openrouter_api_key, openrouter_oauth_token, openrouter_expires_at, openai_api_key, groq_api_key, ollama_base_url, daily_token_limit, monthly_token_limit, tokens_used_today, tokens_used_month, last_token_reset_daily, last_token_reset_monthly"
       )
       .eq("organization_id", profile.organization_id)
       .single();
@@ -51,16 +59,14 @@ export async function POST(req: Request) {
       return Response.json({ error: limitReason }, { status: 429 });
     }
 
-    const provider = settings?.ai_provider || "anthropic";
-    const apiKey = provider === "openrouter"
-      ? settings?.openrouter_api_key || process.env.OPENROUTER_API_KEY
-      : settings?.api_key || process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    const resolved = resolveAIProvider(settings ?? {}, process.env);
+    if (!resolved) {
       return new Response(
         "No AI API key configured. Add one in Settings > AI or set ANTHROPIC_API_KEY.",
         { status: 400 }
       );
     }
+    const provider = resolved.provider;
 
     const orgId = profile.organization_id;
     const rateCheck = checkRateLimit(orgId);
@@ -101,26 +107,81 @@ export async function POST(req: Request) {
       contextStr = await assembleContext(pageContext);
     }
 
+    const fullName = user.user_metadata?.full_name;
+    const userLabel = (typeof fullName === "string" && fullName) || user.email;
+
     const systemMessage = `${SYSTEM_PROMPTS.chat}
 
 ${contextStr ? `\n---\nCurrent CRM Context:\n${contextStr}` : ""}
 
-Current date: ${new Date().toLocaleDateString()}
-User: ${user.email}`;
+Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLabel}` : ""}`;
+
+    const startTime = Date.now();
+
+    if (provider !== "anthropic" && provider !== "openrouter") {
+      // OpenAI-compatible providers (OpenAI, Groq, Ollama): one completion
+      // without CRM tools, delivered as a single text part of the UI stream.
+      const client = createAIMessagesClient(resolved);
+      const chatMessages = (messages as Array<{ role: string; content?: unknown }>).filter(
+        (m): m is { role: "user" | "assistant"; content: string } =>
+          (m.role === "user" || m.role === "assistant") &&
+          typeof m.content === "string" &&
+          m.content.length > 0
+      );
+      const stream = createUIMessageStream({
+        execute: async ({ writer }) => {
+          try {
+            const response = await client.messages.create({
+              model: getModelId("sonnet", provider),
+              max_tokens: 4096,
+              system: systemMessage,
+              messages: chatMessages,
+            });
+            const text = response.content
+              .filter((b) => b.type === "text")
+              .map((b) => b.text)
+              .join("");
+            const id = crypto.randomUUID();
+            writer.write({ type: "start" });
+            writer.write({ type: "text-start", id });
+            writer.write({ type: "text-delta", id, delta: text });
+            writer.write({ type: "text-end", id });
+            writer.write({ type: "finish" });
+            await logTokenUsage({
+              orgId,
+              userId: user.id,
+              feature: "chat",
+              model: response.model,
+              inputTokens: response.usage.input_tokens,
+              outputTokens: response.usage.output_tokens,
+              durationMs: Date.now() - startTime,
+              success: true,
+              metadata: { provider },
+            });
+          } finally {
+            guardedRelease();
+          }
+        },
+        onError: (error) => {
+          console.error("AI Chat error:", error);
+          return "The AI provider request failed. Please try again.";
+        },
+      });
+      return createUIMessageStreamResponse({ stream });
+    }
 
     const anthropic = createAnthropic(
       provider === "openrouter"
         ? {
-            apiKey,
+            apiKey: resolved.apiKey,
             baseURL: "https://openrouter.ai/api/v1",
             headers: {
-              "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "https://pulse-crm-rosy.vercel.app",
+              "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "https://pulse-crm-weld.vercel.app",
               "X-Title": "Pulse CRM",
             },
           }
-        : { apiKey }
+        : { apiKey: resolved.apiKey }
     );
-    const startTime = Date.now();
 
     const modelId = provider === "openrouter"
       ? "anthropic/claude-sonnet-4-6"

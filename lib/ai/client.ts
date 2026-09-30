@@ -1,67 +1,178 @@
 import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { AIFeature, AISettings } from "./types";
-import { convertModelForProvider } from "./models";
+import { assertSafeFetchTarget } from "@/lib/security/fetch-target";
+import { createPinnedFetch } from "@/lib/security/safe-fetch";
+import { AIFeature, AIModel, AISettings } from "./types";
+import { convertModelForProvider, getModelName } from "./models";
+import {
+  AI_PROVIDER_ORDER,
+  resolveAIProvider,
+  type ResolvedAIProvider,
+} from "./provider-resolver";
+
+/** The part of the Anthropic SDK the CRM uses: non-streaming messages.create. */
+export interface AIMessagesClient {
+  messages: {
+    create(params: Anthropic.MessageCreateParamsNonStreaming): Promise<Anthropic.Message>;
+  };
+}
 
 interface AIClientResult {
-  client: Anthropic;
+  client: AIMessagesClient;
   settings: AISettings;
   orgId: string;
   userId: string;
 }
 
-// Provider configuration for building Anthropic SDK clients
-interface ProviderConfig {
-  provider: string;
-  apiKey: string;
-  clientOptions: ConstructorParameters<typeof Anthropic>[0];
+type OpenAICompatibleProvider = "openai" | "groq" | "ollama";
+
+// CRM callers ask for Claude model IDs; map them to the provider's equivalent tier.
+const OPENAI_COMPATIBLE_MODELS: Record<OpenAICompatibleProvider, Record<AIModel, string>> = {
+  openai: { haiku: "gpt-4o-mini", sonnet: "gpt-4o" },
+  groq: { haiku: "llama-4-scout-17b-16e-instruct", sonnet: "llama-4-maverick-17b-128e-instruct" },
+  ollama: { haiku: "llama3.2", sonnet: "llama3.1" },
+};
+
+function toOpenAICompatibleModel(modelId: string, provider: OpenAICompatibleProvider): string {
+  if (!/claude/i.test(modelId)) return modelId;
+  return OPENAI_COMPATIBLE_MODELS[provider][getModelName(modelId)];
 }
 
-/**
- * Build provider config for a given provider type and settings.
- * Returns null if the provider's API key is not configured.
- */
-function buildProviderConfig(
-  provider: string,
-  settings: AISettings | null
-): ProviderConfig | null {
-  if (provider === "openrouter") {
-    const apiKey = settings?.openrouter_api_key || "";
-    if (!apiKey) return null;
-    return {
-      provider,
-      apiKey,
-      clientOptions: {
-        apiKey,
-        baseURL: "https://openrouter.ai/api",
-        defaultHeaders: {
-          "HTTP-Referer":
-            process.env.NEXT_PUBLIC_APP_URL ||
-            "https://pulse-crm-rosy.vercel.app",
-          "X-Title": "Pulse CRM",
-        },
-      },
-    };
-  }
+function textOf(content: string | Anthropic.ContentBlockParam[]): string {
+  if (typeof content === "string") return content;
+  return content
+    .filter((b): b is Anthropic.TextBlockParam => b.type === "text")
+    .map((b) => b.text)
+    .join("");
+}
 
-  // Default: direct Anthropic
-  const apiKey = settings?.api_key || process.env.ANTHROPIC_API_KEY || "";
-  if (!apiKey) return null;
+function toChatMessages(
+  params: Anthropic.MessageCreateParamsNonStreaming
+): OpenAI.ChatCompletionMessageParam[] {
+  const messages: OpenAI.ChatCompletionMessageParam[] = [];
+  const system =
+    typeof params.system === "string"
+      ? params.system
+      : (params.system ?? []).map((b) => b.text).join("\n");
+  if (system) messages.push({ role: "system", content: system });
+  for (const m of params.messages) {
+    messages.push({ role: m.role, content: textOf(m.content) });
+  }
+  return messages;
+}
+
+function toAnthropicMessage(res: OpenAI.ChatCompletion, model: string): Anthropic.Message {
+  const choice = res.choices[0];
   return {
-    provider: "anthropic",
-    apiKey,
-    clientOptions: { apiKey },
+    id: res.id,
+    type: "message",
+    role: "assistant",
+    model,
+    container: null,
+    content: [{ type: "text", text: choice?.message?.content ?? "", citations: null }],
+    stop_reason: choice?.finish_reason === "length" ? "max_tokens" : "end_turn",
+    stop_sequence: null,
+    usage: {
+      input_tokens: res.usage?.prompt_tokens ?? 0,
+      output_tokens: res.usage?.completion_tokens ?? 0,
+      cache_creation: null,
+      cache_creation_input_tokens: null,
+      cache_read_input_tokens: null,
+      inference_geo: null,
+      server_tool_use: null,
+      service_tier: null,
+    },
   };
 }
 
 /**
- * Determine the fallback provider order.
- * Primary = user's configured provider, fallback = the other one.
+ * Anthropic-shaped client over an OpenAI-compatible API (OpenAI, Groq, Ollama),
+ * so CRM callers keep using `client.messages.create`.
  */
-function getProviderOrder(settings: AISettings | null): string[] {
-  const primary = settings?.ai_provider || "anthropic";
-  if (primary === "openrouter") return ["openrouter", "anthropic"];
-  return ["anthropic", "openrouter"];
+function openAICompatibleClient(
+  provider: OpenAICompatibleProvider,
+  resolved: ResolvedAIProvider
+): AIMessagesClient {
+  const complete = async (
+    client: OpenAI,
+    params: Anthropic.MessageCreateParamsNonStreaming
+  ): Promise<Anthropic.Message> => {
+    const model = toOpenAICompatibleModel(params.model, provider);
+    const res = await client.chat.completions.create({
+      model,
+      messages: toChatMessages(params),
+      max_tokens: params.max_tokens,
+      ...(params.temperature !== undefined ? { temperature: params.temperature } : {}),
+    });
+    return toAnthropicMessage(res, model);
+  };
+
+  return {
+    messages: {
+      create: async (params) => {
+        if (provider !== "ollama") {
+          const client = new OpenAI({
+            apiKey: resolved.apiKey,
+            ...(provider === "groq" ? { baseURL: "https://api.groq.com/openai/v1" } : {}),
+          });
+          return complete(client, params);
+        }
+
+        // SECURITY (SSRF): the Ollama base URL is tenant-configurable. Re-assert
+        // at use time and pin the resolved addresses (no DNS rebinding).
+        const baseURL = resolved.baseURL ?? "";
+        let target;
+        try {
+          target = await assertSafeFetchTarget(baseURL);
+        } catch {
+          throw new Error("Configured Ollama base URL is not allowed");
+        }
+        const pinned = createPinnedFetch(target);
+        try {
+          const client = new OpenAI({ baseURL, apiKey: "ollama", fetch: pinned.fetch });
+          return await complete(client, params);
+        } finally {
+          await pinned.close();
+        }
+      },
+    },
+  };
+}
+
+/** Build the client for a resolved provider. */
+export function createAIMessagesClient(resolved: ResolvedAIProvider): AIMessagesClient {
+  switch (resolved.provider) {
+    case "openrouter":
+      return new Anthropic({
+        apiKey: resolved.apiKey,
+        baseURL: "https://openrouter.ai/api",
+        defaultHeaders: {
+          "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "https://pulse-crm-weld.vercel.app",
+          "X-Title": "Pulse CRM",
+        },
+      });
+    case "anthropic":
+      return new Anthropic({ apiKey: resolved.apiKey });
+    default:
+      return openAICompatibleClient(resolved.provider, resolved);
+  }
+}
+
+/**
+ * Providers to try, in order: the resolved one first, then every other
+ * provider that has a credential.
+ */
+function getProviderChain(settings: AISettings): ResolvedAIProvider[] {
+  const primary = resolveAIProvider(settings, process.env);
+  if (!primary) return [];
+  const chain = [primary];
+  for (const provider of AI_PROVIDER_ORDER) {
+    if (provider === primary.provider) continue;
+    const candidate = resolveAIProvider({ ...settings, ai_provider: provider }, process.env);
+    if (candidate?.provider === provider) chain.push(candidate);
+  }
+  return chain;
 }
 
 export async function getAIClient(): Promise<AIClientResult> {
@@ -96,7 +207,7 @@ export async function getAIClient(): Promise<AIClientResult> {
     api_key: null,
     apify_api_key: null,
     openai_api_key: null,
-    ai_provider: "anthropic",
+    ai_provider: null,
     openrouter_api_key: null,
     default_model: "sonnet",
     feature_lead_scoring: true,
@@ -127,25 +238,17 @@ export async function getAIClient(): Promise<AIClientResult> {
     updated_at: new Date().toISOString(),
   };
 
-  // Build client for primary provider
-  const providerOrder = getProviderOrder(resolvedSettings);
-  let config: ProviderConfig | null = null;
-
-  for (const p of providerOrder) {
-    config = buildProviderConfig(p, resolvedSettings);
-    if (config) break;
-  }
-
-  if (!config) {
+  const resolved = resolveAIProvider(resolvedSettings, process.env);
+  if (!resolved) {
     throw new Error(
       "No AI API key configured. Add one in Settings > AI or set ANTHROPIC_API_KEY in environment."
     );
   }
 
   // Override the resolved provider so model resolution uses the correct map
-  resolvedSettings.ai_provider = config.provider;
+  resolvedSettings.ai_provider = resolved.provider;
 
-  const client = new Anthropic(config.clientOptions);
+  const client = createAIMessagesClient(resolved);
 
   return {
     client,
@@ -158,11 +261,9 @@ export async function getAIClient(): Promise<AIClientResult> {
 /**
  * Smart AI call with automatic provider fallback.
  *
- * Tries the primary provider first. If it fails with a retriable error
- * (network, 429, 500+, auth), automatically falls back to the other provider
- * if its API key is configured. This means:
- *   - OpenRouter primary → falls back to direct Anthropic (if ANTHROPIC_API_KEY set)
- *   - Anthropic primary → falls back to OpenRouter (if openrouter_api_key set)
+ * Tries the resolved provider first. If it fails with a retriable error
+ * (network, 429, 500+, auth), falls back to each other provider that has a
+ * credential, in the order anthropic, openrouter, openai, groq, ollama.
  *
  * Usage:
  *   const { client, settings, orgId, userId } = await getAIClient();
@@ -189,17 +290,13 @@ export async function callAIWithFallback(params: {
   fallbackUsed: boolean;
 }> {
   const { settings, createParams, feature, orgId, userId, modelOverride } = params;
-  const providerOrder = getProviderOrder(settings);
+  const providerOrder = getProviderChain(settings);
 
   let lastError: Error | null = null;
 
   for (let i = 0; i < providerOrder.length; i++) {
-    const provider = providerOrder[i];
-    const config = buildProviderConfig(provider, settings);
-
-    if (!config) continue; // Skip if no API key for this provider
-
-    const client = new Anthropic(config.clientOptions);
+    const provider = providerOrder[i].provider;
+    const client = createAIMessagesClient(providerOrder[i]);
     const modelId = modelOverride
       ? (i === 0 ? modelOverride : convertModelForProvider(modelOverride, provider))
       : convertModelForProvider(
@@ -230,7 +327,7 @@ export async function callAIWithFallback(params: {
         metadata: {
           provider,
           fallbackUsed: i > 0,
-          ...(i > 0 ? { primaryProvider: providerOrder[0] } : {}),
+          ...(i > 0 ? { primaryProvider: providerOrder[0].provider } : {}),
         },
       });
 
@@ -262,7 +359,7 @@ export async function callAIWithFallback(params: {
       // Determine if we should try fallback
       if (isRetriableError(lastError) && i < providerOrder.length - 1) {
         console.warn(
-          `[AI Fallback] ${provider} failed (${lastError.message.substring(0, 100)}), trying ${providerOrder[i + 1]}...`
+          `[AI Fallback] ${provider} failed (${lastError.message.substring(0, 100)}), trying ${providerOrder[i + 1].provider}...`
         );
         continue;
       }

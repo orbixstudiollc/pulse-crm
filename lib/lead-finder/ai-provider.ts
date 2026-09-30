@@ -10,6 +10,7 @@ import {
 } from "./apify/token";
 import { assertSafeFetchTarget } from "@/lib/security/fetch-target";
 import { createPinnedFetch } from "@/lib/security/safe-fetch";
+import { resolveAIProvider } from "@/lib/ai/provider-resolver";
 
 // =============================================================================
 // Model Pricing (USD per 1M tokens)
@@ -201,25 +202,21 @@ export async function resolveProviderAndModel(
   hint?: AIProvider
 ): Promise<{ provider: AIProvider; model: string }> {
   const settings = await loadOrgSettings(orgId);
-  const keys = await getApiKeys(orgId);
 
-  const configured = (settings?.ai_provider as AIProvider | null) ?? null;
+  // The saved provider (or the caller's hint) is used only when it has a
+  // credential; otherwise the shared resolver falls back across configured keys.
+  // Ollama Cloud is Lead Finder only and keyed by env, so it is checked here.
+  const choice = settings?.ai_provider || hint || null;
   const provider: AIProvider =
-    configured ||
-    hint ||
-    (keys.openrouterKey
-      ? "openrouter"
-      : keys.anthropicKey
-        ? "anthropic"
-        : keys.openaiKey
-          ? "openai"
-          : keys.groqKey
-            ? "groq"
-            : "openrouter");
+    choice === "ollama_cloud" && process.env.OLLAMA_CLOUD_API_KEY
+      ? "ollama_cloud"
+      : (resolveAIProvider({ ...settings, ai_provider: choice }, process.env)
+          ?.provider ?? "openrouter");
 
   // Rows written by the old settings route hold "ollama:<url>:<model>" here;
   // ignore them so the provider default is used until settings are re-saved.
-  const raw = settings?.default_model ?? null;
+  // The saved model belongs to the saved provider; ignore it after a fallback.
+  const raw = provider === settings?.ai_provider ? settings.default_model : null;
   const defaultModel = raw && raw.startsWith("ollama:") ? null : raw;
   let model = defaultModel ?? "";
   if (!model) {
