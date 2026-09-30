@@ -44,7 +44,7 @@ export default async function DashboardLayout({
                 </div>
                 <Header />
                 <main className="flex-1 overflow-auto bg-page">
-                  <div className="mx-auto h-full w-full max-w-[1120px] has-[[data-full-bleed]]:max-w-none">{children}</div>
+                  <div className="h-full w-full">{children}</div>
                 </main>
               </div>
             </div>

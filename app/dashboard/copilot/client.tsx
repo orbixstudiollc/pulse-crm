@@ -135,7 +135,7 @@ export function CopilotClient({ initialConversations, initialMemory, initialTask
         {/* Header */}
         <div className="px-5 py-4 border-b border-line">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-inverse flex items-center justify-center">
+            <div className="w-7 h-7 rounded-full bg-accent-strong flex items-center justify-center">
               <SparkleIcon size={14} className="text-on-inverse" weight="fill" />
             </div>
             <h1 className="text-base font-semibold text-fg">Pulse Copilot</h1>
@@ -780,7 +780,7 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
               </div>
 
               <div className="flex items-center gap-2 pt-2">
-                <button onClick={handleSave} className="px-4 py-2 rounded bg-inverse text-on-inverse text-sm font-medium hover:bg-inverse transition-colors">
+                <button onClick={handleSave} className="px-4 py-2 rounded-md bg-accent-strong text-on-inverse text-sm font-medium hover:bg-accent-strong/90 transition-colors">
                   {editingId ? "Update" : "Save"}
                 </button>
                 <button
@@ -818,7 +818,7 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                   <button
                     onClick={handleScrape}
                     disabled={scraping || !scrapeUrl.trim()}
-                    className="px-4 py-2 rounded bg-inverse text-on-inverse text-sm font-medium hover:bg-inverse transition-colors disabled:opacity-50 flex items-center gap-2"
+                    className="px-4 py-2 rounded-md bg-accent-strong text-on-inverse text-sm font-medium hover:bg-accent-strong/90 transition-colors disabled:opacity-50 flex items-center gap-2"
                   >
                     {scraping ? (
                       <>
@@ -873,7 +873,7 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                           className={cn(
                             "mt-0.5 w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-colors",
                             result.selected
-                              ? "bg-inverse border-inverse text-on-inverse"
+                              ? "bg-accent-surface border-accent text-accent-on-surface"
                               : "border-line"
                           )}
                         >
@@ -907,7 +907,7 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                   <button
                     onClick={handleSaveScrapeResults}
                     disabled={savingScrape || scrapeResults.filter(r => r.selected).length === 0}
-                    className="px-4 py-2 rounded bg-inverse text-on-inverse text-sm font-medium hover:bg-inverse transition-colors disabled:opacity-50 flex items-center gap-2"
+                    className="px-4 py-2 rounded-md bg-accent-strong text-on-inverse text-sm font-medium hover:bg-accent-strong/90 transition-colors disabled:opacity-50 flex items-center gap-2"
                   >
                     {savingScrape ? (
                       <>
@@ -1205,7 +1205,7 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
               </div>
 
               <div className="flex items-center gap-2 pt-2">
-                <button onClick={handleSave} className="px-4 py-2 rounded bg-inverse text-on-inverse text-sm font-medium hover:bg-inverse transition-colors">
+                <button onClick={handleSave} className="px-4 py-2 rounded-md bg-accent-strong text-on-inverse text-sm font-medium hover:bg-accent-strong/90 transition-colors">
                   {editingId ? "Update" : "Create"}
                 </button>
                 <button
@@ -1291,7 +1291,7 @@ function SettingsView() {
 
           {/* Save */}
           <div className="flex justify-end pt-4">
-            <button className="px-4 py-2 rounded bg-inverse text-on-inverse text-sm font-medium transition-colors">
+            <button className="px-4 py-2 rounded-md bg-accent-strong text-on-inverse text-sm font-medium hover:bg-accent-strong/90 transition-colors">
               Save
             </button>
           </div>

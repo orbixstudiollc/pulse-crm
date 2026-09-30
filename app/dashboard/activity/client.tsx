@@ -446,10 +446,10 @@ export function ActivityPageClient({
                 key={page}
                 onClick={() => setCurrentPage(page)}
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded text-sm font-medium transition-colors",
+                  "flex h-8 w-8 items-center justify-center rounded-md border text-[13px] font-medium transition-colors",
                   page === currentPage
-                    ? "bg-inverse text-on-inverse"
-                    : "text-fg-secondary hover:bg-muted",
+                    ? "border-accent text-accent-strong bg-surface"
+                    : "border-line text-fg-secondary hover:bg-subtle",
                 )}
               >
                 {page}

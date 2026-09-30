@@ -386,14 +386,14 @@ export function InboxClient() {
                 key={id}
                 onClick={() => setChannelFilter(id)}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-colors",
+                  "flex items-center gap-1.5 h-8 px-3 text-[13px] font-medium rounded-full border transition-colors",
                   channelFilter === id
                     ? id === "whatsapp"
                       ? "bg-success text-on-inverse"
                       : id === "linkedin"
                         ? "bg-accent-strong text-on-inverse"
-                        : "bg-inverse text-on-inverse"
-                    : "text-fg-secondary hover:text-fg hover:bg-muted",
+                        : "border-accent text-accent-strong bg-surface"
+                    : "border-line text-fg-secondary hover:bg-subtle",
                 )}
               >
                 {icon}
@@ -422,10 +422,10 @@ export function InboxClient() {
                   key={v}
                   onClick={() => setFilterView(v)}
                   className={cn(
-                    "px-3 py-1.5 text-xs font-medium rounded transition-colors",
+                    "h-8 px-3 text-[13px] font-medium rounded-md border transition-colors",
                     filterView === v
-                      ? "bg-inverse text-on-inverse"
-                      : "text-fg-secondary hover:text-fg hover:bg-muted",
+                      ? "border-accent text-accent-strong bg-surface"
+                      : "border-line text-fg-secondary hover:bg-subtle",
                   )}
                 >
                   {v.charAt(0).toUpperCase() + v.slice(1)}
