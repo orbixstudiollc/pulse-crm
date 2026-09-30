@@ -15,6 +15,7 @@ import { getModelId } from "@/lib/ai/models";
 import { resolveAIProvider } from "@/lib/ai/provider-resolver";
 import { aiSdkBaseUrl, createCustomFetch, customModelFor } from "@/lib/ai/custom-provider";
 import { checkRateLimit, acquireRateLimit } from "@/lib/ai/rate-limiter";
+import { toChatMessages } from "@/lib/ai/chat-messages";
 import { PageContext } from "@/lib/ai/types";
 import { escapePostgrestLike } from "@/lib/security";
 
@@ -110,16 +111,13 @@ export async function POST(req: Request) {
     const { messages: rawMessages, data } = await req.json();
     const pageContext: PageContext | undefined = data?.pageContext;
 
-    // Convert UIMessage format (parts) to ModelMessage format (content) if needed
-    const messages = (rawMessages || []).map((msg: { role: string; content?: string; parts?: Array<{ type: string; text?: string }> }) => {
-      if (msg.content) return msg;
-      // Extract text from parts array (UIMessage format from useChat)
-      const text = msg.parts
-        ?.filter((p: { type: string; text?: string }) => p.type === "text" && p.text)
-        .map((p: { type: string; text?: string }) => p.text)
-        .join("") || "";
-      return { role: msg.role, content: text };
-    });
+    // User/assistant text only: client-supplied file/image parts or system/tool
+    // roles never reach the model (see lib/ai/chat-messages.ts).
+    const messages = toChatMessages(rawMessages);
+    if (messages.length === 0) {
+      guardedRelease();
+      return Response.json({ error: "No message to send." }, { status: 400 });
+    }
 
     // Build context from current page
     let contextStr = "";
