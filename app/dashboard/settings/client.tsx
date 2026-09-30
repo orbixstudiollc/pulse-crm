@@ -91,6 +91,7 @@ import {
   getAIUsageStats,
   getAIUsageDailyChart,
   getAIUsageLog,
+  listCustomModels,
 } from "@/lib/actions/ai-settings";
 import type { PublicAISettings, AIUsageStats, AIUsageDailyPoint, AIUsageLogEntry } from "@/lib/ai/types";
 import type { BillingData } from "@/lib/actions/billing";
@@ -1279,6 +1280,15 @@ function AISettingsSection({
   const [showOpenrouterKey, setShowOpenrouterKey] = useState(false);
   const [apifyKey, setApifyKey] = useState("");
   const [showApifyKey, setShowApifyKey] = useState(false);
+  const [customBaseUrl, setCustomBaseUrl] = useState(settings?.custom_base_url ?? "");
+  const [customKey, setCustomKey] = useState("");
+  const [showCustomKey, setShowCustomKey] = useState(false);
+  const [customModel, setCustomModel] = useState(settings?.custom_model ?? "");
+  const [customFastModel, setCustomFastModel] = useState(settings?.custom_fast_model ?? "");
+  // Model ids from the endpoint; null keeps the model fields as free text.
+  const [customModels, setCustomModels] = useState<string[] | null>(null);
+  const [customModelsError, setCustomModelsError] = useState("");
+  const [isLoadingModels, startLoadingModels] = useTransition();
   const [defaultModel, setDefaultModel] = useState(
     settings?.default_model ?? "sonnet"
   );
@@ -1324,6 +1334,26 @@ function AISettingsSection({
     });
   }, []);
 
+  const handleLoadModels = () => {
+    startLoadingModels(async () => {
+      // Typed values win; blank ones fall back to the saved settings server-side.
+      const result = await listCustomModels({
+        baseUrl: customBaseUrl.trim() || undefined,
+        apiKey: customKey.trim() || undefined,
+      });
+      if (!result.ok) {
+        setCustomModels(null);
+        setCustomModelsError(result.error);
+      } else if (result.models.length === 0) {
+        setCustomModels(null);
+        setCustomModelsError("The endpoint returned no models");
+      } else {
+        setCustomModels(result.models);
+        setCustomModelsError("");
+      }
+    });
+  };
+
   const handleSave = () => {
     startTransition(async () => {
       const updates: Record<string, unknown> = {
@@ -1333,6 +1363,12 @@ function AISettingsSection({
       if (apiKey.trim()) updates.api_key = apiKey.trim();
       if (openrouterKey.trim()) updates.openrouter_api_key = openrouterKey.trim();
       if (apifyKey.trim()) updates.apify_api_key = apifyKey.trim();
+      if (aiProvider === "custom") {
+        updates.custom_base_url = customBaseUrl.trim();
+        updates.custom_model = customModel.trim() || null;
+        updates.custom_fast_model = customFastModel.trim() || null;
+        if (customKey.trim()) updates.custom_api_key = customKey.trim();
+      }
 
       // Feature toggles
       Object.entries(features).forEach(([key, val]) => {
@@ -1346,7 +1382,8 @@ function AISettingsSection({
 
       const result = await updateAISettings(updates);
       if (result.error) {
-        setToastMessage("Failed to save AI settings");
+        // Custom endpoint errors (e.g. "Base URL must use https://") are user-readable.
+        setToastMessage(aiProvider === "custom" ? result.error : "Failed to save AI settings");
       } else {
         setToastMessage("AI settings saved successfully");
       }
@@ -1389,13 +1426,13 @@ function AISettingsSection({
       {/* AI Provider */}
       <SettingsSection
         title="AI Provider"
-        description="Choose your AI provider. Anthropic (direct) or OpenRouter for access to multiple models."
+        description="Choose your AI provider. Anthropic (direct), OpenRouter for access to multiple models, or any Anthropic-compatible endpoint."
       >
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => setAiProvider("anthropic")}
-            className={`flex-1 h-8 rounded-md border px-3 text-sm font-medium transition-colors ${
+            className={`flex-1 whitespace-nowrap h-8 rounded-md border px-3 text-sm font-medium transition-colors ${
               aiProvider === "anthropic"
                 ? "border-accent bg-surface text-accent-strong"
                 : "border-line text-fg-secondary hover:bg-subtle"
@@ -1406,7 +1443,7 @@ function AISettingsSection({
           <button
             type="button"
             onClick={() => setAiProvider("openrouter")}
-            className={`flex-1 h-8 rounded-md border px-3 text-sm font-medium transition-colors ${
+            className={`flex-1 whitespace-nowrap h-8 rounded-md border px-3 text-sm font-medium transition-colors ${
               aiProvider === "openrouter"
                 ? "border-accent bg-surface text-accent-strong"
                 : "border-line text-fg-secondary hover:bg-subtle"
@@ -1414,11 +1451,129 @@ function AISettingsSection({
           >
             OpenRouter
           </button>
+          <button
+            type="button"
+            onClick={() => setAiProvider("custom")}
+            className={`flex-1 whitespace-nowrap h-8 rounded-md border px-3 text-sm font-medium transition-colors ${
+              aiProvider === "custom"
+                ? "border-accent bg-surface text-accent-strong"
+                : "border-line text-fg-secondary hover:bg-subtle"
+            }`}
+          >
+            Custom (Anthropic-compatible)
+          </button>
         </div>
       </SettingsSection>
 
       {/* API Key — conditional on provider */}
-      {aiProvider !== "openrouter" ? (
+      {aiProvider === "custom" ? (
+        <SettingsSection
+          title="Custom Endpoint"
+          description="Connect an Anthropic-compatible endpoint. The key is stored encrypted."
+        >
+          <div className="space-y-4">
+            <Input
+              id="custom-base-url"
+              label="Base URL"
+              type="url"
+              value={customBaseUrl}
+              onChange={(e) => setCustomBaseUrl(e.target.value)}
+              placeholder="https://api.llmsrelay.com"
+              helperText="Any Anthropic-compatible endpoint, e.g. LLMsRelay. https only."
+            />
+            <Input
+              id="custom-api-key"
+              label="API key"
+              type={showCustomKey ? "text" : "password"}
+              value={customKey}
+              onChange={(e) => setCustomKey(e.target.value)}
+              placeholder={settings?.has_custom_api_key ? "Saved - enter a new key to replace" : "sk-..."}
+              autoComplete="off"
+              rightIcon={
+                <button
+                  type="button"
+                  onClick={() => setShowCustomKey(!showCustomKey)}
+                  aria-label={showCustomKey ? "Hide API key" : "Show API key"}
+                  className="text-fg-muted hover:text-fg-secondary"
+                >
+                  {showCustomKey ? <EyeSlashIcon size={16} /> : <EyeIcon size={16} />}
+                </button>
+              }
+            />
+            {customModels ? (
+              <>
+                <Select
+                  id="custom-model"
+                  label="Model"
+                  value={customModel}
+                  onChange={(e) => setCustomModel(e.target.value)}
+                >
+                  {!customModel && <option value="">Select a model</option>}
+                  {customModel && !customModels.includes(customModel) && (
+                    <option value={customModel}>{customModel}</option>
+                  )}
+                  {customModels.map((id) => (
+                    <option key={id} value={id}>
+                      {id}
+                    </option>
+                  ))}
+                </Select>
+                <Select
+                  id="custom-fast-model"
+                  label="Fast model"
+                  optional
+                  value={customFastModel}
+                  onChange={(e) => setCustomFastModel(e.target.value)}
+                >
+                  <option value="">Same as model</option>
+                  {customFastModel && !customModels.includes(customFastModel) && (
+                    <option value={customFastModel}>{customFastModel}</option>
+                  )}
+                  {customModels.map((id) => (
+                    <option key={id} value={id}>
+                      {id}
+                    </option>
+                  ))}
+                </Select>
+              </>
+            ) : (
+              <>
+                <Input
+                  id="custom-model"
+                  label="Model"
+                  value={customModel}
+                  onChange={(e) => setCustomModel(e.target.value)}
+                  placeholder="claude-sonnet-4.6"
+                />
+                <Input
+                  id="custom-fast-model"
+                  label="Fast model"
+                  optional
+                  value={customFastModel}
+                  onChange={(e) => setCustomFastModel(e.target.value)}
+                  placeholder="claude-haiku-4.5"
+                  helperText="Used for quick tasks. Blank uses the model above."
+                />
+              </>
+            )}
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleLoadModels}
+                loading={isLoadingModels}
+                leftIcon={<ArrowsClockwiseIcon size={14} />}
+              >
+                Load models
+              </Button>
+              {customModelsError && (
+                <p className="text-[13px] text-danger">{customModelsError}</p>
+              )}
+            </div>
+          </div>
+        </SettingsSection>
+      ) : aiProvider !== "openrouter" ? (
         <SettingsSection
           title="Anthropic API Key"
           description="Enter your Anthropic API key for AI features. If not set, the app-level key will be used."

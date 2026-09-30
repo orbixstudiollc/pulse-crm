@@ -13,6 +13,7 @@ import { assembleContext, fetchEntityForChat } from "@/lib/ai/context";
 import { createAIMessagesClient, logTokenUsage, tokenLimitReason } from "@/lib/ai/client";
 import { getModelId } from "@/lib/ai/models";
 import { resolveAIProvider } from "@/lib/ai/provider-resolver";
+import { aiSdkBaseUrl, createCustomFetch, customModelFor } from "@/lib/ai/custom-provider";
 import { checkRateLimit, acquireRateLimit } from "@/lib/ai/rate-limiter";
 import { PageContext } from "@/lib/ai/types";
 import { escapePostgrestLike } from "@/lib/security";
@@ -21,6 +22,7 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   let releaseRateLimit: (() => void) | null = null;
+  let closeCustomFetch: (() => void) | null = null;
   try {
     const supabase = await createClient();
     const {
@@ -45,7 +47,7 @@ export async function POST(req: Request) {
     const { data: settings } = await createAdminClient()
       .from("ai_settings")
       .select(
-        "api_key, feature_chat, ai_provider, openrouter_api_key, openrouter_oauth_token, openrouter_expires_at, openai_api_key, groq_api_key, ollama_base_url, daily_token_limit, monthly_token_limit, tokens_used_today, tokens_used_month, last_token_reset_daily, last_token_reset_monthly"
+        "api_key, feature_chat, ai_provider, openrouter_api_key, openrouter_oauth_token, openrouter_expires_at, openai_api_key, groq_api_key, ollama_base_url, custom_base_url, custom_api_key, custom_model, custom_fast_model, daily_token_limit, monthly_token_limit, tokens_used_today, tokens_used_month, last_token_reset_daily, last_token_reset_monthly"
       )
       .eq("organization_id", profile.organization_id)
       .single();
@@ -59,14 +61,30 @@ export async function POST(req: Request) {
       return Response.json({ error: limitReason }, { status: 429 });
     }
 
-    const resolved = resolveAIProvider(settings ?? {}, process.env);
-    if (!resolved) {
-      return new Response(
+    const notConfigured = () =>
+      new Response(
         "No AI API key configured. Add one in Settings > AI or set ANTHROPIC_API_KEY.",
         { status: 400 }
       );
-    }
+    const resolved = resolveAIProvider(settings ?? {}, process.env);
+    if (!resolved) return notConfigured();
     const provider = resolved.provider;
+
+    // Model for the streaming (Anthropic protocol) branch below.
+    let modelId: string;
+    switch (provider) {
+      case "custom": {
+        const customModel = customModelFor("sonnet", settings ?? {});
+        if (!customModel || !resolved.baseURL) return notConfigured();
+        modelId = customModel;
+        break;
+      }
+      case "openrouter":
+        modelId = "anthropic/claude-sonnet-4-6";
+        break;
+      default:
+        modelId = "claude-sonnet-4-6";
+    }
 
     const orgId = profile.organization_id;
     const rateCheck = checkRateLimit(orgId);
@@ -118,7 +136,7 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
 
     const startTime = Date.now();
 
-    if (provider !== "anthropic" && provider !== "openrouter") {
+    if (provider !== "anthropic" && provider !== "openrouter" && provider !== "custom") {
       // OpenAI-compatible providers (OpenAI, Groq, Ollama): one completion
       // without CRM tools, delivered as a single text part of the UI stream.
       const client = createAIMessagesClient(resolved);
@@ -170,22 +188,47 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
       return createUIMessageStreamResponse({ stream });
     }
 
-    const anthropic = createAnthropic(
-      provider === "openrouter"
-        ? {
-            apiKey: resolved.apiKey,
-            baseURL: "https://openrouter.ai/api/v1",
-            headers: {
-              "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "https://pulse-crm-weld.vercel.app",
-              "X-Title": "Pulse CRM",
-            },
-          }
-        : { apiKey: resolved.apiKey }
-    );
-
-    const modelId = provider === "openrouter"
-      ? "anthropic/claude-sonnet-4-6"
-      : "claude-sonnet-4-6";
+    let anthropicOptions: Parameters<typeof createAnthropic>[0];
+    if (provider === "custom" && resolved.baseURL) {
+      // SECURITY: tenant-supplied URL, so every request goes through a fetch
+      // pinned to the validated public addresses. Closed exactly once when the
+      // stream finishes, errors, or the client disconnects.
+      let pinned: Awaited<ReturnType<typeof createCustomFetch>>;
+      try {
+        pinned = await createCustomFetch(resolved.baseURL);
+      } catch (err) {
+        guardedRelease();
+        return new Response(
+          err instanceof Error ? err.message : "Custom AI base URL is not allowed",
+          { status: 400 }
+        );
+      }
+      let fetchClosed = false;
+      const guardedClose = () => {
+        if (fetchClosed) return;
+        fetchClosed = true;
+        pinned.close().catch((err) => console.error("AI Chat: closing custom fetch failed:", err));
+      };
+      closeCustomFetch = guardedClose;
+      req.signal.addEventListener("abort", guardedClose);
+      anthropicOptions = {
+        apiKey: resolved.apiKey,
+        baseURL: aiSdkBaseUrl(resolved.baseURL),
+        fetch: pinned.fetch,
+      };
+    } else if (provider === "openrouter") {
+      anthropicOptions = {
+        apiKey: resolved.apiKey,
+        baseURL: "https://openrouter.ai/api/v1",
+        headers: {
+          "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL ?? "https://pulse-crm-weld.vercel.app",
+          "X-Title": "Pulse CRM",
+        },
+      };
+    } else {
+      anthropicOptions = { apiKey: resolved.apiKey };
+    }
+    const anthropic = createAnthropic(anthropicOptions);
 
     const result = streamText({
       model: anthropic(modelId),
@@ -461,10 +504,12 @@ ${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByTy
       stopWhen: stepCountIs(3),
       onError: ({ error }) => {
         guardedRelease();
+        closeCustomFetch?.();
         console.error("AI Chat stream error:", error);
       },
       onFinish: async ({ totalUsage }) => {
         guardedRelease();
+        closeCustomFetch?.();
         const durationMs = Date.now() - startTime;
         await logTokenUsage({
           orgId: profile.organization_id!,
@@ -482,6 +527,7 @@ ${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByTy
     return result.toUIMessageStreamResponse();
   } catch (error) {
     releaseRateLimit?.();
+    closeCustomFetch?.();
     console.error("AI Chat error:", error);
     return new Response(
       error instanceof Error ? error.message : "Internal server error",
