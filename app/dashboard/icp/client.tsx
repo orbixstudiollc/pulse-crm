@@ -18,11 +18,10 @@ import {
   TrashIcon,
   CrosshairIcon,
   CircleNotchIcon,
-  EyeIcon,
   SparkleIcon,
   CaretDownIcon,
 } from "@/components/ui";
-import { PageHeader, StatCard, EmptyState } from "@/components/dashboard";
+import { Page, PageHeader, MetricStrip, TableSection, StatCard, EmptyState } from "@/components/dashboard";
 import {
   createICPProfile,
   updateICPProfile,
@@ -502,9 +501,9 @@ function ICPProfileModal({
   );
 }
 
-// ── ICPProfileCard ────────────────────────────────────────────────────────────
+// ── ICPProfileRow ─────────────────────────────────────────────────────────────
 
-function ICPProfileCard({
+function ICPProfileRow({
   profile,
   insights,
   onEdit,
@@ -519,52 +518,36 @@ function ICPProfileCard({
   const { count, avgScore } = getDistributionForProfile(insights, profile.name);
 
   return (
-    <div className="rounded-lg border border-line bg-surface overflow-hidden">
-      {/* Header */}
-      <div className="p-5">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div
-              className="h-3 w-3 rounded-full shrink-0"
-              style={{ backgroundColor: profile.color ?? "#6366f1" }}
-            />
-            <h3 className="text-base font-semibold text-fg">
-              {profile.name}
-            </h3>
-            {profile.is_primary && (
-              <Badge variant="primary" dot>
-                Primary
-              </Badge>
+    <tr className="hover:bg-subtle transition-colors">
+      {/* Profile */}
+      <td className="py-2 text-[14px] text-fg">
+        <div className="flex items-start gap-2">
+          <div
+            className="mt-1.5 h-3 w-3 rounded-full shrink-0"
+            style={{ backgroundColor: profile.color ?? "#6366f1" }}
+          />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[14px] font-medium text-fg">
+                {profile.name}
+              </span>
+              {profile.is_primary && (
+                <Badge variant="primary" dot>
+                  Primary
+                </Badge>
+              )}
+            </div>
+            {profile.description && (
+              <p className="mt-0.5 max-w-md text-[13px] text-fg-muted line-clamp-2">
+                {profile.description}
+              </p>
             )}
           </div>
-          <div className="flex items-center gap-1">
-            <Link href={`/dashboard/icp/${profile.id}`}>
-              <button className="p-1.5 rounded text-fg-muted hover:text-fg hover:bg-muted transition-colors">
-                <EyeIcon size={16} />
-              </button>
-            </Link>
-            <button
-              onClick={onEdit}
-              className="p-1.5 rounded text-fg-muted hover:text-fg hover:bg-muted transition-colors"
-            >
-              <PencilSimpleIcon size={16} />
-            </button>
-            <button
-              onClick={onDelete}
-              className="p-1.5 rounded text-fg-muted hover:text-danger hover:bg-danger-surface transition-colors"
-            >
-              <TrashIcon size={16} />
-            </button>
-          </div>
         </div>
+      </td>
 
-        {profile.description && (
-          <p className="text-sm text-fg-secondary mb-4 line-clamp-2">
-            {profile.description}
-          </p>
-        )}
-
-        {/* Criteria Summary */}
+      {/* Criteria Summary */}
+      <td className="py-2">
         <div className="space-y-2">
           {criteria.firmographic.industries.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
@@ -613,29 +596,39 @@ function ICPProfileCard({
             </div>
           )}
         </div>
-      </div>
+      </td>
 
-      {/* Footer stats */}
-      <div className="border-t border-line px-5 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div>
-            <p className="text-xs text-fg-secondary">Matched Leads</p>
-            <p className="text-sm font-semibold text-fg">{count}</p>
-          </div>
-          <div>
-            <p className="text-xs text-fg-secondary">Avg Score</p>
-            <p className="text-sm font-semibold text-fg">
-              {avgScore > 0 ? `${avgScore}%` : "--"}
-            </p>
-          </div>
+      {/* Matched Leads */}
+      <td className="py-2 text-[14px] text-fg">{count}</td>
+
+      {/* Avg Score */}
+      <td className="py-2 text-[14px] text-fg">
+        {avgScore > 0 ? `${avgScore}%` : "--"}
+      </td>
+
+      {/* Actions */}
+      <td className="py-2">
+        <div className="flex items-center justify-end gap-1">
+          <Link href={`/dashboard/icp/${profile.id}`}>
+            <Button variant="ghost" size="sm">
+              View Details
+            </Button>
+          </Link>
+          <button
+            onClick={onEdit}
+            className="p-1.5 rounded text-fg-muted hover:text-fg hover:bg-muted transition-colors"
+          >
+            <PencilSimpleIcon size={16} />
+          </button>
+          <button
+            onClick={onDelete}
+            className="p-1.5 rounded text-fg-muted hover:text-danger hover:bg-danger-surface transition-colors"
+          >
+            <TrashIcon size={16} />
+          </button>
         </div>
-        <Link href={`/dashboard/icp/${profile.id}`}>
-          <Button variant="ghost" size="sm">
-            View Details
-          </Button>
-        </Link>
-      </div>
-    </div>
+      </td>
+    </tr>
   );
 }
 
@@ -690,7 +683,7 @@ function SalesCycleDropdown({
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="flex w-full items-center justify-between rounded-lg border border-line bg-surface px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-line"
+          className="flex w-full items-center justify-between rounded-lg border border-line bg-surface px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-line" data-clay-box
         >
           <span className={selected?.value ? "text-fg" : "text-fg-muted"}>
             {selected?.label || "Select..."}
@@ -701,7 +694,7 @@ function SalesCycleDropdown({
           />
         </button>
         {open && (
-          <ul className="absolute z-50 mt-1 w-full overflow-auto rounded-lg border border-line bg-surface py-1 shadow-dropdown max-h-60">
+          <ul className="absolute z-50 mt-1 w-full overflow-auto rounded-lg border border-line bg-surface py-1 shadow-dropdown max-h-60" data-clay-box>
             {salesCycleOptions
               .filter((o) => o.value !== "")
               .map((opt) => (
@@ -989,7 +982,7 @@ function ICPWizardModal({
           {/* Step 4: Deal Patterns */}
           {step === 4 && (
             <>
-              <div className="rounded-lg border border-line bg-subtle p-4">
+              <div className="border-b border-divider pb-4">
                 <div className="flex items-center gap-2 mb-2">
                   <SparkleIcon size={16} className="text-fg-secondary" />
                   <p className="text-sm font-medium text-fg">
@@ -1023,7 +1016,7 @@ function ICPWizardModal({
               )}
 
               {generationError && !isGenerating && (
-                <div className="rounded-lg border border-danger bg-danger-surface p-4">
+                <div className="border-b border-danger pb-4">
                   <p className="text-sm text-danger">{generationError}</p>
                   <Button
                     variant="outline"
@@ -1039,7 +1032,7 @@ function ICPWizardModal({
               {generatedProfile && !isGenerating && (
                 <div className="space-y-5">
                   {/* AI Reasoning */}
-                  <div className="rounded-lg border border-line bg-subtle p-4">
+                  <div className="border-b border-divider pb-4">
                     <div className="flex items-center gap-2 mb-2">
                       <SparkleIcon size={16} className="text-fg-secondary" />
                       <p className="text-sm font-medium text-fg">
@@ -1174,14 +1167,14 @@ function ICPWizardModal({
 
                   {/* Buyer Personas Preview */}
                   {generatedProfile.buyer_personas.length > 0 && (
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-semibold text-fg">
+                    <div>
+                      <h3 className="mb-2 text-sm font-semibold text-fg">
                         Buyer Personas
                       </h3>
                       {generatedProfile.buyer_personas.map((persona, i) => (
                         <div
                           key={i}
-                          className="rounded-lg border border-line p-3"
+                          className="border-t border-divider py-3"
                         >
                           <p className="text-sm font-medium text-fg mb-1">
                             {persona.role}
@@ -1312,44 +1305,46 @@ export function ICPClient({ profiles, insights }: ICPClientProps) {
   };
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-8">
+    <Page>
       {/* Page Header */}
-      <PageHeader title="Ideal Customer Profiles">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={handleRecalculate}
-          disabled={isPending || profiles.length === 0}
-          leftIcon={
-            isPending ? (
-              <CircleNotchIcon size={16} className="animate-spin" />
-            ) : (
-              <CrosshairIcon size={16} />
-            )
-          }
-        >
-          Recalculate Matches
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          leftIcon={<SparkleIcon size={16} />}
-          onClick={() => setShowWizard(true)}
-        >
-          Create with AI
-        </Button>
-        <Button
-          size="sm"
-          leftIcon={<PlusIcon size={16} />}
-          onClick={handleCreate}
-        >
-          Create Manually
-        </Button>
+      <PageHeader title="Ideal Customer Profiles" icon={<CrosshairIcon size={18} />}>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRecalculate}
+            disabled={isPending || profiles.length === 0}
+            leftIcon={
+              isPending ? (
+                <CircleNotchIcon size={16} className="animate-spin" />
+              ) : (
+                <CrosshairIcon size={16} />
+              )
+            }
+          >
+            Recalculate Matches
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<SparkleIcon size={16} />}
+            onClick={() => setShowWizard(true)}
+          >
+            Create with AI
+          </Button>
+          <Button
+            size="sm"
+            leftIcon={<PlusIcon size={16} />}
+            onClick={handleCreate}
+          >
+            Create Manually
+          </Button>
+        </div>
       </PageHeader>
 
       {/* Insights Summary */}
       {insights && profiles.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <MetricStrip>
           <StatCard
             label="Total Leads"
             value={insights.totalLeads}
@@ -1390,22 +1385,37 @@ export function ICPClient({ profiles, insights }: ICPClientProps) {
               />
             }
           />
-        </div>
+        </MetricStrip>
       )}
 
-      {/* Profile Cards */}
+      {/* Profiles */}
       {profiles.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {profiles.map((profile) => (
-            <ICPProfileCard
-              key={profile.id}
-              profile={profile}
-              insights={insights}
-              onEdit={() => handleEdit(profile)}
-              onDelete={() => setDeleteTarget(profile)}
-            />
-          ))}
-        </div>
+        <TableSection>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className="text-left text-[13px] font-medium text-fg-secondary">Profile</th>
+                  <th className="text-left text-[13px] font-medium text-fg-secondary">Criteria</th>
+                  <th className="text-left text-[13px] font-medium text-fg-secondary">Matched Leads</th>
+                  <th className="text-left text-[13px] font-medium text-fg-secondary">Avg Score</th>
+                  <th className="text-right text-[13px] font-medium text-fg-secondary">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {profiles.map((profile) => (
+                  <ICPProfileRow
+                    key={profile.id}
+                    profile={profile}
+                    insights={insights}
+                    onEdit={() => handleEdit(profile)}
+                    onDelete={() => setDeleteTarget(profile)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </TableSection>
       ) : (
         <EmptyState
           icon={<CrosshairIcon size={24} />}
@@ -1453,6 +1463,6 @@ export function ICPClient({ profiles, insights }: ICPClientProps) {
         itemName={deleteTarget?.name}
         loading={isDeleting}
       />
-    </div>
+    </Page>
   );
 }

@@ -16,8 +16,9 @@ import {
   ClockIcon,
   WarningIcon,
   ArrowRightIcon,
+  MegaphoneSimpleIcon,
 } from "@/components/ui";
-import { PageHeader } from "@/components/dashboard";
+import { Page, PageHeader, PageTabs, TableSection, Section, EmptyState } from "@/components/dashboard";
 import { cn } from "@/lib/utils";
 import { deleteMarketingAudit, updateMarketingActionItem } from "@/lib/actions/marketing";
 
@@ -224,134 +225,192 @@ export function MarketingPageClient({
   function renderAuditsTab() {
     if (initialAudits.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <ChartBarIcon className="h-12 w-12 text-fg-disabled mb-4" weight="regular" />
-          <h3 className="text-lg font-medium text-fg">No marketing audits yet</h3>
-          <p className="mt-1 text-sm text-fg-secondary">Run your first audit to analyze a website&apos;s marketing effectiveness.</p>
-          <Button className="mt-4" onClick={() => router.push("/dashboard/marketing/new")}>
-            <PlusIcon className="h-4 w-4 mr-2" weight="bold" />
-            New Audit
-          </Button>
-        </div>
+        <EmptyState
+          icon={<ChartBarIcon weight="regular" />}
+          title="No marketing audits yet"
+          description="Run your first audit to analyze a website's marketing effectiveness."
+          actions={[
+            {
+              label: "New Audit",
+              icon: <PlusIcon size={16} weight="bold" />,
+              onClick: () => router.push("/dashboard/marketing/new"),
+            },
+          ]}
+        />
       );
     }
 
     return (
-      <div className="space-y-3">
-        {initialAudits.map((audit) => (
-          <div
-            key={audit.id}
-            className="flex items-center gap-4 rounded-lg border border-line bg-surface p-4 hover:border-fg-muted transition-colors cursor-pointer"
-            onClick={() => router.push(`/dashboard/marketing/${audit.id}`)}
-          >
-            <ScoreGauge score={audit.overall_score} />
-
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="font-medium text-fg truncate">
-                  {audit.business_name || audit.website_url}
-                </p>
-                {statusBadge(audit.status)}
-              </div>
-              <p className="mt-0.5 text-sm text-fg-secondary truncate">{audit.website_url}</p>
-              <p className="mt-0.5 text-xs text-fg-muted">{formatDate(audit.created_at)} · {audit.audit_type} audit</p>
-            </div>
-
-            {audit.grade && (
-              <div className={cn("flex items-center justify-center w-10 h-10 rounded-lg text-lg font-semibold", scoreBg(audit.overall_score), scoreColor(audit.overall_score))}>
-                {audit.grade}
-              </div>
-            )}
-
-            {audit.status === "running" && (
-              <div className="w-20">
-                <div className="h-1.5 bg-active rounded-full overflow-hidden">
-                  <motion.div
-                    className="h-full bg-accent-strong rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${audit.progress}%` }}
-                    transition={{ duration: 0.5 }}
-                  />
-                </div>
-                <p className="text-xs text-fg-muted mt-1 text-center">{audit.progress}%</p>
-              </div>
-            )}
-
-            <button
-              onClick={(e) => { e.stopPropagation(); handleDeleteAudit(audit.id); }}
-              className="p-2 rounded hover:bg-muted text-fg-muted hover:text-danger transition-colors"
-            >
-              <TrashIcon className="h-4 w-4" weight="regular" />
-            </button>
-          </div>
-        ))}
-      </div>
+      <TableSection flush>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="text-left text-[13px] font-medium text-fg-secondary">Audit</th>
+                <th className="text-left text-[13px] font-medium text-fg-secondary">Score</th>
+                <th className="text-left text-[13px] font-medium text-fg-secondary">Grade</th>
+                <th className="text-left text-[13px] font-medium text-fg-secondary">Progress</th>
+                <th className="text-right text-[13px] font-medium text-fg-secondary">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {initialAudits.map((audit) => (
+                <tr
+                  key={audit.id}
+                  className="hover:bg-subtle transition-colors cursor-pointer"
+                  onClick={() => router.push(`/dashboard/marketing/${audit.id}`)}
+                >
+                  <td className="py-2 text-[14px] text-fg">
+                    <div className="flex items-start gap-2">
+                      <ChartBarIcon size={16} className="mt-0.5 shrink-0 text-fg-muted" />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-fg truncate">
+                            {audit.business_name || audit.website_url}
+                          </p>
+                          {statusBadge(audit.status)}
+                        </div>
+                        <p className="mt-0.5 text-sm text-fg-secondary truncate">{audit.website_url}</p>
+                        <p className="mt-0.5 text-xs text-fg-muted">{formatDate(audit.created_at)} · {audit.audit_type} audit</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-2">
+                    <ScoreGauge score={audit.overall_score} />
+                  </td>
+                  <td className="py-2">
+                    {audit.grade && (
+                      <div className={cn("flex items-center justify-center w-10 h-10 rounded-md text-lg font-semibold", scoreBg(audit.overall_score), scoreColor(audit.overall_score))}>
+                        {audit.grade}
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-2">
+                    {audit.status === "running" && (
+                      <div className="w-20">
+                        <div className="h-1.5 bg-active rounded-full overflow-hidden">
+                          <motion.div
+                            className="h-full bg-accent-strong rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${audit.progress}%` }}
+                            transition={{ duration: 0.5 }}
+                          />
+                        </div>
+                        <p className="text-xs text-fg-muted mt-1 text-center">{audit.progress}%</p>
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-2">
+                    <div className="flex justify-end">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteAudit(audit.id); }}
+                        className="flex h-6 w-6 items-center justify-center rounded-md border border-line text-fg-secondary hover:bg-subtle hover:text-danger transition-colors"
+                      >
+                        <TrashIcon className="h-4 w-4" weight="regular" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </TableSection>
     );
   }
 
   function renderContentTab() {
     if (initialContent.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <SparkleIcon className="h-12 w-12 text-fg-disabled mb-4" weight="regular" />
-          <h3 className="text-lg font-medium text-fg">No generated content yet</h3>
-          <p className="mt-1 text-sm text-fg-secondary">Run an audit first, then generate email sequences, social calendars, and more.</p>
-        </div>
+        <EmptyState
+          icon={<SparkleIcon weight="regular" />}
+          title="No generated content yet"
+          description="Run an audit first, then generate email sequences, social calendars, and more."
+        />
       );
     }
 
     return (
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {initialContent.map((item) => (
-          <div
-            key={item.id}
-            className="rounded-lg border border-line bg-surface p-4 hover:border-fg-muted transition-colors"
-          >
-            <div className="flex items-center justify-between mb-2">
-              {contentTypeBadge(item.content_type)}
-              <span className="text-xs text-fg-muted">{formatDate(item.created_at)}</span>
-            </div>
-            <p className="font-medium text-fg truncate">{item.title}</p>
-          </div>
-        ))}
-      </div>
+      <TableSection flush>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="text-left text-[13px] font-medium text-fg-secondary">Title</th>
+                <th className="text-left text-[13px] font-medium text-fg-secondary">Type</th>
+                <th className="text-left text-[13px] font-medium text-fg-secondary">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {initialContent.map((item) => (
+                <tr key={item.id} className="hover:bg-subtle transition-colors">
+                  <td className="py-2 text-[14px] text-fg">
+                    <div className="flex items-center gap-2">
+                      <SparkleIcon size={16} className="shrink-0 text-fg-muted" />
+                      <p className="font-medium text-fg truncate">{item.title}</p>
+                    </div>
+                  </td>
+                  <td className="py-2">{contentTypeBadge(item.content_type)}</td>
+                  <td className="py-2 text-[13px] text-fg-muted">{formatDate(item.created_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </TableSection>
     );
   }
 
   function renderReportsTab() {
     if (initialReports.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <FileTextIcon className="h-12 w-12 text-fg-disabled mb-4" weight="regular" />
-          <h3 className="text-lg font-medium text-fg">No reports yet</h3>
-          <p className="mt-1 text-sm text-fg-secondary">Generate reports from completed audits.</p>
-        </div>
+        <EmptyState
+          icon={<FileTextIcon weight="regular" />}
+          title="No reports yet"
+          description="Generate reports from completed audits."
+        />
       );
     }
 
     return (
-      <div className="space-y-3">
-        {initialReports.map((report) => (
-          <div key={report.id} className="flex items-center gap-4 rounded-lg border border-line bg-surface p-4">
-            <FileTextIcon className="h-8 w-8 text-accent-strong" weight="regular" />
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-fg">{report.title}</p>
-              <p className="text-xs text-fg-muted">{formatDate(report.created_at)} · {report.report_type.toUpperCase()}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      <TableSection flush>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="text-left text-[13px] font-medium text-fg-secondary">Report</th>
+                <th className="text-left text-[13px] font-medium text-fg-secondary">Type</th>
+                <th className="text-left text-[13px] font-medium text-fg-secondary">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {initialReports.map((report) => (
+                <tr key={report.id} className="hover:bg-subtle transition-colors">
+                  <td className="py-2 text-[14px] text-fg">
+                    <div className="flex items-center gap-2">
+                      <FileTextIcon size={16} className="shrink-0 text-fg-muted" />
+                      <p className="font-medium text-fg">{report.title}</p>
+                    </div>
+                  </td>
+                  <td className="py-2 text-[13px] text-fg-muted">{report.report_type.toUpperCase()}</td>
+                  <td className="py-2 text-[13px] text-fg-muted">{formatDate(report.created_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </TableSection>
     );
   }
 
   function renderActionsTab() {
     if (initialActions.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <CheckCircleIcon className="h-12 w-12 text-fg-disabled mb-4" weight="regular" />
-          <h3 className="text-lg font-medium text-fg">No action items yet</h3>
-          <p className="mt-1 text-sm text-fg-secondary">Action items are generated from audit findings.</p>
-        </div>
+        <EmptyState
+          icon={<CheckCircleIcon weight="regular" />}
+          title="No action items yet"
+          description="Action items are generated from audit findings."
+        />
       );
     }
 
@@ -359,25 +418,17 @@ export function MarketingPageClient({
     const tierLabels: Record<string, string> = { quick_win: "Quick Wins", medium_term: "Medium Term", strategic: "Strategic" };
 
     return (
-      <div className="space-y-6">
+      <div>
         {tiers.map((tier) => {
           const items = initialActions.filter((a) => a.tier === tier);
           if (items.length === 0) return null;
           return (
-            <div key={tier}>
-              <h3 className="text-sm font-semibold text-fg mb-3">
-                {tierLabels[tier]} ({items.length})
-              </h3>
-              <div className="space-y-2">
+            <Section key={tier} title={`${tierLabels[tier]} (${items.length})`}>
+              <div>
                 {items.map((item) => (
                   <div
                     key={item.id}
-                    className={cn(
-                      "flex items-start gap-3 rounded-lg border p-3 transition-colors",
-                      item.status === "completed"
-                        ? "border-success bg-success-surface"
-                        : "border-line bg-surface",
-                    )}
+                    className="flex items-start gap-3 border-t border-divider py-3 first:border-t-0 first:pt-0"
                   >
                     <button
                       onClick={() => handleToggleAction(item.id, item.status)}
@@ -409,7 +460,7 @@ export function MarketingPageClient({
                   </div>
                 ))}
               </div>
-            </div>
+            </Section>
           );
         })}
       </div>
@@ -426,8 +477,8 @@ export function MarketingPageClient({
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 lg:p-6">
-      <PageHeader title="Marketing">
+    <Page>
+      <PageHeader title="Marketing" icon={<MegaphoneSimpleIcon size={18} />}>
         <Button onClick={() => router.push("/dashboard/marketing/new")}>
           <PlusIcon className="h-4 w-4 mr-2" weight="bold" />
           New Audit
@@ -435,34 +486,20 @@ export function MarketingPageClient({
       </PageHeader>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 rounded border border-line bg-subtle p-1 overflow-x-auto">
-        {TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded transition-colors whitespace-nowrap",
-                isActive
-                  ? "bg-surface text-fg"
-                  : "text-fg-secondary hover:text-fg",
-              )}
-            >
-              <tab.icon className="h-4 w-4" weight="regular" />
-              {tab.label}
-              {tab.id === "audits" && initialAudits.length > 0 && (
-                <span className="ml-1 rounded-full bg-active px-1.5 py-0.5 text-xs">
-                  {initialAudits.length}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      <PageTabs
+        tabs={TABS.map((tab) => ({
+          id: tab.id,
+          label: tab.label,
+          icon: <tab.icon weight="regular" />,
+          count: tab.id === "audits" && initialAudits.length > 0 ? initialAudits.length : undefined,
+        }))}
+        value={activeTab}
+        onChange={setActiveTab}
+        className="max-sm:overflow-x-auto max-sm:overflow-y-hidden"
+      />
 
       {/* Tab Content */}
       {renderTabContent()}
-    </div>
+    </Page>
   );
 }

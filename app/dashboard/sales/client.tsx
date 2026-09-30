@@ -3,7 +3,7 @@
 import { useState, useTransition, useMemo, useCallback } from "react";
 import Image from "next/image";
 import { Button, Badge, Progress, PlusIcon, FadersIcon } from "@/components/ui";
-import { PageHeader } from "@/components/dashboard";
+import { Page, PageHeader, MetricStrip, Metric, PageTabs } from "@/components/dashboard";
 import {
   AddDealModal,
   DealDrawer,
@@ -35,11 +35,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  ChartBarIcon,
   CurrencyDollarIcon,
-  TrendUpIcon,
-  CrosshairIcon,
-  TrophyIcon,
   MagnifyingGlassIcon,
 } from "@/components/ui/Icons";
 
@@ -145,34 +141,19 @@ function PipelineStats({ deals }: { deals: MappedDeal[] }) {
   const winRate = closedTotal > 0 ? Math.round((closedWon.length / closedTotal) * 100) : 0;
 
   const stats = [
-    { label: "Pipeline Value", value: formatDealCurrency(totalValue), icon: CurrencyDollarIcon },
-    { label: "Weighted Value", value: formatDealCurrency(weightedValue), icon: TrendUpIcon },
-    { label: "Active Deals", value: activeDeals.length.toString(), icon: ChartBarIcon },
-    { label: "Avg Deal Size", value: formatDealCurrency(avgDealSize), icon: CrosshairIcon },
-    { label: "Win Rate", value: `${winRate}%`, icon: TrophyIcon },
+    { label: "Pipeline Value", value: formatDealCurrency(totalValue) },
+    { label: "Weighted Value", value: formatDealCurrency(weightedValue) },
+    { label: "Active Deals", value: activeDeals.length.toString() },
+    { label: "Avg Deal Size", value: formatDealCurrency(avgDealSize) },
+    { label: "Win Rate", value: `${winRate}%` },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+    <MetricStrip>
       {stats.map((stat) => (
-        <div
-          key={stat.label}
-          className="flex items-center gap-3 rounded-lg border border-line bg-surface px-4 py-3"
-        >
-          <div className="p-2 rounded bg-muted">
-            <stat.icon size={16} className="text-fg-secondary" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs text-fg-secondary truncate">
-              {stat.label}
-            </p>
-            <p className="text-sm font-semibold text-fg">
-              {stat.value}
-            </p>
-          </div>
-        </div>
+        <Metric key={stat.label} label={stat.label} value={stat.value} />
       ))}
-    </div>
+    </MetricStrip>
   );
 }
 
@@ -199,12 +180,12 @@ function DroppableColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex flex-col min-w-72 sm:min-w-85 flex-1 rounded-lg border border-line bg-subtle transition-colors",
-        isOver && "border-fg-muted bg-muted",
+        "flex flex-col min-w-72 sm:min-w-85 flex-1 transition-colors",
+        isOver && "bg-subtle",
       )}
     >
       {/* Column Header */}
-      <div className="flex items-center justify-between p-4">
+      <div className="flex h-10 items-center justify-between border-b border-divider">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-fg">
             {label}
@@ -224,7 +205,7 @@ function DroppableColumn({
       </div>
 
       {/* Add Deal Button */}
-      <div className="px-4 mb-3">
+      <div className="my-3">
         <button
           onClick={onAddDeal}
           className="flex w-full items-center justify-center gap-2 rounded border border-dashed border-line py-2.5 text-sm text-fg-secondary hover:border-fg-muted hover:text-fg hover:bg-surface transition-colors"
@@ -234,7 +215,7 @@ function DroppableColumn({
       </div>
 
       {/* Deal Cards */}
-      <div className="flex-1 px-4 pb-4 space-y-3 overflow-y-auto min-h-[100px]">
+      <div className="flex-1 pb-4 space-y-3 overflow-y-auto min-h-[100px]">
         {children}
       </div>
     </div>
@@ -444,89 +425,54 @@ export function SalesPageClient({
   };
 
   return (
-    <div data-full-bleed className="p-6 flex flex-col gap-6 min-h-full">
+    <Page>
       {/* Header */}
-      <PageHeader title="Sales Pipeline">
-        <Button
-          variant="outline"
-          leftIcon={<FadersIcon size={18} />}
-          onClick={() => setShowFilters(true)}
-        >
-          Filters
-          {activeFilterCount > 0 && (
-            <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-strong px-1.5 text-xs font-semibold text-on-inverse">
-              {activeFilterCount}
-            </span>
-          )}
-        </Button>
-        <Button
-          leftIcon={<PlusIcon size={20} weight="bold" />}
-          onClick={() => setShowAddDeal(true)}
-        >
-          Add Deal
-        </Button>
+      <PageHeader title="Sales Pipeline" icon={<CurrencyDollarIcon size={18} />}>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <MagnifyingGlassIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
+            <input
+              type="text"
+              placeholder="Search deals..."
+              value={filters.search}
+              onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
+              className="w-48 pl-9 pr-3 h-8 rounded-md border border-line bg-surface text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-line"
+            />
+          </div>
+          <Button
+            variant="outline"
+            leftIcon={<FadersIcon size={18} />}
+            onClick={() => setShowFilters(true)}
+          >
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-strong px-1.5 text-xs font-semibold text-on-inverse">
+                {activeFilterCount}
+              </span>
+            )}
+          </Button>
+          <Button
+            leftIcon={<PlusIcon size={20} weight="bold" />}
+            onClick={() => setShowAddDeal(true)}
+          >
+            Add Deal
+          </Button>
+        </div>
       </PageHeader>
-
-      {/* Search Bar */}
-      <div className="relative">
-        <MagnifyingGlassIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
-        <input
-          type="text"
-          placeholder="Search deals..."
-          value={filters.search}
-          onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
-          className="w-full sm:w-72 pl-9 pr-3 h-8 rounded-md border border-line bg-surface text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-line"
-        />
-      </div>
 
       {/* Pipeline Stats */}
       <PipelineStats deals={allDeals} />
 
       {/* Tabs */}
-      <div className="inline-flex h-8 items-center gap-0.5 rounded-md bg-muted p-0.5 w-fit">
-        <button
-          onClick={() => setActiveTab("active")}
-          className={cn(
-            "flex h-7 items-center gap-2 px-3 text-[13px] font-medium rounded-sm transition-colors",
-            activeTab === "active"
-              ? "bg-surface text-fg"
-              : "text-fg-secondary hover:text-fg",
-          )}
-        >
-          Active Pipeline
-          <span
-            className={cn(
-              "flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold",
-              activeTab === "active"
-                ? "bg-accent-surface text-accent-on-surface"
-                : "bg-active text-fg-secondary",
-            )}
-          >
-            {activeDeals.length}
-          </span>
-        </button>
-        <button
-          onClick={() => setActiveTab("closed")}
-          className={cn(
-            "flex h-7 items-center gap-2 px-3 text-[13px] font-medium rounded-sm transition-colors",
-            activeTab === "closed"
-              ? "bg-surface text-fg"
-              : "text-fg-secondary hover:text-fg",
-          )}
-        >
-          Closed Deals
-          <span
-            className={cn(
-              "flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold",
-              activeTab === "closed"
-                ? "bg-accent-surface text-accent-on-surface"
-                : "bg-active text-fg-secondary",
-            )}
-          >
-            {closedDeals.length}
-          </span>
-        </button>
-      </div>
+      <PageTabs
+        tabs={[
+          { id: "active", label: "Active Pipeline", count: activeDeals.length },
+          { id: "closed", label: "Closed Deals", count: closedDeals.length },
+        ]}
+        value={activeTab}
+        onChange={setActiveTab}
+        className="max-sm:overflow-x-auto max-sm:overflow-y-hidden"
+      />
 
       {/* Kanban Board with DnD */}
       <DndContext
@@ -534,7 +480,7 @@ export function SalesPageClient({
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4 flex-1">
+        <div className="flex gap-6 overflow-x-auto px-8 pt-6 pb-4 max-sm:px-4">
           {visibleStages.map((stageId) => {
             const stage = pipelineStages.find((s) => s.id === stageId)!;
             const deals = getDealsByStage(stageId);
@@ -597,7 +543,7 @@ export function SalesPageClient({
         filters={filters}
         onApply={setFilters}
       />
-    </div>
+    </Page>
   );
 }
 
@@ -616,10 +562,10 @@ function DealCard({
   return (
     <div
       onClick={onClick}
-      className="rounded-lg border border-line bg-surface hover:border-fg-muted transition-all cursor-pointer py-1"
+      className="rounded-lg border border-line bg-surface p-3 hover:border-fg-muted transition-all cursor-pointer" data-clay-box
     >
       {/* Top row: Name + Value */}
-      <div className="flex items-start justify-between px-4 py-3">
+      <div className="flex items-start justify-between pb-3">
         <div className="min-w-0 flex-1 mr-3 space-y-1">
           <p className="text-sm font-medium text-fg truncate">
             {deal.name}
@@ -633,13 +579,13 @@ function DealCard({
             </p>
           )}
         </div>
-        <p className="text-[22px] leading-7 font-semibold text-fg shrink-0">
+        <p className="text-[18px] leading-6 font-semibold text-fg shrink-0">
           {formatDealCurrency(deal.value)}
         </p>
       </div>
 
       {/* Bottom row: Probability + Date + Avatar */}
-      <div className="flex items-center justify-between px-4 py-3 border-t border-divider">
+      <div className="flex items-center justify-between pt-3 border-t border-divider">
         <div className="flex items-center gap-3">
           {isClosed ? (
             <Badge variant={isWon ? "success" : "error"} dot>
