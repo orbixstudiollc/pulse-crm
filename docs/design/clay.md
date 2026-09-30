@@ -73,3 +73,12 @@ Dark: page #111214, surface #16171A, subtle #1B1C1F, muted #202226, active #2628
 2. Ask box: a single-line input with a sparkle icon and a round accent send button, placeholder "Ask Pulse anything or describe what you'd like to do…"; submitting routes to `/dashboard/copilot?prompt=<text>`.
 3. Quick-action cards (4, horizontal, wrap on mobile): Find leads → /dashboard/lead-finder, Import data → /dashboard/leads?import=1, Create a campaign → /dashboard/sequences, Start from template → /dashboard/templates.
 4. Existing stat cards and widgets follow, restyled by tokens.
+
+## Execution record (2026-09-30)
+
+Plan: `tasks-clay.json`, K1–K17, run with astra-fable-execute. Each task passed its own gate before it was committed. Two spec conflicts were settled in this contract, not in executor code: the 2px tab underline is an absolutely positioned span, and primary buttons use `accent-strong` so white text passes AA.
+
+- K1–K11: tokens and light default, controls, overlays, display components, app shell, dashboard kit, Overview home with `?prompt=` / `?import=1` deep links, and table sweeps across every page.
+- K13–K17 came from the local visual check. They cover full-width content (the 1120px container is gone) and replace the old black `bg-inverse` pills and buttons in 26 files with Clay's outlined segments and blue actions. Tooltips keep `bg-inverse`, and so do a few non-selection fills: the negotiation stage colour and the Replied funnel bar.
+- K12 full gate: lint, tests, production build, `scan.mjs`, `contrast.mjs` and `npm audit` all pass. The scope check found no executor drift; the only files it lists are untracked `AGENTS.md` and `CLAUDE.md`, which predate this work.
+- Known and unchanged: `/dashboard` has no index page and returns 404, both locally and on production. The Overview lives at `/dashboard/overview`.
