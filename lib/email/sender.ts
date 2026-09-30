@@ -279,7 +279,7 @@ async function sendViaSMTP(
 ): Promise<SendResult> {
   const resolved = await resolveMailHost(account.smtp_config.host, account.smtp_config.port, "smtp");
   if (!resolved) {
-    return { success: false, error: "Mail server not allowed" };
+    return { success: false, error: "SMTP host or port not allowed. Allowed ports: 25, 465, 587, 2525. Port 465 uses TLS; the other ports require STARTTLS." };
   }
 
   const transporter = nodemailer.createTransport({

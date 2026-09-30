@@ -268,18 +268,21 @@ function AddAccountModal({
             </select>
           </div>
           {provider === "custom_imap" && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm text-fg-secondary mb-1">SMTP Host</label>
-                <input value={smtpHost} onChange={(e) => setSmtpHost(e.target.value)} placeholder="smtp.example.com"
-                  className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent" />
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-fg-secondary mb-1">SMTP Host</label>
+                  <input value={smtpHost} onChange={(e) => setSmtpHost(e.target.value)} placeholder="smtp.example.com"
+                    className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent" />
+                </div>
+                <div>
+                  <label className="block text-sm text-fg-secondary mb-1">Port</label>
+                  <input value={smtpPort} onChange={(e) => setSmtpPort(e.target.value)} placeholder="587"
+                    className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent" />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm text-fg-secondary mb-1">Port</label>
-                <input value={smtpPort} onChange={(e) => setSmtpPort(e.target.value)} placeholder="587"
-                  className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent" />
-              </div>
-            </div>
+              <p className="text-xs text-fg-secondary mt-2">Allowed ports: 25, 465, 587, 2525. Port 465 uses TLS; the other ports require STARTTLS.</p>
+            </>
           )}
           <div className="grid grid-cols-2 gap-3">
             <div>

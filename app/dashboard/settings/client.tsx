@@ -3108,6 +3108,7 @@ function EmailAccountsSection() {
                 onChange={(e) => setCustomForm({ ...customForm, smtp_password: e.target.value })}
               />
             </div>
+            <p className="text-xs text-fg-secondary mt-2">Allowed ports: 25, 465, 587, 2525. Port 465 uses TLS; the other ports require STARTTLS.</p>
             <label className="flex items-center gap-2 mt-3 text-sm text-fg-secondary">
               <input
                 type="checkbox"
