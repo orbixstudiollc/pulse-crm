@@ -5,9 +5,10 @@
  * - Runs enrichSingleLead() per claimed job, respecting per-org campaign concurrency
  * - On success: status="done"
  * - On failure: exponential backoff retry up to MAX_ATTEMPTS, then status="failed"
- * - On 429 / memory limit: pauses global loop for a cooling window
- * - Survives HMR reloads (singleton stored on globalThis)
- * - Must be kicked via workerPump() on enqueue; also started by instrumentation on boot
+ * - On 429 / memory limit: pauses this instance for a cooling window
+ * - Drained in bounded, awaited batches by drainEnrichmentJobs(), which the
+ *   lead-finder-worker cron calls (serverless-safe: nothing keeps running after
+ *   the response). workerPump() is a dev-only background loop over the same drain.
  *
  * All DB access uses the admin client so the worker can see/update jobs for every tenant.
  * Per-org isolation is preserved by explicit organization_id filters on every statement.
@@ -30,7 +31,7 @@ import type {
 // Tunables
 // =============================================================================
 
-const POLL_IDLE_MS = 500;
+const DEV_IDLE_MS = 5_000;
 const STALE_RUNNING_MINUTES = 10;
 const STALE_RETRY_HOURS = 6;
 const MAX_ATTEMPTS = 3;
@@ -42,7 +43,7 @@ const MAX_ENRICHMENT_CONCURRENCY = 50;
 const DEFAULT_CONCURRENCY = 3;
 
 // =============================================================================
-// HMR-safe singleton state
+// Per-instance state (cooling window, adaptive cap, dev loop guard)
 // =============================================================================
 
 const g = globalThis as unknown as {
@@ -50,9 +51,6 @@ const g = globalThis as unknown as {
   _lfEnrichWorkerPauseUntil?: number;
   _lfEnrichAdaptiveCap?: number;
   _lfEnrichStableCycles?: number;
-  _lfEnrichWorkerRestartAttempts?: number;
-  _lfEnrichWorkerRestartTimer?: ReturnType<typeof setTimeout>;
-  _lfEnrichLastHygieneAt?: number;
 };
 
 function isPaused(): boolean {
@@ -287,7 +285,7 @@ async function resolveCampaignConcurrency(
 // Job claiming (single process, single-claim pass per lead per cycle)
 // =============================================================================
 
-interface ClaimedJob {
+export interface ClaimedJob {
   id: string;
   organization_id: string;
   batch_id: string;
@@ -321,19 +319,68 @@ async function claimJobs(limit: number): Promise<ClaimedJob[]> {
     if (picks.length >= limit) break;
   }
 
+  // Overlapping cron invocations can race for the same rows: a job counts as
+  // claimed only when this compare-and-swap actually matched it.
   const claimed: ClaimedJob[] = [];
   for (const row of picks) {
-    const { error } = await supabase
+    const { data: won, error } = await supabase
       .from("lf_enrichment_jobs")
       .update({
         status: "running",
         started_at: nowIso,
       })
       .eq("id", row.id)
-      .in("status", ["queued", "retry"]);
-    if (!error) claimed.push(row);
+      .in("status", ["queued", "retry"])
+      .select("id");
+    if (!error && won && won.length > 0) claimed.push(row);
   }
   return claimed;
+}
+
+/**
+ * Claims up to `limit` jobs, then keeps only as many per batch as the
+ * campaign's concurrency allows. Jobs over the cap go back to `queued` so they
+ * are not stranded in `running` until stale recovery.
+ */
+async function claimRunnableJobs(limit: number): Promise<ClaimedJob[]> {
+  const claimed = await claimJobs(limit);
+  if (claimed.length === 0) return [];
+
+  const byBatch = new Map<string, ClaimedJob[]>();
+  for (const j of claimed) {
+    const key = `${j.organization_id}|${j.batch_id}`;
+    const arr = byBatch.get(key) ?? [];
+    arr.push(j);
+    byBatch.set(key, arr);
+  }
+
+  const supabase = createAdminClient();
+  const toRun: ClaimedJob[] = [];
+  const overCap: string[] = [];
+  for (const [, jobs] of byBatch.entries()) {
+    const first = jobs[0];
+    const { data: batch } = await supabase
+      .from("lf_enrichment_batches")
+      .select("campaign_id")
+      .eq("id", first.batch_id)
+      .limit(1)
+      .maybeSingle();
+    const cap = await resolveCampaignConcurrency(
+      batch?.campaign_id ?? null,
+      first.organization_id
+    );
+    toRun.push(...jobs.slice(0, cap));
+    overCap.push(...jobs.slice(cap).map((j) => j.id));
+  }
+
+  if (overCap.length > 0) {
+    await supabase
+      .from("lf_enrichment_jobs")
+      .update({ status: "queued" })
+      .in("id", overCap)
+      .eq("status", "running");
+  }
+  return toRun;
 }
 
 // =============================================================================
@@ -491,13 +538,19 @@ async function writeObsidianObservationForLead(
   });
 }
 
+/** `failed` is true when the job did not complete (failed or rescheduled for retry). */
+export interface JobOutcome {
+  rateLimited: boolean;
+  failed: boolean;
+}
+
 async function processJob(
   job: ClaimedJob
-): Promise<{ rateLimited: boolean }> {
+): Promise<JobOutcome> {
   const ctx = await loadJobContext(job);
   if (!ctx) {
     await failJob(job, (job.attempts ?? 0) + 1, "Lead not found");
-    return { rateLimited: false };
+    return { rateLimited: false, failed: true };
   }
 
   if (!ctx.campaignId) {
@@ -506,7 +559,7 @@ async function processJob(
       (job.attempts ?? 0) + 1,
       "Lead has no campaign_id"
     );
-    return { rateLimited: false };
+    return { rateLimited: false, failed: true };
   }
 
   try {
@@ -524,7 +577,7 @@ async function processJob(
         jobId: job.id,
       }
     );
-    if (!persisted) return { rateLimited: false };
+    if (!persisted) return { rateLimited: false, failed: false };
 
     // Best-effort Obsidian observation write (no-ops when disabled/unconfigured).
     // Never fail the job if the vault write errors — the worker has already
@@ -542,7 +595,7 @@ async function processJob(
       );
     }
 
-    return { rateLimited: false };
+    return { rateLimited: false, failed: false };
   } catch (err) {
     const newAttempts = (job.attempts ?? 0) + 1;
 
@@ -562,7 +615,7 @@ async function processJob(
           Math.max(APIFY_MEMORY_PAUSE_MS, backoffMs(newAttempts))
         );
       }
-      return { rateLimited: true };
+      return { rateLimited: true, failed: true };
     }
 
     if (isRateLimitError(err)) {
@@ -577,7 +630,7 @@ async function processJob(
           Math.max(RATE_LIMIT_PAUSE_MS, backoffMs(newAttempts))
         );
       }
-      return { rateLimited: true };
+      return { rateLimited: true, failed: true };
     }
 
     if (newAttempts >= MAX_ATTEMPTS) {
@@ -597,7 +650,7 @@ async function processJob(
         `[lf-worker] Job ${job.id} attempt ${newAttempts}/${MAX_ATTEMPTS} failed, retrying later`
       );
     }
-    return { rateLimited: false };
+    return { rateLimited: false, failed: true };
   }
 }
 
@@ -630,122 +683,134 @@ function tuneConcurrencyAfterCycle(
 }
 
 // =============================================================================
-// Main loop
+// Bounded drain (serverless-safe)
 // =============================================================================
 
-async function workerLoop(): Promise<void> {
-  while (true) {
-    if (
-      !g._lfEnrichLastHygieneAt ||
-      Date.now() - g._lfEnrichLastHygieneAt > 30_000
-    ) {
-      await recoverStaleRunning();
-      await failAncientRetryJobs();
-      await syncBatchStatuses();
-      g._lfEnrichLastHygieneAt = Date.now();
-    }
+export interface DrainOptions {
+  /** Stop once this many jobs have been processed. */
+  maxJobs: number;
+  /** Do not start a new cycle once this many ms have elapsed. */
+  deadlineMs: number;
+}
 
-    if (isPaused()) {
-      await sleep(POLL_IDLE_MS);
-      continue;
-    }
+export interface DrainResult {
+  /** Jobs claimed and run to an outcome during this drain. */
+  processed: number;
+  /** Of those, jobs that did not complete (failed or rescheduled for retry). */
+  failed: number;
+  /** Jobs still waiting in `queued`/`retry` after the drain. */
+  remaining: number;
+}
 
-    if (g._lfEnrichAdaptiveCap == null) {
-      g._lfEnrichAdaptiveCap = DEFAULT_CONCURRENCY;
-    }
-    const claimed = await claimJobs(
-      Math.min(
-        MAX_ENRICHMENT_CONCURRENCY,
-        Math.max(1, g._lfEnrichAdaptiveCap)
-      )
+/** Injectable collaborators (tests pass fakes; production uses the DB). */
+export interface DrainDeps {
+  claim: (limit: number) => Promise<ClaimedJob[]>;
+  process: (job: ClaimedJob) => Promise<JobOutcome>;
+  countRemaining: () => Promise<number>;
+  /** Queue hygiene, run once before the first cycle. */
+  prepare: () => Promise<void>;
+  /** Runs after every cycle (batch status sync). */
+  afterCycle: () => Promise<void>;
+  isPaused: () => boolean;
+  now: () => number;
+}
+
+async function countRemainingJobs(): Promise<number> {
+  const { count } = await createAdminClient()
+    .from("lf_enrichment_jobs")
+    .select("id", { count: "exact", head: true })
+    .in("status", ["queued", "retry"]);
+  return count ?? 0;
+}
+
+async function prepareQueue(): Promise<void> {
+  await recoverStaleRunning();
+  await failAncientRetryJobs();
+  await syncBatchStatuses();
+}
+
+const defaultDrainDeps: DrainDeps = {
+  claim: claimRunnableJobs,
+  process: processJob,
+  countRemaining: countRemainingJobs,
+  prepare: prepareQueue,
+  afterCycle: syncBatchStatuses,
+  isPaused,
+  now: () => Date.now(),
+};
+
+/**
+ * Claims and processes queued/retry jobs in awaited cycles until `maxJobs`
+ * have been processed, the deadline passes, the queue is empty, or this
+ * instance is cooling down after a rate/memory limit. Every started job is
+ * awaited before returning, so nothing is left running after the response.
+ */
+export async function drainEnrichmentJobs(
+  opts: DrainOptions,
+  deps: Partial<DrainDeps> = {}
+): Promise<DrainResult> {
+  const d: DrainDeps = { ...defaultDrainDeps, ...deps };
+  const startedAt = d.now();
+  let processed = 0;
+  let failed = 0;
+
+  await d.prepare();
+
+  while (
+    processed < opts.maxJobs &&
+    d.now() - startedAt < opts.deadlineMs &&
+    !d.isPaused()
+  ) {
+    const cap = Math.min(
+      MAX_ENRICHMENT_CONCURRENCY,
+      Math.max(1, g._lfEnrichAdaptiveCap ?? DEFAULT_CONCURRENCY)
     );
+    const claimed = await d.claim(Math.min(cap, opts.maxJobs - processed));
+    if (claimed.length === 0) break;
 
-    if (claimed.length === 0) {
-      await syncBatchStatuses();
-      await sleep(POLL_IDLE_MS);
-      continue;
-    }
-
-    // Resolve per-campaign concurrency and cap claimed jobs accordingly.
-    const byCampaign = new Map<string, ClaimedJob[]>();
-    for (const j of claimed) {
-      const key = `${j.organization_id}|${j.batch_id}`;
-      const arr = byCampaign.get(key) ?? [];
-      arr.push(j);
-      byCampaign.set(key, arr);
-    }
-
-    const toRun: ClaimedJob[] = [];
-    for (const [, jobs] of byCampaign.entries()) {
-      const first = jobs[0];
-      const supabase = createAdminClient();
-      const { data: batch } = await supabase
-        .from("lf_enrichment_batches")
-        .select("campaign_id")
-        .eq("id", first.batch_id)
-        .limit(1)
-        .maybeSingle();
-      const campId = batch?.campaign_id ?? null;
-      const cap = await resolveCampaignConcurrency(
-        campId,
-        first.organization_id
-      );
-      toRun.push(...jobs.slice(0, cap));
-    }
-
-    const results = await Promise.allSettled(toRun.map(processJob));
-    const hadRateLimit = results.some(
-      (r) => r.status === "fulfilled" && r.value.rateLimited
+    const results = await Promise.allSettled(claimed.map((j) => d.process(j)));
+    processed += claimed.length;
+    failed += results.filter(
+      (r) => r.status === "rejected" || r.value.failed
+    ).length;
+    tuneConcurrencyAfterCycle(
+      results.some((r) => r.status === "fulfilled" && r.value.rateLimited),
+      DEFAULT_CONCURRENCY
     );
-    tuneConcurrencyAfterCycle(hadRateLimit, DEFAULT_CONCURRENCY);
-    await syncBatchStatuses();
+    await d.afterCycle();
   }
+
+  return { processed, failed, remaining: await d.countRemaining() };
 }
 
 // =============================================================================
-// Public: start the worker (idempotent, HMR-safe)
+// Dev-only background loop
 // =============================================================================
 
+/**
+ * Local/dev convenience (booted by instrumentation.ts): keeps draining in a
+ * long-lived `next dev` process. A no-op in production, where the
+ * lead-finder-worker cron drains in bounded, awaited batches instead.
+ */
 export function workerPump(): void {
+  if (process.env.NODE_ENV === "production") return;
   if (g._lfEnrichWorkerRunning) return;
-  if (g._lfEnrichWorkerRestartTimer) {
-    clearTimeout(g._lfEnrichWorkerRestartTimer);
-    g._lfEnrichWorkerRestartTimer = undefined;
-  }
   g._lfEnrichWorkerRunning = true;
-  g._lfEnrichWorkerRestartAttempts = 0;
-  console.log("[lf-worker] Starting Lead Finder enrichment worker");
+  console.log("[lf-worker] Starting dev enrichment loop");
 
-  const restart = (delayMs: number) => {
-    if (g._lfEnrichWorkerRestartTimer) {
-      clearTimeout(g._lfEnrichWorkerRestartTimer);
+  void (async () => {
+    try {
+      while (true) {
+        const { processed } = await drainEnrichmentJobs({
+          maxJobs: 50,
+          deadlineMs: 60_000,
+        });
+        if (processed === 0) await sleep(DEV_IDLE_MS);
+      }
+    } catch (err) {
+      console.error("[lf-worker] Dev enrichment loop stopped:", err);
+    } finally {
+      g._lfEnrichWorkerRunning = false;
     }
-    g._lfEnrichWorkerRestartTimer = setTimeout(() => {
-      g._lfEnrichWorkerRestartTimer = undefined;
-      if (!g._lfEnrichWorkerRunning) workerPump();
-    }, delayMs);
-  };
-
-  workerLoop()
-    .then(() => {
-      console.warn(
-        "[lf-worker] Worker loop exited unexpectedly — restarting"
-      );
-      g._lfEnrichWorkerRunning = false;
-      restart(2000);
-    })
-    .catch((err) => {
-      console.error("[lf-worker] Fatal error — worker stopped:", err);
-      g._lfEnrichWorkerRunning = false;
-      g._lfEnrichWorkerRestartAttempts =
-        (g._lfEnrichWorkerRestartAttempts ?? 0) + 1;
-      const delay = Math.min(
-        30_000,
-        2_000 * Math.pow(2, g._lfEnrichWorkerRestartAttempts - 1)
-      );
-      console.warn(
-        `[lf-worker] Scheduling auto-restart in ${Math.round(delay / 1000)}s`
-      );
-      restart(delay);
-    });
+  })();
 }

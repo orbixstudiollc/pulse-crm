@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/Progress";
 
 const STORAGE_KEY = "activeBatchId";
 const POLL_INTERVAL_MS = 2000;
+const STATUS_POLL_INTERVAL_MS = 5000;
 
 /**
  * Call this after a successful POST that enqueues an enrichment batch
@@ -43,25 +44,30 @@ interface BatchStatus {
   finishedAt: string | null;
 }
 
-interface BatchUpdateEvent {
-  batchId: string;
+interface EnrichmentStatusBatch {
+  id: string;
   campaignId: string | null;
   total: number;
-  completed: number;
+  done: number;
   failed: number;
   status: string;
 }
 
+interface EnrichmentStatusResponse {
+  active: boolean;
+  batches: EnrichmentStatusBatch[];
+}
+
 interface EnrichmentProgressBannerProps {
   /**
-   * When provided, the banner scopes its SSE subscription to this campaign
-   * id. When omitted, it listens to org-wide events.
+   * When provided, the banner only picks up batches for this campaign id.
+   * When omitted, it considers every batch in the org.
    */
   campaignId?: string;
   /**
    * Optional initial batch id. Callers that just kicked off an enrichment
    * (e.g. bulk-enrich) can pass the returned batchId so the banner latches
-   * on immediately instead of waiting for the first SSE event.
+   * on immediately instead of waiting for the next status poll.
    */
   batchId?: string | null;
   /**
@@ -81,6 +87,20 @@ function formatEta(seconds: number | null): string {
   if (mins < 60) return `${mins}m ${seconds % 60}s`;
   const hours = Math.floor(mins / 60);
   return `${hours}h ${mins % 60}m`;
+}
+
+function isTerminal(status: string): boolean {
+  return status === "done" || status === "cancelled";
+}
+
+async function fetchEnrichmentStatus(): Promise<EnrichmentStatusResponse | null> {
+  try {
+    const res = await fetch("/api/lead-finder/enrichment-status");
+    if (!res.ok) return null;
+    return (await res.json()) as EnrichmentStatusResponse;
+  } catch {
+    return null;
+  }
 }
 
 async function fetchBatchStatus(id: string): Promise<BatchStatus | null> {
@@ -109,8 +129,16 @@ export function EnrichmentProgressBanner({
   const [status, setStatus] = useState<BatchStatus | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [active, setActive] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const finishedSignalled = useRef<string | null>(null);
+  const batchIdRef = useRef<string | null>(batchId);
+  const statusRef = useRef<BatchStatus | null>(status);
+
+  useEffect(() => {
+    batchIdRef.current = batchId;
+    statusRef.current = status;
+  }, [batchId, status]);
 
   // When the caller provides a new initial batchId, latch on immediately.
   useEffect(() => {
@@ -141,59 +169,71 @@ export function EnrichmentProgressBanner({
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  // ── Subscribe to SSE ────────────────────────────────────────────────────
+  // ── Poll org-wide enrichment status ────────────────────────────────────
+  // Works across serverless instances (reads the DB), unlike an in-memory
+  // event stream. Runs once on mount / when the tracked batch changes, when
+  // the tab becomes visible, and every few seconds only while a batch is active.
 
-  useEffect(() => {
-    const url = campaignId
-      ? `/api/lead-finder/events?campaignId=${campaignId}`
-      : `/api/lead-finder/events`;
-    const es = new EventSource(url);
+  const refreshStatus = useCallback(async () => {
+    const data = await fetchEnrichmentStatus();
+    if (!data) return;
+    const batches = campaignId
+      ? data.batches.filter((b) => b.campaignId === campaignId)
+      : data.batches;
+    const running = batches.find((b) => !isTerminal(b.status));
+    setActive(!!running);
 
-    const onBatchUpdate = (e: MessageEvent) => {
-      try {
-        const data = JSON.parse(e.data) as BatchUpdateEvent;
+    // Latch on to an active batch if we don't track one, or if the tracked
+    // batch has finished and a new one is starting.
+    const tracked = batchIdRef.current;
+    const trackedStatus = statusRef.current;
+    const trackedFinished =
+      !!trackedStatus &&
+      trackedStatus.id === tracked &&
+      isTerminal(trackedStatus.status);
+    if (running && running.id !== tracked && (!tracked || trackedFinished)) {
+      setBatchId(running.id);
+      setStatus(null);
+      setDismissed(false);
+      finishedSignalled.current = null;
+      return;
+    }
 
-        setBatchId((prev) => {
-          // Latch on to whatever batch is active if we don't have one, OR
-          // if the previously tracked batch is finished and a new one is
-          // starting.
-          if (!prev) return data.batchId;
-          return prev;
-        });
-
-        setStatus((prev) => {
-          if (!prev || prev.id !== data.batchId) return prev;
-          return {
-            ...prev,
-            done: data.completed,
-            failed: data.failed,
-            total: data.total,
-            status: data.status,
-          };
-        });
-
-        // Unhide the banner when a new batch comes in.
-        setDismissed(false);
-      } catch {
-        /* swallow */
-      }
-    };
-
-    es.addEventListener(
-      "enrichment-batch:updated",
-      onBatchUpdate as EventListener
-    );
-
-    return () => {
-      es.removeEventListener(
-        "enrichment-batch:updated",
-        onBatchUpdate as EventListener
-      );
-      es.close();
-    };
+    setStatus((prev) => {
+      if (!prev) return prev;
+      const match = batches.find((b) => b.id === prev.id);
+      if (!match) return prev;
+      return {
+        ...prev,
+        done: match.done,
+        failed: match.failed,
+        total: match.total,
+        status: match.status,
+      };
+    });
   }, [campaignId]);
 
-  // ── Poll the batch endpoint while active ───────────────────────────────
+  useEffect(() => {
+    void refreshStatus();
+  }, [refreshStatus, batchId]);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void refreshStatus();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [refreshStatus]);
+
+  useEffect(() => {
+    if (!active) return;
+    const t = setInterval(() => {
+      void refreshStatus();
+    }, STATUS_POLL_INTERVAL_MS);
+    return () => clearInterval(t);
+  }, [active, refreshStatus]);
+
+  // ── Poll the tracked batch's details until it finishes ─────────────────
 
   useEffect(() => {
     if (!batchId) return;
@@ -204,6 +244,10 @@ export function EnrichmentProgressBanner({
       const fresh = await fetchBatchStatus(batchId);
       if (cancelled || !fresh) return;
       setStatus(fresh);
+      if (isTerminal(fresh.status) && pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
     };
     void load();
 

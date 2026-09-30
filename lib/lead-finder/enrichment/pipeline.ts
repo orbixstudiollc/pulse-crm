@@ -235,7 +235,7 @@ export async function enrichSingleLead(
 
 // ---------------------------------------------------------------------------
 // Batch enrichment – enqueues all "new" leads in a campaign into the durable
-// enrichment queue. Returns immediately; the background worker drains jobs.
+// enrichment queue. Returns immediately; the lead-finder-worker cron drains jobs.
 // ---------------------------------------------------------------------------
 
 export async function enrichCampaignLeads(
@@ -352,17 +352,7 @@ export async function enrichCampaignLeads(
     }
   }
 
-  // Kick the worker
-  try {
-    const { workerPump } = await import("./worker");
-    workerPump();
-  } catch (err) {
-    console.error(
-      "[lead-finder] Failed to start enrichment worker:",
-      err
-    );
-  }
-
+  // No in-request kick: the lead-finder-worker cron drains the queue.
   leadEmitter.emit("campaign:enrichment-progress", {
     campaignId,
     completed: 0,
@@ -490,16 +480,7 @@ export async function enqueueLeadsEnrichment(
     }
   }
 
-  try {
-    const { workerPump } = await import("./worker");
-    workerPump();
-  } catch (err) {
-    console.error(
-      "[lead-finder] Failed to start enrichment worker:",
-      err
-    );
-  }
-
+  // No in-request kick: the lead-finder-worker cron drains the queue.
   return {
     batchId,
     enqueued: toEnqueue.length,
