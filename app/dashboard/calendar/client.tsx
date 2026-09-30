@@ -5,10 +5,11 @@ import {
   Button,
   ExportIcon,
   PlusIcon,
+  CalendarBlankIcon,
   CaretLeftIcon,
   CaretRightIcon,
 } from "@/components/ui";
-import { PageHeader } from "@/components/dashboard";
+import { Page, PageHeader, DetailLayout, PanelSection } from "@/components/dashboard";
 import { LogActivityModal, ActivityDetailDrawer } from "@/components/features";
 import { cn } from "@/lib/utils";
 import {
@@ -328,9 +329,9 @@ export function CalendarPageClient({
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-6">
+    <Page>
       {/* Header */}
-      <PageHeader title="Calendar">
+      <PageHeader title="Calendar" icon={<CalendarBlankIcon size={18} />}>
         <Button
           variant="outline"
           leftIcon={<ExportIcon size={18} />}
@@ -359,7 +360,7 @@ export function CalendarPageClient({
       </PageHeader>
 
       {/* Calendar Navigation */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 px-8 pb-4 max-sm:px-4">
         <button
           onClick={goToPreviousMonth}
           className="p-2 rounded border border-line hover:bg-muted transition-colors"
@@ -394,15 +395,70 @@ export function CalendarPageClient({
       </div>
 
       {/* Calendar + Upcoming Sidebar */}
-      <div className="flex flex-col lg:flex-row gap-6">
+      <DetailLayout
+        className="border-t border-divider"
+        aside={
+          <PanelSection title="Upcoming">
+            <div className="space-y-6">
+              {Object.entries(groupedUpcoming).length === 0 ? (
+                <p className="text-sm text-fg-secondary">
+                  No upcoming events
+                </p>
+              ) : (
+                Object.entries(groupedUpcoming).map(([date, dateEvents]) => (
+                  <div key={date}>
+                    <h3 className="text-xs font-medium text-fg-secondary mb-3">
+                      {formatDateLabel(date)}
+                    </h3>
+                    <div>
+                      {dateEvents.map((event) => (
+                        <button
+                          key={event.id}
+                          onClick={() => handleEventClick(event)}
+                          className="w-full border-b border-divider py-2.5 text-left hover:bg-subtle transition-colors last:border-b-0"
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className="text-sm text-fg-secondary w-11 shrink-0">
+                              {formatTime(event.startTime)}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-fg truncate">
+                                {event.title}
+                              </p>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span
+                                  className={cn(
+                                    "w-1.5 h-1.5 rounded-full",
+                                    eventDotColors[event.type] ||
+                                      eventDotColors.task,
+                                  )}
+                                />
+                                <span className="text-xs text-fg-secondary">
+                                  {event.type.charAt(0).toUpperCase() +
+                                    event.type.slice(1)}{" "}
+                                  · {event.duration}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </PanelSection>
+        }
+      >
         {/* Calendar Grid */}
-        <div className="flex-1 rounded-lg border border-line bg-surface overflow-hidden">
+        <div>
           {/* Day Headers */}
-          <div className="grid grid-cols-7 border-b border-line">
+          <div className="grid grid-cols-7 border-b border-divider">
             {DAYS.map((day) => (
               <div
                 key={day}
-                className="px-3 py-3 text-center text-xs font-medium text-fg-secondary border-r border-row last:border-r-0"
+                className="px-3 py-3 text-center text-xs font-medium text-fg-secondary border-r border-divider last:border-r-0"
               >
                 {day}
               </div>
@@ -422,7 +478,7 @@ export function CalendarPageClient({
                 <div
                   key={index}
                   className={cn(
-                    "min-h-[110px] p-2 border-r border-b border-row",
+                    "min-h-[110px] p-2 border-r border-b border-divider",
                     "[&:nth-child(7n)]:border-r-0",
                     !day && "bg-subtle",
                   )}
@@ -467,66 +523,7 @@ export function CalendarPageClient({
             })}
           </div>
         </div>
-
-        {/* Upcoming Sidebar */}
-        <div className="w-full lg:w-72 lg:shrink-0">
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <h2 className="text-lg font-semibold text-fg mb-5">
-              Upcoming
-            </h2>
-
-            <div className="space-y-6">
-              {Object.entries(groupedUpcoming).length === 0 ? (
-                <p className="text-sm text-fg-secondary">
-                  No upcoming events
-                </p>
-              ) : (
-                Object.entries(groupedUpcoming).map(([date, dateEvents]) => (
-                  <div key={date}>
-                    <h3 className="text-xs font-medium text-fg-secondary mb-3">
-                      {formatDateLabel(date)}
-                    </h3>
-                    <div className="space-y-2">
-                      {dateEvents.map((event) => (
-                        <button
-                          key={event.id}
-                          onClick={() => handleEventClick(event)}
-                          className="w-full p-3 rounded border border-line hover:bg-muted transition-colors text-left"
-                        >
-                          <div className="flex items-start gap-3">
-                            <span className="text-sm text-fg-secondary w-11 shrink-0">
-                              {formatTime(event.startTime)}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-fg truncate">
-                                {event.title}
-                              </p>
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <span
-                                  className={cn(
-                                    "w-1.5 h-1.5 rounded-full",
-                                    eventDotColors[event.type] ||
-                                      eventDotColors.task,
-                                  )}
-                                />
-                                <span className="text-xs text-fg-secondary">
-                                  {event.type.charAt(0).toUpperCase() +
-                                    event.type.slice(1)}{" "}
-                                  · {event.duration}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      </DetailLayout>
 
       {/* Schedule Event Modal */}
       <LogActivityModal
@@ -613,6 +610,6 @@ export function CalendarPageClient({
           }
         }}
       />
-    </div>
+    </Page>
   );
 }

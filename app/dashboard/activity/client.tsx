@@ -7,6 +7,7 @@ import {
   Input,
   Select,
   PlusIcon,
+  PulseIcon,
   MagnifyingGlassIcon,
   PhoneIcon,
   CalendarBlankIcon,
@@ -17,7 +18,7 @@ import {
   CaretLeftIcon,
   CaretRightIcon,
 } from "@/components/ui";
-import { PageHeader } from "@/components/dashboard";
+import { Page, PageHeader, MetricStrip, Metric } from "@/components/dashboard";
 import {
   LogActivityModal,
   ActivityDetailDrawer,
@@ -292,9 +293,9 @@ export function ActivityPageClient({
   };
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-6 flex flex-col gap-6 min-h-full">
+    <Page>
       {/* Header */}
-      <PageHeader title="Activities">
+      <PageHeader title="Activities" icon={<PulseIcon size={18} />}>
         <Button
           leftIcon={<PlusIcon size={20} weight="bold" />}
           onClick={() => setShowLogActivity(true)}
@@ -304,40 +305,22 @@ export function ActivityPageClient({
       </PageHeader>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-lg border border-line bg-surface p-4">
-          <p className="text-sm text-fg-secondary">
-            Total Activities
-          </p>
-          <p className="mt-1 text-2xl font-semibold text-fg">
-            {stats.total}
-          </p>
-        </div>
-        <div className="rounded-lg border border-line bg-surface p-4">
-          <p className="text-sm text-fg-secondary">
-            Calls
-          </p>
-          <p className="mt-1 text-2xl font-semibold text-fg">
-            {stats.calls}
-          </p>
-        </div>
-        <div className="rounded-lg border border-line bg-surface p-4">
-          <p className="text-sm text-fg-secondary">
-            Meetings
-          </p>
-          <p className="mt-1 text-2xl font-semibold text-fg">
-            {stats.meetings}
-          </p>
-          {stats.scheduledMeetings > 0 && (
-            <p className="text-xs text-fg-muted mt-1">
-              {stats.scheduledMeetings} upcoming
-            </p>
-          )}
-        </div>
-      </div>
+      <MetricStrip>
+        <Metric label="Total Activities" value={stats.total} />
+        <Metric label="Calls" value={stats.calls} />
+        <Metric
+          label="Meetings"
+          value={stats.meetings}
+          hint={
+            stats.scheduledMeetings > 0
+              ? `${stats.scheduledMeetings} upcoming`
+              : undefined
+          }
+        />
+      </MetricStrip>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 px-8 max-sm:px-4 py-2 border-t border-divider">
         <div className="flex-1 max-w-md">
           <Input
             placeholder="Search activities..."
@@ -388,7 +371,7 @@ export function ActivityPageClient({
       </div>
 
       {/* Activity List */}
-      <div className="rounded-lg border border-line bg-surface overflow-hidden flex-1">
+      <div className="border-t border-divider">
         {paginatedActivities.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4">
             <p className="text-fg-secondary text-sm">
@@ -403,7 +386,7 @@ export function ActivityPageClient({
             </Button>
           </div>
         ) : (
-          <div className="divide-y divide-row">
+          <div>
             {paginatedActivities.map((activity) => (
               <ActivityRow
                 key={activity.id}
@@ -426,8 +409,8 @@ export function ActivityPageClient({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-fg-secondary">
+        <div className="flex h-12 items-center justify-between gap-4 px-8 max-sm:px-4 text-[13px] text-fg-muted">
+          <p>
             Showing {(currentPage - 1) * rowsPerPage + 1}–
             {Math.min(currentPage * rowsPerPage, filteredActivities.length)} of{" "}
             {filteredActivities.length}
@@ -560,7 +543,7 @@ export function ActivityPageClient({
           }
         }}
       />
-    </div>
+    </Page>
   );
 }
 
@@ -589,17 +572,17 @@ function ActivityRow({
 
   return (
     <div
-      className="flex items-center gap-4 px-5 py-4 hover:bg-muted transition-colors cursor-pointer"
+      className="flex items-center gap-4 border-b border-divider px-8 py-3 hover:bg-subtle transition-colors cursor-pointer max-sm:px-4"
       onClick={onClick}
     >
       {/* Type Icon */}
       <div
         className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded",
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-md",
           colorClass,
         )}
       >
-        <Icon size={20} />
+        <Icon size={16} />
       </div>
 
       {/* Content */}
@@ -650,9 +633,9 @@ function ActivityRow({
             e.stopPropagation();
             onToggleMenu();
           }}
-          className="flex h-8 w-8 items-center justify-center rounded text-fg-muted hover:bg-muted hover:text-fg-secondary transition-colors"
+          className="flex h-6 w-6 items-center justify-center rounded-md border border-line text-fg-secondary hover:bg-subtle transition-colors"
         >
-          <DotsThreeIcon size={20} weight="bold" />
+          <DotsThreeIcon size={16} weight="bold" />
         </button>
 
         {actionMenuOpen && (

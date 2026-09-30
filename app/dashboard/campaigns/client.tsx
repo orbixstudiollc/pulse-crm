@@ -9,7 +9,6 @@ import {
   PlusIcon,
   MagnifyingGlassIcon,
   PaperPlaneTiltIcon,
-  DotsThreeVerticalIcon,
   PencilSimpleIcon,
   TrashIcon,
   CopyIcon,
@@ -33,7 +32,16 @@ import {
   MicrosoftOutlookLogoIcon,
   FunnelSimpleIcon,
   Button,
+  ActionMenu,
 } from "@/components/ui";
+import {
+  Page,
+  PageHeader,
+  MetricStrip,
+  PageTabs,
+  TableSection,
+  StatCard,
+} from "@/components/dashboard";
 import {
   getCampaignsWithTags,
   getCampaignDashboardStats,
@@ -101,7 +109,7 @@ function DeleteConfirmModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative rounded-lg border border-line bg-surface shadow-modal p-4 max-w-md w-full mx-4">
+      <div className="relative rounded-lg border border-line bg-surface shadow-modal p-4 max-w-md w-full mx-4" data-clay-box>
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-danger-surface rounded">
             <WarningIcon className="w-5 h-5 text-danger" />
@@ -150,7 +158,7 @@ function TagManagerModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative rounded-lg border border-line bg-surface shadow-modal p-4 max-w-md w-full mx-4">
+      <div className="relative rounded-lg border border-line bg-surface shadow-modal p-4 max-w-md w-full mx-4" data-clay-box>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-fg">Manage Tags</h3>
           <button onClick={onClose} className="text-fg-secondary hover:text-fg"><XIcon className="w-5 h-5" /></button>
@@ -268,9 +276,9 @@ function PerformanceDrawer({
           </div>
 
           {/* Metrics */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-4 mb-6 pt-6 border-t border-divider">
             {metrics.map((m) => (
-              <div key={m.label} className="bg-muted rounded p-3">
+              <div key={m.label}>
                 <div className="flex items-center gap-2 mb-1">
                   <m.icon className={`w-4 h-4 ${m.color}`} />
                   <span className="text-xs text-fg-secondary">{m.label}</span>
@@ -278,7 +286,7 @@ function PerformanceDrawer({
                 <span className="text-lg font-semibold text-fg">{m.value.toLocaleString()}</span>
               </div>
             ))}
-            <div className="bg-muted rounded p-3">
+            <div>
               <div className="flex items-center gap-2 mb-1">
                 <UsersIcon className="w-4 h-4 text-accent-strong" />
                 <span className="text-xs text-fg-secondary">Enrolled</span>
@@ -307,7 +315,7 @@ function PerformanceDrawer({
           </div>
 
           {/* Quick Info */}
-          <div className="bg-muted rounded p-4 mb-6 space-y-2">
+          <div className="pt-6 border-t border-divider mb-6 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-fg-secondary">Steps</span>
               <span className="text-fg">{campaign.total_steps}</span>
@@ -381,7 +389,6 @@ export function CampaignsPageClient({
   const [drawerCampaign, setDrawerCampaign] = useState<CampaignWithTags | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [showTagManager, setShowTagManager] = useState(false);
-  const [actionMenuId, setActionMenuId] = useState<string | null>(null);
 
   // Animated stats
   const animActive = useCountUp(stats.activeCampaigns);
@@ -391,11 +398,11 @@ export function CampaignsPageClient({
   const animAccounts = useCountUp(stats.activeAccounts);
 
   const tabs = [
-    { key: "all", label: "All", count: stats.totalCampaigns },
-    { key: "active", label: "Active", count: stats.activeCampaigns },
-    { key: "paused", label: "Paused", count: stats.pausedCampaigns },
-    { key: "draft", label: "Drafts", count: stats.draftCampaigns },
-    { key: "accounts", label: "Accounts", count: stats.totalAccounts },
+    { id: "all", label: "All", count: stats.totalCampaigns },
+    { id: "active", label: "Active", count: stats.activeCampaigns },
+    { id: "paused", label: "Paused", count: stats.pausedCampaigns },
+    { id: "draft", label: "Drafts", count: stats.draftCampaigns },
+    { id: "accounts", label: "Accounts", count: stats.totalAccounts },
   ];
 
   // Refresh data
@@ -452,7 +459,6 @@ export function CampaignsPageClient({
       const res = await cloneSequence(id);
       if (res.error) { toast.error(res.error); return; }
       toast.success("Campaign cloned");
-      setActionMenuId(null);
       refresh();
     });
   };
@@ -503,312 +509,306 @@ export function CampaignsPageClient({
   ];
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
+    <Page>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-[22px] leading-7 font-semibold text-fg">Campaigns</h1>
-          <p className="text-[13px] text-fg-muted mt-1">Manage your outreach campaigns, email accounts, and send schedules</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={() => setShowTagManager(true)}>
-            Tags
-          </Button>
-          <Button onClick={handleNewCampaign} disabled={isPending} leftIcon={<PlusIcon className="w-4 h-4" />}>
-            New Campaign
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Campaigns"
+        description="Manage your outreach campaigns, email accounts, and send schedules"
+        icon={<PaperPlaneTiltIcon size={18} />}
+      >
+        <Button variant="secondary" onClick={() => setShowTagManager(true)}>
+          Tags
+        </Button>
+        <Button onClick={handleNewCampaign} disabled={isPending} leftIcon={<PlusIcon className="w-4 h-4" />}>
+          New Campaign
+        </Button>
+      </PageHeader>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-5 gap-4">
+      {/* KPI Metrics */}
+      <MetricStrip>
         {kpis.map((kpi) => (
-          <div key={kpi.label} className="rounded-lg border border-line bg-surface">
-            <div className="flex items-start justify-between p-4">
-              <div className="space-y-2">
-                <p className="text-xs font-normal leading-5 text-fg-secondary">{kpi.label}</p>
-                <p className="text-[22px] font-semibold text-fg">{typeof kpi.value === "number" ? kpi.value.toLocaleString() : kpi.value}</p>
-              </div>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line">
-                <kpi.icon className="w-4 h-4 text-fg-secondary" />
-              </div>
-            </div>
-          </div>
+          <StatCard
+            key={kpi.label}
+            label={kpi.label}
+            value={typeof kpi.value === "number" ? kpi.value.toLocaleString() : kpi.value}
+            icon={<kpi.icon className="w-4 h-4" />}
+          />
         ))}
-      </div>
+      </MetricStrip>
 
-      {/* Tabs + Search */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => { setActiveTab(tab.key); setSelectedRows(new Set()); }}
-              className={`h-7 px-3 text-[13px] rounded-md border transition-colors ${
-                activeTab === tab.key ? "border-accent text-accent-strong bg-surface font-medium" : "border-line text-fg-secondary hover:bg-subtle hover:text-fg"
-              }`}
+      {/* Tabs */}
+      <PageTabs
+        tabs={tabs}
+        value={activeTab}
+        onChange={(id) => { setActiveTab(id); setSelectedRows(new Set()); }}
+        className="max-sm:overflow-x-auto max-sm:overflow-y-hidden"
+      />
+
+      {/* Search + tag filter */}
+      {activeTab !== "accounts" && (
+        <div className="flex flex-wrap items-center gap-3 px-8 max-sm:px-4 py-2">
+          {tags.length > 0 && (
+            <select
+              value={selectedTag ?? ""}
+              onChange={(e) => setSelectedTag(e.target.value || null)}
+              className="px-3 py-1.5 bg-muted border border-line rounded text-sm text-fg focus:outline-none"
             >
-              {tab.label} <span className="text-xs opacity-70">({tab.count})</span>
-            </button>
-          ))}
-        </div>
-
-        {activeTab !== "accounts" && (
-          <div className="flex items-center gap-3">
-            {tags.length > 0 && (
-              <select
-                value={selectedTag ?? ""}
-                onChange={(e) => setSelectedTag(e.target.value || null)}
-                className="px-3 py-1.5 bg-muted border border-line rounded text-sm text-fg focus:outline-none"
-              >
-                <option value="">All Tags</option>
-                {tags.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
-            )}
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search campaigns..."
-                className="pl-9 pr-3 py-1.5 w-64 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent"
-              />
-            </div>
+              <option value="">All Tags</option>
+              {tags.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          )}
+          <div className="relative">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search campaigns..."
+              className="pl-9 pr-3 py-1.5 w-64 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent"
+            />
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Campaign List or Accounts Tab */}
       <AnimatePresence mode="wait">
         {activeTab === "accounts" ? (
           <motion.div key="accounts" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.15 }}>
             {/* Accounts Tab */}
-            <div className="rounded-lg border border-line bg-surface overflow-x-auto">
-              <div className="flex items-center justify-between p-4 border-b border-line">
-                <div className="flex items-center gap-4">
-                  <h3 className="text-sm font-medium text-fg">Email Accounts</h3>
-                  <div className="flex items-center gap-2 text-xs text-fg-secondary">
-                    <span className="px-2 py-0.5 bg-success-surface text-success rounded-full">
-                      {accounts.filter((a) => a.status === "active").length} active
-                    </span>
-                    <span className="px-2 py-0.5 bg-warning-surface text-warning rounded-full">
-                      {accounts.filter((a) => a.status === "warming_up").length} warming
-                    </span>
-                  </div>
+            <div className="flex h-14 items-center justify-between gap-4 px-8 max-sm:px-4">
+              <div className="flex items-center gap-4">
+                <h3 className="text-[18px] leading-6 font-semibold text-fg">Email Accounts</h3>
+                <div className="flex items-center gap-2 text-xs text-fg-secondary">
+                  <span className="px-2 py-0.5 bg-success-surface text-success rounded-full">
+                    {accounts.filter((a) => a.status === "active").length} active
+                  </span>
+                  <span className="px-2 py-0.5 bg-warning-surface text-warning rounded-full">
+                    {accounts.filter((a) => a.status === "warming_up").length} warming
+                  </span>
                 </div>
+              </div>
+              <Link href="/dashboard/settings?tab=email-accounts"
+                className="inline-flex items-center gap-1.5 h-8 px-3 bg-accent-strong hover:bg-accent-strong/90 text-on-inverse text-[14px] font-medium rounded-md transition-colors">
+                <PlusIcon className="w-4 h-4" /> Add Account
+              </Link>
+            </div>
+
+            {accounts.length === 0 ? (
+              <div className="p-12 text-center border-t border-divider">
+                <PlugsConnectedIcon className="w-10 h-10 text-fg-muted mx-auto mb-3" />
+                <p className="text-sm text-fg-secondary mb-4">No email accounts connected yet</p>
                 <Link href="/dashboard/settings?tab=email-accounts"
-                  className="inline-flex items-center gap-1.5 h-8 px-3 bg-accent-strong hover:bg-accent-strong/90 text-on-inverse text-[14px] font-medium rounded-md transition-colors">
-                  <PlusIcon className="w-4 h-4" /> Add Account
+                  className="inline-flex items-center h-8 px-3 bg-accent-strong hover:bg-accent-strong/90 text-on-inverse text-[14px] font-medium rounded-md transition-colors">
+                  Add Your First Account
                 </Link>
               </div>
-
-              {accounts.length === 0 ? (
-                <div className="p-12 text-center">
-                  <PlugsConnectedIcon className="w-10 h-10 text-fg-muted mx-auto mb-3" />
-                  <p className="text-sm text-fg-secondary mb-4">No email accounts connected yet</p>
-                  <Link href="/dashboard/settings?tab=email-accounts"
-                    className="inline-flex items-center h-8 px-3 bg-accent-strong hover:bg-accent-strong/90 text-on-inverse text-[14px] font-medium rounded-md transition-colors">
-                    Add Your First Account
-                  </Link>
-                </div>
-              ) : (
-                <table className="w-full">
-                  <thead>
-                    <tr>
-                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Email</th>
-                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Provider</th>
-                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Status</th>
-                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Daily Limit</th>
-                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Reputation</th>
-                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Warmup</th>
-                      <th className="h-10 px-3 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {accounts.map((acc) => (
-                      <tr key={acc.id} className="h-10 hover:bg-subtle transition-colors">
-                        <td className="px-3 py-2 border-b border-divider">
-                          <div className="flex items-center gap-2">
-                            {acc.provider === "gmail" ? <GoogleLogoIcon className="w-4 h-4 text-fg-secondary" /> :
-                             acc.provider === "microsoft" ? <MicrosoftOutlookLogoIcon className="w-4 h-4 text-fg-secondary" /> :
-                             <EnvelopeIcon className="w-4 h-4 text-fg-secondary" />}
-                            <div>
-                              <span className="text-sm text-fg">{acc.email_address}</span>
-                              {acc.display_name && <span className="text-xs text-fg-muted ml-2">{acc.display_name}</span>}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 text-[14px] text-fg-secondary capitalize border-b border-divider">{acc.provider}</td>
-                        <td className="px-3 py-2 border-b border-divider">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            acc.status === "active" ? "bg-success-surface text-success" :
-                            acc.status === "warming_up" ? "bg-warning-surface text-warning" :
-                            acc.status === "error" ? "bg-danger-surface text-danger" :
-                            "bg-muted text-fg-secondary"
-                          }`}>{acc.status}</span>
-                        </td>
-                        <td className="px-3 py-2 border-b border-divider">
-                          <div className="flex items-center gap-2">
-                            <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
-                              <div className="h-full bg-accent-strong rounded-full" style={{ width: `${Math.min((acc.daily_sent_count / acc.daily_send_limit) * 100, 100)}%` }} />
-                            </div>
-                            <span className="text-xs text-fg-secondary">{acc.daily_sent_count}/{acc.daily_send_limit}</span>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 border-b border-divider">
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-                              <div className={`h-full rounded-full ${Number(acc.reputation_score) >= 80 ? "bg-success" : Number(acc.reputation_score) >= 50 ? "bg-warning" : "bg-danger"}`}
-                                style={{ width: `${acc.reputation_score}%` }} />
-                            </div>
-                            <span className="text-xs text-fg-secondary">{Math.round(Number(acc.reputation_score))}</span>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 border-b border-divider">
-                          {acc.warmup_enabled ? (
-                            <span className="px-2 py-0.5 bg-warning-surface text-warning rounded-full text-xs">
-                              {acc.warmup_limit}/day
-                            </span>
-                          ) : (
-                            <span className="text-xs text-fg-muted">Off</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-right border-b border-divider">
-                          <button onClick={() => handleDeleteAccount(acc.id)} className="text-fg-muted hover:text-danger">
-                            <TrashIcon className="w-4 h-4" />
-                          </button>
-                        </td>
+            ) : (
+              <TableSection>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr>
+                        <th className="text-left text-[13px] font-medium text-fg-secondary">Email</th>
+                        <th className="text-left text-[13px] font-medium text-fg-secondary">Provider</th>
+                        <th className="text-left text-[13px] font-medium text-fg-secondary">Status</th>
+                        <th className="text-left text-[13px] font-medium text-fg-secondary">Daily Limit</th>
+                        <th className="text-left text-[13px] font-medium text-fg-secondary">Reputation</th>
+                        <th className="text-left text-[13px] font-medium text-fg-secondary">Warmup</th>
+                        <th className="text-right text-[13px] font-medium text-fg-secondary">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+                    </thead>
+                    <tbody>
+                      {accounts.map((acc) => (
+                        <tr key={acc.id} className="hover:bg-subtle transition-colors">
+                          <td className="py-2">
+                            <div className="flex items-center gap-2">
+                              {acc.provider === "gmail" ? <GoogleLogoIcon className="w-4 h-4 text-fg-muted" /> :
+                               acc.provider === "microsoft" ? <MicrosoftOutlookLogoIcon className="w-4 h-4 text-fg-muted" /> :
+                               <EnvelopeIcon className="w-4 h-4 text-fg-muted" />}
+                              <div>
+                                <span className="text-sm text-fg">{acc.email_address}</span>
+                                {acc.display_name && <span className="text-xs text-fg-muted ml-2">{acc.display_name}</span>}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-2 text-[14px] text-fg-secondary capitalize">{acc.provider}</td>
+                          <td className="py-2">
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                              acc.status === "active" ? "bg-success-surface text-success" :
+                              acc.status === "warming_up" ? "bg-warning-surface text-warning" :
+                              acc.status === "error" ? "bg-danger-surface text-danger" :
+                              "bg-muted text-fg-secondary"
+                            }`}>{acc.status}</span>
+                          </td>
+                          <td className="py-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div className="h-full bg-accent-strong rounded-full" style={{ width: `${Math.min((acc.daily_sent_count / acc.daily_send_limit) * 100, 100)}%` }} />
+                              </div>
+                              <span className="text-xs text-fg-secondary">{acc.daily_sent_count}/{acc.daily_send_limit}</span>
+                            </div>
+                          </td>
+                          <td className="py-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full ${Number(acc.reputation_score) >= 80 ? "bg-success" : Number(acc.reputation_score) >= 50 ? "bg-warning" : "bg-danger"}`}
+                                  style={{ width: `${acc.reputation_score}%` }} />
+                              </div>
+                              <span className="text-xs text-fg-secondary">{Math.round(Number(acc.reputation_score))}</span>
+                            </div>
+                          </td>
+                          <td className="py-2">
+                            {acc.warmup_enabled ? (
+                              <span className="px-2 py-0.5 bg-warning-surface text-warning rounded-full text-xs">
+                                {acc.warmup_limit}/day
+                              </span>
+                            ) : (
+                              <span className="text-xs text-fg-muted">Off</span>
+                            )}
+                          </td>
+                          <td className="py-2 text-right">
+                            <div className="flex justify-end">
+                              <button onClick={() => handleDeleteAccount(acc.id)} className="text-fg-muted hover:text-danger">
+                                <TrashIcon className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </TableSection>
+            )}
           </motion.div>
         ) : (
           <motion.div key="campaigns" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.15 }}>
             {/* Bulk actions */}
             {selectedRows.size > 0 && (
-              <div className="flex items-center gap-3 mb-3 px-4 py-2 bg-muted border border-line rounded">
+              <div className="flex h-10 items-center gap-3 px-8 max-sm:px-4 border-t border-divider">
                 <span className="text-sm text-fg">{selectedRows.size} selected</span>
                 <button onClick={() => setSelectedRows(new Set())} className="text-xs text-fg-secondary hover:text-fg">Clear</button>
               </div>
             )}
 
             {/* Campaign Table */}
-            <div className="rounded-lg border border-line bg-surface overflow-visible">
-              {filtered.length === 0 ? (
-                <div className="p-12 text-center">
-                  <PaperPlaneTiltIcon className="w-10 h-10 text-fg-muted mx-auto mb-3" />
-                  <p className="text-sm text-fg-secondary mb-4">
-                    {searchQuery || selectedTag ? "No campaigns match your filters" : "No campaigns yet"}
-                  </p>
-                  {!searchQuery && !selectedTag && (
-                    <Button onClick={handleNewCampaign}>
-                      Create Your First Campaign
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <table className="w-full">
-                  <thead>
-                    <tr>
-                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider w-10">
-                        <input type="checkbox" checked={selectedRows.size === filtered.length && filtered.length > 0} onChange={toggleSelectAll}
-                          className="rounded border-line bg-muted text-fg" />
-                      </th>
-                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Campaign</th>
-                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Status</th>
-                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Tags</th>
-                      <th className="h-10 px-3 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">Enrolled</th>
-                      <th className="h-10 px-3 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">Sent</th>
-                      <th className="h-10 px-3 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">Opened</th>
-                      <th className="h-10 px-3 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">Replied</th>
-                      <th className="h-10 px-3 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">Reply Rate</th>
-                      <th className="h-10 px-3 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((campaign) => (
-                      <tr key={campaign.id} className="h-10 hover:bg-subtle transition-colors cursor-pointer"
-                        onClick={() => setDrawerCampaign(campaign)}>
-                        <td className="px-3 py-2 border-b border-divider" onClick={(e) => e.stopPropagation()}>
-                          <input type="checkbox" checked={selectedRows.has(campaign.id)} onChange={() => toggleSelect(campaign.id)}
+            {filtered.length === 0 ? (
+              <div className="p-12 text-center border-t border-divider">
+                <PaperPlaneTiltIcon className="w-10 h-10 text-fg-muted mx-auto mb-3" />
+                <p className="text-sm text-fg-secondary mb-4">
+                  {searchQuery || selectedTag ? "No campaigns match your filters" : "No campaigns yet"}
+                </p>
+                {!searchQuery && !selectedTag && (
+                  <Button onClick={handleNewCampaign}>
+                    Create Your First Campaign
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <TableSection>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr>
+                        <th className="text-left text-[13px] font-medium text-fg-secondary w-10">
+                          <input type="checkbox" checked={selectedRows.size === filtered.length && filtered.length > 0} onChange={toggleSelectAll}
                             className="rounded border-line bg-muted text-fg" />
-                        </td>
-                        <td className="px-3 py-2 border-b border-divider">
-                          <div>
-                            <span className="text-sm font-medium text-fg">{campaign.name}</span>
-                            {campaign.description && <p className="text-xs text-fg-muted mt-0.5 truncate max-w-[200px]">{campaign.description}</p>}
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 border-b border-divider" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => handleToggleStatus(campaign.id, campaign.status)}
-                            className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
-                              campaign.status === "active" ? "bg-success-surface text-success hover:bg-success-surface" :
-                              campaign.status === "paused" ? "bg-warning-surface text-warning hover:bg-warning-surface" :
-                              "bg-muted text-fg-secondary"
-                            }`}
-                          >
-                            {campaign.status}
-                          </button>
-                        </td>
-                        <td className="px-3 py-2 border-b border-divider">
-                          <div className="flex items-center gap-1">
-                            {campaign.tags.slice(0, 3).map((t) => (
-                              <span key={t.id} className="px-1.5 py-0.5 rounded text-xs font-medium"
-                                style={{ backgroundColor: t.color + "20", color: t.color }}>
-                                {t.name}
-                              </span>
-                            ))}
-                            {campaign.tags.length > 3 && (
-                              <span className="text-xs text-fg-muted">+{campaign.tags.length - 3}</span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 text-right text-[14px] text-fg border-b border-divider">{campaign.total_enrolled.toLocaleString()}</td>
-                        <td className="px-3 py-2 text-right text-[14px] text-fg border-b border-divider">{campaign.total_sent.toLocaleString()}</td>
-                        <td className="px-3 py-2 text-right text-[14px] text-fg border-b border-divider">{campaign.total_opened.toLocaleString()}</td>
-                        <td className="px-3 py-2 text-right text-[14px] text-fg border-b border-divider">{campaign.total_replied.toLocaleString()}</td>
-                        <td className="px-3 py-2 text-right border-b border-divider">
-                          <span className={`text-sm font-medium ${
-                            campaign.reply_rate >= 10 ? "text-success" :
-                            campaign.reply_rate >= 5 ? "text-warning" : "text-fg-secondary"
-                          }`}>{campaign.reply_rate.toFixed(1)}%</span>
-                        </td>
-                        <td className="px-3 py-2 text-right border-b border-divider" onClick={(e) => e.stopPropagation()}>
-                          <div className="relative">
-                            <button onClick={() => setActionMenuId(actionMenuId === campaign.id ? null : campaign.id)}
-                              className="text-fg-muted hover:text-fg p-1">
-                              <DotsThreeVerticalIcon className="w-4 h-4" />
-                            </button>
-                            {actionMenuId === campaign.id && (
-                              <div className="absolute right-0 top-full mt-1 w-44 rounded-lg border border-line bg-surface shadow-dropdown z-30 py-1">
-                                <button onClick={() => { router.push(`/dashboard/sequences/${campaign.id}`); setActionMenuId(null); }}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted">
-                                  <PencilSimpleIcon className="w-4 h-4" /> Edit
-                                </button>
-                                <button onClick={() => handleClone(campaign.id)}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-muted">
-                                  <CopyIcon className="w-4 h-4" /> Clone
-                                </button>
-                                <button onClick={() => { setDeleteTarget({ id: campaign.id, name: campaign.name }); setActionMenuId(null); }}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-muted">
-                                  <TrashIcon className="w-4 h-4" /> Delete
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </td>
+                        </th>
+                        <th className="text-left text-[13px] font-medium text-fg-secondary">Campaign</th>
+                        <th className="text-left text-[13px] font-medium text-fg-secondary">Status</th>
+                        <th className="text-left text-[13px] font-medium text-fg-secondary">Tags</th>
+                        <th className="text-right text-[13px] font-medium text-fg-secondary">Enrolled</th>
+                        <th className="text-right text-[13px] font-medium text-fg-secondary">Sent</th>
+                        <th className="text-right text-[13px] font-medium text-fg-secondary">Opened</th>
+                        <th className="text-right text-[13px] font-medium text-fg-secondary">Replied</th>
+                        <th className="text-right text-[13px] font-medium text-fg-secondary">Reply Rate</th>
+                        <th className="text-right text-[13px] font-medium text-fg-secondary">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+                    </thead>
+                    <tbody>
+                      {filtered.map((campaign) => (
+                        <tr key={campaign.id} className="hover:bg-subtle transition-colors cursor-pointer"
+                          onClick={() => setDrawerCampaign(campaign)}>
+                          <td className="py-2" onClick={(e) => e.stopPropagation()}>
+                            <input type="checkbox" checked={selectedRows.has(campaign.id)} onChange={() => toggleSelect(campaign.id)}
+                              className="rounded border-line bg-muted text-fg" />
+                          </td>
+                          <td className="py-2">
+                            <div className="flex items-start gap-2">
+                              <PaperPlaneTiltIcon size={16} className="mt-0.5 shrink-0 text-fg-muted" />
+                              <div>
+                                <span className="text-sm font-medium text-fg">{campaign.name}</span>
+                                {campaign.description && <p className="text-xs text-fg-muted mt-0.5 truncate max-w-[200px]">{campaign.description}</p>}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-2" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => handleToggleStatus(campaign.id, campaign.status)}
+                              className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                                campaign.status === "active" ? "bg-success-surface text-success hover:bg-success-surface" :
+                                campaign.status === "paused" ? "bg-warning-surface text-warning hover:bg-warning-surface" :
+                                "bg-muted text-fg-secondary"
+                              }`}
+                            >
+                              {campaign.status}
+                            </button>
+                          </td>
+                          <td className="py-2">
+                            <div className="flex items-center gap-1">
+                              {campaign.tags.slice(0, 3).map((t) => (
+                                <span key={t.id} className="px-1.5 py-0.5 rounded text-xs font-medium"
+                                  style={{ backgroundColor: t.color + "20", color: t.color }}>
+                                  {t.name}
+                                </span>
+                              ))}
+                              {campaign.tags.length > 3 && (
+                                <span className="text-xs text-fg-muted">+{campaign.tags.length - 3}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-2 text-right text-[14px] text-fg">{campaign.total_enrolled.toLocaleString()}</td>
+                          <td className="py-2 text-right text-[14px] text-fg">{campaign.total_sent.toLocaleString()}</td>
+                          <td className="py-2 text-right text-[14px] text-fg">{campaign.total_opened.toLocaleString()}</td>
+                          <td className="py-2 text-right text-[14px] text-fg">{campaign.total_replied.toLocaleString()}</td>
+                          <td className="py-2 text-right">
+                            <span className={`text-sm font-medium ${
+                              campaign.reply_rate >= 10 ? "text-success" :
+                              campaign.reply_rate >= 5 ? "text-warning" : "text-fg-secondary"
+                            }`}>{campaign.reply_rate.toFixed(1)}%</span>
+                          </td>
+                          <td className="py-2 text-right" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex justify-end">
+                              <ActionMenu
+                                items={[
+                                  {
+                                    label: "Edit",
+                                    icon: <PencilSimpleIcon size={18} />,
+                                    onClick: () => router.push(`/dashboard/sequences/${campaign.id}`),
+                                  },
+                                  {
+                                    label: "Clone",
+                                    icon: <CopyIcon size={18} />,
+                                    onClick: () => handleClone(campaign.id),
+                                  },
+                                  {
+                                    label: "Delete",
+                                    icon: <TrashIcon size={18} />,
+                                    onClick: () => setDeleteTarget({ id: campaign.id, name: campaign.name }),
+                                    variant: "danger",
+                                  },
+                                ]}
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </TableSection>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -826,6 +826,6 @@ export function CampaignsPageClient({
         isPending={isPending}
       />
       <TagManagerModal open={showTagManager} onClose={() => setShowTagManager(false)} tags={tags} onRefresh={refresh} />
-    </div>
+    </Page>
   );
 }
