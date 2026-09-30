@@ -19,7 +19,7 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
-type CommandType = "lead" | "deal" | "contact" | "action" | "nav";
+type CommandType = "action" | "nav";
 
 interface CommandItem {
   id: string;
@@ -27,8 +27,7 @@ interface CommandItem {
   meta: string;
   icon: React.ReactNode;
   type: CommandType;
-  section: "Recent" | "Quick Actions" | "Navigation";
-  shortcut?: string;
+  section: "Quick Actions" | "Navigation";
   keywords?: string[];
   href?: string;
   action?: () => void;
@@ -40,45 +39,12 @@ interface CommandPaletteProps {
 }
 
 const iconStyles: Record<CommandType, string> = {
-  lead: "bg-success-surface text-success",
-  deal: "bg-accent-surface text-accent-on-surface",
-  contact:
-    "bg-accent-surface text-accent-on-surface",
   action:
     "bg-muted text-fg-secondary",
   nav: "bg-muted text-fg-secondary",
 };
 
 const commands: CommandItem[] = [
-  // Recent
-  {
-    id: "recent-lead-1",
-    name: "Maria Santos",
-    meta: "Lead · Hot · Added 10 hours ago",
-    icon: <FunnelIcon size={16} />,
-    type: "lead",
-    section: "Recent",
-    href: "/dashboard/leads/1",
-  },
-  {
-    id: "recent-deal-1",
-    name: "Acme Corp - Enterprise",
-    meta: "Deal · $24,500 · Closed Won",
-    icon: <CurrencyDollarIcon size={16} />,
-    type: "deal",
-    section: "Recent",
-    href: "/dashboard/sales/1",
-  },
-  {
-    id: "recent-contact-1",
-    name: "James Wilson",
-    meta: "Contact · Acme Corp · CEO",
-    icon: <UsersIcon size={16} />,
-    type: "contact",
-    section: "Recent",
-    href: "/dashboard/customers/1",
-  },
-
   // Quick Actions
   {
     id: "add-lead",
@@ -87,7 +53,7 @@ const commands: CommandItem[] = [
     icon: <PlusIcon size={16} />,
     type: "action",
     section: "Quick Actions",
-    shortcut: "⌘ L",
+    href: "/dashboard/leads",
     keywords: ["create", "new", "add"],
   },
   {
@@ -97,7 +63,7 @@ const commands: CommandItem[] = [
     icon: <PlusIcon size={16} />,
     type: "action",
     section: "Quick Actions",
-    shortcut: "⌘ D",
+    href: "/dashboard/sales",
     keywords: ["create", "new", "add"],
   },
   {
@@ -107,7 +73,7 @@ const commands: CommandItem[] = [
     icon: <ExportIcon size={16} />,
     type: "action",
     section: "Quick Actions",
-    shortcut: "⌘ E",
+    href: "/dashboard/analytics",
     keywords: ["download", "csv", "pdf"],
   },
   {
@@ -117,7 +83,6 @@ const commands: CommandItem[] = [
     icon: <GearIcon size={16} />,
     type: "action",
     section: "Quick Actions",
-    shortcut: "⌘ ,",
     href: "/dashboard/settings",
   },
 
@@ -129,7 +94,6 @@ const commands: CommandItem[] = [
     icon: <GaugeIcon size={16} />,
     type: "nav",
     section: "Navigation",
-    shortcut: "G O",
     href: "/dashboard/overview",
   },
   {
@@ -139,7 +103,6 @@ const commands: CommandItem[] = [
     icon: <UsersIcon size={16} />,
     type: "nav",
     section: "Navigation",
-    shortcut: "G C",
     href: "/dashboard/customers",
   },
   {
@@ -149,7 +112,6 @@ const commands: CommandItem[] = [
     icon: <FunnelIcon size={16} />,
     type: "nav",
     section: "Navigation",
-    shortcut: "G L",
     href: "/dashboard/leads",
   },
   {
@@ -159,7 +121,6 @@ const commands: CommandItem[] = [
     icon: <CurrencyDollarIcon size={16} />,
     type: "nav",
     section: "Navigation",
-    shortcut: "G S",
     href: "/dashboard/sales",
   },
   {
@@ -169,7 +130,6 @@ const commands: CommandItem[] = [
     icon: <PulseIcon size={16} />,
     type: "nav",
     section: "Navigation",
-    shortcut: "G A",
     href: "/dashboard/activity",
   },
 ];
@@ -348,16 +308,10 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                       </div>
                     </div>
 
-                    {/* Shortcut or Type badge */}
-                    {cmd.shortcut ? (
-                      <kbd className="shrink-0 rounded-sm bg-code px-1.5 py-0.5 text-xs text-fg-secondary font-mono">
-                        {cmd.shortcut}
-                      </kbd>
-                    ) : (
-                      <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-fg-secondary capitalize">
-                        {cmd.type}
-                      </span>
-                    )}
+                    {/* Type badge */}
+                    <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs text-fg-secondary capitalize">
+                      {cmd.type}
+                    </span>
                   </button>
                 );
               })}

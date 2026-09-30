@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   CalendarBlankIcon,
   IconButton,
@@ -11,6 +12,8 @@ import {
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { useClickOutside } from "@/hooks";
+import { getCalendarEvents } from "@/lib/actions/calendar";
+
 const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const MONTHS = [
   "January",
@@ -27,21 +30,23 @@ const MONTHS = [
   "December",
 ];
 
-// Sample events - in real app this would come from props or API
-const events: Record<string, number> = {
-  "2025-01-15": 2,
-  "2025-01-18": 1,
-  "2025-01-22": 3,
-  "2025-01-25": 1,
-  "2025-01-30": 2,
-  "2025-02-03": 1,
-  "2025-02-10": 2,
-  "2025-02-14": 1,
-};
+const UPCOMING_LIMIT = 4;
+
+interface CalendarEventSummary {
+  id: string;
+  title: string;
+  date: string;
+  start_time: string | null;
+}
+
+const toDateKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 export function CalendarDropdown() {
   const [open, setOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [events, setEvents] = useState<CalendarEventSummary[]>([]);
+  const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const today = new Date();
@@ -54,6 +59,34 @@ export function CalendarDropdown() {
   const firstDayOfMonth = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+  // Load real events for the displayed month whenever the popover opens or the
+  // month changes. getCalendarEvents takes a 1-based month.
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    getCalendarEvents(month + 1, year).then((res) => {
+      if (!cancelled) setEvents(res.data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, month, year]);
+
+  const eventCounts = events.reduce<Record<string, number>>((acc, e) => {
+    acc[e.date] = (acc[e.date] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const todayKey = toDateKey(today);
+  const upcomingEvents = events
+    .filter((e) => e.date >= todayKey)
+    .slice(0, UPCOMING_LIMIT);
+
+  const goToCalendar = () => {
+    setOpen(false);
+    router.push("/dashboard/calendar");
+  };
 
   const prevMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1));
@@ -68,8 +101,7 @@ export function CalendarDropdown() {
   };
 
   const formatDateKey = (day: number, monthOffset: number = 0) => {
-    const d = new Date(year, month + monthOffset, day);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return toDateKey(new Date(year, month + monthOffset, day));
   };
 
   const isToday = (day: number) => {
@@ -175,12 +207,13 @@ export function CalendarDropdown() {
             {/* Days grid */}
             <div className="grid grid-cols-7 gap-0.5">
               {calendarDays.map(({ day, isCurrentMonth, dateKey }, index) => {
-                const hasEvents = events[dateKey];
+                const hasEvents = eventCounts[dateKey];
                 const isTodayDate = isCurrentMonth && isToday(day);
 
                 return (
                   <button
                     key={index}
+                    onClick={goToCalendar}
                     className={cn(
                       "relative flex flex-col items-center justify-center h-9 rounded-md text-sm transition-colors",
                       isCurrentMonth
@@ -205,6 +238,28 @@ export function CalendarDropdown() {
                 );
               })}
             </div>
+          </div>
+
+          {/* Upcoming events */}
+          <div className="border-t border-divider px-4 py-3">
+            <div className="text-xs font-medium text-fg-secondary mb-2">
+              Upcoming
+            </div>
+            {upcomingEvents.length === 0 ? (
+              <p className="text-xs text-fg-muted">No upcoming events</p>
+            ) : (
+              <ul className="space-y-2">
+                {upcomingEvents.map((event) => (
+                  <li key={event.id} className="flex items-baseline justify-between gap-3">
+                    <span className="text-sm text-fg truncate">{event.title}</span>
+                    <span className="text-xs text-fg-secondary whitespace-nowrap tabular-nums">
+                      {event.date.slice(5)}
+                      {event.start_time ? ` ${event.start_time.slice(0, 5)}` : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {/* Footer */}

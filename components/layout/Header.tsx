@@ -47,8 +47,6 @@ export function Header() {
             // Friendly names for hyphenated route segments
             const segmentLabels: Record<string, string> = {
               "lead-finder": "Lead Finder",
-              "lead-scraper": "Lead Finder",
-              "email-accounts": "Email Accounts",
               icp: "ICP",
               "website-visitors": "Website visitors",
             };

@@ -1,29 +1,21 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { signOut } from "@/lib/actions/auth";
-import { getLeadCount } from "@/lib/actions/leads";
 import { CaretDownIcon, GearIcon } from "../ui";
-import { Progress } from "../ui/Progress";
 import { useClickOutside } from "@/hooks";
 
 export function HeaderUserMenu() {
   const { profile } = useAuth();
   const [open, setOpen] = useState(false);
-  const [leadCount, setLeadCount] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
-  const maxLeads = 100000;
 
   useClickOutside(menuRef, () => setOpen(false), open);
-
-  useEffect(() => {
-    getLeadCount().then((res) => setLeadCount(res.count));
-  }, []);
 
   // Testing phase: guests have no account to sign out of, and their synthetic
   // email is not worth showing.
@@ -34,6 +26,9 @@ export function HeaderUserMenu() {
     : openAccess ? "Guest" : "User";
 
   const orgName = displayName;
+  const roleLabel = profile?.role
+    ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1)
+    : null;
   const avatarUrl = profile?.avatar_url || "/images/avatars/user.jpg";
 
   const handleSignOut = async () => {
@@ -51,17 +46,6 @@ export function HeaderUserMenu() {
           open && "bg-muted",
         )}
       >
-        {/* Lead usage mini bar */}
-        <div className="hidden sm:flex items-center gap-2">
-          <span className="text-xs leading-none font-medium text-fg-secondary tabular-nums">
-            {leadCount} / {maxLeads}
-          </span>
-          <Progress value={leadCount} max={maxLeads} size="sm" className="w-16" />
-        </div>
-
-        {/* Divider */}
-        <div className="hidden sm:block h-4 w-px bg-divider" />
-
         {/* Avatar */}
         <Image
           src={avatarUrl}
@@ -72,12 +56,14 @@ export function HeaderUserMenu() {
           className="h-5 w-5 shrink-0 rounded-full object-cover"
         />
 
-        {/* Name + Plan */}
+        {/* Name + Role */}
         <div className="hidden md:flex items-baseline gap-1.5 text-left">
           <span className="text-sm font-medium text-fg truncate max-w-[120px]">
             {orgName}
           </span>
-          <span className="text-xs text-fg-secondary whitespace-nowrap">Pro Plan</span>
+          {roleLabel && (
+            <span className="text-xs text-fg-secondary whitespace-nowrap">{roleLabel}</span>
+          )}
         </div>
 
         <CaretDownIcon
@@ -114,23 +100,11 @@ export function HeaderUserMenu() {
                   <div className="text-sm font-medium text-fg truncate">
                     {orgName}
                   </div>
-                  <div className="text-xs text-fg-secondary">Pro Plan</div>
+                  {roleLabel && (
+                    <div className="text-xs text-fg-secondary">{roleLabel}</div>
+                  )}
                 </div>
               </div>
-            </div>
-
-            {/* Lead usage */}
-            <div className="px-3 py-3 border-b border-divider">
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="text-fg-secondary">Leads</span>
-                <span className="text-fg-secondary tabular-nums">
-                  {leadCount} / {maxLeads}
-                </span>
-              </div>
-              <Progress value={leadCount} max={maxLeads} size="sm" />
-              <button className="mt-2 w-full text-xs font-medium text-fg hover:underline text-center">
-                Upgrade to Unlimited
-              </button>
             </div>
 
             {/* Menu items */}
