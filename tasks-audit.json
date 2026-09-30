@@ -384,6 +384,95 @@
     "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && node scripts/check-vercel-config.mjs && grep -q 'startDiscoveryRun' app/api/cron/lead-finder/route.ts && ! grep -q 'await runCampaignDiscovery' app/api/cron/lead-finder/route.ts && npx tsc --noEmit && npx eslint 'app/api/cron/lead-finder/route.ts' && git add -A -- 'vercel.json' 'app/api/cron/lead-finder/route.ts' && git commit -q -m 'fix(lead-finder): full time budget for the enrichment cron; scheduled discovery via async service-role runs' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F25-OK"
   },
   {
+    "id": "V1",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Review H1: enrichment Apify runs work from the cron (admin client with explicit org) and have a per-job time budget",
+    "files": [
+      "lib/lead-finder/apify/runner.ts",
+      "lib/lead-finder/apify/registry-server.ts",
+      "lib/lead-finder/enrichment/pipeline.ts",
+      "tests/apify-runner.test.ts"
+    ],
+    "interface": "Since F11 the only production path that drains enrichment jobs is the CRON_SECRET-protected /api/cron/lead-finder-worker, which has no user session. lib/lead-finder/apify/runner.ts startRecordedActorRun (~line 242), pollRunUntilDone (~300) and runActorAndCollect's result-count update (~418) call the cookie-scoped createClient(), so the lf_apify_runs insert/update runs as anon, fails RLS, and pipeline.ts treats it as a non-fatal actor failure: every lead gets an AI-only score. lib/lead-finder/apify/registry-server.ts getCustomActorsFromDb (~20) has the same problem, so custom actors resolve to null in cron. Fix: runner.ts functions that write lf_apify_runs take the database client and the organization id explicitly (add a parameter such as `db: SupabaseClient<Database>` or an options object; keep call sites compiling) and always write organization_id explicitly; pipeline.ts (the enrichment caller, running inside the worker) passes the admin client (createAdminClient) and the job's organization id. registry-server.ts getCustomActorsFromDb/getActorById/getActorsByPhase accept an optional `{ db, orgId }`; when given, query with that client filtered by organization_id = orgId; otherwise keep the current user-client behaviour for UI callers. pipeline.ts passes `{ db: admin, orgId }`. Per-job time budget: runActorAndCollect gains an optional `maxWaitMs` (default unchanged for other callers); the enrichment pipeline passes 200_000 so one job can never outlive the 300 s function; on timeout the job is recorded as a retryable failure through the existing retry path (do not mark the lead qualified from AI-only data when the actor timed out: keep the existing non-fatal behaviour only for real actor failures). Extend tests/apify-runner.test.ts (it already mocks server-only modules with vi.mock) with a case proving the recorded-run insert uses the injected client and includes organization_id.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! grep -q 'await createClient()' lib/lead-finder/apify/runner.ts && grep -q 'organization_id' lib/lead-finder/apify/runner.ts && grep -q 'maxWaitMs' lib/lead-finder/apify/runner.ts && grep -q 'maxWaitMs' lib/lead-finder/enrichment/pipeline.ts && grep -q 'createAdminClient' lib/lead-finder/enrichment/pipeline.ts && grep -q 'orgId' lib/lead-finder/apify/registry-server.ts && npx vitest run tests/apify-runner.test.ts && npx tsc --noEmit && npx eslint 'lib/lead-finder/apify/runner.ts' 'lib/lead-finder/apify/registry-server.ts' 'lib/lead-finder/enrichment/pipeline.ts' && git add -A -- 'lib/lead-finder/apify/runner.ts' 'lib/lead-finder/apify/registry-server.ts' 'lib/lead-finder/enrichment/pipeline.ts' 'tests/apify-runner.test.ts' && git commit -q -m 'fix(lead-finder): enrichment Apify runs use the admin client with explicit org from cron, with a per-job time budget (review H1)' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo V1-OK"
+  },
+  {
+    "id": "V2",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Review H2/M2: discovery finaliser cannot be blocked by one tenant and never discards a paid run; discover route starts find-phase actors only",
+    "files": [
+      "app/api/cron/lead-finder/route.ts",
+      "app/api/lead-finder/campaigns/[id]/discover/route.ts"
+    ],
+    "interface": "app/api/cron/lead-finder/route.ts finalizeDiscoveryRuns: (H2) the 45-minute timeout is only applied after getRunStatus succeeds, so runs whose token was removed or whose run id 401/404s under a new Apify account stay running forever; the candidate query takes the oldest running rows and finalises at most 10 per tick, so one org can starve every other tenant. Apply the timeout first: any running find-phase run older than RUN_TIMEOUT_MS is marked failed before any Apify call, and in the catch of authorizeActors/getRunStatus/fetch the run is marked failed when older than RUN_TIMEOUT_MS (otherwise left for retry). Order candidates so a run that errored this tick does not block others next tick: select more candidates (e.g. 50), process them round-robin by organization_id, and stop after 10 finalisations. (M2) Do not flip a run to succeeded before ingest. Claim it with a lease instead: set finished_at = now() while status stays running, guarded by `.is(\"finished_at\", null)` or finished_at older than 10 minutes (stale lease), then fetch the dataset and ingest, and only then set status succeeded with counts. On a transient fetch/ingest error clear the lease (finished_at null) so the next tick retries; only after RUN_TIMEOUT_MS mark it failed. Stay within the lf_apify_runs status CHECK constraint (running|succeeded|failed). Bound ingest work per tick so the 300 s function cannot be exceeded (stop starting new runs after 200 s elapsed). app/api/lead-finder/campaigns/[id]/discover/route.ts: when no actorId is given, start only find-phase actors (use the same isDiscoveryActor check the cron uses); an explicit enrich-phase actorId returns 400 `{ error: \"Only discovery actors can be run here\" }`.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'RUN_TIMEOUT_MS' app/api/cron/lead-finder/route.ts && grep -q 'finished_at' app/api/cron/lead-finder/route.ts && grep -q 'Only discovery actors can be run here' 'app/api/lead-finder/campaigns/[id]/discover/route.ts' && npx tsc --noEmit && npx eslint 'app/api/cron/lead-finder/route.ts' 'app/api/lead-finder/campaigns/[id]/discover/route.ts' && git add -A -- 'app/api/cron/lead-finder/route.ts' 'app/api/lead-finder/campaigns/[id]/discover/route.ts' && git commit -q -m 'fix(lead-finder): tenant-fair discovery finaliser with ingest lease; discover route runs find-phase actors only (review H2 M2)' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo V2-OK"
+  },
+  {
+    "id": "V3",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Review M1: workflow timeouts match the worker budget",
+    "files": [
+      ".github/workflows/lead-finder-cron.yml"
+    ],
+    "interface": "In .github/workflows/lead-finder-cron.yml: the lead-finder-worker curl step uses `--max-time 65` but the route now drains for up to 240 s (maxDuration 300); change it to `--max-time 300`. The job `timeout-minutes` must cover all four steps (300 + 295 + 120 + 120 s plus overhead): set it to 16. Nothing else changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'max-time 300' .github/workflows/lead-finder-cron.yml && ! grep -q 'max-time 65' .github/workflows/lead-finder-cron.yml && grep -q 'timeout-minutes: 16' .github/workflows/lead-finder-cron.yml && git add -A -- '.github/workflows/lead-finder-cron.yml' && git commit -q -m 'ci: worker step and job timeouts cover the 240s enrichment drain (review M1)' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo V3-OK"
+  },
+  {
+    "id": "V4",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Review M3: Lead Finder never sends CRM model aliases to providers",
+    "files": [
+      "lib/lead-finder/ai-provider.ts",
+      "tests/ai-provider-resolver.test.ts"
+    ],
+    "interface": "lib/lead-finder/ai-provider.ts (~line 219) uses ai_settings.default_model when the resolved provider equals the saved ai_provider, but the CRM settings save aliases `sonnet` / `haiku` there (lib/ai/models.ts AIModel), so Lead Finder sends model `sonnet` and Anthropic/OpenRouter 404 on every call. When the saved default_model is a CRM alias (any key of the AIModel map in lib/ai/models.ts), translate it with `getModelId(alias, provider)` from lib/ai/models.ts when that mapping supports the provider, otherwise treat it as unset so the provider default applies. Keep the existing `ollama:` legacy handling. Add cases to tests/ai-provider-resolver.test.ts only if the translation is exposed as a pure helper (export a small `normalizeLeadFinderModel(raw, provider)` from ai-provider.ts only if that file has no server-only import; otherwise put no new test and say so).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'getModelId' lib/lead-finder/ai-provider.ts && npx vitest run tests/ai-provider-resolver.test.ts && npx tsc --noEmit && npx eslint 'lib/lead-finder/ai-provider.ts' && git add -A -- 'lib/lead-finder/ai-provider.ts' 'tests/ai-provider-resolver.test.ts' && git commit -q -m 'fix(lead-finder): translate CRM model aliases before calling providers (review M3)' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo V4-OK"
+  },
+  {
+    "id": "V5",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Review M4: LinkedIn profile via the OIDC userinfo endpoint",
+    "files": [
+      "lib/linkedin/client.ts"
+    ],
+    "interface": "F9 moved LinkedIn OAuth to OIDC scopes (openid profile email w_member_social), but getCurrentProfile in lib/linkedin/client.ts still calls `${LINKEDIN_API_BASE}/me`, which requires the retired r_liteprofile scope and returns 403 for OIDC tokens, so every connect fails. Change getCurrentProfile to call `https://api.linkedin.com/v2/userinfo` and map its JSON (sub, name, given_name, family_name, email, picture) onto the existing LinkedInProfile type (id = sub; first/last name from given_name/family_name; headline/vanity fields left empty if the type requires them). Keep the function signature and error shape; callers in lib/actions/linkedin-accounts.ts must not need changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'v2/userinfo' lib/linkedin/client.ts && grep -q 'given_name' lib/linkedin/client.ts && npx tsc --noEmit && npx eslint 'lib/linkedin/client.ts' && git add -A -- 'lib/linkedin/client.ts' && git commit -q -m 'fix(linkedin): read the profile from the OIDC userinfo endpoint (review M4)' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo V5-OK"
+  },
+  {
+    "id": "V6",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Review lows: calendar update allowlist, /calendar target, lookup limit cap, avatar cleanup, progress banner backoff",
+    "files": [
+      "lib/actions/calendar.ts",
+      "app/calendar/page.tsx",
+      "lib/actions/lookup.ts",
+      "lib/actions/profile.ts",
+      "components/lead-finder/EnrichmentProgressBanner.tsx",
+      "app/api/lead-finder/enrichment-status/route.ts"
+    ],
+    "interface": "(1) lib/actions/calendar.ts: updateCalendarEvent must not accept `id`, `organization_id` or `created_by`; use a separate update allowlist without them (create keeps its behaviour). (2) app/calendar/page.tsx redirects to /dashboard/overview; redirect to /dashboard/calendar instead. (3) lib/actions/lookup.ts searchRecords: clamp limit to the range 1..25. (4) lib/actions/profile.ts uploadAvatar: after a successful upload and profile update, list the user folder and remove every object except the one just uploaded (ignore removal errors, log them). (5) app/api/lead-finder/enrichment-status/route.ts: replace the per-batch head-count queries with one query over lf_enrichment_jobs for the listed batch ids (select batch_id, status) aggregated in JS. components/lead-finder/EnrichmentProgressBanner.tsx: while batches stay active but no progress changes between polls, back off the poll interval (5 s doubling to a 60 s max, reset when progress changes or the tab becomes visible).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'redirect(\"/dashboard/calendar\")' app/calendar/page.tsx && grep -q 'Math.min' lib/actions/lookup.ts && grep -q '60_000\\|60000' components/lead-finder/EnrichmentProgressBanner.tsx && npx tsc --noEmit && npx eslint 'lib/actions/calendar.ts' 'app/calendar/page.tsx' 'lib/actions/lookup.ts' 'lib/actions/profile.ts' 'components/lead-finder/EnrichmentProgressBanner.tsx' 'app/api/lead-finder/enrichment-status/route.ts' && node scripts/restyle/scan.mjs app components && git add -A -- 'lib/actions/calendar.ts' 'app/calendar/page.tsx' 'lib/actions/lookup.ts' 'lib/actions/profile.ts' 'components/lead-finder/EnrichmentProgressBanner.tsx' 'app/api/lead-finder/enrichment-status/route.ts' && git commit -q -m 'fix: calendar update allowlist, calendar redirect, lookup cap, avatar cleanup, banner backoff (review lows)' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo V6-OK"
+  },
+  {
+    "id": "V7",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Review low: confirm before deleting an activity on record pages",
+    "files": [
+      "app/dashboard/customers/[id]/client.tsx",
+      "app/dashboard/leads/[id]/client.tsx",
+      "app/dashboard/sales/[id]/client.tsx"
+    ],
+    "interface": "Deleting an item from the activity feed on the customer, lead and deal detail pages is now a real, irreversible delete with no confirmation. Before calling the delete action, ask for confirmation using the existing DeleteConfirmModal component (components/features or components/ui; find it with grep; F18 used it in components/dashboard/CustomersTable.tsx) with the title `Delete this activity?` and a short description; only delete on confirm. Keep the existing routing to deleteRecordActivity / deleteActivity / deleteCalendarEvent, toasts and refresh.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'Delete this activity' 'app/dashboard/customers/[id]/client.tsx' && grep -q 'Delete this activity' 'app/dashboard/leads/[id]/client.tsx' && grep -q 'Delete this activity' 'app/dashboard/sales/[id]/client.tsx' && npx tsc --noEmit && npx eslint 'app/dashboard/customers/[id]/client.tsx' 'app/dashboard/leads/[id]/client.tsx' 'app/dashboard/sales/[id]/client.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/dashboard/customers/[id]/client.tsx' 'app/dashboard/leads/[id]/client.tsx' 'app/dashboard/sales/[id]/client.tsx' && git commit -q -m 'fix(records): confirm before deleting an activity (review low)' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo V7-OK"
+  },
+  {
     "id": "F20",
     "model": "sonnet",
     "depends_on": [
@@ -410,7 +499,14 @@
       "F22",
       "F23",
       "F24",
-      "F25"
+      "F25",
+      "V1",
+      "V2",
+      "V3",
+      "V4",
+      "V5",
+      "V6",
+      "V7"
     ],
     "title": "Final gate: lint, tests, build, restyle scan, contrast, audit",
     "files": [],
