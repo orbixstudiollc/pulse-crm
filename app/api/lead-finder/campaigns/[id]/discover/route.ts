@@ -5,6 +5,7 @@ import { getOrgId } from "@/lib/actions/helpers";
 import { isUuid } from "@/lib/security";
 import { startDiscoveryRun } from "@/lib/lead-finder/apify/discovery";
 import { authorizeActors } from "@/lib/lead-finder/apify/policy-server";
+import { ACTOR_REGISTRY } from "@/lib/lead-finder/apify/registry";
 import { ApifyError } from "@/lib/lead-finder/apify/runner";
 
 // Starting an Apify run is a single HTTP call; the cron route finalises it.
@@ -97,8 +98,29 @@ export async function POST(
       );
     }
 
-    // Per-actor discovery when actorId is given, otherwise every campaign actor.
-    const actorIds = actorId ? [actorId] : actors;
+    // Per-actor discovery when actorId is given, otherwise every find-phase
+    // campaign actor. Enrich-phase actors are run by the enrichment pipeline.
+    let actorIds: string[];
+    if (actorId) {
+      if (!(await isDiscoveryActor(supabase, actorId, orgId))) {
+        return NextResponse.json(
+          { error: "Only discovery actors can be run here" },
+          { status: 400 }
+        );
+      }
+      actorIds = [actorId];
+    } else {
+      actorIds = [];
+      for (const aid of actors) {
+        if (await isDiscoveryActor(supabase, aid, orgId)) actorIds.push(aid);
+      }
+      if (actorIds.length === 0) {
+        return NextResponse.json(
+          { error: "No discovery actors configured" },
+          { status: 400 }
+        );
+      }
+    }
 
     // Resolves the Apify token and checks the actor policy.
     let token: string;
@@ -157,4 +179,26 @@ export async function POST(
       { status: 500 }
     );
   }
+}
+
+/**
+ * Same check as the cron finaliser's isDiscoveryActor (route files cannot
+ * export helpers): built-in actors by registry phase, custom actors by
+ * lf_custom_actors.phase.
+ */
+async function isDiscoveryActor(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  actorId: string,
+  orgId: string
+): Promise<boolean> {
+  const builtin = ACTOR_REGISTRY.find((a) => a.id === actorId);
+  if (builtin) return builtin.phase === "find";
+  const { data } = await supabase
+    .from("lf_custom_actors")
+    .select("phase")
+    .eq("organization_id", orgId)
+    .eq("actor_id", actorId)
+    .limit(1)
+    .maybeSingle();
+  return data?.phase === "find";
 }

@@ -9,6 +9,7 @@ import { ACTOR_REGISTRY } from "@/lib/lead-finder/apify/registry";
 import {
   fetchDatasetItems,
   getRunStatus,
+  type RunStatus,
 } from "@/lib/lead-finder/apify/runner";
 import { enrichCampaignLeads } from "@/lib/lead-finder/enrichment/pipeline";
 import type { LFCampaign } from "@/lib/lead-finder/types";
@@ -22,18 +23,23 @@ const MAX_RUNS_PER_TICK = 10;
 const RUN_CANDIDATE_SCAN = 50;
 const MIN_RUN_AGE_MS = 10_000;
 const RUN_TIMEOUT_MS = 45 * 60_000;
+// An ingest lease (finished_at set while status is running) older than this is stale.
+const LEASE_MS = 10 * 60_000;
+// Stop starting new finalisations after this much of the 300 s budget is spent.
+const FINALIZE_BUDGET_MS = 200_000;
 
 export async function GET(req: NextRequest) {
   const authErr = verifyCronRequest(req);
   if (authErr) return authErr;
 
+  const startedAt = Date.now();
   try {
 
     const supabase = createAdminClient();
     const now = new Date().toISOString();
 
     // Finalise running discovery runs first so scheduled discovery can't starve it.
-    const finalized = await finalizeDiscoveryRuns(supabase);
+    const finalized = await finalizeDiscoveryRuns(supabase, startedAt);
 
     // Find active campaigns with scheduled discovery that are due
     const { data: campaigns, error } = await supabase
@@ -143,58 +149,160 @@ type FinalizeOutcome = {
   error?: string;
 };
 
+type DiscoveryCheck = (actorId: string, orgId: string) => Promise<boolean>;
+
 /**
- * Check running discovery runs (find-phase actors only; enrichment runs are
- * polled by their own pipeline) and ingest the results of the finished ones.
- * Bounded to MAX_RUNS_PER_TICK runs per invocation.
+ * Finalise running discovery runs (find-phase actors only; enrichment runs are
+ * polled by their own pipeline):
+ * 1. Runs older than RUN_TIMEOUT_MS are marked failed before any Apify call,
+ *    so a removed token or an unknown run id cannot keep a run open forever.
+ * 2. Up to RUN_CANDIDATE_SCAN candidates are checked round-robin by
+ *    organization, so one tenant cannot starve the others. Only runs that
+ *    reach succeeded/failed count towards MAX_RUNS_PER_TICK.
+ * 3. A finished run is leased (finished_at set, status still running),
+ *    ingested, and only then marked succeeded. A transient error releases the
+ *    lease so the next tick retries.
+ * No run is started once FINALIZE_BUDGET_MS has elapsed since `startedAt`.
  */
 async function finalizeDiscoveryRuns(
-  supabase: AdminClient
+  supabase: AdminClient,
+  startedAt: number
 ): Promise<FinalizeOutcome[]> {
-  const cutoff = new Date(Date.now() - MIN_RUN_AGE_MS).toISOString();
-  const enrichActorList = `(${ACTOR_REGISTRY.filter((a) => a.phase !== "find")
-    .map((a) => `"${a.id}"`)
-    .join(",")})`;
-  const { data, error } = await supabase
-    .from("lf_apify_runs")
-    .select("id, organization_id, campaign_id, actor_id, run_id, started_at")
-    .eq("status", "running")
-    .not("campaign_id", "is", null)
-    .not("actor_id", "in", enrichActorList)
+  const isDiscovery = discoveryActorCheck(supabase);
+  const outcomes = await failTimedOutRuns(supabase, isDiscovery);
+
+  const now = Date.now();
+  const { data, error } = await runningRunsQuery(supabase)
     .neq("run_id", "")
-    .lte("started_at", cutoff)
+    .lte("started_at", new Date(now - MIN_RUN_AGE_MS).toISOString())
+    .or(leaseFreeFilter(now))
     .order("started_at", { ascending: true })
     .limit(RUN_CANDIDATE_SCAN);
 
   if (error) {
     console.error("[cron/lead-finder] fetch running runs failed", error);
-    return [];
+    return outcomes;
   }
 
-  const candidates = (data ?? []) as RunRow[];
   const runs: RunRow[] = [];
-  for (const run of candidates) {
-    if (runs.length >= MAX_RUNS_PER_TICK) break;
-    if (await isDiscoveryActor(supabase, run.actor_id, run.organization_id)) {
-      runs.push(run);
-    }
+  for (const run of (data ?? []) as RunRow[]) {
+    if (await isDiscovery(run.actor_id, run.organization_id)) runs.push(run);
   }
 
-  const outcomes: FinalizeOutcome[] = [];
-  for (const run of runs) {
+  let finalized = 0;
+  for (const run of roundRobinByOrg(runs)) {
+    if (finalized >= MAX_RUNS_PER_TICK) break;
+    if (Date.now() - startedAt > FINALIZE_BUDGET_MS) break;
     try {
-      outcomes.push(await finalizeRun(supabase, run));
+      const outcome = await finalizeRun(supabase, run);
+      if (outcome.status !== "running") finalized++;
+      outcomes.push(outcome);
     } catch (err) {
-      // Transient (e.g. Apify unreachable): leave it running; the timeout catches it.
+      // Unexpected (e.g. DB unreachable): leave it running; the timeout catches it.
       console.error(`[cron/lead-finder] finalize run ${run.id} failed`, err);
-      outcomes.push({
-        id: run.id,
-        status: "running",
-        error: err instanceof Error ? err.message : "Unknown error",
-      });
+      outcomes.push({ id: run.id, status: "running", error: errorMessage(err) });
     }
   }
   return outcomes;
+}
+
+/** Running, campaign-scoped runs, excluding built-in enrich-phase actors. */
+function runningRunsQuery(supabase: AdminClient) {
+  const enrichActorList = `(${ACTOR_REGISTRY.filter((a) => a.phase !== "find")
+    .map((a) => `"${a.id}"`)
+    .join(",")})`;
+  return supabase
+    .from("lf_apify_runs")
+    .select("id, organization_id, campaign_id, actor_id, run_id, started_at")
+    .eq("status", "running")
+    .not("campaign_id", "is", null)
+    .not("actor_id", "in", enrichActorList);
+}
+
+/** PostgREST `or` filter: no ingest lease, or a stale one (older than LEASE_MS). */
+function leaseFreeFilter(now: number): string {
+  const staleBefore = new Date(now - LEASE_MS).toISOString();
+  return `finished_at.is.null,finished_at.lt."${staleBefore}"`;
+}
+
+/**
+ * Mark running find-phase runs older than RUN_TIMEOUT_MS as failed without
+ * calling Apify. Runs holding an active ingest lease are left alone.
+ */
+async function failTimedOutRuns(
+  supabase: AdminClient,
+  isDiscovery: DiscoveryCheck
+): Promise<FinalizeOutcome[]> {
+  const now = Date.now();
+  const { data, error } = await runningRunsQuery(supabase)
+    .lt("started_at", new Date(now - RUN_TIMEOUT_MS).toISOString())
+    .or(leaseFreeFilter(now))
+    .order("started_at", { ascending: true })
+    .limit(RUN_CANDIDATE_SCAN);
+
+  if (error) {
+    console.error("[cron/lead-finder] fetch timed-out runs failed", error);
+    return [];
+  }
+
+  const expired: RunRow[] = [];
+  for (const run of (data ?? []) as RunRow[]) {
+    if (await isDiscovery(run.actor_id, run.organization_id)) expired.push(run);
+  }
+  if (expired.length === 0) return [];
+
+  const { data: updated, error: updateErr } = await supabase
+    .from("lf_apify_runs")
+    .update({ status: "failed", finished_at: new Date().toISOString() })
+    .in("id", expired.map((r) => r.id))
+    .eq("status", "running")
+    .or(leaseFreeFilter(now))
+    .select("id");
+
+  if (updateErr) {
+    console.error("[cron/lead-finder] fail timed-out runs failed", updateErr);
+    return [];
+  }
+
+  const failedIds = new Set((updated ?? []).map((r) => r.id));
+  return expired
+    .filter((run) => failedIds.has(run.id))
+    .map((run) => {
+      console.error(
+        `[cron/lead-finder] discovery run ${run.id} (apify ${run.run_id}) failed: timed out`
+      );
+      return { id: run.id, status: "failed" as const, error: "timed out" };
+    });
+}
+
+/** Interleave runs by organization: each org's oldest run, then its second, ... */
+function roundRobinByOrg(runs: RunRow[]): RunRow[] {
+  const byOrg = new Map<string, RunRow[]>();
+  for (const run of runs) {
+    byOrg.set(run.organization_id, [...(byOrg.get(run.organization_id) ?? []), run]);
+  }
+  const queues = [...byOrg.values()];
+  const longest = Math.max(0, ...queues.map((q) => q.length));
+  const ordered: RunRow[] = [];
+  for (let i = 0; i < longest; i++) {
+    for (const queue of queues) {
+      if (i < queue.length) ordered.push(queue[i]);
+    }
+  }
+  return ordered;
+}
+
+/** isDiscoveryActor, memoised for one cron tick. */
+function discoveryActorCheck(supabase: AdminClient): DiscoveryCheck {
+  const cache = new Map<string, Promise<boolean>>();
+  return (actorId, orgId) => {
+    const key = `${orgId}:${actorId}`;
+    const cached = cache.get(key);
+    if (cached) return cached;
+    const result = isDiscoveryActor(supabase, actorId, orgId);
+    cache.set(key, result);
+    return result;
+  };
 }
 
 async function isDiscoveryActor(
@@ -214,46 +322,68 @@ async function isDiscoveryActor(
   return data?.phase === "find";
 }
 
+function isTimedOut(run: RunRow): boolean {
+  return Date.now() - new Date(run.started_at).getTime() > RUN_TIMEOUT_MS;
+}
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : "Unknown error";
+}
+
 async function finalizeRun(
   supabase: AdminClient,
   run: RunRow
 ): Promise<FinalizeOutcome> {
-  const { token } = await authorizeActors(run.organization_id, []);
-  const status = await getRunStatus(run.run_id, token);
+  let status: RunStatus;
+  try {
+    const { token } = await authorizeActors(run.organization_id, []);
+    status = await getRunStatus(run.run_id, token);
+  } catch (err) {
+    // Token removed, run id unknown to the current Apify account (401/404), or
+    // Apify unreachable: retry next tick unless the run has timed out.
+    const message = errorMessage(err);
+    if (!isTimedOut(run)) return { id: run.id, status: "running", error: message };
+    await markRunFailed(supabase, run, message);
+    return { id: run.id, status: "failed", error: message };
+  }
 
   if (status.status === "running") {
-    const age = Date.now() - new Date(run.started_at).getTime();
-    if (age <= RUN_TIMEOUT_MS) return { id: run.id, status: "running" };
+    if (!isTimedOut(run)) return { id: run.id, status: "running" };
     await markRunFailed(supabase, run, "timed out");
     return { id: run.id, status: "failed", error: "timed out" };
   }
 
   if (status.status === "failed") {
-    await markRunFailed(supabase, run, status.error ?? "Actor run failed");
-    return { id: run.id, status: "failed", error: status.error };
+    const reason = status.error ?? "Actor run failed";
+    await markRunFailed(supabase, run, reason);
+    return { id: run.id, status: "failed", error: reason };
   }
 
-  // Claim the run so a concurrent invocation cannot ingest it twice.
-  const { data: claimed } = await supabase
+  // Lease the run so a concurrent invocation cannot ingest it twice. Status
+  // stays "running" until ingest completes, so a failed ingest is retried.
+  const leaseAt = Date.now();
+  const { data: claimed, error: claimErr } = await supabase
     .from("lf_apify_runs")
     .update({
-      status: "succeeded",
+      finished_at: new Date(leaseAt).toISOString(),
       dataset_id: status.datasetId ?? null,
       cost_usd: status.costUsd ?? null,
-      finished_at: new Date().toISOString(),
     })
     .eq("id", run.id)
     .eq("status", "running")
+    .or(leaseFreeFilter(leaseAt))
     .select("id");
+  if (claimErr) throw claimErr;
   if (!claimed || claimed.length === 0) {
-    return { id: run.id, status: "succeeded", inserted: 0 };
+    return { id: run.id, status: "running" }; // leased by another invocation
   }
 
+  let counts: Awaited<ReturnType<typeof ingestDiscoveredItems>>;
   try {
     const items = status.datasetId
       ? await fetchDatasetItems(status.datasetId, run.organization_id)
       : [];
-    const counts = await ingestDiscoveredItems(
+    counts = await ingestDiscoveredItems(
       items,
       {
         actorId: run.actor_id,
@@ -264,27 +394,44 @@ async function finalizeRun(
       },
       supabase
     );
-
+  } catch (err) {
+    const message = errorMessage(err);
+    if (isTimedOut(run)) {
+      await markRunFailed(supabase, run, message);
+      return { id: run.id, status: "failed", error: message };
+    }
+    // Transient: release the lease so the next tick retries the ingest.
+    console.error(
+      `[cron/lead-finder] ingest of run ${run.id} failed, will retry: ${message}`
+    );
     await supabase
       .from("lf_apify_runs")
-      .update({ result_count: counts.totalResults })
-      .eq("id", run.id);
-    await supabase
-      .from("lf_campaigns")
-      .update({ last_discovery_at: new Date().toISOString() })
-      .eq("id", run.campaign_id)
-      .eq("organization_id", run.organization_id);
-
-    if (counts.inserted > 0) {
-      await autoEnrichIfEnabled(supabase, run);
-    }
-
-    return { id: run.id, status: "succeeded", inserted: counts.inserted };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    await markRunFailed(supabase, run, message);
-    return { id: run.id, status: "failed", error: message };
+      .update({ finished_at: null })
+      .eq("id", run.id)
+      .eq("status", "running");
+    return { id: run.id, status: "running", error: message };
   }
+
+  await supabase
+    .from("lf_apify_runs")
+    .update({
+      status: "succeeded",
+      result_count: counts.totalResults,
+      finished_at: new Date().toISOString(),
+    })
+    .eq("id", run.id)
+    .eq("status", "running");
+  await supabase
+    .from("lf_campaigns")
+    .update({ last_discovery_at: new Date().toISOString() })
+    .eq("id", run.campaign_id)
+    .eq("organization_id", run.organization_id);
+
+  if (counts.inserted > 0) {
+    await autoEnrichIfEnabled(supabase, run);
+  }
+
+  return { id: run.id, status: "succeeded", inserted: counts.inserted };
 }
 
 /** lf_apify_runs has no error column, so the reason is logged. */
@@ -299,7 +446,8 @@ async function markRunFailed(
   await supabase
     .from("lf_apify_runs")
     .update({ status: "failed", finished_at: new Date().toISOString() })
-    .eq("id", run.id);
+    .eq("id", run.id)
+    .eq("status", "running");
 }
 
 async function autoEnrichIfEnabled(
