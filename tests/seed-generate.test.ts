@@ -110,4 +110,23 @@ describe("generateSeed", () => {
     });
     expect(startup.weights).toEqual({ industry: 20, size: 20, revenue: 15, title: 15, geography: 15, tech: 15 });
   });
+
+  it("grades every lead from its score", () => {
+    const expected = (score: number) => (score >= 80 ? "A" : score >= 60 ? "B" : score >= 40 ? "C" : "D");
+    const { leads } = generateSeed("org-1");
+    expect(leads.length).toBeGreaterThan(0);
+    for (const lead of leads) {
+      expect(lead.qualification_grade).toBe(expected(lead.score as number));
+    }
+  });
+
+  it("gives every activity a real description that names its company", () => {
+    const { activities } = generateSeed("org-1");
+    for (const a of activities) {
+      expect(a.description).toBeTruthy();
+      expect(a.description).not.toMatch(/seed data generation/i);
+      expect(a.description).toContain(a.related_name as string);
+    }
+    expect(new Set(activities.map((a) => a.description)).size).toBeGreaterThan(5);
+  });
 });

@@ -426,8 +426,15 @@ function buildCustomers(orgId: string, r: Rand): CustomerInsert[] {
   });
 }
 
+function gradeFromScore(score: number): "A" | "B" | "C" | "D" {
+  if (score >= 80) return "A";
+  if (score >= 60) return "B";
+  if (score >= 40) return "C";
+  return "D";
+}
+
 function buildLeads(orgId: string, r: Rand): LeadInsert[] {
-  return Array.from({ length: 20 }, (_, i) => {
+  const leads = Array.from({ length: 20 }, (_, i) => {
     const firstName = FIRST_NAMES[(i + 5) % FIRST_NAMES.length];
     const lastName = LAST_NAMES[(i + 3) % LAST_NAMES.length];
     const company = COMPANIES[(i + 7) % COMPANIES.length];
@@ -448,6 +455,7 @@ function buildLeads(orgId: string, r: Rand): LeadInsert[] {
       location: r.pick(LOCATIONS),
     };
   });
+  return leads.map((lead) => ({ ...lead, qualification_grade: gradeFromScore(lead.score ?? 0) }));
 }
 
 function buildDeals(orgId: string, customers: CustomerInsert[], r: Rand): SeedBundle["deals"] {
@@ -499,6 +507,44 @@ function activityTitle(type: (typeof ACTIVITY_TYPES)[number], company: string, r
   return `Follow up on ${company} requirement`;
 }
 
+const ACTIVITY_DESCRIPTIONS: Record<(typeof ACTIVITY_TYPES)[number], Array<(company: string) => string>> = {
+  call: [
+    (c) => `Discussed renewal timeline with ${c}.`,
+    (c) => `Walked through open questions on pricing with ${c}.`,
+    (c) => `Checked in on rollout progress with the ${c} team.`,
+    (c) => `Aligned on next steps and owners with ${c}.`,
+  ],
+  email: [
+    (c) => `Sent the updated proposal and pricing summary to ${c}.`,
+    (c) => `Shared a relevant case study with ${c}.`,
+    (c) => `Followed up with ${c} after the last conversation.`,
+    (c) => `Confirmed meeting details and agenda with ${c}.`,
+  ],
+  meeting: [
+    (c) => `Ran a product demo for the ${c} stakeholders.`,
+    (c) => `Quarterly business review with ${c}.`,
+    (c) => `Kickoff session to scope onboarding with ${c}.`,
+    (c) => `Met with ${c} to review success metrics.`,
+  ],
+  note: [
+    (c) => `${c} is comparing us with two other vendors; decision expected this quarter.`,
+    (c) => `Main champion at ${c} wants a security overview before sign-off.`,
+    (c) => `${c} raised budget timing as the main concern.`,
+    (c) => `Expansion opportunity noted at ${c} across a second team.`,
+  ],
+  task: [
+    (c) => `Prepare a tailored pricing sheet for ${c}.`,
+    (c) => `Send the signed contract to ${c} for countersignature.`,
+    (c) => `Schedule a check-in with ${c} for next week.`,
+    (c) => `Collect usage data to share with ${c}.`,
+  ],
+};
+
+function activityDescription(type: (typeof ACTIVITY_TYPES)[number], company: string, i: number): string {
+  const options = ACTIVITY_DESCRIPTIONS[type];
+  return options[Math.floor(i / ACTIVITY_TYPES.length) % options.length](company);
+}
+
 function buildActivities(orgId: string, customers: CustomerInsert[], r: Rand): SeedBundle["activities"] {
   return Array.from({ length: 20 }, (_, i) => {
     const parentIndex = i % customers.length;
@@ -509,7 +555,7 @@ function buildActivities(orgId: string, customers: CustomerInsert[], r: Rand): S
       organization_id: orgId,
       type,
       title: activityTitle(type, company, r),
-      description: "Activity created during seed data generation.",
+      description: activityDescription(type, company, i),
       status: r.pick(["completed", "pending", "scheduled"] as const),
       date: r.pastDate(30),
       time: `${r.between(9, 17).toString().padStart(2, "0")}:00`,
