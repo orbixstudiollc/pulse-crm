@@ -206,25 +206,25 @@ export default function LeadFinderOverviewPage() {
               label="Total Leads"
               value={data.totalLeads.toLocaleString()}
               icon={<UsersIcon size={20} className="text-fg-secondary" />}
-              change={{ value: `${data.activeCampaigns} active campaign${data.activeCampaigns !== 1 ? "s" : ""}`, trend: "neutral" }}
+              hint={`${data.activeCampaigns} active campaign${data.activeCampaigns !== 1 ? "s" : ""}`}
             />
             <StatCard
               label="Active Campaigns"
               value={data.activeCampaigns}
               icon={<TargetIcon size={20} className="text-fg-secondary" />}
-              change={{ value: `${data.totalCampaigns} total`, trend: "neutral" }}
+              hint={`${data.totalCampaigns} total`}
             />
             <StatCard
               label="Conversions"
               value={data.conversions.toLocaleString()}
               icon={<CheckCircleIcon size={20} className="text-fg-secondary" />}
-              change={{ value: `${data.conversionRate}% conversion rate`, trend: data.conversionRate > 0 ? "up" : "neutral" }}
+              hint={`${data.conversionRate}% conversion rate`}
             />
             <StatCard
               label="Total Cost"
               value={`$${data.costs.total.toFixed(4)}`}
               icon={<CurrencyDollarIcon size={20} className="text-fg-secondary" />}
-              change={{ value: `$${data.costs.avgPerLead.toFixed(4)} avg/lead`, trend: "neutral" }}
+              hint={`$${data.costs.avgPerLead.toFixed(4)} avg/lead`}
             />
           </div>
 

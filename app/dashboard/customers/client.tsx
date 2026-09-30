@@ -26,6 +26,7 @@ import {
 import type { Customer } from "@/lib/data/customers";
 import { exportCustomersToCSV } from "@/lib/actions/export";
 import { toast } from "sonner";
+import { countInMonth, monthOverMonth } from "@/lib/stats/period-delta";
 
 interface CustomerRecord {
   id: string;
@@ -39,6 +40,11 @@ interface CustomerRecord {
   mrr?: number;
   last_contact?: string | null;
   [key: string]: unknown;
+}
+
+function monthChange(dates: (string | null | undefined)[]) {
+  const delta = monthOverMonth(countInMonth(dates, 0), countInMonth(dates, -1));
+  return delta ? { value: delta.text, trend: delta.trend } : undefined;
 }
 
 // Map DB record to the shape CustomersTable expects
@@ -115,6 +121,10 @@ export function CustomersPageClient({
   const totalCustomers = allCustomers.length;
   const activeCount = allCustomers.filter((c) => c.status === "active").length;
   const atRiskCount = allCustomers.filter((c) => c.healthScore < 50).length;
+  const createdDates = initialCustomers.map((c) => c.created_at as string | null | undefined);
+  const activeCreatedDates = initialCustomers
+    .filter((c) => (c.status || "active") === "active")
+    .map((c) => c.created_at as string | null | undefined);
 
   return (
     <div className="p-6 space-y-6">
@@ -147,7 +157,7 @@ export function CustomersPageClient({
         <StatCard
           label="Total Customers"
           value={totalCustomers.toLocaleString()}
-          change={{ value: "+12.5%", trend: "up" }}
+          change={monthChange(createdDates)}
           icon={
             <UsersThreeIcon
               size={20}
@@ -158,7 +168,7 @@ export function CustomersPageClient({
         <StatCard
           label="Active"
           value={activeCount.toLocaleString()}
-          change={{ value: "+24.5%", trend: "up" }}
+          change={monthChange(activeCreatedDates)}
           icon={
             <CheckCircleIcon
               size={20}
@@ -169,7 +179,6 @@ export function CustomersPageClient({
         <StatCard
           label="At Risk"
           value={atRiskCount.toLocaleString()}
-          change={{ value: "+15.2%", trend: "up" }}
           icon={
             <WarningIcon
               size={20}

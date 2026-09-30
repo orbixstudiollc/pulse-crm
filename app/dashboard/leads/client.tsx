@@ -46,6 +46,7 @@ import { exportLeadsToCSV } from "@/lib/actions/export";
 import { useClickOutside } from "@/hooks";
 // useRouter removed — data refresh via fetchLeads()
 import { toast } from "sonner";
+import { countInMonth, monthOverMonth } from "@/lib/stats/period-delta";
 
 interface LeadRecord {
   id: string;
@@ -64,6 +65,11 @@ interface LeadRecord {
   days_in_pipeline: number;
   created_at: string;
   [key: string]: unknown;
+}
+
+function monthChange(dates: (string | null | undefined)[]) {
+  const delta = monthOverMonth(countInMonth(dates, 0), countInMonth(dates, -1));
+  return delta ? { value: delta.text, trend: delta.trend } : undefined;
 }
 
 // Map DB record to display shape
@@ -425,47 +431,53 @@ export function LeadsPageClient() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <PageHeader title="Leads">
-        <Button
-          variant="outline"
-          leftIcon={<SparkleIcon size={18} />}
-          onClick={handleAIScoreAll}
-          disabled={isPending}
-        >
-          AI Score All
-        </Button>
-        <Button
-          variant="outline"
-          leftIcon={<LightningIcon size={18} />}
-          onClick={handleRecalculateAll}
-          disabled={isPending}
-        >
-          {isPending ? "Recalculating..." : "Recalculate All"}
-        </Button>
-        <Button variant="outline" leftIcon={<UploadIcon size={18} />} onClick={() => setShowImport(true)}>
-          Import
-        </Button>
-        <Button
-          variant="outline"
-          leftIcon={<ExportIcon size={18} />}
-          onClick={async () => {
-            const result = await exportLeadsToCSV();
-            if (result.error) { toast.error(result.error); return; }
-            const blob = new Blob([result.csv], { type: "text/csv" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url; a.download = `leads-export-${new Date().toISOString().slice(0, 10)}.csv`;
-            a.click(); URL.revokeObjectURL(url);
-            toast.success("Leads exported successfully");
-          }}
-        >
-          Export
-        </Button>
-        <Button
-          leftIcon={<PlusIcon size={20} weight="bold" />}
-          onClick={() => setShowAddLead(true)}
-        >
-          Add Lead
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            className="whitespace-nowrap"
+            leftIcon={<SparkleIcon size={18} />}
+            onClick={handleAIScoreAll}
+            disabled={isPending}
+          >
+            AI Score All
+          </Button>
+          <Button
+            variant="outline"
+            className="whitespace-nowrap"
+            leftIcon={<LightningIcon size={18} />}
+            onClick={handleRecalculateAll}
+            disabled={isPending}
+          >
+            {isPending ? "Recalculating..." : "Recalculate All"}
+          </Button>
+          <Button variant="outline" className="whitespace-nowrap" leftIcon={<UploadIcon size={18} />} onClick={() => setShowImport(true)}>
+            Import
+          </Button>
+          <Button
+            variant="outline"
+            className="whitespace-nowrap"
+            leftIcon={<ExportIcon size={18} />}
+            onClick={async () => {
+              const result = await exportLeadsToCSV();
+              if (result.error) { toast.error(result.error); return; }
+              const blob = new Blob([result.csv], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url; a.download = `leads-export-${new Date().toISOString().slice(0, 10)}.csv`;
+              a.click(); URL.revokeObjectURL(url);
+              toast.success("Leads exported successfully");
+            }}
+          >
+            Export
+          </Button>
+          <Button
+            className="whitespace-nowrap"
+            leftIcon={<PlusIcon size={20} weight="bold" />}
+            onClick={() => setShowAddLead(true)}
+          >
+            Add Lead
+          </Button>
+        </div>
       </PageHeader>
 
       {/* Stat Cards */}
@@ -473,7 +485,7 @@ export function LeadsPageClient() {
         <StatCard
           label="Total Leads"
           value={allLeads.length.toString()}
-          change={{ value: "+12%", trend: "up" }}
+          change={monthChange(leadsData.map((l) => l.created_at))}
           icon={
             <UsersThreeIcon
               size={24}
@@ -484,7 +496,7 @@ export function LeadsPageClient() {
         <StatCard
           label="Hot Leads"
           value={allLeads.filter((l) => l.status === "hot").length.toString()}
-          change={{ value: "+8%", trend: "up" }}
+          change={monthChange(leadsData.filter((l) => (l.status || "cold") === "hot").map((l) => l.created_at))}
           icon={
             <SparkleIcon
               size={24}
@@ -495,7 +507,6 @@ export function LeadsPageClient() {
         <StatCard
           label="Converted"
           value="0"
-          change={{ value: "0%", trend: "neutral" }}
           icon={
             <CheckCircleIcon
               size={24}
@@ -603,8 +614,19 @@ export function LeadsPageClient() {
           }}
         />
 
-        {/* Table or Empty State */}
-        {filteredLeads.length > 0 ? (
+        {/* Table, Loading Skeleton, or Empty State */}
+        {leadsLoading ? (
+          <div className="divide-y divide-line">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-3 py-3">
+                <div className="h-4 w-4 animate-pulse rounded bg-active" />
+                <div className="h-4 w-40 animate-pulse rounded bg-active" />
+                <div className="h-4 w-32 animate-pulse rounded bg-active max-sm:hidden" />
+                <div className="ml-auto h-4 w-16 animate-pulse rounded bg-active" />
+              </div>
+            ))}
+          </div>
+        ) : filteredLeads.length > 0 ? (
           <>
             {/* Table */}
             <div className="overflow-x-auto">

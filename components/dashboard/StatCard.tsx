@@ -8,8 +8,9 @@ interface StatCardProps {
   value: string | number;
   change?: {
     value: string;
-    trend: "up" | "down" | "neutral";
+    trend: "up" | "down" | "neutral" | "flat";
   };
+  hint?: string;
   icon: ReactNode;
   className?: string;
 }
@@ -19,6 +20,7 @@ export function StatCard({
   label,
   value,
   change,
+  hint,
   className,
 }: StatCardProps) {
   return (
@@ -46,7 +48,7 @@ export function StatCard({
               "font-medium",
               change.trend === "up" && "text-success",
               change.trend === "down" && "text-danger",
-              change.trend === "neutral" && "text-fg-secondary",
+              (change.trend === "neutral" || change.trend === "flat") && "text-fg-secondary",
             )}
           >
             {change.value}
@@ -55,6 +57,12 @@ export function StatCard({
             {" "}
             from last month
           </span>
+        </p>
+      )}
+
+      {hint && (
+        <p className="mt-2 text-xs text-fg-secondary">
+          {hint}
         </p>
       )}
     </div>

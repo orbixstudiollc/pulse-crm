@@ -16,11 +16,16 @@ import { getDashboardStats, getRevenueChartData, getLatestLeads, getActivityFeed
 import { getActiveDeals } from "@/lib/actions/dashboard";
 import { createClient } from "@/lib/supabase/server";
 import type { LeadSource } from "@/lib/data/leads";
+import { monthOverMonth, type PeriodDelta } from "@/lib/stats/period-delta";
 
 function formatCurrency(value: number): string {
   if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
   if (value >= 1000) return `$${(value / 1000).toFixed(1)}k`;
   return `$${value.toLocaleString()}`;
+}
+
+function toChange(delta: PeriodDelta | null) {
+  return delta ? { value: delta.text, trend: delta.trend } : undefined;
 }
 
 export default async function OverviewPage() {
@@ -45,6 +50,7 @@ export default async function OverviewPage() {
   ]);
 
   const stats = statsRes.data;
+  const pipelineValue = (stagesRes.data ?? []).reduce((sum, s) => sum + s.value, 0);
 
   return (
     <div className="p-6 space-y-6">
@@ -58,7 +64,7 @@ export default async function OverviewPage() {
         <StatCard
           label="Total Revenue"
           value={formatCurrency(stats?.totalRevenue ?? 0)}
-          change={{ value: "+12.5%", trend: "up" }}
+          change={toChange(monthOverMonth(stats?.revenueThisMonth ?? 0, stats?.revenueLastMonth ?? 0))}
           icon={
             <CurrencyDollarIcon
               size={20}
@@ -69,7 +75,7 @@ export default async function OverviewPage() {
         <StatCard
           label="Active Deals"
           value={String(stats?.activeDeals ?? 0)}
-          change={{ value: "+8", trend: "up" }}
+          change={toChange(monthOverMonth(stats?.activeDealsThisMonth ?? 0, stats?.activeDealsLastMonth ?? 0))}
           icon={
             <TrophyIcon
               size={20}
@@ -80,7 +86,7 @@ export default async function OverviewPage() {
         <StatCard
           label="Total Leads"
           value={String(stats?.totalLeads ?? 0)}
-          change={{ value: "+23%", trend: "up" }}
+          change={toChange(monthOverMonth(stats?.leadsThisMonth ?? 0, stats?.leadsLastMonth ?? 0))}
           icon={
             <UsersThreeIcon
               size={20}
@@ -94,7 +100,7 @@ export default async function OverviewPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <RevenueChart data={revenueRes.data} className="lg:col-span-2" />
         <ActiveDeals
-          total={stats?.totalRevenue ?? 0}
+          total={pipelineValue}
           dealCount={stats?.activeDeals ?? 0}
           stages={stagesRes.data ?? []}
         />
