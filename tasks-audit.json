@@ -1,0 +1,334 @@
+[
+  {
+    "id": "F1",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Performance: run functions next to the database, add loading skeletons to 13 sections",
+    "files": [
+      "vercel.json",
+      "app/dashboard/analytics/loading.tsx",
+      "app/dashboard/campaigns/loading.tsx",
+      "app/dashboard/competitors/loading.tsx",
+      "app/dashboard/contacts/loading.tsx",
+      "app/dashboard/copilot/loading.tsx",
+      "app/dashboard/icp/loading.tsx",
+      "app/dashboard/inbox/loading.tsx",
+      "app/dashboard/marketing/loading.tsx",
+      "app/dashboard/playbook/loading.tsx",
+      "app/dashboard/proposals/loading.tsx",
+      "app/dashboard/sequences/loading.tsx",
+      "app/dashboard/templates/loading.tsx",
+      "app/dashboard/website-visitors/loading.tsx"
+    ],
+    "interface": "vercel.json: add a top-level `\"regions\": [\"sin1\"]` (Supabase is in ap-southeast-1 Singapore; functions currently run in iad1, so every query crosses the globe). Keep the existing `crons` array exactly as is. Create app/dashboard/<section>/loading.tsx for each of: analytics, campaigns, competitors, contacts, copilot, icp, inbox, marketing, playbook, proposals, sequences, templates, website-visitors. Copy the exact pattern of app/dashboard/activity/loading.tsx (a local Skeleton helper with `animate-pulse rounded bg-active`, default export named <Section>Loading, wrapper `space-y-4 px-4 py-6 sm:px-6 lg:px-6`): a page-title skeleton, then a row of stat-card skeletons (grid, rounded-lg, h-24) and a table/list skeleton of 6-8 rows. No imports, no data fetching, no \"use client\". Use only token classes already used in that file.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q '\"sin1\"' vercel.json && grep -q '\"crons\"' vercel.json && node -e \"JSON.parse(require('fs').readFileSync('vercel.json','utf8'))\" && test -f app/dashboard/analytics/loading.tsx && test -f app/dashboard/campaigns/loading.tsx && test -f app/dashboard/competitors/loading.tsx && test -f app/dashboard/contacts/loading.tsx && test -f app/dashboard/copilot/loading.tsx && test -f app/dashboard/icp/loading.tsx && test -f app/dashboard/inbox/loading.tsx && test -f app/dashboard/marketing/loading.tsx && test -f app/dashboard/playbook/loading.tsx && test -f app/dashboard/proposals/loading.tsx && test -f app/dashboard/sequences/loading.tsx && test -f app/dashboard/templates/loading.tsx && test -f app/dashboard/website-visitors/loading.tsx && npx tsc --noEmit && node scripts/restyle/scan.mjs app components && git add -A -- 'vercel.json' 'app/dashboard/analytics/loading.tsx' 'app/dashboard/campaigns/loading.tsx' 'app/dashboard/competitors/loading.tsx' 'app/dashboard/contacts/loading.tsx' 'app/dashboard/copilot/loading.tsx' 'app/dashboard/icp/loading.tsx' 'app/dashboard/inbox/loading.tsx' 'app/dashboard/marketing/loading.tsx' 'app/dashboard/playbook/loading.tsx' 'app/dashboard/proposals/loading.tsx' 'app/dashboard/sequences/loading.tsx' 'app/dashboard/templates/loading.tsx' 'app/dashboard/website-visitors/loading.tsx' && git commit -q -m 'perf: run functions in sin1 next to Supabase and add loading skeletons to 13 sections' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F1-OK"
+  },
+  {
+    "id": "F2",
+    "model": "opus",
+    "depends_on": [],
+    "title": "AI chat: surface errors and missing-key state in Copilot and the floating panel; make Copilot settings honest",
+    "files": [
+      "app/dashboard/copilot/client.tsx",
+      "app/dashboard/copilot/page.tsx",
+      "components/features/AIChat/AIChatPanel.tsx",
+      "components/features/AIChat/index.tsx",
+      "tests/ai-chat-error.test.ts",
+      "lib/ai/chat-error.ts"
+    ],
+    "interface": "Problem: /api/ai/chat returns a 400 plain-text body such as `No AI API key configured. Add one in Settings > AI or set ANTHROPIC_API_KEY.` when no key exists, and neither chat UI reads the `useChat` error, so the user's message appears and nothing else ever happens. Create lib/ai/chat-error.ts exporting `describeChatError(err: unknown): { message: string; needsKey: boolean }`: returns needsKey true when the error message contains `No AI API key` (case-insensitive) with message `Add an AI API key to use the assistant.`; for any other Error returns its message trimmed to 200 chars; for non-Error returns `Something went wrong. Please try again.`. Add tests/ai-chat-error.test.ts covering the three branches. app/dashboard/copilot/client.tsx: destructure `error` from `useChat` in the chat view; when set, render an inline alert under the last message (role=\"alert\", bg-danger-surface/text-danger tokens) with `describeChatError(error).message`, and when needsKey is true a link `Open AI settings` to `/dashboard/settings?tab=ai`. Clear the alert when the user sends again. In the Copilot Settings view (the view with the model select, chat-history and analytics toggles and the Save button that only toasts `Settings saved`): remove the fake Save toast, disable those controls, and show a one-line note `These settings are coming soon.` above them. components/features/AIChat/AIChatPanel.tsx: same error surfacing with describeChatError and the settings link. Also hide the floating AI launcher button while the pathname starts with `/dashboard/copilot` (use usePathname), since Copilot is already the full-page assistant. app/dashboard/copilot/page.tsx and components/features/AIChat/index.tsx may be touched only if needed to pass data or export the helper. Do not touch app/api/ai/chat/route.ts or lib/ai/client.ts.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && test -f lib/ai/chat-error.ts && grep -q 'export function describeChatError' lib/ai/chat-error.ts && grep -q 'describeChatError' app/dashboard/copilot/client.tsx && grep -q 'describeChatError' components/features/AIChat/AIChatPanel.tsx && grep -q 'settings?tab=ai' app/dashboard/copilot/client.tsx && grep -q 'coming soon' app/dashboard/copilot/client.tsx && ! grep -q 'toast.success(\"Settings saved\")' app/dashboard/copilot/client.tsx && grep -q 'usePathname' components/features/AIChat/AIChatPanel.tsx && npx vitest run tests/ai-chat-error.test.ts && npx tsc --noEmit && npx eslint 'app/dashboard/copilot/client.tsx' 'app/dashboard/copilot/page.tsx' 'components/features/AIChat/AIChatPanel.tsx' 'components/features/AIChat/index.tsx' 'lib/ai/chat-error.ts' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/dashboard/copilot/client.tsx' 'app/dashboard/copilot/page.tsx' 'components/features/AIChat/AIChatPanel.tsx' 'components/features/AIChat/index.tsx' 'tests/ai-chat-error.test.ts' 'lib/ai/chat-error.ts' && git commit -q -m 'fix(ai): show chat errors and the missing-key state; honest Copilot settings; hide the launcher on Copilot' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F2-OK"
+  },
+  {
+    "id": "F3",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Overview: make Add Lead save, and remove or wire every dead control on the dashboard widgets",
+    "files": [
+      "components/dashboard/PageHeaderActions.tsx",
+      "components/dashboard/RevenueChart.tsx",
+      "components/dashboard/ActiveDeals.tsx",
+      "components/dashboard/ActivityFeed.tsx",
+      "components/dashboard/LatestLeads.tsx"
+    ],
+    "interface": "components/dashboard/PageHeaderActions.tsx: the AddLeadModal onSubmit currently only does `console.log(\"New lead:\", data)`. Replace with a call to `createLead` from `@/lib/actions/leads` (read its signature and the LeadFormData interface in components/features/AddLeadModal.tsx, and map fields exactly the way app/dashboard/leads/client.tsx maps them when it calls createLead). On `{ error }` show `toast.error(result.error)`; on success `toast.success(\"Lead added\")`, close the modal and call `router.refresh()` (useRouter from next/navigation). Remove the unused date-range dropdown state/UI in this file. No console.log may remain. components/dashboard/RevenueChart.tsx, ActiveDeals.tsx, ActivityFeed.tsx, LatestLeads.tsx: each header arrow icon button that has no handler becomes a next/link Link (same visual classes, keep its aria-label or add one) to: RevenueChart -> /dashboard/analytics, ActiveDeals -> /dashboard/sales, ActivityFeed -> /dashboard/activity, LatestLeads -> /dashboard/leads. Remove the date-range / This Year dropdowns that change nothing (RevenueChart, LatestLeads), and the dead per-row `⋮` button in LatestLeads (make the row link to /dashboard/leads/<id> if rows are not already links). Do not change the data these widgets receive.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! grep -q 'console.log' components/dashboard/PageHeaderActions.tsx && grep -q 'createLead' components/dashboard/PageHeaderActions.tsx && grep -q 'router.refresh' components/dashboard/PageHeaderActions.tsx && grep -q '/dashboard/analytics' components/dashboard/RevenueChart.tsx && grep -q '/dashboard/sales' components/dashboard/ActiveDeals.tsx && grep -q '/dashboard/activity' components/dashboard/ActivityFeed.tsx && grep -q '/dashboard/leads' components/dashboard/LatestLeads.tsx && npx tsc --noEmit && npx eslint 'components/dashboard/PageHeaderActions.tsx' 'components/dashboard/RevenueChart.tsx' 'components/dashboard/ActiveDeals.tsx' 'components/dashboard/ActivityFeed.tsx' 'components/dashboard/LatestLeads.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'components/dashboard/PageHeaderActions.tsx' 'components/dashboard/RevenueChart.tsx' 'components/dashboard/ActiveDeals.tsx' 'components/dashboard/ActivityFeed.tsx' 'components/dashboard/LatestLeads.tsx' && git commit -q -m 'fix(overview): Add Lead saves; dashboard widget links replace dead buttons and dropdowns' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F3-OK"
+  },
+  {
+    "id": "F4",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Real stat deltas and revenue; Leads loading skeleton and phone header",
+    "files": [
+      "lib/stats/period-delta.ts",
+      "tests/period-delta.test.ts",
+      "lib/actions/dashboard.ts",
+      "app/dashboard/overview/page.tsx",
+      "components/dashboard/StatCard.tsx",
+      "app/dashboard/customers/client.tsx",
+      "app/dashboard/leads/client.tsx",
+      "app/dashboard/lead-finder/overview/page.tsx"
+    ],
+    "interface": "Create lib/stats/period-delta.ts (plain module, no server-only) exporting `monthOverMonth(current: number, previous: number): { text: string; trend: \"up\" | \"down\" | \"flat\" } | null`: returns null when previous is 0 and current is 0; when previous is 0 and current > 0 returns `{ text: \"New this month\", trend: \"up\" }`; otherwise percent change rounded to one decimal with sign (`+12.5%`, `-3.0%`, `0%` -> trend flat). Also `countInMonth(dates: (string | null | undefined)[], monthOffset: 0 | -1, now = new Date()): number` counting ISO dates falling in the current (0) or previous (-1) calendar month (UTC). tests/period-delta.test.ts covers all branches. lib/actions/dashboard.ts: getDashboardStats `totalRevenue` becomes the sum of deal values whose stage is closed-won only (read the deals schema / enum in types/database.ts for the exact stage value), and returns the previous-month comparable numbers needed for real deltas: revenue won this month vs last month (by the deal's close date column if one exists, else updated_at), active deals created this month vs last month, leads created this month vs last month. getRevenueChartData groups closed-won deal values by that same close date. Keep existing return fields; add new ones. components/dashboard/StatCard.tsx: only render the change line (and the `from last month` suffix) when a change is provided; accept an optional `hint?: string` rendered as plain secondary text with no suffix. app/dashboard/overview/page.tsx: replace the literal `+12.5%`, `+8`, `+23%` with monthOverMonth results (omit the change when null). app/dashboard/customers/client.tsx and app/dashboard/leads/client.tsx: replace every literal delta (`+12.5%`, `+24.5%`, `+15.2%`, `+12%`, `+8%`, `0%`) with monthOverMonth computed from the loaded records' created_at via countInMonth; for counts without a meaningful comparison (e.g. At Risk, Converted) pass no change. app/dashboard/lead-finder/overview/page.tsx: text currently passed into the change slot (e.g. `3 active campaigns`, `$0.0012 avg/lead`) moves to `hint`. app/dashboard/leads/client.tsx also: while `leadsLoading` is true render skeleton rows (animate-pulse bg-active) instead of the `No leads yet` empty state; and make the page-header action buttons wrap cleanly on phones (flex-wrap with gap, `whitespace-nowrap` on labels) so none is cut off at 375px.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'export function monthOverMonth' lib/stats/period-delta.ts && grep -q 'export function countInMonth' lib/stats/period-delta.ts && npx vitest run tests/period-delta.test.ts && ! grep -q '\"+12.5%\"' app/dashboard/overview/page.tsx && ! grep -q '\"+23%\"' app/dashboard/overview/page.tsx && ! grep -q '+12.5%' app/dashboard/customers/client.tsx && ! grep -q '+24.5%' app/dashboard/customers/client.tsx && ! grep -q '\"+12%\"' app/dashboard/leads/client.tsx && grep -q 'monthOverMonth' app/dashboard/overview/page.tsx && grep -q 'monthOverMonth' app/dashboard/customers/client.tsx && grep -q 'monthOverMonth' app/dashboard/leads/client.tsx && grep -q 'hint' components/dashboard/StatCard.tsx && grep -q 'leadsLoading' app/dashboard/leads/client.tsx && npx tsc --noEmit && npx eslint 'lib/stats/period-delta.ts' 'lib/actions/dashboard.ts' 'app/dashboard/overview/page.tsx' 'components/dashboard/StatCard.tsx' 'app/dashboard/customers/client.tsx' 'app/dashboard/leads/client.tsx' 'app/dashboard/lead-finder/overview/page.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'lib/stats/period-delta.ts' 'tests/period-delta.test.ts' 'lib/actions/dashboard.ts' 'app/dashboard/overview/page.tsx' 'components/dashboard/StatCard.tsx' 'app/dashboard/customers/client.tsx' 'app/dashboard/leads/client.tsx' 'app/dashboard/lead-finder/overview/page.tsx' && git commit -q -m 'fix(stats): real month-over-month deltas, won-only revenue, Leads skeleton and phone header' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F4-OK"
+  },
+  {
+    "id": "F5",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Header chrome: remove fake plan, notifications, palette recents and calendar events",
+    "files": [
+      "components/layout/HeaderUserMenu.tsx",
+      "components/layout/Header.tsx",
+      "components/features/NotificationsDropdown.tsx",
+      "components/features/CommandPalette.tsx",
+      "components/features/CalendarDropdown.tsx"
+    ],
+    "interface": "components/layout/HeaderUserMenu.tsx: remove the `Pro Plan` label, the `maxLeads = 100000` usage block with its Progress bar and the dead `Upgrade to Unlimited` button. Under the name show the user's role capitalised if available, else nothing. Keep Settings and the open-access-aware Sign out. Remove imports/props this orphans (update the caller in components/layout/Header.tsx if a prop disappears). components/features/NotificationsDropdown.tsx: delete the hardcoded sample notifications (Maria Santos, Acme Corp, Sarah Chen, etc.) and the unread badge; render an empty state `You're all caught up` with secondary text `Notifications will appear here.`; remove the dead `View all notifications` button. The bell must show no badge. Update Header.tsx if it passes or renders a badge count for notifications. components/features/CommandPalette.tsx: delete the hardcoded Recent items (Maria Santos, Acme Corp, James Wilson and their /1 links). Make `Add New Lead` navigate to /dashboard/leads, `Add New Deal` to /dashboard/sales, `Export Report` to /dashboard/analytics (router.push then close). Remove every shortcut hint except the ⌘K / Ctrl K that opens the palette, since no other shortcut is bound. components/features/CalendarDropdown.tsx: delete the hardcoded Jan/Feb 2025 sample events. Load real events for the displayed month with `getCalendarEvents(month, year)` from `@/lib/actions/calendar` (check whether month is 0- or 1-based there) whenever the popover opens or the month changes; show dots for days with events and the list of upcoming events from that data. Clicking a day navigates to /dashboard/calendar and closes the popover. components/layout/Header.tsx: also remove the breadcrumb label mappings for `lead-scraper` and `email-accounts` (neither route exists as a page).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! grep -q 'Pro Plan' components/layout/HeaderUserMenu.tsx && ! grep -q '100000' components/layout/HeaderUserMenu.tsx && ! grep -q 'Upgrade to Unlimited' components/layout/HeaderUserMenu.tsx && ! grep -q 'Maria Santos' components/features/NotificationsDropdown.tsx && ! grep -q 'Acme Corp' components/features/NotificationsDropdown.tsx && grep -q 'all caught up' components/features/NotificationsDropdown.tsx && ! grep -q 'Maria Santos' components/features/CommandPalette.tsx && ! grep -q 'James Wilson' components/features/CommandPalette.tsx && ! grep -q '2025' components/features/CalendarDropdown.tsx && grep -q 'getCalendarEvents' components/features/CalendarDropdown.tsx && ! grep -q 'lead-scraper' components/layout/Header.tsx && npx tsc --noEmit && npx eslint 'components/layout/HeaderUserMenu.tsx' 'components/layout/Header.tsx' 'components/features/NotificationsDropdown.tsx' 'components/features/CommandPalette.tsx' 'components/features/CalendarDropdown.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'components/layout/HeaderUserMenu.tsx' 'components/layout/Header.tsx' 'components/features/NotificationsDropdown.tsx' 'components/features/CommandPalette.tsx' 'components/features/CalendarDropdown.tsx' && git commit -q -m 'fix(header): remove fake plan, notifications, palette recents and calendar samples; real calendar events' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F5-OK"
+  },
+  {
+    "id": "F6",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Detail pages: Schedule Meeting, Create Task, Complete Meeting persist; Call/Email/Delete work; drop Create Invoice; real customer stats",
+    "files": [
+      "components/features/ScheduleMeetingModal.tsx",
+      "components/features/CreateTaskModal.tsx",
+      "components/features/CompleteMeetingModal.tsx",
+      "app/dashboard/customers/[id]/client.tsx",
+      "app/dashboard/leads/[id]/client.tsx",
+      "app/dashboard/sales/[id]/client.tsx",
+      "lib/actions/team.ts"
+    ],
+    "interface": "ScheduleMeetingModal, CreateTaskModal, CompleteMeetingModal currently close without saving (`// Handle scheduling logic`). Give each a real submit: ScheduleMeetingModal -> `createCalendarEvent` (lib/actions/calendar.ts); CreateTaskModal -> `createActivity` with the activity type used for tasks in types/database.ts; CompleteMeetingModal -> update the meeting activity via `updateActivity`/`updateActivityStatus` (lib/actions/activities.ts) with its outcome/notes. Each modal takes an optional link context prop `{ leadId?: string; customerId?: string; dealId?: string }` written to the matching foreign-key columns (read the calendar_events / activities columns in types/database.ts; only set columns that exist). Show toast.error on `{ error }`, toast.success and close on success, and call an optional `onSaved?: () => void` so the page can refresh. CreateTaskModal's hardcoded assignees (Sarah Kim, Mike Johnson, Jennifer Kim…) are replaced by real members of the caller's organization: create lib/actions/team.ts (\"use server\") exporting `getOrgMembers(): Promise<{ id: string; name: string }[]>` that selects id, first_name, last_name, email from profiles where organization_id = getOrgId() (user client, RLS applies), name = full name or email local part. Default assignee is the current user. app/dashboard/customers/[id]/client.tsx, app/dashboard/leads/[id]/client.tsx, app/dashboard/sales/[id]/client.tsx: pass the link context and `onSaved={() => router.refresh()}` to these modals; remove the Create Invoice button and the CreateInvoiceModal usage (there is no invoices table); `Call` becomes an `<a href=\"tel:...\">` when the record has a phone and is hidden otherwise; `Send Email`/`Email` becomes `<a href=\"mailto:...\">` when it has an email, hidden otherwise; activity `onDelete={() => {}}` calls `deleteActivity(id)` then refreshes, with toast on error. customers/[id]: Health Score, LTV and Tenure show `—` when the stored value is null or 0; LTV is computed as the sum of this customer's closed-won deal values when deals are already loaded on the page, and Tenure from the customer's created_at in months. Do not change any other behaviour.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! grep -q 'Handle scheduling logic' components/features/ScheduleMeetingModal.tsx && grep -q 'createCalendarEvent' components/features/ScheduleMeetingModal.tsx && grep -q 'createActivity' components/features/CreateTaskModal.tsx && ! grep -q 'Sarah Kim' components/features/CreateTaskModal.tsx && ! grep -q 'Mike Johnson' components/features/CreateTaskModal.tsx && grep -q 'export async function getOrgMembers' lib/actions/team.ts && ! grep -q 'CreateInvoiceModal' 'app/dashboard/customers/[id]/client.tsx' && ! grep -q 'onDelete={() => {}}' 'app/dashboard/customers/[id]/client.tsx' && ! grep -q 'onDelete={() => {}}' 'app/dashboard/leads/[id]/client.tsx' && ! grep -q 'onDelete={() => {}}' 'app/dashboard/sales/[id]/client.tsx' && grep -q 'tel:' 'app/dashboard/customers/[id]/client.tsx' && grep -q 'mailto:' 'app/dashboard/leads/[id]/client.tsx' && npx tsc --noEmit && npx eslint 'components/features/ScheduleMeetingModal.tsx' 'components/features/CreateTaskModal.tsx' 'components/features/CompleteMeetingModal.tsx' 'app/dashboard/customers/[id]/client.tsx' 'app/dashboard/leads/[id]/client.tsx' 'app/dashboard/sales/[id]/client.tsx' 'lib/actions/team.ts' && node scripts/restyle/scan.mjs app components && git add -A -- 'components/features/ScheduleMeetingModal.tsx' 'components/features/CreateTaskModal.tsx' 'components/features/CompleteMeetingModal.tsx' 'app/dashboard/customers/[id]/client.tsx' 'app/dashboard/leads/[id]/client.tsx' 'app/dashboard/sales/[id]/client.tsx' 'lib/actions/team.ts' && git commit -q -m 'fix(records): meetings, tasks and completions persist; call/email/delete work; drop invoice stub; real customer stats' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F6-OK"
+  },
+  {
+    "id": "F7",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Pickers use real records: Add Deal customers, Log Activity related-to, deal and activity drawers",
+    "files": [
+      "components/features/AddDealModal.tsx",
+      "components/features/LogActivityModal.tsx",
+      "components/features/DealDrawer.tsx",
+      "components/features/ActivityDetailDrawer.tsx",
+      "lib/actions/lookup.ts"
+    ],
+    "interface": "Create lib/actions/lookup.ts (\"use server\") exporting `searchRecords(query: string, kinds: (\"lead\" | \"customer\" | \"deal\")[] = [\"lead\", \"customer\", \"deal\"], limit = 8): Promise<{ id: string; kind: \"lead\" | \"customer\" | \"deal\"; label: string; sublabel?: string }[]>` using the user client scoped with `.eq(\"organization_id\", orgId)` (getOrgId from ./helpers), ilike on name/company/email (leads, customers) or title/name (deals) via escapePostgrestLike (find it in lib/security or lib/utils), empty query returns the most recent records. components/features/AddDealModal.tsx: replace the six hardcoded customers (James Wilson, Sarah Chen…) with results from searchRecords(q, [\"customer\"]) (debounced 250ms typeahead); the submitted value is the real customer id. components/features/LogActivityModal.tsx: replace the fake `Related to` entities (MegaCorp, CloudNine, TechFlow…) with searchRecords over all kinds; submit writes the matching lead_id/customer_id/deal_id the activity form already supports (read how it submits today and keep that contract). components/features/DealDrawer.tsx: the dead contact `View` button links to /dashboard/customers/<id> or /dashboard/leads/<id> depending on what the deal references, and is hidden when neither exists. components/features/ActivityDetailDrawer.tsx: `Google Calendar` becomes a link to https://calendar.google.com/calendar/render?action=TEMPLATE with text, dates (UTC basic format) and details params built from the activity; `Apple Calendar` downloads a minimal .ics file generated client-side (Blob + object URL) for the same event. Hide both when the activity has no date.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'export async function searchRecords' lib/actions/lookup.ts && grep -q 'organization_id' lib/actions/lookup.ts && ! grep -q 'James Wilson' components/features/AddDealModal.tsx && ! grep -q 'Sarah Chen' components/features/AddDealModal.tsx && grep -q 'searchRecords' components/features/AddDealModal.tsx && ! grep -q 'MegaCorp' components/features/LogActivityModal.tsx && ! grep -q 'CloudNine' components/features/LogActivityModal.tsx && grep -q 'searchRecords' components/features/LogActivityModal.tsx && grep -q 'calendar.google.com' components/features/ActivityDetailDrawer.tsx && grep -q 'text/calendar' components/features/ActivityDetailDrawer.tsx && npx tsc --noEmit && npx eslint 'components/features/AddDealModal.tsx' 'components/features/LogActivityModal.tsx' 'components/features/DealDrawer.tsx' 'components/features/ActivityDetailDrawer.tsx' 'lib/actions/lookup.ts' && node scripts/restyle/scan.mjs app components && git add -A -- 'components/features/AddDealModal.tsx' 'components/features/LogActivityModal.tsx' 'components/features/DealDrawer.tsx' 'components/features/ActivityDetailDrawer.tsx' 'lib/actions/lookup.ts' && git commit -q -m 'fix(pickers): real customer and related-record search; working deal contact link and calendar exports' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F7-OK"
+  },
+  {
+    "id": "F8",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Settings honesty: no fake sessions, 2FA, delete, billing or integrations; LinkedIn errors shown; worldwide timezones",
+    "files": [
+      "app/dashboard/settings/client.tsx",
+      "app/dashboard/lead-finder/settings/page.tsx"
+    ],
+    "interface": "All in app/dashboard/settings/client.tsx unless noted. Never show success for something that did not happen. (1) Security: remove the hardcoded Active Sessions list (MacBook Pro San Francisco, iPhone 15 Pro, Windows Desktop New York) and its Revoke buttons; show one row `This device` / `Current session` with no action. 2FA Enable: disabled button plus text `Two-factor authentication is coming soon.`; no state flip, no toast. Hide the Change Password form for guest users (email ending `@guest.local`; `isGuestEmail` from `@/lib/auth/open-access`). (2) Delete Account: remove the setTimeout + toast fake; the button is disabled with helper text `Account deletion is coming soon. Contact support to delete your data.` (3) Billing: `Manage Plan`, `View Invoices`, `Upgrade Now` buttons become disabled with the existing note that billing is not connected; remove their `Redirecting…`/`Opening invoices…` toasts and the fixed $19/$49/$149 upgrade price cards if they only toast. (4) Integrations (Google Calendar, Slack, Gmail, LinkedIn, Salesforce, Zoom via lib/actions/integrations.ts): remove Connect/Disconnect toggling; show each card with a `Coming soon` badge and a disabled button. Gmail/LinkedIn cards may instead point to the working Email Accounts / LinkedIn tabs with a `Set up` link (`?tab=email-accounts`, `?tab=linkedin`). (5) Export Your Data: make the description match what it exports (leads only), e.g. `Download your leads as CSV.` (6) LinkedInSection: read `error` from useSearchParams on mount and show it with toast.error (the OAuth route redirects with `?tab=linkedin&error=...`), mirroring how EmailAccountsSection already does it. (7) Timezone select: build options from `Intl.supportedValuesOf(\"timeZone\")` (fallback to the current list if unavailable) so non-US users can pick theirs. (8) AI tab: if the AI provider select defaults to `anthropic` when no provider is saved, default it to empty/`auto` instead so saving the form does not force a provider (keep the saved value when there is one). app/dashboard/lead-finder/settings/page.tsx: under the Obsidian sync toggle add the note `Obsidian sync writes files on the server and only works on self-hosted deployments.`",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! grep -q 'MacBook Pro' app/dashboard/settings/client.tsx && ! grep -q 'iPhone 15 Pro' app/dashboard/settings/client.tsx && ! grep -q 'Redirecting' app/dashboard/settings/client.tsx && ! grep -q 'Opening invoices' app/dashboard/settings/client.tsx && grep -q 'coming soon' app/dashboard/settings/client.tsx && grep -q 'supportedValuesOf' app/dashboard/settings/client.tsx && grep -q 'isGuestEmail' app/dashboard/settings/client.tsx && grep -q 'self-hosted' app/dashboard/lead-finder/settings/page.tsx && npx tsc --noEmit && npx eslint 'app/dashboard/settings/client.tsx' 'app/dashboard/lead-finder/settings/page.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/dashboard/settings/client.tsx' 'app/dashboard/lead-finder/settings/page.tsx' && git commit -q -m 'fix(settings): remove fake sessions, 2FA, deletion, billing and integration toggles; show LinkedIn errors; all timezones' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F8-OK"
+  },
+  {
+    "id": "F9",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "LinkedIn OAuth scopes and stale fallback URLs",
+    "files": [
+      "app/api/linkedin/oauth/route.ts",
+      "app/dashboard/website-visitors/client.tsx"
+    ],
+    "interface": "app/api/linkedin/oauth/route.ts: replace the deprecated scopes `r_liteprofile r_emailaddress` with `openid profile email` (keep any other scopes already requested, e.g. w_member_social); replace the fallback app URL `https://pulse-crm-rosy.vercel.app` with `new URL(request.url).origin` (use the route's request argument). app/dashboard/website-visitors/client.tsx: the tracking snippet host falls back to `https://pulse-crm-rosy.vercel.app` when NEXT_PUBLIC_APP_URL is unset; fall back to `window.location.origin` instead (the component is client-side; guard for SSR if the value is computed during render). No other changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! grep -q 'r_liteprofile' app/api/linkedin/oauth/route.ts && grep -q 'openid' app/api/linkedin/oauth/route.ts && ! grep -q 'pulse-crm-rosy' app/api/linkedin/oauth/route.ts && ! grep -q 'pulse-crm-rosy' app/dashboard/website-visitors/client.tsx && npx tsc --noEmit && npx eslint 'app/api/linkedin/oauth/route.ts' 'app/dashboard/website-visitors/client.tsx' && git add -A -- 'app/api/linkedin/oauth/route.ts' 'app/dashboard/website-visitors/client.tsx' && git commit -q -m 'fix: current LinkedIn OIDC scopes and origin-based fallback URLs' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F9-OK"
+  },
+  {
+    "id": "F10",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Lead Finder discovery: report failures, and run Apify asynchronously so requests never time out",
+    "files": [
+      "app/api/lead-finder/campaigns/[id]/discover/route.ts",
+      "lib/lead-finder/apify/discovery.ts",
+      "lib/lead-finder/apify/runner.ts",
+      "app/api/cron/lead-finder/route.ts",
+      "app/dashboard/lead-finder/campaigns/[id]/page.tsx",
+      "tests/apify-runner.test.ts"
+    ],
+    "interface": "Today: discover route calls runSingleActorDiscovery, which polls Apify every 5s for up to 30 minutes inside one request (runner.ts), and returns `{ success: true, inserted: 0 }` even when discovery.ts caught a failure. On Vercel the request dies at the function limit and the client shows `SyntaxError` or `Actor completed — no new leads found`. Change to start-then-complete: (a) runner.ts gets `startActorRun(actorId, input, token)` returning the Apify run id without waiting, and `getRunStatus(runId, token)` returning `{ status: \"running\" | \"succeeded\" | \"failed\"; datasetId?: string; error?: string }` (keep existing exports working for other callers; pinned/safe fetch conventions already in the file stay). (b) The discover route validates, starts the run, records it in the existing apify-runs table the code already uses for runs (find it: apify_scraper_runs or lf_apify_runs; use the columns that exist, status `running`, the Apify run id, campaign id, org id), and returns 202 `{ started: true, runId }`. If the Apify token is missing or start fails it returns 400/502 `{ error }` with the real reason. (c) app/api/cron/lead-finder/route.ts (already called every 5 minutes by GitHub Actions and CRON_SECRET-protected) additionally finalises running runs: for each running run older than 10s, getRunStatus; on succeeded fetch the dataset and hand items to the existing insert/dedupe path in discovery.ts (refactor that path into an exported function taking items), set status done with counts; on failed set status failed with the error; runs running longer than 45 minutes become failed `timed out`. Bound the work per invocation (at most 10 runs) and await everything. Export `export const maxDuration = 60` on the discover route and 300 on the cron route. (d) app/dashboard/lead-finder/campaigns/[id]/page.tsx: handle 202 by showing `Discovery started. New leads will appear in a few minutes.`; on non-2xx read the JSON `error` when the response is JSON, otherwise show `Request failed (<status>)`; never call res.json() unguarded. tests/apify-runner.test.ts: unit-test getRunStatus mapping of Apify statuses (SUCCEEDED, FAILED, ABORTED, TIMED-OUT, RUNNING, READY) with an injected fetch or by testing a pure mapping helper you export.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'export async function startActorRun' lib/lead-finder/apify/runner.ts && grep -q 'export async function getRunStatus' lib/lead-finder/apify/runner.ts && grep -q 'status: 202' 'app/api/lead-finder/campaigns/[id]/discover/route.ts' && grep -q 'export const maxDuration' 'app/api/lead-finder/campaigns/[id]/discover/route.ts' && grep -q 'getRunStatus' app/api/cron/lead-finder/route.ts && grep -q 'Discovery started' 'app/dashboard/lead-finder/campaigns/[id]/page.tsx' && npx vitest run tests/apify-runner.test.ts && npx tsc --noEmit && npx eslint 'app/api/lead-finder/campaigns/[id]/discover/route.ts' 'lib/lead-finder/apify/discovery.ts' 'lib/lead-finder/apify/runner.ts' 'app/api/cron/lead-finder/route.ts' 'app/dashboard/lead-finder/campaigns/[id]/page.tsx' && git add -A -- 'app/api/lead-finder/campaigns/[id]/discover/route.ts' 'lib/lead-finder/apify/discovery.ts' 'lib/lead-finder/apify/runner.ts' 'app/api/cron/lead-finder/route.ts' 'app/dashboard/lead-finder/campaigns/[id]/page.tsx' 'tests/apify-runner.test.ts' && git commit -q -m 'fix(lead-finder): asynchronous Apify discovery finalised by cron; real errors surfaced to the user' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F10-OK"
+  },
+  {
+    "id": "F11",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Lead Finder enrichment: bounded awaited worker batches; progress banner polls instead of a cross-instance event stream",
+    "files": [
+      "app/api/cron/lead-finder-worker/route.ts",
+      "lib/lead-finder/enrichment/worker.ts",
+      "lib/lead-finder/enrichment/pipeline.ts",
+      "components/lead-finder/EnrichmentProgressBanner.tsx",
+      "app/api/lead-finder/events/route.ts",
+      "lib/lead-finder/events/emitter.ts",
+      "app/api/lead-finder/enrichment-status/route.ts",
+      "tests/enrichment-drain.test.ts"
+    ],
+    "interface": "Today the worker cron calls `workerPump()` without awaiting; worker.ts runs a `while(true)` loop behind a module-global running flag, and pipeline.ts uses the same pattern. On Vercel the instance freezes after the response and later pumps on a warm instance see the stale flag and do nothing. The progress banner (mounted in the dashboard layout on every page) holds an SSE connection to /api/lead-finder/events, whose in-memory EventEmitter never receives events from other instances. (a) worker.ts: export `drainEnrichmentJobs(opts: { maxJobs: number; deadlineMs: number }): Promise<{ processed: number; failed: number; remaining: number }>` that claims and processes queued/retry jobs (reuse the existing claim/process functions and concurrency limit) until maxJobs or the deadline, awaiting all work, with no module-global loop flag. Keep `workerPump` only as a thin wrapper for local/dev callers if something else imports it, but it must not start an unbounded loop in production (NODE_ENV === \"production\"). Apply the same to the fire-and-forget spots in pipeline.ts (enqueue jobs and return; the cron drains). (b) app/api/cron/lead-finder-worker/route.ts: `export const maxDuration = 300`; `await drainEnrichmentJobs({ maxJobs: 50, deadlineMs: 240_000 })` and return its counts. (c) Create app/api/lead-finder/enrichment-status/route.ts (GET, authenticated user, org-scoped via the user client): returns `{ active: boolean; batches: { id, campaignId, total, done, failed, status }[] }` for batches not in a terminal state plus those finished in the last 2 minutes. (d) EnrichmentProgressBanner.tsx: replace EventSource with polling that endpoint every 5s while `active` is true, once on mount, and again when the tab becomes visible; stop polling while none are active. Keep the existing visual and dismiss behaviour. (e) app/api/lead-finder/events/route.ts and lib/lead-finder/events/emitter.ts: if nothing else uses them after (d), delete them (grep first); otherwise leave them and note why. tests/enrichment-drain.test.ts: test drainEnrichmentJobs stop conditions (maxJobs reached, deadline reached, queue empty) with injected claim/process functions (refactor to allow injection via an optional deps parameter).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'export async function drainEnrichmentJobs' lib/lead-finder/enrichment/worker.ts && grep -q 'await drainEnrichmentJobs' app/api/cron/lead-finder-worker/route.ts && grep -q 'export const maxDuration' app/api/cron/lead-finder-worker/route.ts && test -f app/api/lead-finder/enrichment-status/route.ts && ! grep -q 'new EventSource' components/lead-finder/EnrichmentProgressBanner.tsx && grep -q 'enrichment-status' components/lead-finder/EnrichmentProgressBanner.tsx && npx vitest run tests/enrichment-drain.test.ts && npx tsc --noEmit && git add -A -- 'app/api/cron/lead-finder-worker/route.ts' 'lib/lead-finder/enrichment/worker.ts' 'lib/lead-finder/enrichment/pipeline.ts' 'components/lead-finder/EnrichmentProgressBanner.tsx' 'app/api/lead-finder/events/route.ts' 'lib/lead-finder/events/emitter.ts' 'app/api/lead-finder/enrichment-status/route.ts' 'tests/enrichment-drain.test.ts' && git commit -q -m 'fix(lead-finder): bounded awaited enrichment batches and polling progress banner (no cross-instance SSE)' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F11-OK"
+  },
+  {
+    "id": "F12",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Schedule the automation and sequence executors from GitHub Actions",
+    "files": [
+      ".github/workflows/lead-finder-cron.yml"
+    ],
+    "interface": ".github/workflows/lead-finder-cron.yml already pings /api/cron/lead-finder-worker and /api/cron/lead-finder every 5 minutes with `Authorization: Bearer $CRON_SECRET`, each step `continue-on-error: true` with an id, plus a final step that fails the job if any failed. Add two more steps in the same style before the final check: `Call automation executor` (id automation, `curl -fsS --max-time 120 ... https://pulse-crm-weld.vercel.app/api/cron/automation-executor`) and `Call sequence executor` (id sequences, `--max-time 120 ... /api/cron/sequence-executor`). Extend the final step's condition to include `steps.automation.outcome == 'failure' || steps.sequences.outcome == 'failure'`. Change the workflow `name:` to `crm-cron` (keep the file name and the */5 schedule, workflow_dispatch and concurrency as they are). Both routes already use verifyCronRequest; sequence-executor only sends messages whose scheduled_at has passed and respects daily limits, so a 5-minute cadence is safe.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q '/api/cron/automation-executor' .github/workflows/lead-finder-cron.yml && grep -q '/api/cron/sequence-executor' .github/workflows/lead-finder-cron.yml && grep -q \"steps.automation.outcome == 'failure'\" .github/workflows/lead-finder-cron.yml && grep -q \"steps.sequences.outcome == 'failure'\" .github/workflows/lead-finder-cron.yml && grep -q 'name: crm-cron' .github/workflows/lead-finder-cron.yml && node -e \"const y=require('fs').readFileSync('.github/workflows/lead-finder-cron.yml','utf8'); if(/\\t/.test(y)) throw new Error('tab in yaml')\" && git add -A -- '.github/workflows/lead-finder-cron.yml' && git commit -q -m 'ci: schedule automation and sequence executors every 5 minutes' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F12-OK"
+  },
+  {
+    "id": "F13",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Navigation: hide the non-functional social pages, link Calendar and Templates, remove dead lead-scraper code",
+    "files": [
+      "app/compose/page.tsx",
+      "app/drafts/page.tsx",
+      "app/connections/page.tsx",
+      "app/team/page.tsx",
+      "app/calendar/page.tsx",
+      "components/layout/Sidebar.tsx",
+      "app/dashboard/lead-scraper/client.tsx",
+      "lib/actions/lead-scraper.ts",
+      "app/api/cron/lead-scraper/route.ts",
+      "app/dashboard/lead-scraper/page.tsx"
+    ],
+    "interface": "app/compose/page.tsx, app/drafts/page.tsx, app/connections/page.tsx, app/team/page.tsx, app/calendar/page.tsx (top-level social/team pages; publish always throws, drafts use a mismatched storage key, team invites are mocked): replace each page's content with `import { redirect } from \"next/navigation\"; export default function Page() { redirect(\"/dashboard/overview\"); }` (keep the client.tsx files; they become unused and stay for when social posting is wired). components/layout/Sidebar.tsx: add `Calendar` -> /dashboard/calendar (after Activity) and `Templates` -> /dashboard/templates (after Sequences), using icons from components/ui/Icons.tsx that match existing entries (CalendarIcon/CalendarBlankIcon, FileTextIcon or similar that exists there; check the exports). Dead lead-scraper code: app/dashboard/lead-scraper/page.tsx already redirects to /dashboard/lead-finder; delete app/dashboard/lead-scraper/client.tsx, lib/actions/lead-scraper.ts and app/api/cron/lead-scraper/route.ts ONLY if `grep -rn \"lead-scraper\" app lib components --include=*.ts --include=*.tsx` shows no remaining importer other than those files, app/dashboard/lead-scraper/page.tsx, Header.tsx (handled elsewhere) and middleware path lists. lib/actions/ai-lead-validation.ts and lib/actions/apify.ts mention it: check whether they import from ./lead-scraper; if they do, leave the action file and delete only the unused client and cron route. Delete one file per command. Keep app/dashboard/lead-scraper/page.tsx (the redirect).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && for p in compose drafts connections team calendar; do grep -q 'redirect(\"/dashboard/overview\")' app/$p/page.tsx || exit 1; done && grep -q '/dashboard/calendar' components/layout/Sidebar.tsx && grep -q '/dashboard/templates' components/layout/Sidebar.tsx && test ! -f app/dashboard/lead-scraper/client.tsx && test ! -f app/api/cron/lead-scraper/route.ts && grep -q 'redirect' app/dashboard/lead-scraper/page.tsx && npx tsc --noEmit && npx eslint 'components/layout/Sidebar.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/compose/page.tsx' 'app/drafts/page.tsx' 'app/connections/page.tsx' 'app/team/page.tsx' 'app/calendar/page.tsx' 'components/layout/Sidebar.tsx' 'app/dashboard/lead-scraper/client.tsx' 'lib/actions/lead-scraper.ts' 'app/api/cron/lead-scraper/route.ts' 'app/dashboard/lead-scraper/page.tsx' && git commit -q -m 'fix(nav): hide unwired social pages, link Calendar and Templates, remove dead lead-scraper code' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F13-OK"
+  },
+  {
+    "id": "F14",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Campaigns email accounts go through Settings; Proposals 'Mark as sent'; Inbox explains outbound-only",
+    "files": [
+      "app/dashboard/campaigns/client.tsx",
+      "app/dashboard/proposals/client.tsx",
+      "app/dashboard/inbox/client.tsx"
+    ],
+    "interface": "app/dashboard/campaigns/client.tsx: the `Add Email Account` modal calls createEmailAccount without OAuth tokens or SMTP credentials, producing accounts that can never send. Remove the modal and its state; every `Add Email Account` / `Add Account` button becomes a next/link to `/dashboard/settings?tab=email-accounts` with the same styling. Remove imports this orphans (createEmailAccount if unused). The accounts list stays. app/dashboard/proposals/client.tsx: the `Send` action only sets status to sent (no email or PDF). Rename its label to `Mark as sent` (and any matching tooltip/aria-label/toast text to match, e.g. toast `Marked as sent`). app/dashboard/inbox/client.tsx: add a dismissible-free info line at the top of the list pane: `Showing messages sent from Pulse. Reply sync isn't connected yet.` using secondary text tokens.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'tab=email-accounts' app/dashboard/campaigns/client.tsx && ! grep -q 'createEmailAccount' app/dashboard/campaigns/client.tsx && grep -q 'Mark as sent' app/dashboard/proposals/client.tsx && grep -q \"Reply sync isn\" app/dashboard/inbox/client.tsx && npx tsc --noEmit && npx eslint 'app/dashboard/campaigns/client.tsx' 'app/dashboard/proposals/client.tsx' 'app/dashboard/inbox/client.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/dashboard/campaigns/client.tsx' 'app/dashboard/proposals/client.tsx' 'app/dashboard/inbox/client.tsx' && git commit -q -m 'fix: campaigns add accounts via Settings, proposals mark-as-sent wording, inbox outbound-only note' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F14-OK"
+  },
+  {
+    "id": "F15",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Auth and onboarding pages: no dead links, fake testimonial, wrong stepper or stale year",
+    "files": [
+      "app/(auth)/login/page.tsx",
+      "app/(auth)/signup/page.tsx",
+      "app/(auth)/forgot-password/page.tsx",
+      "app/(auth)/reset-password/page.tsx",
+      "app/(auth)/verify-email/page.tsx",
+      "app/(auth)/onboarding/page.tsx"
+    ],
+    "interface": "In the six files listed: remove every `Need Help?` / `Need help?` link that is `href=\"#\"`; on signup, render `Terms of Service` and `Privacy Policy` as plain text (no anchor) since no such pages exist; replace hardcoded `© 2025` with `© {new Date().getFullYear()}`; login: remove the unused `Remember me` checkbox and its state. onboarding/page.tsx: remove the invented testimonial (Sarah Chen, TechCorp, `40% more deals`); fix the stepper so the step count never exceeds the total (it shows `5 of 4`); the invite-team step and the HubSpot/CSV import step do nothing — keep them but label each `Coming soon` with the primary button reading `Skip` and remove the dead `browse` control. No other behaviour changes; these pages are hidden in open-access mode but must be correct when login returns.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! grep -rq 'href=\"#\"' 'app/(auth)' && ! grep -rq '© 2025' 'app/(auth)' && ! grep -q 'Sarah Chen' 'app/(auth)/onboarding/page.tsx' && ! grep -q '40% more' 'app/(auth)/onboarding/page.tsx' && ! grep -qi 'remember me' 'app/(auth)/login/page.tsx' && npx tsc --noEmit && npx eslint 'app/(auth)/login/page.tsx' 'app/(auth)/signup/page.tsx' 'app/(auth)/forgot-password/page.tsx' 'app/(auth)/reset-password/page.tsx' 'app/(auth)/verify-email/page.tsx' 'app/(auth)/onboarding/page.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/(auth)/login/page.tsx' 'app/(auth)/signup/page.tsx' 'app/(auth)/forgot-password/page.tsx' 'app/(auth)/reset-password/page.tsx' 'app/(auth)/verify-email/page.tsx' 'app/(auth)/onboarding/page.tsx' && git commit -q -m 'fix(auth): remove dead links, fake testimonial and stale year; honest onboarding steps' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F15-OK"
+  },
+  {
+    "id": "F16",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Error boundaries; Copilot mutations scoped to the caller's organization",
+    "files": [
+      "app/error.tsx",
+      "app/global-error.tsx",
+      "lib/actions/copilot.ts",
+      "tests/copilot-scope.test.ts"
+    ],
+    "interface": "Create app/error.tsx (\"use client\", props { error, reset }) rendering a centred card: title `Something went wrong`, secondary text `The page failed to load. Try again, or go back to the dashboard.`, a `Try again` button calling reset() and a link to /dashboard/overview; console.error(error) in a useEffect. Use the same token classes as app/dashboard/error.tsx (read it and mirror it). Create app/global-error.tsx with the same content but wrapping `<html><body>` as Next requires, with inline-safe classes (body bg-canvas text-fg if those tokens exist in globals.css). lib/actions/copilot.ts: every update/delete/select-by-id (conversations, messages, memory, tasks) must also filter `.eq(\"organization_id\", orgId)` where the table has that column (check types/database.ts; copilot_messages may scope through conversation_id — then verify the conversation belongs to orgId first). Resolve orgId with getOrgId() once per function. Behaviour for the caller's own rows is unchanged; a foreign id now matches nothing and returns `{ error: \"Not found\" }` or a no-op consistent with the function's existing return shape. tests/copilot-scope.test.ts: a static test reading lib/actions/copilot.ts as text asserting every `.update(` and `.delete(` call chain in the file is followed within the same statement by `organization_id` or `conversation_id` scoping (simple regex over statements split on `;`).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && test -f app/error.tsx && test -f app/global-error.tsx && grep -q 'use client' app/error.tsx && grep -q '<html' app/global-error.tsx && grep -q 'organization_id' lib/actions/copilot.ts && npx vitest run tests/copilot-scope.test.ts && npx tsc --noEmit && npx eslint 'app/error.tsx' 'app/global-error.tsx' 'lib/actions/copilot.ts' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/error.tsx' 'app/global-error.tsx' 'lib/actions/copilot.ts' 'tests/copilot-scope.test.ts' && git commit -q -m 'fix: root error boundaries; Copilot mutations scoped to the caller's organization' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F16-OK"
+  },
+  {
+    "id": "F17",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Security: avatar upload validation and storage policy; OAuth state cookie and checked saves",
+    "files": [
+      "lib/actions/profile.ts",
+      "supabase/migrations/032_avatar_storage.sql",
+      "app/api/email/oauth/google/route.ts",
+      "app/api/email/oauth/google/callback/route.ts",
+      "app/api/email/oauth/microsoft/route.ts",
+      "app/api/email/oauth/microsoft/callback/route.ts",
+      "lib/security/oauth-state.ts",
+      "tests/oauth-state.test.ts",
+      "tests/avatar-upload.test.ts"
+    ],
+    "interface": "Avatars: lib/actions/profile.ts upload accepts any file and takes the extension from the client name; the public `avatars` bucket's INSERT policy (001_initial_schema.sql ~505) only checks auth.role()='authenticated', which every anonymous guest satisfies. Export a pure `validateAvatarFile(file: { type: string; size: number }): string | null` (allow image/png, image/jpeg, image/webp, image/gif; max 2 MB; returns an error message or null) and use it before upload; derive the extension from the MIME type, never the file name; store at `${user.id}/avatar-${Date.now()}.<ext>`. Create supabase/migrations/032_avatar_storage.sql (idempotent, header in the style of 031, `Apply by hand in the Supabase SQL editor`): replace the avatars INSERT/UPDATE/DELETE policies on storage.objects so they require `bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text`; keep public SELECT. Use DROP POLICY IF EXISTS with the exact existing policy names from 001 (read them) before CREATE. tests/avatar-upload.test.ts covers validateAvatarFile. OAuth: create lib/security/oauth-state.ts exporting `createOAuthState(): string` (32 random bytes base64url) and `stateMatches(expected: string | undefined, actual: string | null): boolean` (timing-safe, false on missing). In the Google and Microsoft start routes set an httpOnly, secure, sameSite=lax cookie `oauth_state_<provider>` (maxAge 600, path /api/email/oauth) and pass the value as `state` instead of the user id. In both callbacks require stateMatches(cookie, state) else redirect `/dashboard/settings?tab=email-accounts&error=invalid_state`; delete the cookie; keep the existing user and admin-role checks; check the `email_accounts` upsert `error` and on failure redirect `...&error=save_failed` instead of reporting success. tests/oauth-state.test.ts covers createOAuthState length/charset and stateMatches (match, mismatch, missing).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'export function validateAvatarFile' lib/actions/profile.ts && test -f supabase/migrations/032_avatar_storage.sql && grep -q 'storage.foldername' supabase/migrations/032_avatar_storage.sql && grep -q 'DROP POLICY IF EXISTS' supabase/migrations/032_avatar_storage.sql && grep -q 'export function createOAuthState' lib/security/oauth-state.ts && grep -q 'stateMatches' app/api/email/oauth/google/callback/route.ts && grep -q 'stateMatches' app/api/email/oauth/microsoft/callback/route.ts && grep -q 'save_failed' app/api/email/oauth/google/callback/route.ts && grep -q 'createOAuthState' app/api/email/oauth/google/route.ts && npx vitest run tests/oauth-state.test.ts tests/avatar-upload.test.ts && npx tsc --noEmit && git add -A -- 'lib/actions/profile.ts' 'supabase/migrations/032_avatar_storage.sql' 'app/api/email/oauth/google/route.ts' 'app/api/email/oauth/google/callback/route.ts' 'app/api/email/oauth/microsoft/route.ts' 'app/api/email/oauth/microsoft/callback/route.ts' 'lib/security/oauth-state.ts' 'tests/oauth-state.test.ts' 'tests/avatar-upload.test.ts' && git commit -q -m 'fix(security): validated avatar uploads with per-user storage policy (032); OAuth state cookie and checked saves' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F17-OK"
+  },
+  {
+    "id": "F18",
+    "model": "sonnet",
+    "depends_on": [
+      "F4"
+    ],
+    "title": "Customers list: working delete, bulk actions and rows-per-page",
+    "files": [
+      "components/dashboard/CustomersTable.tsx",
+      "app/dashboard/customers/client.tsx"
+    ],
+    "interface": "components/dashboard/CustomersTable.tsx: the row action `Delete Customer` is `console.log(\"Delete\", id)`; call `deleteCustomer(id)` from `@/lib/actions/customers` after a confirm dialog (use the existing confirm pattern in the codebase, or window.confirm), toast on error/success, and notify the parent via an `onChanged?: () => void` prop. Bulk bar: `Delete` deletes the selected ids (sequentially, then onChanged), `Export` downloads the selected rows as CSV (name, company, email, phone, status, created_at) client-side; remove the bulk `Email` and `Edit` buttons. No console.log may remain. app/dashboard/customers/client.tsx: `onRowsPerPageChange={() => {}}` becomes real rows-per-page state that the table pagination uses; pass `onChanged` that reloads the customer list (router.refresh or the page's existing reload function). Do not touch the stat cards F4 changed.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! grep -q 'console.log' components/dashboard/CustomersTable.tsx && grep -q 'deleteCustomer' components/dashboard/CustomersTable.tsx && grep -q 'text/csv' components/dashboard/CustomersTable.tsx && ! grep -q 'onRowsPerPageChange={() => {}}' app/dashboard/customers/client.tsx && npx tsc --noEmit && npx eslint 'components/dashboard/CustomersTable.tsx' 'app/dashboard/customers/client.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'components/dashboard/CustomersTable.tsx' 'app/dashboard/customers/client.tsx' && git commit -q -m 'fix(customers): real delete, bulk delete and CSV export, rows-per-page' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F18-OK"
+  },
+  {
+    "id": "F19",
+    "model": "opus",
+    "depends_on": [
+      "F2",
+      "F8"
+    ],
+    "title": "One AI provider resolver shared by the CRM and Lead Finder",
+    "files": [
+      "lib/ai/provider-resolver.ts",
+      "tests/ai-provider-resolver.test.ts",
+      "lib/ai/client.ts",
+      "app/api/ai/chat/route.ts",
+      "lib/lead-finder/ai-provider.ts"
+    ],
+    "interface": "Today lib/ai/client.ts and app/api/ai/chat/route.ts only support anthropic and openrouter, while lib/lead-finder/ai-provider.ts supports anthropic, openai, openrouter, groq, ollama, ollama_cloud; both read and write the same ai_settings.ai_provider column, so an org with only an OpenAI or Groq key gets `No AI API key configured` in every CRM AI feature, and an explicit `anthropic` default breaks Lead Finder for OpenRouter-only orgs. Create lib/ai/provider-resolver.ts (plain module) exporting `resolveAIProvider(settings: { ai_provider?: string | null; api_key?: string | null; openrouter_api_key?: string | null; openrouter_oauth_token?: string | null; openrouter_expires_at?: string | null; openai_api_key?: string | null; groq_api_key?: string | null; ollama_base_url?: string | null }, env: Record<string, string | undefined>, now = Date.now()): { provider: \"anthropic\" | \"openrouter\" | \"openai\" | \"groq\" | \"ollama\"; apiKey?: string; baseURL?: string } | null`. Rules: an explicitly chosen provider is used only if it has a credential (org key, unexpired OpenRouter OAuth token, or env key); otherwise fall back in order anthropic, openrouter, openai, groq, ollama to the first with a credential; org credentials beat env; null when none. tests/ai-provider-resolver.test.ts covers explicit-with-key, explicit-without-key fallback, OAuth expiry, env fallback, none. lib/ai/client.ts and lib/lead-finder/ai-provider.ts both use resolveAIProvider for provider choice (keep their existing model/client construction per provider; add openai and groq to the CRM side via the OpenAI-compatible client already used in lead-finder/ai-provider.ts, reusing createPinnedFetch for ollama as that file does). Replace the stale fallback `https://pulse-crm-rosy.vercel.app` in lib/ai/client.ts with `process.env.NEXT_PUBLIC_APP_URL ?? \"https://pulse-crm-weld.vercel.app\"`. app/api/ai/chat/route.ts: use the resolver; keep the 400 `No AI API key configured…` text when it returns null (the UI from F2 relies on that wording); and fix the system prompt line that interpolates `User: undefined` for guests so it omits the user line when no name/email is available.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'export function resolveAIProvider' lib/ai/provider-resolver.ts && grep -q 'resolveAIProvider' lib/ai/client.ts && grep -q 'resolveAIProvider' lib/lead-finder/ai-provider.ts && grep -q 'resolveAIProvider' app/api/ai/chat/route.ts && grep -q 'No AI API key configured' app/api/ai/chat/route.ts && ! grep -q 'pulse-crm-rosy' lib/ai/client.ts && npx vitest run tests/ai-provider-resolver.test.ts && npx tsc --noEmit && npx eslint 'lib/ai/provider-resolver.ts' 'lib/ai/client.ts' 'app/api/ai/chat/route.ts' 'lib/lead-finder/ai-provider.ts' && git add -A -- 'lib/ai/provider-resolver.ts' 'tests/ai-provider-resolver.test.ts' 'lib/ai/client.ts' 'app/api/ai/chat/route.ts' 'lib/lead-finder/ai-provider.ts' && git commit -q -m 'fix(ai): one provider resolver for CRM and Lead Finder, with fallback across configured keys' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F19-OK"
+  },
+  {
+    "id": "F20",
+    "model": "sonnet",
+    "depends_on": [
+      "F1",
+      "F2",
+      "F3",
+      "F4",
+      "F5",
+      "F6",
+      "F7",
+      "F8",
+      "F9",
+      "F10",
+      "F11",
+      "F12",
+      "F13",
+      "F14",
+      "F15",
+      "F16",
+      "F17",
+      "F18",
+      "F19"
+    ],
+    "title": "Final gate: lint, tests, build, restyle scan, contrast, audit",
+    "files": [],
+    "interface": "NONE. Read-only gate. Requires ENCRYPTION_KEY and NEXT_PUBLIC_SUPABASE_* in the build shell; do not export NEXT_PUBLIC_OPEN_ACCESS in the test shell.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npm run lint && npm test && npm run build && node scripts/restyle/scan.mjs app components && node scripts/restyle/contrast.mjs && npm audit --omit=dev --audit-level=high && echo F20-OK"
+  }
+]
