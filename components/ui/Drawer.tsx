@@ -66,19 +66,19 @@ export function Drawer({
             exit={{ x: "100%" }}
             transition={{ duration: 0.2, ease: "easeOut" }}
             className={cn(
-              "fixed right-0 top-0 h-full w-full max-w-md bg-surface border-l border-line z-50 flex flex-col",
+              "fixed right-0 top-0 h-full w-full max-w-md bg-surface border-l border-divider z-50 flex flex-col",
               className,
             )}
           >
             {/* Header */}
             {title && (
-              <div className="flex h-12 shrink-0 items-center justify-between px-4 border-b border-divider">
+              <div className="flex h-14 shrink-0 items-center justify-between px-4 border-b border-divider">
                 <h2 className="text-heading-md text-fg">
                   {title}
                 </h2>
                 <button
                   onClick={onClose}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:bg-muted hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:bg-subtle hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                   <XIcon size={16} className="text-current" />
                 </button>
@@ -90,7 +90,7 @@ export function Drawer({
 
             {/* Footer */}
             {footer && (
-              <div className="px-4 py-3 border-t border-divider bg-subtle">
+              <div className="px-4 py-3 border-t border-divider bg-surface">
                 {footer}
               </div>
             )}

@@ -67,10 +67,10 @@ export function Dropdown({
                   setOpen(false);
                 }}
                 className={cn(
-                  "flex w-full items-center rounded-sm px-2.5 py-1.5 text-sm text-left text-fg transition-colors focus-visible:outline-none focus-visible:bg-muted",
+                  "flex h-8 w-full items-center rounded-md px-2.5 text-[14px] text-left text-fg transition-colors focus-visible:outline-none focus-visible:bg-subtle",
                   option.value === value
                     ? "bg-muted font-medium"
-                    : "hover:bg-muted",
+                    : "hover:bg-subtle",
                 )}
               >
                 {option.label}

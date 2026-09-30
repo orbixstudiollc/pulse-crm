@@ -64,7 +64,7 @@ export function ConfirmDialog({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="w-full max-w-[480px] overflow-hidden rounded-lg border border-line bg-surface shadow-modal"
+            className="w-full max-w-[480px] overflow-hidden rounded-xl border border-line bg-surface shadow-modal"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={handleKeyDown}
           >
@@ -95,7 +95,7 @@ export function ConfirmDialog({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="flex-shrink-0 -mt-1 -mr-1 flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:text-fg hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      className="flex-shrink-0 -mt-1 -mr-1 flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:text-fg hover:bg-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                       aria-label="Close dialog"
                     >
                       <XIcon className="h-4 w-4" />
@@ -109,7 +109,7 @@ export function ConfirmDialog({
             <div className="pr-4 pb-4 pl-15">
               <p
                 id="confirm-dialog-description"
-                className="text-sm text-fg-secondary leading-relaxed"
+                className="text-[14px] leading-5 text-fg-secondary"
               >
                 {message}
               </p>
@@ -119,7 +119,7 @@ export function ConfirmDialog({
             <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-divider">
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 onClick={onClose}
                 disabled={loading}
               >

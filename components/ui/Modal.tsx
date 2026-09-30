@@ -59,7 +59,7 @@ export function Modal({
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
             className={cn(
-              "w-full max-w-[480px] overflow-hidden rounded-lg border border-line bg-surface shadow-modal",
+              "w-full max-w-[480px] overflow-hidden rounded-xl border border-line bg-surface shadow-modal",
               className,
             )}
             onClick={(e) => e.stopPropagation()}

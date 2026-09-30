@@ -39,21 +39,23 @@ export function DeleteConfirmModal({
         </h3>
 
         {/* Description */}
-        <p className="text-sm text-fg-secondary">
+        <p className="text-[14px] leading-5 text-fg-secondary">
           {description || defaultDescription}
         </p>
 
         {/* Actions */}
         <div className="-mx-4 -mb-4 mt-4 flex justify-end gap-2 px-4 py-3 border-t border-divider">
           <Button
-            variant="ghost" className="shrink-0"
+            variant="outline"
+            className="shrink-0"
             onClick={onClose}
             disabled={loading}
           >
             Cancel
           </Button>
           <Button
-            className="shrink-0 bg-danger border-danger text-on-inverse! hover:bg-danger hover:border-danger hover:opacity-90"
+            variant="danger"
+            className="shrink-0"
             onClick={onConfirm}
             disabled={loading}
             leftIcon={

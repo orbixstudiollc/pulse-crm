@@ -38,10 +38,10 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
 
   const itemClassName = (variant?: "default" | "danger") =>
     cn(
-      "flex w-full items-center gap-2 rounded-sm px-2.5 py-1.5 text-sm text-left transition-colors focus-visible:outline-none",
+      "flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-[14px] text-left transition-colors focus-visible:outline-none",
       variant === "danger"
-        ? "text-danger hover:bg-danger-surface focus-visible:bg-danger-surface"
-        : "text-fg hover:bg-muted focus-visible:bg-muted",
+        ? "text-danger hover:bg-subtle focus-visible:bg-subtle"
+        : "text-fg hover:bg-subtle focus-visible:bg-subtle",
     );
 
   const itemContent = (item: ActionMenuItem) => (
@@ -67,7 +67,7 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
         ref={buttonRef}
         onClick={() => (open ? setOpen(false) : handleOpen())}
         className={cn(
-          "flex h-7 w-7 items-center justify-center rounded-sm text-fg-secondary hover:bg-muted hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+          "flex h-7 w-7 items-center justify-center rounded-md border border-line bg-surface text-fg-secondary hover:bg-subtle hover:text-fg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
           className,
         )}
       >
