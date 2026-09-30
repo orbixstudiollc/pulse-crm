@@ -60,18 +60,27 @@ export function Header() {
           <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-2 text-[14px]">
             {crumbs.map((segment, index) => {
               // Replace ID-like segments (numeric or long hashes) with breadcrumbLabel
-              const isIdSegment = /^[0-9]+$/.test(segment) || segment.length > 20;
+              const isIdSegment =
+                /^[0-9]+$/.test(segment) ||
+                segment.length > 20 ||
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment);
               // Friendly names for hyphenated route segments
               const segmentLabels: Record<string, string> = {
                 "lead-finder": "Lead Finder",
                 icp: "ICP",
                 "website-visitors": "Website visitors",
               };
-              const displayText =
-                isIdSegment && config.breadcrumbLabel
-                  ? config.breadcrumbLabel
-                  : segmentLabels[segment] ??
-                    decodeURIComponent(segment).replace(/^./, (c) => c.toUpperCase());
+              // Never show a raw ID: use the page's label, or a muted placeholder until it is set
+              const displayText = isIdSegment ? (
+                config.breadcrumbLabel ?? (
+                  <span aria-hidden="true" className="text-fg-muted">
+                    …
+                  </span>
+                )
+              ) : (
+                segmentLabels[segment] ??
+                decodeURIComponent(segment).replace(/^./, (c) => c.toUpperCase())
+              );
 
               return (
                 <span key={index} className="flex items-center gap-2">

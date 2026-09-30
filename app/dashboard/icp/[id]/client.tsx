@@ -35,6 +35,7 @@ import {
   type ICPWeights,
 } from "@/lib/actions/icp";
 import { cn, formatCurrency } from "@/lib/utils";
+import { usePageHeader } from "@/hooks";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -523,6 +524,11 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showEditModal, setShowEditModal] = useState(false);
+
+  usePageHeader({
+    backHref: "/dashboard/icp",
+    breadcrumbLabel: profile.name,
+  });
 
   const criteria = parseCriteria(profile.criteria);
   const weights = parseWeights(profile.weights);

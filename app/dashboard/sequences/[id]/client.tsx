@@ -87,6 +87,7 @@ import type {
 import { aiGenerateEmail } from "@/lib/actions/ai-outreach";
 import { getEmailTemplates } from "@/lib/actions/email-templates";
 import { cn } from "@/lib/utils";
+import { usePageHeader } from "@/hooks";
 import { chartAccent, chartSuccess, chartWarning, chartGrid, chartAxis, chartTooltipStyle, axisTick } from "@/lib/design-system/chart-colors";
 
 interface StepVariant {
@@ -483,6 +484,11 @@ export function SequenceDetailClient({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState<TabId>("steps");
+
+  usePageHeader({
+    backHref: "/dashboard/sequences",
+    breadcrumbLabel: sequence.name,
+  });
 
   // Step modal state
   const [showStepModal, setShowStepModal] = useState(false);
