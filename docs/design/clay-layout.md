@@ -84,3 +84,29 @@ Measurements come from the Mobbin captures (1920px wide at about 1.33× device s
 - Change handlers, data fetching, props passed to children, conditions or copy. Layout JSX may be regrouped (wrappers removed, sections reordered), but every element that was there stays reachable.
 - Introduce new colours or arbitrary hex values. Use tokens only; `scripts/restyle/scan.mjs` must pass.
 - Leave a `rounded-lg border border-line` (or `rounded-xl border`) box around a table, metric group or section. Run `node scripts/restyle/boxes.mjs <files>` to list what remains.
+
+## Execution record (2026-10-01)
+
+- **Plans:** `tasks-clay2.json` covers the foundation and the pilot. `tasks-clay3.json` covers the rollout, and `tasks-clay4.json` the review fixes. All were run with astra-fable-execute, and every task passed its own gate before commit.
+- **Foundation.** L1: the shell. L2: the page kit plus the `.clay-table` CSS. L3: the accessibility fixes from the colour review.
+- **Pilot (P1, P2).** Overview, Leads and Sequences were built first. Each was compared against Clay screens 27, 164 and 165 before the rollout.
+- **Rollout.**
+  - L4: the row menu is portalled so tables can't clip it, it uses horizontal dots, and page tabs scroll.
+  - L5: route loading skeletons.
+  - R1–R14: every list page, detail page, form, Copilot, Settings (whose own nav replaces the sidebar) and the drawers.
+  - F1: Settings sections switch with shallow URL updates.
+  - F2: the Lead Finder sub-navigation became underline tabs.
+- **Review (Opus).** No critical or high findings. The medium and low findings were fixed in V1–V5:
+  - Customer bulk actions now act only on visible selected rows.
+  - Copilot stacks on phones.
+  - Page header actions wrap.
+  - Customer records fall back to an initials avatar.
+  - The Latest leads footer no longer paginates.
+  - Unknown settings tabs fall back to Profile.
+  - The row menu has ARIA attributes and closes on scroll.
+- **Final gate (G2, re-run after V1–V5).** Lint, tests, production build, `scan.mjs`, `contrast.mjs` and `boxes.mjs` across every page all pass.
+- **Intentional deviations, all recorded in the task reports:**
+  - The ICP list dropped a duplicate eye-icon link to the detail page.
+  - The competitor battle card is now stacked Sections instead of a two-column grid.
+  - The Inbox and Copilot keep full-height workspaces instead of `<Page>`.
+  - The sequence detail page and the Lead Finder campaign detail page have no properties aside, because they have no properties content.
