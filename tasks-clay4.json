@@ -1,0 +1,63 @@
+[
+  {
+    "id": "V1",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Customer bulk actions act only on visible selected rows",
+    "files": [
+      "components/dashboard/CustomersTable.tsx",
+      "app/dashboard/customers/client.tsx"
+    ],
+    "interface": "Review finding M1. CustomersTable now stays mounted when the filtered list is empty (it renders an emptyState prop), so selectedRows survives filter changes: select a row, filter it out, and the bulk bar still says 1 selected and Delete/Export act on the hidden id. Fix: derive visibleSelected = selectedRows filtered to ids present in the customers prop currently rendered (all filtered rows, not just the current page, matching how select-all and bulk actions worked before), and use visibleSelected everywhere the selection drives UI or actions: the bulk bar visibility and count, Delete (setDeleteIds), Export, and the select-all checkbox state (checked/indeterminate). Also prune selectedRows to visible ids when the customers list changes (a useEffect on the list identity is fine) so hidden ids never come back. Row checkboxes keep working. Do not change copy or other behaviour. Keep each file's line endings, token classes only (scripts/restyle/scan.mjs), touch only the listed files, do not run git add/commit, and do not create, edit, delete or send anything in the browser (the dev server at http://localhost:3001 writes to a shared database).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'visibleSelected' components/dashboard/CustomersTable.tsx && npx tsc --noEmit && npx eslint 'components/dashboard/CustomersTable.tsx' 'app/dashboard/customers/client.tsx' && node scripts/restyle/scan.mjs app components && node scripts/restyle/boxes.mjs 'app/dashboard/customers/client.tsx' && git add -A -- 'components/dashboard/CustomersTable.tsx' 'app/dashboard/customers/client.tsx' && git commit -q -m 'fix(customers): bulk actions act only on visible selected rows' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo V1-OK"
+  },
+  {
+    "id": "V2",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Copilot usable on phones; one h1",
+    "files": [
+      "app/dashboard/copilot/client.tsx"
+    ],
+    "interface": "Review findings M2 and L3. (M2) The Copilot left column is w-64 shrink-0 border-r, so at 375px the chat gets about 120px. Make the workspace stack on small screens: the root row becomes flex-col below md (max-md:flex-col), the left column becomes max-md:w-full max-md:border-r-0 max-md:border-b max-md:max-h-56 max-md:overflow-y-auto, and the main pane keeps flex-1 min-h-0. Desktop stays unchanged. (L3) The column title 'Pulse Copilot' is an h1 while the Memory/Tasks/Settings views also render a PageHeader h1: change the column title element to a p with the same classes. Keep each file's line endings, token classes only (scripts/restyle/scan.mjs), touch only the listed files, do not run git add/commit, and do not create, edit, delete or send anything in the browser (the dev server at http://localhost:3001 writes to a shared database).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'max-md:flex-col' app/dashboard/copilot/client.tsx && npx tsc --noEmit && npx eslint 'app/dashboard/copilot/client.tsx' && node scripts/restyle/scan.mjs app components && node scripts/restyle/boxes.mjs 'app/dashboard/copilot/client.tsx' && git add -A -- 'app/dashboard/copilot/client.tsx' && git commit -q -m 'fix(copilot): stack the workspace on phones and keep one h1' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo V2-OK"
+  },
+  {
+    "id": "V3",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Small layout fixes: header actions wrap, contacts search, customer avatar fallback, latest leads footer",
+    "files": [
+      "components/dashboard/PageHeader.tsx",
+      "app/dashboard/contacts/client.tsx",
+      "app/dashboard/customers/[id]/client.tsx",
+      "components/dashboard/LatestLeads.tsx"
+    ],
+    "interface": "Four small fixes. (1) PageHeader.tsx: the actions row (children) is flex items-center gap-2 and cannot wrap, so a w-48 search plus a button overflows under 360px; add flex-wrap to that row. (2) contacts/client.tsx: the header search wrapper w-48 gets max-sm:w-full. (3) customers/[id]/client.tsx: the header avatar is an img with src customer.avatar_url || '/images/avatars/default.svg', but that file does not exist, so a broken image and its alt text spill out of the 36px tile. Replace it with the Avatar component from @/components/ui (the one leads/[id]/client.tsx uses for its header: check its import and props there), passing the avatar_url when present and the customer name for initials, sized to fit the 36px tile. (4) LatestLeads.tsx: the overview always passes the same 6 latest leads, but the footer paginates over the org's total lead count, so pages 2..n show the same rows. Remove the pagination: drop TableFooter and the page state, render all passed leads, and show a footer line in the TableFooter style (flex h-12 items-center px-8 max-sm:px-4 text-[13px] text-fg-muted) reading Showing {leads.length} of {totalLeads} leads, only when leads.length > 0. Keep props the same so the overview compiles unchanged. Keep each file's line endings, token classes only (scripts/restyle/scan.mjs), touch only the listed files, do not run git add/commit, and do not create, edit, delete or send anything in the browser (the dev server at http://localhost:3001 writes to a shared database).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'flex-wrap' components/dashboard/PageHeader.tsx && ! grep -q 'default.svg' 'app/dashboard/customers/[id]/client.tsx' && ! grep -q 'TableFooter' components/dashboard/LatestLeads.tsx && npx tsc --noEmit && npx eslint 'components/dashboard/PageHeader.tsx' 'app/dashboard/contacts/client.tsx' 'app/dashboard/customers/[id]/client.tsx' 'components/dashboard/LatestLeads.tsx' && node scripts/restyle/scan.mjs app components && node scripts/restyle/boxes.mjs 'app/dashboard/contacts/client.tsx' 'app/dashboard/customers/[id]/client.tsx' && git add -A -- 'components/dashboard/PageHeader.tsx' 'app/dashboard/contacts/client.tsx' 'app/dashboard/customers/[id]/client.tsx' 'components/dashboard/LatestLeads.tsx' && git commit -q -m 'fix(clay): wrapping header actions, contacts search width, customer avatar fallback, latest leads footer' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo V3-OK"
+  },
+  {
+    "id": "V4",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Settings ignores unknown tab values",
+    "files": [
+      "app/dashboard/settings/client.tsx",
+      "components/layout/Sidebar.tsx",
+      "components/layout/settings-nav.ts"
+    ],
+    "interface": "Review finding L2. settings/client.tsx casts searchParams.get('tab') to SettingsTab without checking it, so ?tab=foo renders Profile while no sidebar item or mobile tab is highlighted. Add to components/layout/settings-nav.ts an exported helper parseSettingsTab(value: string | null): SettingsTab that returns the value when it is one of the ids in SETTINGS_GROUPS and 'profile' otherwise. Use it in settings/client.tsx for the active tab and in Sidebar.tsx for the settings nav active item, so both always agree. No other changes. Keep each file's line endings, token classes only (scripts/restyle/scan.mjs), touch only the listed files, do not run git add/commit, and do not create, edit, delete or send anything in the browser (the dev server at http://localhost:3001 writes to a shared database).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'export function parseSettingsTab' components/layout/settings-nav.ts && grep -q 'parseSettingsTab' components/layout/Sidebar.tsx && grep -q 'parseSettingsTab' app/dashboard/settings/client.tsx && npx tsc --noEmit && npx eslint 'app/dashboard/settings/client.tsx' 'components/layout/Sidebar.tsx' 'components/layout/settings-nav.ts' && node scripts/restyle/scan.mjs app components && node scripts/restyle/boxes.mjs 'app/dashboard/settings/client.tsx' && git add -A -- 'app/dashboard/settings/client.tsx' 'components/layout/Sidebar.tsx' 'components/layout/settings-nav.ts' && git commit -q -m 'fix(settings): unknown tab values fall back to profile consistently' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo V4-OK"
+  },
+  {
+    "id": "V5",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Row menu accessibility and scroll behaviour",
+    "files": [
+      "components/ui/ActionMenu.tsx"
+    ],
+    "interface": "Review finding L4 on the portalled ActionMenu. (1) The trigger button gets aria-label (use an optional label prop defaulting to 'More actions'), aria-haspopup='menu' and aria-expanded={open}; the menu container gets role='menu' and items role='menuitem' if they do not already. (2) Shift+Tab from the open trigger (focus leaving backwards) closes the menu. (3) While open, the fixed menu follows its trigger when the page scrolls and can end up over the top bar: instead of repositioning on scroll, close the menu on scroll events that do not originate inside the menu (keep repositioning on resize). Keep portal, outside-click, Escape and focus-return behaviour and all item rendering. Keep each file's line endings, token classes only (scripts/restyle/scan.mjs), touch only the listed files, do not run git add/commit, and do not create, edit, delete or send anything in the browser (the dev server at http://localhost:3001 writes to a shared database).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'aria-expanded' components/ui/ActionMenu.tsx && grep -q 'aria-haspopup' components/ui/ActionMenu.tsx && npx tsc --noEmit && npx eslint 'components/ui/ActionMenu.tsx' && node scripts/restyle/scan.mjs app components && node scripts/restyle/boxes.mjs components/dashboard/PageHeader.tsx && git add -A -- 'components/ui/ActionMenu.tsx' && git commit -q -m 'fix(ui): row menu aria attributes and close on scroll' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo V5-OK"
+  }
+]
