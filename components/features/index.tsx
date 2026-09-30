@@ -7,7 +7,6 @@ export { ScheduleMeetingModal } from "./ScheduleMeetingModal";
 export { CompleteMeetingModal } from "./CompleteMeetingModal";
 export { ActivityDetailDrawer } from "./ActivityDetailDrawer";
 export { CreateTaskModal } from "./CreateTaskModal";
-export { CreateInvoiceModal } from "./CreateInvoiceModal";
 export { AddLeadModal, type LeadFormData } from "./AddLeadModal";
 export { ConvertLeadModal } from "./ConvertLeadModal";
 export { DealDrawer } from "./DealDrawer";

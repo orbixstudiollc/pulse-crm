@@ -522,6 +522,8 @@ export function ActivityPageClient({
                 type: selectedActivity.type,
                 title: selectedActivity.title,
                 description: selectedActivity.description,
+                date: selectedActivity.date,
+                time: selectedActivity.time,
                 badge: statusConfig[selectedActivity.status]
                   ? {
                       label: statusConfig[selectedActivity.status].label,

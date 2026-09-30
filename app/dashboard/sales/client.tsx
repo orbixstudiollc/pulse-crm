@@ -64,6 +64,7 @@ type MappedDeal = {
   name: string;
   company: string;
   contactName: string;
+  contact: { name: string; email: string; avatar: string };
   value: number;
   stage: PipelineStage;
   probability: number;
@@ -94,6 +95,7 @@ function mapDeal(d: DealRecord): MappedDeal {
     name: d.name || "",
     company: d.company || "",
     contactName: d.contact_name || "",
+    contact: { name: d.contact_name || "", email: "", avatar: "" },
     value: d.value || 0,
     stage: (d.stage || "discovery") as PipelineStage,
     probability: d.probability || 0,
@@ -428,6 +430,7 @@ export function SalesPageClient({
         name: data.dealName || data.name,
         company: data.company,
         contact_name: data.contactName || data.customer,
+        ...(data.customerId ? { customer_id: data.customerId } : {}),
         value: parseFloat(data.value as string) || 0,
         stage: data.stage || "discovery",
         probability: parseInt(data.probability as string) || 30,

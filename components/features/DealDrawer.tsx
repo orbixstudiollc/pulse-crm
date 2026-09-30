@@ -7,7 +7,6 @@ import { Drawer, Button, Badge, ArrowRightIcon, type BadgeVariant } from "@/comp
 import {
   type PipelineDeal,
   type PipelineStage,
-  pipelineStages,
   activeStageOrder,
   getStageLabel,
   formatDealCurrency,
@@ -378,19 +377,21 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
               <div className="flex items-center justify-between rounded-lg border border-line bg-surface p-4">
                 <div className="flex items-center gap-3">
                   <div className="relative h-10 w-10 rounded-full overflow-hidden border border-line">
-                    <Image
-                      src={deal.contact.avatar}
-                      alt={deal.contact.name}
-                      fill
-                      className="object-cover"
-                    />
+                    {deal.contact?.avatar && (
+                      <Image
+                        src={deal.contact.avatar}
+                        alt={deal.contact?.name ?? ""}
+                        fill
+                        className="object-cover"
+                      />
+                    )}
                   </div>
                   <div>
                     <p className="text-sm font-medium text-fg">
-                      {deal.contact.name}
+                      {deal.contact?.name ?? ""}
                     </p>
                     <p className="text-xs text-fg-secondary">
-                      {deal.contact.email}
+                      {deal.contact?.email ?? ""}
                     </p>
                   </div>
                 </div>
