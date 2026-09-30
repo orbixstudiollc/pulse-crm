@@ -15,6 +15,7 @@ import {
   CheckCircleIcon,
   CurrencyDollarIcon,
   ActionMenu,
+  DeleteConfirmModal,
   TrashIcon,
   PencilSimpleIcon,
   type BadgeVariant,
@@ -150,6 +151,7 @@ export function CustomerDetailClient({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [activityToDelete, setActivityToDelete] = useState<FeedItem | null>(null);
 
   const customerName = [customer.first_name, customer.last_name]
     .filter(Boolean)
@@ -211,6 +213,13 @@ export function CustomerDetailClient({
   };
 
   const handleDeleteActivity = (item: FeedItem) => {
+    setActivityToDelete(item);
+  };
+
+  const confirmDeleteActivity = () => {
+    const item = activityToDelete;
+    if (!item) return;
+    setActivityToDelete(null);
     startTransition(async () => {
       const res =
         item.source === "record"
@@ -919,6 +928,13 @@ export function CustomerDetailClient({
         onSubmit={handleCreateDeal}
       />
 
+      <DeleteConfirmModal
+        open={activityToDelete !== null}
+        onClose={() => setActivityToDelete(null)}
+        onConfirm={confirmDeleteActivity}
+        title="Delete this activity?"
+        description="This activity will be permanently removed from the timeline. This action cannot be undone."
+      />
       <ConfirmModal
         open={showDeleteConfirm}
         title="Delete Customer"

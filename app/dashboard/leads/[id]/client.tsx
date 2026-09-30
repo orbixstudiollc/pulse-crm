@@ -13,6 +13,7 @@ import {
   CalendarBlankIcon,
   CheckCircleIcon,
   ActionMenu,
+  DeleteConfirmModal,
   TrashIcon,
   UsersThreeIcon,
   PencilSimpleIcon,
@@ -160,6 +161,7 @@ export function LeadDetailClient({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [activityToDelete, setActivityToDelete] = useState<FeedItem | null>(null);
 
   const leadNotes = notes || [];
   const activityItems = useMemo<FeedItem[]>(
@@ -272,6 +274,13 @@ export function LeadDetailClient({
   };
 
   const handleDeleteActivity = (item: FeedItem) => {
+    setActivityToDelete(item);
+  };
+
+  const confirmDeleteActivity = () => {
+    const item = activityToDelete;
+    if (!item) return;
+    setActivityToDelete(null);
     startTransition(async () => {
       const res =
         item.source === "record"
@@ -879,6 +888,13 @@ export function LeadDetailClient({
           return typeof result === "string" ? result : JSON.stringify(result, null, 2);
         }}
         editable={false}
+      />
+      <DeleteConfirmModal
+        open={activityToDelete !== null}
+        onClose={() => setActivityToDelete(null)}
+        onConfirm={confirmDeleteActivity}
+        title="Delete this activity?"
+        description="This activity will be permanently removed from the timeline. This action cannot be undone."
       />
       <ConfirmModal
         open={showDeleteConfirm}

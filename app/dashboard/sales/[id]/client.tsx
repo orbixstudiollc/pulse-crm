@@ -8,6 +8,7 @@ import {
   Badge,
   Textarea,
   ActionMenu,
+  DeleteConfirmModal,
   TrashIcon,
   CalendarBlankIcon,
   CheckCircleIcon,
@@ -212,6 +213,7 @@ export function DealDetailClient({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [activityToDelete, setActivityToDelete] = useState<FeedItem | null>(null);
 
   const dealNotes = notes || [];
   const activityItems = useMemo<FeedItem[]>(
@@ -284,6 +286,13 @@ export function DealDetailClient({
   };
 
   const handleDeleteActivity = (item: FeedItem) => {
+    setActivityToDelete(item);
+  };
+
+  const confirmDeleteActivity = () => {
+    const item = activityToDelete;
+    if (!item) return;
+    setActivityToDelete(null);
     startTransition(async () => {
       const res =
         item.source === "record"
@@ -691,6 +700,13 @@ export function DealDetailClient({
           notes: deal.notes || "",
         }}
         onSubmit={handleEditSubmit}
+      />
+      <DeleteConfirmModal
+        open={activityToDelete !== null}
+        onClose={() => setActivityToDelete(null)}
+        onConfirm={confirmDeleteActivity}
+        title="Delete this activity?"
+        description="This activity will be permanently removed from the timeline. This action cannot be undone."
       />
       <ConfirmModal
         open={showDeleteConfirm}
