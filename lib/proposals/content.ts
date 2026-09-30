@@ -19,6 +19,8 @@ const KNOWN_SECTIONS: [key: string, title: string][] = [
 
 const SKIPPED_KEYS = new Set(["title", "pricing"]);
 
+const TIER_ORDER = ["good", "better", "best"];
+
 type PlainObject = Record<string, unknown>;
 
 function isPlainObject(value: unknown): value is PlainObject {
@@ -76,7 +78,10 @@ function tierEntries(source: unknown): unknown[] {
   if (Array.isArray(source)) return source;
   if (!isPlainObject(source)) return [];
   if (Array.isArray(source.tiers)) return source.tiers;
-  return Object.values(source);
+  // jsonb does not preserve key order, so pin good/better/best first, then the rest as given.
+  const keys = Object.keys(source);
+  const ordered = [...TIER_ORDER.filter((k) => keys.includes(k)), ...keys.filter((k) => !TIER_ORDER.includes(k))];
+  return ordered.map((k) => source[k]);
 }
 
 function tiersFrom(source: unknown): PricingTier[] {

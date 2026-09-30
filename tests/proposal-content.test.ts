@@ -88,6 +88,15 @@ describe("parsePricingTiers", () => {
     ]);
   });
 
+  it("orders a jsonb-reordered object map as good, better, best", () => {
+    const tiers = parsePricingTiers({
+      best: { name: "Enterprise", price: 499, features: [] },
+      good: { name: "Starter", price: 99, features: [] },
+      better: { name: "Professional", price: 1249, features: [] },
+    });
+    expect(tiers.map((t) => t.name)).toEqual(["Starter", "Professional", "Enterprise"]);
+  });
+
   it("reads { tiers: [...] } from the AI pricing generator", () => {
     const tiers = parsePricingTiers({
       tiers: [
