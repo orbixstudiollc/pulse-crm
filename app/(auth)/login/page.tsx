@@ -190,7 +190,7 @@ export default function LoginPage() {
       </div>
 
       {/* ── Right column: hero panel ──────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col bg-inverse text-on-inverse overflow-hidden relative">
+      <div className="hidden lg:flex lg:w-1/2 flex-col bg-accent-strong text-on-inverse overflow-hidden relative">
         {/* Marketing copy */}
         <div className="relative z-10 max-w-[342px] pt-[88px] pl-[88px]">
           <h2 className="text-2xl font-semibold text-on-inverse mb-4">

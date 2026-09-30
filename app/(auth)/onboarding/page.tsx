@@ -347,7 +347,7 @@ function ImportData({
           onClick={() => setImportSource("hubspot")}
           className={`w-full flex items-center justify-between rounded-lg border bg-surface p-4 transition-colors text-left ${
             importSource === "hubspot"
-              ? "border-inverse"
+              ? "border-accent"
               : "border-line"
           }`}
         >
@@ -370,12 +370,12 @@ function ImportData({
           <div
             className={`h-5 w-5 rounded-full border flex items-center justify-center ${
               importSource === "hubspot"
-                ? "border-inverse"
+                ? "border-accent"
                 : "border-line"
             }`}
           >
             {importSource === "hubspot" && (
-              <div className="h-2.5 w-2.5 rounded-full bg-inverse" />
+              <div className="h-2.5 w-2.5 rounded-full bg-accent-strong" />
             )}
           </div>
         </button>
@@ -385,7 +385,7 @@ function ImportData({
           onClick={() => setImportSource("csv")}
           className={`w-full flex items-center justify-between rounded-lg border bg-surface p-4 transition-colors text-left ${
             importSource === "csv"
-              ? "border-inverse"
+              ? "border-accent"
               : "border-line"
           }`}
         >
@@ -408,12 +408,12 @@ function ImportData({
           <div
             className={`h-5 w-5 rounded-full border flex items-center justify-center ${
               importSource === "csv"
-                ? "border-inverse"
+                ? "border-accent"
                 : "border-line"
             }`}
           >
             {importSource === "csv" && (
-              <div className="h-2.5 w-2.5 rounded-full bg-inverse" />
+              <div className="h-2.5 w-2.5 rounded-full bg-accent-strong" />
             )}
           </div>
         </button>
@@ -640,7 +640,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* ── Right column: hero panel ──────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col bg-inverse text-on-inverse overflow-hidden relative">
+      <div className="hidden lg:flex lg:w-1/2 flex-col bg-accent-strong text-on-inverse overflow-hidden relative">
         <div className="relative z-10 w-[544px] pt-[88px] pl-[88px]">
           <h2 className="text-2xl font-semibold text-on-inverse mb-4">
             Manage your sales pipeline with ease
