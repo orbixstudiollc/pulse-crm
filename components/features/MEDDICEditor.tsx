@@ -94,7 +94,7 @@ export function MEDDICEditor({ leadId, data }: MEDDICEditorProps) {
                         ? level === "high" ? "border-success bg-success-surface text-success"
                         : level === "medium" ? "border-warning bg-warning-surface text-warning"
                         : "border-danger bg-danger-surface text-danger"
-                        : "border-line text-fg-secondary hover:bg-muted",
+                        : "border-line text-fg-secondary hover:bg-subtle",
                     )}
                   >
                     {level.charAt(0).toUpperCase() + level.slice(1)}
@@ -181,8 +181,8 @@ export function MEDDICEditor({ leadId, data }: MEDDICEditorProps) {
                     className={cn(
                       "h-7 px-2.5 rounded-md border text-xs font-medium transition-colors",
                       formData.decision_process.type === type
-                        ? "border-inverse bg-inverse text-on-inverse"
-                        : "border-line text-fg-secondary hover:bg-muted",
+                        ? "border-accent bg-surface text-accent-strong"
+                        : "border-line text-fg-secondary hover:bg-subtle",
                     )}
                   >
                     {type.charAt(0).toUpperCase() + type.slice(1).replace("-", " ")}

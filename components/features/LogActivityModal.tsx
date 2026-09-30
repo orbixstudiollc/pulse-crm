@@ -228,8 +228,8 @@ export function LogActivityModal({
                   className={cn(
                     "flex h-8 items-center gap-2 px-3 rounded-md border text-sm font-medium transition-colors",
                     isSelected
-                      ? "border-inverse bg-inverse text-on-inverse"
-                      : "border-line text-fg-secondary hover:border-fg-muted",
+                      ? "border-accent bg-surface text-accent-strong"
+                      : "border-line text-fg-secondary hover:bg-subtle",
                   )}
                 >
                   <Icon size={18} />

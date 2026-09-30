@@ -115,7 +115,7 @@ export function SequencePickerModal({ open, onClose, leadIds, onComplete }: Sequ
                 onClick={() => setSelectedId(seq.id)}
                 className={`w-full flex items-center justify-between p-3 rounded-md border text-left transition-colors ${
                   selectedId === seq.id
-                    ? "border-inverse bg-subtle"
+                    ? "border-accent bg-accent-surface text-accent-on-surface"
                     : "border-line hover:border-fg-muted"
                 }`}
               >
@@ -147,7 +147,7 @@ export function SequencePickerModal({ open, onClose, leadIds, onComplete }: Sequ
           <button
             onClick={handleEnroll}
             disabled={!selectedId || isPending}
-            className="flex-1 h-8 px-3 text-sm font-medium bg-inverse text-on-inverse rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="flex-1 h-8 px-3 text-sm font-medium bg-accent-strong text-on-inverse hover:bg-accent-strong/90 rounded-md transition-colors disabled:opacity-50"
           >
             {isPending ? "Enrolling..." : `Enroll ${leadIds.length} Lead${leadIds.length !== 1 ? "s" : ""}`}
           </button>

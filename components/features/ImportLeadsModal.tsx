@@ -509,7 +509,7 @@ export function ImportLeadsModal({
                     i < stepIndex
                       ? "bg-success-fill text-on-inverse"
                       : i === stepIndex
-                        ? "bg-inverse text-on-inverse"
+                        ? "bg-accent-strong text-on-inverse"
                         : "bg-muted text-fg-muted"
                   }`}
                 >
@@ -622,7 +622,7 @@ export function ImportLeadsModal({
               <button
                 onClick={handleAIMapFields}
                 disabled={isAiMapping}
-                className="flex h-7 items-center gap-1.5 px-2.5 rounded-md bg-inverse text-on-inverse text-xs font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+                className="flex h-7 items-center gap-1.5 px-2.5 rounded-md bg-accent-strong text-on-inverse hover:bg-accent-strong/90 text-xs font-medium disabled:opacity-50 transition-colors"
               >
                 {isAiMapping ? (
                   <CircleNotchIcon size={14} className="animate-spin" />
@@ -946,7 +946,7 @@ export function ImportLeadsModal({
                   <button
                     onClick={handleSequenceEnroll}
                     disabled={!selectedSequenceId || enrolling}
-                    className="flex-1 h-7 px-2.5 text-xs font-medium bg-inverse text-on-inverse rounded-md hover:opacity-90 disabled:opacity-50"
+                    className="flex-1 h-7 px-2.5 text-xs font-medium bg-accent-strong text-on-inverse hover:bg-accent-strong/90 rounded-md disabled:opacity-50"
                   >
                     {enrolling ? "Enrolling..." : `Enroll ${importResult.importedIds.length} Leads`}
                   </button>
