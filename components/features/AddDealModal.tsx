@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Modal,
   Button,
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui";
 import { X } from "@phosphor-icons/react";
 import { type PipelineStage, pipelineStages } from "@/lib/data/sales";
+import { searchRecords, type RecordResult } from "@/lib/actions/lookup";
 
 interface AddDealModalProps {
   open: boolean;
@@ -23,7 +24,10 @@ interface AddDealModalProps {
 
 export interface DealFormData {
   name: string;
+  /** Display name of the selected customer. */
   customer: string;
+  /** Real customer id, set when a customer is picked from search. */
+  customerId?: string;
   value: string;
   stage: PipelineStage;
   probability: string;
@@ -46,16 +50,7 @@ const probabilityOptions = [
   { value: "90", label: "90%" },
 ];
 
-// Mock customers - in real app, this would come from API/data
-const customerOptions = [
-  { value: "", label: "Select customer..." },
-  { value: "James Wilson", label: "James Wilson" },
-  { value: "Sarah Chen", label: "Sarah Chen" },
-  { value: "Michael Torres", label: "Michael Torres" },
-  { value: "Emily Richards", label: "Emily Richards" },
-  { value: "David Kim", label: "David Kim" },
-  { value: "Alexandra Foster", label: "Alexandra Foster" },
-];
+const SEARCH_DEBOUNCE_MS = 250;
 
 const emptyFormData: DealFormData = {
   name: "",
@@ -80,6 +75,56 @@ function DealForm({
   isEdit: boolean;
 }) {
   const [formData, setFormData] = useState<DealFormData>(initialData);
+  const [customerQuery, setCustomerQuery] = useState(initialData.customer);
+  const [showResults, setShowResults] = useState(false);
+  const [results, setResults] = useState<RecordResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const customerRef = useRef<HTMLDivElement>(null);
+
+  // Debounced typeahead over the org's real customers
+  useEffect(() => {
+    if (!showResults) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const found = await searchRecords(customerQuery, ["customer"]);
+        if (!cancelled) setResults(found);
+      } catch {
+        if (!cancelled) setResults([]);
+      } finally {
+        if (!cancelled) setIsSearching(false);
+      }
+    }, SEARCH_DEBOUNCE_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [customerQuery, showResults]);
+
+  // Close results when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        customerRef.current &&
+        !customerRef.current.contains(event.target as Node)
+      ) {
+        setShowResults(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectCustomer = (record: RecordResult) => {
+    setFormData((prev) => ({
+      ...prev,
+      customer: record.label,
+      customerId: record.id,
+    }));
+    setCustomerQuery(record.label);
+    setShowResults(false);
+  };
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -126,18 +171,51 @@ function DealForm({
         />
 
         {/* Customer */}
-        <Select
-          label="Customer"
-          name="customer"
-          value={formData.customer}
-          onChange={handleChange}
-        >
-          {customerOptions.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
+        <div ref={customerRef} className="relative">
+          <Input
+            label="Customer"
+            value={customerQuery}
+            onChange={(e) => {
+              setCustomerQuery(e.target.value);
+              setFormData((prev) => ({
+                ...prev,
+                customer: "",
+                customerId: undefined,
+              }));
+              setShowResults(true);
+            }}
+            onFocus={() => setShowResults(true)}
+            placeholder="Search customers..."
+            autoComplete="off"
+          />
+          {showResults && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-line rounded-lg shadow-dropdown z-10 max-h-60 overflow-y-auto">
+              {results.length > 0 ? (
+                results.map((record) => (
+                  <button
+                    key={record.id}
+                    type="button"
+                    onClick={() => selectCustomer(record)}
+                    className="w-full flex flex-col px-3 py-2 hover:bg-muted transition-colors text-left"
+                  >
+                    <span className="text-sm font-medium text-fg">
+                      {record.label}
+                    </span>
+                    {record.sublabel && (
+                      <span className="text-xs text-fg-secondary">
+                        {record.sublabel}
+                      </span>
+                    )}
+                  </button>
+                ))
+              ) : (
+                <div className="px-4 py-3 text-sm text-fg-secondary">
+                  {isSearching ? "Searching..." : "No customers found"}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Value & Stage */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

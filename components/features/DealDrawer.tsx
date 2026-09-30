@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { MarkDealLostModal } from "./MarkDealLostModal";
 import {
+  getDealById,
   getDealNotes,
   getDealActivities,
   addDealNote,
@@ -153,25 +154,38 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
   const [activities, setActivities] = useState<DealActivityRecord[]>([]);
   const [newNote, setNewNote] = useState("");
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [contactHref, setContactHref] = useState<string | null>(null);
 
   // Mark data as loading when the drawer opens (adjusted during render, not in an effect)
   const loadKey = open && deal?.id ? deal.id : null;
   const [loadingKey, setLoadingKey] = useState<string | null>(null);
   if (loadKey !== loadingKey) {
     setLoadingKey(loadKey);
+    setContactHref(null);
     if (loadKey) setIsLoadingData(true);
   }
 
   // Fetch notes and activities when drawer opens
   useEffect(() => {
     if (open && deal?.id) {
-      Promise.all([getDealNotes(deal.id), getDealActivities(deal.id)]).then(
-        ([notesRes, activitiesRes]) => {
-          setNotes((notesRes.data ?? []) as DealNoteRecord[]);
-          setActivities((activitiesRes.data ?? []) as DealActivityRecord[]);
-          setIsLoadingData(false);
-        },
-      );
+      Promise.all([
+        getDealNotes(deal.id),
+        getDealActivities(deal.id),
+        getDealById(deal.id),
+      ]).then(([notesRes, activitiesRes, dealRes]) => {
+        setNotes((notesRes.data ?? []) as DealNoteRecord[]);
+        setActivities((activitiesRes.data ?? []) as DealActivityRecord[]);
+        // Link the contact to the record this deal references, if any
+        const row = dealRes.data as { customer_id?: string | null; lead_id?: string | null } | null;
+        setContactHref(
+          row?.customer_id
+            ? `/dashboard/customers/${row.customer_id}`
+            : row?.lead_id
+              ? `/dashboard/leads/${row.lead_id}`
+              : null,
+        );
+        setIsLoadingData(false);
+      });
     }
   }, [open, deal?.id]);
 
@@ -380,9 +394,14 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
                     </p>
                   </div>
                 </div>
-                <button className="text-sm font-medium text-fg hover:text-fg-secondary transition-colors">
-                  View
-                </button>
+                {contactHref && (
+                  <Link
+                    href={contactHref}
+                    className="text-sm font-medium text-fg hover:text-fg-secondary transition-colors"
+                  >
+                    View
+                  </Link>
+                )}
               </div>
             </div>
 

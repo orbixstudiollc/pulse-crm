@@ -17,6 +17,7 @@ import {
   MonitorIcon,
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
+import { searchRecords, type RecordResult } from "@/lib/actions/lookup";
 
 // Activity types
 type ActivityType = "call" | "meeting" | "task" | "email" | "note" | "demo";
@@ -28,15 +29,7 @@ interface RelatedEntity {
   type: "customer" | "lead" | "deal";
 }
 
-// Mock data for search
-const mockEntities: RelatedEntity[] = [
-  { id: "c1", name: "MegaCorp", type: "customer" },
-  { id: "c2", name: "CloudNine", type: "customer" },
-  { id: "l1", name: "TechFlow Inc.", type: "lead" },
-  { id: "l2", name: "StartupX", type: "lead" },
-  { id: "d1", name: "Enterprise Suite", type: "deal" },
-  { id: "d2", name: "Pro Package", type: "deal" },
-];
+const SEARCH_DEBOUNCE_MS = 250;
 
 // Activity type config
 const activityTypeConfig: {
@@ -145,12 +138,30 @@ export function LogActivityModal({
   // Related To search state
   const [searchQuery, setSearchQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
+  const [results, setResults] = useState<RecordResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Filter entities based on search
-  const filteredEntities = mockEntities.filter((entity) =>
-    entity.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  // Debounced search over the org's real leads, customers and deals
+  useEffect(() => {
+    if (!showResults || relatedTo) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const found = await searchRecords(searchQuery);
+        if (!cancelled) setResults(found);
+      } catch {
+        if (!cancelled) setResults([]);
+      } finally {
+        if (!cancelled) setIsSearching(false);
+      }
+    }, SEARCH_DEBOUNCE_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, showResults, relatedTo]);
 
   // Close search results when clicking outside
   useEffect(() => {
@@ -280,15 +291,19 @@ export function LogActivityModal({
               />
 
               {/* Search Results Dropdown */}
-              {showResults && searchQuery && (
+              {showResults && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-line rounded-lg shadow-dropdown z-10 max-h-60 overflow-y-auto">
-                  {filteredEntities.length > 0 ? (
-                    filteredEntities.map((entity) => (
+                  {results.length > 0 ? (
+                    results.map((entity) => (
                       <button
-                        key={entity.id}
+                        key={`${entity.kind}-${entity.id}`}
                         type="button"
                         onClick={() => {
-                          setRelatedTo(entity);
+                          setRelatedTo({
+                            id: entity.id,
+                            name: entity.label,
+                            type: entity.kind,
+                          });
                           setSearchQuery("");
                           setShowResults(false);
                         }}
@@ -302,17 +317,18 @@ export function LogActivityModal({
                         </div>
                         <div>
                           <p className="text-sm font-medium text-fg">
-                            {entity.name}
+                            {entity.label}
                           </p>
                           <p className="text-xs text-fg-secondary">
-                            {getTypeLabel(entity.type)}
+                            {getTypeLabel(entity.kind)}
+                            {entity.sublabel ? ` · ${entity.sublabel}` : ""}
                           </p>
                         </div>
                       </button>
                     ))
                   ) : (
                     <div className="px-4 py-3 text-sm text-fg-secondary">
-                      No results found
+                      {isSearching ? "Searching..." : "No results found"}
                     </div>
                   )}
                 </div>
