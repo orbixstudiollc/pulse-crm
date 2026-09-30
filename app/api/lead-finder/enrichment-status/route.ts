@@ -16,6 +16,7 @@ export const dynamic = "force-dynamic";
 
 const RECENTLY_FINISHED_MS = 2 * 60_000;
 const ACTIVE_STATUSES = ["queued", "running", "paused"];
+const JOB_PAGE_SIZE = 1000;
 
 export async function GET() {
   const supabase = await createClient();
@@ -54,32 +55,42 @@ export async function GET() {
     );
   }
 
-  const countJobs = async (batchId: string, status: "done" | "failed") => {
-    const { count } = await supabase
+  // One aggregated read instead of two head-count queries per batch. Paged
+  // because PostgREST caps the rows returned per request.
+  const batchIds = (rows ?? []).map((b) => b.id);
+  const counts = new Map<string, { done: number; failed: number }>();
+  for (let from = 0; batchIds.length > 0; from += JOB_PAGE_SIZE) {
+    const { data: jobs, error: jobsError } = await supabase
       .from("lf_enrichment_jobs")
-      .select("id", { count: "exact", head: true })
-      .eq("batch_id", batchId)
+      .select("batch_id, status")
       .eq("organization_id", orgId)
-      .eq("status", status);
-    return count ?? 0;
-  };
+      .in("batch_id", batchIds)
+      .in("status", ["done", "failed"])
+      .order("id", { ascending: true })
+      .range(from, from + JOB_PAGE_SIZE - 1);
+    if (jobsError) {
+      return NextResponse.json(
+        { error: "Failed to load enrichment jobs" },
+        { status: 500 }
+      );
+    }
+    for (const j of jobs ?? []) {
+      const c = counts.get(j.batch_id) ?? { done: 0, failed: 0 };
+      if (j.status === "done") c.done += 1;
+      else c.failed += 1;
+      counts.set(j.batch_id, c);
+    }
+    if ((jobs ?? []).length < JOB_PAGE_SIZE) break;
+  }
 
-  const batches = await Promise.all(
-    (rows ?? []).map(async (b) => {
-      const [done, failed] = await Promise.all([
-        countJobs(b.id, "done"),
-        countJobs(b.id, "failed"),
-      ]);
-      return {
-        id: b.id,
-        campaignId: b.campaign_id,
-        total: b.total,
-        done,
-        failed,
-        status: b.status,
-      };
-    })
-  );
+  const batches = (rows ?? []).map((b) => ({
+    id: b.id,
+    campaignId: b.campaign_id,
+    total: b.total,
+    done: counts.get(b.id)?.done ?? 0,
+    failed: counts.get(b.id)?.failed ?? 0,
+    status: b.status,
+  }));
 
   return NextResponse.json({
     active: batches.some((b) => ACTIVE_STATUSES.includes(b.status)),

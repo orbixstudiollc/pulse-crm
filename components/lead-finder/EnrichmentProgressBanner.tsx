@@ -10,6 +10,7 @@ import { Progress } from "@/components/ui/Progress";
 const STORAGE_KEY = "activeBatchId";
 const POLL_INTERVAL_MS = 2000;
 const STATUS_POLL_INTERVAL_MS = 5000;
+const STATUS_POLL_MAX_INTERVAL_MS = 60_000;
 
 /**
  * Call this after a successful POST that enqueues an enrichment batch
@@ -134,6 +135,7 @@ export function EnrichmentProgressBanner({
   const finishedSignalled = useRef<string | null>(null);
   const batchIdRef = useRef<string | null>(batchId);
   const statusRef = useRef<BatchStatus | null>(status);
+  const progressSignatureRef = useRef("");
 
   useEffect(() => {
     batchIdRef.current = batchId;
@@ -181,6 +183,9 @@ export function EnrichmentProgressBanner({
       ? data.batches.filter((b) => b.campaignId === campaignId)
       : data.batches;
     const running = batches.find((b) => !isTerminal(b.status));
+    progressSignatureRef.current = batches
+      .map((b) => `${b.id}:${b.status}:${b.done}:${b.failed}`)
+      .join("|");
     setActive(!!running);
 
     // Latch on to an active batch if we don't track one, or if the tracked
@@ -225,12 +230,43 @@ export function EnrichmentProgressBanner({
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [refreshStatus]);
 
+  // Back off (5s doubling to 60s) while batches stay active but nothing
+  // changes; reset when progress changes or the tab becomes visible.
   useEffect(() => {
     if (!active) return;
-    const t = setInterval(() => {
-      void refreshStatus();
-    }, STATUS_POLL_INTERVAL_MS);
-    return () => clearInterval(t);
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let delay = STATUS_POLL_INTERVAL_MS;
+    let lastSignature = progressSignatureRef.current;
+
+    const schedule = () => {
+      timer = setTimeout(async () => {
+        await refreshStatus();
+        if (cancelled) return;
+        const signature = progressSignatureRef.current;
+        delay =
+          signature !== lastSignature
+            ? STATUS_POLL_INTERVAL_MS
+            : Math.min(delay * 2, STATUS_POLL_MAX_INTERVAL_MS);
+        lastSignature = signature;
+        schedule();
+      }, delay);
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      delay = STATUS_POLL_INTERVAL_MS;
+      if (timer) clearTimeout(timer);
+      schedule();
+    };
+
+    schedule();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [active, refreshStatus]);
 
   // ── Poll the tracked batch's details until it finishes ─────────────────

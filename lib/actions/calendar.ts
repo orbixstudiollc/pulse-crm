@@ -25,12 +25,19 @@ const CALENDAR_EVENT_COLUMNS = [
   "related_id",
 ] as const;
 
-function pickCalendarColumns(data: Record<string, unknown>) {
+// Updates must never rewrite identity or ownership columns.
+const CALENDAR_EVENT_UPDATE_COLUMNS = CALENDAR_EVENT_COLUMNS.filter(
+  (c) => c !== "id" && c !== "organization_id" && c !== "created_by",
+);
+
+function pickColumns(data: Record<string, unknown>, allowed: readonly string[]) {
   return Object.fromEntries(
-    Object.entries(data).filter(([key]) =>
-      (CALENDAR_EVENT_COLUMNS as readonly string[]).includes(key),
-    ),
+    Object.entries(data).filter(([key]) => allowed.includes(key)),
   );
+}
+
+function pickCalendarColumns(data: Record<string, unknown>) {
+  return pickColumns(data, CALENDAR_EVENT_COLUMNS);
 }
 
 // ── Read ─────────────────────────────────────────────────────────────────────
@@ -123,12 +130,15 @@ export async function updateCalendarEvent(
   updates: Record<string, unknown>,
 ) {
   const supabase = await createClient();
-  await getOrgId();
+  const orgId = await getOrgId();
 
   const { data, error } = await supabase
     .from("calendar_events")
-    .update(pickCalendarColumns(updates) as CalendarEventUpdate)
+    .update(
+      pickColumns(updates, CALENDAR_EVENT_UPDATE_COLUMNS) as CalendarEventUpdate,
+    )
     .eq("id", id)
+    .eq("organization_id", orgId)
     .select()
     .single();
 

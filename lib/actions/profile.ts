@@ -88,6 +88,26 @@ export async function uploadAvatar(formData: FormData) {
 
   if (error) return { error: error.message };
 
+  // Drop superseded avatars; cleanup failures must not fail the upload.
+  const { data: existing, error: listError } = await supabase.storage
+    .from("avatars")
+    .list(user.id);
+  if (listError) {
+    console.error("uploadAvatar: failed to list old avatars", listError.message);
+  } else {
+    const stale = (existing ?? [])
+      .map((f) => `${user.id}/${f.name}`)
+      .filter((p) => p !== filePath);
+    if (stale.length > 0) {
+      const { error: removeError } = await supabase.storage
+        .from("avatars")
+        .remove(stale);
+      if (removeError) {
+        console.error("uploadAvatar: failed to remove old avatars", removeError.message);
+      }
+    }
+  }
+
   revalidatePath("/dashboard/settings");
   revalidatePath("/dashboard");
   return { data };

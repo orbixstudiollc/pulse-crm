@@ -20,8 +20,9 @@ export type RecordResult = {
 export async function searchRecords(
   query: string,
   kinds: RecordKind[] = ["lead", "customer", "deal"],
-  limit = 8,
+  requestedLimit = 8,
 ): Promise<RecordResult[]> {
+  const limit = Math.min(Math.max(Math.trunc(requestedLimit) || 1, 1), 25);
   const supabase = await createClient();
   const orgId = await getOrgId();
   const q = escapePostgrestLike(query.trim());
