@@ -20,7 +20,22 @@ import {
   PencilSimpleIcon,
   type BadgeVariant,
 } from "@/components/ui";
-import { ActivityRow, type ActivityRowType, ConfirmModal } from "@/components/dashboard";
+import {
+  ActivityRow,
+  type ActivityRowType,
+  ConfirmModal,
+  Page,
+  PageHeader,
+  MetricStrip,
+  Metric,
+  PageTabs,
+  TableSection,
+  Section,
+  DetailLayout,
+  PanelSection,
+  KeyValueList,
+  KeyValue,
+} from "@/components/dashboard";
 import { cn } from "@/lib/utils";
 import {
   CompleteMeetingModal,
@@ -309,170 +324,247 @@ export function CustomerDetailClient({
   const tenure = monthsSince(customer.created_at) || customer.tenure || customer.tenure_months || 0;
 
   return (
-    <div className="min-h-full p-6">
-      {/* Header + Stats Card */}
-      <div className="rounded-lg border border-line bg-surface p-4 mb-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-4 sm:gap-6">
-            <div className="relative w-20 h-20 rounded-full overflow-hidden border border-line">
-              <Image
-                src={customer.avatar_url || "/images/avatars/default.svg"}
-                alt={customerName}
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold text-fg mb-1">
-                {customerName}
-              </h1>
-              <p className="text-sm text-fg-secondary mb-2">
-                {customer.email}
-              </p>
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant={
-                    customer.status === "active"
-                      ? "success"
-                      : customer.status === "pending"
-                        ? "warning"
-                        : "neutral"
-                  }
+    <Page>
+      {/* Record header */}
+      <PageHeader
+        title={customerName}
+        icon={
+          <div className="relative h-9 w-9 overflow-hidden rounded-full">
+            <Image
+              src={customer.avatar_url || "/images/avatars/default.svg"}
+              alt={customerName}
+              fill
+              className="object-cover"
+            />
+          </div>
+        }
+        description={
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <span>{customer.email}</span>
+            <Badge
+              variant={
+                customer.status === "active"
+                  ? "success"
+                  : customer.status === "pending"
+                    ? "warning"
+                    : "neutral"
+              }
+            >
+              {customer.status.charAt(0).toUpperCase() +
+                customer.status.slice(1)}
+            </Badge>
+            <Badge
+              variant={
+                customer.plan === "enterprise"
+                  ? "primary"
+                  : customer.plan === "pro"
+                    ? "info"
+                    : "neutral"
+              }
+            >
+              {customer.plan.charAt(0).toUpperCase() +
+                customer.plan.slice(1)}
+            </Badge>
+          </div>
+        }
+      >
+        {customer.phone && (
+          <a href={`tel:${customer.phone}`}>
+            <Button variant="outline" leftIcon={<PhoneIcon size={18} />}>
+              <span className="hidden sm:inline">Call</span>
+            </Button>
+          </a>
+        )}
+        {customer.email && (
+          <a href={`mailto:${customer.email}`}>
+            <Button leftIcon={<EnvelopeIcon size={18} />}>
+              <span className="hidden sm:inline">Send Email</span>
+            </Button>
+          </a>
+        )}
+      </PageHeader>
+
+      {/* Metrics */}
+      <MetricStrip>
+        <Metric label="Monthly Revenue" value={formatCurrency(mrr)} />
+        <Metric label="Health Score" value={healthScore || "—"} />
+        <Metric label="Lifetime Value" value={ltv ? `$${(ltv / 1000).toFixed(1)}K` : "—"} />
+        <Metric label="Tenure" value={tenure ? `${tenure} mo` : "—"} />
+      </MetricStrip>
+
+      {/* Activity / Deals Tabs */}
+      <PageTabs
+        tabs={[
+          { id: "activity" as const, label: "Activity" },
+          { id: "deals" as const, label: "Deals" },
+        ]}
+        value={activeTab}
+        onChange={setActiveTab}
+        className="max-sm:overflow-x-auto max-sm:overflow-y-hidden"
+      />
+
+      <DetailLayout
+        aside={
+          <>
+            <PanelSection title="Quick Actions">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<CalendarBlankIcon size={16} />}
+                  onClick={() => setShowMeetingModal(true)}
                 >
-                  {customer.status.charAt(0).toUpperCase() +
-                    customer.status.slice(1)}
-                </Badge>
-                <Badge
-                  variant={
-                    customer.plan === "enterprise"
-                      ? "primary"
-                      : customer.plan === "pro"
-                        ? "info"
-                        : "neutral"
-                  }
+                  Schedule Meeting
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<CheckCircleIcon size={16} />}
+                  onClick={() => setShowTaskModal(true)}
                 >
-                  {customer.plan.charAt(0).toUpperCase() +
-                    customer.plan.slice(1)}
-                </Badge>
+                  Create Task
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<CurrencyDollarIcon size={16} />}
+                  onClick={() => setShowDealModal(true)}
+                >
+                  Create Deal
+                </Button>
               </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {customer.phone && (
-              <a href={`tel:${customer.phone}`}>
-                <Button variant="outline" leftIcon={<PhoneIcon size={18} />}>
-                  <span className="hidden sm:inline">Call</span>
-                </Button>
-              </a>
+            </PanelSection>
+
+            <PanelSection
+              title="Details"
+              actions={
+                <Link href={`/dashboard/customers/${customer.id}/edit`}>
+                  <button className="text-[13px] text-fg-secondary hover:text-fg transition-colors">
+                    Edit Customer
+                  </button>
+                </Link>
+              }
+            >
+              <KeyValueList>
+                <KeyValue label="Phone">{customer.phone || "—"}</KeyValue>
+                <KeyValue label="Company">{customer.company || "—"}</KeyValue>
+                <KeyValue label="Job Title">{customer.job_title || "—"}</KeyValue>
+                <KeyValue label="Industry">{customer.industry || "—"}</KeyValue>
+                <KeyValue label="Website">{customer.website || "—"}</KeyValue>
+                <KeyValue label="Company Size">{customer.company_size || "—"}</KeyValue>
+                <KeyValue label="Location">
+                  {[customer.city, customer.state, customer.country]
+                    .filter(Boolean)
+                    .join(", ") || "—"}
+                </KeyValue>
+                <KeyValue label="Timezone">{customer.timezone || "—"}</KeyValue>
+              </KeyValueList>
+            </PanelSection>
+
+            <PanelSection title="Health Score">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-success-surface flex items-center justify-center">
+                  <span className="text-xl font-semibold text-success">
+                    {healthScore || "—"}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-fg">
+                    {!healthScore
+                      ? "Not scored"
+                      : healthScore >= 80
+                      ? "Excellent"
+                      : healthScore >= 60
+                        ? "Good"
+                        : "At Risk"}
+                  </p>
+                  <p className="text-xs text-fg-secondary">
+                    {!healthScore
+                      ? "No health score yet"
+                      : healthScore >= 80
+                      ? "High engagement, active user"
+                      : "Needs attention"}
+                  </p>
+                </div>
+              </div>
+            </PanelSection>
+
+            <PanelSection title="Revenue">
+              <KeyValueList>
+                <KeyValue label="Monthly Revenue">{formatCurrency(mrr)}</KeyValue>
+                <KeyValue label="Lifetime Value">{ltv ? formatCurrency(ltv) : "—"}</KeyValue>
+              </KeyValueList>
+            </PanelSection>
+
+            {customer.tags && customer.tags.length > 0 && (
+              <PanelSection title="Tags">
+                <div className="flex flex-wrap gap-2">
+                  {customer.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-2.5 py-1 text-xs rounded bg-muted text-fg-secondary"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </PanelSection>
             )}
-            {customer.email && (
-              <a href={`mailto:${customer.email}`}>
-                <Button leftIcon={<EnvelopeIcon size={18} />}>
-                  <span className="hidden sm:inline">Send Email</span>
-                </Button>
-              </a>
+
+            <PanelSection title="Key Dates">
+              <KeyValueList>
+                <KeyValue label="Customer Since">{formatDate(customer.customer_since)}</KeyValue>
+                <KeyValue label="Last Contact">{formatDate(customer.last_contact)}</KeyValue>
+                <KeyValue label="Renewal Date">{formatDate(customer.renewal_date)}</KeyValue>
+              </KeyValueList>
+            </PanelSection>
+          </>
+        }
+      >
+        {activeTab === "activity" && (
+          <>
+            {activityItems.length > 0 ? (
+              <div className="px-4 max-sm:px-0">
+                {activityItems.map((item) => (
+                  <ActivityRow
+                    key={`${item.source}-${item.id}`}
+                    id={item.id}
+                    type={item.type as ActivityRowType}
+                    title={item.title}
+                    description={item.description || ""}
+                    onView={() => {
+                      setSelectedActivity(item);
+                      setShowActivityDrawer(true);
+                    }}
+                    onDelete={() => handleDeleteActivity(item)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center text-fg-secondary">
+                <p>No activity yet</p>
+              </div>
             )}
-          </div>
-        </div>
+          </>
+        )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-lg border border-line p-4 text-center">
-            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
-              {formatCurrency(mrr)}
-            </p>
-            <p className="text-xs text-fg-secondary">
-              Monthly Revenue
-            </p>
-          </div>
-          <div className="rounded-lg border border-line p-4 text-center">
-            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
-              {healthScore || "—"}
-            </p>
-            <p className="text-xs text-fg-secondary">
-              Health Score
-            </p>
-          </div>
-          <div className="rounded-lg border border-line p-4 text-center">
-            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
-              {ltv ? `$${(ltv / 1000).toFixed(1)}K` : "—"}
-            </p>
-            <p className="text-xs text-fg-secondary">
-              Lifetime Value
-            </p>
-          </div>
-          <div className="rounded-lg border border-line p-4 text-center">
-            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
-              {tenure ? `${tenure} mo` : "—"}
-            </p>
-            <p className="text-xs text-fg-secondary">
-              Tenure
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content - Left 2 columns */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Activity / Deals Tabs */}
-          <div className="rounded-lg border border-line bg-surface">
-            <div className="flex border-b border-divider">
-              <button
-                onClick={() => setActiveTab("activity")}
-                className={`px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === "activity"
-                    ? "text-fg border-b border-inverse -mb-px"
-                    : "text-fg-secondary hover:text-fg"
-                }`}
-              >
-                Activity
-              </button>
-              <button
-                onClick={() => setActiveTab("deals")}
-                className={`px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === "deals"
-                    ? "text-fg border-b border-inverse -mb-px"
-                    : "text-fg-secondary hover:text-fg"
-                }`}
-              >
-                Deals
-              </button>
-            </div>
-
-            <div>
-              {activeTab === "activity" && (
-                <>
-                  {activityItems.length > 0 ? (
-                    <div>
-                      {activityItems.map((item) => (
-                        <ActivityRow
-                          key={`${item.source}-${item.id}`}
-                          id={item.id}
-                          type={item.type as ActivityRowType}
-                          title={item.title}
-                          description={item.description || ""}
-                          onView={() => {
-                            setSelectedActivity(item);
-                            setShowActivityDrawer(true);
-                          }}
-                          onDelete={() => handleDeleteActivity(item)}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="py-12 text-center text-fg-secondary">
-                      <p>No activity yet</p>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {activeTab === "deals" && (
-                <>
-                  {customerDeals.length > 0 ? (
-                    <div className="p-4 space-y-4">
+        {activeTab === "deals" && (
+          <>
+            {customerDeals.length > 0 ? (
+              <TableSection flush>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr>
+                        <th className="text-left">Name</th>
+                        <th className="text-left">Stage</th>
+                        <th className="text-left">Probability</th>
+                        <th className="text-left">Created</th>
+                        <th className="text-left">Expected Close</th>
+                        <th className="text-right">Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
                       {customerDeals.map((deal) => {
                         const isClosed =
                           deal.stage === "closed_won" ||
@@ -482,47 +574,34 @@ export function CustomerDetailClient({
                           variant: "neutral",
                         };
                         return (
-                          <Link
+                          <tr
                             key={deal.id}
-                            href={`/dashboard/sales/${deal.id}`}
-                            className={cn(
-                              "block rounded border border-line bg-subtle overflow-hidden transition-all hover:border-fg-muted",
-                              isClosed && "opacity-70 hover:opacity-100",
-                            )}
+                            className={cn(isClosed && "opacity-70 hover:opacity-100")}
                           >
-                            {/* Card Header */}
-                            <div className="flex items-center justify-between px-4 py-3.5 border-b border-line">
-                              <div>
-                                <p className="text-sm font-semibold text-fg">
-                                  {deal.name}
-                                </p>
-                                <p className="text-[13px] text-fg-secondary">
-                                  {deal.company || customerName}
-                                </p>
-                              </div>
-                              <p className="text-xl font-semibold text-fg">
-                                {formatCurrency(deal.value || 0)}
-                              </p>
-                            </div>
-
-                            {/* Card Body */}
-                            <div className="px-4 py-3.5 space-y-3.5">
-                              {/* Stage */}
-                              <div className="flex items-center gap-3">
-                                <span className="text-[13px] text-fg-secondary w-20">
-                                  Stage
-                                </span>
-                                <Badge variant={stage.variant}>
-                                  {stage.label}
-                                </Badge>
-                              </div>
-
-                              {/* Probability - only show if not closed */}
-                              {!isClosed && (
-                                <div className="flex items-center gap-3">
-                                  <span className="text-[13px] text-fg-secondary w-20">
-                                    Probability
+                            <td>
+                              <Link
+                                href={`/dashboard/sales/${deal.id}`}
+                                className="flex items-center gap-2 min-w-0"
+                              >
+                                <CurrencyDollarIcon size={16} className="shrink-0 text-fg-muted" />
+                                <span className="min-w-0">
+                                  <span className="block text-[13px] font-medium text-fg truncate">
+                                    {deal.name}
                                   </span>
+                                  <span className="block text-[12px] text-fg-muted truncate">
+                                    {deal.company || customerName}
+                                  </span>
+                                </span>
+                              </Link>
+                            </td>
+                            <td>
+                              <Badge variant={stage.variant}>
+                                {stage.label}
+                              </Badge>
+                            </td>
+                            <td>
+                              {!isClosed && (
+                                <div className="flex items-center gap-3 min-w-[140px]">
                                   <Progress
                                     value={deal.probability || 0}
                                     color="green"
@@ -533,340 +612,81 @@ export function CustomerDetailClient({
                                   </span>
                                 </div>
                               )}
-
-                              {/* Dates */}
-                              <div className="flex items-center gap-6">
-                                <div>
-                                  <span className="text-xs text-fg-muted block mb-0.5">
-                                    Created
-                                  </span>
-                                  <span className="text-[13px] font-medium text-fg">
-                                    {formatDate(deal.created_at)}
-                                  </span>
-                                </div>
-                                <div>
-                                  <span className="text-xs text-fg-muted block mb-0.5">
-                                    {isClosed ? "Closed" : "Expected Close"}
-                                  </span>
-                                  <span className="text-[13px] font-medium text-fg">
-                                    {formatDate(deal.expected_close_date || deal.close_date || null)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </Link>
+                            </td>
+                            <td className="text-[13px] text-fg">
+                              {formatDate(deal.created_at)}
+                            </td>
+                            <td className="text-[13px] text-fg">
+                              {formatDate(deal.expected_close_date || deal.close_date || null)}
+                              {isClosed && (
+                                <span className="ml-1.5 text-fg-muted">Closed</span>
+                              )}
+                            </td>
+                            <td className="text-right text-[13px] font-semibold text-fg">
+                              {formatCurrency(deal.value || 0)}
+                            </td>
+                          </tr>
                         );
                       })}
-                    </div>
-                  ) : (
-                    <div className="py-12 text-center text-fg-secondary">
-                      <p>No deals to display</p>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Details */}
-          <div className="rounded-lg border border-line bg-surface">
-            <div className="flex h-12 items-center justify-between px-4 border-b border-divider">
-              <h2 className="text-heading-md text-fg">
-                Details
-              </h2>
-              <Link href={`/dashboard/customers/${customer.id}/edit`}>
-                <button className="text-sm text-fg-secondary hover:text-fg transition-colors">
-                  Edit Customer
-                </button>
-              </Link>
-            </div>
-            <div className="p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
-                <div>
-                  <p className="text-xs text-fg-muted mb-1">
-                    Phone
-                  </p>
-                  <p className="text-sm text-fg">
-                    {customer.phone || "—"}
-                  </p>
+                    </tbody>
+                  </table>
                 </div>
-                <div>
-                  <p className="text-xs text-fg-muted mb-1">
-                    Company
-                  </p>
-                  <p className="text-sm text-fg">
-                    {customer.company || "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-fg-muted mb-1">
-                    Job Title
-                  </p>
-                  <p className="text-sm text-fg">
-                    {customer.job_title || "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-fg-muted mb-1">
-                    Industry
-                  </p>
-                  <p className="text-sm text-fg">
-                    {customer.industry || "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-fg-muted mb-1">
-                    Website
-                  </p>
-                  <p className="text-sm text-fg">
-                    {customer.website || "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-fg-muted mb-1">
-                    Company Size
-                  </p>
-                  <p className="text-sm text-fg">
-                    {customer.company_size || "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-fg-muted mb-1">
-                    Location
-                  </p>
-                  <p className="text-sm text-fg">
-                    {[customer.city, customer.state, customer.country]
-                      .filter(Boolean)
-                      .join(", ") || "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-fg-muted mb-1">
-                    Timezone
-                  </p>
-                  <p className="text-sm text-fg">
-                    {customer.timezone || "—"}
-                  </p>
-                </div>
+              </TableSection>
+            ) : (
+              <div className="py-12 text-center text-fg-secondary">
+                <p>No deals to display</p>
               </div>
-            </div>
-          </div>
+            )}
+          </>
+        )}
 
-          {/* Notes */}
-          <div className="rounded-lg border border-line bg-surface">
-            <div className="flex h-12 items-center px-4 border-b border-divider">
-              <h2 className="text-heading-md text-fg">
-                Notes
-              </h2>
-            </div>
-            <div className="p-4">
-              {customerNotes.length > 0 ? (
-                <div className="space-y-6 mb-6">
-                  {customerNotes.map((note) => (
-                    <div key={note.id}>
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium text-fg">
-                          {note.author_name || "Unknown"}
-                        </p>
-                        <p className="text-xs text-fg-muted">
-                          {formatDate(note.created_at)}
-                        </p>
-                      </div>
-                      <p className="text-sm text-fg-secondary leading-relaxed">
-                        {note.content}
-                      </p>
-                    </div>
-                  ))}
+        {/* Notes */}
+        <Section
+          title="Notes"
+          className={cn(activeTab === "deals" && customerDeals.length > 0 && "border-t-0")}
+        >
+          {customerNotes.length > 0 ? (
+            <div className="space-y-6 mb-6">
+              {customerNotes.map((note) => (
+                <div key={note.id}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-fg">
+                      {note.author_name || "Unknown"}
+                    </p>
+                    <p className="text-xs text-fg-muted">
+                      {formatDate(note.created_at)}
+                    </p>
+                  </div>
+                  <p className="text-sm text-fg-secondary leading-relaxed">
+                    {note.content}
+                  </p>
                 </div>
-              ) : (
-                <p className="text-sm text-fg-secondary mb-6">
-                  No notes yet
-                </p>
-              )}
-              <div className="space-y-3">
-                <Textarea
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  placeholder="Add a note..."
-                  rows={3}
-                />
-                <div className="flex justify-end">
-                  <Button
-                    size="sm"
-                    onClick={handleAddNote}
-                    disabled={isPending || !newNote.trim()}
-                  >
-                    {isPending ? "Adding..." : "Add Note"}
-                  </Button>
-                </div>
-              </div>
+              ))}
             </div>
-          </div>
-        </div>
-
-        {/* Sidebar - Right column */}
-        <div className="space-y-6">
-          {/* Quick Actions */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <p className="text-xs font-medium text-fg-secondary mb-4">
-              Quick Actions
+          ) : (
+            <p className="text-sm text-fg-secondary mb-6">
+              No notes yet
             </p>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setShowMeetingModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-line bg-subtle hover:bg-muted transition-colors"
-              >
-                <div className="w-10 h-10 rounded-full border border-line bg-surface flex items-center justify-center">
-                  <CalendarBlankIcon
-                    size={18}
-                    className="text-fg-secondary"
-                  />
-                </div>
-                <span className="text-sm font-medium text-fg">
-                  Schedule Meeting
-                </span>
-              </button>
-              <button
-                onClick={() => setShowTaskModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-line bg-subtle hover:bg-muted transition-colors"
-              >
-                <div className="w-10 h-10 rounded-full border border-line bg-surface flex items-center justify-center">
-                  <CheckCircleIcon
-                    size={18}
-                    className="text-fg-secondary"
-                  />
-                </div>
-                <span className="text-sm font-medium text-fg">
-                  Create Task
-                </span>
-              </button>
-              <button
-                onClick={() => setShowDealModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-line bg-subtle hover:bg-muted transition-colors"
-              >
-                <div className="w-10 h-10 rounded-full border border-line bg-surface flex items-center justify-center">
-                  <CurrencyDollarIcon
-                    size={18}
-                    className="text-fg-secondary"
-                  />
-                </div>
-                <span className="text-sm font-medium text-fg">
-                  Create Deal
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Health Score */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <p className="text-xs font-medium text-fg-secondary mb-4">
-              Health Score
-            </p>
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-success-surface flex items-center justify-center">
-                <span className="text-xl font-semibold text-success">
-                  {healthScore || "—"}
-                </span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-fg">
-                  {!healthScore
-                    ? "Not scored"
-                    : healthScore >= 80
-                    ? "Excellent"
-                    : healthScore >= 60
-                      ? "Good"
-                      : "At Risk"}
-                </p>
-                <p className="text-xs text-fg-secondary">
-                  {!healthScore
-                    ? "No health score yet"
-                    : healthScore >= 80
-                    ? "High engagement, active user"
-                    : "Needs attention"}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Revenue */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <p className="text-xs font-medium text-fg-secondary mb-4">
-              Revenue
-            </p>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs text-fg-secondary mb-1">
-                  Monthly Revenue
-                </p>
-                <p className="text-xl font-semibold text-fg">
-                  {formatCurrency(mrr)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-fg-secondary mb-1">
-                  Lifetime Value
-                </p>
-                <p className="text-xl font-semibold text-fg">
-                  {ltv ? formatCurrency(ltv) : "—"}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Tags */}
-          {customer.tags && customer.tags.length > 0 && (
-            <div className="rounded-lg border border-line bg-surface p-4">
-              <p className="text-xs font-medium text-fg-secondary mb-4">
-                Tags
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {customer.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-2.5 py-1 text-xs rounded bg-muted text-fg-secondary"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
           )}
-
-          {/* Key Dates */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <p className="text-xs font-medium text-fg-secondary mb-4">
-              Key Dates
-            </p>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs text-fg-secondary mb-0.5">
-                  Customer Since
-                </p>
-                <p className="text-sm font-medium text-fg">
-                  {formatDate(customer.customer_since)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-fg-secondary mb-0.5">
-                  Last Contact
-                </p>
-                <p className="text-sm font-medium text-fg">
-                  {formatDate(customer.last_contact)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-fg-secondary mb-0.5">
-                  Renewal Date
-                </p>
-                <p className="text-sm font-medium text-fg">
-                  {formatDate(customer.renewal_date)}
-                </p>
-              </div>
+          <div className="space-y-3">
+            <Textarea
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              placeholder="Add a note..."
+              rows={3}
+            />
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={handleAddNote}
+                disabled={isPending || !newNote.trim()}
+              >
+                {isPending ? "Adding..." : "Add Note"}
+              </Button>
             </div>
           </div>
-        </div>
-      </div>
+        </Section>
+      </DetailLayout>
 
       {/* Schedule Meeting Modal */}
       <ScheduleMeetingModal
@@ -944,6 +764,6 @@ export function CustomerDetailClient({
         onConfirm={executeDelete}
         onCancel={() => setShowDeleteConfirm(false)}
       />
-    </div>
+    </Page>
   );
 }

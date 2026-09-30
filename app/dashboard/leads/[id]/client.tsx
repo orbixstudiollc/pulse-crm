@@ -18,9 +18,23 @@ import {
   UsersThreeIcon,
   PencilSimpleIcon,
   LightningIcon,
+  SegmentedControl,
   type BadgeVariant,
 } from "@/components/ui";
-import { ActivityRow, type ActivityRowType, ConfirmModal } from "@/components/dashboard";
+import {
+  ActivityRow,
+  type ActivityRowType,
+  ConfirmModal,
+  Page,
+  PageHeader,
+  MetricStrip,
+  Metric,
+  Section,
+  DetailLayout,
+  PanelSection,
+  KeyValueList,
+  KeyValue,
+} from "@/components/dashboard";
 import {
   ScheduleMeetingModal,
   CreateTaskModal,
@@ -452,361 +466,265 @@ export function LeadDetailClient({
   });
 
   return (
-    <div className="min-h-full p-6">
-      {/* Header + Stats Card */}
-      <div className="rounded-lg border border-line bg-surface p-4 mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-4 sm:gap-6">
-            <Avatar
-              name={lead.name}
-              size="xl"
-              className="h-16! w-16! sm:h-20! sm:w-20! text-xl! sm:text-2xl!"
-            />
-            <div>
-              <h1 className="text-xl font-semibold text-fg mb-2">
-                {lead.name}
-              </h1>
-              <p className="text-sm text-fg-secondary mb-2">
-                {lead.company || "—"}
-              </p>
-              <div className="flex items-center gap-2">
-                <Badge variant={statusCfg.variant as BadgeVariant} dot>
-                  {statusCfg.label}
-                </Badge>
-                {lead.source && <Badge variant="neutral">{lead.source}</Badge>}
-              </div>
-              <div className="flex items-center gap-2 mt-3">
-                <AIActionButton
-                  label="AI Score"
-                  onClick={handleAIScore}
-                  loading={aiScoring}
-                  size="sm"
-                />
-                <AIActionButton
-                  label="ICP Match"
-                  onClick={handleAIMatch}
-                  loading={aiMatching}
-                  size="sm"
-                  variant="secondary"
-                />
-                <AIActionButton
-                  label="AI Qualify"
-                  onClick={handleAIQualify}
-                  loading={aiQualifying}
-                  size="sm"
-                  variant="secondary"
-                />
-                <AIActionButton
-                  label="Meeting Brief"
-                  onClick={() => setAIBriefOpen(true)}
-                  size="sm"
-                  variant="ghost"
-                />
-              </div>
-            </div>
+    <Page>
+      {/* Record header */}
+      <PageHeader
+        title={lead.name}
+        icon={<Avatar name={lead.name} size="sm" className="h-9! w-9! text-[13px]!" />}
+        description={
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <span>{lead.company || "—"}</span>
+            <Badge variant={statusCfg.variant as BadgeVariant} dot>
+              {statusCfg.label}
+            </Badge>
+            {lead.source && <Badge variant="neutral">{lead.source}</Badge>}
           </div>
-          <div className="flex items-center gap-3">
-            {lead.phone && (
-              <a href={`tel:${lead.phone}`}>
-                <Button variant="outline" leftIcon={<PhoneIcon size={18} />}>
-                  Call
-                </Button>
-              </a>
-            )}
-            {lead.email && (
-              <a href={`mailto:${lead.email}`}>
-                <Button variant="outline" leftIcon={<EnvelopeIcon size={18} />}>
-                  Email
-                </Button>
-              </a>
-            )}
-            <Button
-              variant="outline"
-              leftIcon={<LightningIcon size={18} />}
-              onClick={handleRecalculateScore}
-              disabled={isPending}
-            >
-              {isPending ? "Scoring..." : "Recalculate Score"}
-            </Button>
-            <Button
-              leftIcon={<UsersThreeIcon size={18} />}
-              onClick={() => setShowConvertModal(true)}
-            >
-              Convert to Customer
-            </Button>
-          </div>
+        }
+      >
+        <div className="flex flex-wrap gap-2">
+          {lead.phone && (
+            <a href={`tel:${lead.phone}`}>
+              <Button variant="outline" leftIcon={<PhoneIcon size={18} />}>
+                Call
+              </Button>
+            </a>
+          )}
+          {lead.email && (
+            <a href={`mailto:${lead.email}`}>
+              <Button variant="outline" leftIcon={<EnvelopeIcon size={18} />}>
+                Email
+              </Button>
+            </a>
+          )}
+          <Button
+            variant="outline"
+            leftIcon={<LightningIcon size={18} />}
+            onClick={handleRecalculateScore}
+            disabled={isPending}
+          >
+            {isPending ? "Scoring..." : "Recalculate Score"}
+          </Button>
+          <Button
+            leftIcon={<UsersThreeIcon size={18} />}
+            onClick={() => setShowConvertModal(true)}
+          >
+            Convert to Customer
+          </Button>
         </div>
+      </PageHeader>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-lg border border-line p-4 text-center">
-            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
-              {formatCurrency(lead.estimated_value || 0)}
-            </p>
-            <p className="text-xs text-fg-secondary">
-              Est. Value
-            </p>
-          </div>
-          <div className="rounded-lg border border-line p-4 text-center">
-            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
-              {lead.win_probability || 0}%
-            </p>
-            <p className="text-xs text-fg-secondary">
-              Win Probability
-            </p>
-          </div>
-          <div className="rounded-lg border border-line p-4 text-center">
-            <p className={cn(
-              "text-xl font-semibold mb-1",
-              (lead.score || 0) >= 75
-                ? "text-success"
-                : (lead.score || 0) >= 50
-                  ? "text-warning"
-                  : "text-danger",
-            )}>
+      {/* AI actions */}
+      <div className="flex flex-wrap items-center gap-2 px-8 pb-6 max-sm:px-4">
+        <AIActionButton
+          label="AI Score"
+          onClick={handleAIScore}
+          loading={aiScoring}
+          size="sm"
+        />
+        <AIActionButton
+          label="ICP Match"
+          onClick={handleAIMatch}
+          loading={aiMatching}
+          size="sm"
+          variant="secondary"
+        />
+        <AIActionButton
+          label="AI Qualify"
+          onClick={handleAIQualify}
+          loading={aiQualifying}
+          size="sm"
+          variant="secondary"
+        />
+        <AIActionButton
+          label="Meeting Brief"
+          onClick={() => setAIBriefOpen(true)}
+          size="sm"
+          variant="ghost"
+        />
+      </div>
+
+      {/* Metrics */}
+      <MetricStrip>
+        <Metric label="Est. Value" value={formatCurrency(lead.estimated_value || 0)} />
+        <Metric label="Win Probability" value={`${lead.win_probability || 0}%`} />
+        <Metric
+          label="Lead Score"
+          value={
+            <span
+              className={cn(
+                (lead.score || 0) >= 75
+                  ? "text-success"
+                  : (lead.score || 0) >= 50
+                    ? "text-warning"
+                    : "text-danger",
+              )}
+            >
               {lead.score || 0}
-            </p>
-            <p className="text-xs text-fg-secondary">
-              Lead Score
-            </p>
-          </div>
-          <div className="rounded-lg border border-line p-4 text-center">
-            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
-              {lead.days_in_pipeline || 0}
-            </p>
-            <p className="text-xs text-fg-secondary">
-              Days in Pipeline
-            </p>
-          </div>
-        </div>
-      </div>
+            </span>
+          }
+        />
+        <Metric label="Days in Pipeline" value={lead.days_in_pipeline || 0} />
+      </MetricStrip>
 
-      {/* Score Breakdown & History */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="rounded-lg border border-line bg-surface p-4">
-          <ScoreBreakdown breakdown={scoreBreakdown} />
-        </div>
-        <ScoreHistoryChart history={scoreHistory || []} />
-      </div>
-
-      {/* Qualification */}
-      {qualificationData && (
-        <div className="rounded-lg border border-line bg-surface p-4 mb-6">
-          {/* Tabs */}
-          <div className="flex items-center gap-1 mb-4 border-b border-divider -mx-4 px-4">
-            {([
-              { key: "overview" as const, label: "Overview" },
-              { key: "bant" as const, label: "BANT" },
-              { key: "meddic" as const, label: "MEDDIC" },
-            ]).map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveQualTab(tab.key)}
-                className={cn(
-                  "px-4 py-2.5 text-sm font-medium transition-colors border-b -mb-px",
-                  activeQualTab === tab.key
-                    ? "border-inverse text-fg"
-                    : "border-transparent text-fg-secondary hover:text-fg",
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Tab Content */}
-          {activeQualTab === "overview" && (
-            <QualificationScorecard
-              data={qualificationData.qualification_data}
-              grade={qualificationData.qualification_grade}
-              score={qualificationData.qualification_score}
-            />
-          )}
-          {activeQualTab === "bant" && (
-            <BANTEditor
-              leadId={lead.id}
-              data={qualificationData.qualification_data.bant}
-            />
-          )}
-          {activeQualTab === "meddic" && (
-            <MEDDICEditor
-              leadId={lead.id}
-              data={qualificationData.qualification_data.meddic}
-            />
-          )}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          {/* Activity */}
-          <div className="rounded-lg border border-line bg-surface">
-            <div className="flex h-12 items-center px-4 border-b border-divider">
-              <h2 className="text-heading-md text-fg">
-                Activity
-              </h2>
-            </div>
-            <div>
-              {activityItems.length > 0 ? (
-                <div>
-                  {activityItems.map((item) => (
-                    <ActivityRow
-                      key={`${item.source}-${item.id}`}
-                      id={item.id}
-                      type={item.type as ActivityRowType}
-                      title={item.title}
-                      description={item.description || ""}
-                      onView={() => {
-                        setSelectedActivity(item);
-                        setShowActivityDrawer(true);
-                      }}
-                      onDelete={() => handleDeleteActivity(item)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="py-12 text-center text-fg-secondary">
-                  <p>No activity yet</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div className="rounded-lg border border-line bg-surface">
-            <div className="flex h-12 items-center px-4 border-b border-divider">
-              <h2 className="text-heading-md text-fg">
-                Notes
-              </h2>
-            </div>
-            <div className="p-4">
-              {leadNotes.length > 0 ? (
-                <div className="space-y-6 mb-6">
-                  {leadNotes.map((note) => (
-                    <div key={note.id}>
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium text-fg">
-                          {note.author_name || "Unknown"}
-                        </p>
-                        <p className="text-xs text-fg-muted">
-                          {formatDate(note.created_at)}
-                        </p>
-                      </div>
-                      <p className="text-sm text-fg-secondary leading-relaxed">
-                        {note.content}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-fg-secondary mb-6">
-                  No notes yet
-                </p>
-              )}
-              <div className="space-y-3">
-                <Textarea
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  placeholder="Add a note..."
-                  rows={3}
-                />
-                <div className="flex justify-end">
-                  <Button
-                    size="sm"
-                    onClick={handleAddNote}
-                    disabled={isPending || !newNote.trim()}
-                  >
-                    {isPending ? "Adding..." : "Add Note"}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Quick Actions */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <p className="text-xs font-medium text-fg-secondary mb-4">
-              Quick Actions
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setShowMeetingModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-line bg-subtle hover:bg-muted transition-colors"
-              >
-                <div className="w-10 h-10 rounded-full border border-line bg-surface flex items-center justify-center">
-                  <CalendarBlankIcon size={18} className="text-fg-secondary" />
-                </div>
-                <span className="text-sm font-medium text-fg">
+      <DetailLayout
+        className="border-t border-divider"
+        aside={
+          <>
+            <PanelSection title="Quick Actions">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<CalendarBlankIcon size={16} />}
+                  onClick={() => setShowMeetingModal(true)}
+                >
                   Schedule Meeting
-                </span>
-              </button>
-              <button
-                onClick={() => setShowTaskModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-line bg-subtle hover:bg-muted transition-colors"
-              >
-                <div className="w-10 h-10 rounded-full border border-line bg-surface flex items-center justify-center">
-                  <CheckCircleIcon size={18} className="text-fg-secondary" />
-                </div>
-                <span className="text-sm font-medium text-fg">
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<CheckCircleIcon size={16} />}
+                  onClick={() => setShowTaskModal(true)}
+                >
                   Add Task
-                </span>
-              </button>
-            </div>
-          </div>
+                </Button>
+              </div>
+            </PanelSection>
 
-          {/* Contact Information */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <p className="text-xs font-medium text-fg-secondary mb-4">
-              Contact Information
-            </p>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs text-fg-secondary mb-0.5">Email</p>
-                <p className="text-sm font-medium text-fg">{lead.email}</p>
-              </div>
-              <div>
-                <p className="text-xs text-fg-secondary mb-0.5">Phone</p>
-                <p className="text-sm font-medium text-fg">{lead.phone || "—"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-fg-secondary mb-0.5">LinkedIn</p>
-                <p className="text-sm font-medium text-fg">{lead.linkedin || "—"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-fg-secondary mb-0.5">Location</p>
-                <p className="text-sm font-medium text-fg">{lead.location || "—"}</p>
-              </div>
-            </div>
-          </div>
+            <PanelSection title="Contact Information">
+              <KeyValueList>
+                <KeyValue label="Email">{lead.email}</KeyValue>
+                <KeyValue label="Phone">{lead.phone || "—"}</KeyValue>
+                <KeyValue label="LinkedIn">{lead.linkedin || "—"}</KeyValue>
+                <KeyValue label="Location">{lead.location || "—"}</KeyValue>
+              </KeyValueList>
+            </PanelSection>
 
-          {/* Company */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <p className="text-xs font-medium text-fg-secondary mb-4">
-              Company
+            <PanelSection title="Company">
+              <KeyValueList>
+                <KeyValue label="Company">{lead.company || "—"}</KeyValue>
+                <KeyValue label="Employees">{lead.employees || "—"}</KeyValue>
+                <KeyValue label="Website">{lead.website || "—"}</KeyValue>
+                <KeyValue label="Industry">{lead.industry || "—"}</KeyValue>
+              </KeyValueList>
+            </PanelSection>
+          </>
+        }
+      >
+        {/* Score Breakdown & History */}
+        <Section>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <ScoreBreakdown breakdown={scoreBreakdown} />
+            <ScoreHistoryChart history={scoreHistory || []} />
+          </div>
+        </Section>
+
+        {/* Qualification */}
+        {qualificationData && (
+          <Section>
+            <SegmentedControl
+              options={[
+                { value: "overview" as const, label: "Overview" },
+                { value: "bant" as const, label: "BANT" },
+                { value: "meddic" as const, label: "MEDDIC" },
+              ]}
+              value={activeQualTab}
+              onChange={setActiveQualTab}
+              className="mb-4"
+            />
+
+            {activeQualTab === "overview" && (
+              <QualificationScorecard
+                data={qualificationData.qualification_data}
+                grade={qualificationData.qualification_grade}
+                score={qualificationData.qualification_score}
+              />
+            )}
+            {activeQualTab === "bant" && (
+              <BANTEditor
+                leadId={lead.id}
+                data={qualificationData.qualification_data.bant}
+              />
+            )}
+            {activeQualTab === "meddic" && (
+              <MEDDICEditor
+                leadId={lead.id}
+                data={qualificationData.qualification_data.meddic}
+              />
+            )}
+          </Section>
+        )}
+
+        {/* Activity */}
+        <Section title="Activity">
+          {activityItems.length > 0 ? (
+            <div className="-mx-4">
+              {activityItems.map((item) => (
+                <ActivityRow
+                  key={`${item.source}-${item.id}`}
+                  id={item.id}
+                  type={item.type as ActivityRowType}
+                  title={item.title}
+                  description={item.description || ""}
+                  onView={() => {
+                    setSelectedActivity(item);
+                    setShowActivityDrawer(true);
+                  }}
+                  onDelete={() => handleDeleteActivity(item)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 text-center text-fg-secondary">
+              <p>No activity yet</p>
+            </div>
+          )}
+        </Section>
+
+        {/* Notes */}
+        <Section title="Notes">
+          {leadNotes.length > 0 ? (
+            <div className="space-y-6 mb-6">
+              {leadNotes.map((note) => (
+                <div key={note.id}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-fg">
+                      {note.author_name || "Unknown"}
+                    </p>
+                    <p className="text-xs text-fg-muted">
+                      {formatDate(note.created_at)}
+                    </p>
+                  </div>
+                  <p className="text-sm text-fg-secondary leading-relaxed">
+                    {note.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-fg-secondary mb-6">
+              No notes yet
             </p>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs text-fg-secondary mb-0.5">Company</p>
-                <p className="text-sm font-medium text-fg">{lead.company || "—"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-fg-secondary mb-0.5">Employees</p>
-                <p className="text-sm font-medium text-fg">{lead.employees || "—"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-fg-secondary mb-0.5">Website</p>
-                <p className="text-sm font-medium text-fg">{lead.website || "—"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-fg-secondary mb-0.5">Industry</p>
-                <p className="text-sm font-medium text-fg">{lead.industry || "—"}</p>
-              </div>
+          )}
+          <div className="space-y-3">
+            <Textarea
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              placeholder="Add a note..."
+              rows={3}
+            />
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={handleAddNote}
+                disabled={isPending || !newNote.trim()}
+              >
+                {isPending ? "Adding..." : "Add Note"}
+              </Button>
             </div>
           </div>
-        </div>
-      </div>
+        </Section>
+      </DetailLayout>
 
       <ScheduleMeetingModal
         open={showMeetingModal}
@@ -905,6 +823,6 @@ export function LeadDetailClient({
         onConfirm={executeDelete}
         onCancel={() => setShowDeleteConfirm(false)}
       />
-    </div>
+    </Page>
   );
 }
