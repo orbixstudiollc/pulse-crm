@@ -7,15 +7,15 @@ import {
   UsersIcon,
   TargetIcon,
   CurrencyDollarIcon,
-  SparkleIcon,
   CheckCircleIcon,
   CircleNotchIcon,
   PlusIcon,
   LightningIcon,
   ChartBarIcon,
   ArrowRightIcon,
+  MagnifyingGlassIcon,
 } from "@/components/ui";
-import { PageHeader, StatCard } from "@/components/dashboard";
+import { Page, PageHeader, MetricStrip, Section, TableSection, EmptyState, StatCard } from "@/components/dashboard";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 import { Button } from "@/components/ui";
 import { EnrichmentProgressBanner } from "@/components/lead-finder/EnrichmentProgressBanner";
@@ -181,16 +181,20 @@ export default function LeadFinderOverviewPage() {
   }, [data]);
 
   return (
-    <div className="p-6 lg:p-6 space-y-6">
-      <PageHeader title="Lead Finder">
+    <Page>
+      <PageHeader title="Lead Finder" icon={<MagnifyingGlassIcon size={18} />}>
         <Link href="/dashboard/lead-finder/campaigns/new">
           <Button leftIcon={<PlusIcon size={15} />}>New Campaign</Button>
         </Link>
       </PageHeader>
 
-      <LeadFinderSubNav />
+      <div className="px-8 max-sm:px-4">
+        <LeadFinderSubNav />
+      </div>
 
-      <EnrichmentProgressBanner onBatchFinished={() => void refreshAnalytics()} />
+      <div className="px-8 max-sm:px-4 empty:hidden">
+        <EnrichmentProgressBanner onBatchFinished={() => void refreshAnalytics()} />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-24">
@@ -200,8 +204,8 @@ export default function LeadFinderOverviewPage() {
 
       {!loading && data && (
         <>
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* KPI Metrics */}
+          <MetricStrip>
             <StatCard
               label="Total Leads"
               value={data.totalLeads.toLocaleString()}
@@ -226,11 +230,10 @@ export default function LeadFinderOverviewPage() {
               icon={<CurrencyDollarIcon size={20} className="text-fg-secondary" />}
               hint={`$${data.costs.avgPerLead.toFixed(4)} avg/lead`}
             />
-          </div>
+          </MetricStrip>
 
           {/* Pipeline Status */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <h2 className="text-sm font-semibold text-fg mb-4">Pipeline Status</h2>
+          <Section title="Pipeline Status">
             <div className="flex flex-wrap gap-3">
               {Object.entries(STATUS_CONFIG).map(([status, cfg]) => {
                 const count = data.statusBreakdown[status] ?? 0;
@@ -243,15 +246,15 @@ export default function LeadFinderOverviewPage() {
                 );
               })}
             </div>
-          </div>
+          </Section>
 
           {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-lg border border-line bg-surface p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <ChartBarIcon size={15} className="text-fg-muted" />
-                <h2 className="text-sm font-semibold text-fg">Score Distribution</h2>
-              </div>
+          <div className="grid grid-cols-1 border-t border-divider lg:grid-cols-2">
+            <Section
+              title="Score Distribution"
+              icon={<ChartBarIcon size={15} />}
+              className="border-t-0"
+            >
               {scoreChartData.some((d) => d.count > 0) ? (
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={scoreChartData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
@@ -259,19 +262,19 @@ export default function LeadFinderOverviewPage() {
                     <XAxis dataKey="range" tick={axisTick} />
                     <YAxis tick={axisTick} allowDecimals={false} />
                     <Tooltip content={<ChartTooltip />} />
-                    <Bar dataKey="count" name="Leads" fill={chartAccent} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="count" name="Leads" fill={chartAccent} radius={[2, 2, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-[200px] text-sm text-fg-secondary">No scored leads yet</div>
               )}
-            </div>
+            </Section>
 
-            <div className="rounded-lg border border-line bg-surface p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <LightningIcon size={15} className="text-fg-muted" />
-                <h2 className="text-sm font-semibold text-fg">Leads by Source</h2>
-              </div>
+            <Section
+              title="Leads by Source"
+              icon={<LightningIcon size={15} />}
+              className="border-t border-divider lg:border-t-0 lg:border-l"
+            >
               {sourceChartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
@@ -285,167 +288,172 @@ export default function LeadFinderOverviewPage() {
               ) : (
                 <div className="flex items-center justify-center h-[200px] text-sm text-fg-secondary">No leads yet</div>
               )}
-            </div>
+            </Section>
           </div>
 
-          {/* Cost breakdown + Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-lg border border-line bg-surface p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <CurrencyDollarIcon size={15} className="text-fg-muted" />
-                <h2 className="text-sm font-semibold text-fg">Cost Breakdown</h2>
-              </div>
-              <div className="space-y-3">
-                {[
-                  { label: "Apify (scraping)", value: data.costs.apify, color: "bg-accent-strong" },
-                  { label: "LLM (AI enrichment)", value: data.costs.llm, color: "bg-accent-strong" },
-                ].map((item) => {
-                  const pct = data.costs.total > 0 ? Math.round((item.value / data.costs.total) * 100) : 0;
-                  return (
-                    <div key={item.label}>
-                      <div className="flex items-center justify-between text-xs mb-1.5">
-                        <span className="text-fg-secondary">{item.label}</span>
-                        <span className="text-fg font-medium">
-                          ${item.value.toFixed(4)} <span className="text-fg-muted font-normal">({pct}%)</span>
-                        </span>
-                      </div>
-                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div className={`h-full ${item.color} rounded-full`} style={{ width: `${pct}%` }} />
-                      </div>
+          {/* Cost breakdown */}
+          <Section title="Cost Breakdown" icon={<CurrencyDollarIcon size={15} />}>
+            <div className="max-w-[560px] space-y-3">
+              {[
+                { label: "Apify (scraping)", value: data.costs.apify, color: "bg-accent-strong" },
+                { label: "LLM (AI enrichment)", value: data.costs.llm, color: "bg-accent-strong" },
+              ].map((item) => {
+                const pct = data.costs.total > 0 ? Math.round((item.value / data.costs.total) * 100) : 0;
+                return (
+                  <div key={item.label}>
+                    <div className="flex items-center justify-between text-xs mb-1.5">
+                      <span className="text-fg-secondary">{item.label}</span>
+                      <span className="text-fg font-medium">
+                        ${item.value.toFixed(4)} <span className="text-fg-muted font-normal">({pct}%)</span>
+                      </span>
                     </div>
-                  );
-                })}
-                <div className="pt-2 border-t border-line flex items-center justify-between text-xs">
-                  <span className="text-fg-secondary">Total</span>
-                  <span className="text-fg font-semibold">${data.costs.total.toFixed(4)}</span>
-                </div>
-                <Link href="/dashboard/lead-finder/costs" className="flex items-center gap-1.5 text-xs text-fg-secondary hover:text-fg transition-colors pt-1">
-                  View full cost report <ArrowRightIcon size={12} />
-                </Link>
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div className={`h-full ${item.color} rounded-full`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="pt-2 border-t border-divider flex items-center justify-between text-xs">
+                <span className="text-fg-secondary">Total</span>
+                <span className="text-fg font-semibold">${data.costs.total.toFixed(4)}</span>
               </div>
+              <Link href="/dashboard/lead-finder/costs" className="flex items-center gap-1.5 text-xs text-fg-secondary hover:text-fg transition-colors pt-1">
+                View full cost report <ArrowRightIcon size={12} />
+              </Link>
             </div>
+          </Section>
 
-            <div className="rounded-lg border border-line bg-surface p-4">
-              <div className="flex items-center gap-2 mb-4">
-                <SparkleIcon size={15} className="text-fg-muted" />
-                <h2 className="text-sm font-semibold text-fg">Recent Activity</h2>
-              </div>
+          {/* Recent activity */}
+          <div className="border-t border-divider">
+            <TableSection title="Recent Activity">
               {data.recentActivity.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center gap-3">
                   <p className="text-sm text-fg-secondary">No activity yet</p>
                   <Link href="/dashboard/lead-finder/campaigns/new" className="text-xs text-fg underline underline-offset-2">Create your first campaign</Link>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {data.recentActivity.map((event) => (
-                    <div key={event.id} className="flex items-start gap-3">
-                      <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${event.type === "discovery_success" ? "bg-success" : event.type === "lead_added" ? "bg-accent-strong" : "bg-fg-muted"}`} />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs text-fg leading-snug truncate">{event.description}</p>
-                        <p className="text-xs text-fg-secondary mt-0.5">{timeAgo(event.timestamp)}</p>
-                      </div>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr>
+                        <th className="text-left">Activity</th>
+                        <th className="text-left">When</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.recentActivity.map((event) => (
+                        <tr key={event.id}>
+                          <td className="text-[14px] text-fg">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${event.type === "discovery_success" ? "bg-success" : event.type === "lead_added" ? "bg-accent-strong" : "bg-fg-muted"}`} />
+                              <span className="truncate">{event.description}</span>
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap text-[13px] text-fg-secondary">{timeAgo(event.timestamp)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
-            </div>
+            </TableSection>
           </div>
 
-          {/* Per-campaign mini-cards */}
+          {/* Per-campaign summary */}
           {campaigns.length > 0 && (
-            <div className="rounded-lg border border-line bg-surface p-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <TargetIcon size={15} className="text-fg-muted" />
-                  <h2 className="text-sm font-semibold text-fg">Campaigns</h2>
+            <div className="border-t border-divider">
+              <TableSection
+                title="Campaigns"
+                actions={
+                  <Link
+                    href="/dashboard/lead-finder/campaigns"
+                    className="flex items-center gap-1.5 text-xs text-fg-secondary hover:text-fg transition-colors"
+                  >
+                    View all <ArrowRightIcon size={12} />
+                  </Link>
+                }
+              >
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr>
+                        <th className="text-left">Campaign</th>
+                        <th className="text-left">Status</th>
+                        <th className="text-left">Leads</th>
+                        <th className="text-left">New</th>
+                        <th className="text-left">Avg</th>
+                        <th className="text-left">Schedule</th>
+                        <th className="text-left">Updated</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {campaigns.slice(0, 6).map((campaign) => {
+                        const newCount = Math.max(
+                          0,
+                          (campaign.leadCount ?? 0) - (campaign.enrichedCount ?? 0)
+                        );
+                        return (
+                          <tr key={campaign.id}>
+                            <td>
+                              <Link
+                                href={`/dashboard/lead-finder/campaigns/${campaign.id}`}
+                                className="flex min-w-0 items-center gap-2"
+                              >
+                                <TargetIcon size={16} className="shrink-0 text-fg-muted" />
+                                <span className="min-w-0">
+                                  <span className="block truncate text-[14px] font-medium text-fg">
+                                    {campaign.name}
+                                  </span>
+                                  {campaign.target_niche && (
+                                    <span className="block truncate text-xs text-fg-secondary">
+                                      {campaign.target_niche}
+                                    </span>
+                                  )}
+                                </span>
+                              </Link>
+                            </td>
+                            <td>
+                              <span
+                                className={`rounded-md px-1.5 py-0.5 text-xs font-medium capitalize ${campaignStatusClass(campaign.status)}`}
+                              >
+                                {campaign.status}
+                              </span>
+                            </td>
+                            <td className="text-[14px] font-medium text-fg">{campaign.leadCount ?? 0}</td>
+                            <td className="text-[14px] font-medium text-accent-strong">{newCount}</td>
+                            <td className="text-[14px] font-medium text-fg">{campaign.avgScore ?? 0}</td>
+                            <td className="whitespace-nowrap text-[13px] text-fg-secondary">
+                              {campaign.schedule_frequency
+                                ? `Runs ${campaign.schedule_frequency}`
+                                : "Manual run"}
+                            </td>
+                            <td className="whitespace-nowrap text-[13px] text-fg-secondary">
+                              {campaign.updated_at && timeAgo(campaign.updated_at)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-                <Link
-                  href="/dashboard/lead-finder/campaigns"
-                  className="flex items-center gap-1.5 text-xs text-fg-secondary hover:text-fg transition-colors"
-                >
-                  View all <ArrowRightIcon size={12} />
-                </Link>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {campaigns.slice(0, 6).map((campaign) => {
-                  const newCount = Math.max(
-                    0,
-                    (campaign.leadCount ?? 0) - (campaign.enrichedCount ?? 0)
-                  );
-                  return (
-                    <Link
-                      key={campaign.id}
-                      href={`/dashboard/lead-finder/campaigns/${campaign.id}`}
-                      className="group flex flex-col gap-3 rounded-lg border border-line p-3 transition-colors hover:border-fg-muted hover:bg-muted"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-fg">
-                            {campaign.name}
-                          </p>
-                          {campaign.target_niche && (
-                            <p className="truncate text-xs text-fg-secondary">
-                              {campaign.target_niche}
-                            </p>
-                          )}
-                        </div>
-                        <span
-                          className={`shrink-0 rounded-md px-1.5 py-0.5 text-xs font-medium capitalize ${campaignStatusClass(campaign.status)}`}
-                        >
-                          {campaign.status}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 text-center">
-                        <div>
-                          <p className="text-base font-semibold text-fg">
-                            {campaign.leadCount ?? 0}
-                          </p>
-                          <p className="text-xs text-fg-secondary">
-                            Leads
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-base font-semibold text-accent-strong">
-                            {newCount}
-                          </p>
-                          <p className="text-xs text-fg-secondary">
-                            New
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-base font-semibold text-fg">
-                            {campaign.avgScore ?? 0}
-                          </p>
-                          <p className="text-xs text-fg-secondary">
-                            Avg
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-fg-secondary">
-                        <span>
-                          {campaign.schedule_frequency
-                            ? `Runs ${campaign.schedule_frequency}`
-                            : "Manual run"}
-                        </span>
-                        {campaign.updated_at && (
-                          <span>{timeAgo(campaign.updated_at)}</span>
-                        )}
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
+              </TableSection>
             </div>
           )}
 
           {data.totalLeads === 0 && data.totalCampaigns === 0 && (
-            <div className="rounded-lg border border-line bg-surface px-4 py-12 text-center">
-              <h2 className="text-base font-semibold text-fg mb-2">Get started with Lead Finder</h2>
-              <p className="text-sm text-fg-secondary mb-4">Create a campaign to start discovering and enriching leads automatically.</p>
-              <Link href="/dashboard/lead-finder/campaigns/new">
-                <Button leftIcon={<PlusIcon size={15} />}>Create Campaign</Button>
-              </Link>
-            </div>
+            <EmptyState
+              icon={<MagnifyingGlassIcon />}
+              title="Get started with Lead Finder"
+              description="Create a campaign to start discovering and enriching leads automatically."
+              actions={[
+                {
+                  label: "Create Campaign",
+                  href: "/dashboard/lead-finder/campaigns/new",
+                  variant: "primary",
+                  icon: <PlusIcon size={15} />,
+                },
+              ]}
+            />
           )}
         </>
       )}
@@ -453,6 +461,6 @@ export default function LeadFinderOverviewPage() {
       {!loading && !data && (
         <div className="flex items-center justify-center py-24 text-sm text-fg-secondary">Failed to load analytics.</div>
       )}
-    </div>
+    </Page>
   );
 }

@@ -7,18 +7,15 @@ import { toast } from "sonner";
 import {
   PlusIcon,
   TrashIcon,
-  UsersIcon,
-  SparkleIcon,
   TargetIcon,
-  CurrencyDollarIcon,
-  ChartBarIcon,
+  MagnifyingGlassIcon,
   CircleNotchIcon,
   CheckCircleIcon,
   ClockIcon,
   PlayIcon,
   PauseIcon,
 } from "@/components/ui";
-import { PageHeader } from "@/components/dashboard";
+import { Page, PageHeader, TableSection, EmptyState } from "@/components/dashboard";
 import { Button, Badge } from "@/components/ui";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 
@@ -72,7 +69,7 @@ function DeleteModal({ campaign, onConfirm, onCancel }: { campaign: Campaign; on
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
-      <div className="relative bg-surface border border-line rounded-lg shadow-modal p-4 max-w-md w-full mx-4">
+      <div data-clay-box className="relative bg-surface border border-line rounded-lg shadow-modal p-4 max-w-md w-full mx-4">
         <h3 className="text-base font-semibold text-fg mb-2">Delete Campaign</h3>
         <p className="text-sm text-fg-secondary mb-1">
           Are you sure you want to delete <span className="text-fg font-medium">{campaign.name}</span>?
@@ -123,14 +120,16 @@ export default function CampaignsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-6 space-y-6">
-      <PageHeader title="Lead Finder">
+    <Page>
+      <PageHeader title="Lead Finder" icon={<MagnifyingGlassIcon size={18} />}>
         <Link href="/dashboard/lead-finder/campaigns/new">
           <Button leftIcon={<PlusIcon size={15} />}>New Campaign</Button>
         </Link>
       </PageHeader>
 
-      <LeadFinderSubNav />
+      <div className="px-8 max-sm:px-4">
+        <LeadFinderSubNav />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-24">
@@ -139,120 +138,119 @@ export default function CampaignsPage() {
       )}
 
       {!loading && campaigns.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="w-10 h-10 rounded-md border border-line bg-subtle flex items-center justify-center mb-4">
-            <TargetIcon size={20} className="text-fg-secondary" />
-          </div>
-          <h2 className="text-base font-semibold text-fg mb-2">No campaigns yet</h2>
-          <p className="text-sm text-fg-secondary max-w-sm mb-6">
-            Create your first lead finder campaign to start discovering and enriching leads with AI.
-          </p>
-          <Link href="/dashboard/lead-finder/campaigns/new">
-            <Button leftIcon={<PlusIcon size={15} />}>Create Campaign</Button>
-          </Link>
-        </div>
+        <EmptyState
+          icon={<TargetIcon />}
+          title="No campaigns yet"
+          description="Create your first lead finder campaign to start discovering and enriching leads with AI."
+          actions={[
+            {
+              label: "Create Campaign",
+              href: "/dashboard/lead-finder/campaigns/new",
+              variant: "primary",
+              icon: <PlusIcon size={15} />,
+            },
+          ]}
+        />
       )}
 
       {!loading && campaigns.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {campaigns.map((campaign) => {
-            const statusCfg = STATUS_CONFIG[campaign.status] ?? STATUS_CONFIG.draft;
-            return (
-              <div
-                key={campaign.id}
-                className="group relative rounded-lg border border-line bg-surface p-4 hover:border-fg-muted transition-colors cursor-pointer"
-                onClick={() => router.push(`/dashboard/lead-finder/campaigns/${campaign.id}`)}
-              >
-                {/* Header */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1 min-w-0 pr-3">
-                    <h3 className="text-sm font-semibold text-fg truncate">{campaign.name}</h3>
-                    <p className="text-xs text-fg-secondary mt-0.5 truncate">{campaign.target_niche}</p>
-                  </div>
-                  <Badge variant={statusCfg.color as "neutral" | "success" | "warning" | "info" | "error"}>
-                    <span className="flex items-center gap-1">
-                      {statusCfg.icon}
-                      <span className="capitalize">{campaign.status}</span>
-                    </span>
-                  </Badge>
-                </div>
-
-                {campaign.description && (
-                  <p className="text-xs text-fg-secondary mb-4 line-clamp-2">{campaign.description}</p>
-                )}
-
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 text-fg-muted mb-1">
-                      <UsersIcon size={12} />
-                      <span className="text-xs">Leads</span>
-                    </div>
-                    <p className="text-lg font-semibold text-fg">{campaign.leadCount}</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 text-fg-muted mb-1">
-                      <SparkleIcon size={12} />
-                      <span className="text-xs">Enriched</span>
-                    </div>
-                    <p className="text-lg font-semibold text-fg">
-                      {campaign.enrichedCount}
-                      {campaign.leadCount > 0 && (
-                        <span className="text-xs font-sans font-normal text-fg-muted">
-                          /{campaign.leadCount}
+        <TableSection title="Campaigns">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className="text-left">Campaign</th>
+                  <th className="text-left">Status</th>
+                  <th className="text-left">Leads</th>
+                  <th className="text-left">Enriched</th>
+                  <th className="text-left">Score</th>
+                  <th className="text-left">Cost</th>
+                  <th className="text-left">Provider</th>
+                  <th className="text-left">Created</th>
+                  <th className="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {campaigns.map((campaign) => {
+                  const statusCfg = STATUS_CONFIG[campaign.status] ?? STATUS_CONFIG.draft;
+                  return (
+                    <tr
+                      key={campaign.id}
+                      className="group cursor-pointer transition-colors"
+                      onClick={() => router.push(`/dashboard/lead-finder/campaigns/${campaign.id}`)}
+                    >
+                      <td className="py-2 text-[14px] text-fg">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <TargetIcon size={16} className="shrink-0 text-fg-muted" />
+                          <div className="min-w-0">
+                            <p className="truncate text-[14px] font-medium text-fg">{campaign.name}</p>
+                            <p className="truncate text-xs text-fg-secondary">{campaign.target_niche}</p>
+                            {campaign.description && (
+                              <p className="max-w-[320px] truncate text-xs text-fg-muted">{campaign.description}</p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-2 text-[14px] text-fg">
+                        <Badge variant={statusCfg.color as "neutral" | "success" | "warning" | "info" | "error"}>
+                          <span className="flex items-center gap-1">
+                            {statusCfg.icon}
+                            <span className="capitalize">{campaign.status}</span>
+                          </span>
+                        </Badge>
+                      </td>
+                      <td className="py-2 text-[14px] font-medium text-fg">{campaign.leadCount}</td>
+                      <td className="py-2 text-[14px] font-medium text-fg">
+                        {campaign.enrichedCount}
+                        {campaign.leadCount > 0 && (
+                          <span className="text-xs font-sans font-normal text-fg-muted">
+                            /{campaign.leadCount}
+                          </span>
+                        )}
+                      </td>
+                      <td className={`py-2 text-[14px] font-medium ${campaign.avgScore >= 70 ? "text-success" : campaign.avgScore >= 40 ? "text-warning" : "text-fg"}`}>
+                        {campaign.avgScore}
+                      </td>
+                      <td className="whitespace-nowrap py-2 text-xs text-fg-secondary">
+                        ${campaign.totalCost.toFixed(4)}
+                        {campaign.avgCostPerLead > 0 && (
+                          <span className="text-fg-muted">
+                            {" "}· ${campaign.avgCostPerLead.toFixed(4)}/lead
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2">
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                          campaign.ai_provider === "anthropic"
+                            ? "bg-warning-surface text-warning"
+                            : campaign.ai_provider === "openrouter"
+                              ? "bg-accent-surface text-accent-on-surface"
+                              : "bg-success-surface text-success"
+                        }`}>
+                          {campaign.ai_provider === "anthropic" ? "Claude" : campaign.ai_provider === "openrouter" ? "OpenRouter" : "GPT"}
                         </span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 text-fg-muted mb-1">
-                      <ChartBarIcon size={12} />
-                      <span className="text-xs">Score</span>
-                    </div>
-                    <p className={`text-lg font-semibold ${campaign.avgScore >= 70 ? "text-success" : campaign.avgScore >= 40 ? "text-warning" : "text-fg"}`}>
-                      {campaign.avgScore}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-3 border-t border-row">
-                  <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1 text-xs text-fg-secondary">
-                      <CurrencyDollarIcon size={12} />
-                      ${campaign.totalCost.toFixed(4)}
-                      {campaign.avgCostPerLead > 0 && (
-                        <span className="text-fg-muted">
-                          · ${campaign.avgCostPerLead.toFixed(4)}/lead
-                        </span>
-                      )}
-                    </span>
-                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-                      campaign.ai_provider === "anthropic"
-                        ? "bg-warning-surface text-warning"
-                        : campaign.ai_provider === "openrouter"
-                          ? "bg-accent-surface text-accent-on-surface"
-                          : "bg-success-surface text-success"
-                    }`}>
-                      {campaign.ai_provider === "anthropic" ? "Claude" : campaign.ai_provider === "openrouter" ? "OpenRouter" : "GPT"}
-                    </span>
-                  </div>
-                  <span className="text-xs text-fg-muted">
-                    {relativeDate(campaign.created_at)}
-                  </span>
-
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setDeleteTarget(campaign); }}
-                    disabled={deleting === campaign.id}
-                    className="p-1.5 rounded text-fg-muted hover:text-danger hover:bg-danger-surface transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    {deleting === campaign.id ? <CircleNotchIcon size={14} className="animate-spin" /> : <TrashIcon size={14} />}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                      </td>
+                      <td className="whitespace-nowrap py-2 text-xs text-fg-muted">
+                        {relativeDate(campaign.created_at)}
+                      </td>
+                      <td className="py-2">
+                        <div className="flex justify-end">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDeleteTarget(campaign); }}
+                            disabled={deleting === campaign.id}
+                            className="p-1.5 rounded text-fg-muted hover:text-danger hover:bg-danger-surface transition-colors opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                          >
+                            {deleting === campaign.id ? <CircleNotchIcon size={14} className="animate-spin" /> : <TrashIcon size={14} />}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </TableSection>
       )}
 
       {deleteTarget && (
@@ -262,6 +260,6 @@ export default function CampaignsPage() {
           onCancel={() => setDeleteTarget(null)}
         />
       )}
-    </div>
+    </Page>
   );
 }

@@ -17,8 +17,10 @@ import {
   LockIcon,
   PlusIcon,
   TrashIcon,
+  MagnifyingGlassIcon,
+  FileTextIcon,
 } from "@/components/ui";
-import { PageHeader } from "@/components/dashboard";
+import { Page, PageHeader, PageTabs, Section, TableSection } from "@/components/dashboard";
 import { Button } from "@/components/ui";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 
@@ -137,13 +139,7 @@ function SectionCard({
   children: React.ReactNode;
   className?: string;
 }) {
-  return (
-    <div
-      className={`rounded-lg border border-line bg-surface p-4 ${className}`}
-    >
-      {children}
-    </div>
-  );
+  return <Section className={className}>{children}</Section>;
 }
 
 function SectionHeader({
@@ -157,14 +153,14 @@ function SectionHeader({
 }) {
   return (
     <div className="mb-4">
-      <div className="flex items-center gap-2 mb-0.5">
+      <div className="flex items-center gap-2">
         {icon}
-        <h2 className="text-sm font-semibold text-fg">
+        <h2 className="text-[16px] leading-6 font-semibold text-fg">
           {title}
         </h2>
       </div>
       {subtitle && (
-        <p className="text-xs text-fg-secondary">
+        <p className="mt-0.5 text-[13px] text-fg-muted">
           {subtitle}
         </p>
       )}
@@ -192,29 +188,6 @@ function Field({
 const inputCls =
   "w-full bg-surface border border-line rounded px-3 py-2.5 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-line focus:shadow-focus";
 const textareaCls = `${inputCls} resize-none`;
-
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`h-7 px-3 rounded-sm text-[13px] font-medium transition-colors whitespace-nowrap ${
-        active
-          ? "bg-surface text-fg"
-          : "text-fg-secondary hover:text-fg"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
 
 // ── Main ───────────────────────────────────────────────────────────────────
 
@@ -555,9 +528,11 @@ function LeadFinderSettingsPageInner() {
   );
 
   return (
-    <div className="p-6 lg:p-6 space-y-6">
-      <PageHeader title="Lead Finder" />
-      <LeadFinderSubNav />
+    <Page>
+      <PageHeader title="Lead Finder" icon={<MagnifyingGlassIcon size={18} />} />
+      <div className="px-8 max-sm:px-4">
+        <LeadFinderSubNav />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-24">
@@ -567,13 +542,8 @@ function LeadFinderSettingsPageInner() {
 
       {!loading && data && (
         <>
-          <div
-            className={`flex items-start gap-3 p-4 rounded-lg border ${
-              allRequired
-                ? "bg-success-surface border-success"
-                : "bg-warning-surface border-warning"
-            }`}
-          >
+          <Section className="border-t border-divider py-4">
+          <div className="flex items-start gap-3">
             {allRequired ? (
               <CheckCircleIcon
                 size={18}
@@ -606,12 +576,10 @@ function LeadFinderSettingsPageInner() {
               </p>
             </div>
           </div>
+          </Section>
 
           {envStatus && (
-            <div className="rounded-lg border border-line bg-surface p-4">
-              <p className="text-xs text-fg-secondary mb-2">
-                Environment variables
-              </p>
+            <Section title="Environment variables">
               <div className="flex flex-wrap items-center gap-2">
                 {[
                   { key: "apify", label: "APIFY_TOKEN" },
@@ -640,30 +608,25 @@ function LeadFinderSettingsPageInner() {
                   );
                 })}
               </div>
-            </div>
+            </Section>
           )}
 
-          <div className="flex w-fit max-w-full items-center gap-0.5 overflow-x-auto rounded-md bg-muted p-0.5">
-            {providerTabs.map((t) => (
-              <TabButton
-                key={t.id}
-                active={tab === t.id}
-                onClick={() => setTab(t.id)}
-              >
-                {t.label}
-              </TabButton>
-            ))}
-          </div>
+          <PageTabs
+            tabs={providerTabs}
+            value={tab}
+            onChange={setTab}
+            className="max-sm:overflow-x-auto max-sm:overflow-y-hidden"
+          />
 
           {tab === "providers" && (
-            <SectionCard>
+            <SectionCard className="border-t-0">
               <SectionHeader
                 icon={<LightningIcon size={15} className="text-warning" />}
                 title="AI Providers"
                 subtitle="Configure keys per provider. Pick a default provider and model."
               />
 
-              <div className="space-y-4">
+              <div className="max-w-[560px] space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Field label="Default provider">
                     <select
@@ -755,8 +718,9 @@ function LeadFinderSettingsPageInner() {
                     Leave blank unless you self-host Ollama.
                   </p>
                 </Field>
+              </div>
+              <div className="mt-6 flex justify-end">
                 <Button
-                  className="w-full justify-center"
                   onClick={saveKeys}
                   disabled={savingKeys}
                   leftIcon={
@@ -774,7 +738,7 @@ function LeadFinderSettingsPageInner() {
           )}
 
           {tab === "agency" && (
-            <SectionCard>
+            <SectionCard className="border-t-0">
               <div className="flex items-start justify-between mb-4 gap-3">
                 <SectionHeader
                   icon={<BuildingsIcon size={15} className="text-accent-strong" />}
@@ -783,7 +747,7 @@ function LeadFinderSettingsPageInner() {
                 />
               </div>
 
-              <div className="space-y-4">
+              <div className="max-w-[560px] space-y-4">
                 <Field label="Paste your website/about page text">
                   <textarea
                     rows={4}
@@ -883,7 +847,7 @@ function LeadFinderSettingsPageInner() {
                   />
                 </Field>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-line">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-divider">
                   <Field label="Sender First Name">
                     <input
                       type="text"
@@ -917,8 +881,9 @@ function LeadFinderSettingsPageInner() {
                   persistence API will be enabled in a follow-up migration.
                 </p>
 
+              </div>
+              <div className="mt-6 flex justify-end">
                 <Button
-                  className="w-full justify-center"
                   onClick={saveAgency}
                   disabled={savingAgency}
                   leftIcon={
@@ -936,159 +901,183 @@ function LeadFinderSettingsPageInner() {
           )}
 
           {tab === "actors" && (
-            <SectionCard>
-              <div className="flex items-center justify-between mb-4">
-                <SectionHeader
-                  icon={<LightningIcon size={15} className="text-warning" />}
-                  title="Apify Actors"
-                  subtitle="Discovery and enrichment scrapers. Add your own via Apify actor IDs."
-                />
-                <button
-                  onClick={() => setShowAddActor((v) => !v)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-accent-strong text-on-inverse hover:bg-accent-strong/90 transition-colors flex-shrink-0"
-                >
-                  <PlusIcon size={12} />
-                  Add Custom Actor
-                </button>
-              </div>
-
-              {showAddActor && (
-                <div className="mb-4 p-4 rounded-lg border border-line bg-subtle space-y-3">
-                  <p className="text-xs font-medium text-fg">
-                    New Custom Actor
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <input
-                        type="text"
-                        value={newActorId}
-                        onChange={(e) => setNewActorId(e.target.value)}
-                        placeholder="e.g. apify/linkedin-scraper"
-                        className={inputCls}
-                      />
-                      <p className="text-xs text-fg-muted mt-1">
-                        Apify actor path
-                      </p>
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        value={newActorName}
-                        onChange={(e) => setNewActorName(e.target.value)}
-                        placeholder="Display name"
-                        className={inputCls}
-                      />
-                      <p className="text-xs text-fg-muted mt-1">
-                        Name shown in UI
-                      </p>
-                    </div>
-                    <div>
-                      <select
-                        value={newActorPhase}
-                        onChange={(e) =>
-                          setNewActorPhase(e.target.value as "find" | "enrich")
-                        }
-                        className={inputCls}
-                      >
-                        <option value="find">Find</option>
-                        <option value="enrich">Enrich</option>
-                      </select>
-                      <p className="text-xs text-fg-muted mt-1">Phase</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={addCustomActor}
-                      disabled={savingActor}
-                      leftIcon={
-                        savingActor ? (
-                          <CircleNotchIcon size={13} className="animate-spin" />
-                        ) : (
-                          <PlusIcon size={13} />
-                        )
-                      }
-                    >
-                      Add Actor
-                    </Button>
-                    <button
-                      onClick={() => setShowAddActor(false)}
-                      className="px-3 py-1.5 text-xs text-fg-secondary hover:text-fg transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
+            <>
+              <SectionCard className="border-t-0 pb-4">
+                <div className="flex items-center justify-between">
+                  <SectionHeader
+                    icon={<LightningIcon size={15} className="text-warning" />}
+                    title="Apify Actors"
+                    subtitle="Discovery and enrichment scrapers. Add your own via Apify actor IDs."
+                  />
+                  <button
+                    onClick={() => setShowAddActor((v) => !v)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-accent-strong text-on-inverse hover:bg-accent-strong/90 transition-colors flex-shrink-0"
+                  >
+                    <PlusIcon size={12} />
+                    Add Custom Actor
+                  </button>
                 </div>
-              )}
 
-              <div className="divide-y divide-row">
+                {showAddActor && (
+                  <div className="max-w-[560px] space-y-3">
+                    <p className="text-xs font-medium text-fg">
+                      New Custom Actor
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <input
+                          type="text"
+                          value={newActorId}
+                          onChange={(e) => setNewActorId(e.target.value)}
+                          placeholder="e.g. apify/linkedin-scraper"
+                          className={inputCls}
+                        />
+                        <p className="text-xs text-fg-muted mt-1">
+                          Apify actor path
+                        </p>
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          value={newActorName}
+                          onChange={(e) => setNewActorName(e.target.value)}
+                          placeholder="Display name"
+                          className={inputCls}
+                        />
+                        <p className="text-xs text-fg-muted mt-1">
+                          Name shown in UI
+                        </p>
+                      </div>
+                      <div>
+                        <select
+                          value={newActorPhase}
+                          onChange={(e) =>
+                            setNewActorPhase(e.target.value as "find" | "enrich")
+                          }
+                          className={inputCls}
+                        >
+                          <option value="find">Find</option>
+                          <option value="enrich">Enrich</option>
+                        </select>
+                        <p className="text-xs text-fg-muted mt-1">Phase</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={addCustomActor}
+                        disabled={savingActor}
+                        leftIcon={
+                          savingActor ? (
+                            <CircleNotchIcon size={13} className="animate-spin" />
+                          ) : (
+                            <PlusIcon size={13} />
+                          )
+                        }
+                      >
+                        Add Actor
+                      </Button>
+                      <button
+                        onClick={() => setShowAddActor(false)}
+                        className="px-3 py-1.5 text-xs text-fg-secondary hover:text-fg transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </SectionCard>
+
+              <TableSection>
                 {actors.length === 0 && (
                   <p className="text-sm text-fg-secondary py-4 text-center">
                     No actors loaded.
                   </p>
                 )}
-                {actors.map((actor) => (
-                  <div
-                    key={`${actor.id}:${actor.dbId ?? "builtin"}`}
-                    className="flex items-center gap-3 py-3"
-                  >
-                    <LockIcon
-                      size={14}
-                      className="text-fg-muted flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-fg truncate">
-                        {actor.name}
-                      </p>
-                      <p className="text-xs text-fg-muted truncate">
-                        {actor.id}
-                        {actor.category ? ` · ${actor.category}` : ""}
-                      </p>
-                    </div>
-                    <span
-                      className={`text-xs font-semibold px-2.5 py-0.5 rounded-full flex-shrink-0 ${
-                        actor.phase === "find"
-                          ? "bg-accent-surface text-accent-on-surface"
-                          : "bg-success-surface text-success"
-                      }`}
-                    >
-                      {actor.phase === "find" ? "Find" : "Enrich"}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => validateActor(actor)}
-                      disabled={validatingId === actor.id}
-                      leftIcon={
-                        validatingId === actor.id ? (
-                          <CircleNotchIcon size={12} className="animate-spin" />
-                        ) : null
-                      }
-                    >
-                      Validate
-                    </Button>
-                    {actor.isCustom && actor.dbId && (
-                      <button
-                        onClick={() => deleteCustomActor(actor)}
-                        className="p-1 text-fg-muted hover:text-danger transition-colors flex-shrink-0"
-                        title="Remove actor"
-                      >
-                        <TrashIcon size={14} />
-                      </button>
-                    )}
+                {actors.length > 0 && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr>
+                          <th className="text-left">Actor</th>
+                          <th className="text-left">Phase</th>
+                          <th className="text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {actors.map((actor) => (
+                          <tr key={`${actor.id}:${actor.dbId ?? "builtin"}`}>
+                            <td className="py-2">
+                              <div className="flex items-center gap-2">
+                                <LockIcon
+                                  size={16}
+                                  className="text-fg-muted flex-shrink-0"
+                                />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-fg truncate">
+                                    {actor.name}
+                                  </p>
+                                  <p className="text-xs text-fg-muted truncate">
+                                    {actor.id}
+                                    {actor.category ? ` · ${actor.category}` : ""}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-2">
+                              <span
+                                className={`text-xs font-semibold px-2.5 py-0.5 rounded-full flex-shrink-0 ${
+                                  actor.phase === "find"
+                                    ? "bg-accent-surface text-accent-on-surface"
+                                    : "bg-success-surface text-success"
+                                }`}
+                              >
+                                {actor.phase === "find" ? "Find" : "Enrich"}
+                              </span>
+                            </td>
+                            <td className="py-2">
+                              <div className="flex items-center justify-end gap-3">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => validateActor(actor)}
+                                  disabled={validatingId === actor.id}
+                                  leftIcon={
+                                    validatingId === actor.id ? (
+                                      <CircleNotchIcon size={12} className="animate-spin" />
+                                    ) : null
+                                  }
+                                >
+                                  Validate
+                                </Button>
+                                {actor.isCustom && actor.dbId && (
+                                  <button
+                                    onClick={() => deleteCustomActor(actor)}
+                                    className="p-1 text-fg-muted hover:text-danger transition-colors flex-shrink-0"
+                                    title="Remove actor"
+                                  >
+                                    <TrashIcon size={14} />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                ))}
-              </div>
-            </SectionCard>
+                )}
+              </TableSection>
+            </>
           )}
 
           {tab === "enrichment" && (
-            <SectionCard>
+            <SectionCard className="border-t-0">
               <SectionHeader
                 icon={<GearIcon size={15} className="text-accent-strong" />}
                 title="Enrichment"
                 subtitle="How aggressively leads are enriched across campaigns."
               />
-              <div className="space-y-4">
+              <div className="max-w-[560px] space-y-4">
                 <Field label={`Parallel enrichment limit (${parallelLimit})`}>
                   <input
                     type="range"
@@ -1104,8 +1093,9 @@ function LeadFinderSettingsPageInner() {
                     but consume more Apify credits.
                   </p>
                 </Field>
+              </div>
+              <div className="mt-6 flex justify-end">
                 <Button
-                  className="w-full justify-center"
                   onClick={saveEnrichment}
                   disabled={savingEnrichment}
                   leftIcon={
@@ -1132,7 +1122,7 @@ function LeadFinderSettingsPageInner() {
           )}
         </>
       )}
-    </div>
+    </Page>
   );
 }
 
@@ -1217,103 +1207,122 @@ function ObsidianSyncSection({
   };
 
   return (
-    <SectionCard>
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <SectionHeader
-          icon={<FloppyDiskIcon size={15} className="text-success" />}
-          title="Obsidian Sync"
-          subtitle="Daily observation files generated from your campaigns."
-        />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void load()}
-          disabled={loading}
-          leftIcon={
-            loading ? (
-              <CircleNotchIcon size={12} className="animate-spin" />
-            ) : null
-          }
-        >
-          Refresh
-        </Button>
-      </div>
-
-      <div className="space-y-4 mb-6">
-        <p className="text-xs text-fg-secondary">Observation files are written to a server-managed vault folder for this organization.</p>
-        <label className="flex items-center gap-2 text-sm text-fg">
-          <input
-            type="checkbox"
-            checked={enabled}
-            onChange={(e) => setEnabled(e.target.checked)}
+    <>
+      <SectionCard className="border-t-0">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <SectionHeader
+            icon={<FloppyDiskIcon size={15} className="text-success" />}
+            title="Obsidian Sync"
+            subtitle="Daily observation files generated from your campaigns."
           />
-          Enable Obsidian sync for this organization
-        </label>
-        <p className="text-xs text-fg-secondary">Obsidian sync writes files on the server and only works on self-hosted deployments.</p>
-        <Button
-          onClick={onSave}
-          disabled={saving}
-          leftIcon={
-            saving ? (
-              <CircleNotchIcon size={14} className="animate-spin" />
-            ) : (
-              <FloppyDiskIcon size={14} />
-            )
-          }
-        >
-          Save Obsidian Settings
-        </Button>
-      </div>
-
-      <p className="text-xs font-medium text-fg mb-2">
-        Recent observation files
-      </p>
-
-      {error && (
-        <p className="text-xs text-danger mb-3">{error}</p>
-      )}
-
-      {!error && files.length === 0 && !loading && (
-        <p className="text-sm text-fg-secondary py-4 text-center border border-dashed border-line rounded-lg">
-          No observation files yet.
-        </p>
-      )}
-
-      {files.length > 0 && (
-        <div className="divide-y divide-row rounded-lg border border-line">
-          {files.map((file) => (
-            <div
-              key={file.date}
-              className="flex items-center justify-between gap-3 px-3 py-2"
-            >
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-fg">
-                  {file.date}
-                </p>
-                {file.path && (
-                  <p className="truncate text-xs text-fg-secondary">
-                    {file.path}
-                  </p>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => void viewFile(file.date)}
-              >
-                View
-              </Button>
-            </div>
-          ))}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void load()}
+            disabled={loading}
+            leftIcon={
+              loading ? (
+                <CircleNotchIcon size={12} className="animate-spin" />
+              ) : null
+            }
+          >
+            Refresh
+          </Button>
         </div>
-      )}
+
+        <div className="max-w-[560px] space-y-4">
+          <p className="text-xs text-fg-secondary">Observation files are written to a server-managed vault folder for this organization.</p>
+          <label className="flex items-center gap-2 text-sm text-fg">
+            <input
+              type="checkbox"
+              checked={enabled}
+              onChange={(e) => setEnabled(e.target.checked)}
+            />
+            Enable Obsidian sync for this organization
+          </label>
+          <p className="text-xs text-fg-secondary">Obsidian sync writes files on the server and only works on self-hosted deployments.</p>
+        </div>
+        <div className="mt-6 flex justify-end">
+          <Button
+            onClick={onSave}
+            disabled={saving}
+            leftIcon={
+              saving ? (
+                <CircleNotchIcon size={14} className="animate-spin" />
+              ) : (
+                <FloppyDiskIcon size={14} />
+              )
+            }
+          >
+            Save Obsidian Settings
+          </Button>
+        </div>
+      </SectionCard>
+
+      <div className="border-t border-divider">
+        <TableSection title="Recent observation files">
+          {error && (
+            <p className="px-8 max-sm:px-4 pb-3 text-xs text-danger">{error}</p>
+          )}
+
+          {!error && files.length === 0 && !loading && (
+            <p className="text-sm text-fg-secondary py-4 text-center">
+              No observation files yet.
+            </p>
+          )}
+
+          {files.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="text-left">File</th>
+                    <th className="text-left">Path</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {files.map((file) => (
+                    <tr key={file.date}>
+                      <td className="py-2">
+                        <div className="flex items-center gap-2">
+                          <FileTextIcon size={16} className="shrink-0 text-fg-muted" />
+                          <p className="text-sm font-medium text-fg">
+                            {file.date}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="py-2">
+                        {file.path && (
+                          <p className="truncate text-xs text-fg-secondary">
+                            {file.path}
+                          </p>
+                        )}
+                      </td>
+                      <td className="py-2">
+                        <div className="flex justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void viewFile(file.date)}
+                          >
+                            View
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </TableSection>
+      </div>
 
       {previewDate && (
-        <div className="mt-4 rounded-lg border border-line">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-line">
-            <p className="text-sm font-medium text-fg">
-              {previewDate}
-            </p>
+        <Section
+          title={previewDate}
+          actions={
             <Button
               variant="ghost"
               size="sm"
@@ -1324,8 +1333,9 @@ function ObsidianSyncSection({
             >
               Close
             </Button>
-          </div>
-          <div className="max-h-80 overflow-auto p-3">
+          }
+        >
+          <div className="max-h-80 overflow-auto">
             {previewLoading ? (
               <div className="flex items-center gap-2 text-sm text-fg-secondary">
                 <CircleNotchIcon size={14} className="animate-spin" />
@@ -1337,8 +1347,8 @@ function ObsidianSyncSection({
               </pre>
             )}
           </div>
-        </div>
+        </Section>
       )}
-    </SectionCard>
+    </>
   );
 }

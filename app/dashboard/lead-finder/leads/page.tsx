@@ -12,8 +12,6 @@ import {
   EnvelopeIcon,
   DownloadIcon,
   XIcon,
-  CaretLeftIcon,
-  CaretRightIcon,
   ArrowSquareOutIcon,
   FunnelIcon,
   TargetIcon,
@@ -22,6 +20,7 @@ import {
   Select,
   Button,
 } from "@/components/ui";
+import { Page, PageHeader, Section, TableSection, TableHeader, TableFooter, EmptyState } from "@/components/dashboard";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 import { LeadDetailDrawer } from "@/components/lead-finder/LeadDetailDrawer";
 import { ScoreBadge } from "@/components/lead-finder/ScoreBadge";
@@ -616,19 +615,17 @@ export default function AllLeadsPage() {
   // ── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 lg:p-6 space-y-6">
+    <Page>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-fg">
-            Lead Finder
-          </h1>
-          <p className="text-sm text-fg-secondary mt-1">
-            {selectedCampaign
-              ? `${filteredLeads.length} of ${total} leads in ${selectedCampaign.name}`
-              : "All leads across campaigns"}
-          </p>
-        </div>
+      <PageHeader
+        title="Lead Finder"
+        icon={<MagnifyingGlassIcon size={18} />}
+        description={
+          selectedCampaign
+            ? `${filteredLeads.length} of ${total} leads in ${selectedCampaign.name}`
+            : "All leads across campaigns"
+        }
+      >
         {filteredLeads.length > 0 && (
           <Button
             variant="outline"
@@ -639,22 +636,37 @@ export default function AllLeadsPage() {
             Export CSV
           </Button>
         )}
-      </div>
+      </PageHeader>
 
       {/* Sub nav */}
-      <LeadFinderSubNav />
+      <div className="px-8 max-sm:px-4">
+        <LeadFinderSubNav />
+      </div>
 
-      <EnrichmentProgressBanner
-        campaignId={campaignFilter || undefined}
-        batchId={activeBatchId}
-        onBatchFinished={() => {
-          setActiveBatchId(null);
-          void fetchLeads();
+      <div className="px-8 max-sm:px-4 empty:hidden">
+        <EnrichmentProgressBanner
+          campaignId={campaignFilter || undefined}
+          batchId={activeBatchId}
+          onBatchFinished={() => {
+            setActiveBatchId(null);
+            void fetchLeads();
+          }}
+        />
+      </div>
+
+      {/* Table heading row */}
+      <TableHeader
+        title="Leads"
+        rowsPerPage={String(pageSize)}
+        onRowsPerPageChange={(value) => {
+          setPageSize(Number(value));
+          setOffset(0);
         }}
+        rowsPerPageOptions={PAGE_SIZES.map((s) => ({ label: String(s), value: String(s) }))}
       />
 
-      {/* Filter bar */}
-      <div className="flex flex-wrap items-center gap-3">
+      {/* Filter row */}
+      <div className="flex flex-wrap items-center gap-3 px-8 max-sm:px-4 py-2 border-t border-divider">
         {/* Search */}
         <div className="flex-1 min-w-[200px] max-w-xs">
           <Input
@@ -704,13 +716,15 @@ export default function AllLeadsPage() {
         >
           AI Filter
         </Button>
+      </div>
 
-        {/* Bulk actions */}
-        {selectedLeads.size > 0 && (
-          <div className="flex items-center gap-2 ml-auto">
-            <span className="text-xs text-fg-secondary">
-              {selectedLeads.size} selected
-            </span>
+      {/* Bulk actions */}
+      {selectedLeads.size > 0 && (
+        <div className="flex h-10 items-center justify-between gap-4 px-8 max-sm:px-4 border-t border-divider">
+          <span className="text-[13px] font-medium text-fg">
+            {selectedLeads.size} selected
+          </span>
+          <div className="flex items-center gap-2">
             <Button
               variant="secondary"
               size="sm"
@@ -746,12 +760,12 @@ export default function AllLeadsPage() {
               Delete
             </Button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* AI Filter panel */}
       {showAIFilter && (
-        <div className="p-4 bg-surface border border-line rounded-lg">
+        <Section className="py-4">
           <p className="text-xs text-fg-secondary mb-2">
             Describe the kind of leads you are looking for in natural language:
           </p>
@@ -788,12 +802,12 @@ export default function AllLeadsPage() {
               Clear
             </Button>
           </form>
-        </div>
+        </Section>
       )}
 
       {/* Active AI filter chips */}
       {aiFilters.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 px-8 max-sm:px-4 py-3 border-t border-divider">
           <span className="text-xs font-medium text-fg-secondary">
             Active filters:
           </span>
@@ -822,7 +836,7 @@ export default function AllLeadsPage() {
 
       {/* Loading */}
       {loading && (
-        <div className="flex items-center justify-center py-24">
+        <div className="flex items-center justify-center py-24 border-t border-divider">
           <CircleNotchIcon
             size={32}
             className="animate-spin text-fg-secondary"
@@ -832,269 +846,215 @@ export default function AllLeadsPage() {
 
       {/* Empty state */}
       {!loading && filteredLeads.length === 0 && (
-        <div className="bg-surface border border-line rounded-lg flex flex-col items-center justify-center py-16">
-          <UsersIcon
-            size={40}
-            className="mb-4 text-fg-muted"
+        <div className="border-t border-divider">
+          <EmptyState
+            icon={<UsersIcon />}
+            title={
+              aiFilters.length > 0
+                ? "No leads match the current filters"
+                : selectedCampaign
+                  ? "No leads found in this campaign"
+                  : "No leads found"
+            }
+            description=""
           />
-          <p className="text-fg-secondary text-sm">
-            {aiFilters.length > 0
-              ? "No leads match the current filters"
-              : selectedCampaign
-                ? "No leads found in this campaign"
-                : "No leads found"}
-          </p>
         </div>
       )}
 
       {/* Leads table */}
       {!loading && filteredLeads.length > 0 && (
-        <div className="bg-surface border border-line rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr>
-                  <th className="h-10 px-3 w-10 border-b border-divider">
-                    <input
-                      type="checkbox"
-                      checked={
-                        selectedLeads.size === filteredLeads.length &&
-                        filteredLeads.length > 0
-                      }
-                      onChange={toggleSelectAll}
-                      className="rounded border-line bg-subtle"
-                    />
-                  </th>
-                  <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider min-w-[180px]">
-                    Name
-                  </th>
-                  {/* Dynamic campaign columns */}
-                  {dynFields.map((f) => (
-                    <th
-                      key={f.id}
-                      className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider min-w-[120px]"
-                    >
-                      {f.label}
+        <>
+          <TableSection>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr>
+                    <th className="w-10">
+                      <input
+                        type="checkbox"
+                        checked={
+                          selectedLeads.size === filteredLeads.length &&
+                          filteredLeads.length > 0
+                        }
+                        onChange={toggleSelectAll}
+                        className="rounded border-line bg-subtle"
+                      />
                     </th>
-                  ))}
-                  <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
-                    Email
-                  </th>
-                  {!campaignFilter && (
-                    <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
-                      Campaign
+                    <th className="text-[13px] font-medium text-fg-secondary min-w-[180px]">
+                      Name
                     </th>
-                  )}
-                  <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider min-w-[70px]">
-                    Score
-                  </th>
-                  <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider min-w-[80px]">
-                    Cost
-                  </th>
-                  <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider min-w-[100px]">
-                    Status
-                  </th>
-                  <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
-                    Source
-                  </th>
-                  <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
-                    Created
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLeads.map((lead) => {
-                  const displayName =
-                    lead.display_name || lead.email || lead.website || "Unknown";
-                  const totalCost =
-                    (lead.llm_cost_usd ?? 0) + (lead.apify_cost_usd ?? 0);
-
-                  return (
-                    <tr
-                      key={lead.id}
-                      className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors cursor-pointer"
-                      onClick={() => setDrawerLeadId(lead.id)}
-                    >
-                      <td
-                        className="px-3 py-2"
-                        onClick={(e) => e.stopPropagation()}
+                    {/* Dynamic campaign columns */}
+                    {dynFields.map((f) => (
+                      <th
+                        key={f.id}
+                        className="text-[13px] font-medium text-fg-secondary min-w-[120px]"
                       >
-                        <input
-                          type="checkbox"
-                          checked={selectedLeads.has(lead.id)}
-                          onChange={() => toggleSelect(lead.id)}
-                          className="rounded border-line bg-subtle"
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setDrawerLeadId(lead.id); }}
-                          className="text-sm text-fg font-medium hover:underline break-words line-clamp-2 text-left cursor-pointer"
+                        {f.label}
+                      </th>
+                    ))}
+                    <th className="text-[13px] font-medium text-fg-secondary">
+                      Email
+                    </th>
+                    {!campaignFilter && (
+                      <th className="text-[13px] font-medium text-fg-secondary">
+                        Campaign
+                      </th>
+                    )}
+                    <th className="text-[13px] font-medium text-fg-secondary min-w-[70px]">
+                      Score
+                    </th>
+                    <th className="text-[13px] font-medium text-fg-secondary min-w-[80px]">
+                      Cost
+                    </th>
+                    <th className="text-[13px] font-medium text-fg-secondary min-w-[100px]">
+                      Status
+                    </th>
+                    <th className="text-[13px] font-medium text-fg-secondary">
+                      Source
+                    </th>
+                    <th className="text-[13px] font-medium text-fg-secondary">
+                      Created
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLeads.map((lead) => {
+                    const displayName =
+                      lead.display_name || lead.email || lead.website || "Unknown";
+                    const totalCost =
+                      (lead.llm_cost_usd ?? 0) + (lead.apify_cost_usd ?? 0);
+
+                    return (
+                      <tr
+                        key={lead.id}
+                        className="transition-colors cursor-pointer"
+                        onClick={() => setDrawerLeadId(lead.id)}
+                      >
+                        <td
+                          className="py-2"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          {displayName}
-                        </button>
-                      </td>
-                      {/* Dynamic field columns */}
-                      {dynFields.map((f) => {
-                        const val = formatFieldValue(
-                          resolveFieldValue(lead, f.id),
-                          f.type
-                        );
-                        if (
-                          (f.type === "url" || val.startsWith("http")) &&
-                          val !== "\u2014"
-                        ) {
+                          <input
+                            type="checkbox"
+                            checked={selectedLeads.has(lead.id)}
+                            onChange={() => toggleSelect(lead.id)}
+                            className="rounded border-line bg-subtle"
+                          />
+                        </td>
+                        <td className="py-2">
+                          <div className="flex items-center gap-2">
+                            <UsersIcon size={16} className="shrink-0 text-fg-muted" />
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setDrawerLeadId(lead.id); }}
+                              className="text-sm text-fg font-medium hover:underline break-words line-clamp-2 text-left cursor-pointer"
+                            >
+                              {displayName}
+                            </button>
+                          </div>
+                        </td>
+                        {/* Dynamic field columns */}
+                        {dynFields.map((f) => {
+                          const val = formatFieldValue(
+                            resolveFieldValue(lead, f.id),
+                            f.type
+                          );
+                          if (
+                            (f.type === "url" || val.startsWith("http")) &&
+                            val !== "—"
+                          ) {
+                            return (
+                              <td
+                                key={f.id}
+                                className="py-2 text-xs truncate max-w-[180px]"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <a
+                                  href={val}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-accent-strong hover:underline inline-flex items-center gap-1"
+                                >
+                                  {val
+                                    .replace(/^https?:\/\/(www\.)?/, "")
+                                    .split("/")[0]}
+                                  <ArrowSquareOutIcon size={10} />
+                                </a>
+                              </td>
+                            );
+                          }
                           return (
                             <td
                               key={f.id}
-                              className="px-3 py-2 text-xs truncate max-w-[180px]"
-                              onClick={(e) => e.stopPropagation()}
+                              className="py-2 text-sm text-fg truncate max-w-[180px]"
                             >
-                              <a
-                                href={val}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-accent-strong hover:underline inline-flex items-center gap-1"
-                              >
-                                {val
-                                  .replace(/^https?:\/\/(www\.)?/, "")
-                                  .split("/")[0]}
-                                <ArrowSquareOutIcon size={10} />
-                              </a>
+                              {val}
                             </td>
                           );
-                        }
-                        return (
-                          <td
-                            key={f.id}
-                            className="px-3 py-2 text-sm text-fg truncate max-w-[180px]"
-                          >
-                            {val}
+                        })}
+                        <td className="py-2">
+                          {lead.email ? (
+                            <span className="text-sm text-fg-secondary flex items-center gap-1">
+                              <EnvelopeIcon size={12} />
+                              {lead.email}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-fg-muted">
+                              --
+                            </span>
+                          )}
+                        </td>
+                        {!campaignFilter && (
+                          <td className="py-2">
+                            <span className="text-xs text-fg-secondary">
+                              {campaignNameMap[lead.campaign_id] || "Unknown"}
+                            </span>
                           </td>
-                        );
-                      })}
-                      <td className="px-3 py-2">
-                        {lead.email ? (
-                          <span className="text-sm text-fg-secondary flex items-center gap-1">
-                            <EnvelopeIcon size={12} />
-                            {lead.email}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-fg-muted">
-                            --
-                          </span>
                         )}
-                      </td>
-                      {!campaignFilter && (
-                        <td className="px-3 py-2">
-                          <span className="text-xs text-fg-secondary">
-                            {campaignNameMap[lead.campaign_id] || "Unknown"}
+                        <td className="py-2">
+                          <ScoreBadge score={lead.score} />
+                        </td>
+                        <td className="py-2 text-xs text-fg-secondary tabular-nums">
+                          {totalCost > 0 ? `$${totalCost.toFixed(4)}` : "—"}
+                        </td>
+                        <td
+                          className="py-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <StatusDropdown
+                            status={lead.status}
+                            onSelect={(s) => updateLeadStatus(lead.id, s)}
+                          />
+                        </td>
+                        <td className="py-2">
+                          <span className="text-xs text-fg-secondary capitalize">
+                            {lead.source?.replace(/_/g, " ") || "--"}
                           </span>
                         </td>
-                      )}
-                      <td className="px-3 py-2">
-                        <ScoreBadge score={lead.score} />
-                      </td>
-                      <td className="px-3 py-2 text-xs text-fg-secondary tabular-nums">
-                        {totalCost > 0 ? `$${totalCost.toFixed(4)}` : "\u2014"}
-                      </td>
-                      <td
-                        className="px-3 py-2"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <StatusDropdown
-                          status={lead.status}
-                          onSelect={(s) => updateLeadStatus(lead.id, s)}
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className="text-xs text-fg-secondary capitalize">
-                          {lead.source?.replace(/_/g, " ") || "--"}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className="text-xs text-fg-secondary">
-                          {new Date(lead.created_at).toLocaleDateString()}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        <td className="py-2">
+                          <span className="text-xs text-fg-secondary">
+                            {new Date(lead.created_at).toLocaleDateString()}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </TableSection>
 
           {/* Pagination */}
-          {total > 0 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-line">
-              <div className="flex items-center gap-4">
-                <span className="text-xs text-fg-secondary">
-                  Showing {offset + 1}-{Math.min(offset + pageSize, total)} of{" "}
-                  {total}
-                </span>
-                <Select
-                  value={String(pageSize)}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setOffset(0);
-                  }}
-                  className="text-xs py-1"
-                >
-                  {PAGE_SIZES.map((s) => (
-                    <option key={String(s)} value={String(s)}>
-                      {`${s} per page`}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => goToPage(currentPage - 1)}
-                  disabled={currentPage <= 1}
-                  className="p-1.5 rounded text-fg-secondary hover:text-fg disabled:opacity-30 transition-colors"
-                >
-                  <CaretLeftIcon size={14} />
-                </button>
-                {Array.from(
-                  { length: Math.min(5, totalPages) },
-                  (_, i) => {
-                    let page: number;
-                    if (totalPages <= 5) {
-                      page = i + 1;
-                    } else if (currentPage <= 3) {
-                      page = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      page = totalPages - 4 + i;
-                    } else {
-                      page = currentPage - 2 + i;
-                    }
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => goToPage(page)}
-                        className={`h-8 min-w-8 px-2 rounded-md border text-[13px] font-medium transition-colors ${
-                          page === currentPage
-                            ? "border-accent text-accent-strong bg-surface"
-                            : "border-line text-fg-secondary hover:bg-subtle"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  }
-                )}
-                <button
-                  onClick={() => goToPage(currentPage + 1)}
-                  disabled={currentPage >= totalPages}
-                  className="p-1.5 rounded text-fg-secondary hover:text-fg disabled:opacity-30 transition-colors"
-                >
-                  <CaretRightIcon size={14} />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+          <TableFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={total}
+            startIndex={offset + 1}
+            endIndex={Math.min(offset + pageSize, total)}
+            onPageChange={goToPage}
+            itemLabel="leads"
+          />
+        </>
       )}
 
       <LeadDetailDrawer
@@ -1103,7 +1063,7 @@ export default function AllLeadsPage() {
         leadId={drawerLeadId}
         campaignId={campaignFilter || null}
       />
-    </div>
+    </Page>
   );
 }
 
@@ -1141,7 +1101,7 @@ function StatusDropdown({
         {status}
       </button>
       {open && (
-        <div className="absolute z-50 mt-1 left-0 bg-surface border border-line rounded-lg shadow-dropdown py-1 min-w-[140px]">
+        <div data-clay-box className="absolute z-50 mt-1 left-0 bg-surface border border-line rounded-lg shadow-dropdown py-1 min-w-[140px]">
           {STATUS_OPTIONS.map((s) => (
             <button
               key={s}
