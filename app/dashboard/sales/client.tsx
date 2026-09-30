@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo, useCallback } from "react";
+import { useState, useTransition, useMemo, useCallback, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { Button, Badge, Progress, PlusIcon, FadersIcon } from "@/components/ui";
 import { Page, PageHeader, MetricStrip, Metric, PageTabs } from "@/components/dashboard";
@@ -20,6 +20,7 @@ import {
   type PipelineStage,
 } from "@/lib/data/sales";
 import { cn } from "@/lib/utils";
+import { parseDealDate, stageDays } from "@/lib/deals/metrics";
 import { createDeal, updateDealStage } from "@/lib/actions/deals";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -51,7 +52,6 @@ interface DealRecord {
   owner_avatar?: string | null;
   created_at: string;
   days_in_stage?: number | null;
-  stage_changed_at?: string | null;
   [key: string]: unknown;
 }
 
@@ -67,25 +67,12 @@ type MappedDeal = {
   closeDate: string;
   ownerAvatar: string;
   createdAt: string;
-  daysInStage: number;
+  /** null until mounted: it depends on today's local date */
+  daysInStage: number | null;
 };
 
-// Map DB deal to display shape
-function mapDeal(d: DealRecord): MappedDeal {
-  // Compute days in current stage
-  let daysInStage = 0;
-  if (d.days_in_stage != null) {
-    daysInStage = d.days_in_stage;
-  } else if (d.stage_changed_at) {
-    daysInStage = Math.floor(
-      (Date.now() - new Date(d.stage_changed_at).getTime()) / (1000 * 60 * 60 * 24),
-    );
-  } else {
-    daysInStage = Math.floor(
-      (Date.now() - new Date(d.created_at).getTime()) / (1000 * 60 * 60 * 24),
-    );
-  }
-
+// Map DB deal to display shape (now = null before mount)
+function mapDeal(d: DealRecord, now: Date | null): MappedDeal {
   return {
     id: d.id,
     name: d.name || "",
@@ -96,11 +83,11 @@ function mapDeal(d: DealRecord): MappedDeal {
     stage: (d.stage || "discovery") as PipelineStage,
     probability: d.probability || 0,
     closeDate: d.close_date
-      ? new Date(d.close_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      ? parseDealDate(d.close_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
       : "",
     ownerAvatar: d.owner_avatar || "/images/avatars/user.jpg",
     createdAt: d.created_at,
-    daysInStage,
+    daysInStage: now ? stageDays(d.days_in_stage, d.created_at, now) : null,
   };
 }
 
@@ -253,6 +240,8 @@ function DraggableDealCard({
   );
 }
 
+const subscribeNoop = () => () => {};
+
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export function SalesPageClient({
@@ -271,9 +260,18 @@ export function SalesPageClient({
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [localStageOverrides, setLocalStageOverrides] = useState<Record<string, PipelineStage>>({});
 
+  // Days in stage depend on today's local date, so they are only known after
+  // hydration (the server renders in UTC).
+  const isMounted = useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false,
+  );
+
   const activeFilterCount = getActiveFilterCount(filters);
   const allDeals = useMemo(() => {
-    const mapped = initialDeals.map(mapDeal);
+    const now = isMounted ? new Date() : null;
+    const mapped = initialDeals.map((d) => mapDeal(d, now));
     // Apply optimistic stage overrides
     const withOverrides = mapped.map((d) =>
       localStageOverrides[d.id] ? { ...d, stage: localStageOverrides[d.id] } : d,
@@ -341,7 +339,7 @@ export function SalesPageClient({
 
       return true;
     });
-  }, [initialDeals, localStageOverrides, filters]);
+  }, [initialDeals, localStageOverrides, filters, isMounted]);
 
   const activeDeals = allDeals.filter((d) => activeStageIds.includes(d.stage));
   const closedDeals = allDeals.filter((d) => closedStageIds.includes(d.stage));
@@ -607,7 +605,7 @@ function DealCard({
         </div>
 
         <div className="flex items-center gap-3">
-          {deal.daysInStage > 0 && (
+          {deal.daysInStage !== null && deal.daysInStage > 0 && (
             <span
               className={cn(
                 "text-xs font-medium px-1.5 py-0.5 rounded",

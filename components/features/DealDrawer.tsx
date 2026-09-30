@@ -166,27 +166,33 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
 
   // Fetch notes and activities when drawer opens
   useEffect(() => {
-    if (open && deal?.id) {
-      Promise.all([
-        getDealNotes(deal.id),
-        getDealActivities(deal.id),
-        getDealById(deal.id),
-      ]).then(([notesRes, activitiesRes, dealRes]) => {
-        setNotes((notesRes.data ?? []) as DealNoteRecord[]);
-        setActivities((activitiesRes.data ?? []) as DealActivityRecord[]);
-        // Link the contact to the record this deal references, if any
-        const row = dealRes.data as DealRowDetails | null;
-        setDetails(row);
-        setContactHref(
-          row?.customer_id
-            ? `/dashboard/customers/${row.customer_id}`
-            : row?.lead_id
-              ? `/dashboard/leads/${row.lead_id}`
-              : null,
-        );
-        setIsLoadingData(false);
-      });
-    }
+    if (!open || !deal?.id) return;
+
+    // Ignore a late response for a deal the drawer no longer shows
+    let cancelled = false;
+    Promise.all([
+      getDealNotes(deal.id),
+      getDealActivities(deal.id),
+      getDealById(deal.id),
+    ]).then(([notesRes, activitiesRes, dealRes]) => {
+      if (cancelled) return;
+      setNotes((notesRes.data ?? []) as DealNoteRecord[]);
+      setActivities((activitiesRes.data ?? []) as DealActivityRecord[]);
+      // Link the contact to the record this deal references, if any
+      const row = dealRes.data as DealRowDetails | null;
+      setDetails(row);
+      setContactHref(
+        row?.customer_id
+          ? `/dashboard/customers/${row.customer_id}`
+          : row?.lead_id
+            ? `/dashboard/leads/${row.lead_id}`
+            : null,
+      );
+      setIsLoadingData(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [open, deal?.id]);
 
   if (!deal) return null;

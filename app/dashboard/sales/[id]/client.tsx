@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useTransition } from "react";
+import { useState, useMemo, useSyncExternalStore, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -47,7 +47,7 @@ import { addDealNote, deleteDeal, updateDeal, updateDealStage } from "@/lib/acti
 import { deleteActivity } from "@/lib/actions/activities";
 import { deleteCalendarEvent } from "@/lib/actions/calendar";
 import { deleteRecordActivity, type LinkedItem } from "@/lib/actions/record-activities";
-import { daysInStage, daysToClose, parseDealDate } from "@/lib/deals/metrics";
+import { daysToClose, parseDealDate, stageDays } from "@/lib/deals/metrics";
 import { toast } from "sonner";
 
 // --- Types ---
@@ -64,7 +64,7 @@ interface DealRow {
   probability: number | null;
   expected_close_date?: string | null;
   close_date?: string | null;
-  stage_changed_at?: string | null;
+  days_in_stage?: number | null;
   owner_name?: string | null;
   owner_avatar?: string | null;
   owner_id?: string | null;
@@ -217,6 +217,8 @@ function StageDropdown({
   );
 }
 
+const subscribeNoop = () => () => {};
+
 // --- Main component ---
 
 export function DealDetailClient({
@@ -252,10 +254,21 @@ export function DealDetailClient({
 
   const contactName = deal.contact_name || "Unknown Contact";
   const expectedClose = deal.expected_close_date ?? deal.close_date ?? null;
-  const stageDays = daysInStage(deal.stage_changed_at, deal.created_at);
-  const closeDays = daysToClose(expectedClose);
-  const closeDaysLabel =
-    closeDays === null
+  const isClosed = currentStage === "closed_won" || currentStage === "closed_lost";
+
+  // Day counts depend on today's local date, so they are only known after
+  // hydration (the server renders in UTC).
+  const isMounted = useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false,
+  );
+  const now = isMounted ? new Date() : null;
+  const daysInStageLabel = now ? stageDays(deal.days_in_stage, deal.created_at, now) : "—";
+  const closeDays = now ? daysToClose(expectedClose, now) : null;
+  const closeDaysLabel = isClosed
+    ? "Closed"
+    : closeDays === null
       ? "—"
       : closeDays < 0
         ? `Overdue by ${-closeDays} ${closeDays === -1 ? "day" : "days"}`
@@ -444,7 +457,7 @@ export function DealDetailClient({
       </div>
 
       <MetricStrip>
-        <Metric label="Days in Stage" value={stageDays} />
+        <Metric label="Days in Stage" value={daysInStageLabel} />
         <Metric label="Days to Close" value={closeDaysLabel} />
         <Metric label="Probability" value={`${deal.probability || 0}%`} />
         <Metric label="Activities" value={activityItems.length} />
