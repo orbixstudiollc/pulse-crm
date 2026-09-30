@@ -238,7 +238,8 @@ export async function getCurrentProfile(
   accessToken: string
 ): Promise<{ profile?: LinkedInProfile; error?: string }> {
   try {
-    const res = await fetch(`${LINKEDIN_API_BASE}/me`, {
+    // OIDC userinfo (openid profile email scopes); /me needs the retired r_liteprofile scope.
+    const res = await fetch("https://api.linkedin.com/v2/userinfo", {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -252,10 +253,10 @@ export async function getCurrentProfile(
     const data = await res.json();
     return {
       profile: {
-        id: data.id,
-        localizedFirstName: data.localizedFirstName,
-        localizedLastName: data.localizedLastName,
-        vanityName: data.vanityName,
+        id: data.sub,
+        localizedFirstName: data.given_name,
+        localizedLastName: data.family_name,
+        profilePicture: data.picture,
       },
     };
   } catch (err) {
