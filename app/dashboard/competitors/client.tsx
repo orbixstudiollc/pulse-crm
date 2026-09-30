@@ -21,9 +21,15 @@ import {
   ShieldIcon,
   SparkleIcon,
 } from "@/components/ui";
-import { PageHeader, StatCard, EmptyState } from "@/components/dashboard";
+import {
+  Page,
+  PageHeader,
+  MetricStrip,
+  PageTabs,
+  StatCard,
+  EmptyState,
+} from "@/components/dashboard";
 import { AIActionButton, AIGenerateModal } from "@/components/features";
-import { cn } from "@/lib/utils";
 import {
   createCompetitor,
   updateCompetitor,
@@ -47,11 +53,11 @@ interface CompetitorRecord {
 
 type CategoryFilter = "all" | "direct" | "indirect" | "aspirational";
 
-const categoryTabs: { label: string; value: CategoryFilter }[] = [
-  { label: "All", value: "all" },
-  { label: "Direct", value: "direct" },
-  { label: "Indirect", value: "indirect" },
-  { label: "Aspirational", value: "aspirational" },
+const categoryTabs: { label: string; id: CategoryFilter }[] = [
+  { label: "All", id: "all" },
+  { label: "Direct", id: "direct" },
+  { label: "Indirect", id: "indirect" },
+  { label: "Aspirational", id: "aspirational" },
 ];
 
 const categoryBadgeVariant: Record<string, "success" | "warning" | "info"> = {
@@ -227,9 +233,9 @@ export function CompetitorsPageClient({
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
+    <Page>
       {/* Header */}
-      <PageHeader title="Competitors">
+      <PageHeader title="Competitors" icon={<ShieldIcon size={18} />}>
         <Button
           leftIcon={<PlusIcon size={20} weight="bold" />}
           onClick={openCreateModal}
@@ -238,8 +244,8 @@ export function CompetitorsPageClient({
         </Button>
       </PageHeader>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Metrics */}
+      <MetricStrip>
         <StatCard
           label="Total Competitors"
           value={totalCount.toString()}
@@ -270,33 +276,23 @@ export function CompetitorsPageClient({
             />
           }
         />
-      </div>
+      </MetricStrip>
 
       {/* Category Tabs */}
-      <div className="flex items-center gap-2 w-fit">
-        {categoryTabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setActiveTab(tab.value)}
-            className={cn(
-              "h-8 px-3 text-[13px] font-medium rounded-md border whitespace-nowrap transition-colors",
-              activeTab === tab.value
-                ? "border-accent text-accent-strong bg-surface"
-                : "border-line text-fg-secondary hover:bg-subtle"
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <PageTabs
+        tabs={categoryTabs}
+        value={activeTab}
+        onChange={setActiveTab}
+        className="max-sm:overflow-x-auto max-sm:overflow-y-hidden"
+      />
 
       {/* Competitor Grid */}
       {filteredCompetitors.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
           {filteredCompetitors.map((competitor) => (
             <div
               key={competitor.id}
-              className="rounded-lg border border-line bg-surface p-4 flex flex-col gap-4"
+              className="flex flex-col gap-4 border-b border-divider px-8 py-5 max-sm:px-4 md:border-r md:[&:nth-child(2n)]:border-r-0 xl:[&:nth-child(2n)]:border-r xl:[&:nth-child(3n)]:border-r-0"
             >
               {/* Card Header */}
               <div className="flex items-start justify-between">
@@ -409,7 +405,7 @@ export function CompetitorsPageClient({
               )}
 
               {/* Card Footer */}
-              <div className="mt-auto pt-3 border-t border-line">
+              <div className="mt-auto pt-3 border-t border-divider">
                 <Link
                   href={`/dashboard/competitors/${competitor.id}`}
                   className="text-sm font-medium text-fg hover:underline"
@@ -421,25 +417,23 @@ export function CompetitorsPageClient({
           ))}
         </div>
       ) : (
-        <div className="rounded-lg border border-line bg-surface">
-          <EmptyState
-            icon={<ShieldIcon size={24} />}
-            title={
-              activeTab !== "all"
-                ? "No competitors in this category"
-                : "No competitors yet"
-            }
-            description="Track your competitors and build battle cards to help your sales team win more deals."
-            actions={[
-              {
-                label: "Add Competitor",
-                icon: <PlusIcon size={18} weight="bold" />,
-                variant: "primary",
-                onClick: openCreateModal,
-              },
-            ]}
-          />
-        </div>
+        <EmptyState
+          icon={<ShieldIcon size={24} />}
+          title={
+            activeTab !== "all"
+              ? "No competitors in this category"
+              : "No competitors yet"
+          }
+          description="Track your competitors and build battle cards to help your sales team win more deals."
+          actions={[
+            {
+              label: "Add Competitor",
+              icon: <PlusIcon size={18} weight="bold" />,
+              variant: "primary",
+              onClick: openCreateModal,
+            },
+          ]}
+        />
       )}
 
       {/* Create / Edit Modal */}
@@ -639,6 +633,6 @@ export function CompetitorsPageClient({
         }}
         editable={false}
       />
-    </div>
+    </Page>
   );
 }

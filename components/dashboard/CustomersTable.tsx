@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { toast } from "sonner";
 import {
   Avatar,
@@ -14,9 +14,9 @@ import {
   TrashIcon,
 } from "@/components/ui";
 import { CustomerDrawer } from "./CustomerDrawer";
+import { TableSection } from "./Page";
 import { TableHeader } from "./TableHeader";
 import { TableFooter } from "./TableFooter";
-import { cn } from "@/lib/utils";
 import { Customer } from "@/lib/data/customers";
 import { deleteCustomer } from "@/lib/actions/customers";
 
@@ -30,6 +30,8 @@ interface CustomersTableProps {
   rowsPerPage: string;
   onRowsPerPageChange: (value: string) => void;
   onChanged?: () => void;
+  filters?: ReactNode;
+  emptyState?: ReactNode;
   className?: string;
 }
 
@@ -74,6 +76,8 @@ export function CustomersTable({
   rowsPerPage,
   onRowsPerPageChange,
   onChanged,
+  filters,
+  emptyState,
   className,
 }: CustomersTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -155,42 +159,7 @@ export function CustomersTable({
   };
 
   return (
-    <div
-      className={cn(
-        "rounded-lg border border-line bg-surface overflow-hidden",
-        className,
-      )}
-    >
-      {/* Bulk Actions Bar */}
-      {selectedRows.length > 0 && (
-        <div className="flex items-center justify-between px-4 py-2 border-b border-divider bg-subtle">
-          <span className="text-[13px] font-medium text-fg">
-            {selectedRows.length} item{selectedRows.length > 1 ? "s" : ""}{" "}
-            selected
-          </span>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleExportSelected}
-              className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
-            >
-              Export
-            </button>
-            <button
-              onClick={() => setDeleteIds(selectedRows)}
-              className="text-[13px] text-danger hover:opacity-80 transition-colors"
-            >
-              Delete
-            </button>
-            <button
-              onClick={() => setSelectedRows([])}
-              className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
-            >
-              Clear selection
-            </button>
-          </div>
-        </div>
-      )}
-
+    <div className={className}>
       {/* Table Header */}
       <TableHeader
         title="All Customers"
@@ -201,155 +170,195 @@ export function CustomersTable({
         }}
       />
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr>
-              {/* Checkbox */}
-              <th className="w-10 h-10 px-3 border-b border-divider">
-                <Checkbox checked={isAllSelected} onChange={toggleSelectAll} />
-              </th>
-              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
-                Customer
-              </th>
-              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
-                Status
-              </th>
-              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
-                Plan
-              </th>
-              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
-                MRR
-              </th>
-              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
-                Health
-              </th>
-              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
-                Last Contact
-              </th>
-              <th className="h-10 px-3 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {pagedCustomers.map((customer) => (
-              <tr
-                key={customer.id}
-                onClick={() => handleViewDetails(customer)}
-                className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors cursor-pointer"
-              >
-                {/* Checkbox */}
-                <td
-                  className="w-10 px-3 py-2 text-[14px] text-fg"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Checkbox
-                    checked={selectedRows.includes(customer.id)}
-                    onChange={() => toggleSelectRow(customer.id)}
-                  />
-                </td>
-                {/* Customer */}
-                <td className="px-3 py-2 text-[14px] text-fg">
-                  <div className="flex items-center gap-3 [&>div:first-child>div]:size-8 [&>div:first-child>div]:text-xs">
-                    <Avatar
-                      src={customer.avatar}
-                      name={customer.name}
-                      size="lg"
-                    />
-                    <div>
-                      <p className="text-[14px] font-medium text-fg">
-                        {customer.name}
-                      </p>
-                      <p className="text-[13px] text-fg-secondary">
-                        {customer.email}
-                      </p>
-                    </div>
-                  </div>
-                </td>
-                {/* Status */}
-                <td className="px-3 py-2 text-[14px] text-fg">
-                  <Badge variant={statusConfig[customer.status].variant}>
-                    {statusConfig[customer.status].label}
-                  </Badge>
-                </td>
-                {/* Plan */}
-                <td className="px-3 py-2 text-[14px] text-fg">
-                  <Badge variant={planConfig[customer.plan].variant}>
-                    {planConfig[customer.plan].label}
-                  </Badge>
-                </td>
-                {/* MRR */}
-                <td className="px-3 py-2 text-[14px] text-fg">
-                  <span className="text-[14px] font-medium text-fg">
-                    {formatMRR(customer.mrr)}
-                  </span>
-                </td>
-                {/* Health */}
-                <td className="px-3 py-2 text-[14px] text-fg">
-                  <div className="flex items-center gap-2">
-                    <Progress
-                      value={customer.healthScore}
-                      color="auto"
-                      className="w-16"
-                    />
-                    <span className="text-[13px] text-fg-secondary">
-                      {customer.healthScore}
-                    </span>
-                  </div>
-                </td>
-                {/* Last Contact */}
-                <td className="px-3 py-2 text-[14px] text-fg">
-                  <span className="text-[13px] text-fg-secondary">
-                    {customer.lastContact}
-                  </span>
-                </td>
-                {/* Actions */}
-                <td
-                  className="px-3 py-2 text-[14px] text-fg"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex justify-end">
-                    <ActionMenu
-                      className="rounded-md border border-line bg-surface hover:bg-subtle"
-                      items={[
-                        {
-                          label: "View Details",
-                          icon: <EyeIcon size={18} />,
-                          onClick: () => handleViewDetails(customer),
-                        },
-                        {
-                          label: "Edit Customer",
-                          icon: <PencilSimpleIcon size={18} />,
-                          href: `/dashboard/customers/${customer.id}/edit`,
-                        },
-                        {
-                          label: "Delete Customer",
-                          icon: <TrashIcon size={18} />,
-                          onClick: () => setDeleteIds([customer.id]),
-                          variant: "danger",
-                        },
-                      ]}
-                    />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* Filter row */}
+      {filters}
 
-      {/* Table Footer with Pagination */}
-      <TableFooter
-        currentPage={page}
-        totalPages={totalPages}
-        totalItems={totalCustomers}
-        startIndex={startIndex}
-        endIndex={endIndex}
-        onPageChange={setCurrentPage}
-        itemLabel="customers"
-      />
+      {customers.length > 0 ? (
+        <>
+          {/* Bulk Actions Bar */}
+          {selectedRows.length > 0 && (
+            <div className="flex h-10 items-center justify-between gap-4 px-8 max-sm:px-4 border-t border-divider">
+              <span className="text-[13px] font-medium text-fg">
+                {selectedRows.length} item{selectedRows.length > 1 ? "s" : ""}{" "}
+                selected
+              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleExportSelected}
+                  className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
+                >
+                  Export
+                </button>
+                <button
+                  onClick={() => setDeleteIds(selectedRows)}
+                  className="text-[13px] text-danger hover:opacity-80 transition-colors"
+                >
+                  Delete
+                </button>
+                <button
+                  onClick={() => setSelectedRows([])}
+                  className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
+                >
+                  Clear selection
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Table */}
+          <TableSection>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    {/* Checkbox */}
+                    <th className="w-10">
+                      <Checkbox checked={isAllSelected} onChange={toggleSelectAll} />
+                    </th>
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
+                      Customer
+                    </th>
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
+                      Status
+                    </th>
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
+                      Plan
+                    </th>
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
+                      MRR
+                    </th>
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
+                      Health
+                    </th>
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
+                      Last Contact
+                    </th>
+                    <th className="text-right text-[13px] font-medium text-fg-secondary">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagedCustomers.map((customer) => (
+                    <tr
+                      key={customer.id}
+                      onClick={() => handleViewDetails(customer)}
+                      className="hover:bg-subtle transition-colors cursor-pointer"
+                    >
+                      {/* Checkbox */}
+                      <td
+                        className="w-10 py-2 text-[14px] text-fg"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Checkbox
+                          checked={selectedRows.includes(customer.id)}
+                          onChange={() => toggleSelectRow(customer.id)}
+                        />
+                      </td>
+                      {/* Customer */}
+                      <td className="py-2 text-[14px] text-fg">
+                        <div className="flex items-center gap-3 [&>div:first-child>div]:size-8 [&>div:first-child>div]:text-xs">
+                          <Avatar
+                            src={customer.avatar}
+                            name={customer.name}
+                            size="lg"
+                          />
+                          <div>
+                            <p className="text-[14px] font-medium text-fg">
+                              {customer.name}
+                            </p>
+                            <p className="text-[13px] text-fg-secondary">
+                              {customer.email}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      {/* Status */}
+                      <td className="py-2 text-[14px] text-fg">
+                        <Badge variant={statusConfig[customer.status].variant}>
+                          {statusConfig[customer.status].label}
+                        </Badge>
+                      </td>
+                      {/* Plan */}
+                      <td className="py-2 text-[14px] text-fg">
+                        <Badge variant={planConfig[customer.plan].variant}>
+                          {planConfig[customer.plan].label}
+                        </Badge>
+                      </td>
+                      {/* MRR */}
+                      <td className="py-2 text-[14px] text-fg">
+                        <span className="text-[14px] font-medium text-fg">
+                          {formatMRR(customer.mrr)}
+                        </span>
+                      </td>
+                      {/* Health */}
+                      <td className="py-2 text-[14px] text-fg">
+                        <div className="flex items-center gap-2">
+                          <Progress
+                            value={customer.healthScore}
+                            color="auto"
+                            className="w-16"
+                          />
+                          <span className="text-[13px] text-fg-secondary">
+                            {customer.healthScore}
+                          </span>
+                        </div>
+                      </td>
+                      {/* Last Contact */}
+                      <td className="py-2 text-[14px] text-fg">
+                        <span className="text-[13px] text-fg-secondary">
+                          {customer.lastContact}
+                        </span>
+                      </td>
+                      {/* Actions */}
+                      <td
+                        className="py-2 text-[14px] text-fg"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex justify-end">
+                          <ActionMenu
+                            items={[
+                              {
+                                label: "View Details",
+                                icon: <EyeIcon size={18} />,
+                                onClick: () => handleViewDetails(customer),
+                              },
+                              {
+                                label: "Edit Customer",
+                                icon: <PencilSimpleIcon size={18} />,
+                                href: `/dashboard/customers/${customer.id}/edit`,
+                              },
+                              {
+                                label: "Delete Customer",
+                                icon: <TrashIcon size={18} />,
+                                onClick: () => setDeleteIds([customer.id]),
+                                variant: "danger",
+                              },
+                            ]}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </TableSection>
+
+          {/* Table Footer with Pagination */}
+          <TableFooter
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalCustomers}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            onPageChange={setCurrentPage}
+            itemLabel="customers"
+          />
+        </>
+      ) : (
+        emptyState
+      )}
 
       <DeleteConfirmModal
         open={deleteIds !== null}

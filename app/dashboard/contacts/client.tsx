@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
 import {
   Button,
   Badge,
@@ -18,10 +17,19 @@ import {
   XIcon,
   UserIcon,
   UsersThreeIcon,
+  AddressBookIcon,
   CircleNotchIcon,
   MagnifyingGlassIcon,
 } from "@/components/ui";
-import { PageHeader, StatCard } from "@/components/dashboard";
+import {
+  Page,
+  PageHeader,
+  MetricStrip,
+  PageTabs,
+  TableSection,
+  StatCard,
+  EmptyState,
+} from "@/components/dashboard";
 import { DeleteConfirmModal } from "@/components/ui";
 import {
   createContact,
@@ -48,13 +56,13 @@ const INFLUENCE_LEVELS = [
 ] as const;
 
 const ROLE_TABS = [
-  { value: "all", label: "All" },
-  { value: "economic_buyer", label: "Economic Buyer" },
-  { value: "champion", label: "Champion" },
-  { value: "technical_evaluator", label: "Technical Evaluator" },
-  { value: "end_user", label: "End User" },
-  { value: "blocker", label: "Blocker" },
-  { value: "coach", label: "Coach" },
+  { id: "all", label: "All" },
+  { id: "economic_buyer", label: "Economic Buyer" },
+  { id: "champion", label: "Champion" },
+  { id: "technical_evaluator", label: "Technical Evaluator" },
+  { id: "end_user", label: "End User" },
+  { id: "blocker", label: "Blocker" },
+  { id: "coach", label: "Coach" },
 ] as const;
 
 const roleBadgeConfig: Record<
@@ -261,9 +269,17 @@ export function ContactsPageClient({
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 space-y-6">
+    <Page>
       {/* Header */}
-      <PageHeader title="Contacts">
+      <PageHeader title="Contacts" icon={<AddressBookIcon size={18} />}>
+        <div className="w-48">
+          <Input
+            placeholder="Search contacts..."
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            leftIcon={<MagnifyingGlassIcon size={18} />}
+          />
+        </div>
         <Button
           leftIcon={<PlusIcon size={20} weight="bold" />}
           onClick={openCreateModal}
@@ -272,29 +288,8 @@ export function ContactsPageClient({
         </Button>
       </PageHeader>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-1">
-        {ROLE_TABS.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => {
-              setActiveTab(tab.value);
-              setSearchValue("");
-            }}
-            className={cn(
-              "inline-flex h-7 items-center rounded-md border px-3 text-[13px] font-medium whitespace-nowrap transition-colors",
-              activeTab === tab.value
-                ? "border-accent bg-surface text-accent-strong"
-                : "border-line text-fg-secondary hover:bg-subtle hover:text-fg",
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <MetricStrip>
         <StatCard
           label="Total Contacts"
           value={initialContacts.length.toString()}
@@ -318,44 +313,45 @@ export function ContactsPageClient({
             }
           />
         ))}
-      </div>
+      </MetricStrip>
 
-      {/* Search */}
-      <div className="max-w-sm">
-        <Input
-          placeholder="Search contacts..."
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          leftIcon={<MagnifyingGlassIcon size={18} />}
-        />
-      </div>
+      {/* Filter Tabs */}
+      <PageTabs
+        tabs={ROLE_TABS.map((tab) => ({ id: tab.id, label: tab.label }))}
+        value={activeTab}
+        onChange={(id) => {
+          setActiveTab(id);
+          setSearchValue("");
+        }}
+        className="max-sm:overflow-x-auto max-sm:overflow-y-hidden"
+      />
 
       {/* Contacts Table */}
-      <div className="rounded-lg border border-line bg-surface overflow-hidden">
-        {filteredContacts.length > 0 ? (
+      {filteredContacts.length > 0 ? (
+        <TableSection flush>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr>
-                  <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-left text-[13px] font-medium text-fg-secondary">
                     Name
                   </th>
-                  <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-left text-[13px] font-medium text-fg-secondary">
                     Title
                   </th>
-                  <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-left text-[13px] font-medium text-fg-secondary">
                     Email
                   </th>
-                  <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-left text-[13px] font-medium text-fg-secondary">
                     Company
                   </th>
-                  <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-left text-[13px] font-medium text-fg-secondary">
                     Buying Role
                   </th>
-                  <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-left text-[13px] font-medium text-fg-secondary">
                     Influence
                   </th>
-                  <th className="h-10 px-3 text-center text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-right text-[13px] font-medium text-fg-secondary">
                     Actions
                   </th>
                 </tr>
@@ -369,17 +365,12 @@ export function ContactsPageClient({
                   return (
                     <tr
                       key={contact.id}
-                      className="h-10 hover:bg-subtle transition-colors"
+                      className="hover:bg-subtle transition-colors"
                     >
                       {/* Name */}
-                      <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
+                      <td className="py-2 text-[14px] text-fg">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
-                            <UserIcon
-                              size={18}
-                              className="text-fg-secondary"
-                            />
-                          </div>
+                          <UserIcon size={16} className="shrink-0 text-fg-muted" />
                           <p className="text-[13px] font-medium text-fg">
                             {contact.name}
                           </p>
@@ -387,21 +378,21 @@ export function ContactsPageClient({
                       </td>
 
                       {/* Title */}
-                      <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
+                      <td className="py-2 text-[14px] text-fg">
                         <span className="text-[13px] text-fg-secondary">
                           {contact.title || "—"}
                         </span>
                       </td>
 
                       {/* Email */}
-                      <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
+                      <td className="py-2 text-[14px] text-fg">
                         <span className="text-[13px] text-fg-secondary">
                           {contact.email || "—"}
                         </span>
                       </td>
 
                       {/* Company (lead/customer badge) */}
-                      <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
+                      <td className="py-2 text-[14px] text-fg">
                         <div className="flex items-center gap-1.5">
                           {contact.lead_id && (
                             <span className="inline-flex items-center rounded-full bg-accent-surface px-2 py-0.5 text-xs font-medium text-accent-on-surface">
@@ -422,14 +413,14 @@ export function ContactsPageClient({
                       </td>
 
                       {/* Buying Role */}
-                      <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
+                      <td className="py-2 text-[14px] text-fg">
                         <Badge variant={roleConfig?.variant ?? "neutral"} dot>
                           {roleConfig?.label ?? contact.buying_role}
                         </Badge>
                       </td>
 
                       {/* Influence Level */}
-                      <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
+                      <td className="py-2 text-[14px] text-fg">
                         <Badge
                           variant={influenceConfig?.variant ?? "neutral"}
                         >
@@ -438,8 +429,8 @@ export function ContactsPageClient({
                       </td>
 
                       {/* Actions */}
-                      <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
-                        <div className="flex justify-center">
+                      <td className="py-2 text-[14px] text-fg">
+                        <div className="flex justify-end">
                           <ActionMenu
                             items={[
                               {
@@ -463,35 +454,34 @@ export function ContactsPageClient({
               </tbody>
             </table>
           </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-12 px-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md border border-line bg-subtle text-fg-secondary mb-4">
-              <UserIcon
-                size={24}
-                className="text-fg-secondary"
-              />
-            </div>
-            <p className="text-heading-md text-fg mb-1">
-              {searchValue || activeTab !== "all"
-                ? "No contacts found"
-                : "No contacts yet"}
-            </p>
-            <p className="text-sm text-fg-secondary text-center max-w-xs mb-4">
-              {searchValue || activeTab !== "all"
-                ? "Try adjusting your search or filters to find what you're looking for."
-                : "Start building your contact intelligence by adding your first contact."}
-            </p>
-            {!searchValue && activeTab === "all" && (
-              <Button
-                leftIcon={<PlusIcon size={18} weight="bold" />}
-                onClick={openCreateModal}
-              >
-                Add Contact
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
+        </TableSection>
+      ) : (
+        <EmptyState
+          icon={<UserIcon size={24} />}
+          title={
+            searchValue || activeTab !== "all"
+              ? "No contacts found"
+              : "No contacts yet"
+          }
+          description={
+            searchValue || activeTab !== "all"
+              ? "Try adjusting your search or filters to find what you're looking for."
+              : "Start building your contact intelligence by adding your first contact."
+          }
+          actions={
+            !searchValue && activeTab === "all"
+              ? [
+                  {
+                    label: "Add Contact",
+                    icon: <PlusIcon size={18} weight="bold" />,
+                    variant: "primary",
+                    onClick: openCreateModal,
+                  },
+                ]
+              : []
+          }
+        />
+      )}
 
       {/* Create / Edit Modal */}
       <Modal open={showModal} onClose={closeModal}>
@@ -646,6 +636,6 @@ export function ContactsPageClient({
         itemName={deleteTarget?.name}
         loading={isPending}
       />
-    </div>
+    </Page>
   );
 }

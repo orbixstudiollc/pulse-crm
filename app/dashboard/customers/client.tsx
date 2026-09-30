@@ -9,17 +9,19 @@ import {
   CustomersTable,
   customerStatusOptions,
   FilterBar,
+  Page,
   PageHeader,
+  MetricStrip,
   StatCard,
   timeRangeOptions,
   EmptyState,
-  TableHeader,
 } from "@/components/dashboard";
 import {
   Button,
   CheckCircleIcon,
   ExportIcon,
   PlusIcon,
+  UsersIcon,
   UsersThreeIcon,
   WarningIcon,
   UploadIcon,
@@ -132,9 +134,44 @@ export function CustomersPageClient({
     .filter((c) => (c.status || "active") === "active")
     .map((c) => c.created_at as string | null | undefined);
 
+  const filterBar = (
+    <FilterBar
+      className="px-8 max-sm:px-4 border-t border-divider"
+      searchPlaceholder="Search customers..."
+      onSearchChange={setSearchValue}
+      filters={[
+        {
+          key: "status",
+          label: "Status",
+          options: customerStatusOptions,
+          defaultValue: "all",
+        },
+        {
+          key: "plan",
+          label: "Plan",
+          options: customerPlanOptions,
+          defaultValue: "all",
+        },
+        {
+          key: "health",
+          label: "Health",
+          options: customerScoreOptions,
+          defaultValue: "all",
+        },
+        {
+          key: "time",
+          label: "Time",
+          options: timeRangeOptions,
+          defaultValue: "all",
+        },
+      ]}
+      onFilterChange={handleFilterChange}
+    />
+  );
+
   return (
-    <div className="p-6 space-y-6">
-      <PageHeader title="Customers">
+    <Page>
+      <PageHeader title="Customers" icon={<UsersIcon size={18} />}>
         <Button
           variant="outline"
           leftIcon={<ExportIcon size={20} />}
@@ -158,8 +195,8 @@ export function CustomersPageClient({
         </Link>
       </PageHeader>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      {/* Metrics */}
+      <MetricStrip>
         <StatCard
           label="Total Customers"
           value={totalCustomers.toLocaleString()}
@@ -192,57 +229,17 @@ export function CustomersPageClient({
             />
           }
         />
-      </div>
-
-      {/* Filters */}
-      <FilterBar
-        searchPlaceholder="Search customers..."
-        onSearchChange={setSearchValue}
-        filters={[
-          {
-            key: "status",
-            label: "Status",
-            options: customerStatusOptions,
-            defaultValue: "all",
-          },
-          {
-            key: "plan",
-            label: "Plan",
-            options: customerPlanOptions,
-            defaultValue: "all",
-          },
-          {
-            key: "health",
-            label: "Health",
-            options: customerScoreOptions,
-            defaultValue: "all",
-          },
-          {
-            key: "time",
-            label: "Time",
-            options: timeRangeOptions,
-            defaultValue: "all",
-          },
-        ]}
-        onFilterChange={handleFilterChange}
-      />
+      </MetricStrip>
 
       {/* Customers Table or Empty State */}
-      {filteredCustomers.length > 0 ? (
-        <CustomersTable
-          customers={filteredCustomers}
-          totalCustomers={filteredCustomers.length}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={setRowsPerPage}
-          onChanged={() => router.refresh()}
-        />
-      ) : (
-        <div className="rounded-lg border border-line bg-surface overflow-hidden">
-          <TableHeader
-            title="All Customers"
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={setRowsPerPage}
-          />
+      <CustomersTable
+        customers={filteredCustomers}
+        totalCustomers={filteredCustomers.length}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={setRowsPerPage}
+        onChanged={() => router.refresh()}
+        filters={filterBar}
+        emptyState={
           <EmptyState
             icon={<UsersThreeIcon size={24} />}
             title={
@@ -293,8 +290,8 @@ export function CustomersPageClient({
                   ]
             }
           />
-        </div>
-      )}
-    </div>
+        }
+      />
+    </Page>
   );
 }
