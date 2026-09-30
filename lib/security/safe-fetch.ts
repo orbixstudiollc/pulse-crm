@@ -27,7 +27,8 @@ function createPinnedAgent(target: SafeFetchTarget): Agent {
 
 /**
  * A fetch bound to one pinned target, for SDK clients that accept a custom
- * fetch. Requests to any other host are refused; redirects are not followed.
+ * fetch. Requests to any other host or protocol are refused; redirects are
+ * not followed.
  * Call close() when done to release the agent's sockets.
  */
 export function createPinnedFetch(target: SafeFetchTarget): {
@@ -39,6 +40,9 @@ export function createPinnedFetch(target: SafeFetchTarget): {
     const url = new URL(input instanceof Request ? input.url : String(input));
     if (url.host !== target.url.host) {
       throw new Error("Pinned fetch: host mismatch");
+    }
+    if (url.protocol !== target.url.protocol) {
+      throw new Error("Pinned fetch: protocol mismatch");
     }
     const res = await undiciFetch(url, {
       ...(init as UndiciRequestInit),

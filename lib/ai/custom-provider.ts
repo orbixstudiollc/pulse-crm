@@ -2,12 +2,15 @@
  * Org-configured Anthropic-compatible endpoint (provider value "custom"),
  * e.g. LLMsRelay. The base URL is tenant-supplied, so every request goes
  * through a fetch pinned to the validated public addresses (SSRF / DNS
- * rebinding safe). The API key is stored sealed with encrypt().
+ * rebinding safe). The API key is stored sealed with encrypt(), bound by GCM
+ * additional authenticated data to its purpose, the org and the base URL, so
+ * it cannot be replayed for another org or URL and no other sealed secret can
+ * be passed off as it.
  *
  * Plain module (no server-only imports) so it can be unit tested directly.
  */
 
-import { decrypt } from "@/lib/utils/encryption";
+import { decrypt, encrypt } from "@/lib/utils/encryption";
 import { isSealedValue } from "@/lib/email/oauth-tokens";
 import { assertSafeFetchTarget, type LookupFn } from "@/lib/security/fetch-target";
 import { createPinnedFetch } from "@/lib/security/safe-fetch";
@@ -18,9 +21,10 @@ export interface CustomModelSettings {
 }
 
 /**
- * Normalize a tenant-supplied base URL: https only, no credentials, query or
- * fragment; trailing slashes and a trailing /v1 are removed. Throws an Error
- * with a user-readable message when the URL is not acceptable.
+ * Normalize a tenant-supplied base URL: https only on the default port 443,
+ * no credentials, query or fragment; trailing slashes and a trailing /v1 are
+ * removed. Throws an Error with a user-readable message when the URL is not
+ * acceptable.
  */
 export function normalizeCustomBaseUrl(input: string): string {
   const trimmed = input.trim();
@@ -31,6 +35,8 @@ export function normalizeCustomBaseUrl(input: string): string {
     throw new Error("Base URL must be a valid URL, e.g. https://api.llmsrelay.com");
   }
   if (url.protocol !== "https:") throw new Error("Base URL must use https://");
+  // URL drops the default port, so any port left here is not 443.
+  if (url.port && url.port !== "443") throw new Error("Base URL must not use a port other than 443");
   if (url.username || url.password) throw new Error("Base URL must not contain a username or password");
   if (url.search || url.hash || /[?#]/.test(trimmed)) {
     throw new Error("Base URL must not contain a query string or fragment");
@@ -59,28 +65,47 @@ export function customModelFor(
   return main;
 }
 
+/** GCM additional authenticated data for the custom API key of one org and URL. */
+export function customKeyAad(orgId: string, normalizedBaseUrl: string): string {
+  return `custom_ai_key:v1:${orgId}:${normalizedBaseUrl}`;
+}
+
 /**
- * The plaintext API key. Legacy plaintext passes through; sealed values that
- * fail to decrypt (tampered, wrong key) return null.
+ * Seal the API key for one org and base URL. Throws when the URL is not
+ * acceptable (see normalizeCustomBaseUrl) or encryption is not configured.
  */
-export function openCustomApiKey(sealed: string | null | undefined): string | null {
-  if (!sealed) return null;
-  if (!isSealedValue(sealed)) return sealed;
+export function sealCustomApiKey(plain: string, orgId: string, baseUrl: string): string {
+  if (!orgId) throw new Error("Organization is required to seal the API key");
+  return encrypt(plain, customKeyAad(orgId, normalizeCustomBaseUrl(baseUrl)));
+}
+
+/**
+ * The plaintext API key, or null unless `sealed` was sealed by
+ * sealCustomApiKey for this org and (normalized) base URL. Plaintext,
+ * tampered values, other sealed secrets and a wrong key all return null.
+ */
+export function openCustomApiKey(
+  sealed: string | null | undefined,
+  orgId: string | null | undefined,
+  baseUrl: string | null | undefined
+): string | null {
+  if (!sealed || !orgId || !baseUrl || !isSealedValue(sealed)) return null;
   try {
-    return decrypt(sealed);
+    return decrypt(sealed, customKeyAad(orgId, normalizeCustomBaseUrl(baseUrl)));
   } catch {
     return null;
   }
 }
 
 /**
- * A fetch pinned to the base URL's validated public addresses. Call close()
- * when the request is done. `lookup` is injectable for tests.
+ * A fetch pinned to the base URL's validated public addresses, plus `base`,
+ * the normalized URL the SDK must use. Call close() when the request is
+ * done. `lookup` is injectable for tests.
  */
 export async function createCustomFetch(
   base: string,
   lookup?: LookupFn
-): Promise<{ fetch: typeof fetch; close: () => Promise<void> }> {
+): Promise<{ fetch: typeof fetch; close: () => Promise<void>; base: string }> {
   const normalized = normalizeCustomBaseUrl(base);
   let target;
   try {
@@ -88,5 +113,5 @@ export async function createCustomFetch(
   } catch {
     throw new Error("Custom AI base URL is not allowed");
   }
-  return createPinnedFetch(target);
+  return { ...createPinnedFetch(target), base: normalized };
 }

@@ -12,7 +12,6 @@ import { assertSafeFetchTarget } from "@/lib/security/fetch-target";
 import { createPinnedFetch } from "@/lib/security/safe-fetch";
 import { resolveAIProvider } from "@/lib/ai/provider-resolver";
 import {
-  anthropicSdkBaseUrl,
   createCustomFetch,
   customModelFor,
   openCustomApiKey,
@@ -210,7 +209,10 @@ async function getApiKeys(orgId: string): Promise<{
       data?.apify_api_key || getApifyTokenFromEnv() || undefined,
     // SECURITY: no env fallback; a server key never goes to a tenant URL.
     customBaseUrl: data?.custom_base_url || undefined,
-    customKey: openCustomApiKey(data?.custom_api_key) ?? undefined,
+    // The key opens only for this org and the saved URL it was sealed for.
+    customKey:
+      openCustomApiKey(data?.custom_api_key, orgId, data?.custom_base_url) ??
+      undefined,
   };
 }
 
@@ -239,8 +241,10 @@ export async function resolveProviderAndModel(
   const provider: AIProvider =
     choice === "ollama_cloud" && process.env.OLLAMA_CLOUD_API_KEY
       ? "ollama_cloud"
-      : (resolveAIProvider({ ...settings, ai_provider: choice }, process.env)
-          ?.provider ?? "openrouter");
+      : (resolveAIProvider(
+          { ...settings, organization_id: orgId, ai_provider: choice },
+          process.env
+        )?.provider ?? "openrouter");
 
   // Rows written by the old settings route hold "ollama:<url>:<model>" here;
   // ignore them so the provider default is used until settings are re-saved.
@@ -496,10 +500,14 @@ export async function generateCompletion(
     // to its validated public addresses.
     const pinned = await createCustomFetch(customBaseUrl);
     try {
+      // authToken: null so ANTHROPIC_AUTH_TOKEN from env is never sent to the tenant URL.
       const client = new Anthropic({
         apiKey: customKey,
-        baseURL: anthropicSdkBaseUrl(customBaseUrl),
+        authToken: null,
+        baseURL: pinned.base,
         fetch: pinned.fetch,
+        timeout: 60_000,
+        maxRetries: 1,
       });
       const systemMessage =
         messages.find((m) => m.role === "system")?.content ?? "";

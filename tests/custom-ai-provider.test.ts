@@ -11,12 +11,17 @@ const {
   anthropicSdkBaseUrl,
   createCustomFetch,
   customModelFor,
+  customKeyAad,
   normalizeCustomBaseUrl,
   openCustomApiKey,
+  sealCustomApiKey,
 } = await import("@/lib/ai/custom-provider");
 const { convertModelForProvider, getModelId, MODEL_MAP } = await import("@/lib/ai/models");
 
 const FAKE_KEY = "sk-cs4-test";
+const ORG = "00000000-0000-4000-8000-000000000001";
+const OTHER_ORG = "00000000-0000-4000-8000-000000000002";
+const BASE = "https://api.llmsrelay.com";
 
 afterEach(() => {
   process.env.ENCRYPTION_KEY = KEY;
@@ -32,6 +37,7 @@ describe("normalizeCustomBaseUrl", () => {
     ["https://relay.example.com/anthropic/v1", "https://relay.example.com/anthropic"],
     ["https://relay.example.com/anthropic/", "https://relay.example.com/anthropic"],
     ["https://API.LLMSRELAY.COM", "https://api.llmsrelay.com"],
+    ["https://api.llmsrelay.com:443", "https://api.llmsrelay.com"],
   ])("normalizes %s to %s", (input, expected) => {
     expect(normalizeCustomBaseUrl(input)).toBe(expected);
   });
@@ -44,6 +50,8 @@ describe("normalizeCustomBaseUrl", () => {
     "https://api.llmsrelay.com/?region=eu",
     "https://api.llmsrelay.com/?",
     "https://api.llmsrelay.com/#frag",
+    "https://api.llmsrelay.com:8443",
+    "https://api.llmsrelay.com:80",
     "api.llmsrelay.com",
     "",
     "   ",
@@ -53,6 +61,10 @@ describe("normalizeCustomBaseUrl", () => {
 
   it("gives a user-readable message for a non-https URL", () => {
     expect(() => normalizeCustomBaseUrl("http://api.llmsrelay.com")).toThrow(/https/i);
+  });
+
+  it("gives a user-readable message for a port other than 443", () => {
+    expect(() => normalizeCustomBaseUrl("https://api.llmsrelay.com:8443")).toThrow(/port/i);
   });
 });
 
@@ -87,29 +99,64 @@ describe("customModelFor", () => {
   });
 });
 
-describe("openCustomApiKey", () => {
-  it("round-trips a sealed key", () => {
-    const sealed = encrypt(FAKE_KEY);
+describe("customKeyAad", () => {
+  it("binds purpose, version, org and normalized URL", () => {
+    expect(customKeyAad(ORG, BASE)).toBe(`custom_ai_key:v1:${ORG}:${BASE}`);
+  });
+});
+
+describe("sealCustomApiKey / openCustomApiKey", () => {
+  it("round-trips a sealed key for the same org and URL", () => {
+    const sealed = sealCustomApiKey(FAKE_KEY, ORG, BASE);
     expect(sealed).not.toContain(FAKE_KEY);
-    expect(openCustomApiKey(sealed)).toBe(FAKE_KEY);
+    expect(openCustomApiKey(sealed, ORG, BASE)).toBe(FAKE_KEY);
   });
 
-  it("passes legacy plaintext through", () => {
-    expect(openCustomApiKey(FAKE_KEY)).toBe(FAKE_KEY);
+  it("normalizes the URL on both sides", () => {
+    const sealed = sealCustomApiKey(FAKE_KEY, ORG, "https://API.llmsrelay.com/v1/");
+    expect(openCustomApiKey(sealed, ORG, BASE)).toBe(FAKE_KEY);
+    expect(openCustomApiKey(sealCustomApiKey(FAKE_KEY, ORG, BASE), ORG, `${BASE}/v1`)).toBe(FAKE_KEY);
   });
 
-  it("returns null for empty, tampered or wrong-key values", () => {
-    expect(openCustomApiKey(null)).toBeNull();
-    expect(openCustomApiKey(undefined)).toBeNull();
-    expect(openCustomApiKey("")).toBeNull();
+  it("rejects plaintext (no legacy pass-through)", () => {
+    expect(openCustomApiKey(FAKE_KEY, ORG, BASE)).toBeNull();
+  });
 
-    const sealed = encrypt(FAKE_KEY);
+  it("rejects a key sealed for another org", () => {
+    const sealed = sealCustomApiKey(FAKE_KEY, OTHER_ORG, BASE);
+    expect(openCustomApiKey(sealed, ORG, BASE)).toBeNull();
+  });
+
+  it("rejects a key sealed for another URL", () => {
+    const sealed = sealCustomApiKey(FAKE_KEY, ORG, "https://attacker.example.com");
+    expect(openCustomApiKey(sealed, ORG, BASE)).toBeNull();
+    expect(openCustomApiKey(sealCustomApiKey(FAKE_KEY, ORG, BASE), ORG, "https://attacker.example.com")).toBeNull();
+  });
+
+  it("rejects another sealed secret (encrypt() without the custom key AAD)", () => {
+    expect(openCustomApiKey(encrypt("fake-gmail-refresh-token"), ORG, BASE)).toBeNull();
+  });
+
+  it("returns null for empty, tampered, wrong-key values or an unusable URL", () => {
+    expect(openCustomApiKey(null, ORG, BASE)).toBeNull();
+    expect(openCustomApiKey(undefined, ORG, BASE)).toBeNull();
+    expect(openCustomApiKey("", ORG, BASE)).toBeNull();
+
+    const sealed = sealCustomApiKey(FAKE_KEY, ORG, BASE);
+    expect(openCustomApiKey(sealed, ORG, null)).toBeNull();
+    expect(openCustomApiKey(sealed, null, BASE)).toBeNull();
+    expect(openCustomApiKey(sealed, ORG, "http://api.llmsrelay.com")).toBeNull();
+
     const [iv, tag, body] = sealed.split(":");
     const tampered = `${iv}:${tag}:${(body[0] === "0" ? "1" : "0") + body.slice(1)}`;
-    expect(openCustomApiKey(tampered)).toBeNull();
+    expect(openCustomApiKey(tampered, ORG, BASE)).toBeNull();
 
     process.env.ENCRYPTION_KEY = "a-different-rotated-key";
-    expect(openCustomApiKey(sealed)).toBeNull();
+    expect(openCustomApiKey(sealed, ORG, BASE)).toBeNull();
+  });
+
+  it("refuses to seal for a URL that is not acceptable", () => {
+    expect(() => sealCustomApiKey(FAKE_KEY, ORG, "https://api.llmsrelay.com:8443")).toThrow();
   });
 });
 
@@ -130,6 +177,11 @@ describe("createCustomFetch", () => {
     await expect(createCustomFetch("https://relay.evil.example", lookup)).rejects.toThrow();
   });
 
+  it("rejects a base with a port other than 443", async () => {
+    const lookup = fakeLookup({ "api.llmsrelay.com": [{ address: "93.184.216.34", family: 4 }] });
+    await expect(createCustomFetch("https://api.llmsrelay.com:8443", lookup)).rejects.toThrow();
+  });
+
   it("rejects a non-https base", async () => {
     const lookup = fakeLookup({ "api.llmsrelay.com": [{ address: "93.184.216.34", family: 4 }] });
     await expect(createCustomFetch("http://api.llmsrelay.com", lookup)).rejects.toThrow();
@@ -137,9 +189,10 @@ describe("createCustomFetch", () => {
 
   it("returns a fetch pinned to the validated host", async () => {
     const lookup = fakeLookup({ "api.llmsrelay.com": [{ address: "93.184.216.34", family: 4 }] });
-    const pinned = await createCustomFetch("https://api.llmsrelay.com", lookup);
+    const pinned = await createCustomFetch("https://API.llmsrelay.com/v1/", lookup);
     try {
       expect(typeof pinned.fetch).toBe("function");
+      expect(pinned.base).toBe("https://api.llmsrelay.com");
       await expect(pinned.fetch("https://other.example.com/v1/models")).rejects.toThrow(/host mismatch/);
     } finally {
       await pinned.close();

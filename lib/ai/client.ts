@@ -5,11 +5,7 @@ import { assertSafeFetchTarget } from "@/lib/security/fetch-target";
 import { createPinnedFetch } from "@/lib/security/safe-fetch";
 import { AIFeature, AIModel, AISettings } from "./types";
 import { convertModelForProvider, getModelName } from "./models";
-import {
-  anthropicSdkBaseUrl,
-  createCustomFetch,
-  type CustomModelSettings,
-} from "./custom-provider";
+import { createCustomFetch, type CustomModelSettings } from "./custom-provider";
 import {
   AI_PROVIDER_ORDER,
   resolveAIProvider,
@@ -164,15 +160,20 @@ function customClient(
   return {
     messages: {
       create: async (params) => {
+        // Without a key the SDK would fall back to ANTHROPIC_API_KEY from env.
+        if (!resolved.apiKey) throw new Error("Custom AI provider not configured");
         // SECURITY (SSRF): the base URL is tenant-configurable. Validate it at
         // use time and pin the resolved addresses for this call only.
-        const base = resolved.baseURL ?? "";
-        const pinned = await createCustomFetch(base);
+        const pinned = await createCustomFetch(resolved.baseURL ?? "");
         try {
+          // authToken: null so ANTHROPIC_AUTH_TOKEN from env is never sent to the tenant URL.
           const client = new Anthropic({
             apiKey: resolved.apiKey,
-            baseURL: anthropicSdkBaseUrl(base),
+            authToken: null,
+            baseURL: pinned.base,
             fetch: pinned.fetch,
+            timeout: 60_000,
+            maxRetries: 1,
           });
           return await client.messages.create({ ...params, model: toCustomModel(params.model, settings) });
         } finally {

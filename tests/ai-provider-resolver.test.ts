@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 process.env.ENCRYPTION_KEY = "test-encryption-key-for-provider-resolver";
 
 const { encrypt } = await import("@/lib/utils/encryption");
+const { sealCustomApiKey } = await import("@/lib/ai/custom-provider");
 const { AI_PROVIDER_ORDER, resolveAIProvider } = await import("@/lib/ai/provider-resolver");
 
 const NOW = Date.parse("2026-09-30T12:00:00Z");
@@ -103,24 +104,72 @@ describe("resolveAIProvider", () => {
   describe("custom provider", () => {
     const BASE = "https://api.llmsrelay.com";
     const FAKE_KEY = "sk-cs4-test";
+    const ORG = "00000000-0000-4000-8000-000000000001";
+    const OTHER_ORG = "00000000-0000-4000-8000-000000000002";
+    const seal = (key: string, org = ORG, base = BASE) => sealCustomApiKey(key, org, base);
 
     it("needs both a base URL and a decryptable key", () => {
-      expect(resolveAIProvider({ ai_provider: "custom", custom_base_url: BASE }, {}, NOW)).toBeNull();
       expect(
-        resolveAIProvider({ ai_provider: "custom", custom_api_key: encrypt(FAKE_KEY) }, {}, NOW)
+        resolveAIProvider({ ai_provider: "custom", organization_id: ORG, custom_base_url: BASE }, {}, NOW)
       ).toBeNull();
-      const sealed = encrypt(FAKE_KEY);
+      expect(
+        resolveAIProvider({ ai_provider: "custom", organization_id: ORG, custom_api_key: seal(FAKE_KEY) }, {}, NOW)
+      ).toBeNull();
+      const sealed = seal(FAKE_KEY);
       const [iv, tag, body] = sealed.split(":");
       const tampered = `${iv}:${tag}:${(body[0] === "0" ? "1" : "0") + body.slice(1)}`;
       expect(
-        resolveAIProvider({ ai_provider: "custom", custom_base_url: BASE, custom_api_key: tampered }, {}, NOW)
+        resolveAIProvider(
+          { ai_provider: "custom", organization_id: ORG, custom_base_url: BASE, custom_api_key: tampered },
+          {},
+          NOW
+        )
       ).toBeNull();
+      // Plaintext and other sealed secrets (no custom key AAD) are refused.
+      expect(
+        resolveAIProvider(
+          { ai_provider: "custom", organization_id: ORG, custom_base_url: BASE, custom_api_key: FAKE_KEY },
+          {},
+          NOW
+        )
+      ).toBeNull();
+      expect(
+        resolveAIProvider(
+          { ai_provider: "custom", organization_id: ORG, custom_base_url: BASE, custom_api_key: encrypt(FAKE_KEY) },
+          {},
+          NOW
+        )
+      ).toBeNull();
+    });
+
+    it("only opens a key sealed for the same org and base URL", () => {
+      const settings = { ai_provider: "custom", custom_base_url: BASE };
+      expect(
+        resolveAIProvider({ ...settings, organization_id: ORG, custom_api_key: seal(FAKE_KEY, OTHER_ORG) }, {}, NOW)
+      ).toBeNull();
+      expect(
+        resolveAIProvider(
+          { ...settings, organization_id: ORG, custom_api_key: seal(FAKE_KEY, ORG, "https://attacker.example.com") },
+          {},
+          NOW
+        )
+      ).toBeNull();
+      expect(resolveAIProvider({ ...settings, custom_api_key: seal(FAKE_KEY) }, {}, NOW)).toBeNull();
+      expect(
+        resolveAIProvider({ ...settings, organization_id: ORG, custom_api_key: seal(FAKE_KEY) }, {}, NOW)
+      ).toEqual({ provider: "custom", apiKey: FAKE_KEY, baseURL: BASE });
     });
 
     it("uses an explicitly chosen custom provider and decrypts its key", () => {
       expect(
         resolveAIProvider(
-          { ai_provider: "custom", api_key: "sk-ant", custom_base_url: BASE, custom_api_key: encrypt(FAKE_KEY) },
+          {
+            ai_provider: "custom",
+            organization_id: ORG,
+            api_key: "sk-ant",
+            custom_base_url: BASE,
+            custom_api_key: seal(FAKE_KEY),
+          },
           { ANTHROPIC_API_KEY: "sk-env" },
           NOW
         )
@@ -142,7 +191,7 @@ describe("resolveAIProvider", () => {
 
     it("is last in the fallback order", () => {
       expect(AI_PROVIDER_ORDER[AI_PROVIDER_ORDER.length - 1]).toBe("custom");
-      const custom = { custom_base_url: BASE, custom_api_key: encrypt(FAKE_KEY) };
+      const custom = { organization_id: ORG, custom_base_url: BASE, custom_api_key: seal(FAKE_KEY) };
       expect(resolveAIProvider({ ...custom, groq_api_key: "gsk" }, {}, NOW)).toEqual({
         provider: "groq",
         apiKey: "gsk",

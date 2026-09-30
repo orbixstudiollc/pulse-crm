@@ -15,6 +15,8 @@ export type ResolvedAIProviderName =
   | "custom";
 
 export interface AIProviderSettings {
+  /** Required for "custom": its key is sealed for this org. */
+  organization_id?: string | null;
   ai_provider?: string | null;
   api_key?: string | null;
   openrouter_api_key?: string | null;
@@ -74,8 +76,12 @@ function orgCredential(
     case "ollama":
       return settings.ollama_base_url ? { baseURL: settings.ollama_base_url } : null;
     case "custom": {
-      // Both the tenant URL and a decryptable (sealed) key are required.
-      const apiKey = openCustomApiKey(settings.custom_api_key);
+      // Both the tenant URL and a key sealed for this org and URL are required.
+      const apiKey = openCustomApiKey(
+        settings.custom_api_key,
+        settings.organization_id,
+        settings.custom_base_url
+      );
       return settings.custom_base_url && apiKey
         ? { apiKey, baseURL: settings.custom_base_url }
         : null;

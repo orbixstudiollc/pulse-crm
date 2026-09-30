@@ -7,12 +7,43 @@ import { AISettings, PublicAISettings, AIUsageStats, AIUsageDailyPoint, AIUsageL
 import { toPublicAISettings, omitBlankAISecrets, pickWritableAISettings } from "@/lib/ai/public-settings";
 import { requireRole } from "./helpers";
 import { assertSafeFetchTarget } from "@/lib/security/fetch-target";
-import { encrypt } from "@/lib/utils/encryption";
-import { createCustomFetch, normalizeCustomBaseUrl, openCustomApiKey } from "@/lib/ai/custom-provider";
+import {
+  createCustomFetch,
+  normalizeCustomBaseUrl,
+  openCustomApiKey,
+  sealCustomApiKey,
+} from "@/lib/ai/custom-provider";
 
 const CUSTOM_MODELS_TIMEOUT_MS = 10_000;
 const CUSTOM_MODELS_MAX_BYTES = 1_048_576;
 const CUSTOM_URL_NOT_ALLOWED = "Custom AI base URL is not allowed (it must be a public https host)";
+const LIST_MODELS_MAX_CALLS = 10;
+const LIST_MODELS_WINDOW_MS = 60_000;
+
+// Per-instance (best-effort) window of listCustomModels calls per org.
+const listModelsCalls = new Map<string, number[]>();
+
+/** Records a listCustomModels call; false when the org is over its limit. */
+function allowListModels(orgId: string): boolean {
+  const now = Date.now();
+  const recent = (listModelsCalls.get(orgId) ?? []).filter((t) => t > now - LIST_MODELS_WINDOW_MS);
+  if (recent.length >= LIST_MODELS_MAX_CALLS) {
+    listModelsCalls.set(orgId, recent);
+    return false;
+  }
+  listModelsCalls.set(orgId, [...recent, now]);
+  return true;
+}
+
+/** The normalized form of a stored base URL, or null when missing or unusable. */
+function normalizedOrNull(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    return normalizeCustomBaseUrl(url);
+  } catch {
+    return null;
+  }
+}
 
 export async function getAISettings(): Promise<PublicAISettings | null> {
   const supabase = await createClient();
@@ -89,7 +120,7 @@ export async function updateAISettings(
     }
   }
 
-  const prepared = await prepareCustomProviderFields(clean);
+  const prepared = await prepareCustomProviderFields(clean, orgId);
   if ("error" in prepared) return { success: false, error: prepared.error };
 
   const { error } = await createAdminClient()
@@ -108,41 +139,60 @@ export async function updateAISettings(
 
 /**
  * Returns a copy of `clean` with the custom provider fields prepared: the base
- * URL normalized and SSRF-checked (blank clears it), the API key sealed.
+ * URL normalized and SSRF-checked (blank clears it), the API key sealed for
+ * this org and URL. A saved key is only kept while the URL is unchanged.
  * Returns a user-readable error when a field is not acceptable.
  */
 async function prepareCustomProviderFields<T extends Record<string, unknown>>(
-  clean: T
+  clean: T,
+  orgId: string
 ): Promise<{ updates: T } | { error: string }> {
   const updates: Record<string, unknown> = { ...clean };
-
   const baseUrl = clean.custom_base_url;
+  // Blank keys were already dropped by omitBlankAISecrets (the saved key is kept).
+  const apiKey = typeof clean.custom_api_key === "string" ? clean.custom_api_key.trim() : "";
+  if (typeof baseUrl !== "string" && !apiKey) return { updates: clean };
+
+  const { data: saved, error } = await createAdminClient()
+    .from("ai_settings")
+    .select("custom_base_url")
+    .eq("organization_id", orgId)
+    .maybeSingle();
+  if (error) {
+    console.error("Failed to load the saved custom AI base URL:", error);
+    return { error: "Could not load the saved AI settings" };
+  }
+  const savedBase = normalizedOrNull(saved?.custom_base_url);
+
+  let base = savedBase;
   if (typeof baseUrl === "string" && baseUrl.trim()) {
-    let normalized: string;
     try {
-      normalized = normalizeCustomBaseUrl(baseUrl);
+      base = normalizeCustomBaseUrl(baseUrl);
     } catch (err) {
       return { error: err instanceof Error ? err.message : "Base URL is not valid" };
     }
     // SECURITY (SSRF): the custom base URL is fetched server-side.
     try {
-      await assertSafeFetchTarget(normalized);
+      await assertSafeFetchTarget(base);
     } catch {
       return { error: CUSTOM_URL_NOT_ALLOWED };
     }
-    updates.custom_base_url = normalized;
+    updates.custom_base_url = base;
   } else if (typeof baseUrl === "string") {
+    base = null;
     updates.custom_base_url = null;
   }
 
-  // Blank keys were already dropped by omitBlankAISecrets (the saved key is kept).
-  const apiKey = clean.custom_api_key;
-  if (typeof apiKey === "string") {
+  if (apiKey) {
+    if (!base) return { error: "Enter a base URL first" };
     try {
-      updates.custom_api_key = encrypt(apiKey.trim());
+      updates.custom_api_key = sealCustomApiKey(apiKey, orgId, base);
     } catch {
       return { error: "The API key could not be stored securely (encryption is not configured)" };
     }
+  } else if (base && base !== savedBase) {
+    // The saved key is sealed for the saved URL and is never sent elsewhere.
+    return { error: "Re-enter the API key when changing the base URL" };
   }
 
   return { updates: updates as T };
@@ -179,7 +229,7 @@ async function fetchCustomModelIds(
   }
 
   try {
-    const res = await pinned.fetch(`${base}/v1/models`, {
+    const res = await pinned.fetch(`${pinned.base}/v1/models`, {
       method: "GET",
       headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", accept: "application/json" },
       signal: AbortSignal.timeout(CUSTOM_MODELS_TIMEOUT_MS),
@@ -210,8 +260,9 @@ async function fetchCustomModelIds(
 
 /**
  * Lists the model IDs offered by a custom Anthropic-compatible endpoint
- * (GET {base}/v1/models). Omitted arguments fall back to the saved settings.
- * Admin/owner only. Error messages never include the API key.
+ * (GET {base}/v1/models). Omitted arguments fall back to the saved settings;
+ * the saved key is only used for the saved URL. Admin/owner only, rate
+ * limited per org. Error messages never include the API key.
  */
 export async function listCustomModels(input?: {
   baseUrl?: string;
@@ -224,21 +275,24 @@ export async function listCustomModels(input?: {
     unstable_rethrow(err);
     return { ok: false, error: err instanceof Error ? err.message : "Forbidden: admin role required" };
   }
+  if (!allowListModels(orgId)) {
+    return { ok: false, error: "Too many model list requests. Try again in a minute." };
+  }
 
-  let baseUrl = input?.baseUrl?.trim() || null;
-  let apiKey = input?.apiKey?.trim() || null;
-  if (!baseUrl || !apiKey) {
+  const typedUrl = input?.baseUrl?.trim() || null;
+  const typedKey = input?.apiKey?.trim() || null;
+  let saved: { custom_base_url: string | null; custom_api_key: string | null } | null = null;
+  if (!typedUrl || !typedKey) {
     // Secret columns are only readable with the service role.
     const { data } = await createAdminClient()
       .from("ai_settings")
       .select("custom_base_url, custom_api_key")
       .eq("organization_id", orgId)
       .maybeSingle();
-    baseUrl ??= data?.custom_base_url ?? null;
-    apiKey ??= openCustomApiKey(data?.custom_api_key);
+    saved = data;
   }
+  const baseUrl = typedUrl ?? saved?.custom_base_url ?? null;
   if (!baseUrl) return { ok: false, error: "Enter a base URL first" };
-  if (!apiKey) return { ok: false, error: "Enter an API key first" };
 
   let base: string;
   try {
@@ -246,6 +300,16 @@ export async function listCustomModels(input?: {
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Base URL is not valid" };
   }
+
+  let apiKey = typedKey;
+  if (!apiKey) {
+    // SECURITY: the saved key may only be sent to the URL it was saved for.
+    const savedBase = normalizedOrNull(saved?.custom_base_url);
+    if (savedBase !== base) return { ok: false, error: "Enter the API key for this URL" };
+    apiKey = openCustomApiKey(saved?.custom_api_key, orgId, savedBase);
+  }
+  if (!apiKey) return { ok: false, error: "Enter an API key first" };
+
   return fetchCustomModelIds(base, apiKey);
 }
 

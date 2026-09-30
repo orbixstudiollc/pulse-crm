@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     const { data: settings } = await createAdminClient()
       .from("ai_settings")
       .select(
-        "api_key, feature_chat, ai_provider, openrouter_api_key, openrouter_oauth_token, openrouter_expires_at, openai_api_key, groq_api_key, ollama_base_url, custom_base_url, custom_api_key, custom_model, custom_fast_model, daily_token_limit, monthly_token_limit, tokens_used_today, tokens_used_month, last_token_reset_daily, last_token_reset_monthly"
+        "organization_id, api_key, feature_chat, ai_provider, openrouter_api_key, openrouter_oauth_token, openrouter_expires_at, openai_api_key, groq_api_key, ollama_base_url, custom_base_url, custom_api_key, custom_model, custom_fast_model, daily_token_limit, monthly_token_limit, tokens_used_today, tokens_used_month, last_token_reset_daily, last_token_reset_monthly"
       )
       .eq("organization_id", profile.organization_id)
       .single();
@@ -76,6 +76,8 @@ export async function POST(req: Request) {
       case "custom": {
         const customModel = customModelFor("sonnet", settings ?? {});
         if (!customModel || !resolved.baseURL) return notConfigured();
+        // Without a key the SDK would fall back to ANTHROPIC_API_KEY from env.
+        if (!resolved.apiKey) return notConfigured();
         modelId = customModel;
         break;
       }
@@ -213,7 +215,7 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
       req.signal.addEventListener("abort", guardedClose);
       anthropicOptions = {
         apiKey: resolved.apiKey,
-        baseURL: aiSdkBaseUrl(resolved.baseURL),
+        baseURL: aiSdkBaseUrl(pinned.base),
         fetch: pinned.fetch,
       };
     } else if (provider === "openrouter") {
@@ -502,6 +504,11 @@ ${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByTy
         }),
       },
       stopWhen: stepCountIs(3),
+      abortSignal: req.signal,
+      onAbort: () => {
+        guardedRelease();
+        closeCustomFetch?.();
+      },
       onError: ({ error }) => {
         guardedRelease();
         closeCustomFetch?.();

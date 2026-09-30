@@ -92,6 +92,17 @@ describe("createPinnedFetch", () => {
     }
   });
 
+  it("rejects a URL with a different protocol on the same host", async () => {
+    const pinned = createPinnedFetch(target());
+    try {
+      await expect(pinned.fetch(`https://pinned.invalid:${port}/`)).rejects.toThrow(
+        "Pinned fetch: protocol mismatch"
+      );
+    } finally {
+      await pinned.close();
+    }
+  });
+
   it("close() resolves", async () => {
     const pinned = createPinnedFetch(exampleTarget);
     await expect(pinned.close()).resolves.toBeUndefined();
