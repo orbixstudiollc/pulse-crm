@@ -203,11 +203,9 @@ interface TeamMember {
 function InviteTeam({
   onNext,
   onBack,
-  onSkip,
 }: {
   onNext: () => void;
   onBack: () => void;
-  onSkip: () => void;
 }) {
   const [members, setMembers] = useState<TeamMember[]>([
     { id: "1", email: "", role: "sales-rep" },
@@ -242,6 +240,9 @@ function InviteTeam({
         <p className="text-sm text-fg-secondary">
           Collaborate with your team members. You can always add more later.
         </p>
+        <span className="mt-3 inline-block rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-fg-secondary">
+          Coming soon
+        </span>
       </div>
 
       <Stepper currentStep={2} totalSteps={4} />
@@ -295,7 +296,7 @@ function InviteTeam({
           rightIcon={<ArrowRightIcon size={18} />}
           onClick={onNext}
         >
-          Continue
+          Skip
         </Button>
 
         <div className="flex items-center justify-between">
@@ -306,13 +307,6 @@ function InviteTeam({
           >
             <ArrowLeftIcon size={16} />
             Back
-          </button>
-          <button
-            type="button"
-            onClick={onSkip}
-            className="text-sm text-fg-secondary hover:text-fg transition-colors"
-          >
-            Skip for now
           </button>
         </div>
       </div>
@@ -325,11 +319,9 @@ function InviteTeam({
 function ImportData({
   onNext,
   onBack,
-  onSkip,
 }: {
   onNext: () => void;
   onBack: () => void;
-  onSkip: () => void;
 }) {
   const [importSource, setImportSource] = useState<"hubspot" | "csv">("csv");
 
@@ -342,6 +334,9 @@ function ImportData({
         <p className="text-sm text-fg-secondary">
           Bring in your existing contacts and deals to get started quickly.
         </p>
+        <span className="mt-3 inline-block rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-fg-secondary">
+          Coming soon
+        </span>
       </div>
 
       <Stepper currentStep={3} totalSteps={4} />
@@ -432,16 +427,6 @@ function ImportData({
             <p className="text-sm font-medium text-fg">
               Drag and drop your file here
             </p>
-            <p className="text-xs text-fg-secondary mt-1">
-              or{" "}
-              <button
-                type="button"
-                className="text-accent-strong hover:underline"
-              >
-                browse
-              </button>{" "}
-              to choose a file
-            </p>
           </div>
         )}
       </div>
@@ -452,7 +437,7 @@ function ImportData({
           rightIcon={<ArrowRightIcon size={18} />}
           onClick={onNext}
         >
-          Continue
+          Skip
         </Button>
 
         <div className="flex items-center justify-between">
@@ -463,13 +448,6 @@ function ImportData({
           >
             <ArrowLeftIcon size={16} />
             Back
-          </button>
-          <button
-            type="button"
-            onClick={onSkip}
-            className="text-sm text-fg-secondary hover:text-fg transition-colors"
-          >
-            Skip for now
           </button>
         </div>
       </div>
@@ -518,7 +496,7 @@ function Complete() {
         </p>
       </div>
 
-      <Stepper currentStep={5} totalSteps={4} />
+      <Stepper currentStep={4} totalSteps={4} />
 
       <div className="mt-8 grid grid-cols-2 gap-4">
         {actions.map((action) => (
@@ -621,7 +599,6 @@ export default function OnboardingPage() {
           <InviteTeam
             onNext={() => setStep(3)}
             onBack={() => setStep(1)}
-            onSkip={() => setStep(3)}
           />
         );
       case 3:
@@ -629,7 +606,6 @@ export default function OnboardingPage() {
           <ImportData
             onNext={() => setStep(4)}
             onBack={() => setStep(2)}
-            onSkip={() => setStep(4)}
           />
         );
       case 4:
@@ -650,12 +626,6 @@ export default function OnboardingPage() {
           >
             Pulse
           </Link>
-          <Link
-            href="#"
-            className="text-sm font-medium text-fg-secondary hover:text-fg transition-colors"
-          >
-            Need Help?
-          </Link>
         </header>
 
         <div className="flex flex-1 items-center justify-center px-8">
@@ -664,7 +634,7 @@ export default function OnboardingPage() {
 
         <footer className="px-8 py-6">
           <p className="text-sm text-fg-secondary text-center">
-            © 2025 Pulse CRM. All rights reserved.
+            © {new Date().getFullYear()} Pulse CRM. All rights reserved.
           </p>
         </footer>
       </div>
@@ -672,12 +642,11 @@ export default function OnboardingPage() {
       {/* ── Right column: hero panel ──────────────────────────────── */}
       <div className="hidden lg:flex lg:w-1/2 flex-col bg-inverse text-on-inverse overflow-hidden relative">
         <div className="relative z-10 w-[544px] pt-[88px] pl-[88px]">
-          <blockquote className="text-2xl font-semibold text-on-inverse mb-4">
-            Pulse transformed how we manage our sales pipeline. We closed 40%
-            more deals in the first quarter.
-          </blockquote>
+          <h2 className="text-2xl font-semibold text-on-inverse mb-4">
+            Manage your sales pipeline with ease
+          </h2>
           <p className="text-sm leading-[22px] text-on-inverse/70">
-            — Sarah Chen, Sales Director at TechCorp
+            Leads, deals, and activity in one place.
           </p>
         </div>
         <div className="absolute bottom-0 right-0 left-0 top-[32%]">

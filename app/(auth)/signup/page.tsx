@@ -63,12 +63,6 @@ export default function RegisterPage() {
           >
             Pulse
           </Link>
-          <Link
-            href="#"
-            className="text-sm font-medium text-fg-secondary hover:text-fg transition-colors"
-          >
-            Need Help?
-          </Link>
         </header>
 
         {/* Form — centered vertically */}
@@ -204,19 +198,9 @@ export default function RegisterPage() {
             {/* Terms */}
             <p className="text-sm text-fg-secondary text-center mt-6">
               By creating an account, you agree to our{" "}
-              <Link
-                href="#"
-                className="font-medium text-fg hover:underline"
-              >
-                Terms of Service
-              </Link>{" "}
+              <span className="font-medium text-fg">Terms of Service</span>{" "}
               and{" "}
-              <Link
-                href="#"
-                className="font-medium text-fg hover:underline"
-              >
-                Privacy Policy
-              </Link>
+              <span className="font-medium text-fg">Privacy Policy</span>
             </p>
           </div>
         </div>
@@ -224,7 +208,7 @@ export default function RegisterPage() {
         {/* Footer */}
         <footer className="px-8 py-6">
           <p className="text-sm text-fg-secondary text-center">
-            © 2025 Pulse CRM. All rights reserved.
+            © {new Date().getFullYear()} Pulse CRM. All rights reserved.
           </p>
         </footer>
       </div>

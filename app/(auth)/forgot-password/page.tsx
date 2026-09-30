@@ -41,12 +41,6 @@ export default function ForgotPasswordPage() {
           >
             Pulse
           </Link>
-          <Link
-            href="#"
-            className="text-sm font-medium text-fg-secondary hover:text-fg transition-colors"
-          >
-            Need Help?
-          </Link>
         </header>
 
         {/* Form — centered vertically */}
@@ -115,7 +109,7 @@ export default function ForgotPasswordPage() {
         {/* Footer */}
         <footer className="px-8 py-6">
           <p className="text-sm text-fg-secondary text-center">
-            © 2025 Pulse CRM. All rights reserved.
+            © {new Date().getFullYear()} Pulse CRM. All rights reserved.
           </p>
         </footer>
       </div>

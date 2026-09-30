@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import {
   Button,
   Input,
-  Checkbox,
   EyeIcon,
   EyeSlashIcon,
   CircleNotchIcon,
@@ -20,7 +19,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,12 +58,6 @@ export default function LoginPage() {
             className="text-xl font-semibold text-fg"
           >
             Pulse
-          </Link>
-          <Link
-            href="#"
-            className="text-sm font-medium text-fg-secondary hover:text-fg transition-colors"
-          >
-            Need Help?
           </Link>
         </header>
 
@@ -127,13 +119,8 @@ export default function LoginPage() {
                 }
               />
 
-              {/* Remember me + Forgot password */}
-              <div className="flex items-center justify-between">
-                <Checkbox
-                  label="Remember me"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                />
+              {/* Forgot password */}
+              <div className="flex items-center justify-end">
                 <Link
                   href="/forgot-password"
                   className="text-sm font-medium text-fg-secondary hover:text-fg transition-colors"
@@ -197,7 +184,7 @@ export default function LoginPage() {
         {/* Footer */}
         <footer className="px-8 py-6">
           <p className="text-sm text-fg-secondary text-center">
-            © 2025 Pulse CRM. All rights reserved.
+            © {new Date().getFullYear()} Pulse CRM. All rights reserved.
           </p>
         </footer>
       </div>
