@@ -154,11 +154,14 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
   const [contactHref, setContactHref] = useState<string | null>(null);
   const [details, setDetails] = useState<DealRowDetails | null>(null);
 
-  // Mark data as loading when the drawer opens (adjusted during render, not in an effect)
+  // Mark data as loading when the drawer opens or switches deal, and drop the
+  // previous deal's data (adjusted during render, not in an effect)
   const loadKey = open && deal?.id ? deal.id : null;
   const [loadingKey, setLoadingKey] = useState<string | null>(null);
   if (loadKey !== loadingKey) {
     setLoadingKey(loadKey);
+    setNotes([]);
+    setActivities([]);
     setContactHref(null);
     setDetails(null);
     if (loadKey) setIsLoadingData(true);
@@ -174,22 +177,28 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
       getDealNotes(deal.id),
       getDealActivities(deal.id),
       getDealById(deal.id),
-    ]).then(([notesRes, activitiesRes, dealRes]) => {
-      if (cancelled) return;
-      setNotes((notesRes.data ?? []) as DealNoteRecord[]);
-      setActivities((activitiesRes.data ?? []) as DealActivityRecord[]);
-      // Link the contact to the record this deal references, if any
-      const row = dealRes.data as DealRowDetails | null;
-      setDetails(row);
-      setContactHref(
-        row?.customer_id
-          ? `/dashboard/customers/${row.customer_id}`
-          : row?.lead_id
-            ? `/dashboard/leads/${row.lead_id}`
-            : null,
-      );
-      setIsLoadingData(false);
-    });
+    ])
+      .then(([notesRes, activitiesRes, dealRes]) => {
+        if (cancelled) return;
+        setNotes((notesRes.data ?? []) as DealNoteRecord[]);
+        setActivities((activitiesRes.data ?? []) as DealActivityRecord[]);
+        // Link the contact to the record this deal references, if any
+        const row = dealRes.data as DealRowDetails | null;
+        setDetails(row);
+        setContactHref(
+          row?.customer_id
+            ? `/dashboard/customers/${row.customer_id}`
+            : row?.lead_id
+              ? `/dashboard/leads/${row.lead_id}`
+              : null,
+        );
+      })
+      .catch(() => {
+        if (!cancelled) toast.error("Failed to load deal details");
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingData(false);
+      });
     return () => {
       cancelled = true;
     };
