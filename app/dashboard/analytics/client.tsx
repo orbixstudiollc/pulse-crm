@@ -14,7 +14,7 @@ import {
   Cell,
 } from "recharts";
 import {
-  Button,
+  ChartBarIcon,
   FunnelIcon,
   CurrencyDollarIcon,
   TrophyIcon,
@@ -28,9 +28,18 @@ import {
   WhatsappLogoIcon,
   LinkedinLogoIcon,
 } from "@/components/ui";
-import { PageHeader } from "@/components/dashboard";
+import {
+  Page,
+  PageHeader,
+  PageTabs,
+  MetricStrip,
+  Metric,
+  Section,
+  TableSection,
+  EmptyState as PageEmptyState,
+} from "@/components/dashboard";
 import { cn } from "@/lib/utils";
-import { chartSeries, chartTooltipStyle, axisTick } from "@/lib/design-system/chart-colors";
+import { chartSeries, chartGrid, chartTooltipStyle, axisTick } from "@/lib/design-system/chart-colors";
 import { formatCurrency } from "@/lib/utils";
 import { aiGenerateInsightsSummary, aiAnalyzePipeline, aiIdentifyRisks, aiPredictForecast } from "@/lib/actions/ai-analytics";
 import type { EmailOverviewStats, AccountHealth, DailyEmailVolume } from "@/lib/actions/email-analytics";
@@ -209,25 +218,6 @@ function formatStageName(stage: string): string {
 
 // ── Shared Components ────────────────────────────────────────────────────────
 
-function Card({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "rounded-lg border border-line bg-surface p-4",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
-}
-
 function StatBox({
   label,
   value,
@@ -237,38 +227,16 @@ function StatBox({
   value: string;
   subValue?: string;
 }) {
-  return (
-    <Card>
-      <p className="text-sm font-medium text-fg-secondary">
-        {label}
-      </p>
-      <p className="mt-1 text-2xl font-semibold text-fg">
-        {value}
-      </p>
-      {subValue && (
-        <p className="mt-1 text-sm text-fg-secondary">
-          {subValue}
-        </p>
-      )}
-    </Card>
-  );
+  return <Metric label={label} value={value} hint={subValue} />;
 }
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <Card className="flex items-center justify-center py-16">
+    <div className="flex items-center justify-center py-16">
       <p className="text-sm text-fg-secondary">
         {message}
       </p>
-    </Card>
-  );
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h3 className="text-base font-semibold text-fg mb-4">
-      {children}
-    </h3>
+    </div>
   );
 }
 
@@ -319,49 +287,41 @@ function PipelineTab({ data }: { data: PipelineData }) {
   }));
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Stats row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <MetricStrip className="pt-6">
         <StatBox label="Total Deals" value={String(data.totalDeals)} />
         <StatBox
           label="Avg Deal Value"
           value={formatCurrency(data.avgDealValue)}
         />
-      </div>
+      </MetricStrip>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 border-t border-divider">
         {/* Deal count per stage */}
-        <Card>
-          <SectionTitle>Deals by Stage</SectionTitle>
+        <Section title="Deals by Stage">
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} barCategoryGap="20%">
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="currentColor"
-                  className="text-fg-disabled"
-                />
+                <CartesianGrid vertical={false} stroke={chartGrid} />
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 12 }}
+                  tick={axisTick}
                   tickLine={false}
                   axisLine={false}
-                  className="text-fg-secondary"
                 />
                 <YAxis
-                  tick={{ fontSize: 12 }}
+                  tick={axisTick}
                   tickLine={false}
                   axisLine={false}
                   allowDecimals={false}
-                  className="text-fg-secondary"
                 />
                 <Tooltip
                   content={<ChartTooltip />}
                   cursor={{ fill: "transparent" }}
                 />
-                <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                <Bar dataKey="count" radius={[2, 2, 0, 0]}>
                   {chartData.map((entry, i) => (
                     <Cell key={i} fill={entry.fill} />
                   ))}
@@ -369,26 +329,19 @@ function PipelineTab({ data }: { data: PipelineData }) {
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </Card>
+        </Section>
 
         {/* Total value per stage */}
-        <Card>
-          <SectionTitle>Value by Stage</SectionTitle>
+        <Section title="Value by Stage" className="lg:border-t-0 lg:border-l">
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} barCategoryGap="20%">
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="currentColor"
-                  className="text-fg-disabled"
-                />
+                <CartesianGrid vertical={false} stroke={chartGrid} />
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 12 }}
+                  tick={axisTick}
                   tickLine={false}
                   axisLine={false}
-                  className="text-fg-secondary"
                 />
                 <YAxis
                   tick={{ fontSize: 12 }}
@@ -407,7 +360,7 @@ function PipelineTab({ data }: { data: PipelineData }) {
                   }
                   cursor={{ fill: "transparent" }}
                 />
-                <Bar dataKey="totalValue" radius={[6, 6, 0, 0]}>
+                <Bar dataKey="totalValue" radius={[2, 2, 0, 0]}>
                   {chartData.map((entry, i) => (
                     <Cell key={i} fill={entry.fill} />
                   ))}
@@ -415,7 +368,7 @@ function PipelineTab({ data }: { data: PipelineData }) {
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </Card>
+        </Section>
       </div>
     </div>
   );
@@ -433,40 +386,32 @@ function SourcesTab({ data }: { data: SourceData[] }) {
   }));
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2">
         {/* Lead count by source */}
-        <Card>
-          <SectionTitle>Leads by Source</SectionTitle>
+        <Section title="Leads by Source">
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} barCategoryGap="20%">
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="currentColor"
-                  className="text-fg-disabled"
-                />
+                <CartesianGrid vertical={false} stroke={chartGrid} />
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 12 }}
+                  tick={axisTick}
                   tickLine={false}
                   axisLine={false}
-                  className="text-fg-secondary"
                 />
                 <YAxis
-                  tick={{ fontSize: 12 }}
+                  tick={axisTick}
                   tickLine={false}
                   axisLine={false}
                   allowDecimals={false}
-                  className="text-fg-secondary"
                 />
                 <Tooltip
                   content={<ChartTooltip />}
                   cursor={{ fill: "transparent" }}
                 />
-                <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                <Bar dataKey="count" radius={[2, 2, 0, 0]}>
                   {chartData.map((entry, i) => (
                     <Cell key={i} fill={entry.fill} />
                   ))}
@@ -474,39 +419,31 @@ function SourcesTab({ data }: { data: SourceData[] }) {
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </Card>
+        </Section>
 
         {/* Avg score by source */}
-        <Card>
-          <SectionTitle>Avg Score by Source</SectionTitle>
+        <Section title="Avg Score by Source" className="lg:border-t-0 lg:border-l">
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} barCategoryGap="20%">
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="currentColor"
-                  className="text-fg-disabled"
-                />
+                <CartesianGrid vertical={false} stroke={chartGrid} />
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 12 }}
+                  tick={axisTick}
                   tickLine={false}
                   axisLine={false}
-                  className="text-fg-secondary"
                 />
                 <YAxis
-                  tick={{ fontSize: 12 }}
+                  tick={axisTick}
                   tickLine={false}
                   axisLine={false}
                   domain={[0, 100]}
-                  className="text-fg-secondary"
                 />
                 <Tooltip
                   content={<ChartTooltip />}
                   cursor={{ fill: "transparent" }}
                 />
-                <Bar dataKey="avgScore" radius={[6, 6, 0, 0]}>
+                <Bar dataKey="avgScore" radius={[2, 2, 0, 0]}>
                   {chartData.map((entry, i) => (
                     <Cell key={i} fill={entry.fill} />
                   ))}
@@ -514,26 +451,25 @@ function SourcesTab({ data }: { data: SourceData[] }) {
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </Card>
+        </Section>
       </div>
 
       {/* Table */}
-      <Card>
-        <SectionTitle>Source Details</SectionTitle>
+      <TableSection title="Source Details" className="border-t border-divider">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr>
-                <th className="h-10 px-4 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                <th className="text-left text-[13px] font-medium text-fg-secondary">
                   Source
                 </th>
-                <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
+                <th className="text-right text-[13px] font-medium text-fg-secondary">
                   Leads
                 </th>
-                <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
+                <th className="text-right text-[13px] font-medium text-fg-secondary">
                   Avg Score
                 </th>
-                <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
+                <th className="text-right text-[13px] font-medium text-fg-secondary">
                   Hot Rate
                 </th>
               </tr>
@@ -542,18 +478,21 @@ function SourcesTab({ data }: { data: SourceData[] }) {
               {data.map((source) => (
                 <tr
                   key={source.source}
-                  className="h-10 border-b border-divider last:border-0 hover:bg-subtle transition-colors"
+                  className="hover:bg-subtle transition-colors"
                 >
-                  <td className="py-2 px-4 font-medium text-fg">
-                    {source.source}
+                  <td className="py-2 font-medium text-fg">
+                    <div className="flex items-center gap-2">
+                      <GlobeIcon size={16} className="shrink-0 text-fg-muted" />
+                      {source.source}
+                    </div>
                   </td>
-                  <td className="py-2 px-4 text-right text-fg-secondary">
+                  <td className="py-2 text-right text-fg-secondary">
                     {source.count}
                   </td>
-                  <td className="py-2 px-4 text-right text-fg-secondary">
+                  <td className="py-2 text-right text-fg-secondary">
                     {source.avgScore}
                   </td>
-                  <td className="py-2 px-4 text-right">
+                  <td className="py-2 text-right">
                     <span
                       className={cn(
                         "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
@@ -572,7 +511,7 @@ function SourcesTab({ data }: { data: SourceData[] }) {
             </tbody>
           </table>
         </div>
-      </Card>
+      </TableSection>
     </div>
   );
 }
@@ -583,37 +522,34 @@ function ForecastTab({ data }: { data: ForecastData }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Big number */}
-      <Card className="text-center py-10">
-        <p className="text-sm font-medium text-fg-secondary mb-2">
-          Weighted Pipeline Value
-        </p>
-        <p className="text-2xl font-semibold text-fg">
-          {formatCurrency(data.weighted)}
-        </p>
-      </Card>
+      <MetricStrip className="pt-6">
+        <StatBox
+          label="Weighted Pipeline Value"
+          value={formatCurrency(data.weighted)}
+        />
+      </MetricStrip>
 
       {/* Deals table */}
-      <Card>
-        <SectionTitle>Forecast Deals</SectionTitle>
+      <TableSection title="Forecast Deals" className="border-t border-divider">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr>
-                <th className="h-10 px-4 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                <th className="text-left text-[13px] font-medium text-fg-secondary">
                   Stage
                 </th>
-                <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
+                <th className="text-right text-[13px] font-medium text-fg-secondary">
                   Value
                 </th>
-                <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
+                <th className="text-right text-[13px] font-medium text-fg-secondary">
                   Probability
                 </th>
-                <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
+                <th className="text-right text-[13px] font-medium text-fg-secondary">
                   Weighted
                 </th>
-                <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
+                <th className="text-right text-[13px] font-medium text-fg-secondary">
                   Expected Close
                 </th>
               </tr>
@@ -622,9 +558,9 @@ function ForecastTab({ data }: { data: ForecastData }) {
               {data.deals.map((deal, i) => (
                 <tr
                   key={i}
-                  className="h-10 border-b border-divider last:border-0 hover:bg-subtle transition-colors"
+                  className="hover:bg-subtle transition-colors"
                 >
-                  <td className="py-2 px-4">
+                  <td className="py-2">
                     <span
                       className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
                       style={{
@@ -637,16 +573,16 @@ function ForecastTab({ data }: { data: ForecastData }) {
                       {formatStageName(deal.stage)}
                     </span>
                   </td>
-                  <td className="py-2 px-4 text-right font-medium text-fg">
+                  <td className="py-2 text-right font-medium text-fg">
                     {formatCurrency(deal.value)}
                   </td>
-                  <td className="py-2 px-4 text-right text-fg-secondary">
+                  <td className="py-2 text-right text-fg-secondary">
                     {deal.probability}%
                   </td>
-                  <td className="py-2 px-4 text-right font-medium text-fg">
+                  <td className="py-2 text-right font-medium text-fg">
                     {formatCurrency(deal.weightedValue)}
                   </td>
-                  <td className="py-2 px-4 text-right text-fg-secondary">
+                  <td className="py-2 text-right text-fg-secondary">
                     {deal.expectedClose
                       ? new Date(deal.expectedClose).toLocaleDateString(
                           "en-US",
@@ -659,7 +595,7 @@ function ForecastTab({ data }: { data: ForecastData }) {
             </tbody>
           </table>
         </div>
-      </Card>
+      </TableSection>
     </div>
   );
 }
@@ -675,15 +611,12 @@ function WinLossTab({ data }: { data: WinLossData }) {
   const lostPercent = totalDeals > 0 ? (data.lost / totalDeals) * 100 : 0;
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <MetricStrip className="pt-6">
         <StatBox label="Won" value={String(data.won)} />
         <StatBox label="Lost" value={String(data.lost)} />
         <StatBox label="Win Rate" value={`${data.winRate}%`} />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <StatBox
           label="Avg Won Value"
           value={formatCurrency(data.avgWonValue)}
@@ -692,11 +625,10 @@ function WinLossTab({ data }: { data: WinLossData }) {
           label="Avg Lost Value"
           value={formatCurrency(data.avgLostValue)}
         />
-      </div>
+      </MetricStrip>
 
       {/* Visual comparison */}
-      <Card>
-        <SectionTitle>Win vs Loss Distribution</SectionTitle>
+      <Section title="Win vs Loss Distribution">
         <div className="space-y-4">
           {/* Won bar */}
           <div className="space-y-2">
@@ -743,24 +675,16 @@ function WinLossTab({ data }: { data: WinLossData }) {
 
         {/* Value comparison */}
         <div className="mt-8 grid grid-cols-2 gap-4">
-          <div className="rounded p-4 bg-success-surface border border-success">
-            <p className="text-xs font-medium text-success mb-1">
-              Avg Won Deal
-            </p>
-            <p className="text-xl font-semibold text-success">
-              {formatCurrency(data.avgWonValue)}
-            </p>
-          </div>
-          <div className="rounded p-4 bg-danger-surface border border-danger">
-            <p className="text-xs font-medium text-danger mb-1">
-              Avg Lost Deal
-            </p>
-            <p className="text-xl font-semibold text-danger">
-              {formatCurrency(data.avgLostValue)}
-            </p>
-          </div>
+          <Metric
+            label="Avg Won Deal"
+            value={<span className="text-success">{formatCurrency(data.avgWonValue)}</span>}
+          />
+          <Metric
+            label="Avg Lost Deal"
+            value={<span className="text-danger">{formatCurrency(data.avgLostValue)}</span>}
+          />
         </div>
-      </Card>
+      </Section>
     </div>
   );
 }
@@ -777,45 +701,39 @@ function ActivityTab({ data }: { data: ActivityData }) {
   }));
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Stats */}
-      <StatBox
-        label="Total Activities (Last 30 Days)"
-        value={String(data.total)}
-        subValue={`${Object.keys(data.byType).length} activity types`}
-      />
+      <MetricStrip className="pt-6">
+        <StatBox
+          label="Total Activities (Last 30 Days)"
+          value={String(data.total)}
+          subValue={`${Object.keys(data.byType).length} activity types`}
+        />
+      </MetricStrip>
 
       {/* Chart */}
-      <Card>
-        <SectionTitle>Activities by Type</SectionTitle>
+      <Section title="Activities by Type">
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} barCategoryGap="20%">
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-                stroke="currentColor"
-                className="text-fg-disabled"
-              />
+              <CartesianGrid vertical={false} stroke={chartGrid} />
               <XAxis
                 dataKey="name"
-                tick={{ fontSize: 12 }}
+                tick={axisTick}
                 tickLine={false}
                 axisLine={false}
-                className="text-fg-secondary"
               />
               <YAxis
-                tick={{ fontSize: 12 }}
+                tick={axisTick}
                 tickLine={false}
                 axisLine={false}
                 allowDecimals={false}
-                className="text-fg-secondary"
               />
               <Tooltip
                 content={<ChartTooltip />}
                 cursor={{ fill: "transparent" }}
               />
-              <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+              <Bar dataKey="count" radius={[2, 2, 0, 0]}>
                 {chartData.map((entry, i) => (
                   <Cell key={i} fill={entry.fill} />
                 ))}
@@ -823,7 +741,7 @@ function ActivityTab({ data }: { data: ActivityData }) {
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </Card>
+      </Section>
     </div>
   );
 }
@@ -834,22 +752,21 @@ function SequencesTab({ data }: { data: SequenceData[] }) {
   }
 
   return (
-    <Card>
-      <SectionTitle>Sequence Performance</SectionTitle>
+    <TableSection title="Sequence Performance">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr>
-              <th className="h-10 px-4 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+              <th className="text-left text-[13px] font-medium text-fg-secondary">
                 Sequence
               </th>
-              <th className="h-10 px-4 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+              <th className="text-left text-[13px] font-medium text-fg-secondary">
                 Status
               </th>
-              <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
+              <th className="text-right text-[13px] font-medium text-fg-secondary">
                 Enrolled
               </th>
-              <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
+              <th className="text-right text-[13px] font-medium text-fg-secondary">
                 Reply Rate
               </th>
             </tr>
@@ -858,12 +775,15 @@ function SequencesTab({ data }: { data: SequenceData[] }) {
             {data.map((seq) => (
               <tr
                 key={seq.id}
-                className="h-10 border-b border-divider last:border-0 hover:bg-subtle transition-colors"
+                className="hover:bg-subtle transition-colors"
               >
-                <td className="py-2 px-4 font-medium text-fg">
-                  {seq.name}
+                <td className="py-2 font-medium text-fg">
+                  <div className="flex items-center gap-2">
+                    <PulseIcon size={16} className="shrink-0 text-fg-muted" />
+                    {seq.name}
+                  </div>
                 </td>
-                <td className="py-2 px-4">
+                <td className="py-2">
                   <span
                     className={cn(
                       "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
@@ -877,10 +797,10 @@ function SequencesTab({ data }: { data: SequenceData[] }) {
                     {seq.status.charAt(0).toUpperCase() + seq.status.slice(1)}
                   </span>
                 </td>
-                <td className="py-2 px-4 text-right text-fg-secondary">
+                <td className="py-2 text-right text-fg-secondary">
                   {seq.total_enrolled}
                 </td>
-                <td className="py-2 px-4 text-right">
+                <td className="py-2 text-right">
                   <span
                     className={cn(
                       "font-medium",
@@ -899,7 +819,7 @@ function SequencesTab({ data }: { data: SequenceData[] }) {
           </tbody>
         </table>
       </div>
-    </Card>
+    </TableSection>
   );
 }
 
@@ -909,69 +829,60 @@ function ICPTab({ data }: { data: ICPData[] }) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
       {data.map((profile) => (
-        <Card key={profile.profileId} className="relative overflow-hidden">
-          {/* Color accent bar */}
-          <div
-            className="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
-            style={{ backgroundColor: profile.color || CHART_COLORS.indigo }}
-          />
-
-          <div className="pt-2">
-            {/* Profile name */}
-            <div className="flex items-center gap-2 mb-4">
-              <div
-                className="h-3 w-3 rounded-full shrink-0"
-                style={{
-                  backgroundColor: profile.color || CHART_COLORS.indigo,
-                }}
-              />
-              <h4 className="text-base font-semibold text-fg truncate">
-                {profile.name}
-              </h4>
-            </div>
-
-            {/* Metrics */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-fg-secondary">
-                  Matched Leads
-                </span>
-                <span className="text-sm font-semibold text-fg">
-                  {profile.matchedLeads}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-fg-secondary">
-                  Hot Leads
-                </span>
-                <span className="text-sm font-semibold text-fg">
-                  {profile.hotLeads}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-fg-secondary">
-                  Avg Match Score
-                </span>
-                <span className="text-sm font-semibold text-fg">
-                  {profile.avgMatchScore}%
-                </span>
-              </div>
-
-              {/* Score bar */}
-              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${profile.avgMatchScore}%`,
-                    backgroundColor: profile.color || CHART_COLORS.indigo,
-                  }}
-                />
-              </div>
-            </div>
+        <Section
+          key={profile.profileId}
+          title={profile.name}
+          icon={
+            <span
+              className="h-3 w-3 rounded-full shrink-0"
+              style={{
+                backgroundColor: profile.color || CHART_COLORS.indigo,
+              }}
+            />
+          }
+          className="border-t-0 border-b sm:max-lg:odd:border-r lg:[&:not(:nth-child(3n))]:border-r"
+        >
+          {/* Metrics */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-fg-secondary">
+              Matched Leads
+            </span>
+            <span className="text-sm font-semibold text-fg">
+              {profile.matchedLeads}
+            </span>
           </div>
-        </Card>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-fg-secondary">
+              Hot Leads
+            </span>
+            <span className="text-sm font-semibold text-fg">
+              {profile.hotLeads}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-fg-secondary">
+              Avg Match Score
+            </span>
+            <span className="text-sm font-semibold text-fg">
+              {profile.avgMatchScore}%
+            </span>
+          </div>
+
+          {/* Score bar */}
+          <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${profile.avgMatchScore}%`,
+                backgroundColor: profile.color || CHART_COLORS.indigo,
+              }}
+            />
+          </div>
+            </div>
+        </Section>
       ))}
     </div>
   );
@@ -982,26 +893,20 @@ function ICPTab({ data }: { data: ICPData[] }) {
 function EmailTab({ data }: { data?: EmailAnalyticsData }) {
   if (!data) {
     return (
-      <div className="text-center py-16">
-        <div className="w-16 h-16 rounded-2xl bg-accent-surface flex items-center justify-center mx-auto mb-6">
-          <EnvelopeIcon size={32} className="text-accent-strong" />
-        </div>
-        <h3 className="text-lg font-semibold text-fg mb-2">
-          No Email Data Yet
-        </h3>
-        <p className="text-sm text-fg-secondary max-w-md mx-auto">
-          Connect an email account and start sending to see analytics here.
-        </p>
-      </div>
+      <PageEmptyState
+        icon={<EnvelopeIcon size={24} />}
+        title="No Email Data Yet"
+        description="Connect an email account and start sending to see analytics here."
+      />
     );
   }
 
   const { overview, accounts, dailyVolume } = data;
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* KPI row */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      <MetricStrip className="pt-6">
         <StatBox label="Total Sent" value={overview.totalSent.toLocaleString()} />
         <StatBox label="Delivered" value={overview.totalDelivered.toLocaleString()} />
         <StatBox
@@ -1024,22 +929,15 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
           value={`${overview.bounceRate}%`}
           subValue={`${overview.totalBounced} bounced`}
         />
-      </div>
+      </MetricStrip>
 
       {/* Daily volume chart */}
       {dailyVolume.length > 0 && (
-        <Card>
-          <h3 className="text-sm font-semibold text-fg mb-4">
-            Daily Email Volume (Last 30 Days)
-          </h3>
+        <Section title="Daily Email Volume (Last 30 Days)">
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dailyVolume}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="currentColor"
-                  className="text-fg-disabled"
-                />
+                <CartesianGrid vertical={false} stroke={chartGrid} />
                 <XAxis
                   dataKey="date"
                   tick={{ fontSize: 11 }}
@@ -1049,7 +947,7 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
                   }}
                   className="text-fg-secondary"
                 />
-                <YAxis tick={{ fontSize: 11 }} className="text-fg-secondary" />
+                <YAxis axisLine={false} tickLine={false} tick={axisTick} />
                 <Tooltip
                   contentStyle={chartTooltipStyle}
                 />
@@ -1059,38 +957,35 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </Card>
+        </Section>
       )}
 
       {/* Account health */}
       {accounts.length > 0 && (
-        <Card>
-          <h3 className="text-sm font-semibold text-fg mb-4">
-            Account Health
-          </h3>
+        <TableSection title="Account Health" className="border-t border-divider">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr>
-                  <th className="h-10 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-left text-[13px] font-medium text-fg-secondary">
                     Account
                   </th>
-                  <th className="h-10 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-left text-[13px] font-medium text-fg-secondary">
                     Provider
                   </th>
-                  <th className="h-10 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-right text-[13px] font-medium text-fg-secondary">
                     Sent Today
                   </th>
-                  <th className="h-10 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-right text-[13px] font-medium text-fg-secondary">
                     Total Sent
                   </th>
-                  <th className="h-10 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-right text-[13px] font-medium text-fg-secondary">
                     Open Rate
                   </th>
-                  <th className="h-10 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-right text-[13px] font-medium text-fg-secondary">
                     Bounce Rate
                   </th>
-                  <th className="h-10 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-right text-[13px] font-medium text-fg-secondary">
                     Status
                   </th>
                 </tr>
@@ -1099,10 +994,13 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
                 {accounts.map((acc) => (
                   <tr
                     key={acc.id}
-                    className="h-10 border-b border-divider hover:bg-subtle transition-colors"
+                    className="hover:bg-subtle transition-colors"
                   >
                     <td className="py-2 text-fg font-medium">
-                      {acc.email}
+                      <div className="flex items-center gap-2">
+                        <EnvelopeIcon size={16} className="shrink-0 text-fg-muted" />
+                        {acc.email}
+                      </div>
                     </td>
                     <td className="py-2 text-fg-secondary capitalize">
                       {acc.provider}
@@ -1164,7 +1062,7 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
               </tbody>
             </table>
           </div>
-        </Card>
+        </TableSection>
       )}
     </div>
   );
@@ -1181,17 +1079,11 @@ const CHANNEL_COLORS = {
 function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
   if (!data) {
     return (
-      <div className="text-center py-16">
-        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-6">
-          <ChatCircleIcon size={32} className="text-fg-muted" />
-        </div>
-        <h3 className="text-lg font-semibold text-fg mb-2">
-          No Channel Data
-        </h3>
-        <p className="text-sm text-fg-secondary">
-          Channel analytics will appear here once you start sending messages across Email, WhatsApp, and LinkedIn.
-        </p>
-      </div>
+      <PageEmptyState
+        icon={<ChatCircleIcon size={24} />}
+        title="No Channel Data"
+        description="Channel analytics will appear here once you start sending messages across Email, WhatsApp, and LinkedIn."
+      />
     );
   }
 
@@ -1225,63 +1117,46 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
   const totalMessages = channelDistribution.reduce((s, c) => s + c.value, 0);
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Summary stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <p className="text-xs font-medium text-fg-secondary mb-1">
-            Total Outreach
-          </p>
-          <p className="text-2xl font-semibold text-fg">
-            {data.summary.totalOutreach.toLocaleString()}
-          </p>
-          <p className="text-xs text-fg-muted mt-1">Last 30 days</p>
-        </Card>
-        <Card>
-          <p className="text-xs font-medium text-fg-secondary mb-1">
-            Total Replies
-          </p>
-          <p className="text-2xl font-semibold text-fg">
-            {data.summary.totalReplies.toLocaleString()}
-          </p>
-          <p className="text-xs text-fg-muted mt-1">Across all channels</p>
-        </Card>
-        <Card>
-          <p className="text-xs font-medium text-fg-secondary mb-1">
-            Overall Reply Rate
-          </p>
-          <p className="text-2xl font-semibold text-fg">
-            {data.summary.overallReplyRate}%
-          </p>
-          <p className="text-xs text-fg-muted mt-1">Combined average</p>
-        </Card>
-        <Card>
-          <p className="text-xs font-medium text-fg-secondary mb-1">
-            Best Channel
-          </p>
-          <div className="flex items-center gap-2">
-            {data.summary.bestChannel === "email" && (
-              <EnvelopeIcon size={20} className="text-accent-strong" />
-            )}
-            {data.summary.bestChannel === "whatsapp" && (
-              <WhatsappLogoIcon size={20} className="text-success" />
-            )}
-            {data.summary.bestChannel === "linkedin" && (
-              <LinkedinLogoIcon size={20} className="text-accent-strong" />
-            )}
-            <p className="text-2xl font-semibold text-fg capitalize">
-              {data.summary.bestChannel}
-            </p>
-          </div>
-          <p className="text-xs text-fg-muted mt-1">Highest reply rate</p>
-        </Card>
-      </div>
+      <MetricStrip className="pt-6">
+        <StatBox
+          label="Total Outreach"
+          value={data.summary.totalOutreach.toLocaleString()}
+          subValue="Last 30 days"
+        />
+        <StatBox
+          label="Total Replies"
+          value={data.summary.totalReplies.toLocaleString()}
+          subValue="Across all channels"
+        />
+        <StatBox
+          label="Overall Reply Rate"
+          value={`${data.summary.overallReplyRate}%`}
+          subValue="Combined average"
+        />
+        <Metric
+          label="Best Channel"
+          value={
+            <div className="flex items-center gap-2">
+              {data.summary.bestChannel === "email" && (
+                <EnvelopeIcon size={20} className="text-accent-strong" />
+              )}
+              {data.summary.bestChannel === "whatsapp" && (
+                <WhatsappLogoIcon size={20} className="text-success" />
+              )}
+              {data.summary.bestChannel === "linkedin" && (
+                <LinkedinLogoIcon size={20} className="text-accent-strong" />
+              )}
+              <span className="capitalize">{data.summary.bestChannel}</span>
+            </div>
+          }
+          hint="Highest reply rate"
+        />
+      </MetricStrip>
 
       {/* Channel distribution bar */}
-      <Card>
-        <h3 className="text-sm font-semibold text-fg mb-4">
-          Channel Distribution
-        </h3>
+      <Section title="Channel Distribution">
         {totalMessages > 0 ? (
           <>
             <div className="flex h-4 rounded-full overflow-hidden bg-muted">
@@ -1317,21 +1192,14 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
         ) : (
           <p className="text-sm text-fg-secondary">No messages sent yet.</p>
         )}
-      </Card>
+      </Section>
 
       {/* Daily Volume Chart */}
       {data.dailyVolume.length > 0 && (
-        <Card>
-          <h3 className="text-sm font-semibold text-fg mb-4">
-            Daily Volume by Channel
-          </h3>
+        <Section title="Daily Volume by Channel">
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={data.dailyVolume} barCategoryGap="20%">
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="currentColor"
-                className="text-fg-disabled"
-              />
+              <CartesianGrid vertical={false} stroke={chartGrid} />
               <XAxis
                 dataKey="date"
                 tick={axisTick}
@@ -1340,7 +1208,7 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
                   return `${d.getMonth() + 1}/${d.getDate()}`;
                 }}
               />
-              <YAxis tick={axisTick} allowDecimals={false} />
+              <YAxis axisLine={false} tickLine={false} tick={axisTick} allowDecimals={false} />
               <Tooltip
                 contentStyle={chartTooltipStyle}
               />
@@ -1349,23 +1217,16 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
               <Bar dataKey="linkedin" name="LinkedIn" fill={CHANNEL_COLORS.linkedin} radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </Card>
+        </Section>
       )}
 
       {/* Channel Comparison */}
-      <Card>
-        <h3 className="text-sm font-semibold text-fg mb-4">
-          Channel Comparison — Reply Rates
-        </h3>
+      <Section title="Channel Comparison — Reply Rates">
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={channelComparison} layout="vertical" barCategoryGap="30%">
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="currentColor"
-              className="text-fg-disabled"
-            />
-            <XAxis type="number" tick={axisTick} unit="%" />
-            <YAxis
+            <CartesianGrid vertical={false} stroke={chartGrid} />
+            <XAxis axisLine={false} tickLine={false} type="number" tick={axisTick} unit="%" />
+            <YAxis axisLine={false} tickLine={false}
               type="category"
               dataKey="channel"
               tick={axisTick}
@@ -1375,7 +1236,7 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
               contentStyle={chartTooltipStyle}
               formatter={(value: unknown) => [`${value}%`, "Reply Rate"]}
             />
-            <Bar dataKey="replyRate" name="Reply Rate" radius={[0, 4, 4, 0]}>
+            <Bar dataKey="replyRate" name="Reply Rate" radius={[0, 2, 2, 0]}>
               {channelComparison.map((entry, idx) => (
                 <Cell
                   key={idx}
@@ -1391,20 +1252,12 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-      </Card>
+      </Section>
 
       {/* Per-channel detail cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 border-t border-divider">
         {/* Email detail */}
-        <Card>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-accent-surface flex items-center justify-center">
-              <EnvelopeIcon size={16} className="text-accent-strong" />
-            </div>
-            <h4 className="text-sm font-semibold text-fg">
-              Email
-            </h4>
-          </div>
+        <Section title="Email" icon={<EnvelopeIcon size={16} className="text-accent-strong" />} className="lg:border-t-0">
           <div className="space-y-2">
             <div className="flex justify-between text-xs">
               <span className="text-fg-secondary">Sent</span>
@@ -1433,18 +1286,10 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
               <span className="font-medium text-danger">{data.email.bounced}</span>
             </div>
           </div>
-        </Card>
+        </Section>
 
         {/* WhatsApp detail */}
-        <Card>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-success-surface flex items-center justify-center">
-              <WhatsappLogoIcon size={16} className="text-success" />
-            </div>
-            <h4 className="text-sm font-semibold text-fg">
-              WhatsApp
-            </h4>
-          </div>
+        <Section title="WhatsApp" icon={<WhatsappLogoIcon size={16} className="text-success" />} className="lg:border-t-0 lg:border-l">
           <div className="space-y-2">
             <div className="flex justify-between text-xs">
               <span className="text-fg-secondary">Sent</span>
@@ -1473,18 +1318,10 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
               <span className="font-medium text-danger">{data.whatsapp.failed}</span>
             </div>
           </div>
-        </Card>
+        </Section>
 
         {/* LinkedIn detail */}
-        <Card>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-accent-surface flex items-center justify-center">
-              <LinkedinLogoIcon size={16} className="text-accent-strong" />
-            </div>
-            <h4 className="text-sm font-semibold text-fg">
-              LinkedIn
-            </h4>
-          </div>
+        <Section title="LinkedIn" icon={<LinkedinLogoIcon size={16} className="text-accent-strong" />} className="lg:border-t-0 lg:border-l">
           <div className="space-y-2">
             <div className="flex justify-between text-xs">
               <span className="text-fg-secondary">Connections Sent</span>
@@ -1515,7 +1352,7 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
               <span className="font-medium text-fg">{data.linkedin.endorsements}</span>
             </div>
           </div>
-        </Card>
+        </Section>
       </div>
     </div>
   );
@@ -1577,25 +1414,21 @@ export function AnalyticsPageClient({
         return <ChannelsTab data={channels} />;
       case "ai-insights":
         return (
-          <div className="space-y-6">
+          <div>
             {!aiInsights && !aiInsightsLoading && (
-              <div className="text-center py-16">
-                <div className="w-16 h-16 rounded-2xl bg-accent-surface flex items-center justify-center mx-auto mb-6">
-                  <SparkleIcon size={32} className="text-accent-strong" />
-                </div>
-                <h3 className="text-lg font-semibold text-fg mb-2">
-                  AI-Powered Insights
-                </h3>
-                <p className="text-sm text-fg-secondary mb-6 max-w-md mx-auto">
-                  Get an executive summary of your business health, key metrics, and actionable recommendations powered by AI.
-                </p>
-                <Button
-                  leftIcon={<SparkleIcon size={18} />}
-                  onClick={handleGenerateInsights}
-                >
-                  Generate AI Insights
-                </Button>
-              </div>
+              <PageEmptyState
+                icon={<SparkleIcon size={24} />}
+                title="AI-Powered Insights"
+                description="Get an executive summary of your business health, key metrics, and actionable recommendations powered by AI."
+                actions={[
+                  {
+                    label: "Generate AI Insights",
+                    icon: <SparkleIcon size={18} />,
+                    onClick: handleGenerateInsights,
+                    variant: "primary",
+                  },
+                ]}
+              />
             )}
 
             {aiInsightsLoading && (
@@ -1609,18 +1442,19 @@ export function AnalyticsPageClient({
             )}
 
             {aiInsights && !aiInsightsLoading && (
-              <div className="space-y-6">
+              <div>
                 {/* Health Score */}
-                <div className="rounded-lg border border-line bg-surface p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-fg">Business Health Score</h3>
+                <Section
+                  title="Business Health Score"
+                  actions={
                     <button
                       onClick={handleGenerateInsights}
                       className="text-xs text-accent-strong hover:underline"
                     >
                       Regenerate
                     </button>
-                  </div>
+                  }
+                >
                   <div className="flex items-center gap-6">
                     <div className="relative w-20 h-20">
                       <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
@@ -1635,30 +1469,30 @@ export function AnalyticsPageClient({
                       <p className="text-sm text-fg">{aiInsights.executive_summary}</p>
                     </div>
                   </div>
-                </div>
+                </Section>
 
                 {/* Key Metrics */}
-                <div className="rounded-lg border border-line bg-surface p-4">
-                  <h3 className="text-sm font-semibold text-fg mb-4">Key Metrics</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Section title="Key Metrics">
+                  <div className="flex flex-wrap gap-x-10 gap-y-4">
                     {aiInsights.key_metrics?.map((m, i) => (
-                      <div key={i} className="p-4 rounded bg-subtle">
-                        <p className="text-xs text-fg-secondary mb-1">{m.metric}</p>
-                        <p className="text-lg font-semibold text-fg">{m.value}</p>
-                        <p className={`text-xs mt-1 ${m.trend === "up" ? "text-success" : m.trend === "down" ? "text-danger" : "text-fg-secondary"}`}>
-                          {m.trend === "up" ? "\u2191" : m.trend === "down" ? "\u2193" : "\u2192"} {m.trend}
-                        </p>
-                      </div>
+                      <Metric
+                        key={i}
+                        label={m.metric}
+                        value={m.value}
+                        change={{
+                          value: `${m.trend === "up" ? "\u2191" : m.trend === "down" ? "\u2193" : "\u2192"} ${m.trend}`,
+                          trend: m.trend === "up" ? "up" : m.trend === "down" ? "down" : "neutral",
+                        }}
+                      />
                     ))}
                   </div>
-                </div>
+                </Section>
 
                 {/* Action Items */}
-                <div className="rounded-lg border border-line bg-surface p-4">
-                  <h3 className="text-sm font-semibold text-fg mb-4">Action Items</h3>
-                  <div className="space-y-3">
+                <Section title="Action Items">
+                  <div className="divide-y divide-divider">
                     {aiInsights.action_items?.map((item, i) => (
-                      <div key={i} className="flex items-start gap-3 p-3 rounded bg-subtle">
+                      <div key={i} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
                         <span className={`shrink-0 mt-0.5 w-2 h-2 rounded-full ${item.priority === "high" ? "bg-danger" : item.priority === "medium" ? "bg-warning" : "bg-success"}`} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-fg">{item.action}</p>
@@ -1672,7 +1506,7 @@ export function AnalyticsPageClient({
                       </div>
                     ))}
                   </div>
-                </div>
+                </Section>
               </div>
             )}
           </div>
@@ -1683,9 +1517,9 @@ export function AnalyticsPageClient({
   };
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-6 min-h-full">
+    <Page>
       {/* Page header */}
-      <PageHeader title="Analytics">
+      <PageHeader title="Analytics" icon={<ChartBarIcon size={18} />}>
         <div className="flex items-center gap-3 text-sm text-fg-secondary">
           <span>
             <strong className="text-fg">
@@ -1726,28 +1560,15 @@ export function AnalyticsPageClient({
       </PageHeader>
 
       {/* Tab navigation */}
-      <div className="flex items-center gap-1 rounded border border-line bg-subtle p-1 overflow-x-auto">
-        {TABS.map((tab) => {
+      <PageTabs
+        tabs={TABS.map((tab) => {
           const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded transition-colors whitespace-nowrap",
-                isActive
-                  ? "bg-surface text-fg"
-                  : "text-fg-secondary hover:text-fg",
-              )}
-            >
-              <Icon size={16} />
-              {tab.label}
-            </button>
-          );
+          return { id: tab.id, label: tab.label, icon: <Icon size={16} /> };
         })}
-      </div>
+        value={activeTab}
+        onChange={setActiveTab}
+        className="overflow-x-auto overflow-y-hidden"
+      />
 
       {/* Tab content with animation */}
       <AnimatePresence mode="wait">
@@ -1761,6 +1582,6 @@ export function AnalyticsPageClient({
           {renderTabContent()}
         </motion.div>
       </AnimatePresence>
-    </div>
+    </Page>
   );
 }

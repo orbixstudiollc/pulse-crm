@@ -25,7 +25,7 @@ import {
   FunnelSimpleIcon,
   CalendarBlankIcon,
 } from "@/components/ui";
-import { PageHeader, StatCard, EmptyState } from "@/components/dashboard";
+import { Page, PageHeader, MetricStrip, PageTabs, TableSection, Section, StatCard, EmptyState } from "@/components/dashboard";
 import { toast } from "sonner";
 import type { Database } from "@/types/database";
 import {
@@ -248,43 +248,38 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
   const hasScripts = scripts.length > 0;
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
-      <PageHeader title="Website Visitors">
+    <Page>
+      <PageHeader title="Website Visitors" icon={<CursorClickIcon size={18} />}>
         <Button variant="outline" size="sm" onClick={() => setShowSetup(true)} leftIcon={<GlobeIcon size={16} />}>
           Setup Tracking
         </Button>
       </PageHeader>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      <MetricStrip>
         <StatCard label="Today" value={stats.visitorsToday} icon={<CursorClickIcon size={20} className="text-fg" />} />
         <StatCard label="This Week" value={stats.visitorsThisWeek} icon={<ChartBarIcon size={20} className="text-fg" />} />
         <StatCard label="This Month" value={stats.visitorsThisMonth} icon={<UsersIcon size={20} className="text-fg" />} />
         <StatCard label="Companies" value={stats.companiesIdentified} icon={<GlobeIcon size={20} className="text-fg" />} />
         <StatCard label="Hot Visitors" value={stats.hotVisitors} icon={<FireIcon size={20} className="text-fg" />} />
         <StatCard label="Converted" value={stats.convertedToLeads} icon={<LightningIcon size={20} className="text-fg" />} />
-      </div>
+      </MetricStrip>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-line">
-        <button
-          onClick={() => setActiveTab("visitors")}
-          className={`px-4 py-2.5 text-sm font-medium border-b transition-colors ${activeTab === "visitors" ? "border-inverse text-fg" : "border-transparent text-fg-secondary hover:text-fg"}`}
-        >
-          Visitors ({total})
-        </button>
-        <button
-          onClick={() => setActiveTab("scripts")}
-          className={`px-4 py-2.5 text-sm font-medium border-b transition-colors ${activeTab === "scripts" ? "border-inverse text-fg" : "border-transparent text-fg-secondary hover:text-fg"}`}
-        >
-          Tracking Scripts ({scripts.length})
-        </button>
-      </div>
+      <PageTabs
+        tabs={[
+          { id: "visitors", label: `Visitors (${total})` },
+          { id: "scripts", label: `Tracking Scripts (${scripts.length})` },
+        ]}
+        value={activeTab}
+        onChange={setActiveTab}
+        className="max-sm:overflow-x-auto max-sm:overflow-y-hidden"
+      />
 
       {activeTab === "visitors" && (
         <>
           {/* Filters */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 px-8 py-2 max-sm:px-4">
             <Input
               leftIcon={<MagnifyingGlassIcon size={18} />}
               value={search}
@@ -310,94 +305,101 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
 
           {/* Visitors Table */}
           {visitors.length === 0 ? (
-            <EmptyState
-              icon={<CursorClickIcon size={32} />}
-              title={hasScripts ? "No visitors yet" : "Set up tracking first"}
-              description={hasScripts ? "Visitors will appear here once your tracking script starts collecting data." : "Add a tracking script to your website to start identifying visitors."}
-              actions={!hasScripts ? [{ label: "Setup Tracking", onClick: () => setShowSetup(true) }] : undefined}
-            />
+            <div className="border-t border-divider">
+              <EmptyState
+                icon={<CursorClickIcon size={32} />}
+                title={hasScripts ? "No visitors yet" : "Set up tracking first"}
+                description={hasScripts ? "Visitors will appear here once your tracking script starts collecting data." : "Add a tracking script to your website to start identifying visitors."}
+                actions={!hasScripts ? [{ label: "Setup Tracking", onClick: () => setShowSetup(true) }] : undefined}
+              />
+            </div>
           ) : (
-            <div className="rounded-lg border border-line bg-surface overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="text-left">
-                      <th className="h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider">Visitor</th>
-                      <th className="h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider">Location</th>
-                      <th className="h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider">Pages</th>
-                      <th className="h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider">Visits</th>
-                      <th className="h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider">Duration</th>
-                      <th className="h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider">Last Seen</th>
-                      <th className="h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider">Status</th>
-                      <th className="h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visitors.map((v) => (
-                      <tr key={v.id} className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors">
-                        <td className="px-4 py-2 text-[14px] text-fg">
-                          <div>
-                            <div className="text-[14px] font-medium text-fg">
-                              {v.company_name || v.ip_address || "Unknown"}
-                            </div>
-                            {v.company_domain && (
-                              <div className="text-[13px] text-fg-secondary">{v.company_domain}</div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-2 text-[14px] text-fg-secondary">
-                          {[v.city, v.country_code].filter(Boolean).join(", ") || "—"}
-                        </td>
-                        <td className="px-4 py-2 text-[14px] text-fg-secondary">{v.page_count}</td>
-                        <td className="px-4 py-2 text-[14px] text-fg-secondary">{v.visit_count}</td>
-                        <td className="px-4 py-2 text-[14px] text-fg-secondary">
-                          {v.total_duration > 0 ? `${Math.round(v.total_duration / 60)}m` : "—"}
-                        </td>
-                        <td className="px-4 py-2 text-[14px] text-fg-secondary">
-                          {new Date(v.last_seen).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                        </td>
-                        <td className="px-4 py-2 text-[14px] text-fg">
-                          <Badge variant={statusVariant(v.status)}>{v.status}</Badge>
-                        </td>
-                        <td className="px-4 py-2 text-[14px] text-fg">
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => handleViewVisitor(v)}
-                              className="p-1.5 rounded-md hover:bg-muted text-fg-secondary hover:text-fg transition-colors"
-                              title="View details"
-                            >
-                              <EyeIcon size={16} />
-                            </button>
-                            {v.status !== "converted" && v.status !== "ignored" && (
-                              <button
-                                onClick={() => handleConvert(v.id)}
-                                className="p-1.5 rounded-md hover:bg-success-surface text-fg-secondary hover:text-success transition-colors"
-                                title="Convert to lead"
-                              >
-                                <ArrowRightIcon size={16} />
-                              </button>
-                            )}
-                          </div>
-                        </td>
+            <>
+              <TableSection>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-left">
+                        <th className="text-[13px] font-medium text-fg-secondary">Visitor</th>
+                        <th className="text-[13px] font-medium text-fg-secondary">Location</th>
+                        <th className="text-[13px] font-medium text-fg-secondary">Pages</th>
+                        <th className="text-[13px] font-medium text-fg-secondary">Visits</th>
+                        <th className="text-[13px] font-medium text-fg-secondary">Duration</th>
+                        <th className="text-[13px] font-medium text-fg-secondary">Last Seen</th>
+                        <th className="text-[13px] font-medium text-fg-secondary">Status</th>
+                        <th className="text-right text-[13px] font-medium text-fg-secondary">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {visitors.map((v) => (
+                        <tr key={v.id} className="hover:bg-subtle transition-colors">
+                          <td className="py-2 text-[14px] text-fg">
+                            <div className="flex items-start gap-2">
+                              <GlobeIcon size={16} className="mt-0.5 shrink-0 text-fg-muted" />
+                              <div>
+                                <div className="text-[14px] font-medium text-fg">
+                                  {v.company_name || v.ip_address || "Unknown"}
+                                </div>
+                                {v.company_domain && (
+                                  <div className="text-[13px] text-fg-secondary">{v.company_domain}</div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-2 text-[14px] text-fg-secondary">
+                            {[v.city, v.country_code].filter(Boolean).join(", ") || "—"}
+                          </td>
+                          <td className="py-2 text-[14px] text-fg-secondary">{v.page_count}</td>
+                          <td className="py-2 text-[14px] text-fg-secondary">{v.visit_count}</td>
+                          <td className="py-2 text-[14px] text-fg-secondary">
+                            {v.total_duration > 0 ? `${Math.round(v.total_duration / 60)}m` : "—"}
+                          </td>
+                          <td className="py-2 text-[14px] text-fg-secondary">
+                            {new Date(v.last_seen).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </td>
+                          <td className="py-2 text-[14px] text-fg">
+                            <Badge variant={statusVariant(v.status)}>{v.status}</Badge>
+                          </td>
+                          <td className="py-2 text-[14px] text-fg">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => handleViewVisitor(v)}
+                                className="p-1.5 rounded-md hover:bg-muted text-fg-secondary hover:text-fg transition-colors"
+                                title="View details"
+                              >
+                                <EyeIcon size={16} />
+                              </button>
+                              {v.status !== "converted" && v.status !== "ignored" && (
+                                <button
+                                  onClick={() => handleConvert(v.id)}
+                                  className="p-1.5 rounded-md hover:bg-success-surface text-fg-secondary hover:text-success transition-colors"
+                                  title="Convert to lead"
+                                >
+                                  <ArrowRightIcon size={16} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </TableSection>
               {total > 50 && (
-                <div className="px-4 py-3 border-t border-divider text-[13px] text-fg-muted">
+                <div className="flex h-12 items-center px-8 max-sm:px-4 text-[13px] text-fg-muted">
                   Showing {visitors.length} of {total} visitors
                 </div>
               )}
-            </div>
+            </>
           )}
         </>
       )}
 
       {activeTab === "scripts" && (
-        <div className="space-y-4">
+        <div>
           {/* Add Script Form */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 px-8 py-4 max-sm:px-4">
             <Input
               placeholder="Enter your domain (e.g., example.com)"
               value={newDomain}
@@ -412,25 +414,28 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
           </div>
 
           {scripts.length === 0 ? (
-            <EmptyState
-              icon={<GlobeIcon size={32} />}
-              title="No tracking scripts"
-              description="Add a domain to generate a tracking script you can install on your website."
-            />
+            <div className="border-t border-divider">
+              <EmptyState
+                icon={<GlobeIcon size={32} />}
+                title="No tracking scripts"
+                description="Add a domain to generate a tracking script you can install on your website."
+              />
+            </div>
           ) : (
-            <div className="space-y-3">
+            <div className="border-t border-divider">
               {scripts.map((script) => (
-                <div
+                <Section
                   key={script.id}
-                  className="rounded-lg border border-line bg-surface p-4"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-2.5 h-2.5 rounded-full ${script.is_active ? "bg-success" : "bg-active"}`} />
-                      <span className="font-medium text-fg">{script.domain}</span>
+                  title={
+                    <>
+                      <span className={`w-2.5 h-2.5 rounded-full ${script.is_active ? "bg-success" : "bg-active"}`} />
+                      {script.domain}
                       <Badge variant={script.is_active ? "success" : "neutral"}>{script.is_active ? "Active" : "Paused"}</Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
+                    </>
+                  }
+                  description={`Created ${new Date(script.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`}
+                  actions={
+                    <>
                       <Button
                         variant="outline"
                         size="sm"
@@ -446,13 +451,9 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
                       >
                         <TrashIcon size={16} />
                       </Button>
-                    </div>
-                  </div>
-
-                  <div className="text-xs text-fg-secondary mb-3">
-                    Created {new Date(script.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-                  </div>
-
+                    </>
+                  }
+                >
                   {/* Script Snippet */}
                   <div className="relative">
                     <pre suppressHydrationWarning className="p-3 rounded bg-subtle border border-line text-xs text-fg-secondary overflow-x-auto">
@@ -480,7 +481,7 @@ body:JSON.stringify(d),keepalive:true});
                       )}
                     </button>
                   </div>
-                </div>
+                </Section>
               ))}
             </div>
           )}
@@ -601,7 +602,7 @@ body:JSON.stringify(d),keepalive:true});
       {showSetup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowSetup(false)} />
-          <div className="relative w-full max-w-md bg-surface rounded-lg border border-line p-4">
+          <div className="relative w-full max-w-md bg-surface rounded-lg border border-line p-4" data-clay-box>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-fg">Setup Website Tracking</h3>
               <button
@@ -654,7 +655,7 @@ body:JSON.stringify(d),keepalive:true});
           </div>
         </div>
       )}
-    </div>
+    </Page>
   );
 }
 
