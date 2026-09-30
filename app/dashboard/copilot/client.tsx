@@ -29,7 +29,9 @@ import {
   StarIcon,
   ShieldIcon,
   ChatCircleIcon,
+  RobotIcon,
 } from "@/components/ui";
+import { Page, PageHeader, Section, EmptyState } from "@/components/dashboard";
 import type { Tables } from "@/types/database";
 import {
   createConversation,
@@ -62,6 +64,14 @@ function getMessageText(msg: { parts?: Array<{ type: string; text?: string }>; c
   }
   return (msg as { content?: string }).content || "";
 }
+
+// Clay control recipes shared by the Memory, Tasks and Settings views.
+const BTN_PRIMARY = "inline-flex h-8 items-center gap-1.5 rounded-md bg-accent-strong px-3 text-[14px] font-medium text-on-inverse transition-colors hover:bg-accent-strong/90 disabled:opacity-50";
+const BTN_OUTLINE = "inline-flex h-8 items-center gap-1.5 rounded-md border border-line bg-surface px-3 text-[14px] font-medium text-fg transition-colors hover:bg-subtle";
+const BTN_GHOST = "inline-flex h-8 items-center rounded-md px-3 text-[14px] font-medium text-fg-secondary transition-colors hover:bg-subtle hover:text-fg";
+const FIELD = "w-full rounded-md border border-line bg-surface px-3 text-[14px] text-fg placeholder:text-fg-muted focus:border-accent focus:outline-none";
+const LABEL = "mb-1.5 block text-[13px] font-medium text-fg";
+const SUGGESTION_CHIP = "inline-flex h-8 items-center gap-2 rounded-md border border-line bg-surface px-3 text-[13px] font-medium text-fg transition-colors hover:bg-subtle";
 
 interface CopilotClientProps {
   initialConversations: Conversation[];
@@ -130,86 +140,87 @@ export function CopilotClient({ initialConversations, initialMemory, initialTask
 
   return (
     <div className="flex h-full bg-surface">
-      {/* Left Sidebar */}
-      <div className="w-64 border-r border-line flex flex-col bg-subtle">
+      {/* Left column: conversation list (Clay Sculptor panel) */}
+      <div className="w-64 shrink-0 border-r border-divider flex flex-col bg-surface">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-line">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-accent-strong flex items-center justify-center">
-              <SparkleIcon size={14} className="text-on-inverse" weight="fill" />
-            </div>
-            <h1 className="text-base font-semibold text-fg">Pulse Copilot</h1>
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-divider">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-subtle text-fg-secondary">
+            <RobotIcon size={18} />
           </div>
+          <h1 className="text-[16px] leading-6 font-semibold text-fg">Pulse Copilot</h1>
         </div>
 
         {/* Navigation */}
-        <nav className="p-3 space-y-0.5">
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => {
-                if (item.id === "chat") {
-                  handleNewChat();
-                } else {
-                  setView(item.id);
-                  setActiveConversationId(null);
-                }
-              }}
-              className={cn(
-                "flex items-center gap-2.5 w-full px-3 py-2 rounded text-sm font-medium transition-colors",
-                view === item.id && !activeConversationId
-                  ? "bg-surface text-fg border border-line"
-                  : "text-fg-secondary hover:bg-surface hover:text-fg"
-              )}
-            >
-              {item.icon}
-              {item.label}
-            </button>
-          ))}
+        <nav className="py-2">
+          {navItems.map(item => {
+            const isActive = view === item.id && !activeConversationId;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  if (item.id === "chat") {
+                    handleNewChat();
+                  } else {
+                    setView(item.id);
+                    setActiveConversationId(null);
+                  }
+                }}
+                className={cn(
+                  "relative flex h-9 w-full items-center gap-2.5 px-4 text-[14px] text-fg transition-colors hover:bg-subtle [&_svg]:size-4",
+                  isActive ? "font-medium [&_svg]:text-fg" : "[&_svg]:text-fg-muted"
+                )}
+              >
+                {isActive && <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-sm bg-fg" />}
+                {item.icon}
+                {item.label}
+              </button>
+            );
+          })}
         </nav>
 
         {/* Chat History */}
-        <div className="flex-1 overflow-y-auto px-3 pb-3">
-          <div className="border-t border-line pt-3 mt-1">
-            {conversations.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-xs text-fg-muted">No chat history yet</p>
-                <p className="text-xs text-fg-muted mt-0.5">Start a new chat to begin</p>
-              </div>
-            ) : (
-              <div className="space-y-0.5">
-                {conversations.map(conv => (
-                  <div
-                    key={conv.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => {
-                      setActiveConversationId(conv.id);
-                      setView("chat");
+        <div className="flex-1 overflow-y-auto border-t border-divider">
+          {conversations.length === 0 ? (
+            <div className="px-4 py-8 text-center">
+              <p className="text-[13px] text-fg-muted">No chat history yet</p>
+              <p className="text-[13px] text-fg-muted mt-0.5">Start a new chat to begin</p>
+            </div>
+          ) : (
+            <div>
+              {conversations.map(conv => (
+                <div
+                  key={conv.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    setActiveConversationId(conv.id);
+                    setView("chat");
+                  }}
+                  onKeyDown={e => { if (e.key === "Enter") { setActiveConversationId(conv.id); setView("chat"); } }}
+                  className={cn(
+                    "group relative flex h-10 w-full cursor-pointer items-center justify-between gap-2 px-4 text-[14px] border-b border-divider transition-colors hover:bg-subtle",
+                    activeConversationId === conv.id
+                      ? "font-medium text-fg"
+                      : "text-fg-secondary"
+                  )}
+                >
+                  {activeConversationId === conv.id && (
+                    <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-sm bg-fg" />
+                  )}
+                  <span className="truncate text-left flex-1">{conv.title}</span>
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleDeleteConversation(conv.id);
                     }}
-                    onKeyDown={e => { if (e.key === "Enter") { setActiveConversationId(conv.id); setView("chat"); } }}
-                    className={cn(
-                      "flex items-center justify-between w-full px-3 py-2 rounded text-sm transition-colors group cursor-pointer",
-                      activeConversationId === conv.id
-                        ? "bg-surface text-fg border border-line"
-                        : "text-fg-secondary hover:bg-surface"
-                    )}
+                    className="shrink-0 opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-active transition-all"
                   >
-                    <span className="truncate text-left flex-1">{conv.title}</span>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        handleDeleteConversation(conv.id);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-active transition-all"
-                    >
-                      <TrashIcon size={12} className="text-fg-muted" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                    <TrashIcon size={12} className="text-fg-muted" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -263,55 +274,58 @@ function EmptyChatView({ onNewChat, onSendPrompt }: { onNewChat: () => void; onS
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-6">
+    <div className="flex-1 flex flex-col items-center justify-center px-8 max-sm:px-4">
       {/* Heading */}
-      <h2 className="text-xl font-semibold text-fg mb-8">
+      <h2 className="text-[22px] leading-7 font-semibold text-fg mb-6">
         What can I help with?
       </h2>
 
-      {/* Large Input Box */}
-      <div className="w-full max-w-2xl mb-8">
-        <div className="border border-line rounded-lg bg-surface overflow-hidden">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={e => {
-              setInput(e.target.value);
-              e.target.style.height = "auto";
-              e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
-            }}
-            onKeyDown={e => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit();
-              }
-            }}
-            placeholder="Ask Pulse AI or type / to see prompts..."
-            className="w-full px-5 pt-4 pb-2 text-base text-fg placeholder:text-fg-muted bg-transparent outline-none resize-none min-h-[80px]"
-            rows={2}
-          />
-          <div className="flex items-center justify-between px-4 pb-3">
-            <button className="w-8 h-8 rounded-full flex items-center justify-center text-fg-muted hover:text-fg-secondary hover:bg-muted transition-colors">
+      {/* Composer (Clay "Ask questions and add enrichments" box) */}
+      <div className="w-full max-w-2xl mb-6">
+        <div data-clay-box className="rounded-lg border border-line bg-surface shadow-card transition-colors focus-within:border-accent">
+          <div className="flex items-start gap-2.5 px-4 pt-3.5">
+            <SparkleIcon size={16} weight="fill" className="mt-0.5 shrink-0 text-accent" />
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={e => {
+                setInput(e.target.value);
+                e.target.style.height = "auto";
+                e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
+              }}
+              onKeyDown={e => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
+              placeholder="Ask Pulse AI or type / to see prompts..."
+              className="flex-1 min-w-0 pb-2 text-[14px] leading-5 text-fg placeholder:text-fg-muted bg-transparent outline-none resize-none min-h-[64px]"
+              rows={2}
+            />
+          </div>
+          <div className="flex items-center justify-between px-3 pb-3">
+            <button className="flex h-8 w-8 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-subtle hover:text-fg-secondary">
               <ClockIcon size={18} />
             </button>
             <button
               onClick={handleSubmit}
               disabled={!input.trim()}
-              className="w-9 h-9 rounded-md bg-accent-surface flex items-center justify-center text-accent-on-surface hover:opacity-80 disabled:opacity-30 disabled:hover:opacity-30 transition-all"
+              className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-on-inverse transition-colors hover:bg-accent-strong disabled:opacity-40 disabled:hover:bg-accent"
             >
-              <ArrowUpIcon size={18} weight="bold" />
+              <ArrowUpIcon size={16} weight="bold" />
             </button>
           </div>
         </div>
       </div>
 
       {/* Suggestion Chips */}
-      <div className="flex flex-wrap justify-center gap-2.5 max-w-2xl">
+      <div className="flex flex-wrap justify-center gap-2 max-w-2xl">
         {SUGGESTION_CHIPS.map(chip => (
           <button
             key={chip.label}
             onClick={() => onSendPrompt(chip.prompt)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-line bg-surface text-sm font-medium text-fg hover:bg-muted hover:border-fg-muted transition-all"
+            className={SUGGESTION_CHIP}
           >
             <chip.icon size={16} className={chip.color} weight="fill" />
             {chip.label}
@@ -421,17 +435,17 @@ function ChatView({
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 min-h-0">
+      <div className="flex-1 overflow-y-auto px-8 py-6 min-h-0 max-sm:px-4">
         {messages.length === 0 && loaded ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <h3 className="text-xl font-semibold text-fg mb-2">How can I help you today?</h3>
-            <p className="text-sm text-fg-secondary mb-8">Ask about your pipeline, leads, deals, or anything CRM-related.</p>
-            <div className="flex flex-wrap justify-center gap-2.5 max-w-2xl">
+            <h3 className="text-[18px] leading-6 font-semibold text-fg mb-1">How can I help you today?</h3>
+            <p className="text-[13px] text-fg-muted mb-6">Ask about your pipeline, leads, deals, or anything CRM-related.</p>
+            <div className="flex flex-wrap justify-center gap-2 max-w-2xl">
               {SUGGESTION_CHIPS.map(chip => (
                 <button
                   key={chip.label}
                   onClick={() => handleSend(chip.prompt)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-full border border-line bg-surface text-sm font-medium text-fg hover:bg-muted hover:border-fg-muted transition-all"
+                  className={SUGGESTION_CHIP}
                 >
                   <chip.icon size={16} className={chip.color} weight="fill" />
                   {chip.label}
@@ -440,14 +454,14 @@ function ChatView({
             </div>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div className="max-w-3xl mx-auto space-y-5">
             {messages.map(msg => (
               <div key={msg.id} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
                 <div
-                  className={cn(
-                    "text-sm leading-relaxed",
+                  data-clay-box={msg.role === "user" || undefined} className={cn(
+                    "text-[14px] leading-6",
                     msg.role === "user"
-                      ? "bg-muted rounded-2xl px-4 py-3 max-w-[75%] text-fg"
+                      ? "bg-accent-surface rounded-lg px-4 py-2.5 max-w-[75%] text-fg"
                       : "max-w-full text-fg prose prose-sm dark:prose-invert prose-p:my-2 prose-ul:my-2 prose-li:my-0.5"
                   )}
                 >
@@ -567,34 +581,37 @@ function ChatInput({ onSend, isLoading }: { onSend: (text: string) => void; isLo
   };
 
   return (
-    <div className="px-6 py-4">
-      <div className="max-w-3xl mx-auto border border-line rounded-lg bg-surface overflow-hidden">
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={e => {
-            setInput(e.target.value);
-            e.target.style.height = "auto";
-            e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px";
-          }}
-          onKeyDown={e => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSubmit();
-            }
-          }}
-          placeholder="Ask Pulse AI or type / to see prompts..."
-          className="w-full px-5 pt-4 pb-2 text-sm text-fg placeholder:text-fg-muted bg-transparent outline-none resize-none min-h-[48px]"
-          rows={1}
-          disabled={isLoading}
-        />
-        <div className="flex items-center justify-end px-4 pb-3">
+    <div className="shrink-0 px-8 pt-2 pb-6 max-sm:px-4">
+      <div data-clay-box className="max-w-3xl mx-auto rounded-lg border border-line bg-surface shadow-card transition-colors focus-within:border-accent">
+        <div className="flex items-start gap-2.5 px-4 pt-3.5">
+          <SparkleIcon size={16} weight="fill" className="mt-0.5 shrink-0 text-accent" />
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={e => {
+              setInput(e.target.value);
+              e.target.style.height = "auto";
+              e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px";
+            }}
+            onKeyDown={e => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit();
+              }
+            }}
+            placeholder="Ask Pulse AI or type / to see prompts..."
+            className="flex-1 min-w-0 pb-1 text-[14px] leading-5 text-fg placeholder:text-fg-muted bg-transparent outline-none resize-none min-h-[40px]"
+            rows={1}
+            disabled={isLoading}
+          />
+        </div>
+        <div className="flex items-center justify-end px-3 pb-3">
           <button
             onClick={handleSubmit}
             disabled={!input.trim() || isLoading}
-            className="w-9 h-9 rounded-md bg-accent-surface flex items-center justify-center text-accent-on-surface hover:opacity-80 disabled:opacity-30 disabled:hover:opacity-30 transition-all"
+            className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-on-inverse transition-colors hover:bg-accent-strong disabled:opacity-40 disabled:hover:bg-accent"
           >
-            <ArrowUpIcon size={18} weight="bold" />
+            <ArrowUpIcon size={16} weight="bold" />
           </button>
         </div>
       </div>
@@ -727,29 +744,24 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
   };
 
   return (
-    <div className="flex-1 overflow-y-auto flex items-center justify-center">
-      <div className="max-w-2xl w-full mx-auto p-8">
-        <div className="text-center mb-8">
-          <h2 className="text-xl font-semibold text-fg mb-2">Memory</h2>
-          <p className="text-sm text-fg-secondary">
-            Pulse Copilot uses your business details to provide context-aware responses.
-          </p>
-        </div>
+    <div className="flex-1 overflow-y-auto">
+      <Page>
+        <PageHeader
+          icon={<BrainIcon size={18} />}
+          title="Memory"
+          description="Pulse Copilot uses your business details to provide context-aware responses."
+        />
 
         {showForm ? (
           /* Memory Form */
-          <div className="bg-surface rounded-lg border border-line p-4">
-            <h3 className="text-sm font-semibold text-fg mb-4">
-              {editingId ? "Edit Memory" : "Add Memory"}
-            </h3>
-
-            <div className="space-y-4">
+          <Section title={editingId ? "Edit Memory" : "Add Memory"}>
+            <div className="max-w-[560px] space-y-4">
               <div>
-                <label className="text-xs font-medium text-fg-secondary mb-1.5 block">Type</label>
+                <label className={LABEL}>Type</label>
                 <select
                   value={formData.type}
                   onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as MemoryItem["type"] }))}
-                  className="w-full px-3 py-2 rounded border border-line bg-surface text-sm text-fg"
+                  className={cn(FIELD, "h-8")}
                 >
                   {memoryTypes.map(t => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -758,251 +770,237 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
               </div>
 
               <div>
-                <label className="text-xs font-medium text-fg-secondary mb-1.5 block">Title</label>
+                <label className={LABEL}>Title</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="e.g. Company Overview"
-                  className="w-full px-3 py-2 rounded border border-line bg-surface text-sm text-fg placeholder:text-fg-muted"
+                  className={cn(FIELD, "h-8")}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-fg-secondary mb-1.5 block">Content</label>
+                <label className={LABEL}>Content</label>
                 <textarea
                   value={formData.content}
                   onChange={e => setFormData(prev => ({ ...prev, content: e.target.value }))}
                   placeholder="Describe your business, products, target audience, etc..."
                   rows={6}
-                  className="w-full px-3 py-2 rounded border border-line bg-surface text-sm text-fg placeholder:text-fg-muted resize-none"
+                  className={cn(FIELD, "py-2 resize-none")}
                 />
               </div>
 
               <div className="flex items-center gap-2 pt-2">
-                <button onClick={handleSave} className="px-4 py-2 rounded-md bg-accent-strong text-on-inverse text-sm font-medium hover:bg-accent-strong/90 transition-colors">
+                <button onClick={handleSave} className={BTN_PRIMARY}>
                   {editingId ? "Update" : "Save"}
                 </button>
                 <button
                   onClick={() => { setShowForm(false); setEditingId(null); setFormData({ type: "business_details", title: "", content: "" }); }}
-                  className="px-4 py-2 rounded border border-line text-sm font-medium text-fg-secondary hover:bg-muted transition-colors"
+                  className={BTN_OUTLINE}
                 >
                   Cancel
                 </button>
               </div>
             </div>
-          </div>
+          </Section>
         ) : scrapeMode ? (
           /* Scrape Flow */
-          <div className="space-y-6">
-            {scrapeResults === null ? (
-              /* Phase A: URL Input */
-              <div className="bg-surface rounded-lg border border-line p-4">
-                <div className="flex items-center gap-2 mb-4">
-                  <SparkleIcon size={18} className="text-fg-muted" />
-                  <h3 className="text-sm font-semibold text-fg">Scan a website</h3>
-                </div>
-                <p className="text-xs text-fg-secondary mb-4">
-                  Enter your website URL and AI will automatically extract business details, products, audience, and brand voice.
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={scrapeUrl}
-                    onChange={e => setScrapeUrl(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && !scraping && handleScrape()}
-                    placeholder="https://yourcompany.com"
-                    disabled={scraping}
-                    className="flex-1 px-3 py-2 rounded border border-line bg-surface text-sm text-fg placeholder:text-fg-muted disabled:opacity-50"
-                  />
-                  <button
-                    onClick={handleScrape}
-                    disabled={scraping || !scrapeUrl.trim()}
-                    className="px-4 py-2 rounded-md bg-accent-strong text-on-inverse text-sm font-medium hover:bg-accent-strong/90 transition-colors disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {scraping ? (
-                      <>
-                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        Analyzing...
-                      </>
-                    ) : (
-                      "Scan"
-                    )}
-                  </button>
-                </div>
-                <div className="flex justify-end mt-3">
-                  <button
-                    onClick={exitScrapeMode}
-                    disabled={scraping}
-                    className="text-xs text-fg-secondary hover:text-fg transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
+          scrapeResults === null ? (
+            /* Phase A: URL Input */
+            <Section
+              title="Scan a website"
+              icon={<SparkleIcon size={18} />}
+              description="Enter your website URL and AI will automatically extract business details, products, audience, and brand voice."
+            >
+              <div className="flex max-w-[560px] gap-2">
+                <input
+                  type="url"
+                  value={scrapeUrl}
+                  onChange={e => setScrapeUrl(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && !scraping && handleScrape()}
+                  placeholder="https://yourcompany.com"
+                  disabled={scraping}
+                  className={cn(FIELD, "h-8 flex-1 disabled:opacity-50")}
+                />
+                <button
+                  onClick={handleScrape}
+                  disabled={scraping || !scrapeUrl.trim()}
+                  className={BTN_PRIMARY}
+                >
+                  {scraping ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Analyzing...
+                    </>
+                  ) : (
+                    "Scan"
+                  )}
+                </button>
+                <button
+                  onClick={exitScrapeMode}
+                  disabled={scraping}
+                  className={BTN_GHOST}
+                >
+                  Cancel
+                </button>
               </div>
-            ) : (
-              /* Phase B: Results Review */
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <SparkleIcon size={16} className="text-fg-muted" />
-                    <h3 className="text-sm font-semibold text-fg">
-                      Found {scrapeResults.length} item{scrapeResults.length > 1 ? "s" : ""} from {scrapeSiteName}
-                    </h3>
-                  </div>
-                  <span className="text-xs text-fg-muted">{scrapeResults.filter(r => r.selected).length} selected</span>
-                </div>
-
-                <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                  {scrapeResults.map((result, idx) => (
-                    <div
-                      key={idx}
-                      className={cn(
-                        "p-4 rounded-lg border transition-all",
-                        result.selected
-                          ? "border-line bg-surface"
-                          : "border-line bg-surface opacity-60"
-                      )}
-                    >
-                      <div className="flex items-start gap-3">
-                        <button
-                          onClick={() => setScrapeResults(prev => prev!.map((r, i) => i === idx ? { ...r, selected: !r.selected } : r))}
-                          className={cn(
-                            "mt-0.5 w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-colors",
-                            result.selected
-                              ? "bg-accent-surface border-accent text-accent-on-surface"
-                              : "border-line"
-                          )}
-                        >
-                          {result.selected && <CheckIcon size={12} />}
-                        </button>
-                        <div className="flex-1 min-w-0 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-fg-secondary font-medium">
-                              {memoryTypes.find(t => t.value === result.type)?.label || result.type}
-                            </span>
-                          </div>
-                          <input
-                            type="text"
-                            value={result.title}
-                            onChange={e => setScrapeResults(prev => prev!.map((r, i) => i === idx ? { ...r, title: e.target.value } : r))}
-                            className="w-full text-sm font-medium text-fg bg-transparent border-0 p-0 focus:outline-none focus:ring-0"
-                          />
-                          <textarea
-                            value={result.content}
-                            onChange={e => setScrapeResults(prev => prev!.map((r, i) => i === idx ? { ...r, content: e.target.value } : r))}
-                            rows={2}
-                            className="w-full text-xs text-fg-secondary bg-transparent border-0 p-0 focus:outline-none focus:ring-0 resize-none"
-                          />
+            </Section>
+          ) : (
+            /* Phase B: Results Review */
+            <Section
+              title={<>Found {scrapeResults.length} item{scrapeResults.length > 1 ? "s" : ""} from {scrapeSiteName}</>}
+              icon={<SparkleIcon size={16} />}
+              actions={<span className="text-[13px] text-fg-muted">{scrapeResults.filter(r => r.selected).length} selected</span>}
+            >
+              <div className="max-h-[400px] overflow-y-auto border-t border-divider">
+                {scrapeResults.map((result, idx) => (
+                  <div
+                    key={idx}
+                    className={cn(
+                      "py-4 border-b border-divider transition-opacity",
+                      !result.selected && "opacity-60"
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <button
+                        onClick={() => setScrapeResults(prev => prev!.map((r, i) => i === idx ? { ...r, selected: !r.selected } : r))}
+                        className={cn(
+                          "mt-0.5 w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-colors",
+                          result.selected
+                            ? "bg-accent-surface border-accent text-accent-on-surface"
+                            : "border-line"
+                        )}
+                      >
+                        {result.selected && <CheckIcon size={12} />}
+                      </button>
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[12px] px-2 py-0.5 rounded-full bg-muted text-fg-secondary font-medium">
+                            {memoryTypes.find(t => t.value === result.type)?.label || result.type}
+                          </span>
                         </div>
+                        <input
+                          type="text"
+                          value={result.title}
+                          onChange={e => setScrapeResults(prev => prev!.map((r, i) => i === idx ? { ...r, title: e.target.value } : r))}
+                          className="w-full text-[14px] font-medium text-fg bg-transparent border-0 p-0 focus:outline-none focus:ring-0"
+                        />
+                        <textarea
+                          value={result.content}
+                          onChange={e => setScrapeResults(prev => prev!.map((r, i) => i === idx ? { ...r, content: e.target.value } : r))}
+                          rows={2}
+                          className="w-full text-[13px] text-fg-secondary bg-transparent border-0 p-0 focus:outline-none focus:ring-0 resize-none"
+                        />
                       </div>
                     </div>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-2 pt-2">
-                  <button
-                    onClick={handleSaveScrapeResults}
-                    disabled={savingScrape || scrapeResults.filter(r => r.selected).length === 0}
-                    className="px-4 py-2 rounded-md bg-accent-strong text-on-inverse text-sm font-medium hover:bg-accent-strong/90 transition-colors disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {savingScrape ? (
-                      <>
-                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        Saving...
-                      </>
-                    ) : (
-                      `Save ${scrapeResults.filter(r => r.selected).length} selected`
-                    )}
-                  </button>
-                  <button
-                    onClick={() => { setScrapeResults(null); setScrapeUrl(""); }}
-                    className="px-4 py-2 rounded border border-line text-sm font-medium text-fg-secondary hover:bg-muted transition-colors"
-                  >
-                    Back
-                  </button>
-                  <button
-                    onClick={exitScrapeMode}
-                    className="px-4 py-2 rounded text-sm font-medium text-fg-secondary hover:text-fg transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
+
+              <div className="flex items-center gap-2 pt-4">
+                <button
+                  onClick={handleSaveScrapeResults}
+                  disabled={savingScrape || scrapeResults.filter(r => r.selected).length === 0}
+                  className={BTN_PRIMARY}
+                >
+                  {savingScrape ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Saving...
+                    </>
+                  ) : (
+                    `Save ${scrapeResults.filter(r => r.selected).length} selected`
+                  )}
+                </button>
+                <button
+                  onClick={() => { setScrapeResults(null); setScrapeUrl(""); }}
+                  className={BTN_OUTLINE}
+                >
+                  Back
+                </button>
+                <button
+                  onClick={exitScrapeMode}
+                  className={BTN_GHOST}
+                >
+                  Cancel
+                </button>
+              </div>
+            </Section>
+          )
         ) : (
           <>
-            {/* Quick Add Cards */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
-              <button
-                onClick={() => {
-                  setFormData({ type: "business_details", title: "Business Overview", content: "" });
-                  setShowForm(true);
-                }}
-                className="flex flex-col items-center gap-3 p-4 rounded-lg border border-line hover:border-fg-muted transition-all bg-surface"
-              >
-                <GlobeIcon size={28} className="text-fg-muted" />
-                <div>
-                  <p className="text-sm font-medium text-fg">Add business details</p>
-                  <p className="text-xs text-fg-secondary mt-0.5">Company info, products</p>
-                </div>
-              </button>
-              <button
-                onClick={() => setScrapeMode(true)}
-                className="flex flex-col items-center gap-3 p-4 rounded-lg border border-line hover:border-fg-muted transition-all bg-surface"
-              >
-                <SparkleIcon size={28} className="text-fg-muted" />
-                <div>
-                  <p className="text-sm font-medium text-fg">Scan a website</p>
-                  <p className="text-xs text-fg-secondary mt-0.5">Auto-extract with AI</p>
-                </div>
-              </button>
-              <button
-                onClick={() => {
-                  setFormData({ type: "custom", title: "", content: "" });
-                  setShowForm(true);
-                }}
-                className="flex flex-col items-center gap-3 p-4 rounded-lg border border-line hover:border-fg-muted transition-all bg-surface"
-              >
-                <PencilSimpleIcon size={28} className="text-fg-muted" />
-                <div>
-                  <p className="text-sm font-medium text-fg">Edit manually</p>
-                  <p className="text-xs text-fg-secondary mt-0.5">Custom business context</p>
-                </div>
-              </button>
-            </div>
+            {/* Quick Add Tiles */}
+            <Section>
+              <div className="flex flex-wrap gap-4">
+                <button
+                  onClick={() => {
+                    setFormData({ type: "business_details", title: "Business Overview", content: "" });
+                    setShowForm(true);
+                  }}
+                  data-clay-box className="flex w-[230px] items-start gap-3 rounded-lg bg-subtle p-4 text-left shadow-card transition-colors hover:bg-muted max-sm:w-full"
+                >
+                  <GlobeIcon size={18} className="mt-0.5 shrink-0 text-accent" />
+                  <div>
+                    <p className="text-[14px] font-semibold text-fg">Add business details</p>
+                    <p className="text-[13px] text-fg-muted mt-0.5">Company info, products</p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setScrapeMode(true)}
+                  data-clay-box className="flex w-[230px] items-start gap-3 rounded-lg bg-subtle p-4 text-left shadow-card transition-colors hover:bg-muted max-sm:w-full"
+                >
+                  <SparkleIcon size={18} className="mt-0.5 shrink-0 text-accent" />
+                  <div>
+                    <p className="text-[14px] font-semibold text-fg">Scan a website</p>
+                    <p className="text-[13px] text-fg-muted mt-0.5">Auto-extract with AI</p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => {
+                    setFormData({ type: "custom", title: "", content: "" });
+                    setShowForm(true);
+                  }}
+                  data-clay-box className="flex w-[230px] items-start gap-3 rounded-lg bg-subtle p-4 text-left shadow-card transition-colors hover:bg-muted max-sm:w-full"
+                >
+                  <PencilSimpleIcon size={18} className="mt-0.5 shrink-0 text-accent" />
+                  <div>
+                    <p className="text-[14px] font-semibold text-fg">Edit manually</p>
+                    <p className="text-[13px] text-fg-muted mt-0.5">Custom business context</p>
+                  </div>
+                </button>
+              </div>
+            </Section>
 
             {/* Existing Memory Items */}
             {items.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-fg-secondary mb-3">Saved Context</h3>
-                {items.map(item => (
-                  <div key={item.id} className="p-4 rounded-lg border border-line bg-surface group">
-                    <div className="flex items-start justify-between">
+              <Section title="Saved Context">
+                <div className="border-t border-divider">
+                  {items.map(item => (
+                    <div key={item.id} className="group flex items-start justify-between py-3 border-b border-divider">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-fg-secondary font-medium">
+                          <span className="text-[12px] px-2 py-0.5 rounded-full bg-muted text-fg-secondary font-medium">
                             {memoryTypes.find(t => t.value === item.type)?.label || item.type}
                           </span>
                           {item.source === "website" && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-accent-surface text-accent-on-surface">Website</span>
+                            <span className="text-[12px] px-2 py-0.5 rounded-full bg-accent-surface text-accent-on-surface">Website</span>
                           )}
                           {!item.is_active && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-warning-surface text-warning">Disabled</span>
+                            <span className="text-[12px] px-2 py-0.5 rounded-full bg-warning-surface text-warning">Disabled</span>
                           )}
                         </div>
-                        <h4 className="text-sm font-medium text-fg">{item.title}</h4>
-                        <p className="text-xs text-fg-secondary mt-1 line-clamp-2">{item.content}</p>
+                        <h4 className="text-[14px] font-medium text-fg">{item.title}</h4>
+                        <p className="text-[13px] text-fg-muted mt-1 line-clamp-2">{item.content}</p>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-3">
-                        <button onClick={() => handleEdit(item)} className="p-1.5 rounded hover:bg-muted transition-colors">
+                        <button onClick={() => handleEdit(item)} className="p-1.5 rounded hover:bg-subtle transition-colors">
                           <PencilSimpleIcon size={14} className="text-fg-muted" />
                         </button>
                         <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded hover:bg-danger-surface transition-colors">
@@ -1010,13 +1008,13 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                         </button>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </Section>
             )}
           </>
         )}
-      </div>
+      </Page>
     </div>
   );
 }
@@ -1077,125 +1075,117 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
   };
 
   return (
-    <div className="flex-1 overflow-y-auto flex items-center justify-center">
-      <div className="max-w-2xl w-full mx-auto p-8">
-        <div className="text-center mb-8">
-          <h2 className="text-xl font-semibold text-fg mb-2">Tasks</h2>
-          <p className="text-sm text-fg-secondary">
-            Manage recurring prompts that Copilot can execute on a schedule.
-          </p>
-        </div>
-
-        {!showForm ? (
-          <>
-            <button
-              onClick={() => setShowForm(true)}
-              className="w-full flex items-center justify-center gap-2 p-4 rounded-lg border border-dashed border-line text-sm font-medium text-fg-secondary hover:border-fg-muted hover:text-fg transition-colors mb-6"
-            >
+    <div className="flex-1 overflow-y-auto">
+      <Page>
+        <PageHeader
+          icon={<ClockIcon size={18} />}
+          title="Tasks"
+          description="Manage recurring prompts that Copilot can execute on a schedule."
+        >
+          {!showForm && (
+            <button onClick={() => setShowForm(true)} className={BTN_PRIMARY}>
               <PlusIcon size={16} weight="bold" />
               Create new task
             </button>
+          )}
+        </PageHeader>
 
-            {tasks.length === 0 ? (
-              <div className="text-center py-12">
-                <ClockIcon size={40} className="text-fg-disabled mx-auto mb-3" />
-                <p className="text-sm text-fg-secondary">No tasks yet</p>
-                <p className="text-xs text-fg-muted mt-1">Create recurring prompts to automate your workflow.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {tasks.map(task => (
-                  <div key={task.id} className="p-4 rounded-lg border border-line bg-surface group">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="text-sm font-medium text-fg">{task.title}</h4>
-                          <span className={cn(
-                            "text-xs px-2 py-0.5 rounded-full font-medium",
-                            task.is_active
-                              ? "bg-success-surface text-success"
-                              : "bg-muted text-fg-secondary"
-                          )}>
-                            {task.is_active ? "Active" : "Paused"}
-                          </span>
-                        </div>
-                        <p className="text-xs text-fg-secondary line-clamp-1 mb-1">{task.prompt}</p>
-                        <div className="flex items-center gap-3 text-xs text-fg-muted">
-                          <span className="flex items-center gap-1">
-                            <ClockIcon size={12} />
-                            {scheduleLabels[task.schedule]}
-                          </span>
-                          {task.run_count > 0 && <span>Ran {task.run_count} times</span>}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-3">
-                        <button
-                          onClick={() => handleToggle(task)}
-                          className="p-1.5 rounded hover:bg-muted transition-colors"
-                          title={task.is_active ? "Pause" : "Activate"}
-                        >
-                          {task.is_active ? (
-                            <XIcon size={14} className="text-fg-muted" />
-                          ) : (
-                            <CheckIcon size={14} className="text-success" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setFormData({ title: task.title, prompt: task.prompt, schedule: task.schedule });
-                            setEditingId(task.id);
-                            setShowForm(true);
-                          }}
-                          className="p-1.5 rounded hover:bg-muted transition-colors"
-                        >
-                          <PencilSimpleIcon size={14} className="text-fg-muted" />
-                        </button>
-                        <button onClick={() => handleDelete(task.id)} className="p-1.5 rounded hover:bg-danger-surface transition-colors">
-                          <TrashIcon size={14} className="text-danger" />
-                        </button>
-                      </div>
+        {!showForm ? (
+          tasks.length === 0 ? (
+            <div className="border-t border-divider">
+              <EmptyState
+                icon={<ClockIcon size={24} />}
+                title="No tasks yet"
+                description="Create recurring prompts to automate your workflow."
+              />
+            </div>
+          ) : (
+            <div className="border-t border-divider">
+              {tasks.map(task => (
+                <div key={task.id} className="group flex items-start justify-between gap-3 px-8 py-3 border-b border-divider transition-colors hover:bg-subtle max-sm:px-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="text-[14px] font-medium text-fg">{task.title}</h4>
+                      <span className={cn(
+                        "text-[12px] px-2 py-0.5 rounded-full font-medium",
+                        task.is_active
+                          ? "bg-success-surface text-success"
+                          : "bg-muted text-fg-secondary"
+                      )}>
+                        {task.is_active ? "Active" : "Paused"}
+                      </span>
+                    </div>
+                    <p className="text-[13px] text-fg-secondary line-clamp-1 mb-1">{task.prompt}</p>
+                    <div className="flex items-center gap-3 text-[12px] text-fg-muted">
+                      <span className="flex items-center gap-1">
+                        <ClockIcon size={12} />
+                        {scheduleLabels[task.schedule]}
+                      </span>
+                      {task.run_count > 0 && <span>Ran {task.run_count} times</span>}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-3">
+                    <button
+                      onClick={() => handleToggle(task)}
+                      className="p-1.5 rounded hover:bg-muted transition-colors"
+                      title={task.is_active ? "Pause" : "Activate"}
+                    >
+                      {task.is_active ? (
+                        <XIcon size={14} className="text-fg-muted" />
+                      ) : (
+                        <CheckIcon size={14} className="text-success" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setFormData({ title: task.title, prompt: task.prompt, schedule: task.schedule });
+                        setEditingId(task.id);
+                        setShowForm(true);
+                      }}
+                      className="p-1.5 rounded hover:bg-muted transition-colors"
+                    >
+                      <PencilSimpleIcon size={14} className="text-fg-muted" />
+                    </button>
+                    <button onClick={() => handleDelete(task.id)} className="p-1.5 rounded hover:bg-danger-surface transition-colors">
+                      <TrashIcon size={14} className="text-danger" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
         ) : (
           /* Task Form */
-          <div className="bg-surface rounded-lg border border-line p-4">
-            <h3 className="text-sm font-semibold text-fg mb-4">
-              {editingId ? "Edit Task" : "Create Task"}
-            </h3>
-
-            <div className="space-y-4">
+          <Section title={editingId ? "Edit Task" : "Create Task"}>
+            <div className="max-w-[560px] space-y-4">
               <div>
-                <label className="text-xs font-medium text-fg-secondary mb-1.5 block">Title</label>
+                <label className={LABEL}>Title</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="e.g. Daily Pipeline Summary"
-                  className="w-full px-3 py-2 rounded border border-line bg-surface text-sm text-fg placeholder:text-fg-muted"
+                  className={cn(FIELD, "h-8")}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-fg-secondary mb-1.5 block">Prompt</label>
+                <label className={LABEL}>Prompt</label>
                 <textarea
                   value={formData.prompt}
                   onChange={e => setFormData(prev => ({ ...prev, prompt: e.target.value }))}
                   placeholder="What should Copilot do? e.g. Summarize my pipeline and highlight deals at risk..."
                   rows={4}
-                  className="w-full px-3 py-2 rounded border border-line bg-surface text-sm text-fg placeholder:text-fg-muted resize-none"
+                  className={cn(FIELD, "py-2 resize-none")}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-fg-secondary mb-1.5 block">Schedule</label>
+                <label className={LABEL}>Schedule</label>
                 <select
                   value={formData.schedule}
                   onChange={e => setFormData(prev => ({ ...prev, schedule: e.target.value as CopilotTask["schedule"] }))}
-                  className="w-full px-3 py-2 rounded border border-line bg-surface text-sm text-fg"
+                  className={cn(FIELD, "h-8")}
                 >
                   <option value="daily">Daily</option>
                   <option value="weekly">Weekly</option>
@@ -1205,20 +1195,20 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
               </div>
 
               <div className="flex items-center gap-2 pt-2">
-                <button onClick={handleSave} className="px-4 py-2 rounded-md bg-accent-strong text-on-inverse text-sm font-medium hover:bg-accent-strong/90 transition-colors">
+                <button onClick={handleSave} className={BTN_PRIMARY}>
                   {editingId ? "Update" : "Create"}
                 </button>
                 <button
                   onClick={() => { setShowForm(false); setEditingId(null); setFormData({ title: "", prompt: "", schedule: "daily" }); }}
-                  className="px-4 py-2 rounded border border-line text-sm font-medium text-fg-secondary hover:bg-muted transition-colors"
+                  className={BTN_OUTLINE}
                 >
                   Cancel
                 </button>
               </div>
             </div>
-          </div>
+          </Section>
         )}
-      </div>
+      </Page>
     </div>
   );
 }
@@ -1227,23 +1217,22 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
 
 function SettingsView() {
   return (
-    <div className="flex-1 overflow-y-auto flex items-center justify-center">
-      <div className="max-w-2xl w-full mx-auto p-8">
-        <div className="text-center mb-8">
-          <h2 className="text-xl font-semibold text-fg mb-2">Copilot Settings</h2>
-          <p className="text-sm text-fg-secondary">
-            Configure your Pulse Copilot settings.
-          </p>
-        </div>
+    <div className="flex-1 overflow-y-auto">
+      <Page>
+        <PageHeader
+          icon={<GearIcon size={18} />}
+          title="Copilot Settings"
+          description="Configure your Pulse Copilot settings."
+        />
 
-        <p className="mb-4 text-sm text-fg-secondary">These settings are coming soon.</p>
+        <p className="px-8 pb-4 text-[13px] text-fg-secondary max-sm:px-4">These settings are coming soon.</p>
 
-        <fieldset disabled className="min-w-0 space-y-4 opacity-60">
+        <fieldset disabled className="min-w-0 opacity-60">
           {/* Analytics Toggle */}
-          <div className="flex items-center justify-between p-4 rounded-lg border border-line bg-surface">
+          <div className="flex items-center justify-between gap-4 px-8 py-5 border-t border-divider max-sm:px-4">
             <div>
-              <h3 className="text-sm font-medium text-fg">Analytics</h3>
-              <p className="text-xs text-fg-secondary mt-0.5">
+              <h3 className="text-[14px] font-semibold text-fg">Analytics</h3>
+              <p className="text-[13px] text-fg-muted mt-0.5">
                 Enable analytics tracking for Copilot interactions and performance metrics.
               </p>
             </div>
@@ -1258,10 +1247,10 @@ function SettingsView() {
           </div>
 
           {/* Model Selection */}
-          <div className="flex items-center justify-between p-4 rounded-lg border border-line bg-surface">
+          <div className="flex items-center justify-between gap-4 px-8 py-5 border-t border-divider max-sm:px-4">
             <div>
-              <h3 className="text-sm font-medium text-fg">AI Model</h3>
-              <p className="text-xs text-fg-secondary mt-0.5">
+              <h3 className="text-[14px] font-semibold text-fg">AI Model</h3>
+              <p className="text-[13px] text-fg-muted mt-0.5">
                 Choose the AI model for Copilot responses.
               </p>
             </div>
@@ -1272,10 +1261,10 @@ function SettingsView() {
           </div>
 
           {/* Chat History */}
-          <div className="flex items-center justify-between p-4 rounded-lg border border-line bg-surface">
+          <div className="flex items-center justify-between gap-4 px-8 py-5 border-y border-divider max-sm:px-4">
             <div>
-              <h3 className="text-sm font-medium text-fg">Chat History</h3>
-              <p className="text-xs text-fg-secondary mt-0.5">
+              <h3 className="text-[14px] font-semibold text-fg">Chat History</h3>
+              <p className="text-[13px] text-fg-muted mt-0.5">
                 Automatically save chat conversations for future reference.
               </p>
             </div>
@@ -1290,13 +1279,13 @@ function SettingsView() {
           </div>
 
           {/* Save */}
-          <div className="flex justify-end pt-4">
-            <button className="px-4 py-2 rounded-md bg-accent-strong text-on-inverse text-sm font-medium hover:bg-accent-strong/90 transition-colors">
+          <div className="flex justify-end px-8 pt-4 max-sm:px-4">
+            <button className={BTN_PRIMARY}>
               Save
             </button>
           </div>
         </fieldset>
-      </div>
+      </Page>
     </div>
   );
 }
