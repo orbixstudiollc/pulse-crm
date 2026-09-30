@@ -11,6 +11,8 @@ import {
 import { assertSafeFetchTarget } from "@/lib/security/fetch-target";
 import { createPinnedFetch } from "@/lib/security/safe-fetch";
 import { resolveAIProvider } from "@/lib/ai/provider-resolver";
+import { getModelId, MODEL_MAP } from "@/lib/ai/models";
+import type { AIModel } from "@/lib/ai/types";
 
 // =============================================================================
 // Model Pricing (USD per 1M tokens)
@@ -218,7 +220,16 @@ export async function resolveProviderAndModel(
   // The saved model belongs to the saved provider; ignore it after a fallback.
   const raw = provider === settings?.ai_provider ? settings.default_model : null;
   const defaultModel = raw && raw.startsWith("ollama:") ? null : raw;
-  let model = defaultModel ?? "";
+  // CRM settings save aliases ("sonnet"/"haiku"); translate them to a real
+  // model ID where the alias map covers the provider, otherwise use the default.
+  const isAlias =
+    !!defaultModel &&
+    Object.prototype.hasOwnProperty.call(MODEL_MAP, defaultModel);
+  let model = isAlias
+    ? provider === "anthropic" || provider === "openrouter"
+      ? getModelId(defaultModel as AIModel, provider)
+      : ""
+    : (defaultModel ?? "");
   if (!model) {
     switch (provider) {
       case "openrouter":
