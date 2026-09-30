@@ -261,16 +261,16 @@ export function PlaybookPageClient({
       </div>
 
       {/* Category Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto rounded-lg border border-line bg-surface p-1.5">
+      <div className="flex items-center gap-2 overflow-x-auto">
         {categoryTabs.map((tab) => (
           <button
             key={tab.value}
             onClick={() => setActiveTab(tab.value)}
             className={cn(
-              "px-4 py-2 text-sm font-medium rounded whitespace-nowrap transition-colors",
+              "h-8 px-3 text-[13px] font-medium rounded-md border whitespace-nowrap transition-colors",
               activeTab === tab.value
-                ? "bg-inverse text-on-inverse"
-                : "text-fg-secondary hover:text-fg hover:bg-muted",
+                ? "border-accent text-accent-strong bg-surface"
+                : "border-line text-fg-secondary hover:bg-subtle",
             )}
           >
             {tab.label}

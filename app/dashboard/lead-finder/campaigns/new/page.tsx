@@ -87,7 +87,7 @@ function StepIndicator({ current }: { current: number }) {
             <div
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-inverse text-on-inverse"
+                  ? "bg-accent-surface text-accent-on-surface"
                   : isCompleted
                     ? "bg-success-surface text-success"
                     : "bg-muted text-fg-secondary"
@@ -577,7 +577,7 @@ export default function NewCampaignPage() {
           <div
             className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors ${
               isSelected
-                ? "border-inverse bg-inverse"
+                ? "border-accent-strong bg-accent-strong"
                 : "border-line"
             }`}
           >

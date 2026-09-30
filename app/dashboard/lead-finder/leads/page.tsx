@@ -1073,10 +1073,10 @@ export default function AllLeadsPage() {
                       <button
                         key={page}
                         onClick={() => goToPage(page)}
-                        className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                        className={`h-8 min-w-8 px-2 rounded-md border text-[13px] font-medium transition-colors ${
                           page === currentPage
-                            ? "bg-inverse text-on-inverse"
-                            : "text-fg-secondary hover:text-fg"
+                            ? "border-accent text-accent-strong bg-surface"
+                            : "border-line text-fg-secondary hover:bg-subtle"
                         }`}
                       >
                         {page}

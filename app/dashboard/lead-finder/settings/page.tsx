@@ -945,7 +945,7 @@ function LeadFinderSettingsPageInner() {
                 />
                 <button
                   onClick={() => setShowAddActor((v) => !v)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-inverse text-on-inverse hover:opacity-90 transition-opacity flex-shrink-0"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-accent-strong text-on-inverse hover:bg-accent-strong/90 transition-colors flex-shrink-0"
                 >
                   <PlusIcon size={12} />
                   Add Custom Actor

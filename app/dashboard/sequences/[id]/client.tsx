@@ -1007,16 +1007,16 @@ export function SequenceDetailClient({
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 rounded-lg border border-line bg-surface p-1.5 w-fit">
+      <div className="flex items-center gap-2 w-fit">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "px-4 py-2 text-sm font-medium rounded transition-colors",
+              "h-8 px-3 text-[13px] font-medium rounded-md border transition-colors",
               activeTab === tab.id
-                ? "bg-inverse text-on-inverse"
-                : "text-fg-secondary hover:text-fg hover:bg-muted"
+                ? "border-accent text-accent-strong bg-surface"
+                : "border-line text-fg-secondary hover:bg-subtle"
             )}
           >
             {tab.label}
@@ -1366,10 +1366,10 @@ export function SequenceDetailClient({
                 key={f.id}
                 onClick={() => handleActivityFilterChange(f.id)}
                 className={cn(
-                  "px-3 py-1 text-xs font-medium rounded-full transition-colors",
+                  "h-8 px-3 text-[13px] font-medium rounded-md border transition-colors",
                   activityFilter === f.id
-                    ? "bg-inverse text-on-inverse"
-                    : "bg-muted text-fg-secondary hover:bg-active",
+                    ? "border-accent text-accent-strong bg-surface"
+                    : "border-line text-fg-secondary hover:bg-subtle",
                 )}
               >
                 {f.label}
@@ -1676,7 +1676,7 @@ export function SequenceDetailClient({
                       className={cn(
                         "px-3 py-1.5 rounded text-sm font-medium transition-colors border",
                         settScheduleDays.includes(day)
-                          ? "bg-inverse text-on-inverse border-inverse"
+                          ? "bg-accent-surface text-accent-on-surface border-accent"
                           : "bg-surface text-fg-secondary border-line hover:border-fg-muted"
                       )}
                     >
@@ -1747,7 +1747,7 @@ export function SequenceDetailClient({
                     className={cn(
                       "flex items-center gap-3 p-3 rounded border cursor-pointer transition-colors",
                       settAccountIds.includes(acc.id)
-                        ? "border-inverse bg-subtle"
+                        ? "border-accent bg-accent-surface text-accent-on-surface"
                         : "border-line hover:border-fg-muted"
                     )}
                   >
@@ -2278,7 +2278,7 @@ export function SequenceDetailClient({
                   className={cn(
                     "flex items-center gap-3 p-3 rounded border cursor-pointer transition-colors",
                     enrollSelectedIds.has(lead.id)
-                      ? "border-inverse bg-subtle"
+                      ? "border-accent bg-accent-surface text-accent-on-surface"
                       : "border-line hover:border-fg-muted",
                   )}
                 >

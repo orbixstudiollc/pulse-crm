@@ -454,7 +454,7 @@ export function SalesPageClient({
         >
           Filters
           {activeFilterCount > 0 && (
-            <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-inverse px-1.5 text-xs font-semibold text-on-inverse">
+            <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-strong px-1.5 text-xs font-semibold text-on-inverse">
               {activeFilterCount}
             </span>
           )}
@@ -498,7 +498,7 @@ export function SalesPageClient({
             className={cn(
               "flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold",
               activeTab === "active"
-                ? "bg-inverse text-on-inverse"
+                ? "bg-accent-surface text-accent-on-surface"
                 : "bg-active text-fg-secondary",
             )}
           >
@@ -519,7 +519,7 @@ export function SalesPageClient({
             className={cn(
               "flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold",
               activeTab === "closed"
-                ? "bg-inverse text-on-inverse"
+                ? "bg-accent-surface text-accent-on-surface"
                 : "bg-active text-fg-secondary",
             )}
           >
