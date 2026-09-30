@@ -1,0 +1,204 @@
+[
+  {
+    "id": "K1",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Clay tokens: light palette, retuned dark, radii, shadows; light by default",
+    "files": [
+      "styles/globals.css",
+      "app/layout.tsx"
+    ],
+    "interface": "docs/design/clay.md is the contract: read it fully before editing and follow its palette, type, shape, density and component rules. Use only token classes (bg-page, bg-surface, bg-subtle, bg-muted, bg-active, border-line, border-divider, text-fg, text-fg-secondary, text-fg-muted, bg-accent, text-accent-strong, bg-accent-surface, …) — scripts/restyle/scan.mjs forbids palette families (blue-500 etc.), bg-white, arbitrary hex, shadow-sm..2xl, border-2 and text sizes 9/10/11/15/28/32/40px. Allowed arbitrary sizes include text-[12px], text-[13px], text-[14px], text-[16px], text-[22px]. Keep all behaviour, props and exports; this is visual only unless the interface says otherwise. styles/globals.css: set the :root (light) token values to the Palette (light) table in docs/design/clay.md and the .dark values to its Dark line; add any token that table names but the file lacks (keep every existing token name so no class breaks). Set radius tokens to --radius-sm 4px, --radius-md 6px, --radius-lg 8px, --radius-xl 10px (map --radius to 6px and --radius-2xl/3xl to 10px). Replace --shadow-dropdown and --shadow-modal with the spec values (light) and darker equivalents (dark). Base body text stays 14px Inter. accent-strong must be the nearest blue to #0481F6 that gives at least 4.5:1 with #FFFFFF, and accent-on-surface must pass 4.5:1 on accent-surface: run `node scripts/restyle/contrast.mjs` and adjust values until it passes (it checks both themes). Do not edit the contrast script. app/layout.tsx: ThemeProvider `defaultTheme=\"light\"` (keep attribute, enableSystem and disableTransitionOnChange).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -qi '#0481f6' styles/globals.css && grep -qi '#f6f8fa' styles/globals.css && grep -qi '#0c0e10' styles/globals.css && grep -q 'defaultTheme=\"light\"' app/layout.tsx && node scripts/restyle/contrast.mjs && npx tsc --noEmit && node scripts/restyle/scan.mjs app components && git add -A -- 'styles/globals.css' 'app/layout.tsx' && git commit -q -m 'style(clay): Clay palette, radii and shadows; light theme by default' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K1-OK"
+  },
+  {
+    "id": "K2",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Clay controls: buttons, inputs, search, select, textarea",
+    "files": [
+      "components/ui/Button.tsx",
+      "components/ui/IconButton.tsx",
+      "components/ui/Input.tsx",
+      "components/ui/SearchInput.tsx",
+      "components/ui/Select.tsx",
+      "components/ui/Textarea.tsx"
+    ],
+    "interface": "docs/design/clay.md is the contract: read it fully before editing and follow its palette, type, shape, density and component rules. Use only token classes (bg-page, bg-surface, bg-subtle, bg-muted, bg-active, border-line, border-divider, text-fg, text-fg-secondary, text-fg-muted, bg-accent, text-accent-strong, bg-accent-surface, …) — scripts/restyle/scan.mjs forbids palette families (blue-500 etc.), bg-white, arbitrary hex, shadow-sm..2xl, border-2 and text sizes 9/10/11/15/28/32/40px. Allowed arbitrary sizes include text-[12px], text-[13px], text-[14px], text-[16px], text-[22px]. Keep all behaviour, props and exports; this is visual only unless the interface says otherwise. Apply the spec's Primary/Secondary/Ghost button rules (h-8 default, 36px for the large size, rounded-md, text-[14px] font-medium, primary bg-accent with white text via text-on-inverse or the existing white token class the file already uses, hover bg-accent-strong; secondary bg-surface border border-line hover:bg-subtle; ghost hover:bg-subtle text-fg-secondary; danger keeps danger tokens). IconButton: 32px square, rounded-md, ghost by default. Input/SearchInput/Select/Textarea: bg-surface, 1px border-line, rounded-md, h-8 (textarea auto), text-[14px], placeholder:text-fg-muted, focus: border-accent plus a 2px accent ring at low opacity (ring-accent/30 style class if the token supports opacity; otherwise the existing focus shadow token). Keep every variant and size name the components already expose.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'rounded-md' components/ui/Button.tsx && grep -q 'bg-accent' components/ui/Button.tsx && grep -q 'border-line' components/ui/Input.tsx && grep -q 'placeholder:text-fg-muted' components/ui/Input.tsx && npx tsc --noEmit && npx eslint 'components/ui/Button.tsx' 'components/ui/IconButton.tsx' 'components/ui/Input.tsx' 'components/ui/SearchInput.tsx' 'components/ui/Select.tsx' 'components/ui/Textarea.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'components/ui/Button.tsx' 'components/ui/IconButton.tsx' 'components/ui/Input.tsx' 'components/ui/SearchInput.tsx' 'components/ui/Select.tsx' 'components/ui/Textarea.tsx' && git commit -q -m 'style(clay): buttons and text inputs' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K2-OK"
+  },
+  {
+    "id": "K3",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Clay toggles: checkbox, radio, switch, toggle, tag input",
+    "files": [
+      "components/ui/Checkbox.tsx",
+      "components/ui/Radio.tsx",
+      "components/ui/RadioGroup.tsx",
+      "components/ui/Switch.tsx",
+      "components/ui/Toggle.tsx",
+      "components/ui/TagInput.tsx"
+    ],
+    "interface": "docs/design/clay.md is the contract: read it fully before editing and follow its palette, type, shape, density and component rules. Use only token classes (bg-page, bg-surface, bg-subtle, bg-muted, bg-active, border-line, border-divider, text-fg, text-fg-secondary, text-fg-muted, bg-accent, text-accent-strong, bg-accent-surface, …) — scripts/restyle/scan.mjs forbids palette families (blue-500 etc.), bg-white, arbitrary hex, shadow-sm..2xl, border-2 and text sizes 9/10/11/15/28/32/40px. Allowed arbitrary sizes include text-[12px], text-[13px], text-[14px], text-[16px], text-[22px]. Keep all behaviour, props and exports; this is visual only unless the interface says otherwise. Checkbox/Radio: 16px, 1px border-line, rounded-sm (radio full), checked bg-accent border-accent with a white check/dot; focus ring as inputs. Switch/Toggle: 32x18 track, off bg-active, on bg-accent, white thumb, no border. TagInput: same shell as Input (bg-surface, border-line, rounded-md, min-h-8), tags are 12px/500 pills in bg-subtle text-fg with a small remove icon.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'bg-accent' components/ui/Checkbox.tsx && grep -q 'bg-accent' components/ui/Switch.tsx && grep -q 'border-line' components/ui/TagInput.tsx && npx tsc --noEmit && npx eslint 'components/ui/Checkbox.tsx' 'components/ui/Radio.tsx' 'components/ui/RadioGroup.tsx' 'components/ui/Switch.tsx' 'components/ui/Toggle.tsx' 'components/ui/TagInput.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'components/ui/Checkbox.tsx' 'components/ui/Radio.tsx' 'components/ui/RadioGroup.tsx' 'components/ui/Switch.tsx' 'components/ui/Toggle.tsx' 'components/ui/TagInput.tsx' && git commit -q -m 'style(clay): checkboxes, radios, switches and tag input' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K3-OK"
+  },
+  {
+    "id": "K4",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Clay overlays: modal, drawer, dropdown, action menu, confirm dialogs",
+    "files": [
+      "components/ui/Modal.tsx",
+      "components/ui/Drawer.tsx",
+      "components/ui/Dropdown.tsx",
+      "components/ui/ActionMenu.tsx",
+      "components/ui/ConfirmDialog.tsx",
+      "components/ui/DeleteConfirmModal.tsx"
+    ],
+    "interface": "docs/design/clay.md is the contract: read it fully before editing and follow its palette, type, shape, density and component rules. Use only token classes (bg-page, bg-surface, bg-subtle, bg-muted, bg-active, border-line, border-divider, text-fg, text-fg-secondary, text-fg-muted, bg-accent, text-accent-strong, bg-accent-surface, …) — scripts/restyle/scan.mjs forbids palette families (blue-500 etc.), bg-white, arbitrary hex, shadow-sm..2xl, border-2 and text sizes 9/10/11/15/28/32/40px. Allowed arbitrary sizes include text-[12px], text-[13px], text-[14px], text-[16px], text-[22px]. Keep all behaviour, props and exports; this is visual only unless the interface says otherwise. Modal: bg-surface, rounded-xl (10px), shadow via the --shadow-modal token (use the existing shadow-modal utility/class if present, else style={{ boxShadow: \"var(--shadow-modal)\" }}), header 16px/600 fg with an IconButton close, body 14px, footer right-aligned Cancel (secondary Button) then primary; backdrop a neutral translucent overlay token already used in the file. Drawer: same surface, left hairline border-divider, 16px/600 header. Dropdown/ActionMenu: bg-surface, rounded-lg, --shadow-dropdown, 4px inner padding, items h-8 text-[14px] rounded-md hover:bg-subtle, destructive items text-danger. ConfirmDialog/DeleteConfirmModal: Modal rules; destructive confirm uses the danger Button variant.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'rounded-xl' components/ui/Modal.tsx && grep -q 'hover:bg-subtle' components/ui/Dropdown.tsx && grep -q 'hover:bg-subtle' components/ui/ActionMenu.tsx && npx tsc --noEmit && npx eslint 'components/ui/Modal.tsx' 'components/ui/Drawer.tsx' 'components/ui/Dropdown.tsx' 'components/ui/ActionMenu.tsx' 'components/ui/ConfirmDialog.tsx' 'components/ui/DeleteConfirmModal.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'components/ui/Modal.tsx' 'components/ui/Drawer.tsx' 'components/ui/Dropdown.tsx' 'components/ui/ActionMenu.tsx' 'components/ui/ConfirmDialog.tsx' 'components/ui/DeleteConfirmModal.tsx' && git commit -q -m 'style(clay): modals, drawers, menus and confirm dialogs' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K4-OK"
+  },
+  {
+    "id": "K5",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Clay display: card, tabs, badge, toast, avatar, progress",
+    "files": [
+      "components/ui/Card.tsx",
+      "components/ui/Tabs.tsx",
+      "components/ui/Badge.tsx",
+      "components/ui/Toast.tsx",
+      "components/ui/Avatar.tsx",
+      "components/ui/Progress.tsx"
+    ],
+    "interface": "docs/design/clay.md is the contract: read it fully before editing and follow its palette, type, shape, density and component rules. Use only token classes (bg-page, bg-surface, bg-subtle, bg-muted, bg-active, border-line, border-divider, text-fg, text-fg-secondary, text-fg-muted, bg-accent, text-accent-strong, bg-accent-surface, …) — scripts/restyle/scan.mjs forbids palette families (blue-500 etc.), bg-white, arbitrary hex, shadow-sm..2xl, border-2 and text sizes 9/10/11/15/28/32/40px. Allowed arbitrary sizes include text-[12px], text-[13px], text-[14px], text-[16px], text-[22px]. Keep all behaviour, props and exports; this is visual only unless the interface says otherwise. Card: bg-surface border border-line rounded-lg, no shadow, padding p-4. Tabs: support the spec's two styles — keep the existing variant API; the default underline style is 14px, inactive text-fg-secondary, active text-fg font-medium with a 2px accent underline; if the component has (or can take via an existing variant prop) a pills/segmented variant, render it as bordered segments where the active one has border-accent text-accent-strong on bg-surface. Badge: 12px/500 rounded-full px-2 h-5, tinted surface + matching text per variant (success/warning/danger/accent/neutral=bg-subtle text-fg-secondary). Toast: success variant bg-success-fill with white text and no border; other variants bg-surface border-line text-fg with the modal shadow token; rounded-lg. Avatar: rounded-full, neutral fallback bg-muted text-fg-secondary 12px/600. Progress: 6px track bg-active, fill bg-accent (success variant bg-success-fill), rounded-full.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'rounded-lg' components/ui/Card.tsx && grep -q 'rounded-full' components/ui/Badge.tsx && grep -q 'bg-success-fill' components/ui/Toast.tsx && npx tsc --noEmit && npx eslint 'components/ui/Card.tsx' 'components/ui/Tabs.tsx' 'components/ui/Badge.tsx' 'components/ui/Toast.tsx' 'components/ui/Avatar.tsx' 'components/ui/Progress.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'components/ui/Card.tsx' 'components/ui/Tabs.tsx' 'components/ui/Badge.tsx' 'components/ui/Toast.tsx' 'components/ui/Avatar.tsx' 'components/ui/Progress.tsx' && git commit -q -m 'style(clay): cards, tabs, badges, toasts, avatars and progress' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K5-OK"
+  },
+  {
+    "id": "K6",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Clay app shell: white sidebar with hairline, breadcrumb header, two-line user block",
+    "files": [
+      "components/layout/Sidebar.tsx",
+      "components/layout/Header.tsx",
+      "components/layout/HeaderUserMenu.tsx",
+      "components/layout/SearchBar.tsx",
+      "app/dashboard/layout.tsx"
+    ],
+    "interface": "docs/design/clay.md is the contract: read it fully before editing and follow its palette, type, shape, density and component rules. Use only token classes (bg-page, bg-surface, bg-subtle, bg-muted, bg-active, border-line, border-divider, text-fg, text-fg-secondary, text-fg-muted, bg-accent, text-accent-strong, bg-accent-surface, …) — scripts/restyle/scan.mjs forbids palette families (blue-500 etc.), bg-white, arbitrary hex, shadow-sm..2xl, border-2 and text sizes 9/10/11/15/28/32/40px. Allowed arbitrary sizes include text-[12px], text-[13px], text-[14px], text-[16px], text-[22px]. Keep all behaviour, props and exports; this is visual only unless the interface says otherwise. Follow the spec's Sidebar and Header sections exactly. Sidebar: bg-surface (sidebar token is white now), border-r border-divider, 240px wide on desktop (keep the existing collapse/mobile drawer behaviour and SidebarContext), logo row 56px, nav items h-9 rounded-md px-2.5 gap-2.5 text-[14px] text-fg with 16px icons, hover:bg-subtle, active bg-active font-medium; keep the existing item list and order but separate groups with a hairline (border-t border-divider my-2) instead of headings where headings exist; put Settings (and Help if present) in a bottom group pinned to the sidebar bottom. Header: bg-surface h-14 border-b border-divider px-6; breadcrumb segments text-[14px] text-fg-secondary separated by a fg-muted '/', last segment text-fg font-medium; right side ghost 32px IconButtons then the user block: 28px avatar + two lines (name text-[13px] font-semibold text-fg, workspace or role text-[12px] text-fg-muted) inside HeaderUserMenu's trigger. SearchBar: Clay input shell (bg-surface border-line rounded-md h-8, fg-muted icon). app/dashboard/layout.tsx: page area bg-page (white), main content padding px-6 py-6 on desktop and px-4 on mobile if the layout sets padding; do not move providers or the banner.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'border-divider' components/layout/Sidebar.tsx && grep -q 'bg-active' components/layout/Sidebar.tsx && grep -q 'h-14' components/layout/Header.tsx && grep -q 'text-\\[12px\\]' components/layout/HeaderUserMenu.tsx && npx tsc --noEmit && npx eslint 'components/layout/Sidebar.tsx' 'components/layout/Header.tsx' 'components/layout/HeaderUserMenu.tsx' 'components/layout/SearchBar.tsx' 'app/dashboard/layout.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'components/layout/Sidebar.tsx' 'components/layout/Header.tsx' 'components/layout/HeaderUserMenu.tsx' 'components/layout/SearchBar.tsx' 'app/dashboard/layout.tsx' && git commit -q -m 'style(clay): app shell sidebar, header, user block and search' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K6-OK"
+  },
+  {
+    "id": "K7",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Clay dashboard kit: stat cards, page header, table chrome, filters, empty state, shared tables",
+    "files": [
+      "components/dashboard/StatCard.tsx",
+      "components/dashboard/PageHeader.tsx",
+      "components/dashboard/TableHeader.tsx",
+      "components/dashboard/TableFooter.tsx",
+      "components/dashboard/Pagination.tsx",
+      "components/dashboard/FilterBar.tsx",
+      "components/dashboard/EmptyState.tsx",
+      "components/dashboard/CustomersTable.tsx",
+      "components/dashboard/LatestLeads.tsx"
+    ],
+    "interface": "docs/design/clay.md is the contract: read it fully before editing and follow its palette, type, shape, density and component rules. Use only token classes (bg-page, bg-surface, bg-subtle, bg-muted, bg-active, border-line, border-divider, text-fg, text-fg-secondary, text-fg-muted, bg-accent, text-accent-strong, bg-accent-surface, …) — scripts/restyle/scan.mjs forbids palette families (blue-500 etc.), bg-white, arbitrary hex, shadow-sm..2xl, border-2 and text sizes 9/10/11/15/28/32/40px. Allowed arbitrary sizes include text-[12px], text-[13px], text-[14px], text-[16px], text-[22px]. Keep all behaviour, props and exports; this is visual only unless the interface says otherwise. StatCard: Card rules (bg-surface border-line rounded-lg p-4), label text-[13px] text-fg-secondary, value text-[22px] font-semibold text-fg, change line text-[13px] (success/danger/fg-muted by trend; keep V8 logic that hides the suffix for non-numeric text). PageHeader: title text-[22px] leading-7 font-semibold, description text-[13px] text-fg-muted, actions right-aligned gap-2. TableHeader/TableFooter/Pagination/FilterBar: Clay chrome — filter chips are h-7 bordered segments (border-line rounded-md text-[13px]), rows-per-page and pagination use secondary/ghost h-8 controls, footer text-[13px] text-fg-muted. EmptyState: spec's empty state. CustomersTable and LatestLeads: spec Table rules (header th text-[13px] font-medium text-fg-secondary h-10 border-b border-divider; rows h-10 border-b border-divider hover:bg-subtle; no zebra; trailing actions a 28px bordered … button). Keep F18/V8 behaviour (delete confirm, CSV export, rows-per-page, HAS_NUMERIC_CHANGE).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'text-\\[22px\\]' components/dashboard/StatCard.tsx && grep -q 'HAS_NUMERIC_CHANGE' components/dashboard/StatCard.tsx && grep -q 'hover:bg-subtle' components/dashboard/CustomersTable.tsx && grep -q 'border-divider' components/dashboard/LatestLeads.tsx && grep -q 'text-\\[22px\\]' components/dashboard/PageHeader.tsx && npx tsc --noEmit && npx eslint 'components/dashboard/StatCard.tsx' 'components/dashboard/PageHeader.tsx' 'components/dashboard/TableHeader.tsx' 'components/dashboard/TableFooter.tsx' 'components/dashboard/Pagination.tsx' 'components/dashboard/FilterBar.tsx' 'components/dashboard/EmptyState.tsx' 'components/dashboard/CustomersTable.tsx' 'components/dashboard/LatestLeads.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'components/dashboard/StatCard.tsx' 'components/dashboard/PageHeader.tsx' 'components/dashboard/TableHeader.tsx' 'components/dashboard/TableFooter.tsx' 'components/dashboard/Pagination.tsx' 'components/dashboard/FilterBar.tsx' 'components/dashboard/EmptyState.tsx' 'components/dashboard/CustomersTable.tsx' 'components/dashboard/LatestLeads.tsx' && git commit -q -m 'style(clay): stat cards, page header, table chrome, filters, empty state and shared tables' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K7-OK"
+  },
+  {
+    "id": "K8",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Overview adopts the Clay home pattern: greeting, ask box, quick-action cards",
+    "files": [
+      "components/dashboard/OverviewHome.tsx",
+      "app/dashboard/overview/page.tsx",
+      "app/dashboard/copilot/client.tsx",
+      "app/dashboard/leads/client.tsx"
+    ],
+    "interface": "docs/design/clay.md is the contract: read it fully before editing and follow its palette, type, shape, density and component rules. Use only token classes (bg-page, bg-surface, bg-subtle, bg-muted, bg-active, border-line, border-divider, text-fg, text-fg-secondary, text-fg-muted, bg-accent, text-accent-strong, bg-accent-surface, …) — scripts/restyle/scan.mjs forbids palette families (blue-500 etc.), bg-white, arbitrary hex, shadow-sm..2xl, border-2 and text sizes 9/10/11/15/28/32/40px. Allowed arbitrary sizes include text-[12px], text-[13px], text-[14px], text-[16px], text-[22px]. Keep all behaviour, props and exports; this is visual only unless the interface says otherwise. Create components/dashboard/OverviewHome.tsx (\"use client\") implementing the spec's Overview section: greeting (first name from the profile the overview page already loads; \"Hey there, ready to get started?\" for guests or when no first name, and never show the literal word Guest as a name), the ask box (single-line input + sparkle icon + round accent send button; Enter or click routes with router.push to `/dashboard/copilot?prompt=` + encodeURIComponent(text); empty input does nothing), and four quick-action cards (bg-subtle rounded-lg p-4 hover:bg-muted, icon from components/ui/Icons.tsx, 14px/600 title, 13px fg-muted description; Next Link) exactly as listed in the spec. app/dashboard/overview/page.tsx: replace the current \"Welcome back, …\" heading area with <OverviewHome firstName={…} />, keeping the Add Lead action available (move it into the PageHeader actions or keep it beside the greeting) and keeping every existing widget below. app/dashboard/copilot/client.tsx: on mount, if useSearchParams has `prompt`, start a new chat with that prompt exactly once (reuse the existing handleSendFromEmpty path) and then remove the param with router.replace so a refresh does not resend. app/dashboard/leads/client.tsx: if useSearchParams has `import=1`, open the existing import modal once on mount and remove the param with router.replace.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && test -f components/dashboard/OverviewHome.tsx && grep -q 'ready to get started' components/dashboard/OverviewHome.tsx && grep -q '/dashboard/copilot?prompt=' components/dashboard/OverviewHome.tsx && grep -q 'OverviewHome' app/dashboard/overview/page.tsx && grep -q 'searchParams.get(\"prompt\")' app/dashboard/copilot/client.tsx && grep -q 'searchParams.get(\"import\")' app/dashboard/leads/client.tsx && npx tsc --noEmit && npx eslint 'components/dashboard/OverviewHome.tsx' 'app/dashboard/overview/page.tsx' 'app/dashboard/copilot/client.tsx' 'app/dashboard/leads/client.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'components/dashboard/OverviewHome.tsx' 'app/dashboard/overview/page.tsx' 'app/dashboard/copilot/client.tsx' 'app/dashboard/leads/client.tsx' && git commit -q -m 'feat(clay): Overview home with greeting, ask box and quick actions; prompt and import deep links' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K8-OK"
+  },
+  {
+    "id": "K9",
+    "model": "sonnet",
+    "depends_on": [
+      "K1",
+      "K5",
+      "K7"
+    ],
+    "title": "Clay table sweep: analytics, campaigns, contacts, ICP detail, proposals",
+    "files": [
+      "app/dashboard/analytics/client.tsx",
+      "app/dashboard/campaigns/client.tsx",
+      "app/dashboard/contacts/client.tsx",
+      "app/dashboard/icp/[id]/client.tsx",
+      "app/dashboard/proposals/client.tsx"
+    ],
+    "interface": "docs/design/clay.md is the contract: read it fully before editing and follow its palette, type, shape, density and component rules. Use only token classes (bg-page, bg-surface, bg-subtle, bg-muted, bg-active, border-line, border-divider, text-fg, text-fg-secondary, text-fg-muted, bg-accent, text-accent-strong, bg-accent-surface, …) — scripts/restyle/scan.mjs forbids palette families (blue-500 etc.), bg-white, arbitrary hex, shadow-sm..2xl, border-2 and text sizes 9/10/11/15/28/32/40px. Allowed arbitrary sizes include text-[12px], text-[13px], text-[14px], text-[16px], text-[22px]. Keep all behaviour, props and exports; this is visual only unless the interface says otherwise. Sweep these pages so their own <table> markup and page chrome follow the spec's Table rules and PageHeader/StatCard look: th text-[13px] font-medium text-fg-secondary with h-10 and border-b border-divider; td text-[14px] text-fg with h-10 (or py-2) and border-b border-divider; row hover:bg-subtle; remove zebra striping and heavy card chrome around tables (a single border border-line rounded-lg wrapper with overflow-x-auto is fine, but keep any wrapper that sets overflow-visible for row menus); status chips use the Badge component or its token recipe; primary page actions use the Button primary variant. Only className changes plus swapping ad-hoc chips/buttons for the shared components; no logic changes. Pages: app/dashboard/analytics/client.tsx, app/dashboard/campaigns/client.tsx, app/dashboard/contacts/client.tsx, app/dashboard/icp/[id]/client.tsx, app/dashboard/proposals/client.tsx.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'hover:bg-subtle' 'app/dashboard/analytics/client.tsx' && grep -q 'hover:bg-subtle' 'app/dashboard/campaigns/client.tsx' && grep -q 'hover:bg-subtle' 'app/dashboard/contacts/client.tsx' && grep -q 'hover:bg-subtle' 'app/dashboard/icp/[id]/client.tsx' && grep -q 'hover:bg-subtle' 'app/dashboard/proposals/client.tsx' && npx tsc --noEmit && npx eslint 'app/dashboard/analytics/client.tsx' 'app/dashboard/campaigns/client.tsx' 'app/dashboard/contacts/client.tsx' 'app/dashboard/icp/[id]/client.tsx' 'app/dashboard/proposals/client.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/dashboard/analytics/client.tsx' 'app/dashboard/campaigns/client.tsx' 'app/dashboard/contacts/client.tsx' 'app/dashboard/icp/[id]/client.tsx' 'app/dashboard/proposals/client.tsx' && git commit -q -m 'style(clay): tables on analytics, campaigns, contacts, ICP detail and proposals' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K9-OK"
+  },
+  {
+    "id": "K10",
+    "model": "sonnet",
+    "depends_on": [
+      "K1",
+      "K5",
+      "K7"
+    ],
+    "title": "Clay table sweep: Lead Finder campaign, costs, leads; sequences list and detail",
+    "files": [
+      "app/dashboard/lead-finder/campaigns/[id]/page.tsx",
+      "app/dashboard/lead-finder/costs/page.tsx",
+      "app/dashboard/lead-finder/leads/page.tsx",
+      "app/dashboard/sequences/client.tsx",
+      "app/dashboard/sequences/[id]/client.tsx"
+    ],
+    "interface": "docs/design/clay.md is the contract: read it fully before editing and follow its palette, type, shape, density and component rules. Use only token classes (bg-page, bg-surface, bg-subtle, bg-muted, bg-active, border-line, border-divider, text-fg, text-fg-secondary, text-fg-muted, bg-accent, text-accent-strong, bg-accent-surface, …) — scripts/restyle/scan.mjs forbids palette families (blue-500 etc.), bg-white, arbitrary hex, shadow-sm..2xl, border-2 and text sizes 9/10/11/15/28/32/40px. Allowed arbitrary sizes include text-[12px], text-[13px], text-[14px], text-[16px], text-[22px]. Keep all behaviour, props and exports; this is visual only unless the interface says otherwise. Sweep these pages so their own <table> markup and page chrome follow the spec's Table rules and PageHeader/StatCard look: th text-[13px] font-medium text-fg-secondary with h-10 and border-b border-divider; td text-[14px] text-fg with h-10 (or py-2) and border-b border-divider; row hover:bg-subtle; remove zebra striping and heavy card chrome around tables (a single border border-line rounded-lg wrapper with overflow-x-auto is fine, but keep any wrapper that sets overflow-visible for row menus); status chips use the Badge component or its token recipe; primary page actions use the Button primary variant. Only className changes plus swapping ad-hoc chips/buttons for the shared components; no logic changes. Pages: app/dashboard/lead-finder/campaigns/[id]/page.tsx, app/dashboard/lead-finder/costs/page.tsx, app/dashboard/lead-finder/leads/page.tsx, app/dashboard/sequences/client.tsx, app/dashboard/sequences/[id]/client.tsx.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'hover:bg-subtle' 'app/dashboard/lead-finder/campaigns/[id]/page.tsx' && grep -q 'hover:bg-subtle' 'app/dashboard/lead-finder/costs/page.tsx' && grep -q 'hover:bg-subtle' 'app/dashboard/lead-finder/leads/page.tsx' && grep -q 'hover:bg-subtle' 'app/dashboard/sequences/client.tsx' && grep -q 'hover:bg-subtle' 'app/dashboard/sequences/[id]/client.tsx' && npx tsc --noEmit && npx eslint 'app/dashboard/lead-finder/campaigns/[id]/page.tsx' 'app/dashboard/lead-finder/costs/page.tsx' 'app/dashboard/lead-finder/leads/page.tsx' 'app/dashboard/sequences/client.tsx' 'app/dashboard/sequences/[id]/client.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/dashboard/lead-finder/campaigns/[id]/page.tsx' 'app/dashboard/lead-finder/costs/page.tsx' 'app/dashboard/lead-finder/leads/page.tsx' 'app/dashboard/sequences/client.tsx' 'app/dashboard/sequences/[id]/client.tsx' && git commit -q -m 'style(clay): tables on Lead Finder pages and sequences' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K10-OK"
+  },
+  {
+    "id": "K11",
+    "model": "sonnet",
+    "depends_on": [
+      "K1",
+      "K5",
+      "K7",
+      "K8"
+    ],
+    "title": "Clay table sweep: leads, settings, templates, website visitors",
+    "files": [
+      "app/dashboard/leads/client.tsx",
+      "app/dashboard/settings/client.tsx",
+      "app/dashboard/templates/client.tsx",
+      "app/dashboard/website-visitors/client.tsx"
+    ],
+    "interface": "docs/design/clay.md is the contract: read it fully before editing and follow its palette, type, shape, density and component rules. Use only token classes (bg-page, bg-surface, bg-subtle, bg-muted, bg-active, border-line, border-divider, text-fg, text-fg-secondary, text-fg-muted, bg-accent, text-accent-strong, bg-accent-surface, …) — scripts/restyle/scan.mjs forbids palette families (blue-500 etc.), bg-white, arbitrary hex, shadow-sm..2xl, border-2 and text sizes 9/10/11/15/28/32/40px. Allowed arbitrary sizes include text-[12px], text-[13px], text-[14px], text-[16px], text-[22px]. Keep all behaviour, props and exports; this is visual only unless the interface says otherwise. Sweep these pages so their own <table> markup and page chrome follow the spec's Table rules and PageHeader/StatCard look: th text-[13px] font-medium text-fg-secondary with h-10 and border-b border-divider; td text-[14px] text-fg with h-10 (or py-2) and border-b border-divider; row hover:bg-subtle; remove zebra striping and heavy card chrome around tables (a single border border-line rounded-lg wrapper with overflow-x-auto is fine, but keep any wrapper that sets overflow-visible for row menus); status chips use the Badge component or its token recipe; primary page actions use the Button primary variant. Only className changes plus swapping ad-hoc chips/buttons for the shared components; no logic changes. Pages: app/dashboard/leads/client.tsx, app/dashboard/settings/client.tsx, app/dashboard/templates/client.tsx, app/dashboard/website-visitors/client.tsx. app/dashboard/settings/client.tsx uses CRLF line endings; keep them.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'hover:bg-subtle' 'app/dashboard/leads/client.tsx' && grep -q 'hover:bg-subtle' 'app/dashboard/settings/client.tsx' && grep -q 'hover:bg-subtle' 'app/dashboard/templates/client.tsx' && grep -q 'hover:bg-subtle' 'app/dashboard/website-visitors/client.tsx' && npx tsc --noEmit && npx eslint 'app/dashboard/leads/client.tsx' 'app/dashboard/settings/client.tsx' 'app/dashboard/templates/client.tsx' 'app/dashboard/website-visitors/client.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/dashboard/leads/client.tsx' 'app/dashboard/settings/client.tsx' 'app/dashboard/templates/client.tsx' 'app/dashboard/website-visitors/client.tsx' && git commit -q -m 'style(clay): tables on leads, settings, templates and website visitors' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K11-OK"
+  },
+  {
+    "id": "K12",
+    "model": "sonnet",
+    "depends_on": [
+      "K1",
+      "K2",
+      "K3",
+      "K4",
+      "K5",
+      "K6",
+      "K7",
+      "K8",
+      "K9",
+      "K10",
+      "K11"
+    ],
+    "title": "Final gate: lint, tests, build, restyle scan, contrast, audit",
+    "files": [],
+    "interface": "NONE. Read-only gate. Requires ENCRYPTION_KEY and NEXT_PUBLIC_SUPABASE_* in the build shell; do not export NEXT_PUBLIC_OPEN_ACCESS in the test shell.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npm run lint && npm test && npm run build && node scripts/restyle/scan.mjs app components && node scripts/restyle/contrast.mjs && npm audit --omit=dev --audit-level=high && echo K12-OK"
+  }
+]
