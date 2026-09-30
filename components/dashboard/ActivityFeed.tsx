@@ -18,6 +18,7 @@ interface Activity {
   title: string;
   description: string | null;
   status: string;
+  date?: string | null;
   created_at: string;
   related_name: string | null;
 }
@@ -27,19 +28,24 @@ interface ActivityFeedProps {
   className?: string;
 }
 
-function getRelativeTime(dateStr: string): string {
-  const now = new Date();
+// Same day-based wording as the Activity page so both views agree.
+function formatActivityDate(dateStr: string): string {
   const date = new Date(dateStr);
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHr = Math.floor(diffMs / 3600000);
-  const diffDay = Math.floor(diffMs / 86400000);
+  if (isNaN(date.getTime())) return dateStr;
 
-  if (diffMin < 1) return "Just now";
-  if (diffMin < 60) return `${diffMin} min ago`;
-  if (diffHr < 24) return `${diffHr}h ago`;
-  if (diffDay === 1) return "Yesterday";
-  if (diffDay < 7) return `${diffDay}d ago`;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const actDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.floor(
+    (today.getTime() - actDate.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays === -1) return "Tomorrow";
+  if (diffDays > 1 && diffDays <= 7) return `${diffDays} days ago`;
+  if (diffDays < -1 && diffDays >= -7) return `In ${Math.abs(diffDays)} days`;
+
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
@@ -93,7 +99,7 @@ export function ActivityFeed({
                   {status.label}
                 </Badge>
                 <span className="w-20 text-right text-[13px] text-fg-muted">
-                  {getRelativeTime(activity.created_at)}
+                  {formatActivityDate(activity.date || activity.created_at)}
                 </span>
               </div>
             </div>

@@ -41,7 +41,7 @@ const QUICK_ACTIONS: QuickAction[] = [
   {
     title: "Create a campaign",
     description: "Build and automate your outreach sequences.",
-    href: "/dashboard/sequences",
+    href: "/dashboard/campaigns",
     icon: <MegaphoneSimpleIcon size={18} weight="bold" className="text-accent" />,
   },
   {
