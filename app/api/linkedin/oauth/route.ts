@@ -17,16 +17,17 @@ import { timingSafeEqualStr } from "@/lib/security";
 
 const LINKEDIN_CLIENT_ID = process.env.LINKEDIN_CLIENT_ID || "";
 const LINKEDIN_CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET || "";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://pulse-crm-rosy.vercel.app";
-const REDIRECT_URI = `${APP_URL}/api/linkedin/oauth`;
 
 const STATE_COOKIE = "li_oauth_state";
 const STATE_COOKIE_MAX_AGE = 10 * 60; // 10 minutes
 
-const SCOPES = ["r_liteprofile", "r_emailaddress", "w_member_social"].join(" ");
+const SCOPES = ["openid", "profile", "email", "w_member_social"].join(" ");
 
-function redirectToSettings(params: Record<string, string>): NextResponse {
-  const url = new URL(`${APP_URL}/dashboard/settings`);
+function redirectToSettings(
+  appUrl: string,
+  params: Record<string, string>
+): NextResponse {
+  const url = new URL(`${appUrl}/dashboard/settings`);
   url.searchParams.set("tab", "linkedin");
   for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, v);
@@ -35,6 +36,8 @@ function redirectToSettings(params: Record<string, string>): NextResponse {
 }
 
 export async function GET(request: NextRequest) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
+  const redirectUri = `${appUrl}/api/linkedin/oauth`;
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get("code");
   const oauthError = searchParams.get("error");
@@ -42,13 +45,13 @@ export async function GET(request: NextRequest) {
   if (oauthError) {
     const errorDescription =
       searchParams.get("error_description") || "Authorization denied";
-    return redirectToSettings({ error: errorDescription });
+    return redirectToSettings(appUrl, { error: errorDescription });
   }
 
   // No code → initiate OAuth flow.
   if (!code) {
     if (!LINKEDIN_CLIENT_ID) {
-      return redirectToSettings({
+      return redirectToSettings(appUrl, {
         error: "LinkedIn Client ID not configured",
       });
     }
@@ -59,7 +62,7 @@ export async function GET(request: NextRequest) {
     );
     authUrl.searchParams.set("response_type", "code");
     authUrl.searchParams.set("client_id", LINKEDIN_CLIENT_ID);
-    authUrl.searchParams.set("redirect_uri", REDIRECT_URI);
+    authUrl.searchParams.set("redirect_uri", redirectUri);
     authUrl.searchParams.set("scope", SCOPES);
     authUrl.searchParams.set("state", state);
 
@@ -83,20 +86,20 @@ export async function GET(request: NextRequest) {
     !expectedState ||
     !timingSafeEqualStr(providedState, expectedState)
   ) {
-    const res = redirectToSettings({ error: "Invalid OAuth state" });
+    const res = redirectToSettings(appUrl, { error: "Invalid OAuth state" });
     res.cookies.delete(STATE_COOKIE);
     return res;
   }
 
   const result = await exchangeOAuthCode(
     code,
-    REDIRECT_URI,
+    redirectUri,
     LINKEDIN_CLIENT_ID,
     LINKEDIN_CLIENT_SECRET
   );
 
   if (result.error || !result.accessToken) {
-    const res = redirectToSettings({
+    const res = redirectToSettings(appUrl, {
       error: result.error || "Token exchange failed",
     });
     res.cookies.delete(STATE_COOKIE);
@@ -111,14 +114,14 @@ export async function GET(request: NextRequest) {
   });
 
   if (!saveResult.success) {
-    const res = redirectToSettings({
+    const res = redirectToSettings(appUrl, {
       error: saveResult.error || "Failed to save account",
     });
     res.cookies.delete(STATE_COOKIE);
     return res;
   }
 
-  const res = redirectToSettings({ success: "true" });
+  const res = redirectToSettings(appUrl, { success: "true" });
   res.cookies.delete(STATE_COOKIE);
   return res;
 }

@@ -150,7 +150,9 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
     }
   };
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://pulse-crm-rosy.vercel.app";
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (typeof window !== "undefined" ? window.location.origin : "");
 
   const copyScript = (scriptKey: string) => {
     const snippet = `<!-- Pulse CRM Tracking Pixel -->
@@ -453,7 +455,7 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
 
                   {/* Script Snippet */}
                   <div className="relative">
-                    <pre className="p-3 rounded bg-subtle border border-line text-xs text-fg-secondary overflow-x-auto">
+                    <pre suppressHydrationWarning className="p-3 rounded bg-subtle border border-line text-xs text-fg-secondary overflow-x-auto">
 {`<script>
 (function(){var s='${appUrl}/api/tracking';
 var k='${script.script_key}';
