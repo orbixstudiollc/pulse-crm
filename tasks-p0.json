@@ -108,5 +108,19 @@
     ],
     "interface": "In supabase/migrations/034_normalize_seed_values.sql the icp_profiles.weights UPDATE (section 'icp_profiles.weights', ~line 158) derives weights by formula, which gives Growth-Stage Startup {industry 20, size 20, revenue 15, title 10, geography 10, tech 25} while lib/seed/generate.ts now seeds {industry 20, size 20, revenue 15, title 15, geography 15, tech 15}. Change that UPDATE so rows WHERE weights ? 'company_size' get: name = 'Enterprise SaaS' -> exactly the seed's Enterprise SaaS weights object; name = 'Growth-Stage Startup' -> exactly the seed's Growth-Stage Startup weights object (read both literals from lib/seed/generate.ts); any other name keeps the existing formula. Keep it idempotent and inside the existing transaction; update the header comment line about weights to say this. Touch nothing else in the file.",
     "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'Growth-Stage Startup' supabase/migrations/034_normalize_seed_values.sql && grep -q 'Enterprise SaaS' supabase/migrations/034_normalize_seed_values.sql && npx tsc --noEmit && npx eslint 'lib/seed/generate.ts' && npm test && git add -A -- 'supabase/migrations/034_normalize_seed_values.sql' && git commit -q -m 'fix(migration): 034 gives seeded ICP profiles the same weights as the seed' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "F1",
+    "model": "sonnet",
+    "depends_on": [
+      "P1"
+    ],
+    "title": "Live-check fix: pricing tiers from a jsonb map keep good/better/best order",
+    "files": [
+      "lib/proposals/content.ts",
+      "tests/proposal-content.test.ts"
+    ],
+    "interface": "Postgres jsonb reorders object keys (shorter keys first), so the seed's pricing_tiers map {good, better, best} comes back as {best, good, better} and the proposal page lists Enterprise, Starter, Professional. In lib/proposals/content.ts, where a tier object map is turned into a list (Object.values(source), ~line 79), order the entries so the keys good, better, best come first in that order, followed by any other keys in their existing order. Test-first in tests/proposal-content.test.ts: a map given as { best: {...Enterprise}, good: {...Starter}, better: {...Professional} } yields Starter, Professional, Enterprise. No other changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q better lib/proposals/content.ts && npx vitest run tests/proposal-content.test.ts && npx tsc --noEmit && npx eslint 'lib/proposals/content.ts' 'tests/proposal-content.test.ts' && npm test && git add -A -- 'lib/proposals/content.ts' 'tests/proposal-content.test.ts' && git commit -q -m 'fix(proposals): keep good/better/best tier order from jsonb' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
   }
 ]
