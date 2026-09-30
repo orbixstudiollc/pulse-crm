@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect, useRef, useCallback } from "react";
+import { useState, useTransition, useEffect, useRef, useCallback, useId } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,6 +33,7 @@ import {
   FunnelSimpleIcon,
   Button,
   ActionMenu,
+  Modal,
 } from "@/components/ui";
 import {
   Page,
@@ -152,16 +153,14 @@ function TagManagerModal({
   const [isPending, startTransition] = useTransition();
 
   const colors = ["#6366f1", "#8b5cf6", "#ec4899", "#f43f5e", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6"];
-
-  if (!open) return null;
+  const titleId = useId();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative rounded-lg border border-line bg-surface shadow-modal p-4 max-w-md w-full mx-4" data-clay-box>
+    <Modal open={open} onClose={onClose} className="max-w-md rounded-lg">
+      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="p-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-fg">Manage Tags</h3>
-          <button onClick={onClose} className="text-fg-secondary hover:text-fg"><XIcon className="w-5 h-5" /></button>
+          <h3 id={titleId} className="text-lg font-semibold text-fg">Manage Tags</h3>
+          <button onClick={onClose} aria-label="Close" className="text-fg-secondary hover:text-fg"><XIcon className="w-5 h-5" /></button>
         </div>
 
         <div className="flex gap-2 mb-4">
@@ -221,7 +220,7 @@ function TagManagerModal({
           {tags.length === 0 && <p className="text-sm text-fg-secondary text-center py-4">No tags yet</p>}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -433,6 +432,13 @@ export function CampaignsPageClient({
     if (selectedTag && !c.tags.some((t) => t.id === selectedTag)) return false;
     return true;
   });
+  // The org has campaigns, just none under the active status tab.
+  const isEmptyTabOnly = activeTab !== "all" && stats.totalCampaigns > 0;
+  const emptyMessage = searchQuery || selectedTag
+    ? "No campaigns match your filters"
+    : isEmptyTabOnly
+      ? `No ${activeTab} campaigns`
+      : "No campaigns yet";
 
   // Handlers
   const handleNewCampaign = () => {
@@ -696,10 +702,8 @@ export function CampaignsPageClient({
             {filtered.length === 0 ? (
               <div className="p-12 text-center border-t border-divider">
                 <PaperPlaneTiltIcon className="w-10 h-10 text-fg-muted mx-auto mb-3" />
-                <p className="text-sm text-fg-secondary mb-4">
-                  {searchQuery || selectedTag ? "No campaigns match your filters" : "No campaigns yet"}
-                </p>
-                {!searchQuery && !selectedTag && (
+                <p className="text-sm text-fg-secondary mb-4">{emptyMessage}</p>
+                {!searchQuery && !selectedTag && !isEmptyTabOnly && (
                   <Button onClick={handleNewCampaign}>
                     Create Your First Campaign
                   </Button>

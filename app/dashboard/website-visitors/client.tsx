@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition, useCallback, useId } from "react";
 import {
   Button,
   Badge,
@@ -24,6 +24,7 @@ import {
   ChartBarIcon,
   FunnelSimpleIcon,
   CalendarBlankIcon,
+  Modal,
 } from "@/components/ui";
 import { Page, PageHeader, MetricStrip, PageTabs, TableSection, Section, StatCard, EmptyState } from "@/components/dashboard";
 import { toast } from "sonner";
@@ -88,6 +89,7 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
   const [selectedVisitor, setSelectedVisitor] = useState<Visitor | null>(null);
   const [visitorVisits, setVisitorVisits] = useState<Visit[]>([]);
   const [showSetup, setShowSetup] = useState(false);
+  const setupTitleId = useId();
   const [newDomain, setNewDomain] = useState("");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -599,62 +601,60 @@ body:JSON.stringify(d),keepalive:true});
       )}
 
       {/* Setup Modal */}
-      {showSetup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setShowSetup(false)} />
-          <div className="relative w-full max-w-md bg-surface rounded-lg border border-line p-4" data-clay-box>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-fg">Setup Website Tracking</h3>
-              <button
-                onClick={() => setShowSetup(false)}
-                className="p-1.5 rounded-md hover:bg-muted text-fg-secondary"
-              >
-                <XIcon size={18} />
-              </button>
+      <Modal open={showSetup} onClose={() => setShowSetup(false)} className="max-w-md rounded-lg">
+        <div role="dialog" aria-modal="true" aria-labelledby={setupTitleId} className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 id={setupTitleId} className="text-lg font-semibold text-fg">Setup Website Tracking</h3>
+            <button
+              onClick={() => setShowSetup(false)}
+              aria-label="Close"
+              className="p-1.5 rounded-md hover:bg-muted text-fg-secondary"
+            >
+              <XIcon size={18} />
+            </button>
+          </div>
+
+          <p className="text-sm text-fg-secondary mb-4">
+            Add your domain, then copy the tracking script and paste it before the closing {'</body>'} tag on your website.
+          </p>
+
+          <div className="flex gap-2 mb-4">
+            <Input
+              placeholder="yourdomain.com"
+              value={newDomain}
+              onChange={(e) => setNewDomain(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAddScript()}
+              leftIcon={<GlobeIcon size={18} />}
+              className="flex-1"
+            />
+            <Button
+              size="sm"
+              onClick={async () => {
+                await handleAddScript();
+                setShowSetup(false);
+                setActiveTab("scripts");
+              }}
+            >
+              Create
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-fg-secondary">
+              <CheckIcon size={16} className="text-success" />
+              Automatic visitor identification
             </div>
-
-            <p className="text-sm text-fg-secondary mb-4">
-              Add your domain, then copy the tracking script and paste it before the closing {'</body>'} tag on your website.
-            </p>
-
-            <div className="flex gap-2 mb-4">
-              <Input
-                placeholder="yourdomain.com"
-                value={newDomain}
-                onChange={(e) => setNewDomain(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAddScript()}
-                leftIcon={<GlobeIcon size={18} />}
-                className="flex-1"
-              />
-              <Button
-                size="sm"
-                onClick={async () => {
-                  await handleAddScript();
-                  setShowSetup(false);
-                  setActiveTab("scripts");
-                }}
-              >
-                Create
-              </Button>
+            <div className="flex items-center gap-2 text-sm text-fg-secondary">
+              <CheckIcon size={16} className="text-success" />
+              Page tracking & session recording
             </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-fg-secondary">
-                <CheckIcon size={16} className="text-success" />
-                Automatic visitor identification
-              </div>
-              <div className="flex items-center gap-2 text-sm text-fg-secondary">
-                <CheckIcon size={16} className="text-success" />
-                Page tracking & session recording
-              </div>
-              <div className="flex items-center gap-2 text-sm text-fg-secondary">
-                <CheckIcon size={16} className="text-success" />
-                Convert visitors to leads instantly
-              </div>
+            <div className="flex items-center gap-2 text-sm text-fg-secondary">
+              <CheckIcon size={16} className="text-success" />
+              Convert visitors to leads instantly
             </div>
           </div>
         </div>
-      )}
+      </Modal>
     </Page>
   );
 }

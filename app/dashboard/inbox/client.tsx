@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useId } from "react";
 import { cn } from "@/lib/utils";
 import {
   Button,
@@ -22,6 +22,7 @@ import {
   LinkedinLogoIcon,
   TrashIcon,
   SegmentedControl,
+  Modal,
 } from "@/components/ui";
 import {
   getEmailThreads,
@@ -1004,6 +1005,7 @@ function ComposeModal({
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const noAccountsTitleId = useId();
 
   const handleSend = async () => {
     if (!to.trim() || !subject.trim() || !body.trim()) return;
@@ -1021,18 +1023,18 @@ function ComposeModal({
 
   if (accounts.length === 0) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-        <div className="rounded-lg border border-line bg-surface shadow-modal p-4 max-w-md w-full mx-4" data-clay-box>
+      <Modal open onClose={onClose} className="max-w-md rounded-lg">
+        <div role="dialog" aria-modal="true" aria-labelledby={noAccountsTitleId} className="p-4">
           <div className="flex items-center gap-3 mb-4">
             <WarningIcon size={24} className="text-warning" />
-            <h3 className="text-base font-semibold text-fg">No Email Accounts</h3>
+            <h3 id={noAccountsTitleId} className="text-base font-semibold text-fg">No Email Accounts</h3>
           </div>
           <p className="text-sm text-fg-secondary mb-4">
             Connect an email account in Settings before composing emails.
           </p>
           <Button onClick={onClose}>Close</Button>
         </div>
-      </div>
+      </Modal>
     );
   }
 
