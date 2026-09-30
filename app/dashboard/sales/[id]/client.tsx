@@ -15,9 +15,23 @@ import {
   PencilSimpleIcon,
   CheckIcon,
   CaretDownIcon,
+  CurrencyDollarIcon,
   Avatar,
 } from "@/components/ui";
-import { ActivityRow, type ActivityRowType, ConfirmModal } from "@/components/dashboard";
+import {
+  ActivityRow,
+  type ActivityRowType,
+  ConfirmModal,
+  Page,
+  PageHeader,
+  MetricStrip,
+  Metric,
+  DetailLayout,
+  Section,
+  PanelSection,
+  KeyValueList,
+  KeyValue,
+} from "@/components/dashboard";
 import { cn } from "@/lib/utils";
 import {
   ScheduleMeetingModal,
@@ -177,7 +191,7 @@ function StageDropdown({
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 right-0 mt-1 rounded-lg border border-line bg-surface shadow-dropdown z-20 py-1">
+          <div className="absolute top-full left-0 right-0 mt-1 rounded-lg border border-line bg-surface shadow-dropdown z-20 py-1" data-clay-box>
             {pipelineStages.map((stage) => (
               <button
                 key={stage.id}
@@ -385,266 +399,184 @@ export function DealDetailClient({
   });
 
   return (
-    <div className="min-h-full p-6">
-      {/* Header Card */}
-      <div className="rounded-lg border border-line bg-surface p-4 mb-6">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <Badge variant="warning" className="mb-3">
+    <Page>
+      {/* Record header */}
+      <PageHeader
+        icon={<CurrencyDollarIcon size={18} />}
+        title={`${deal.name} - ${formatCurrency(deal.value || 0)}`}
+        description={
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <Badge variant="warning">
               {stageLabels[currentStage] || currentStage}
             </Badge>
-            <h1 className="text-xl font-semibold text-fg mb-1">
-              {deal.name} - {formatCurrency(deal.value || 0)}
-            </h1>
-            <p className="text-sm text-fg-secondary">
-              {deal.company || contactName}
-            </p>
+            <span>{deal.company || contactName}</span>
           </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              className="border-danger text-danger hover:bg-danger-surface hover:border-danger"
-              onClick={() => setShowLostModal(true)}
-            >
-              Mark Lost
-            </Button>
-            <Button
-              leftIcon={<CheckIcon size={18} />}
-              onClick={() => setShowWonModal(true)}
-            >
-              Mark Won
-            </Button>
-          </div>
-        </div>
+        }
+      >
+        <Button
+          variant="outline"
+          className="border-danger text-danger hover:bg-danger-surface hover:border-danger"
+          onClick={() => setShowLostModal(true)}
+        >
+          Mark Lost
+        </Button>
+        <Button
+          leftIcon={<CheckIcon size={18} />}
+          onClick={() => setShowWonModal(true)}
+        >
+          Mark Won
+        </Button>
+      </PageHeader>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-lg border border-line p-4 text-center">
-            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
-              {deal.days_in_stage || 0}
-            </p>
-            <p className="text-xs text-fg-secondary">
-              Days in Stage
-            </p>
-          </div>
-          <div className="rounded-lg border border-line p-4 text-center">
-            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
-              {deal.days_to_close || 0}
-            </p>
-            <p className="text-xs text-fg-secondary">
-              Days to Close
-            </p>
-          </div>
-          <div className="rounded-lg border border-line p-4 text-center">
-            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
-              {deal.probability || 0}%
-            </p>
-            <p className="text-xs text-fg-secondary">
-              Probability
-            </p>
-          </div>
-          <div className="rounded-lg border border-line p-4 text-center">
-            <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
-              {activityItems.length}
-            </p>
-            <p className="text-xs text-fg-secondary">
-              Activities
-            </p>
-          </div>
-        </div>
+      {/* Stage stepper */}
+      <div className="px-8 pb-6 max-sm:px-4">
+        <StageProgress currentStage={currentStage} />
       </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          {/* Activity */}
-          <div className="rounded-lg border border-line bg-surface">
-            <div className="flex h-12 items-center px-4 border-b border-divider">
-              <h2 className="text-heading-md text-fg">
-                Activity
-              </h2>
-            </div>
-            <div>
-              {activityItems.length > 0 ? (
-                <div>
-                  {activityItems.map((item) => (
-                    <ActivityRow
-                      key={`${item.source}-${item.id}`}
-                      id={item.id}
-                      type={item.type as ActivityRowType}
-                      title={item.title}
-                      description={item.description || ""}
-                      onView={() => {
-                        setSelectedActivity(item);
-                        setShowActivityDrawer(true);
-                      }}
-                      onDelete={() => handleDeleteActivity(item)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="py-12 text-center text-fg-secondary">
-                  <p>No activity yet</p>
-                </div>
-              )}
-            </div>
-          </div>
+      <MetricStrip>
+        <Metric label="Days in Stage" value={deal.days_in_stage || 0} />
+        <Metric label="Days to Close" value={deal.days_to_close || 0} />
+        <Metric label="Probability" value={`${deal.probability || 0}%`} />
+        <Metric label="Activities" value={activityItems.length} />
+      </MetricStrip>
 
-          {/* Notes */}
-          <div className="rounded-lg border border-line bg-surface">
-            <div className="flex h-12 items-center px-4 border-b border-divider">
-              <h2 className="text-heading-md text-fg">
-                Notes
-              </h2>
-            </div>
-            <div className="p-4">
-              {dealNotes.length > 0 ? (
-                <div className="space-y-6 mb-6">
-                  {dealNotes.map((note) => (
-                    <div key={note.id}>
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium text-fg">
-                          {note.author_name || "Unknown"}
-                        </p>
-                        <p className="text-xs text-fg-muted">
-                          {formatDate(note.created_at)}
-                        </p>
-                      </div>
-                      <p className="text-sm text-fg-secondary leading-relaxed">
-                        {note.content}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-fg-secondary mb-6">
-                  No notes yet
-                </p>
-              )}
-              <div className="space-y-3">
-                <Textarea
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  placeholder="Add a note..."
-                  rows={3}
+      <DetailLayout
+        className="border-t border-divider"
+        aside={
+          <>
+            <PanelSection title="Deal Stage">
+              <div className="flex items-center gap-2 mb-4">
+                <span
+                  className={cn(
+                    "w-2 h-2 rounded-full",
+                    stageColorMap[currentStage] || "bg-fg-muted",
+                  )}
                 />
-                <div className="flex justify-end">
-                  <Button
-                    size="sm"
-                    onClick={handleAddNote}
-                    disabled={isPending || !newNote.trim()}
-                  >
-                    {isPending ? "Adding..." : "Add Note"}
-                  </Button>
-                </div>
+                <span className="text-sm font-medium text-fg">
+                  {stageLabels[currentStage] || currentStage}
+                </span>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Deal Stage */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <p className="text-xs font-medium text-fg-secondary mb-4">
-              Deal Stage
-            </p>
-            <div className="flex items-center gap-2 mb-4">
-              <span
-                className={cn(
-                  "w-2 h-2 rounded-full",
-                  stageColorMap[currentStage] || "bg-fg-muted",
-                )}
+              <StageDropdown
+                currentStage={currentStage}
+                onChange={handleStageChange}
               />
-              <span className="text-sm font-medium text-fg">
-                {stageLabels[currentStage] || currentStage}
-              </span>
-            </div>
-            <div className="mb-4">
-              <StageProgress currentStage={currentStage} />
-            </div>
-            <StageDropdown
-              currentStage={currentStage}
-              onChange={handleStageChange}
-            />
-          </div>
+            </PanelSection>
 
-          {/* Quick Actions */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <p className="text-xs font-medium text-fg-secondary mb-4">
-              Quick Actions
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => setShowMeetingModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-line bg-subtle hover:bg-muted transition-colors"
-              >
-                <div className="w-10 h-10 rounded-full border border-line bg-surface flex items-center justify-center">
-                  <CalendarBlankIcon size={18} className="text-fg-secondary" />
-                </div>
-                <span className="text-sm font-medium text-fg">
+            <PanelSection title="Quick Actions">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<CalendarBlankIcon size={16} />}
+                  onClick={() => setShowMeetingModal(true)}
+                >
                   Schedule Meeting
-                </span>
-              </button>
-              <button
-                onClick={() => setShowTaskModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-line bg-subtle hover:bg-muted transition-colors"
-              >
-                <div className="w-10 h-10 rounded-full border border-line bg-surface flex items-center justify-center">
-                  <CheckCircleIcon size={18} className="text-fg-secondary" />
-                </div>
-                <span className="text-sm font-medium text-fg">
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<CheckCircleIcon size={16} />}
+                  onClick={() => setShowTaskModal(true)}
+                >
                   Add Task
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Contact */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <p className="text-xs font-medium text-fg-secondary mb-4">
-              Contact
-            </p>
-            <div className="flex items-center gap-3">
-              <Avatar name={contactName} size="md" />
-              <div>
-                <p className="text-sm font-medium text-fg">
-                  {contactName}
-                </p>
-                <p className="text-xs text-fg-secondary">
-                  {deal.company || "—"}
-                </p>
+                </Button>
               </div>
-            </div>
-          </div>
+            </PanelSection>
 
-          {/* Details */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <p className="text-xs font-medium text-fg-secondary mb-4">
-              Details
-            </p>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs text-fg-secondary mb-0.5">Expected Close</p>
-                <p className="text-sm font-medium text-fg">
+            <PanelSection title="Contact">
+              <div className="flex items-center gap-3">
+                <Avatar name={contactName} size="md" />
+                <div>
+                  <p className="text-sm font-medium text-fg">
+                    {contactName}
+                  </p>
+                  <p className="text-xs text-fg-secondary">
+                    {deal.company || "—"}
+                  </p>
+                </div>
+              </div>
+            </PanelSection>
+
+            <PanelSection title="Details">
+              <KeyValueList>
+                <KeyValue label="Expected Close">
                   {formatDate(deal.expected_close_date ?? deal.close_date ?? null)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-fg-secondary mb-0.5">Created</p>
-                <p className="text-sm font-medium text-fg">
-                  {formatDate(deal.created_at)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-fg-secondary mb-0.5">Owner</p>
-                <p className="text-sm font-medium text-fg">
-                  {deal.owner_name || "—"}
-                </p>
-              </div>
+                </KeyValue>
+                <KeyValue label="Created">{formatDate(deal.created_at)}</KeyValue>
+                <KeyValue label="Owner">{deal.owner_name || "—"}</KeyValue>
+              </KeyValueList>
+            </PanelSection>
+          </>
+        }
+      >
+        <Section title="Activity">
+          {activityItems.length > 0 ? (
+            <div className="-mx-4">
+              {activityItems.map((item) => (
+                <ActivityRow
+                  key={`${item.source}-${item.id}`}
+                  id={item.id}
+                  type={item.type as ActivityRowType}
+                  title={item.title}
+                  description={item.description || ""}
+                  onView={() => {
+                    setSelectedActivity(item);
+                    setShowActivityDrawer(true);
+                  }}
+                  onDelete={() => handleDeleteActivity(item)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="py-12 text-center text-fg-secondary">
+              <p>No activity yet</p>
+            </div>
+          )}
+        </Section>
+
+        <Section title="Notes">
+          {dealNotes.length > 0 ? (
+            <div className="space-y-6 mb-6">
+              {dealNotes.map((note) => (
+                <div key={note.id}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-fg">
+                      {note.author_name || "Unknown"}
+                    </p>
+                    <p className="text-xs text-fg-muted">
+                      {formatDate(note.created_at)}
+                    </p>
+                  </div>
+                  <p className="text-sm text-fg-secondary leading-relaxed">
+                    {note.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-fg-secondary mb-6">
+              No notes yet
+            </p>
+          )}
+          <div className="space-y-3">
+            <Textarea
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              placeholder="Add a note..."
+              rows={3}
+            />
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={handleAddNote}
+                disabled={isPending || !newNote.trim()}
+              >
+                {isPending ? "Adding..." : "Add Note"}
+              </Button>
             </div>
           </div>
-        </div>
-      </div>
+        </Section>
+      </DetailLayout>
 
       <ScheduleMeetingModal
         open={showMeetingModal}
@@ -717,6 +649,6 @@ export function DealDetailClient({
         onConfirm={executeDelete}
         onCancel={() => setShowDeleteConfirm(false)}
       />
-    </div>
+    </Page>
   );
 }

@@ -16,6 +16,7 @@ import {
   ShieldIcon,
 } from "@/components/ui";
 import { cn } from "@/lib/utils";
+import { Page, PageHeader, Section } from "@/components/dashboard";
 import {
   updateCompetitor,
   upsertBattleCard,
@@ -105,76 +106,76 @@ function EditableTagSection({
   };
 
   return (
-    <div className="rounded-lg border border-line bg-surface p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-fg-secondary">
-          {title}
-        </h3>
-        {!editing ? (
+    <Section
+      title={title}
+      actions={
+        !editing ? (
           <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
             Edit
           </Button>
         ) : (
-          <div className="flex items-center gap-2">
+          <>
             <Button variant="outline" size="sm" onClick={handleCancel}>
               Cancel
             </Button>
             <Button size="sm" onClick={handleSave} disabled={isPending}>
               {isPending ? "Saving..." : "Save"}
             </Button>
+          </>
+        )
+      }
+    >
+      <div className="space-y-3">
+        {/* Tags display */}
+        <div className="flex flex-wrap gap-2">
+          {(editing ? localTags : tags).map((tag, i) => (
+            <span
+              key={i}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium",
+                tagColorClasses[color]
+              )}
+            >
+              {tag}
+              {editing && (
+                <button
+                  type="button"
+                  onClick={() => removeTag(i)}
+                  className="ml-0.5 hover:opacity-70"
+                >
+                  <XIcon size={12} />
+                </button>
+              )}
+            </span>
+          ))}
+          {(editing ? localTags : tags).length === 0 && !editing && (
+            <p className="text-sm text-fg-secondary italic">
+              No items added yet
+            </p>
+          )}
+        </div>
+
+        {/* Add input when editing */}
+        {editing && (
+          <div className="flex gap-2">
+            <Input
+              placeholder="Type and press Enter to add"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addTag();
+                }
+              }}
+            />
+            <Button variant="outline" onClick={addTag} className="shrink-0">
+              <PlusIcon size={16} />
+            </Button>
           </div>
         )}
       </div>
-
-      {/* Tags display */}
-      <div className="flex flex-wrap gap-2">
-        {(editing ? localTags : tags).map((tag, i) => (
-          <span
-            key={i}
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium",
-              tagColorClasses[color]
-            )}
-          >
-            {tag}
-            {editing && (
-              <button
-                type="button"
-                onClick={() => removeTag(i)}
-                className="ml-0.5 hover:opacity-70"
-              >
-                <XIcon size={12} />
-              </button>
-            )}
-          </span>
-        ))}
-        {(editing ? localTags : tags).length === 0 && !editing && (
-          <p className="text-sm text-fg-secondary italic">
-            No items added yet
-          </p>
-        )}
-      </div>
-
-      {/* Add input when editing */}
-      {editing && (
-        <div className="flex gap-2">
-          <Input
-            placeholder="Type and press Enter to add"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addTag();
-              }
-            }}
-          />
-          <Button variant="outline" onClick={addTag} className="shrink-0">
-            <PlusIcon size={16} />
-          </Button>
-        </div>
-      )}
-    </div>
+    </Section>
   );
 }
 
@@ -218,75 +219,75 @@ function EditableListSection({
   };
 
   return (
-    <div className="rounded-lg border border-line bg-surface p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-fg-secondary">
-          {title}
-        </h3>
-        {!editing ? (
+    <Section
+      title={title}
+      actions={
+        !editing ? (
           <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
             Edit
           </Button>
         ) : (
-          <div className="flex items-center gap-2">
+          <>
             <Button variant="outline" size="sm" onClick={handleCancel}>
               Cancel
             </Button>
             <Button size="sm" onClick={handleSave} disabled={isPending}>
               {isPending ? "Saving..." : "Save"}
             </Button>
+          </>
+        )
+      }
+    >
+      <div className="space-y-3">
+        {/* Items list */}
+        <ul className="space-y-2">
+          {(editing ? localItems : items).map((item, i) => (
+            <li key={i} className="flex items-start gap-3 group">
+              <span className="mt-2 text-fg-muted text-xs font-mono">
+                {i + 1}.
+              </span>
+              <p className="text-sm text-fg flex-1">
+                {item}
+              </p>
+              {editing && (
+                <button
+                  type="button"
+                  onClick={() => removeItem(i)}
+                  className="mt-0.5 text-fg-muted hover:text-danger transition-colors"
+                >
+                  <XIcon size={14} />
+                </button>
+              )}
+            </li>
+          ))}
+          {(editing ? localItems : items).length === 0 && !editing && (
+            <p className="text-sm text-fg-secondary italic">
+              No items added yet
+            </p>
+          )}
+        </ul>
+
+        {/* Add input when editing */}
+        {editing && (
+          <div className="flex gap-2">
+            <Input
+              placeholder="Add a question and press Enter"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addItem();
+                }
+              }}
+            />
+            <Button variant="outline" onClick={addItem} className="shrink-0">
+              <PlusIcon size={16} />
+            </Button>
           </div>
         )}
       </div>
-
-      {/* Items list */}
-      <ul className="space-y-2">
-        {(editing ? localItems : items).map((item, i) => (
-          <li key={i} className="flex items-start gap-3 group">
-            <span className="mt-2 text-fg-muted text-xs font-mono">
-              {i + 1}.
-            </span>
-            <p className="text-sm text-fg flex-1">
-              {item}
-            </p>
-            {editing && (
-              <button
-                type="button"
-                onClick={() => removeItem(i)}
-                className="mt-0.5 text-fg-muted hover:text-danger transition-colors"
-              >
-                <XIcon size={14} />
-              </button>
-            )}
-          </li>
-        ))}
-        {(editing ? localItems : items).length === 0 && !editing && (
-          <p className="text-sm text-fg-secondary italic">
-            No items added yet
-          </p>
-        )}
-      </ul>
-
-      {/* Add input when editing */}
-      {editing && (
-        <div className="flex gap-2">
-          <Input
-            placeholder="Add a question and press Enter"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addItem();
-              }
-            }}
-          />
-          <Button variant="outline" onClick={addItem} className="shrink-0">
-            <PlusIcon size={16} />
-          </Button>
-        </div>
-      )}
-    </div>
+    </Section>
   );
 }
 
@@ -317,44 +318,44 @@ function EditableTextareaSection({
   };
 
   return (
-    <div className="rounded-lg border border-line bg-surface p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-fg-secondary">
-          {title}
-        </h3>
-        {!editing ? (
+    <Section
+      title={title}
+      actions={
+        !editing ? (
           <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
             Edit
           </Button>
         ) : (
-          <div className="flex items-center gap-2">
+          <>
             <Button variant="outline" size="sm" onClick={handleCancel}>
               Cancel
             </Button>
             <Button size="sm" onClick={handleSave} disabled={isPending}>
               {isPending ? "Saving..." : "Save"}
             </Button>
-          </div>
+          </>
+        )
+      }
+    >
+      <div className="space-y-3">
+        {editing ? (
+          <Textarea
+            value={localValue}
+            onChange={(e) => setLocalValue(e.target.value)}
+            rows={4}
+            placeholder="Write your positioning statement..."
+          />
+        ) : (
+          <p className="text-sm text-fg whitespace-pre-wrap">
+            {value || (
+              <span className="text-fg-muted italic">
+                No positioning statement yet
+              </span>
+            )}
+          </p>
         )}
       </div>
-
-      {editing ? (
-        <Textarea
-          value={localValue}
-          onChange={(e) => setLocalValue(e.target.value)}
-          rows={4}
-          placeholder="Write your positioning statement..."
-        />
-      ) : (
-        <p className="text-sm text-fg whitespace-pre-wrap">
-          {value || (
-            <span className="text-fg-muted italic">
-              No positioning statement yet
-            </span>
-          )}
-        </p>
-      )}
-    </div>
+    </Section>
   );
 }
 
@@ -400,110 +401,102 @@ export function CompetitorDetailClient({
   };
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-6">
+    <Page>
       {/* Back link */}
-      <Link
-        href="/dashboard/competitors"
-        className="inline-flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg transition-colors"
-      >
-        <ArrowLeftIcon size={16} />
-        Back to Competitors
-      </Link>
+      <div className="px-8 pt-6 max-sm:px-4">
+        <Link
+          href="/dashboard/competitors"
+          className="inline-flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg transition-colors"
+        >
+          <ArrowLeftIcon size={16} />
+          Back to Competitors
+        </Link>
+      </div>
 
       {/* Competitor Header */}
-      <div className="rounded-lg border border-line bg-surface p-4 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-line bg-subtle">
-              <ShieldIcon
-                size={24}
-                className="text-fg"
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-xl font-semibold text-fg">
-                  {competitor.name}
-                </h1>
-                <Badge
-                  variant={
-                    categoryBadgeVariant[competitor.category || "direct"] ||
-                    "neutral"
-                  }
-                >
-                  {competitor.category || "direct"}
-                </Badge>
-              </div>
-              {competitor.website && (
-                <a
-                  href={
-                    competitor.website.startsWith("http")
-                      ? competitor.website
-                      : `https://${competitor.website}`
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg transition-colors mt-1"
-                >
-                  <GlobeIcon size={14} />
-                  {competitor.website}
-                </a>
-              )}
-            </div>
+      <PageHeader
+        icon={<ShieldIcon size={18} />}
+        title={competitor.name}
+        description={
+          <div className="mt-1 flex flex-wrap items-center gap-3">
+            <Badge
+              variant={
+                categoryBadgeVariant[competitor.category || "direct"] ||
+                "neutral"
+              }
+            >
+              {competitor.category || "direct"}
+            </Badge>
+            {competitor.website && (
+              <a
+                href={
+                  competitor.website.startsWith("http")
+                    ? competitor.website
+                    : `https://${competitor.website}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg transition-colors"
+              >
+                <GlobeIcon size={14} />
+                {competitor.website}
+              </a>
+            )}
           </div>
-        </div>
+        }
+      />
 
-        {/* Description */}
-        {competitor.description && (
+      {/* Description */}
+      {competitor.description && (
+        <div className="px-8 pb-6 max-sm:px-4">
           <p className="text-sm text-fg-secondary leading-relaxed max-w-3xl">
             {competitor.description}
           </p>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Battle Card Sections */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-fg">
+      <div className="flex h-14 items-center px-8 border-t border-divider max-sm:px-4">
+        <h2 className="text-[18px] leading-6 font-semibold text-fg">
           Battle Card
         </h2>
+      </div>
+      <div>
+        {/* Their Strengths */}
+        <EditableTagSection
+          title="Their Strengths"
+          tags={theirStrengths}
+          onSave={(tags) => saveBattleCardField("their_strengths", tags)}
+          isPending={isPending}
+          color="green"
+        />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Their Strengths */}
-          <EditableTagSection
-            title="Their Strengths"
-            tags={theirStrengths}
-            onSave={(tags) => saveBattleCardField("their_strengths", tags)}
-            isPending={isPending}
-            color="green"
-          />
+        {/* Their Weaknesses */}
+        <EditableTagSection
+          title="Their Weaknesses"
+          tags={theirWeaknesses}
+          onSave={(tags) => saveBattleCardField("their_weaknesses", tags)}
+          isPending={isPending}
+          color="red"
+        />
 
-          {/* Their Weaknesses */}
-          <EditableTagSection
-            title="Their Weaknesses"
-            tags={theirWeaknesses}
-            onSave={(tags) => saveBattleCardField("their_weaknesses", tags)}
-            isPending={isPending}
-            color="red"
-          />
+        {/* Our Advantages */}
+        <EditableTagSection
+          title="Our Advantages"
+          tags={ourAdvantages}
+          onSave={(tags) => saveBattleCardField("our_advantages", tags)}
+          isPending={isPending}
+          color="blue"
+        />
 
-          {/* Our Advantages */}
-          <EditableTagSection
-            title="Our Advantages"
-            tags={ourAdvantages}
-            onSave={(tags) => saveBattleCardField("our_advantages", tags)}
-            isPending={isPending}
-            color="blue"
-          />
-
-          {/* Switching Triggers */}
-          <EditableTagSection
-            title="Switching Triggers"
-            tags={switchingTriggers}
-            onSave={(tags) => saveBattleCardField("switching_triggers", tags)}
-            isPending={isPending}
-            color="amber"
-          />
-        </div>
+        {/* Switching Triggers */}
+        <EditableTagSection
+          title="Switching Triggers"
+          tags={switchingTriggers}
+          onSave={(tags) => saveBattleCardField("switching_triggers", tags)}
+          isPending={isPending}
+          color="amber"
+        />
 
         {/* Landmine Questions - full width */}
         <EditableListSection
@@ -523,6 +516,6 @@ export function CompetitorDetailClient({
           isPending={isPending}
         />
       </div>
-    </div>
+    </Page>
   );
 }

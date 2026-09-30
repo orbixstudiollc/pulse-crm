@@ -16,8 +16,18 @@ import {
   ArrowLeftIcon,
   PencilSimpleIcon,
   CircleNotchIcon,
+  UserIcon,
 } from "@/components/ui";
-import { PageHeader } from "@/components/dashboard";
+import {
+  Page,
+  PageHeader,
+  DetailLayout,
+  Section,
+  PanelSection,
+  KeyValueList,
+  KeyValue,
+  TableSection,
+} from "@/components/dashboard";
 import {
   updateICPProfile,
   recalculateICPMatches,
@@ -485,10 +495,7 @@ function CriteriaSection({
   if (!hasContent) return null;
 
   return (
-    <div className="space-y-3">
-      <h4 className="text-sm font-semibold text-fg">
-        {title}
-      </h4>
+    <Section title={title}>
       <div className="space-y-2">
         {items.map(
           (item) =>
@@ -506,7 +513,7 @@ function CriteriaSection({
             ),
         )}
       </div>
-    </div>
+    </Section>
   );
 }
 
@@ -533,9 +540,9 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col gap-4">
+    <Page>
+      {/* Back link */}
+      <div className="px-8 pt-6 max-sm:px-4">
         <Link
           href="/dashboard/icp"
           className="inline-flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg transition-colors w-fit"
@@ -543,296 +550,279 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
           <ArrowLeftIcon size={14} />
           Back to ICP Profiles
         </Link>
-
-        <PageHeader title={profile.name}>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleRecalculate}
-            disabled={isPending}
-            leftIcon={
-              isPending ? (
-                <CircleNotchIcon size={16} className="animate-spin" />
-              ) : (
-                <CrosshairIcon size={16} />
-              )
-            }
-          >
-            Recalculate Matches
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<PencilSimpleIcon size={16} />}
-            onClick={() => setShowEditModal(true)}
-          >
-            Edit Profile
-          </Button>
-        </PageHeader>
       </div>
 
-      {/* Profile Header Card */}
-      <div className="rounded-lg border border-line bg-surface p-4">
-        <div className="flex items-center gap-4 mb-4">
-          <div
-            className="h-4 w-4 rounded-full"
-            style={{ backgroundColor: profile.color ?? "#6366f1" }}
-          />
-          <h2 className="text-xl font-semibold text-fg">
-            {profile.name}
-          </h2>
-          {profile.is_primary && (
-            <Badge variant="primary" dot>
-              Primary
-            </Badge>
-          )}
-        </div>
-        {profile.description && (
-          <p className="text-sm text-fg-secondary">
-            {profile.description}
-          </p>
-        )}
-      </div>
-
-      {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Criteria */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <h3 className="text-base font-semibold text-fg mb-6">
-              Criteria
-            </h3>
-            <div className="space-y-6">
-              <CriteriaSection
-                title="Firmographic"
-                items={[
-                  { label: "Industries", values: criteria.firmographic.industries },
-                  { label: "Sizes", values: criteria.firmographic.company_sizes },
-                  { label: "Geography", values: criteria.firmographic.geography },
-                ]}
+      {/* Header */}
+      <PageHeader
+        title={profile.name}
+        icon={<CrosshairIcon size={18} />}
+        description={
+          <>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <div
+                className="h-3 w-3 rounded-full"
+                style={{ backgroundColor: profile.color ?? "#6366f1" }}
               />
-              <CriteriaSection
-                title="Technographic"
-                items={[
-                  { label: "Tech Stack", values: criteria.technographic.tech_stack },
-                ]}
-              />
-              <CriteriaSection
-                title="Behavioral"
-                items={[
-                  { label: "Buying Patterns", values: criteria.behavioral.buying_patterns },
-                  { label: "Trigger Events", values: criteria.behavioral.trigger_events },
-                ]}
-              />
-              <CriteriaSection
-                title="Budget"
-                items={[
-                  {
-                    label: "Revenue Range",
-                    values:
-                      criteria.budget.revenue_range.min !== null ||
-                      criteria.budget.revenue_range.max !== null
-                        ? [
-                            `${
-                              criteria.budget.revenue_range.min
-                                ? formatCurrency(criteria.budget.revenue_range.min)
-                                : "$0"
-                            } - ${
-                              criteria.budget.revenue_range.max
-                                ? formatCurrency(criteria.budget.revenue_range.max)
-                                : "No limit"
-                            }`,
-                          ]
-                        : [],
-                  },
-                  {
-                    label: "Sweet Spot",
-                    values: criteria.budget.deal_size_sweet_spot
-                      ? [formatCurrency(criteria.budget.deal_size_sweet_spot)]
-                      : [],
-                  },
-                  { label: "Funding Stages", values: criteria.budget.funding_stages },
-                ]}
-              />
-              <CriteriaSection
-                title="Channel"
-                items={[
-                  { label: "Contact Methods", values: criteria.channel.preferred_contact_methods },
-                  { label: "Content Prefs", values: criteria.channel.content_preferences },
-                ]}
-              />
-              {criteria.pain_points.length > 0 && (
-                <CriteriaSection
-                  title="Pain Points"
-                  items={criteria.pain_points.map((p) => ({
-                    label: p.name,
-                    values: [`Severity: ${p.severity}/10`],
-                  }))}
-                />
+              {profile.is_primary && (
+                <Badge variant="primary" dot>
+                  Primary
+                </Badge>
               )}
             </div>
-          </div>
-        </div>
+            {profile.description && (
+              <p className="mt-1 text-sm text-fg-secondary">
+                {profile.description}
+              </p>
+            )}
+          </>
+        }
+      >
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={handleRecalculate}
+          disabled={isPending}
+          leftIcon={
+            isPending ? (
+              <CircleNotchIcon size={16} className="animate-spin" />
+            ) : (
+              <CrosshairIcon size={16} />
+            )
+          }
+        >
+          Recalculate Matches
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          leftIcon={<PencilSimpleIcon size={16} />}
+          onClick={() => setShowEditModal(true)}
+        >
+          Edit Profile
+        </Button>
+      </PageHeader>
 
-        {/* Right: Weights */}
-        <div className="space-y-6">
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <h3 className="text-base font-semibold text-fg mb-6">
-              Weight Distribution
-            </h3>
-            <div className="space-y-4">
-              {(Object.keys(weights) as Array<keyof ICPWeights>).map((key) => (
-                <div key={key} className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-fg-secondary">
-                      {weightLabels[key]}
-                    </span>
-                    <span className="text-sm font-medium text-fg">
-                      {weights[key]}%
-                    </span>
+      <DetailLayout
+        className="border-t border-divider"
+        aside={
+          <>
+            <PanelSection title="Weight Distribution">
+              <div className="space-y-4">
+                {(Object.keys(weights) as Array<keyof ICPWeights>).map((key) => (
+                  <div key={key} className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-fg-secondary">
+                        {weightLabels[key]}
+                      </span>
+                      <span className="text-sm font-medium text-fg">
+                        {weights[key]}%
+                      </span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className={cn("h-full rounded-full transition-all", weightColors[key])}
+                        style={{ width: `${weights[key]}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={cn("h-full rounded-full transition-all", weightColors[key])}
-                      style={{ width: `${weights[key]}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+                ))}
+              </div>
+            </PanelSection>
 
-          {/* Quick Stats */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <h3 className="text-base font-semibold text-fg mb-4">
-              Match Summary
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-fg-secondary">
-                  Total Matched
-                </span>
-                <span className="text-sm font-semibold text-fg">
-                  {matchedLeads.length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-fg-secondary">
-                  Avg Score
-                </span>
-                <span className="text-sm font-semibold text-fg">
-                  {matchedLeads.length > 0
-                    ? `${Math.round(
-                        matchedLeads.reduce(
-                          (sum, l) => sum + (l.icp_match_score ?? 0),
-                          0,
-                        ) / matchedLeads.length,
-                      )}%`
-                    : "--"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-fg-secondary">
-                  A+ Leads
-                </span>
-                <span className="text-sm font-semibold text-success">
-                  {matchedLeads.filter((l) => (l.icp_match_score ?? 0) >= 90).length}
-                </span>
-              </div>
-            </div>
-          </div>
+            {/* Quick Stats */}
+            <PanelSection title="Match Summary">
+              <KeyValueList>
+                <KeyValue label="Total Matched">
+                  <span className="font-semibold">{matchedLeads.length}</span>
+                </KeyValue>
+                <KeyValue label="Avg Score">
+                  <span className="font-semibold">
+                    {matchedLeads.length > 0
+                      ? `${Math.round(
+                          matchedLeads.reduce(
+                            (sum, l) => sum + (l.icp_match_score ?? 0),
+                            0,
+                          ) / matchedLeads.length,
+                        )}%`
+                      : "--"}
+                  </span>
+                </KeyValue>
+                <KeyValue label="A+ Leads">
+                  <span className="font-semibold text-success">
+                    {matchedLeads.filter((l) => (l.icp_match_score ?? 0) >= 90).length}
+                  </span>
+                </KeyValue>
+              </KeyValueList>
+            </PanelSection>
+          </>
+        }
+      >
+        {/* Criteria */}
+        <div className="flex h-14 items-center px-8 max-sm:px-4">
+          <h2 className="text-[18px] leading-6 font-semibold text-fg">
+            Criteria
+          </h2>
         </div>
-      </div>
-
-      {/* Matched Leads Table */}
-      <div className="rounded-lg border border-line bg-surface overflow-hidden">
-        <div className="px-6 py-4 border-b border-divider">
-          <h3 className="text-[16px] leading-6 font-semibold text-fg">
-            Matched Leads ({matchedLeads.length})
-          </h3>
+        <div>
+          <CriteriaSection
+            title="Firmographic"
+            items={[
+              { label: "Industries", values: criteria.firmographic.industries },
+              { label: "Sizes", values: criteria.firmographic.company_sizes },
+              { label: "Geography", values: criteria.firmographic.geography },
+            ]}
+          />
+          <CriteriaSection
+            title="Technographic"
+            items={[
+              { label: "Tech Stack", values: criteria.technographic.tech_stack },
+            ]}
+          />
+          <CriteriaSection
+            title="Behavioral"
+            items={[
+              { label: "Buying Patterns", values: criteria.behavioral.buying_patterns },
+              { label: "Trigger Events", values: criteria.behavioral.trigger_events },
+            ]}
+          />
+          <CriteriaSection
+            title="Budget"
+            items={[
+              {
+                label: "Revenue Range",
+                values:
+                  criteria.budget.revenue_range.min !== null ||
+                  criteria.budget.revenue_range.max !== null
+                    ? [
+                        `${
+                          criteria.budget.revenue_range.min
+                            ? formatCurrency(criteria.budget.revenue_range.min)
+                            : "$0"
+                        } - ${
+                          criteria.budget.revenue_range.max
+                            ? formatCurrency(criteria.budget.revenue_range.max)
+                            : "No limit"
+                        }`,
+                      ]
+                    : [],
+              },
+              {
+                label: "Sweet Spot",
+                values: criteria.budget.deal_size_sweet_spot
+                  ? [formatCurrency(criteria.budget.deal_size_sweet_spot)]
+                  : [],
+              },
+              { label: "Funding Stages", values: criteria.budget.funding_stages },
+            ]}
+          />
+          <CriteriaSection
+            title="Channel"
+            items={[
+              { label: "Contact Methods", values: criteria.channel.preferred_contact_methods },
+              { label: "Content Prefs", values: criteria.channel.content_preferences },
+            ]}
+          />
+          {criteria.pain_points.length > 0 && (
+            <CriteriaSection
+              title="Pain Points"
+              items={criteria.pain_points.map((p) => ({
+                label: p.name,
+                values: [`Severity: ${p.severity}/10`],
+              }))}
+            />
+          )}
         </div>
 
-        {matchedLeads.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr>
-                  <th className="h-10 px-6 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
-                    Name
-                  </th>
-                  <th className="h-10 px-6 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
-                    Company
-                  </th>
-                  <th className="h-10 px-6 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
-                    Match Score
-                  </th>
-                  <th className="h-10 px-6 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
-                    Industry
-                  </th>
-                  <th className="h-10 px-6 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
-                    Employees
-                  </th>
-                  <th className="h-10 px-6 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
-                    Value
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {matchedLeads.map((lead) => {
-                  const score = lead.icp_match_score ?? 0;
-                  const grade = getGrade(score);
-                  const gradeVariant = getGradeVariant(grade);
+        {/* Matched Leads Table */}
+        <TableSection
+          className="border-t border-divider"
+          title={<>Matched Leads ({matchedLeads.length})</>}
+        >
+          {matchedLeads.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
+                      Name
+                    </th>
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
+                      Company
+                    </th>
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
+                      Match Score
+                    </th>
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
+                      Industry
+                    </th>
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
+                      Employees
+                    </th>
+                    <th className="text-right text-[13px] font-medium text-fg-secondary">
+                      Value
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {matchedLeads.map((lead) => {
+                    const score = lead.icp_match_score ?? 0;
+                    const grade = getGrade(score);
+                    const gradeVariant = getGradeVariant(grade);
 
-                  return (
-                    <tr
-                      key={lead.id}
-                      className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors"
-                    >
-                      <td className="px-6 py-2 text-[14px] text-fg">
-                        <div>
-                          <p className="text-sm font-medium text-fg">
-                            {lead.name}
-                          </p>
-                          <p className="text-xs text-fg-secondary">
-                            {lead.email}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-2 text-[14px] text-fg-secondary">
-                        {lead.company || "--"}
-                      </td>
-                      <td className="px-6 py-2 text-[14px] text-fg">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-fg">
-                            {score}%
-                          </span>
-                          <Badge variant={gradeVariant}>{grade}</Badge>
-                        </div>
-                      </td>
-                      <td className="px-6 py-2 text-[14px] text-fg-secondary">
-                        {lead.industry || "--"}
-                      </td>
-                      <td className="px-6 py-2 text-[14px] text-fg-secondary">
-                        {lead.employees || "--"}
-                      </td>
-                      <td className="px-6 py-2 text-right text-[14px] font-medium text-fg">
-                        {formatCurrency(lead.estimated_value)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="py-12 text-center">
-            <p className="text-sm text-fg-secondary">
-              No leads matched to this profile yet. Run &ldquo;Recalculate Matches&rdquo; to score
-              leads against this profile.
-            </p>
-          </div>
-        )}
-      </div>
+                    return (
+                      <tr
+                        key={lead.id}
+                        className="hover:bg-subtle transition-colors"
+                      >
+                        <td className="py-2 text-[14px] text-fg">
+                          <div className="flex items-start gap-2">
+                            <UserIcon size={16} className="mt-0.5 shrink-0 text-fg-muted" />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-fg">
+                                {lead.name}
+                              </p>
+                              <p className="text-xs text-fg-secondary">
+                                {lead.email}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-2 text-[14px] text-fg-secondary">
+                          {lead.company || "--"}
+                        </td>
+                        <td className="py-2 text-[14px] text-fg">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-fg">
+                              {score}%
+                            </span>
+                            <Badge variant={gradeVariant}>{grade}</Badge>
+                          </div>
+                        </td>
+                        <td className="py-2 text-[14px] text-fg-secondary">
+                          {lead.industry || "--"}
+                        </td>
+                        <td className="py-2 text-[14px] text-fg-secondary">
+                          {lead.employees || "--"}
+                        </td>
+                        <td className="py-2 text-right text-[14px] font-medium text-fg">
+                          {formatCurrency(lead.estimated_value)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="py-12 px-8 text-center max-sm:px-4">
+              <p className="text-sm text-fg-secondary">
+                No leads matched to this profile yet. Run &ldquo;Recalculate Matches&rdquo; to score
+                leads against this profile.
+              </p>
+            </div>
+          )}
+        </TableSection>
+      </DetailLayout>
 
       {/* Edit Modal */}
       {showEditModal && (
@@ -843,6 +833,6 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
           profile={profile}
         />
       )}
-    </div>
+    </Page>
   );
 }
