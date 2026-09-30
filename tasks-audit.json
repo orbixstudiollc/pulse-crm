@@ -318,6 +318,73 @@
     "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! grep -q 'order(\"time\"' lib/actions/calendar.ts && grep -q 'order(\"start_time\"' lib/actions/calendar.ts && npx tsc --noEmit && ! grep -q 'event.time)' app/dashboard/calendar/client.tsx && npx eslint 'lib/actions/calendar.ts' 'app/dashboard/calendar/client.tsx' && git add -A -- 'lib/actions/calendar.ts' 'app/dashboard/calendar/client.tsx' && git commit -q -m 'fix(calendar): order events by start_time, the column that exists' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F21-OK"
   },
   {
+    "id": "F22",
+    "model": "sonnet",
+    "depends_on": [
+      "F21"
+    ],
+    "title": "Calendar create/update only write columns that exist",
+    "files": [
+      "app/dashboard/calendar/client.tsx",
+      "lib/actions/calendar.ts"
+    ],
+    "interface": "Verified live: production calendar_events has id, organization_id, created_by, title, description, date, start_time, end_time, type, status, related_type, related_name, related_id (types/database.ts matches); it has NO duration, notes or location columns (PostgREST 42703). app/dashboard/calendar/client.tsx create and update payloads send `duration` and `notes` (and possibly `location`), so every save fails. Change them to: `start_time` from the form time; `end_time` computed from start time + duration minutes (HH:MM, capped at 23:59) when a duration is given; `description` = the notes text (append `Location: <x>` on its own line when a location is entered). mapEvent must read notes from description and derive duration from start_time/end_time (minutes) instead of the missing columns. lib/actions/calendar.ts createCalendarEvent/updateCalendarEvent: drop any keys not in that column list before insert/update (small allowlist const), so a stray key can never fail the whole write again. No other behaviour changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! grep -q 'duration: data.duration' app/dashboard/calendar/client.tsx && ! grep -q 'notes: data.notes' app/dashboard/calendar/client.tsx && grep -q 'end_time' app/dashboard/calendar/client.tsx && grep -q 'start_time' lib/actions/calendar.ts && npx tsc --noEmit && npx eslint 'app/dashboard/calendar/client.tsx' 'lib/actions/calendar.ts' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/dashboard/calendar/client.tsx' 'lib/actions/calendar.ts' && git commit -q -m 'fix(calendar): write only existing columns; notes in description, end time from duration' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F22-OK"
+  },
+  {
+    "id": "F23",
+    "model": "opus",
+    "depends_on": [
+      "F6",
+      "F4"
+    ],
+    "title": "Record pages: activity delete hits the right table; meetings and tasks created there appear in the record's feed",
+    "files": [
+      "lib/actions/record-activities.ts",
+      "app/dashboard/customers/[id]/client.tsx",
+      "app/dashboard/leads/[id]/client.tsx",
+      "app/dashboard/sales/[id]/client.tsx",
+      "app/dashboard/customers/[id]/page.tsx",
+      "app/dashboard/leads/[id]/page.tsx",
+      "app/dashboard/sales/[id]/page.tsx"
+    ],
+    "interface": "The customer, lead and deal detail pages list activities from customer_activities, lead_activities and deal_activities (lib/actions/customers.ts getCustomerActivities, leads.ts getLeadActivities, deals.ts getDealActivities), but F6 wired delete to deleteActivity (general `activities` table) and the Schedule Meeting / Create Task modals write to calendar_events and activities with related_type/related_id/related_name. Result: delete silently does nothing and new items never show on the record. Create lib/actions/record-activities.ts (\"use server\"): `deleteRecordActivity(kind: \"lead\" | \"customer\" | \"deal\", id: string)` deleting from the matching *_activities table, scoped to the caller's organization (the per-record tables may not have organization_id: if not, verify ownership by joining through the parent record — select the activity's lead_id/customer_id/deal_id, then confirm that parent row has organization_id = getOrgId() before deleting); returns `{ success: true }` or `{ error }`. And `getLinkedItems(kind, recordId)`: returns activities (table `activities`) and calendar_events for the caller's org where related_type matches the kind and related_id = recordId, mapped to the same shape the detail pages' activity lists already render (read each page's activity item type), each tagged with `source: \"activity\" | \"event\"`. Detail pages: load getLinkedItems alongside the existing activity list (in page.tsx if the list is fetched server-side, else in the client) and merge by date, newest first. Delete: items from the per-record table call deleteRecordActivity(kind, id); items with source activity call deleteActivity; source event calls deleteCalendarEvent. Toast on error, router.refresh on success.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'export async function deleteRecordActivity' lib/actions/record-activities.ts && grep -q 'export async function getLinkedItems' lib/actions/record-activities.ts && grep -q 'deleteRecordActivity' 'app/dashboard/customers/[id]/client.tsx' && grep -q 'deleteRecordActivity' 'app/dashboard/leads/[id]/client.tsx' && grep -q 'deleteRecordActivity' 'app/dashboard/sales/[id]/client.tsx' && grep -q 'getLinkedItems' 'app/dashboard/customers/[id]/client.tsx' 'app/dashboard/customers/[id]/page.tsx' && npx tsc --noEmit && npx eslint 'lib/actions/record-activities.ts' 'app/dashboard/customers/[id]/client.tsx' 'app/dashboard/leads/[id]/client.tsx' 'app/dashboard/sales/[id]/client.tsx' 'app/dashboard/customers/[id]/page.tsx' 'app/dashboard/leads/[id]/page.tsx' 'app/dashboard/sales/[id]/page.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'lib/actions/record-activities.ts' 'app/dashboard/customers/[id]/client.tsx' 'app/dashboard/leads/[id]/client.tsx' 'app/dashboard/sales/[id]/client.tsx' 'app/dashboard/customers/[id]/page.tsx' 'app/dashboard/leads/[id]/page.tsx' 'app/dashboard/sales/[id]/page.tsx' && git commit -q -m 'fix(records): delete from the right activity table; linked meetings and tasks show on the record' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F23-OK"
+  },
+  {
+    "id": "F24",
+    "model": "sonnet",
+    "depends_on": [
+      "F7"
+    ],
+    "title": "Sales saves the picked customer id and the deal drawer can't crash; Activity passes dates to calendar export; drop dead invoice modal",
+    "files": [
+      "app/dashboard/sales/client.tsx",
+      "app/dashboard/activity/client.tsx",
+      "components/features/DealDrawer.tsx",
+      "components/features/index.tsx",
+      "components/features/CreateInvoiceModal.tsx"
+    ],
+    "interface": "app/dashboard/sales/client.tsx: F7 added `customerId` to DealFormData (components/features/AddDealModal.tsx). In handleAddDeal (and the edit path if it uses the same form) pass `customer_id: data.customerId` to createDeal/updateDeal when set (check the deals Insert type in types/database.ts for the column name). The page casts its MappedDeal to PipelineDeal, but DealDrawer reads `deal.contact.avatar`; MappedDeal has no `contact`. Either map a `contact` object ({ name: contact_name ?? '', avatar: '' , ...fields DealDrawer reads }) when building MappedDeal, or make DealDrawer read `deal.contact?.avatar` / `deal.contact?.name` with safe fallbacks — do both: components/features/DealDrawer.tsx must use optional chaining for every `deal.contact.` access, and remove its unused `pipelineStages` import. app/dashboard/activity/client.tsx: pass `date: selectedActivity.date` and `time: selectedActivity.time` (or the equivalent fields on that page's activity type) to ActivityDetailDrawer so the Google/Apple calendar buttons appear. CreateInvoiceModal is no longer used anywhere (F6 removed its only usage; verify with grep): remove its export line from components/features/index.tsx and delete components/features/CreateInvoiceModal.tsx (one rm per command).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'customer_id: data.customerId' app/dashboard/sales/client.tsx && ! grep -q 'deal\\.contact\\.' components/features/DealDrawer.tsx && grep -q 'date: selectedActivity' app/dashboard/activity/client.tsx && test ! -f components/features/CreateInvoiceModal.tsx && ! grep -q 'CreateInvoiceModal' components/features/index.tsx && npx tsc --noEmit && npx eslint 'app/dashboard/sales/client.tsx' 'app/dashboard/activity/client.tsx' 'components/features/DealDrawer.tsx' 'components/features/index.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/dashboard/sales/client.tsx' 'app/dashboard/activity/client.tsx' 'components/features/DealDrawer.tsx' 'components/features/index.tsx' 'components/features/CreateInvoiceModal.tsx' && git commit -q -m 'fix(sales): save picked customer id, crash-safe deal drawer; activity calendar export dates; drop invoice stub' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F24-OK"
+  },
+  {
+    "id": "F25",
+    "model": "opus",
+    "depends_on": [
+      "F1",
+      "F10",
+      "F11"
+    ],
+    "title": "Lead Finder crons: enrichment gets its full time budget; scheduled discovery uses the asynchronous service-role path",
+    "files": [
+      "vercel.json",
+      "app/api/cron/lead-finder/route.ts"
+    ],
+    "interface": "vercel.json has functions[\"app/api/cron/lead-finder-worker/route.ts\"].maxDuration = 60, which caps the new 240s drain from F11 (the route exports 300). Set that entry to 300 and leave every other key (regions, crons, the lead-finder entry at 300) unchanged. app/api/cron/lead-finder/route.ts: scheduled discovery for due campaigns still calls the blocking runCampaignDiscovery, which uses a user-session Supabase client that has no session inside a cron request, so scheduled campaigns never discover anything. Replace that call with the asynchronous path F10 added: for each due campaign, for each configured find-phase actor, call startDiscoveryRun({ actorId, input, campaignId, orgId, token, maxPages }, admin) with the admin client (resolve the org Apify token the same way the discover route does, via the existing token helper), then set the campaign last_discovery_at / next run exactly as the current code does; finalisation already happens in finalizeDiscoveryRuns on later cron calls. Keep the per-invocation bound and await everything. If runCampaignDiscovery becomes unused, leave it exported (other callers may exist) and do not edit discovery.ts.",
+    "verify": null
+  },
+  {
     "id": "F20",
     "model": "sonnet",
     "depends_on": [
@@ -340,7 +407,11 @@
       "F17",
       "F18",
       "F19",
-      "F21"
+      "F21",
+      "F22",
+      "F23",
+      "F24",
+      "F25"
     ],
     "title": "Final gate: lint, tests, build, restyle scan, contrast, audit",
     "files": [],
