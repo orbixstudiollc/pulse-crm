@@ -31,6 +31,7 @@ import type { CustomerRow } from "@/components/dashboard/CustomersTable";
 import { exportCustomersToCSV } from "@/lib/actions/export";
 import { toast } from "sonner";
 import { countInMonth, monthOverMonth } from "@/lib/stats/period-delta";
+import { customerLifetimeValue, customerTenureMonths } from "@/lib/customers/metrics";
 
 interface CustomerRecord {
   id: string;
@@ -43,6 +44,9 @@ interface CustomerRecord {
   health_score: number;
   mrr?: number;
   last_contact?: string | null;
+  lifetime_value?: number | null;
+  customer_since?: string | null;
+  created_at?: string | null;
   [key: string]: unknown;
 }
 
@@ -65,6 +69,8 @@ function mapCustomer(c: CustomerRecord): CustomerRow {
     lastContact: (c.last_contact as string) ?? "",
     phone: (c.phone as string | null) ?? "",
     createdAt: (c.created_at as string | null) ?? null,
+    lifetimeValue: customerLifetimeValue(c.lifetime_value),
+    tenure: customerTenureMonths(c.customer_since, c.created_at),
   };
 }
 

@@ -37,6 +37,7 @@ import {
   KeyValue,
 } from "@/components/dashboard";
 import { cn } from "@/lib/utils";
+import { customerLifetimeValue, customerTenureMonths } from "@/lib/customers/metrics";
 import {
   CompleteMeetingModal,
   ScheduleMeetingModal,
@@ -144,15 +145,6 @@ const stageConfig: Record<string, { label: string; variant: BadgeVariant }> = {
 };
 
 // --- Helpers ---
-
-function monthsSince(dateStr: string) {
-  const start = new Date(dateStr);
-  const now = new Date();
-  const months =
-    (now.getFullYear() - start.getFullYear()) * 12 +
-    (now.getMonth() - start.getMonth());
-  return Math.max(0, months);
-}
 
 // --- Component ---
 
@@ -320,8 +312,8 @@ export function CustomerDetailClient({
   const closedWonValue = customerDeals
     .filter((d) => d.stage === "closed_won")
     .reduce((sum, d) => sum + (d.value || 0), 0);
-  const ltv = closedWonValue || customer.lifetime_value || 0;
-  const tenure = monthsSince(customer.created_at) || customer.tenure || customer.tenure_months || 0;
+  const ltv = customerLifetimeValue(customer.lifetime_value, closedWonValue);
+  const tenure = customerTenureMonths(customer.customer_since, customer.created_at);
 
   return (
     <Page>

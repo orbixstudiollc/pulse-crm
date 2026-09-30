@@ -195,7 +195,7 @@ export async function getConversionFunnel() {
   const supabase = await createClient();
   const orgId = await getOrgId();
 
-  const [leadsRes, dealsRes, customersRes] = await Promise.all([
+  const [leadsRes, dealsRes, customersRes, wonDealsRes] = await Promise.all([
     supabase
       .from("leads")
       .select("id", { count: "exact", head: true })
@@ -208,11 +208,17 @@ export async function getConversionFunnel() {
       .from("customers")
       .select("id", { count: "exact", head: true })
       .eq("organization_id", orgId),
+    supabase
+      .from("deals")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", orgId)
+      .eq("stage", "closed_won"),
   ]);
 
   const totalLeads = leadsRes.count || 0;
   const totalDeals = dealsRes.count || 0;
   const totalCustomers = customersRes.count || 0;
+  const wonDeals = wonDealsRes.count || 0;
 
   return {
     data: {
@@ -222,7 +228,7 @@ export async function getConversionFunnel() {
       leadToDealRate:
         totalLeads > 0 ? Math.round((totalDeals / totalLeads) * 100) : 0,
       dealToCustomerRate:
-        totalDeals > 0 ? Math.round((totalCustomers / totalDeals) * 100) : 0,
+        totalDeals > 0 ? Math.round((wonDeals / totalDeals) * 100) : 0,
     },
   };
 }
