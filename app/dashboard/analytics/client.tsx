@@ -1138,7 +1138,7 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
   ];
 
   const totalMessages = channelDistribution.reduce((s, c) => s + c.value, 0);
-  const hasReplyRate = channelComparison.some((c) => c.replyRate > 0);
+  const hasReplies = channelComparison.some((c) => c.replies > 0);
 
   return (
     <div>
@@ -1159,7 +1159,7 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
           value={`${data.summary.overallReplyRate}%`}
           subValue="Combined average"
         />
-        {hasReplyRate ? (
+        {hasReplies ? (
           <Metric
             label="Best Channel"
             value={
@@ -1250,7 +1250,7 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
 
       {/* Channel Comparison */}
       <Section title="Channel Comparison — Reply Rates">
-        {!hasReplyRate ? (
+        {!hasReplies ? (
           <PageEmptyState
             icon={<ChatCircleIcon size={24} />}
             title="No replies yet"

@@ -750,9 +750,15 @@ function PreferencesSection({
     () => true,
     () => false,
   );
+  // UTC on the server, so the initial value matches between SSR and hydration
   const [timezone, setTimezone] = useState(() =>
-    normalizeTimezone(preferences?.timezone, browserTimezone()),
+    normalizeTimezone(preferences?.timezone, "UTC"),
   );
+  // No saved timezone: switch to the browser zone once after mount
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time switch to the browser zone after hydration; the zone is unknowable on the server
+    if (!preferences?.timezone?.trim()) setTimezone(browserTimezone());
+  }, [preferences?.timezone]);
   const [dateFormat, setDateFormat] = useState(
     preferences?.date_format ?? "mm/dd/yyyy",
   );
