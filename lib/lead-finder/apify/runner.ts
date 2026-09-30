@@ -1,6 +1,8 @@
 import "server-only";
 
-import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database";
 import { authorizeActors } from "./policy-server";
 
 // =============================================================================
@@ -10,6 +12,17 @@ import { authorizeActors } from "./policy-server";
 const APIFY_BASE = "https://api.apify.com/v2";
 const POLL_INTERVAL_MS = 5_000;
 const MAX_POLL_ATTEMPTS = 360; // ~30 min
+
+/** errorType of the ApifyError thrown when a caller's `maxWaitMs` budget runs out. */
+export const APIFY_WAIT_TIMEOUT = "wait-timeout";
+
+/**
+ * Client for lf_apify_runs bookkeeping. These functions also run from
+ * session-less contexts (cron worker), so they never use the cookie-scoped
+ * client: callers inject one, defaulting to the service-role client. Every
+ * write carries or filters on `organization_id` explicitly.
+ */
+type RunsDb = SupabaseClient<Database>;
 
 // ---------------------------------------------------------------------------
 // Error helpers
@@ -26,6 +39,10 @@ export class ApifyError extends Error {
     super(message);
     this.name = "ApifyError";
   }
+}
+
+export function isApifyWaitTimeout(err: unknown): boolean {
+  return err instanceof ApifyError && err.errorType === APIFY_WAIT_TIMEOUT;
 }
 
 export function parseApifyError(body: string, statusCode: number): ApifyError {
@@ -232,14 +249,14 @@ export async function getRunStatus(
 // Start an actor run and record it in lf_apify_runs (used by runActorAndCollect)
 // ---------------------------------------------------------------------------
 
-async function startRecordedActorRun(
+export async function startRecordedActorRun(
+  supabase: RunsDb,
   actorId: string,
   input: Record<string, unknown>,
   orgId: string,
   campaignId?: string
 ): Promise<{ runId: string; dbId: string }> {
   const cred = await authorizeActors(orgId, [actorId]);
-  const supabase = await createClient();
 
   // Insert DB record first
   const runInsert = {
@@ -269,7 +286,8 @@ async function startRecordedActorRun(
     await supabase
       .from("lf_apify_runs")
       .update({ status: "failed" })
-      .eq("id", dbRow.id);
+      .eq("id", dbRow.id)
+      .eq("organization_id", orgId);
     throw err;
   }
 
@@ -277,7 +295,8 @@ async function startRecordedActorRun(
   await supabase
     .from("lf_apify_runs")
     .update({ run_id: apifyRunId })
-    .eq("id", dbRow.id);
+    .eq("id", dbRow.id)
+    .eq("organization_id", orgId);
 
   return { runId: apifyRunId, dbId: dbRow.id };
 }
@@ -289,7 +308,8 @@ async function startRecordedActorRun(
 export async function pollRunUntilDone(
   runId: string,
   orgId: string,
-  dbId?: string
+  dbId?: string,
+  options?: { db?: RunsDb; maxWaitMs?: number }
 ): Promise<{
   status: "succeeded" | "failed";
   datasetId: string | null;
@@ -297,7 +317,9 @@ export async function pollRunUntilDone(
 }> {
   // No actor to authorize here; resolves the same tenant-first credential.
   const { token } = await authorizeActors(orgId, []);
-  const supabase = await createClient();
+  const supabase = options?.db ?? createAdminClient();
+  const deadline =
+    options?.maxWaitMs !== undefined ? Date.now() + options.maxWaitMs : null;
 
   for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
     const res = await fetch(
@@ -325,7 +347,8 @@ export async function pollRunUntilDone(
             cost_usd: costUsd,
             finished_at: new Date().toISOString(),
           })
-          .eq("id", dbId);
+          .eq("id", dbId)
+          .eq("organization_id", orgId);
       }
 
       return { status: "succeeded", datasetId, costUsd };
@@ -346,10 +369,30 @@ export async function pollRunUntilDone(
             status: "failed",
             finished_at: new Date().toISOString(),
           })
-          .eq("id", dbId);
+          .eq("id", dbId)
+          .eq("organization_id", orgId);
       }
 
       throw new ApifyError(msg, undefined, apifyStatus);
+    }
+
+    // The caller's time budget cannot fit another poll: give up (retryable).
+    if (deadline !== null && Date.now() + POLL_INTERVAL_MS > deadline) {
+      if (dbId) {
+        await supabase
+          .from("lf_apify_runs")
+          .update({
+            status: "failed",
+            finished_at: new Date().toISOString(),
+          })
+          .eq("id", dbId)
+          .eq("organization_id", orgId);
+      }
+      throw new ApifyError(
+        `Run ${runId} did not finish within ${options?.maxWaitMs} ms`,
+        undefined,
+        APIFY_WAIT_TIMEOUT
+      );
     }
 
     // Still running – wait and retry
@@ -389,37 +432,54 @@ export async function fetchDatasetItems(
 // Convenience: run actor → poll → fetch
 // ---------------------------------------------------------------------------
 
+/**
+ * `options.db` is the client for lf_apify_runs (default: service-role client;
+ * rows always carry `organization_id`). `options.maxWaitMs` bounds the whole
+ * call; when it runs out an ApifyError with errorType APIFY_WAIT_TIMEOUT is
+ * thrown. Without it the 30-minute poll cap applies.
+ */
 export async function runActorAndCollect(
   actorId: string,
   input: Record<string, unknown>,
   orgId: string,
   campaignId?: string,
-  itemLimit = 1000
+  itemLimit = 1000,
+  options?: { db?: RunsDb; maxWaitMs?: number }
 ): Promise<{
   items: Record<string, unknown>[];
   runId: string;
   dbId: string;
   costUsd: number | null;
 }> {
+  const startedAt = Date.now();
+  const supabase = options?.db ?? createAdminClient();
   const { runId, dbId } = await startRecordedActorRun(
+    supabase,
     actorId,
     input,
     orgId,
     campaignId
   );
 
-  const result = await pollRunUntilDone(runId, orgId, dbId);
+  const maxWaitMs =
+    options?.maxWaitMs !== undefined
+      ? Math.max(0, options.maxWaitMs - (Date.now() - startedAt))
+      : undefined;
+  const result = await pollRunUntilDone(runId, orgId, dbId, {
+    db: supabase,
+    maxWaitMs,
+  });
 
   let items: Record<string, unknown>[] = [];
   if (result.datasetId) {
     items = await fetchDatasetItems(result.datasetId, orgId, itemLimit);
 
     // Update result count
-    const supabase = await createClient();
     await supabase
       .from("lf_apify_runs")
       .update({ result_count: items.length })
-      .eq("id", dbId);
+      .eq("id", dbId)
+      .eq("organization_id", orgId);
   }
 
   return {

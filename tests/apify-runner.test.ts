@@ -104,3 +104,81 @@ describe("getRunStatus", () => {
     );
   });
 });
+
+describe("recorded runs (lf_apify_runs) use the injected client", () => {
+  type Call = { op: string; args: unknown[] };
+
+  // Minimal chainable stand-in for SupabaseClient that records every call.
+  function fakeDb() {
+    const calls: Call[] = [];
+    const builder: Record<string, unknown> = {};
+    for (const op of ["insert", "update", "select", "eq"]) {
+      builder[op] = (...args: unknown[]) => {
+        calls.push({ op, args });
+        return builder;
+      };
+    }
+    builder.single = async () => ({ data: { id: "db1" }, error: null });
+    builder.then = (resolve: (v: unknown) => void) =>
+      resolve({ data: null, error: null });
+    const db = {
+      from: vi.fn((table: string) => {
+        calls.push({ op: "from", args: [table] });
+        return builder;
+      }),
+    };
+    return { db, calls };
+  }
+
+  it("inserts the run record through the given client with organization_id", async () => {
+    const { authorizeActors } = await import(
+      "@/lib/lead-finder/apify/policy-server"
+    );
+    const { createClient, createAdminClient } = await import(
+      "@/lib/supabase/server"
+    );
+    vi.mocked(authorizeActors).mockResolvedValue({ token: "tok" } as never);
+    mockFetchOnce({ data: { id: "apify-run-1" } });
+    const { db, calls } = fakeDb();
+
+    const { startRecordedActorRun } = await import(
+      "@/lib/lead-finder/apify/runner"
+    );
+    await expect(
+      startRecordedActorRun(db as never, "owner/actor", { a: 1 }, "org-1", "camp-1")
+    ).resolves.toEqual({ runId: "apify-run-1", dbId: "db1" });
+
+    expect(db.from).toHaveBeenCalledWith("lf_apify_runs");
+    const insert = calls.find((c) => c.op === "insert");
+    expect(insert?.args[0]).toMatchObject({
+      organization_id: "org-1",
+      campaign_id: "camp-1",
+      actor_id: "owner/actor",
+    });
+    // The run-id update is scoped by the org as well.
+    expect(calls).toContainEqual({ op: "eq", args: ["organization_id", "org-1"] });
+    expect(createClient).not.toHaveBeenCalled();
+    expect(createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it("throws a wait-timeout ApifyError once maxWaitMs is spent", async () => {
+    const { authorizeActors } = await import(
+      "@/lib/lead-finder/apify/policy-server"
+    );
+    vi.mocked(authorizeActors).mockResolvedValue({ token: "tok" } as never);
+    mockFetchOnce({ data: { status: "RUNNING" } });
+    const { db, calls } = fakeDb();
+
+    const { pollRunUntilDone, isApifyWaitTimeout } = await import(
+      "@/lib/lead-finder/apify/runner"
+    );
+    const err = await pollRunUntilDone("run1", "org-1", "db1", {
+      db: db as never,
+      maxWaitMs: 0,
+    }).catch((e: unknown) => e);
+
+    expect(isApifyWaitTimeout(err)).toBe(true);
+    const update = calls.find((c) => c.op === "update");
+    expect(update?.args[0]).toMatchObject({ status: "failed" });
+  });
+});

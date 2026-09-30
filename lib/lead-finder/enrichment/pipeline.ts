@@ -1,7 +1,12 @@
 import "server-only";
 
-import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { runActorAndCollect } from "../apify/runner";
+import { createAdminClient } from "@/lib/supabase/server";
+import {
+  APIFY_WAIT_TIMEOUT,
+  ApifyError,
+  isApifyWaitTimeout,
+  runActorAndCollect,
+} from "../apify/runner";
 import { getActorById } from "../apify/registry-server";
 import { coerceActorInput } from "../apify/coerce-input";
 import { generateCompletion, logLlmCost } from "../ai-provider";
@@ -18,6 +23,12 @@ import type {
 // =============================================================================
 // Enrichment Pipeline – enriches discovered leads with website/social data + AI
 // =============================================================================
+
+/**
+ * Time budget for all Apify actor runs of one enrichment job, so a job never
+ * outlives the 300 s worker function (leaves room for the AI analysis).
+ */
+const ENRICH_ACTOR_BUDGET_MS = 200_000;
 
 // ---------------------------------------------------------------------------
 // Enrich a single lead
@@ -78,8 +89,13 @@ export async function enrichSingleLead(
     const rawEnrichmentData: Record<string, unknown> = {};
     const usedActors: string[] = [];
 
+    const actorDeadline = Date.now() + ENRICH_ACTOR_BUDGET_MS;
+
     for (const actorId of enrichmentActors) {
-      const actorDef = await getActorById(actorId, orgId);
+      const actorDef = await getActorById(actorId, orgId, {
+        db: supabase,
+        orgId,
+      });
       if (!actorDef) continue;
 
       // Build input from lead data
@@ -88,12 +104,24 @@ export async function enrichSingleLead(
 
       const coerced = coerceActorInput(actorInput, actorDef);
 
+      // Budget spent: fail the job (retryable) rather than score from AI only.
+      const maxWaitMs = actorDeadline - Date.now();
+      if (maxWaitMs <= 0) {
+        throw new ApifyError(
+          `Enrichment actor budget of ${ENRICH_ACTOR_BUDGET_MS} ms exhausted before ${actorId}`,
+          undefined,
+          APIFY_WAIT_TIMEOUT
+        );
+      }
+
       try {
         const { items, costUsd } = await runActorAndCollect(
           actorId,
           coerced,
           orgId,
-          campaignId
+          campaignId,
+          undefined,
+          { db: supabase, maxWaitMs }
         );
 
         rawEnrichmentData[actorId] = items;
@@ -109,8 +137,10 @@ export async function enrichSingleLead(
             .eq("id", leadId)
             .eq("organization_id", orgId);
         }
-      } catch {
-        // Actor failure is non-fatal for enrichment
+      } catch (err) {
+        // A timed-out wait is retried by the worker; do not qualify the lead
+        // from AI-only data. A real actor failure stays non-fatal.
+        if (isApifyWaitTimeout(err)) throw err;
         rawEnrichmentData[actorId] = { error: "Actor run failed" };
       }
     }
@@ -640,8 +670,9 @@ Respond in JSON with this exact structure:
 
     await logLlmCost(response, "enrichment", orgId, campaignId);
 
-    // Update lead LLM costs
-    const supabase = await createClient();
+    // Update lead LLM costs (admin client: runs from the session-less worker;
+    // scoped by organization_id below)
+    const supabase = createAdminClient();
     await supabase
       .from("lf_leads")
       .update({

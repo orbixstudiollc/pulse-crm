@@ -1,6 +1,8 @@
 import "server-only";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database";
 import {
   ACTOR_REGISTRY,
   type ActorDefinition,
@@ -9,19 +11,27 @@ import {
   type InputFieldDescription,
 } from "./registry";
 
+/**
+ * Explicit database access for session-less callers (cron worker): the given
+ * client is queried with `organization_id = orgId`. Omitted, the cookie-scoped
+ * user client is used (UI callers).
+ */
+export type ActorDbScope = { db: SupabaseClient<Database>; orgId: string };
+
 // =============================================================================
 // Load custom (user-defined) actors from Supabase
 // =============================================================================
 
 async function getCustomActorsFromDb(
-  orgId: string
+  orgId: string,
+  scope?: ActorDbScope
 ): Promise<ActorDefinition[]> {
   try {
-    const supabase = await createClient();
+    const supabase = scope?.db ?? (await createClient());
     const { data } = await supabase
       .from("lf_custom_actors")
       .select("*")
-      .eq("organization_id", orgId)
+      .eq("organization_id", scope?.orgId ?? orgId)
       .eq("is_enabled", true);
 
     return (data ?? []).map((r) => ({
@@ -54,30 +64,34 @@ async function getCustomActorsFromDb(
 
 /** Get ALL actors: built-in + org-specific custom actors. */
 export async function getAllActors(
-  orgId: string
+  orgId: string,
+  scope?: ActorDbScope
 ): Promise<ActorDefinition[]> {
-  const custom = await getCustomActorsFromDb(orgId);
+  const custom = await getCustomActorsFromDb(orgId, scope);
   return [...ACTOR_REGISTRY, ...custom];
 }
 
 /** Lookup a single actor by ID (checks built-in first, then custom). */
 export async function getActorById(
   id: string,
-  orgId?: string
+  orgId?: string,
+  scope?: ActorDbScope
 ): Promise<ActorDefinition | undefined> {
   const builtin = ACTOR_REGISTRY.find((a) => a.id === id);
   if (builtin) return builtin;
-  if (!orgId) return undefined;
-  const custom = await getCustomActorsFromDb(orgId);
+  const effectiveOrgId = scope?.orgId ?? orgId;
+  if (!effectiveOrgId) return undefined;
+  const custom = await getCustomActorsFromDb(effectiveOrgId, scope);
   return custom.find((a) => a.id === id);
 }
 
 /** Get actors filtered by phase (find / enrich). */
 export async function getActorsByPhase(
   phase: ActorPhase,
-  orgId: string
+  orgId: string,
+  scope?: ActorDbScope
 ): Promise<ActorDefinition[]> {
-  const all = await getAllActors(orgId);
+  const all = await getAllActors(orgId, scope);
   return all.filter((a) => a.phase === phase);
 }
 
