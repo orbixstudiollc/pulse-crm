@@ -613,10 +613,14 @@ export function LeadDetailClient({
       >
         {/* Score Breakdown & History */}
         <Section>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <ScoreBreakdown breakdown={scoreBreakdown} />
-            <ScoreHistoryChart history={scoreHistory || []} />
-          </div>
+          {scoreBreakdown || scoreHistory?.length ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <ScoreBreakdown breakdown={scoreBreakdown} />
+              <ScoreHistoryChart history={scoreHistory || []} />
+            </div>
+          ) : (
+            <p className="text-[13px] text-fg-muted">No score data available</p>
+          )}
         </Section>
 
         {/* Qualification */}

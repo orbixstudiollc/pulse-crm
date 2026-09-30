@@ -502,7 +502,7 @@ export function LeadsPageClient() {
       <MetricStrip>
         <StatCard
           label="Total Leads"
-          value={allLeads.length.toString()}
+          value={leadsLoading ? "—" : allLeads.length.toString()}
           change={monthChange(leadsData.map((l) => l.created_at))}
           icon={
             <UsersThreeIcon
@@ -513,7 +513,7 @@ export function LeadsPageClient() {
         />
         <StatCard
           label="Hot Leads"
-          value={allLeads.filter((l) => l.status === "hot").length.toString()}
+          value={leadsLoading ? "—" : allLeads.filter((l) => l.status === "hot").length.toString()}
           change={monthChange(leadsData.filter((l) => (l.status || "cold") === "hot").map((l) => l.created_at))}
           icon={
             <SparkleIcon
@@ -524,7 +524,7 @@ export function LeadsPageClient() {
         />
         <StatCard
           label="Converted"
-          value="0"
+          value={leadsLoading ? "—" : "0"}
           icon={
             <CheckCircleIcon
               size={24}

@@ -61,14 +61,7 @@ export function ScoreHistoryChart({
   width,
 }: ScoreHistoryChartProps) {
   if (!history || history.length === 0) {
-    return (
-      <div
-        className="flex items-center justify-center text-xs text-fg-secondary"
-        style={{ height }}
-      >
-        No score history
-      </div>
-    );
+    return <p className="text-[13px] text-fg-muted">No score history</p>;
   }
 
   // Sort chronologically (oldest first) for the chart

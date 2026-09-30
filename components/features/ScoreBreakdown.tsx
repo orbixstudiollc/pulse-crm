@@ -56,11 +56,7 @@ const factors = [
 
 export function ScoreBreakdown({ breakdown, compact = false }: ScoreBreakdownProps) {
   if (!breakdown) {
-    return (
-      <div className="flex items-center justify-center py-8 text-sm text-fg-secondary">
-        No score data available
-      </div>
-    );
+    return <p className="text-[13px] text-fg-muted">No score data available</p>;
   }
 
   if (compact) {
