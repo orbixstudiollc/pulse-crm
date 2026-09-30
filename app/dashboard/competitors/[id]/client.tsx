@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -10,13 +9,20 @@ import {
   Input,
   Textarea,
   PlusIcon,
-  ArrowLeftIcon,
   XIcon,
-  GlobeIcon,
   ShieldIcon,
 } from "@/components/ui";
-import { cn } from "@/lib/utils";
-import { Page, PageHeader, Section } from "@/components/dashboard";
+import { cn, formatDate } from "@/lib/utils";
+import {
+  Page,
+  PageHeader,
+  Section,
+  DetailLayout,
+  PanelSection,
+  KeyValueList,
+  KeyValue,
+} from "@/components/dashboard";
+import { usePageHeader } from "@/hooks";
 import {
   updateCompetitor,
   upsertBattleCard,
@@ -32,6 +38,8 @@ interface CompetitorData {
   description: string | null;
   strengths: string[] | null;
   weaknesses: string[] | null;
+  pricing?: unknown;
+  created_at: string;
   [key: string]: unknown;
 }
 
@@ -52,6 +60,26 @@ const categoryBadgeVariant: Record<string, "success" | "warning" | "info"> = {
   indirect: "warning",
   aspirational: "info",
 };
+
+// Same labels as the category tabs on the competitors list
+const categoryLabels: Record<string, string> = {
+  direct: "Direct",
+  indirect: "Indirect",
+  aspirational: "Aspirational",
+};
+
+// Scalar entries of the pricing JSON (e.g. { starting_price: "$49/mo" })
+function pricingEntries(pricing: unknown): [string, string][] {
+  if (!pricing || typeof pricing !== "object" || Array.isArray(pricing)) {
+    return [];
+  }
+  return Object.entries(pricing as Record<string, unknown>)
+    .filter(([, v]) => ["string", "number", "boolean"].includes(typeof v))
+    .map(([k, v]) => [
+      k.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()),
+      String(v),
+    ]);
+}
 
 // ── Editable Tag Section ─────────────────────────────────────────────────────
 
@@ -371,17 +399,40 @@ export function CompetitorDetailClient({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  // Merge competitor strengths/weaknesses with battle card data
-  const theirStrengths =
-    battleCard?.their_strengths ?? competitor.strengths ?? [];
-  const theirWeaknesses =
-    battleCard?.their_weaknesses ?? competitor.weaknesses ?? [];
+  usePageHeader({
+    backHref: "/dashboard/competitors",
+    breadcrumbLabel: competitor.name,
+  });
+
+  // Strengths/weaknesses come from the competitor's own columns, as on the list card
+  const strengths = competitor.strengths ?? [];
+  const weaknesses = competitor.weaknesses ?? [];
   const ourAdvantages = battleCard?.our_advantages ?? [];
   const switchingTriggers = battleCard?.switching_triggers ?? [];
   const landmineQuestions = battleCard?.landmine_questions ?? [];
   const positioningStatement = battleCard?.positioning_statement ?? "";
 
+  const category = competitor.category || "direct";
+  const pricing = pricingEntries(competitor.pricing);
+
   // ── Save handlers ────────────────────────────────────────────────────────
+
+  const saveCompetitorField = (
+    field: "strengths" | "weaknesses",
+    value: string[]
+  ) => {
+    startTransition(async () => {
+      const result = await updateCompetitor(competitor.id, {
+        [field]: value,
+      });
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("Competitor updated");
+        router.refresh();
+      }
+    });
+  };
 
   const saveBattleCardField = (
     field: string,
@@ -402,49 +453,8 @@ export function CompetitorDetailClient({
 
   return (
     <Page>
-      {/* Back link */}
-      <div className="px-8 pt-6 max-sm:px-4">
-        <Link
-          href="/dashboard/competitors"
-          className="inline-flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg transition-colors"
-        >
-          <ArrowLeftIcon size={16} />
-          Back to Competitors
-        </Link>
-      </div>
-
       {/* Competitor Header */}
-      <PageHeader
-        icon={<ShieldIcon size={18} />}
-        title={competitor.name}
-        description={
-          <div className="mt-1 flex flex-wrap items-center gap-3">
-            <Badge
-              variant={
-                categoryBadgeVariant[competitor.category || "direct"] ||
-                "neutral"
-              }
-            >
-              {competitor.category || "direct"}
-            </Badge>
-            {competitor.website && (
-              <a
-                href={
-                  competitor.website.startsWith("http")
-                    ? competitor.website
-                    : `https://${competitor.website}`
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg transition-colors"
-              >
-                <GlobeIcon size={14} />
-                {competitor.website}
-              </a>
-            )}
-          </div>
-        }
-      />
+      <PageHeader icon={<ShieldIcon size={18} />} title={competitor.name} />
 
       {/* Description */}
       {competitor.description && (
@@ -455,67 +465,108 @@ export function CompetitorDetailClient({
         </div>
       )}
 
-      {/* Battle Card Sections */}
-      <div className="flex h-14 items-center px-8 border-t border-divider max-sm:px-4">
-        <h2 className="text-[18px] leading-6 font-semibold text-fg">
-          Battle Card
-        </h2>
-      </div>
-      <div>
-        {/* Their Strengths */}
-        <EditableTagSection
-          title="Their Strengths"
-          tags={theirStrengths}
-          onSave={(tags) => saveBattleCardField("their_strengths", tags)}
-          isPending={isPending}
-          color="green"
-        />
+      <DetailLayout
+        className="border-t border-divider"
+        aside={
+          <PanelSection title="Details">
+            <KeyValueList>
+              <KeyValue label="Category">
+                <Badge variant={categoryBadgeVariant[category] || "neutral"}>
+                  {categoryLabels[category] ?? category}
+                </Badge>
+              </KeyValue>
+              {competitor.website && (
+                <KeyValue label="Website">
+                  <a
+                    href={
+                      competitor.website.startsWith("http")
+                        ? competitor.website
+                        : `https://${competitor.website}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-fg-secondary hover:text-fg transition-colors"
+                  >
+                    {competitor.website}
+                  </a>
+                </KeyValue>
+              )}
+              {pricing.map(([label, value]) => (
+                <KeyValue key={label} label={label}>
+                  {value}
+                </KeyValue>
+              ))}
+              <KeyValue label="Created">
+                {formatDate(competitor.created_at)}
+              </KeyValue>
+            </KeyValueList>
+          </PanelSection>
+        }
+      >
+        <div>
+          {/* Strengths */}
+          <EditableTagSection
+            title="Strengths"
+            tags={strengths}
+            onSave={(tags) => saveCompetitorField("strengths", tags)}
+            isPending={isPending}
+            color="green"
+          />
 
-        {/* Their Weaknesses */}
-        <EditableTagSection
-          title="Their Weaknesses"
-          tags={theirWeaknesses}
-          onSave={(tags) => saveBattleCardField("their_weaknesses", tags)}
-          isPending={isPending}
-          color="red"
-        />
+          {/* Weaknesses */}
+          <EditableTagSection
+            title="Weaknesses"
+            tags={weaknesses}
+            onSave={(tags) => saveCompetitorField("weaknesses", tags)}
+            isPending={isPending}
+            color="red"
+          />
+        </div>
 
-        {/* Our Advantages */}
-        <EditableTagSection
-          title="Our Advantages"
-          tags={ourAdvantages}
-          onSave={(tags) => saveBattleCardField("our_advantages", tags)}
-          isPending={isPending}
-          color="blue"
-        />
+        {/* Battle Card Sections */}
+        <div className="flex h-14 items-center px-8 border-t border-divider max-sm:px-4">
+          <h2 className="text-[18px] leading-6 font-semibold text-fg">
+            Battle Card
+          </h2>
+        </div>
+        <div>
+          {/* Our Advantages */}
+          <EditableTagSection
+            title="Our Advantages"
+            tags={ourAdvantages}
+            onSave={(tags) => saveBattleCardField("our_advantages", tags)}
+            isPending={isPending}
+            color="blue"
+          />
 
-        {/* Switching Triggers */}
-        <EditableTagSection
-          title="Switching Triggers"
-          tags={switchingTriggers}
-          onSave={(tags) => saveBattleCardField("switching_triggers", tags)}
-          isPending={isPending}
-          color="amber"
-        />
+          {/* Switching Triggers */}
+          <EditableTagSection
+            title="Switching Triggers"
+            tags={switchingTriggers}
+            onSave={(tags) => saveBattleCardField("switching_triggers", tags)}
+            isPending={isPending}
+            color="amber"
+          />
 
-        {/* Landmine Questions - full width */}
-        <EditableListSection
-          title="Landmine Questions"
-          items={landmineQuestions}
-          onSave={(items) => saveBattleCardField("landmine_questions", items)}
-          isPending={isPending}
-        />
+          {/* Landmine Questions - full width */}
+          <EditableListSection
+            title="Landmine Questions"
+            items={landmineQuestions}
+            onSave={(items) => saveBattleCardField("landmine_questions", items)}
+            isPending={isPending}
+          />
 
-        {/* Positioning Statement - full width */}
-        <EditableTextareaSection
-          title="Positioning Statement"
-          value={positioningStatement}
-          onSave={(value) =>
-            saveBattleCardField("positioning_statement", value || null)
-          }
-          isPending={isPending}
-        />
-      </div>
+          {/* Positioning Statement - full width */}
+          <EditableTextareaSection
+            title="Positioning Statement"
+            value={positioningStatement}
+            onSave={(value) =>
+              saveBattleCardField("positioning_statement", value || null)
+            }
+            isPending={isPending}
+          />
+        </div>
+      </DetailLayout>
     </Page>
   );
 }
