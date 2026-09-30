@@ -74,7 +74,7 @@ export function PageTabs<T extends string>({ tabs, value, onChange, className }:
   return (
     <div
       role="tablist"
-      className={cn("flex items-end gap-6 px-8 border-b border-divider max-sm:px-4", className)}
+      className={cn("flex items-end gap-6 px-8 border-b border-divider overflow-x-auto overflow-y-hidden max-sm:px-4", className)}
     >
       {tabs.map((tab) => {
         const isActive = tab.id === value;
@@ -86,14 +86,14 @@ export function PageTabs<T extends string>({ tabs, value, onChange, className }:
             aria-selected={isActive}
             onClick={() => onChange(tab.id)}
             className={cn(
-              "relative flex h-10 shrink-0 items-center gap-1.5 text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent [&_svg]:size-4",
+              "relative flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent [&_svg]:size-4",
               isActive ? "text-accent-strong" : "text-fg hover:text-fg-secondary",
             )}
           >
             {tab.icon}
             {tab.label}
             {tab.count !== undefined && <span className="text-fg-muted">{tab.count}</span>}
-            {isActive && <span className="absolute inset-x-0 -bottom-px h-0.5 bg-accent" />}
+            {isActive && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-accent" />}
           </button>
         );
       })}
