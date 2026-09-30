@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import { useState, useTransition, useMemo, useSyncExternalStore } from "react";
 import {
   Button,
   Badge,
@@ -25,6 +25,7 @@ import {
   CompleteMeetingModal,
 } from "@/components/features";
 import { cn } from "@/lib/utils";
+import { parseLocalDate, relativeDayLabel } from "@/lib/utils/local-date";
 import {
   createActivity,
   updateActivity,
@@ -117,23 +118,14 @@ function mapActivity(a: ActivityRecord) {
 
 type MappedActivity = ReturnType<typeof mapActivity>;
 
-function formatActivityDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return dateStr;
+const subscribeNoop = () => () => {};
 
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const actDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const diffDays = Math.floor(
-    (today.getTime() - actDate.getTime()) / (1000 * 60 * 60 * 24),
-  );
-
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays === -1) return "Tomorrow";
-  if (diffDays > 1 && diffDays <= 7) return `${diffDays} days ago`;
-  if (diffDays < -1 && diffDays >= -7) return `In ${Math.abs(diffDays)} days`;
-
+// The relative label depends on today's date in the browser's time zone, which
+// the UTC server render cannot know, so it replaces the absolute date after mount.
+function formatActivityDate(value: string, today: Date | null): string {
+  const date = parseLocalDate(value);
+  if (!date) return value;
+  if (today) return relativeDayLabel(date, today);
   return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -151,6 +143,12 @@ export function ActivityPageClient({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const isMounted = useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false,
+  );
+  const today = isMounted ? new Date() : null;
 
   // Filter state
   const [search, setSearch] = useState("");
@@ -391,6 +389,7 @@ export function ActivityPageClient({
               <ActivityRow
                 key={activity.id}
                 activity={activity}
+                today={today}
                 onClick={() => openDetail(activity)}
                 onEdit={() => openEdit(activity)}
                 onDelete={() => handleDeleteActivity(activity.id)}
@@ -514,8 +513,8 @@ export function ActivityPageClient({
                     }
                   : undefined,
                 meta: selectedActivity.time
-                  ? `${formatActivityDate(selectedActivity.date)} at ${selectedActivity.time}`
-                  : formatActivityDate(selectedActivity.date),
+                  ? `${formatActivityDate(selectedActivity.date, today)} at ${selectedActivity.time}`
+                  : formatActivityDate(selectedActivity.date, today),
               }
             : null
         }
@@ -551,6 +550,7 @@ export function ActivityPageClient({
 
 function ActivityRow({
   activity,
+  today,
   onClick,
   onEdit,
   onDelete,
@@ -559,6 +559,7 @@ function ActivityRow({
   onToggleMenu,
 }: {
   activity: MappedActivity;
+  today: Date | null;
   onClick: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -617,7 +618,7 @@ function ActivityRow({
       {/* Date */}
       <div className="hidden sm:block text-right shrink-0">
         <p className="text-sm text-fg-secondary">
-          {formatActivityDate(activity.date)}
+          {formatActivityDate(activity.date, today)}
         </p>
         {activity.time && (
           <p className="text-xs text-fg-muted">

@@ -8,7 +8,8 @@ import {
   CalendarCheckIcon,
   CheckCircleIcon,
 } from "@phosphor-icons/react";
-import { ReactNode } from "react";
+import { ReactNode, useSyncExternalStore } from "react";
+import { parseLocalDate, relativeDayLabel } from "@/lib/utils/local-date";
 
 type ActivityType = "email" | "call" | "note" | "meeting" | "task";
 
@@ -28,24 +29,14 @@ interface ActivityFeedProps {
   className?: string;
 }
 
-// Same day-based wording as the Activity page so both views agree.
-function formatActivityDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return dateStr;
+const subscribeNoop = () => () => {};
 
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const actDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const diffDays = Math.floor(
-    (today.getTime() - actDate.getTime()) / (1000 * 60 * 60 * 24),
-  );
-
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays === -1) return "Tomorrow";
-  if (diffDays > 1 && diffDays <= 7) return `${diffDays} days ago`;
-  if (diffDays < -1 && diffDays >= -7) return `In ${Math.abs(diffDays)} days`;
-
+// The relative label depends on today's date in the browser's time zone, which
+// the UTC server render cannot know, so it replaces the absolute date after mount.
+function formatActivityDate(value: string, today: Date | null): string {
+  const date = parseLocalDate(value);
+  if (!date) return value;
+  if (today) return relativeDayLabel(date, today);
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
@@ -68,6 +59,13 @@ export function ActivityFeed({
   activities = [],
   className,
 }: ActivityFeedProps) {
+  const isMounted = useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false,
+  );
+  const today = isMounted ? new Date() : null;
+
   return (
     <div className={className}>
       {activities.length > 0 ? (
@@ -99,7 +97,7 @@ export function ActivityFeed({
                   {status.label}
                 </Badge>
                 <span className="w-20 text-right text-[13px] text-fg-muted">
-                  {formatActivityDate(activity.date || activity.created_at)}
+                  {formatActivityDate(activity.date || activity.created_at, today)}
                 </span>
               </div>
             </div>
