@@ -35,7 +35,7 @@ export default async function DashboardLayout({
       <SidebarProvider>
         <HeaderProvider>
           <AIChatProvider>
-            <div className="flex h-screen overflow-hidden">
+            <div className="flex h-screen overflow-hidden bg-page">
               <Sidebar />
               <MobileSidebar />
               <div className="flex flex-1 flex-col overflow-hidden">

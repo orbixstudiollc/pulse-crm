@@ -19,28 +19,29 @@ export function Header() {
   const hasCustomActions = !!config.actions;
 
   return (
-    <header className="h-12 flex shrink-0 items-center justify-between border-b border-divider bg-page px-6">
+    <header className="h-14 flex shrink-0 items-center justify-between border-b border-divider bg-surface px-6">
       {/* Left: Mobile menu + Back button + Breadcrumb */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {/* Mobile hamburger */}
         <button
           onClick={openMobile}
-          className="hidden max-lg:flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface hover:bg-muted transition-colors"
+          className="hidden max-lg:flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:bg-subtle hover:text-fg transition-colors"
           aria-label="Open menu"
         >
-          <ListIcon size={16} className="text-fg-secondary" />
+          <ListIcon size={16} />
         </button>
 
         {config.backHref && (
           <Link
             href={config.backHref}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface hover:bg-muted transition-colors"
+            aria-label="Back"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:bg-subtle hover:text-fg transition-colors"
           >
-            <CaretLeftIcon size={16} className="text-fg-secondary" />
+            <CaretLeftIcon size={16} />
           </Link>
         )}
 
-        <nav className="hidden sm:flex items-center gap-2 text-sm">
+        <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-2 text-[14px]">
           {segments.map((segment, index) => {
             // Replace ID-like segments (numeric or long hashes) with breadcrumbLabel
             const isIdSegment = /^[0-9]+$/.test(segment) || segment.length > 20;
@@ -75,7 +76,7 @@ export function Header() {
       </div>
 
       {/* Right: Custom actions or default toolbar */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         {hasCustomActions ? (
           config.actions
         ) : (
@@ -87,10 +88,10 @@ export function Header() {
         )}
         <Link
           href="/dashboard/settings"
-          className="flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface hover:bg-muted transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:bg-subtle hover:text-fg transition-colors"
           aria-label="Settings"
         >
-          <GearIcon size={16} className="text-fg-secondary" />
+          <GearIcon size={16} />
         </Link>
         <HeaderUserMenu />
       </div>

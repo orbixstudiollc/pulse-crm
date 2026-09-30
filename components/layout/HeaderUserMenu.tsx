@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { signOut } from "@/lib/actions/auth";
-import { CaretDownIcon, GearIcon } from "../ui";
+import { GearIcon } from "../ui";
 import { useClickOutside } from "@/hooks";
 
 export function HeaderUserMenu() {
@@ -40,39 +40,35 @@ export function HeaderUserMenu() {
       {/* Trigger */}
       <button
         onClick={() => setOpen(!open)}
+        aria-haspopup="menu"
+        aria-expanded={open}
         className={cn(
-          "flex h-8 items-center gap-2 rounded-md border border-line bg-surface px-2 transition-colors duration-150",
-          "hover:bg-muted",
-          open && "bg-muted",
+          "flex h-10 items-center gap-2 rounded-md px-1.5 text-left transition-colors duration-150",
+          "hover:bg-subtle",
+          open && "bg-subtle",
         )}
       >
         {/* Avatar */}
         <Image
           src={avatarUrl}
           alt={orgName}
-          width={20}
-          height={20}
+          width={28}
+          height={28}
           quality={100}
-          className="h-5 w-5 shrink-0 rounded-full object-cover"
+          className="h-7 w-7 shrink-0 rounded-full object-cover"
         />
 
-        {/* Name + Role */}
-        <div className="hidden md:flex items-baseline gap-1.5 text-left">
-          <span className="text-sm font-medium text-fg truncate max-w-[120px]">
+        {/* Name + workspace role */}
+        <div className="hidden md:flex min-w-0 flex-col">
+          <span className="max-w-[140px] truncate text-[13px] font-semibold leading-4 text-fg">
             {orgName}
           </span>
           {roleLabel && (
-            <span className="text-xs text-fg-secondary whitespace-nowrap">{roleLabel}</span>
+            <span className="max-w-[140px] truncate text-[12px] leading-4 text-fg-muted">
+              {roleLabel}
+            </span>
           )}
         </div>
-
-        <CaretDownIcon
-          size={14}
-          className={cn(
-            "text-fg-muted transition-transform duration-150",
-            open && "rotate-180",
-          )}
-        />
       </button>
 
       {/* Dropdown */}
@@ -97,11 +93,11 @@ export function HeaderUserMenu() {
                   className="h-9 w-9 shrink-0 rounded-full object-cover"
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-fg truncate">
+                  <div className="text-[13px] font-semibold text-fg truncate">
                     {orgName}
                   </div>
                   {roleLabel && (
-                    <div className="text-xs text-fg-secondary">{roleLabel}</div>
+                    <div className="text-[12px] text-fg-muted">{roleLabel}</div>
                   )}
                 </div>
               </div>
@@ -112,7 +108,7 @@ export function HeaderUserMenu() {
               <Link
                 href="/dashboard/settings"
                 onClick={() => setOpen(false)}
-                className="flex w-full items-center gap-2.5 rounded-sm px-2.5 py-1.5 text-sm text-fg hover:bg-muted transition-colors"
+                className="flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[14px] text-fg hover:bg-subtle transition-colors"
               >
                 <GearIcon size={16} />
                 Settings
@@ -120,7 +116,7 @@ export function HeaderUserMenu() {
               {!openAccess && (
               <button
                 onClick={handleSignOut}
-                className="flex w-full items-center gap-2.5 rounded-sm px-2.5 py-1.5 text-sm text-danger hover:bg-danger-surface transition-colors"
+                className="flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[14px] text-danger hover:bg-danger-surface transition-colors"
               >
                 <svg
                   width="16"
