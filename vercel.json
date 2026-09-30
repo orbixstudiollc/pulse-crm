@@ -15,7 +15,7 @@
       "maxDuration": 300
     },
     "app/api/cron/lead-finder-worker/route.ts": {
-      "maxDuration": 60
+      "maxDuration": 300
     }
   }
 }

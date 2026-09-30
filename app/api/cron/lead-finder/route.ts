@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   ingestDiscoveredItems,
-  runCampaignDiscovery,
+  startDiscoveryRun,
 } from "@/lib/lead-finder/apify/discovery";
 import { authorizeActors } from "@/lib/lead-finder/apify/policy-server";
 import { ACTOR_REGISTRY } from "@/lib/lead-finder/apify/registry";
@@ -59,12 +59,7 @@ export async function GET(req: NextRequest) {
     const results: {
       campaignId: string;
       name: string;
-      discovery: { totalInserted: number; totalDeduplicated: number } | null;
-      enrichment: {
-        enqueued: number;
-        skipped: number;
-        batchId: string | null;
-      } | null;
+      discovery: ScheduledDiscovery | null;
       error?: string;
     }[] = [];
 
@@ -75,21 +70,10 @@ export async function GET(req: NextRequest) {
       if (actors.length === 0) continue;
 
       try {
-        // Run discovery
-        const discoveryResult = await runCampaignDiscovery(
-          campaign.id,
-          campaign.organization_id
-        );
-
-        let enrichmentResult = null;
-
-        // Auto-enrich if configured
-        if (campaign.auto_enrich && discoveryResult.totalInserted > 0) {
-          enrichmentResult = await enrichCampaignLeads(
-            campaign.id,
-            campaign.organization_id
-          );
-        }
+        // Start find-phase runs asynchronously; finalizeDiscoveryRuns ingests
+        // them (and auto-enriches) on later cron calls.
+        const discovery = await startScheduledDiscovery(supabase, campaign);
+        if (!discovery) continue;
 
         // Calculate next discovery time
         const nextDiscoveryAt = calculateNextDiscovery(
@@ -109,17 +93,7 @@ export async function GET(req: NextRequest) {
         results.push({
           campaignId: campaign.id,
           name: campaign.name,
-          discovery: {
-            totalInserted: discoveryResult.totalInserted,
-            totalDeduplicated: discoveryResult.totalDeduplicated,
-          },
-          enrichment: enrichmentResult
-            ? {
-                enqueued: enrichmentResult.enqueued,
-                skipped: enrichmentResult.skipped,
-                batchId: enrichmentResult.batchId ?? null,
-              }
-            : null,
+          discovery,
         });
       } catch (err) {
         console.error(
@@ -130,7 +104,6 @@ export async function GET(req: NextRequest) {
           campaignId: campaign.id,
           name: campaign.name,
           discovery: null,
-          enrichment: null,
           error: "Campaign run failed",
         });
       }
@@ -346,6 +319,71 @@ async function autoEnrichIfEnabled(
   } catch (err) {
     console.error(`[cron/lead-finder] auto-enrich after run ${run.id} failed`, err);
   }
+}
+
+// =============================================================================
+// Scheduled discovery (asynchronous, service-role)
+// =============================================================================
+
+type ScheduledDiscovery = { runIds: string[]; failed: number };
+
+/**
+ * Start one Apify run per find-phase actor of a due campaign, with the admin
+ * client (a cron request has no user session). Returns null when the campaign
+ * has no find-phase actors. Start failures are logged and counted, not thrown,
+ * so the caller still advances the schedule instead of restarting runs every tick.
+ */
+async function startScheduledDiscovery(
+  supabase: AdminClient,
+  campaign: LFCampaign
+): Promise<ScheduledDiscovery | null> {
+  const orgId = campaign.organization_id;
+  const findActors: string[] = [];
+  for (const actorId of campaign.apify_actors ?? []) {
+    if (await isDiscoveryActor(supabase, actorId, orgId)) {
+      findActors.push(actorId);
+    }
+  }
+  if (findActors.length === 0) return null;
+
+  let token: string;
+  try {
+    token = (await authorizeActors(orgId, findActors)).token;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Apify is not configured";
+    console.error(`[cron/lead-finder] campaign ${campaign.id}: ${message}`);
+    return { runIds: [], failed: findActors.length };
+  }
+
+  const actorConfigs = campaign.actor_configs ?? {};
+  const maxPages =
+    campaign.max_pages_per_search > 0 ? campaign.max_pages_per_search : undefined;
+
+  const runIds: string[] = [];
+  let failed = 0;
+  for (const actorId of findActors) {
+    try {
+      const { runId } = await startDiscoveryRun(
+        {
+          actorId,
+          input: actorConfigs[actorId] ?? {},
+          campaignId: campaign.id,
+          orgId,
+          token,
+          maxPages,
+        },
+        supabase
+      );
+      runIds.push(runId);
+    } catch (err) {
+      console.error(
+        `[cron/lead-finder] campaign ${campaign.id} start ${actorId} failed`,
+        err
+      );
+      failed++;
+    }
+  }
+  return { runIds, failed };
 }
 
 function calculateNextDiscovery(
