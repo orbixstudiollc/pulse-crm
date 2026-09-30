@@ -482,8 +482,8 @@
     "files": [
       "components/dashboard/StatCard.tsx"
     ],
-    "interface": "Live check after deploy: new workspaces show \"New this month from last month\" because StatCard appends the suffix \"from last month\" to every change text, and monthOverMonth (lib/stats/period-delta.ts) returns the text \"New this month\" when last month was 0. In components/dashboard/StatCard.tsx render the suffix only when the change text starts with a sign or digit (regex /^[+-]?d/); otherwise render the change text alone. No other changes.",
-    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q '^[+-]' components/dashboard/StatCard.tsx && npx tsc --noEmit && npx eslint 'components/dashboard/StatCard.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'components/dashboard/StatCard.tsx' && git commit -q -m 'fix(stats): no from-last-month suffix on non-numeric changes' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo V8-OK"
+    "interface": "Live check after deploy: new workspaces show \"New this month from last month\" because StatCard appends the suffix \"from last month\" to every change text, and monthOverMonth (lib/stats/period-delta.ts) returns the text \"New this month\" when last month was 0. In components/dashboard/StatCard.tsx render the suffix only when the change text starts with a sign or digit (regex /^[+-]?\\d/); otherwise render the change text alone. No other changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -qF '[+-]?' components/dashboard/StatCard.tsx && npx tsc --noEmit && npx eslint 'components/dashboard/StatCard.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'components/dashboard/StatCard.tsx' && git commit -q -m 'fix(stats): no from-last-month suffix on non-numeric changes' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo V8-OK"
   },
   {
     "id": "F20",
