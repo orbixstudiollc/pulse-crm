@@ -115,7 +115,7 @@ const JOB_TITLES = [
 const OBJECTIONS = [
   {
     text: "Your solution is too expensive for our budget",
-    category: "price",
+    category: "pricing",
     hidden: "They may not see the ROI clearly or are comparing to cheaper alternatives",
     ffr: "I understand budget is important. Many clients initially felt the same way, but found that our solution actually reduced their total costs by 30% within 6 months through automated workflows and efficiency gains.",
     abc: "Acknowledge the concern, bridge to value by comparing total cost of ownership, and close by offering a tailored pricing proposal.",
@@ -160,7 +160,7 @@ const OBJECTIONS = [
   },
   {
     text: "We had a bad experience with a similar product before",
-    category: "trust",
+    category: "implementation",
     hidden: "Past failure created institutional resistance to trying new solutions",
     ffr: "I'm sorry to hear that. Can you share what went wrong? Understanding that helps us ensure a different outcome this time.",
     abc: "Acknowledge the bad experience, bridge to our support model and guarantees, close with a risk-free trial.",
@@ -173,7 +173,7 @@ const COMPETITORS = [
   {
     name: "RivalCRM Pro",
     website: "https://rivalcrm.com",
-    category: "Direct Competitor",
+    category: "direct",
     description: "Full-featured CRM platform targeting mid-market companies with AI capabilities.",
     strengths: ["Strong brand recognition", "Large partner ecosystem", "Mobile app"],
     weaknesses: ["Complex pricing", "Slow customer support", "Outdated UI"],
@@ -181,7 +181,7 @@ const COMPETITORS = [
   {
     name: "SalesForce Ultra",
     website: "https://salesforceultra.com",
-    category: "Enterprise Competitor",
+    category: "aspirational",
     description: "Enterprise-grade sales platform with extensive customization options.",
     strengths: ["Enterprise features", "Extensive API", "Global presence"],
     weaknesses: ["Expensive", "Steep learning curve", "Over-engineered for SMB"],
@@ -189,7 +189,7 @@ const COMPETITORS = [
   {
     name: "LiteCRM",
     website: "https://litecrm.io",
-    category: "Budget Competitor",
+    category: "indirect",
     description: "Lightweight and affordable CRM for small teams.",
     strengths: ["Low price", "Easy setup", "Clean interface"],
     weaknesses: ["Limited features", "No AI capabilities", "Poor reporting"],
@@ -197,7 +197,7 @@ const COMPETITORS = [
   {
     name: "HubZone Sales",
     website: "https://hubzonesales.com",
-    category: "Direct Competitor",
+    category: "direct",
     description: "All-in-one sales and marketing platform with free tier.",
     strengths: ["Free tier", "Marketing integration", "Content tools"],
     weaknesses: ["Lock-in effect", "Expensive at scale", "Limited customization"],
@@ -205,8 +205,8 @@ const COMPETITORS = [
 ];
 
 const SEQUENCES = [
-  { name: "New Lead Welcome Series", description: "Nurture sequence for new inbound leads", status: "active" as const, category: "Nurture", total_steps: 3 },
-  { name: "Enterprise Outreach", description: "Strategic multi-channel outreach for enterprise prospects", status: "active" as const, category: "Outreach", total_steps: 3 },
+  { name: "New Lead Welcome Series", description: "Nurture sequence for new inbound leads", status: "active" as const, category: "nurture", total_steps: 3 },
+  { name: "Enterprise Outreach", description: "Strategic multi-channel outreach for enterprise prospects", status: "active" as const, category: "cold_outreach", total_steps: 3 },
 ];
 
 const SEQUENCE_STEP_TYPES = ["email", "wait", "email"];
@@ -218,14 +218,23 @@ const ICP_PROFILES = [
     is_primary: true,
     color: "#6366f1",
     criteria: {
-      company_size: { min: 200, max: 10000, ideal: "500-2000" },
-      industry: ["Technology", "SaaS", "Finance"],
-      revenue: { min: 5000000 },
-      tech_stack: ["Cloud", "API-first"],
-      geography: ["North America", "Europe"],
-      pain_points: ["Manual processes", "Data silos", "Scaling challenges"],
+      firmographic: {
+        industries: ["Technology", "SaaS", "Finance"],
+        company_sizes: ["51-200", "201-500", "501-1000", "1001-5000", "5000+"],
+        employee_range: { min: 200, max: 10000 },
+        geography: ["North America", "Europe"],
+      },
+      technographic: { tech_stack: ["Cloud", "API-first"], tech_sophistication_min: 0 },
+      behavioral: { buying_patterns: [], trigger_events: [] },
+      pain_points: [
+        { name: "Manual processes", severity: 8 },
+        { name: "Data silos", severity: 7 },
+        { name: "Scaling challenges", severity: 6 },
+      ],
+      budget: { revenue_range: { min: 5000000, max: null }, deal_size_sweet_spot: null, funding_stages: [] },
+      channel: { preferred_contact_methods: [], content_preferences: [] },
     },
-    weights: { company_size: 25, industry: 20, revenue: 20, tech_stack: 15, geography: 10, pain_points: 10 },
+    weights: { industry: 20, size: 25, revenue: 20, title: 10, geography: 10, tech: 15 },
   },
   {
     name: "Growth-Stage Startup",
@@ -233,56 +242,64 @@ const ICP_PROFILES = [
     is_primary: false,
     color: "#10b981",
     criteria: {
-      company_size: { min: 20, max: 200, ideal: "50-100" },
-      industry: ["Technology", "E-commerce", "Marketing"],
-      revenue: { min: 1000000 },
-      growth_rate: "20%+ YoY",
-      geography: ["North America"],
-      pain_points: ["Outgrowing current tools", "Too much manual work"],
+      firmographic: {
+        industries: ["Technology", "E-commerce", "Marketing"],
+        company_sizes: ["11-50", "51-200"],
+        employee_range: { min: 20, max: 200 },
+        geography: ["North America"],
+      },
+      technographic: { tech_stack: [], tech_sophistication_min: 0 },
+      behavioral: { buying_patterns: [], trigger_events: ["20%+ YoY growth"] },
+      pain_points: [
+        { name: "Outgrowing current tools", severity: 8 },
+        { name: "Too much manual work", severity: 7 },
+      ],
+      budget: { revenue_range: { min: 1000000, max: null }, deal_size_sweet_spot: null, funding_stages: [] },
+      channel: { preferred_contact_methods: [], content_preferences: [] },
     },
-    weights: { company_size: 20, industry: 20, revenue: 15, growth_rate: 20, geography: 10, pain_points: 15 },
+    weights: { industry: 20, size: 20, revenue: 15, title: 15, geography: 15, tech: 15 },
   },
 ];
 
 const EMAIL_TEMPLATES = [
   {
     name: "Cold Outreach",
-    category: "Outreach",
+    category: "cold_outreach",
     subject: "Quick question about {{company}}",
     body: "Hi {{first_name}},\n\nI noticed {{company}} is growing rapidly in the {{industry}} space. We help similar companies streamline their sales process with AI-powered CRM.\n\nWould you be open to a 15-minute call this week?\n\nBest,\n{{sender_name}}",
     merge_fields: ["first_name", "company", "industry", "sender_name"],
   },
   {
     name: "Follow-Up After Demo",
-    category: "Follow-up",
+    category: "follow_up",
     subject: "Re: {{company}} demo follow-up",
     body: "Hi {{first_name}},\n\nThank you for taking the time to see our demo. I wanted to follow up on the key points we discussed.\n\nAs mentioned, our platform can help {{company}} with:\n- Automated lead scoring\n- AI-powered outreach sequences\n- Real-time pipeline analytics\n\nShall we schedule a next step?\n\nBest regards",
     merge_fields: ["first_name", "company"],
   },
   {
     name: "Proposal Sent",
-    category: "Proposal",
+    category: "general",
     subject: "Your personalized proposal from Pulse CRM",
     body: "Hi {{first_name}},\n\nPlease find attached our tailored proposal for {{company}}. I've included three pricing options to match your needs and budget.\n\nI'm available to discuss any questions you may have.\n\nBest regards",
     merge_fields: ["first_name", "company"],
   },
   {
     name: "Re-engagement",
-    category: "Re-engagement",
+    category: "re_engagement",
     subject: "Been a while, {{first_name}} — new updates from Pulse",
     body: "Hi {{first_name}},\n\nIt's been a while since we last connected. I wanted to share some exciting updates that might be relevant for {{company}}.\n\nWe've recently launched AI-powered features that could help your team close deals faster.\n\nWould you be interested in a quick catch-up?\n\nBest",
     merge_fields: ["first_name", "company"],
   },
   {
     name: "Meeting Confirmation",
-    category: "Scheduling",
+    category: "meeting",
     subject: "Confirmed: our call with {{company}}",
     body: "Hi {{first_name}},\n\nThanks for booking time with us. I'm looking forward to learning more about {{company}} and your goals for this quarter.\n\nIf anything changes, just reply to this email.\n\nBest,\n{{sender_name}}",
     merge_fields: ["first_name", "company", "sender_name"],
   },
   {
     name: "Welcome Aboard",
-    category: "Onboarding",
+    category: "nurture",
     subject: "Welcome to Pulse CRM, {{first_name}}",
     body: "Hi {{first_name}},\n\nWelcome aboard! Your onboarding specialist will reach out within one business day to help {{company}} get set up.\n\nIn the meantime, feel free to explore the dashboard.\n\nBest regards",
     merge_fields: ["first_name", "company"],
@@ -467,7 +484,7 @@ function buildContacts(orgId: string, customers: CustomerInsert[], r: Rand): See
       email: generateEmail(firstName, lastName, customers[parentIndex].company ?? COMPANIES[i]),
       phone: generatePhone(r),
       title: r.pick(JOB_TITLES),
-      buying_role: r.pick(["Decision Maker", "Influencer", "Champion", "Gatekeeper", "End User"]),
+      buying_role: r.pick(["economic_buyer", "technical_evaluator", "champion", "blocker", "end_user"]),
       influence_level: r.pick(["high", "medium", "low"]),
       linkedin: `https://linkedin.com/in/${firstName.toLowerCase()}${lastName.toLowerCase()}`,
     };
