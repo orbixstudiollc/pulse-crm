@@ -42,7 +42,7 @@ jobs:
         if: steps.check.outputs.skip != 'true'
         continue-on-error: true
         run: |
-          curl -fsS --max-time 300-H "Authorization: Bearer $CRON_SECRET" https://pulse-crm-weld.vercel.app/api/cron/lead-finder-worker
+          curl -fsS --max-time 300 -H "Authorization: Bearer $CRON_SECRET" https://pulse-crm-weld.vercel.app/api/cron/lead-finder-worker
 
       - name: Call lead-finder scheduler
         id: scheduler
