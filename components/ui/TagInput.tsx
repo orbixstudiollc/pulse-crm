@@ -52,7 +52,7 @@ export function TagInput({
         {tags.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1 h-6 px-2 rounded-sm bg-muted text-[13px] text-fg"
+            className="inline-flex items-center gap-1 h-6 px-2 rounded-full bg-subtle text-[12px] font-medium text-fg"
           >
             {tag}
             <button
@@ -60,7 +60,7 @@ export function TagInput({
               onClick={() => removeTag(tag)}
               className="text-fg-secondary hover:text-fg"
             >
-              <XIcon size={14} />
+              <XIcon size={12} />
             </button>
           </span>
         ))}
@@ -73,7 +73,7 @@ export function TagInput({
           className="flex-1 min-w-[120px] h-6 px-1 bg-transparent text-sm text-fg placeholder:text-fg-muted outline-none"
         />
       </div>
-      <p className="text-xs text-fg-secondary mt-1">
+      <p className="text-[13px] text-fg-muted mt-1">
         Press Enter to add a tag
       </p>
     </div>

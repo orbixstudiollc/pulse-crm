@@ -22,14 +22,14 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               aria-invalid={error ? "true" : "false"}
               aria-describedby={error ? `${id}-error` : undefined}
               className={cn(
-                "peer h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-sm border border-line bg-surface transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page disabled:cursor-not-allowed disabled:opacity-50",
+                "peer h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-sm border border-line bg-surface transition-colors duration-150 focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50",
                 "checked:bg-accent checked:border-accent",
                 className,
               )}
               {...props}
             />
             <svg
-              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 text-white opacity-0 peer-checked:opacity-100"
+              className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 text-white opacity-0 peer-checked:opacity-100"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="none"
@@ -52,7 +52,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
                 </label>
               )}
               {description && (
-                <p className="text-sm text-fg-secondary">
+                <p className="text-[13px] text-fg-muted">
                   {description}
                 </p>
               )}

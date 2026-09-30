@@ -37,7 +37,7 @@ export function RadioGroup({
           <label
             key={option.value}
             className={cn(
-              "relative flex-1 flex items-center gap-3 px-3 py-2.5 rounded-md border cursor-pointer transition-colors duration-150 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent",
+              "relative flex-1 flex items-center gap-3 px-3 py-2.5 rounded-md border cursor-pointer transition-colors duration-150 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent/30",
               value === option.value
                 ? "border-accent bg-accent-surface"
                 : "border-line hover:bg-muted",
@@ -55,12 +55,12 @@ export function RadioGroup({
               className={cn(
                 "w-4 h-4 shrink-0 rounded-full border bg-surface flex items-center justify-center transition-colors",
                 value === option.value
-                  ? "border-accent"
+                  ? "border-accent bg-accent"
                   : "border-line",
               )}
             >
               {value === option.value && (
-                <div className="w-2 h-2 rounded-full bg-accent" />
+                <div className="w-1.5 h-1.5 rounded-full bg-current text-white" />
               )}
             </div>
             <div>
@@ -68,7 +68,7 @@ export function RadioGroup({
                 {option.label}
               </p>
               {option.description && (
-                <p className="text-xs text-fg-secondary">
+                <p className="text-[13px] text-fg-muted">
                   {option.description}
                 </p>
               )}
