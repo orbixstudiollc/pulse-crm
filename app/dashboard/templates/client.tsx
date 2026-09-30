@@ -248,7 +248,7 @@ export function TemplatesPageClient({
       </div>
 
       {/* Category Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto rounded-lg border border-line bg-surface p-1.5">
+      <div className="flex items-center gap-2 overflow-x-auto">
         {categoryTabs.map((tab) => (
           <button
             key={tab.value}
@@ -257,10 +257,10 @@ export function TemplatesPageClient({
               setCurrentPage(1);
             }}
             className={cn(
-              "px-4 py-2 text-sm font-medium rounded whitespace-nowrap transition-colors",
+              "h-8 px-3 text-[13px] font-medium rounded-md border whitespace-nowrap transition-colors",
               activeTab === tab.value
-                ? "bg-inverse text-on-inverse"
-                : "text-fg-secondary hover:text-fg hover:bg-muted"
+                ? "border-accent bg-surface text-accent-strong"
+                : "border-line bg-surface text-fg-secondary hover:bg-subtle"
             )}
           >
             {tab.label}
@@ -284,23 +284,23 @@ export function TemplatesPageClient({
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-muted">
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                  <tr>
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Name
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Subject
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Category
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Merge Fields
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Used
                     </th>
-                    <th className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-center text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Actions
                     </th>
                   </tr>
@@ -309,25 +309,25 @@ export function TemplatesPageClient({
                   {paginatedTemplates.map((template) => (
                     <tr
                       key={template.id}
-                      className="hover:bg-muted transition-colors"
+                      className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors"
                     >
-                      <td className="px-3 py-2 border-t border-row">
-                        <p className="text-sm font-medium text-fg">
+                      <td className="px-3 py-2 text-[14px] text-fg">
+                        <p className="text-[14px] font-medium text-fg">
                           {template.name}
                         </p>
                       </td>
-                      <td className="px-3 py-2 border-t border-row">
-                        <p className="text-sm text-fg-secondary line-clamp-1 max-w-[250px]">
+                      <td className="px-3 py-2 text-[14px] text-fg">
+                        <p className="text-[14px] text-fg-secondary line-clamp-1 max-w-[250px]">
                           {template.subject}
                         </p>
                       </td>
-                      <td className="px-3 py-2 border-t border-row">
-                        <span className="text-sm text-fg-secondary">
+                      <td className="px-3 py-2 text-[14px] text-fg">
+                        <span className="text-[14px] text-fg-secondary">
                           {categoryConfig[template.category] ||
                             template.category}
                         </span>
                       </td>
-                      <td className="px-3 py-2 border-t border-row">
+                      <td className="px-3 py-2 text-[14px] text-fg">
                         <div className="flex flex-wrap gap-1">
                           {(template.merge_fields || [])
                             .slice(0, 3)
@@ -346,12 +346,12 @@ export function TemplatesPageClient({
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-2 border-t border-row">
-                        <span className="text-sm font-semibold text-fg">
+                      <td className="px-3 py-2 text-[14px] text-fg">
+                        <span className="text-[14px] font-medium text-fg">
                           {template.usage_count || 0}
                         </span>
                       </td>
-                      <td className="px-3 py-2 border-t border-row">
+                      <td className="px-3 py-2 text-[14px] text-fg">
                         <div className="flex justify-center">
                           <ActionMenu
                             items={[

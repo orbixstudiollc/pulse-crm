@@ -1729,17 +1729,17 @@ function AISettingsSection({
           <div className="rounded-lg border border-line bg-surface overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-muted">
-                  <th className="text-left px-3 py-2 text-[13px] font-medium text-fg-secondary">
+                <tr>
+                  <th className="text-left h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Feature
                   </th>
-                  <th className="text-right px-3 py-2 text-[13px] font-medium text-fg-secondary">
+                  <th className="text-right h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Requests
                   </th>
-                  <th className="text-right px-3 py-2 text-[13px] font-medium text-fg-secondary">
+                  <th className="text-right h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Tokens
                   </th>
-                  <th className="text-right px-3 py-2 text-[13px] font-medium text-fg-secondary">
+                  <th className="text-right h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Success
                   </th>
                 </tr>
@@ -1748,9 +1748,9 @@ function AISettingsSection({
                 {usageStats.map((stat) => (
                   <tr
                     key={stat.feature}
-                    className="border-t border-row"
+                    className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors"
                   >
-                    <td className="px-3 py-2 text-[13px] text-fg capitalize">
+                    <td className="px-3 py-2 text-[14px] text-fg capitalize">
                       {stat.feature.replace(/_/g, " ")}
                     </td>
                     <td className="px-3 py-2 text-right text-[13px] text-fg-secondary">
@@ -1840,24 +1840,24 @@ function AISettingsSection({
           </h3>
           <div className="rounded-lg border border-line bg-surface overflow-x-auto max-h-[320px] overflow-y-auto">
             <table className="w-full text-sm">
-              <thead className="sticky top-0">
-                <tr className="bg-muted">
-                  <th className="text-left px-3 py-2 text-[13px] font-medium text-fg-secondary">
+              <thead className="sticky top-0 bg-surface">
+                <tr>
+                  <th className="text-left h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Feature
                   </th>
-                  <th className="text-left px-3 py-2 text-[13px] font-medium text-fg-secondary">
+                  <th className="text-left h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Model
                   </th>
-                  <th className="text-right px-3 py-2 text-[13px] font-medium text-fg-secondary">
+                  <th className="text-right h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Tokens
                   </th>
-                  <th className="text-right px-3 py-2 text-[13px] font-medium text-fg-secondary">
+                  <th className="text-right h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Time
                   </th>
-                  <th className="text-center px-3 py-2 text-[13px] font-medium text-fg-secondary">
+                  <th className="text-center h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Status
                   </th>
-                  <th className="text-right px-3 py-2 text-[13px] font-medium text-fg-secondary">
+                  <th className="text-right h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
                     When
                   </th>
                 </tr>
@@ -1866,9 +1866,9 @@ function AISettingsSection({
                 {usageLog.map((entry) => (
                   <tr
                     key={entry.id}
-                    className="border-t border-row"
+                    className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors"
                   >
-                    <td className="px-3 py-2 text-[13px] text-fg capitalize">
+                    <td className="px-3 py-2 text-[14px] text-fg capitalize">
                       {entry.feature.replace(/_/g, " ")}
                     </td>
                     <td className="px-3 py-2 text-fg-secondary text-xs">

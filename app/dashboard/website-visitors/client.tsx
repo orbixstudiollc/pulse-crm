@@ -319,47 +319,47 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
           ) : (
             <div className="rounded-lg border border-line bg-surface overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full">
                   <thead>
-                    <tr className="border-b border-line text-left">
-                      <th className="px-4 py-3 font-medium text-fg-secondary">Visitor</th>
-                      <th className="px-4 py-3 font-medium text-fg-secondary">Location</th>
-                      <th className="px-4 py-3 font-medium text-fg-secondary">Pages</th>
-                      <th className="px-4 py-3 font-medium text-fg-secondary">Visits</th>
-                      <th className="px-4 py-3 font-medium text-fg-secondary">Duration</th>
-                      <th className="px-4 py-3 font-medium text-fg-secondary">Last Seen</th>
-                      <th className="px-4 py-3 font-medium text-fg-secondary">Status</th>
-                      <th className="px-4 py-3 font-medium text-fg-secondary">Actions</th>
+                    <tr className="text-left">
+                      <th className="h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider">Visitor</th>
+                      <th className="h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider">Location</th>
+                      <th className="h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider">Pages</th>
+                      <th className="h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider">Visits</th>
+                      <th className="h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider">Duration</th>
+                      <th className="h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider">Last Seen</th>
+                      <th className="h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider">Status</th>
+                      <th className="h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {visitors.map((v) => (
-                      <tr key={v.id} className="border-b border-row hover:bg-muted transition-colors">
-                        <td className="px-4 py-3">
+                      <tr key={v.id} className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors">
+                        <td className="px-4 py-2 text-[14px] text-fg">
                           <div>
-                            <div className="font-medium text-fg">
+                            <div className="text-[14px] font-medium text-fg">
                               {v.company_name || v.ip_address || "Unknown"}
                             </div>
                             {v.company_domain && (
-                              <div className="text-xs text-fg-secondary">{v.company_domain}</div>
+                              <div className="text-[13px] text-fg-secondary">{v.company_domain}</div>
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-fg-secondary">
+                        <td className="px-4 py-2 text-[14px] text-fg-secondary">
                           {[v.city, v.country_code].filter(Boolean).join(", ") || "—"}
                         </td>
-                        <td className="px-4 py-3 text-fg-secondary">{v.page_count}</td>
-                        <td className="px-4 py-3 text-fg-secondary">{v.visit_count}</td>
-                        <td className="px-4 py-3 text-fg-secondary">
+                        <td className="px-4 py-2 text-[14px] text-fg-secondary">{v.page_count}</td>
+                        <td className="px-4 py-2 text-[14px] text-fg-secondary">{v.visit_count}</td>
+                        <td className="px-4 py-2 text-[14px] text-fg-secondary">
                           {v.total_duration > 0 ? `${Math.round(v.total_duration / 60)}m` : "—"}
                         </td>
-                        <td className="px-4 py-3 text-fg-secondary">
+                        <td className="px-4 py-2 text-[14px] text-fg-secondary">
                           {new Date(v.last_seen).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-2 text-[14px] text-fg">
                           <Badge variant={statusVariant(v.status)}>{v.status}</Badge>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-2 text-[14px] text-fg">
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => handleViewVisitor(v)}
@@ -385,7 +385,7 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
                 </table>
               </div>
               {total > 50 && (
-                <div className="px-4 py-3 border-t border-line text-sm text-fg-secondary">
+                <div className="px-4 py-3 border-t border-divider text-[13px] text-fg-muted">
                   Showing {visitors.length} of {total} visitors
                 </div>
               )}

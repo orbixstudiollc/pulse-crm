@@ -647,35 +647,35 @@ export function LeadsPageClient() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-muted">
-                    <th className="w-10 px-3 py-2">
+                  <tr>
+                    <th className="w-10 h-10 px-3 border-b border-divider">
                       <Checkbox
                         checked={isAllSelected}
                         onChange={toggleSelectAll}
                       />
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Lead
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Status
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Source
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Est. Value
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Score
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Grade
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Created
                     </th>
-                    <th className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-center text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Actions
                     </th>
                   </tr>
@@ -688,10 +688,10 @@ export function LeadsPageClient() {
                         setSelectedLead(lead);
                         setDrawerOpen(true);
                       }}
-                      className="hover:bg-subtle transition-colors cursor-pointer"
+                      className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors cursor-pointer"
                     >
                       <td
-                        className="w-10 px-3 py-2 text-[13px] text-fg border-t border-row"
+                        className="w-10 px-3 py-2 text-[14px] text-fg"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Checkbox
@@ -699,11 +699,11 @@ export function LeadsPageClient() {
                           onChange={() => toggleSelectRow(lead.id)}
                         />
                       </td>
-                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                      <td className="px-3 py-2 text-[14px] text-fg">
                         <div className="flex items-center gap-3">
                           <Avatar name={lead.name} />
                           <div>
-                            <p className="text-[13px] font-medium text-fg">
+                            <p className="text-[14px] font-medium text-fg">
                               {lead.name}
                             </p>
                             <p className="text-xs text-fg-secondary">
@@ -712,7 +712,7 @@ export function LeadsPageClient() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                      <td className="px-3 py-2 text-[14px] text-fg">
                         <Badge
                           variant={
                             leadStatusConfig[lead.status as keyof typeof leadStatusConfig]
@@ -724,18 +724,18 @@ export function LeadsPageClient() {
                             ?.label ?? lead.status}
                         </Badge>
                       </td>
-                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                      <td className="px-3 py-2 text-[14px] text-fg">
                         <span className="text-[13px] text-fg-secondary">
                           {lead.source}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
-                        <span className="text-[13px] font-medium text-fg">
+                      <td className="px-3 py-2 text-[14px] text-fg">
+                        <span className="text-[14px] font-medium text-fg">
                           {formatCurrency(lead.estimatedValue)}
                         </span>
                       </td>
                       <td
-                        className="px-3 py-2 text-[13px] text-fg border-t border-row"
+                        className="px-3 py-2 text-[14px] text-fg"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="relative">
@@ -769,7 +769,7 @@ export function LeadsPageClient() {
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                      <td className="px-3 py-2 text-[14px] text-fg">
                         {lead.qualificationGrade ? (
                           <span
                             className={cn(
@@ -789,13 +789,13 @@ export function LeadsPageClient() {
                           <span className="text-[13px] text-fg-muted">—</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                      <td className="px-3 py-2 text-[14px] text-fg">
                         <span className="text-[13px] text-fg-secondary">
                           {lead.createdDate}
                         </span>
                       </td>
                       <td
-                        className="px-3 py-2 text-[13px] text-fg border-t border-row"
+                        className="px-3 py-2 text-[14px] text-fg"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex justify-center">
