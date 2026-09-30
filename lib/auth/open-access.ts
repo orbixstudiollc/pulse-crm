@@ -41,6 +41,27 @@ export function isBotUserAgent(ua: string | null | undefined): boolean {
   return typeof ua === "string" && BOT_UA_RE.test(ua);
 }
 
+export type GuestRequestInfo = {
+  method: string;
+  accept: string | null | undefined;
+  secFetchMode: string | null | undefined;
+  secFetchDest: string | null | undefined;
+  userAgent: string | null | undefined;
+};
+
+// Only a real browser page load may mint an anonymous user and seed a guest
+// workspace. HEAD, curl-style "*/*" requests, uptime monitors, prefetch/RSC
+// fetches and bots must not. Fetch Metadata headers are checked only when the
+// browser sends them.
+export function shouldProvisionGuest(req: GuestRequestInfo): boolean {
+  if (req.method.toUpperCase() !== "GET") return false;
+  if (isBotUserAgent(req.userAgent)) return false;
+  if (!req.accept?.toLowerCase().includes("text/html")) return false;
+  if (req.secFetchMode != null && req.secFetchMode !== "navigate") return false;
+  if (req.secFetchDest != null && req.secFetchDest !== "document") return false;
+  return true;
+}
+
 export const GUEST_SIGNUPS_PER_HOUR_DEFAULT = 200;
 
 export function guestSignupsPerHour(env: string | undefined = process.env.GUEST_SIGNUPS_PER_HOUR): number {

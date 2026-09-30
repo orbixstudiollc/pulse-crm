@@ -8,6 +8,7 @@ import {
   isGuestCapReached,
   isGuestEmail,
   isOpenAccess,
+  shouldProvisionGuest,
 } from "@/lib/auth/open-access";
 
 describe("isOpenAccess", () => {
@@ -96,5 +97,55 @@ describe("guestSignupsPerHour", () => {
   it("uses a positive integer setting, else the default", () => {
     expect(guestSignupsPerHour("50")).toBe(50);
     expect(guestSignupsPerHour("x")).toBe(200);
+  });
+});
+
+describe("shouldProvisionGuest", () => {
+  const CHROME =
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+  const navigation = {
+    method: "GET",
+    accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    secFetchMode: "navigate",
+    secFetchDest: "document",
+    userAgent: CHROME,
+  };
+
+  it("is true for a browser page navigation", () => {
+    expect(shouldProvisionGuest(navigation)).toBe(true);
+  });
+
+  it("is true for a browser without Fetch Metadata that asks for HTML", () => {
+    expect(shouldProvisionGuest({ ...navigation, secFetchMode: null, secFetchDest: null })).toBe(true);
+    expect(shouldProvisionGuest({ ...navigation, secFetchMode: undefined, secFetchDest: undefined })).toBe(true);
+  });
+
+  it("is false for HEAD and other methods", () => {
+    for (const method of ["HEAD", "head", "POST", "OPTIONS"]) {
+      expect(shouldProvisionGuest({ ...navigation, method })).toBe(false);
+    }
+  });
+
+  it("is false for curl-style requests that accept anything", () => {
+    expect(
+      shouldProvisionGuest({ method: "GET", accept: "*/*", secFetchMode: null, secFetchDest: null, userAgent: "curl/8.4.0" }),
+    ).toBe(false);
+    expect(shouldProvisionGuest({ ...navigation, accept: "*/*" })).toBe(false);
+    expect(shouldProvisionGuest({ ...navigation, accept: null })).toBe(false);
+  });
+
+  it("is false for prefetch and RSC fetches that are not navigations", () => {
+    for (const secFetchMode of ["cors", "no-cors", "same-origin", ""]) {
+      expect(shouldProvisionGuest({ ...navigation, secFetchMode })).toBe(false);
+    }
+    expect(shouldProvisionGuest({ ...navigation, secFetchMode: null, secFetchDest: "empty" })).toBe(false);
+  });
+
+  it("is false for navigations into a frame rather than the top document", () => {
+    expect(shouldProvisionGuest({ ...navigation, secFetchDest: "iframe" })).toBe(false);
+  });
+
+  it("is false for bot user agents even when they look like a navigation", () => {
+    expect(shouldProvisionGuest({ ...navigation, userAgent: "Googlebot/2.1" })).toBe(false);
   });
 });

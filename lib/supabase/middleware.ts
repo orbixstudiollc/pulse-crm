@@ -3,9 +3,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   guestSignupsPerHour,
   isAuthPage,
-  isBotUserAgent,
   isGuestCapReached,
   isOpenAccess,
+  shouldProvisionGuest,
 } from "@/lib/auth/open-access";
 import { ensureGuestWorkspace } from "@/lib/auth/guest-workspace";
 import { countRecentGuestWorkspaces } from "@/lib/auth/guest-cap";
@@ -96,9 +96,16 @@ export async function updateSession(request: NextRequest) {
   const openAccess = isOpenAccess();
   // /api/* never triggers a sign-in: this only matches protected paths, "/" and auth pages.
   if (openAccess && !user && (isProtectedPath(pathname) || pathname === "/" || isAuthPage(pathname))) {
-    const ua = request.headers.get("user-agent");
-    if (isBotUserAgent(ua)) {
-      // No session for bots; they fall through to the /login redirect.
+    const provision = shouldProvisionGuest({
+      method,
+      accept: request.headers.get("accept"),
+      secFetchMode: request.headers.get("sec-fetch-mode"),
+      secFetchDest: request.headers.get("sec-fetch-dest"),
+      userAgent: request.headers.get("user-agent"),
+    });
+    if (!provision) {
+      // No session for bots, HEAD, curl/monitors or prefetch/RSC fetches; they
+      // fall through to the /login redirect.
     } else if (
       isGuestCapReached(await countRecentGuestWorkspaces(new Date(Date.now() - 3_600_000)), guestSignupsPerHour())
     ) {
