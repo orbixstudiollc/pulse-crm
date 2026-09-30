@@ -2,6 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { sealOAuthTokens } from "@/lib/email/oauth-tokens";
 import { hasRequiredRole } from "@/lib/auth/roles";
+import { cookies } from "next/headers";
+import { stateMatches } from "@/lib/security/oauth-state";
+
+const STATE_COOKIE = "oauth_state_microsoft";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -12,12 +16,21 @@ export async function GET(request: Request) {
     redirect("/dashboard/settings?error=missing_code");
   }
 
+  // CSRF: state must match the single-use cookie set by the start route
+  const cookieStore = await cookies();
+  const expectedState = cookieStore.get(STATE_COOKIE)?.value;
+  cookieStore.delete({ name: STATE_COOKIE, path: "/api/email/oauth" });
+
+  if (!stateMatches(expectedState, state)) {
+    redirect("/dashboard/settings?tab=email-accounts&error=invalid_state");
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user || user.id !== state) {
+  if (!user) {
     redirect("/dashboard/settings?error=unauthorized");
   }
 
@@ -71,7 +84,7 @@ export async function GET(request: Request) {
     msProfile.mail || msProfile.userPrincipalName || msProfile.id;
 
   // Upsert email account
-  await supabase.from("email_accounts").upsert(
+  const { error: saveError } = await supabase.from("email_accounts").upsert(
     {
       organization_id: profile.organization_id,
       user_id: user.id,
@@ -88,6 +101,10 @@ export async function GET(request: Request) {
     },
     { onConflict: "organization_id,email_address" },
   );
+
+  if (saveError) {
+    redirect("/dashboard/settings?tab=email-accounts&error=save_failed");
+  }
 
   redirect("/dashboard/settings?tab=email-accounts&connected=microsoft");
 }

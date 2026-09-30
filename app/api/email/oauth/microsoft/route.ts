@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { hasRequiredRole } from "@/lib/auth/roles";
+import { createOAuthState } from "@/lib/security/oauth-state";
 
 export async function GET() {
   const supabase = await createClient();
@@ -46,15 +47,25 @@ export async function GET() {
     "offline_access",
   ].join(" ");
 
+  const state = createOAuthState();
+
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: "code",
     scope: scopes,
-    state: user.id,
+    state,
   });
 
   const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?${params.toString()}`;
 
-  return NextResponse.json({ url: authUrl });
+  const response = NextResponse.json({ url: authUrl });
+  response.cookies.set("oauth_state_microsoft", state, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    maxAge: 600,
+    path: "/api/email/oauth",
+  });
+  return response;
 }

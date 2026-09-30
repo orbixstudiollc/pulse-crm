@@ -5,6 +5,7 @@ import { getCurrentUserProfile } from "./helpers";
 import { revalidatePath } from "next/cache";
 import type { Database, Json } from "@/types/database";
 import { pickProfileUpdates } from "@/lib/profile/allowlist";
+import { AVATAR_EXTENSIONS, validateAvatarFile } from "@/lib/security/avatar";
 
 type ProfileUpdate = Database["public"]["Tables"]["profiles"]["Update"];
 
@@ -55,16 +56,20 @@ export async function uploadAvatar(formData: FormData) {
   const supabase = await createClient();
   const { user } = await getCurrentUserProfile();
 
-  const file = formData.get("avatar") as File;
-  if (!file) return { error: "No file provided" };
+  const file = formData.get("avatar");
+  if (!(file instanceof File)) return { error: "No file provided" };
 
-  const fileExt = file.name.split(".").pop();
-  const filePath = `${user.id}/avatar.${fileExt}`;
+  const invalid = validateAvatarFile(file);
+  if (invalid) return { error: invalid };
+
+  // Extension comes from the validated MIME type, never the client file name
+  const fileExt = AVATAR_EXTENSIONS[file.type];
+  const filePath = `${user.id}/avatar-${Date.now()}.${fileExt}`;
 
   // Upload to storage
   const { error: uploadError } = await supabase.storage
     .from("avatars")
-    .upload(filePath, file, { upsert: true });
+    .upload(filePath, file, { upsert: true, contentType: file.type });
 
   if (uploadError) return { error: uploadError.message };
 
@@ -92,12 +97,20 @@ export async function removeAvatar() {
   const supabase = await createClient();
   const { user } = await getCurrentUserProfile();
 
-  // Remove from storage
-  const { error: deleteError } = await supabase.storage
+  // Remove everything in the user's avatar folder
+  const { data: files, error: listError } = await supabase.storage
     .from("avatars")
-    .remove([`${user.id}/avatar.jpg`, `${user.id}/avatar.png`, `${user.id}/avatar.webp`]);
+    .list(user.id);
 
-  if (deleteError) return { error: deleteError.message };
+  if (listError) return { error: listError.message };
+
+  if (files && files.length > 0) {
+    const { error: deleteError } = await supabase.storage
+      .from("avatars")
+      .remove(files.map((f) => `${user.id}/${f.name}`));
+
+    if (deleteError) return { error: deleteError.message };
+  }
 
   // Clear avatar URL in profile
   const { data, error } = await supabase

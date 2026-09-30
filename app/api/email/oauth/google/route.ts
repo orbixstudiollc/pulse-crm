@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { hasRequiredRole } from "@/lib/auth/roles";
+import { createOAuthState } from "@/lib/security/oauth-state";
 
 export async function GET() {
   const supabase = await createClient();
@@ -46,6 +47,8 @@ export async function GET() {
     "https://www.googleapis.com/auth/userinfo.email",
   ].join(" ");
 
+  const state = createOAuthState();
+
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -53,10 +56,18 @@ export async function GET() {
     scope: scopes,
     access_type: "offline",
     prompt: "consent",
-    state: user.id, // CSRF protection
+    state, // CSRF protection, checked against the cookie in the callback
   });
 
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 
-  return NextResponse.json({ url: authUrl });
+  const response = NextResponse.json({ url: authUrl });
+  response.cookies.set("oauth_state_google", state, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    maxAge: 600,
+    path: "/api/email/oauth",
+  });
+  return response;
 }
