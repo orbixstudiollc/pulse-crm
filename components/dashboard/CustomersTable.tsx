@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   Avatar,
@@ -96,8 +96,22 @@ export function CustomersTable({
   const endIndex = Math.min(page * perPage, totalCustomers);
   const pagedCustomers = customers.slice(startIndex - 1, endIndex);
 
+  // Only rows present in the rendered (filtered) list count as selected.
+  const visibleIds = new Set(customers.map((c) => c.id));
+  const visibleSelected = selectedRows.filter((id) => visibleIds.has(id));
+
+  // Drop selections hidden by a list change so they never come back.
+  useEffect(() => {
+    const ids = new Set(customers.map((c) => c.id));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- prunes ids the new list no longer shows; returns prev (no re-render) when nothing is hidden
+    setSelectedRows((prev) => {
+      const next = prev.filter((id) => ids.has(id));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [customers]);
+
   const toggleSelectAll = () => {
-    if (selectedRows.length === customers.length) {
+    if (visibleSelected.length === customers.length) {
       setSelectedRows([]);
     } else {
       setSelectedRows(customers.map((c) => c.id));
@@ -116,10 +130,10 @@ export function CustomersTable({
   };
 
   const isAllSelected =
-    customers.length > 0 && selectedRows.length === customers.length;
+    customers.length > 0 && visibleSelected.length === customers.length;
 
   const handleExportSelected = () => {
-    const rows = customers.filter((c) => selectedRows.includes(c.id));
+    const rows = customers.filter((c) => visibleSelected.includes(c.id));
     const blob = new Blob([buildCustomersCsv(rows)], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -176,10 +190,10 @@ export function CustomersTable({
       {customers.length > 0 ? (
         <>
           {/* Bulk Actions Bar */}
-          {selectedRows.length > 0 && (
+          {visibleSelected.length > 0 && (
             <div className="flex h-10 items-center justify-between gap-4 px-8 max-sm:px-4 border-t border-divider">
               <span className="text-[13px] font-medium text-fg">
-                {selectedRows.length} item{selectedRows.length > 1 ? "s" : ""}{" "}
+                {visibleSelected.length} item{visibleSelected.length > 1 ? "s" : ""}{" "}
                 selected
               </span>
               <div className="flex items-center gap-3">
@@ -190,7 +204,7 @@ export function CustomersTable({
                   Export
                 </button>
                 <button
-                  onClick={() => setDeleteIds(selectedRows)}
+                  onClick={() => setDeleteIds(visibleSelected)}
                   className="text-[13px] text-danger hover:opacity-80 transition-colors"
                 >
                   Delete
