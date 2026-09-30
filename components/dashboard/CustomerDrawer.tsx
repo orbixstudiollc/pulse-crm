@@ -9,6 +9,7 @@ import {
   UserIcon,
 } from "@/components/ui";
 import Link from "next/link";
+import { KeyValue, KeyValueList, Metric, PanelSection } from "./Page";
 
 interface CustomerDrawerProps {
   open: boolean;
@@ -89,122 +90,64 @@ export function CustomerDrawer({
       }
     >
       {customer ? (
-        <>
+        <div className="-m-4">
           {/* Profile Header */}
-          <div className="flex items-center gap-3 mb-6">
-            <Avatar src={customer.avatar} name={customer.name} size="lg" />
-            <div>
-              <h3 className="text-heading-lg text-fg">
-                {customer.name}
-              </h3>
-              <p className="text-sm text-fg-secondary">
-                {customer.email}
-              </p>
+          <div className="px-6 py-5 border-t border-divider first:border-t-0">
+            <div className="flex items-center gap-3">
+              <Avatar src={customer.avatar} name={customer.name} size="lg" />
+              <div>
+                <h3 className="text-heading-lg text-fg">
+                  {customer.name}
+                </h3>
+                <p className="text-sm text-fg-secondary">
+                  {customer.email}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="rounded-lg border border-line bg-subtle p-3">
-              <p className="text-xs text-fg-secondary mb-1">
-                Monthly Revenue
-              </p>
-              <p className="text-[22px] leading-7 font-semibold text-fg">
-                ${customer.monthlyRevenue.toLocaleString()}
-              </p>
-            </div>
-            <div className="rounded-lg border border-line bg-subtle p-3">
-              <p className="text-xs text-fg-secondary mb-1">
-                Health Score
-              </p>
-              <p className="text-[22px] leading-7 font-semibold text-fg">
-                {customer.healthScore}
-              </p>
-            </div>
-            <div className="rounded-lg border border-line bg-subtle p-3">
-              <p className="text-xs text-fg-secondary mb-1">
-                Lifetime Value
-              </p>
-              <p className="text-[22px] leading-7 font-semibold text-fg">
-                {formatCurrency(customer.lifetimeValue)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-line bg-subtle p-3">
-              <p className="text-xs text-fg-secondary mb-1">
-                Tenure
-              </p>
-              <p className="text-[22px] leading-7 font-semibold text-fg">
-                {customer.tenure} mo
-              </p>
+          {/* Stats */}
+          <div className="px-6 py-5 border-t border-divider first:border-t-0">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+              <Metric
+                label="Monthly Revenue"
+                value={`$${customer.monthlyRevenue.toLocaleString()}`}
+              />
+              <Metric label="Health Score" value={customer.healthScore} />
+              <Metric
+                label="Lifetime Value"
+                value={formatCurrency(customer.lifetimeValue)}
+              />
+              <Metric label="Tenure" value={`${customer.tenure} mo`} />
             </div>
           </div>
 
           {/* Account Information */}
-          <div className="mb-6">
-            <h4 className="text-xs font-medium text-fg-secondary mb-2">
-              Account Information
-            </h4>
-            <div className="*:py-2.5 *:border-b *:border-row [&>*:first-child]:pt-0 [&>*:last-child]:border-b-0 [&>*:last-child]:pb-0">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-fg-secondary">
-                  Status
-                </span>
+          <PanelSection title="Account Information">
+            <KeyValueList>
+              <KeyValue label="Status">
                 <Badge variant={statusConfig[customer.status].variant}>
                   {statusConfig[customer.status].label}
                 </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-fg-secondary">
-                  Plan
-                </span>
+              </KeyValue>
+              <KeyValue label="Plan">
                 <Badge variant={planConfig[customer.plan].variant}>
                   {planConfig[customer.plan].label}
                 </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-fg-secondary">
-                  Company
-                </span>
-                <span className="text-sm font-medium text-fg">
-                  {customer.company}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-fg-secondary">
-                  Industry
-                </span>
-                <span className="text-sm font-medium text-fg">
-                  {customer.industry}
-                </span>
-              </div>
-            </div>
-          </div>
+              </KeyValue>
+              <KeyValue label="Company">{customer.company}</KeyValue>
+              <KeyValue label="Industry">{customer.industry}</KeyValue>
+            </KeyValueList>
+          </PanelSection>
 
           {/* Contact Details */}
-          <div>
-            <h4 className="text-xs font-medium text-fg-secondary mb-2">
-              Contact Details
-            </h4>
-            <div className="*:py-2.5 *:border-b *:border-row [&>*:first-child]:pt-0 [&>*:last-child]:border-b-0 [&>*:last-child]:pb-0">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-fg-secondary">
-                  Phone
-                </span>
-                <span className="text-sm font-medium text-fg">
-                  {customer.phone}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-fg-secondary">
-                  Location
-                </span>
-                <span className="text-sm font-medium text-fg">
-                  {customer.location}
-                </span>
-              </div>
-            </div>
-          </div>
-        </>
+          <PanelSection title="Contact Details">
+            <KeyValueList>
+              <KeyValue label="Phone">{customer.phone}</KeyValue>
+              <KeyValue label="Location">{customer.location}</KeyValue>
+            </KeyValueList>
+          </PanelSection>
+        </div>
       ) : null}
     </Drawer>
   );

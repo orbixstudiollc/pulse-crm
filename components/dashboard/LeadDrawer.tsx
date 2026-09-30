@@ -17,6 +17,12 @@ import {
   leadStatusConfig,
 } from "@/lib/data/leads";
 import { cn } from "@/lib/utils";
+import {
+  KeyValue,
+  KeyValueList,
+  Metric,
+  PanelSection,
+} from "./Page";
 import Link from "next/link";
 import type { ComponentProps } from "react";
 
@@ -60,344 +66,218 @@ export function LeadDrawer({ open, onClose, lead, onEdit }: LeadDrawerProps) {
       }
     >
       {lead ? (
-        <>
+        <div className="-m-4">
           {/* Profile Header */}
-          <div className="flex items-center gap-3 mb-6">
-            <Avatar name={lead.name} size="lg" />
-            <div>
-              <h3 className="text-heading-lg text-fg">
-                {lead.name}
-              </h3>
-              {lead.title && (
+          <div className="px-6 py-5 border-t border-divider first:border-t-0">
+            <div className="flex items-center gap-3">
+              <Avatar name={lead.name} size="lg" />
+              <div>
+                <h3 className="text-heading-lg text-fg">
+                  {lead.name}
+                </h3>
+                {lead.title && (
+                  <p className="text-sm text-fg-secondary">
+                    {lead.title}
+                  </p>
+                )}
                 <p className="text-sm text-fg-secondary">
-                  {lead.title}
+                  {lead.company}
                 </p>
-              )}
-              <p className="text-sm text-fg-secondary">
-                {lead.company}
-              </p>
+              </div>
             </div>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="rounded-lg border border-line bg-subtle p-3">
-              <p className="text-xs text-fg-secondary mb-1">
-                Est. Value
-              </p>
-              <p className="text-[22px] leading-7 font-semibold text-fg">
-                ${lead.estimatedValue.toLocaleString()}
-              </p>
-            </div>
-            <div className="rounded-lg border border-line bg-subtle p-3">
-              <p className="text-xs text-fg-secondary mb-1">
-                Health Score
-              </p>
-              <p className={cn(
-                "text-[22px] leading-7 font-semibold",
-                lead.score >= 75
-                  ? "text-success"
-                  : lead.score >= 50
-                    ? "text-warning"
-                    : "text-danger",
-              )}>
-                {lead.score}
-              </p>
-            </div>
-            <div className="rounded-lg border border-line bg-subtle p-3">
-              <p className="text-xs text-fg-secondary mb-1">
-                Win Probability
-              </p>
-              <p className="text-[22px] leading-7 font-semibold text-fg">
-                {lead.winProbability}%
-              </p>
-            </div>
-            <div className="rounded-lg border border-line bg-subtle p-3">
-              <p className="text-xs text-fg-secondary mb-1">
-                Days in Pipeline
-              </p>
-              <p className="text-[22px] leading-7 font-semibold text-fg">
-                {lead.daysInPipeline}
-              </p>
+          {/* Stats */}
+          <div className="px-6 py-5 border-t border-divider first:border-t-0">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+              <Metric
+                label="Est. Value"
+                value={`$${lead.estimatedValue.toLocaleString()}`}
+              />
+              <Metric
+                label="Health Score"
+                value={
+                  <span
+                    className={cn(
+                      lead.score >= 75
+                        ? "text-success"
+                        : lead.score >= 50
+                          ? "text-warning"
+                          : "text-danger",
+                    )}
+                  >
+                    {lead.score}
+                  </span>
+                }
+              />
+              <Metric label="Win Probability" value={`${lead.winProbability}%`} />
+              <Metric label="Days in Pipeline" value={lead.daysInPipeline} />
             </div>
           </div>
 
           {/* Score Breakdown */}
-          {lead.scoreBreakdown && (
-            <div className="mb-6">
-              <h4 className="text-xs font-medium text-fg-secondary mb-2">
-                Score Breakdown
-              </h4>
-              <div className="rounded-lg border border-line bg-subtle p-3">
-                <ScoreBreakdown
-                  breakdown={
-                    typeof lead.scoreBreakdown === "string"
-                      ? JSON.parse(lead.scoreBreakdown as string)
-                      : (lead.scoreBreakdown as unknown as ScoreBreakdownData)
-                  }
-                  compact
-                />
-              </div>
-            </div>
+          {!!lead.scoreBreakdown && (
+            <PanelSection title="Score Breakdown">
+              <ScoreBreakdown
+                breakdown={
+                  typeof lead.scoreBreakdown === "string"
+                    ? JSON.parse(lead.scoreBreakdown as string)
+                    : (lead.scoreBreakdown as unknown as ScoreBreakdownData)
+                }
+                compact
+              />
+            </PanelSection>
           )}
 
           {/* Qualification Scorecard */}
-          {lead.qualificationData && (
-            <div className="mb-6">
-              <h4 className="text-xs font-medium text-fg-secondary mb-2">
-                Qualification
-              </h4>
-              <div className="rounded-lg border border-line bg-subtle p-3">
-                <QualificationScorecard
-                  data={
-                    typeof lead.qualificationData === "string"
-                      ? JSON.parse(lead.qualificationData)
-                      : (lead.qualificationData as QualificationData)
-                  }
-                  grade={lead.qualificationGrade ?? null}
-                  score={lead.qualificationScore ?? null}
-                  compact
-                />
-              </div>
-            </div>
+          {!!lead.qualificationData && (
+            <PanelSection title="Qualification">
+              <QualificationScorecard
+                data={
+                  typeof lead.qualificationData === "string"
+                    ? JSON.parse(lead.qualificationData)
+                    : (lead.qualificationData as QualificationData)
+                }
+                grade={lead.qualificationGrade ?? null}
+                score={lead.qualificationScore ?? null}
+                compact
+              />
+            </PanelSection>
           )}
 
           {/* Lead Information */}
-          <div className="mb-6">
-            <h4 className="text-xs font-medium text-fg-secondary mb-2">
-              Lead Information
-            </h4>
-            <div className="divide-y divide-row">
-              <div className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
-                <span className="text-sm text-fg-secondary">
-                  Status
-                </span>
+          <PanelSection title="Lead Information">
+            <KeyValueList>
+              <KeyValue label="Status">
                 <Badge variant={leadStatusConfig[lead.status].variant}>
                   {leadQualificationConfig[lead.status].label}
                 </Badge>
-              </div>
-              <div className="flex items-center justify-between py-2.5 last:pb-0">
-                <span className="text-sm text-fg-secondary">
-                  Source
-                </span>
-                <span className="text-sm font-medium text-fg">
-                  {lead.source}
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-2.5 last:pb-0">
-                <span className="text-sm text-fg-secondary">
-                  Company
-                </span>
-                <span className="text-sm font-medium text-fg">
-                  {lead.company}
-                </span>
-              </div>
-            </div>
-          </div>
+              </KeyValue>
+              <KeyValue label="Source">{lead.source}</KeyValue>
+              <KeyValue label="Company">{lead.company}</KeyValue>
+            </KeyValueList>
+          </PanelSection>
 
           {/* Contact Details */}
-          <div className="mb-6">
-            <h4 className="text-xs font-medium text-fg-secondary mb-2">
-              Contact Details
-            </h4>
-            <div className="divide-y divide-row">
-              <div className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
-                <span className="text-sm text-fg-secondary">
-                  Email
-                </span>
-                <a href={`mailto:${lead.email}`} className="text-sm font-medium text-fg hover:underline">
+          <PanelSection title="Contact Details">
+            <KeyValueList>
+              <KeyValue label="Email">
+                <a href={`mailto:${lead.email}`} className="hover:underline">
                   {lead.email}
                 </a>
-              </div>
-              {lead.phone && (
-                <div className="flex items-center justify-between py-2.5 last:pb-0">
-                  <span className="text-sm text-fg-secondary">
-                    Phone
-                  </span>
-                  <span className="text-sm font-medium text-fg">
-                    {lead.phone}
-                  </span>
-                </div>
-              )}
+              </KeyValue>
+              {lead.phone && <KeyValue label="Phone">{lead.phone}</KeyValue>}
               {lead.website && (
-                <div className="flex items-center justify-between py-2.5 last:pb-0">
-                  <span className="text-sm text-fg-secondary">
-                    Website
-                  </span>
+                <KeyValue label="Website">
                   <a
                     href={lead.website.startsWith("http") ? lead.website : `https://${lead.website}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-medium text-accent-strong hover:underline truncate max-w-[200px]"
+                    className="text-accent-strong hover:underline"
                   >
                     {lead.website.replace(/^https?:\/\//, "")}
                   </a>
-                </div>
+                </KeyValue>
               )}
-            </div>
-          </div>
+            </KeyValueList>
+          </PanelSection>
 
           {/* Social Profiles */}
           {(lead.linkedin || lead.twitter || lead.instagram || lead.facebook) && (
-            <div>
-              <h4 className="text-xs font-medium text-fg-secondary mb-2">
-                Social Profiles
-              </h4>
-              <div className="divide-y divide-row">
+            <PanelSection title="Social Profiles">
+              <KeyValueList>
                 {lead.linkedin && (
-                  <div className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
-                    <span className="text-sm text-fg-secondary">
-                      LinkedIn
-                    </span>
+                  <KeyValue label="LinkedIn">
                     <a
                       href={lead.linkedin.startsWith("http") ? lead.linkedin : `https://linkedin.com/in/${lead.linkedin}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-accent-strong hover:underline truncate max-w-[200px]"
+                      className="text-accent-strong hover:underline"
                     >
                       {lead.linkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, "")}
                     </a>
-                  </div>
+                  </KeyValue>
                 )}
                 {lead.twitter && (
-                  <div className="flex items-center justify-between py-2.5 last:pb-0">
-                    <span className="text-sm text-fg-secondary">
-                      X / Twitter
-                    </span>
+                  <KeyValue label="X / Twitter">
                     <a
                       href={lead.twitter.startsWith("http") ? lead.twitter : `https://x.com/${lead.twitter.replace("@", "")}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-accent-strong hover:underline truncate max-w-[200px]"
+                      className="text-accent-strong hover:underline"
                     >
                       {lead.twitter.startsWith("@") ? lead.twitter : `@${lead.twitter.replace(/^https?:\/\/(www\.)?(x|twitter)\.com\//, "")}`}
                     </a>
-                  </div>
+                  </KeyValue>
                 )}
                 {lead.instagram && (
-                  <div className="flex items-center justify-between py-2.5 last:pb-0">
-                    <span className="text-sm text-fg-secondary">
-                      Instagram
-                    </span>
+                  <KeyValue label="Instagram">
                     <a
                       href={lead.instagram.startsWith("http") ? lead.instagram : `https://instagram.com/${lead.instagram.replace("@", "")}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-accent-strong hover:underline truncate max-w-[200px]"
+                      className="text-accent-strong hover:underline"
                     >
                       {lead.instagram.startsWith("@") ? lead.instagram : `@${lead.instagram.replace(/^https?:\/\/(www\.)?instagram\.com\//, "")}`}
                     </a>
-                  </div>
+                  </KeyValue>
                 )}
                 {lead.facebook && (
-                  <div className="flex items-center justify-between py-2.5 last:pb-0">
-                    <span className="text-sm text-fg-secondary">
-                      Facebook
-                    </span>
+                  <KeyValue label="Facebook">
                     <a
                       href={lead.facebook.startsWith("http") ? lead.facebook : `https://facebook.com/${lead.facebook}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-accent-strong hover:underline truncate max-w-[200px]"
+                      className="text-accent-strong hover:underline"
                     >
                       {lead.facebook.replace(/^https?:\/\/(www\.)?facebook\.com\//, "")}
                     </a>
-                  </div>
+                  </KeyValue>
                 )}
-              </div>
-            </div>
+              </KeyValueList>
+            </PanelSection>
           )}
 
           {/* Personalization */}
           {(lead.painPoints || lead.triggerEvent || lead.personalNote || lead.referredBy) && (
-            <div className="mb-6">
-              <h4 className="text-xs font-medium text-fg-secondary mb-2">
-                Personalization
-              </h4>
-              <div className="divide-y divide-row">
-                {lead.painPoints && (
-                  <div className="py-2.5 first:pt-0 last:pb-0">
-                    <span className="text-xs text-fg-secondary">Pain Points</span>
-                    <p className="text-sm text-fg mt-1">{lead.painPoints}</p>
-                  </div>
-                )}
-                {lead.triggerEvent && (
-                  <div className="flex items-center justify-between py-2.5 last:pb-0">
-                    <span className="text-sm text-fg-secondary">Trigger Event</span>
-                    <span className="text-sm font-medium text-fg text-right max-w-[200px]">{lead.triggerEvent}</span>
-                  </div>
-                )}
-                {lead.referredBy && (
-                  <div className="flex items-center justify-between py-2.5 last:pb-0">
-                    <span className="text-sm text-fg-secondary">Referred By</span>
-                    <span className="text-sm font-medium text-fg">{lead.referredBy}</span>
-                  </div>
-                )}
-                {lead.personalNote && (
-                  <div className="py-2.5 last:pb-0">
-                    <span className="text-xs text-fg-secondary">Personal Note</span>
-                    <p className="text-sm text-fg mt-1">{lead.personalNote}</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            <PanelSection title="Personalization">
+              <KeyValueList>
+                {lead.painPoints && <KeyValue label="Pain Points">{lead.painPoints}</KeyValue>}
+                {lead.triggerEvent && <KeyValue label="Trigger Event">{lead.triggerEvent}</KeyValue>}
+                {lead.referredBy && <KeyValue label="Referred By">{lead.referredBy}</KeyValue>}
+                {lead.personalNote && <KeyValue label="Personal Note">{lead.personalNote}</KeyValue>}
+              </KeyValueList>
+            </PanelSection>
           )}
 
           {/* Company Details */}
           {(lead.revenueRange || lead.techStack || lead.fundingStage || lead.currentSolution || lead.decisionRole) && (
-            <div className="mb-6">
-              <h4 className="text-xs font-medium text-fg-secondary mb-2">
-                Company Details
-              </h4>
-              <div className="divide-y divide-row">
-                {lead.revenueRange && (
-                  <div className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
-                    <span className="text-sm text-fg-secondary">Revenue</span>
-                    <span className="text-sm font-medium text-fg">{lead.revenueRange}</span>
-                  </div>
-                )}
-                {lead.fundingStage && (
-                  <div className="flex items-center justify-between py-2.5 last:pb-0">
-                    <span className="text-sm text-fg-secondary">Funding</span>
-                    <span className="text-sm font-medium text-fg">{lead.fundingStage}</span>
-                  </div>
-                )}
-                {lead.techStack && (
-                  <div className="flex items-center justify-between py-2.5 last:pb-0">
-                    <span className="text-sm text-fg-secondary">Tech Stack</span>
-                    <span className="text-sm font-medium text-fg text-right max-w-[200px]">{lead.techStack}</span>
-                  </div>
-                )}
-                {lead.currentSolution && (
-                  <div className="flex items-center justify-between py-2.5 last:pb-0">
-                    <span className="text-sm text-fg-secondary">Current Solution</span>
-                    <span className="text-sm font-medium text-fg">{lead.currentSolution}</span>
-                  </div>
-                )}
+            <PanelSection title="Company Details">
+              <KeyValueList>
+                {lead.revenueRange && <KeyValue label="Revenue">{lead.revenueRange}</KeyValue>}
+                {lead.fundingStage && <KeyValue label="Funding">{lead.fundingStage}</KeyValue>}
+                {lead.techStack && <KeyValue label="Tech Stack">{lead.techStack}</KeyValue>}
+                {lead.currentSolution && <KeyValue label="Current Solution">{lead.currentSolution}</KeyValue>}
                 {lead.decisionRole && (
-                  <div className="flex items-center justify-between py-2.5 last:pb-0">
-                    <span className="text-sm text-fg-secondary">Decision Role</span>
+                  <KeyValue label="Decision Role">
                     <Badge variant="neutral">{lead.decisionRole}</Badge>
-                  </div>
+                  </KeyValue>
                 )}
-              </div>
-            </div>
+              </KeyValueList>
+            </PanelSection>
           )}
 
           {/* Tags */}
           {lead.tags && lead.tags.length > 0 && (
-            <div className="mb-6">
-              <h4 className="text-xs font-medium text-fg-secondary mb-2">
-                Tags
-              </h4>
+            <PanelSection title="Tags">
               <div className="flex flex-wrap gap-2">
                 {lead.tags.map((tag) => (
                   <Badge key={tag} variant="neutral">{tag}</Badge>
                 ))}
               </div>
-            </div>
+            </PanelSection>
           )}
-        </>
+        </div>
       ) : null}
     </Drawer>
   );

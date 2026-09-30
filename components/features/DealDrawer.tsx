@@ -12,6 +12,7 @@ import {
   formatDealCurrency,
 } from "@/lib/data/sales";
 import { cn } from "@/lib/utils";
+import { KeyValue, KeyValueList, PageTabs, PanelSection } from "@/components/dashboard/Page";
 import { MarkDealLostModal } from "./MarkDealLostModal";
 import {
   getDealById,
@@ -105,31 +106,6 @@ function StageProgress({ currentStage }: { currentStage: PipelineStage }) {
         );
       })}
     </div>
-  );
-}
-
-// ─── Info Row ────────────────────────────────────────────────────────────────
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between py-3">
-      <span className="text-sm text-fg-secondary">
-        {label}
-      </span>
-      <span className="text-sm font-medium text-fg">
-        {value}
-      </span>
-    </div>
-  );
-}
-
-// ─── Section Header ──────────────────────────────────────────────────────────
-
-function SectionHeader({ children }: { children: string }) {
-  return (
-    <p className="text-xs font-medium text-fg-secondary mb-4">
-      {children}
-    </p>
   );
 }
 
@@ -238,8 +214,8 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
 
   const tabs: { id: DrawerTab; label: string; count?: number }[] = [
     { id: "overview", label: "Overview" },
-    { id: "activity", label: "Activity", count: activities.length },
-    { id: "notes", label: "Notes", count: notes.length },
+    { id: "activity", label: "Activity", count: activities.length || undefined },
+    { id: "notes", label: "Notes", count: notes.length || undefined },
   ];
 
   return (
@@ -270,7 +246,9 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
           </div>
         }
       >
+        <div className="-m-4">
         {/* Deal Header */}
+        <div className="px-6 py-5 border-t border-divider first:border-t-0">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-4">
           <div>
             <h3 className="text-heading-lg text-fg">
@@ -286,7 +264,7 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
         </div>
 
         {/* Stage Progress */}
-        <div className="mb-4">
+        <div className="mb-4 last:mb-0">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-fg-secondary">
               Stage
@@ -300,7 +278,7 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
 
         {/* Quick Actions */}
         {!isClosed && (
-          <div className="flex gap-2 mb-5">
+          <div className="flex gap-2">
             {nextStage && (
               <Button
                 size="sm"
@@ -334,47 +312,27 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="flex border-b border-divider mb-4">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b transition-colors -mb-px",
-                activeTab === tab.id
-                  ? "border-inverse text-fg"
-                  : "border-transparent text-fg-secondary hover:text-fg",
-              )}
-            >
-              {tab.label}
-              {tab.count !== undefined && tab.count > 0 && (
-                <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-active px-1 text-xs font-semibold">
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
         </div>
+
+        {/* Tabs */}
+        <PageTabs tabs={tabs} value={activeTab} onChange={setActiveTab} className="px-6" />
 
         {/* Tab Content */}
         {activeTab === "overview" && (
-          <div className="space-y-6">
+          <div>
             {/* Deal Information */}
-            <div>
-              <SectionHeader>Deal Information</SectionHeader>
-              <div className="divide-y divide-row">
-                <InfoRow label="Probability" value={`${deal.probability}%`} />
-                <InfoRow label="Expected Close" value={deal.closeDate} />
-                <InfoRow label="Created" value={deal.createdDate} />
-                <InfoRow label="Last Activity" value={deal.lastActivity} />
-              </div>
-            </div>
+            <PanelSection title="Deal Information">
+              <KeyValueList>
+                <KeyValue label="Probability">{`${deal.probability}%`}</KeyValue>
+                <KeyValue label="Expected Close">{deal.closeDate}</KeyValue>
+                <KeyValue label="Created">{deal.createdDate}</KeyValue>
+                <KeyValue label="Last Activity">{deal.lastActivity}</KeyValue>
+              </KeyValueList>
+            </PanelSection>
 
             {/* Contact */}
-            <div>
-              <SectionHeader>Contact</SectionHeader>
-              <div className="flex items-center justify-between rounded-lg border border-line bg-surface p-4">
+            <PanelSection title="Contact">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="relative h-10 w-10 rounded-full overflow-hidden border border-line">
                     {deal.contact?.avatar && (
@@ -404,24 +362,21 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
                   </Link>
                 )}
               </div>
-            </div>
+            </PanelSection>
 
             {/* Quick Notes Preview */}
             {deal.notes && (
-              <div>
-                <SectionHeader>Notes</SectionHeader>
-                <div className="rounded-md bg-subtle p-4">
-                  <p className="text-sm text-fg-secondary leading-relaxed">
-                    {deal.notes}
-                  </p>
-                </div>
-              </div>
+              <PanelSection title="Notes">
+                <p className="text-sm text-fg-secondary leading-relaxed">
+                  {deal.notes}
+                </p>
+              </PanelSection>
             )}
           </div>
         )}
 
         {activeTab === "activity" && (
-          <div className="space-y-1">
+          <div className="px-6 py-5 space-y-1">
             {isLoadingData ? (
               <div className="flex items-center justify-center py-8">
                 <div className="h-5 w-5 animate-spin rounded-full border border-line border-t-fg" />
@@ -481,7 +436,7 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
         )}
 
         {activeTab === "notes" && (
-          <div className="space-y-4">
+          <div className="px-6 py-5 space-y-4">
             {/* Add Note Form */}
             <div className="flex gap-2">
               <textarea
@@ -514,11 +469,11 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="divide-y divide-divider">
                 {notes.map((note) => (
                   <div
                     key={note.id}
-                    className="rounded-lg border border-line bg-surface p-4"
+                    className="py-4 first:pt-0 last:pb-0"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs font-medium text-fg">
@@ -542,6 +497,7 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
             )}
           </div>
         )}
+        </div>
       </Drawer>
 
       {/* Mark Deal Lost Modal */}
