@@ -44,7 +44,7 @@ export default async function DashboardLayout({
                   <div className="px-4 pt-4 empty:hidden lead-finder-banner-slot">
                     <EnrichmentProgressBanner />
                   </div>
-                  <main className="flex-1 overflow-auto bg-page pb-24">
+                  <main className="flex-1 overflow-auto bg-page">
                     <div className="h-full w-full">{children}</div>
                   </main>
                 </div>

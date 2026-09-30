@@ -11,7 +11,7 @@ interface Children {
 }
 
 export function Page({ children, className }: Children) {
-  return <div className={cn("min-h-full pb-10", className)}>{children}</div>;
+  return <div className={cn("min-h-full pb-24", className)}>{children}</div>;
 }
 
 export function MetricStrip({ children, className }: Children) {
