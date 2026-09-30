@@ -42,8 +42,20 @@ import {
   CursorClickIcon,
   ChatCircleIcon,
   Drawer,
+  SegmentedControl,
 } from "@/components/ui";
-import { PageHeader, StatCard, TableHeader, TableFooter, EmptyState } from "@/components/dashboard";
+import {
+  Page,
+  PageHeader,
+  MetricStrip,
+  PageTabs,
+  TableSection,
+  Section,
+  StatCard,
+  TableHeader,
+  TableFooter,
+  EmptyState,
+} from "@/components/dashboard";
 import { AIGenerateModal } from "@/components/features";
 import { SparkleIcon, DotsSixVerticalIcon, MagnifyingGlassIcon, FunnelSimpleIcon } from "@/components/ui/Icons";
 import {
@@ -930,50 +942,53 @@ export function SequenceDetailClient({
   ];
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
-      {/* Back Link + Header */}
-      <div className="space-y-3">
+    <Page>
+      {/* Back Link */}
+      <div className="px-8 pt-6 max-sm:px-4">
         <Link
           href="/dashboard/sequences"
-          className="inline-flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg transition-colors"
+          className="inline-flex items-center gap-1.5 text-[13px] text-fg-secondary hover:text-fg transition-colors"
         >
           <ArrowLeftIcon size={16} />
           Back to Sequences
         </Link>
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold text-fg">
-              {sequence.name}
-            </h1>
-            <Badge variant={status.variant} dot>{status.label}</Badge>
-            <span className="text-sm text-fg-secondary">{categoryLabel}</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Button variant="outline" leftIcon={<PlusIcon size={18} weight="bold" />} onClick={openAddStep}>
-              Add Step
-            </Button>
-            <Button
-              variant="outline"
-              leftIcon={<CheckCircleIcon size={18} />}
-              onClick={() => { setShowEnrollDrawer(true); setEnrollStatusFilter("all"); setEnrollScoreFilter("all"); setEnrollSourceFilter("all"); loadEnrollLeads("", "all", "all", "all"); }}
-            >
-              Enroll Leads
-            </Button>
-            <Button variant="outline" onClick={handleToggleStatus} disabled={isPending}>
-              {sequence.status === "active" ? "Pause" : "Activate"}
-            </Button>
-          </div>
-        </div>
-
-        {sequence.description && (
-          <p className="text-sm text-fg-secondary max-w-2xl">{sequence.description}</p>
-        )}
       </div>
 
-      {/* 6 KPI Stat Cards — Animated Count-Up */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      {/* Record Header */}
+      <PageHeader
+        icon={<EnvelopeIcon size={18} />}
+        title={sequence.name}
+        description={
+          <>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <Badge variant={status.variant} dot>{status.label}</Badge>
+              <span>{categoryLabel}</span>
+            </div>
+            {sequence.description && (
+              <p className="mt-1 max-w-2xl">{sequence.description}</p>
+            )}
+          </>
+        }
+      >
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" leftIcon={<PlusIcon size={18} weight="bold" />} onClick={openAddStep}>
+            Add Step
+          </Button>
+          <Button
+            variant="outline"
+            leftIcon={<CheckCircleIcon size={18} />}
+            onClick={() => { setShowEnrollDrawer(true); setEnrollStatusFilter("all"); setEnrollScoreFilter("all"); setEnrollSourceFilter("all"); loadEnrollLeads("", "all", "all", "all"); }}
+          >
+            Enroll Leads
+          </Button>
+          <Button variant="outline" onClick={handleToggleStatus} disabled={isPending}>
+            {sequence.status === "active" ? "Pause" : "Activate"}
+          </Button>
+        </div>
+      </PageHeader>
+
+      {/* 6 KPI Metrics — Animated Count-Up */}
+      <MetricStrip>
         <StatCard
           label="Enrolled"
           value={animEnrolled.toString()}
@@ -1004,28 +1019,18 @@ export function SequenceDetailClient({
           value={`${animBounced} (${kpis.bounceRate}%)`}
           icon={<ChartBarIcon size={24} className="text-fg" />}
         />
-      </div>
+      </MetricStrip>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 w-fit">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              "h-8 px-3 text-[13px] font-medium rounded-md border transition-colors",
-              activeTab === tab.id
-                ? "border-accent text-accent-strong bg-surface"
-                : "border-line text-fg-secondary hover:bg-subtle"
-            )}
-          >
-            {tab.label}
-            {tab.count != null && tab.count > 0 && (
-              <span className="ml-1.5 text-xs opacity-60">({tab.count})</span>
-            )}
-          </button>
-        ))}
-      </div>
+      <PageTabs
+        tabs={tabs.map((tab) => ({
+          ...tab,
+          count: tab.count != null && tab.count > 0 ? `(${tab.count})` : undefined,
+        }))}
+        value={activeTab}
+        onChange={setActiveTab}
+        className="max-sm:overflow-x-auto max-sm:overflow-y-hidden"
+      />
 
       {/* ─────────────── Tab Content with Animation ─────────────── */}
       <AnimatePresence mode="wait">
@@ -1037,13 +1042,11 @@ export function SequenceDetailClient({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.15 }}
-          className="rounded-lg border border-line bg-surface p-4"
         >
           {steps.length > 0 ? (
-            <div className="space-y-0">
+            <div>
               {steps.map((step, index) => {
                 const typeConfig = stepTypeConfig[step.step_type] || stepTypeConfig.email;
-                const isLast = index === steps.length - 1;
                 const metrics = stepMetricsMap.get(step.id);
 
                 return (
@@ -1053,7 +1056,7 @@ export function SequenceDetailClient({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: index * 0.05 }}
                     className={cn(
-                      "relative flex gap-4",
+                      "relative flex gap-4 px-8 py-4 border-b border-divider max-sm:px-4",
                       dropIndex === index && "border-t border-accent",
                     )}
                     draggable
@@ -1072,10 +1075,9 @@ export function SequenceDetailClient({
                     <div className="flex flex-col items-center pt-1 cursor-grab active:cursor-grabbing">
                       <DotsSixVerticalIcon size={16} className="text-fg-muted hover:text-fg-secondary mb-1" />
                       <StepIcon type={step.step_type} />
-                      {!isLast && <div className="w-px flex-1 bg-active my-1" />}
                     </div>
 
-                    <div className={cn("flex-1 pb-6", isLast && "pb-0")}>
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -1204,7 +1206,7 @@ export function SequenceDetailClient({
             </div>
           )}
 
-          <div className="mt-6 pt-4 border-t border-line">
+          <div className="px-8 py-4 max-sm:px-4">
             <Button variant="outline" leftIcon={<PlusIcon size={18} weight="bold" />} onClick={openAddStep}>
               Add Step
             </Button>
@@ -1220,7 +1222,6 @@ export function SequenceDetailClient({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.15 }}
-          className="rounded-lg border border-line bg-surface overflow-hidden"
         >
           <TableHeader
             title="Enrolled Leads"
@@ -1230,73 +1231,75 @@ export function SequenceDetailClient({
 
           {enrollments.length > 0 ? (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr>
-                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Lead</th>
-                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Current Step</th>
-                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Status</th>
-                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Enrolled</th>
-                      <th className="h-10 px-3 text-center text-[13px] font-medium text-fg-secondary border-b border-divider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedEnrollments.map((enrollment) => {
-                      const lead = enrollment.leads;
-                      const enrollStatus = enrollmentStatusConfig[enrollment.status] || enrollmentStatusConfig.active;
+              <TableSection>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr>
+                        <th className="text-left text-[13px] font-medium text-fg-secondary">Lead</th>
+                        <th className="text-left text-[13px] font-medium text-fg-secondary">Current Step</th>
+                        <th className="text-left text-[13px] font-medium text-fg-secondary">Status</th>
+                        <th className="text-left text-[13px] font-medium text-fg-secondary">Enrolled</th>
+                        <th className="text-right text-[13px] font-medium text-fg-secondary">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedEnrollments.map((enrollment) => {
+                        const lead = enrollment.leads;
+                        const enrollStatus = enrollmentStatusConfig[enrollment.status] || enrollmentStatusConfig.active;
 
-                      return (
-                        <tr key={enrollment.id} className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors">
-                          <td className="px-3 py-2 text-[14px] text-fg">
-                            <div className="flex items-center gap-3">
-                              <Avatar name={lead?.name || "Unknown"} />
-                              <div>
-                                <p className="text-sm font-medium text-fg">{lead?.name || "Unknown"}</p>
-                                <p className="text-xs text-fg-secondary">{lead?.email || "—"}</p>
+                        return (
+                          <tr key={enrollment.id} className="hover:bg-subtle transition-colors">
+                            <td className="py-2 text-[14px] text-fg">
+                              <div className="flex items-center gap-3">
+                                <Avatar name={lead?.name || "Unknown"} />
+                                <div>
+                                  <p className="text-sm font-medium text-fg">{lead?.name || "Unknown"}</p>
+                                  <p className="text-xs text-fg-secondary">{lead?.email || "—"}</p>
+                                </div>
                               </div>
-                            </div>
-                          </td>
-                          <td className="px-3 py-2 text-[14px] text-fg">
-                            <span className="text-sm font-semibold text-fg">
-                              {enrollment.current_step} / {steps.length}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 text-[14px] text-fg">
-                            <Badge variant={enrollStatus.variant} dot>{enrollStatus.label}</Badge>
-                          </td>
-                          <td className="px-3 py-2 text-[14px] text-fg">
-                            <span className="text-sm text-fg-secondary">
-                              {new Date(enrollment.enrolled_at).toLocaleDateString()}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 text-[14px] text-fg">
-                            <div className="flex justify-center">
-                              <ActionMenu
-                                items={[
-                                  ...(enrollment.status === "active" ? [{
-                                    label: "Pause", icon: <ClockIcon size={18} />,
-                                    onClick: () => handleEnrollmentAction(enrollment.id, "pause"),
-                                  }] : []),
-                                  ...(enrollment.status === "paused" ? [{
-                                    label: "Resume", icon: <CheckCircleIcon size={18} />,
-                                    onClick: () => handleEnrollmentAction(enrollment.id, "resume"),
-                                  }] : []),
-                                  {
-                                    label: "Remove", icon: <TrashIcon size={18} />,
-                                    onClick: () => handleEnrollmentAction(enrollment.id, "remove"),
-                                    variant: "danger" as const,
-                                  },
-                                ]}
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                            </td>
+                            <td className="py-2 text-[14px] text-fg">
+                              <span className="text-sm font-semibold text-fg">
+                                {enrollment.current_step} / {steps.length}
+                              </span>
+                            </td>
+                            <td className="py-2 text-[14px] text-fg">
+                              <Badge variant={enrollStatus.variant} dot>{enrollStatus.label}</Badge>
+                            </td>
+                            <td className="py-2 text-[14px] text-fg">
+                              <span className="text-sm text-fg-secondary">
+                                {new Date(enrollment.enrolled_at).toLocaleDateString()}
+                              </span>
+                            </td>
+                            <td className="py-2 text-[14px] text-fg">
+                              <div className="flex justify-end">
+                                <ActionMenu
+                                  items={[
+                                    ...(enrollment.status === "active" ? [{
+                                      label: "Pause", icon: <ClockIcon size={18} />,
+                                      onClick: () => handleEnrollmentAction(enrollment.id, "pause"),
+                                    }] : []),
+                                    ...(enrollment.status === "paused" ? [{
+                                      label: "Resume", icon: <CheckCircleIcon size={18} />,
+                                      onClick: () => handleEnrollmentAction(enrollment.id, "resume"),
+                                    }] : []),
+                                    {
+                                      label: "Remove", icon: <TrashIcon size={18} />,
+                                      onClick: () => handleEnrollmentAction(enrollment.id, "remove"),
+                                      variant: "danger" as const,
+                                    },
+                                  ]}
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </TableSection>
 
               <TableFooter
                 currentPage={enrollPage}
@@ -1309,15 +1312,12 @@ export function SequenceDetailClient({
               />
             </>
           ) : (
-            <div className="py-16 flex flex-col items-center text-center">
-              <div className="w-12 h-12 rounded border border-line bg-subtle flex items-center justify-center mb-5">
-                <CheckCircleIcon size={24} className="text-fg" />
-              </div>
-              <h3 className="text-2xl font-semibold text-fg mb-2">No leads enrolled</h3>
-              <p className="text-sm text-fg-secondary max-w-xs">
-                Enroll leads from the Leads page to start this outreach sequence.
-              </p>
-            </div>
+            <EmptyState
+              className="border-t border-divider"
+              icon={<CheckCircleIcon size={24} />}
+              title="No leads enrolled"
+              description="Enroll leads from the Leads page to start this outreach sequence."
+            />
           )}
         </motion.div>
       )}
@@ -1330,10 +1330,9 @@ export function SequenceDetailClient({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.15 }}
-          className="rounded-lg border border-line bg-surface p-4"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <h3 className="text-sm font-medium text-fg">Activity Feed</h3>
+          <div className="flex h-14 items-center justify-between gap-4 px-8 max-sm:px-4">
+            <h3 className="text-[18px] leading-6 font-semibold text-fg">Activity Feed</h3>
             <div className="flex items-center gap-2">
               <div className="relative">
                 <MagnifyingGlassIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-fg-muted" />
@@ -1352,86 +1351,79 @@ export function SequenceDetailClient({
             </div>
           </div>
 
-          {/* Filter pills */}
-          <div className="flex items-center gap-1.5 mb-4 flex-wrap">
-            {[
-              { id: "all", label: "All" },
-              { id: "sent", label: "Sent" },
-              { id: "opened", label: "Opened" },
-              { id: "clicked", label: "Clicked" },
-              { id: "replied", label: "Replied" },
-              { id: "bounced", label: "Bounced" },
-            ].map((f) => (
-              <button
-                key={f.id}
-                onClick={() => handleActivityFilterChange(f.id)}
-                className={cn(
-                  "h-8 px-3 text-[13px] font-medium rounded-md border transition-colors",
-                  activityFilter === f.id
-                    ? "border-accent text-accent-strong bg-surface"
-                    : "border-line text-fg-secondary hover:bg-subtle",
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
+          {/* Filter segments */}
+          <div className="flex h-12 items-center px-8 border-t border-divider max-sm:px-4 max-sm:overflow-x-auto">
+            <SegmentedControl
+              options={[
+                { value: "all", label: "All" },
+                { value: "sent", label: "Sent" },
+                { value: "opened", label: "Opened" },
+                { value: "clicked", label: "Clicked" },
+                { value: "replied", label: "Replied" },
+                { value: "bounced", label: "Bounced" },
+              ]}
+              value={activityFilter}
+              onChange={handleActivityFilterChange}
+            />
           </div>
 
           {/* Activity list — use filtered items if loaded, else fallback to recentActivity */}
-          {(() => {
-            const displayItems = activityItems.length > 0 ? activityItems : (activityFilter === "all" && !activitySearch ? recentActivity : []);
-            return displayItems.length > 0 ? (
-              <div className="space-y-3">
-                {displayItems.map((event) => {
-                  const config = activityEventConfig[event.eventType] || { label: event.eventType, color: "text-fg-secondary" };
-                  return (
-                    <Link
-                      key={event.id}
-                      href={`/dashboard/leads/${event.id}`}
-                      className="flex items-center gap-3 py-2 border-b border-row last:border-b-0 hover:bg-muted rounded px-2 -mx-2 transition-colors"
-                    >
-                      <div className={cn("w-2 h-2 rounded-full shrink-0", config.color.replace("text-", "bg-"))} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-fg">
-                          <span className={cn("font-medium", config.color)}>{config.label}</span>{" "}
-                          <span className="font-medium">{event.leadName}</span>
-                          {event.stepOrder > 0 && (
-                            <span className="text-fg-muted"> — Step {event.stepOrder}</span>
+          <TableSection>
+            {(() => {
+              const displayItems = activityItems.length > 0 ? activityItems : (activityFilter === "all" && !activitySearch ? recentActivity : []);
+              return displayItems.length > 0 ? (
+                <div>
+                  {displayItems.map((event) => {
+                    const config = activityEventConfig[event.eventType] || { label: event.eventType, color: "text-fg-secondary" };
+                    return (
+                      <Link
+                        key={event.id}
+                        href={`/dashboard/leads/${event.id}`}
+                        className="flex min-h-11 items-center gap-3 py-2 px-8 border-b border-divider hover:bg-subtle transition-colors max-sm:px-4"
+                      >
+                        <div className={cn("w-2 h-2 rounded-full shrink-0", config.color.replace("text-", "bg-"))} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-fg">
+                            <span className={cn("font-medium", config.color)}>{config.label}</span>{" "}
+                            <span className="font-medium">{event.leadName}</span>
+                            {event.stepOrder > 0 && (
+                              <span className="text-fg-muted"> — Step {event.stepOrder}</span>
+                            )}
+                          </p>
+                          {event.leadEmail && (
+                            <p className="text-xs text-fg-muted truncate">{event.leadEmail}</p>
                           )}
-                        </p>
-                        {event.leadEmail && (
-                          <p className="text-xs text-fg-muted truncate">{event.leadEmail}</p>
-                        )}
-                      </div>
-                      <span className="text-xs text-fg-muted shrink-0">
-                        {relativeTime(event.createdAt)}
-                      </span>
-                    </Link>
-                  );
-                })}
-                {/* Load More */}
-                {activityHasMore && (
-                  <div className="text-center pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const types = activityFilter === "all" ? undefined : [activityFilter === "sent" ? "email_sent" : activityFilter === "opened" ? "email_opened" : activityFilter === "clicked" ? "link_clicked" : activityFilter === "replied" ? "email_replied" : "email_bounced"];
-                        loadActivity(types, activitySearch, activityItems.length);
-                      }}
-                      disabled={activityLoading}
-                    >
-                      {activityLoading ? "Loading..." : "Load More"}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-fg-secondary py-8 text-center">
-                {activityFilter !== "all" || activitySearch ? "No matching activity found." : "No activity yet. Events will appear here once the sequence starts sending."}
-              </p>
-            );
-          })()}
+                        </div>
+                        <span className="text-xs text-fg-muted shrink-0">
+                          {relativeTime(event.createdAt)}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                  {/* Load More */}
+                  {activityHasMore && (
+                    <div className="text-center py-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const types = activityFilter === "all" ? undefined : [activityFilter === "sent" ? "email_sent" : activityFilter === "opened" ? "email_opened" : activityFilter === "clicked" ? "link_clicked" : activityFilter === "replied" ? "email_replied" : "email_bounced"];
+                          loadActivity(types, activitySearch, activityItems.length);
+                        }}
+                        disabled={activityLoading}
+                      >
+                        {activityLoading ? "Loading..." : "Load More"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-fg-secondary px-8 py-8 text-center max-sm:px-4">
+                  {activityFilter !== "all" || activitySearch ? "No matching activity found." : "No activity yet. Events will appear here once the sequence starts sending."}
+                </p>
+              );
+            })()}
+          </TableSection>
         </motion.div>
       )}
 
@@ -1443,36 +1435,36 @@ export function SequenceDetailClient({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.15 }}
-          className="space-y-4"
         >
           {/* Load advanced analytics button */}
           {heatmapData.length === 0 && (
-            <div className="flex justify-end">
+            <div className="flex justify-end px-8 pt-6 max-sm:px-4">
               <Button variant="outline" size="sm" onClick={loadAdvancedAnalytics}>
                 Load Advanced Analytics
               </Button>
             </div>
           )}
 
-          {/* Time-to-First-Reply Card */}
+          {/* Time-to-First-Reply Metrics */}
           {timeToReply && (
-            <div className="grid grid-cols-2 gap-4">
-              <StatCard
-                label="Avg Time to Reply"
-                value={`${timeToReply.avgHours.toFixed(1)}h`}
-                icon={<ClockIcon size={24} className="text-fg" />}
-              />
-              <StatCard
-                label="Median Time to Reply"
-                value={`${timeToReply.medianHours.toFixed(1)}h`}
-                icon={<ClockIcon size={24} className="text-fg" />}
-              />
-            </div>
+            <Section>
+              <div className="flex flex-wrap gap-x-10 gap-y-4">
+                <StatCard
+                  label="Avg Time to Reply"
+                  value={`${timeToReply.avgHours.toFixed(1)}h`}
+                  icon={<ClockIcon size={24} className="text-fg" />}
+                />
+                <StatCard
+                  label="Median Time to Reply"
+                  value={`${timeToReply.medianHours.toFixed(1)}h`}
+                  icon={<ClockIcon size={24} className="text-fg" />}
+                />
+              </div>
+            </Section>
           )}
 
           {/* Funnel Chart */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <h3 className="text-sm font-medium text-fg mb-4">Conversion Funnel</h3>
+          <Section title="Conversion Funnel">
             <div className="space-y-3">
               {[
                 { label: "Sent", value: kpis.totalSent, color: "bg-accent-strong" },
@@ -1495,14 +1487,11 @@ export function SequenceDetailClient({
                 );
               })}
             </div>
-          </div>
+          </Section>
 
           {/* Daily Volume Chart */}
           {dailyMetrics.length > 0 && (
-            <div className="rounded-lg border border-line bg-surface p-4">
-              <h3 className="text-sm font-medium text-fg mb-4">
-                Daily Volume (Last 14 Days)
-              </h3>
+            <Section title="Daily Volume (Last 14 Days)">
               <ResponsiveContainer width="100%" height={280}>
                 <AreaChart data={dailyMetrics}>
                   <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
@@ -1522,14 +1511,11 @@ export function SequenceDetailClient({
                   <Area type="monotone" dataKey="replied" stroke={chartWarning} fill={chartWarning} fillOpacity={0.1} name="Replied" />
                 </AreaChart>
               </ResponsiveContainer>
-            </div>
+            </Section>
           )}
 
           {/* Status Breakdown */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <h3 className="text-sm font-medium text-fg mb-4">
-              Enrollment Status Breakdown
-            </h3>
+          <Section title="Enrollment Status Breakdown">
             {analytics?.statusCounts && Object.keys(analytics.statusCounts).length > 0 ? (
               <div className="space-y-3">
                 {Object.entries(analytics.statusCounts).map(([statusKey, count]) => {
@@ -1564,12 +1550,11 @@ export function SequenceDetailClient({
             ) : (
               <p className="text-sm text-fg-secondary">No enrollment data available yet.</p>
             )}
-          </div>
+          </Section>
 
           {/* Best Send Time Heatmap */}
           {heatmapData.length > 0 && (
-            <div className="rounded-lg border border-line bg-surface p-4">
-              <h3 className="text-sm font-medium text-fg mb-4">Best Send Time (Replies)</h3>
+            <Section title="Best Send Time (Replies)">
               <div className="overflow-x-auto">
                 <div className="grid gap-px" style={{ gridTemplateColumns: "auto repeat(24, 1fr)", minWidth: "700px" }}>
                   {/* Hour headers */}
@@ -1605,16 +1590,15 @@ export function SequenceDetailClient({
                   ))}
                 </div>
               </div>
-            </div>
+            </Section>
           )}
 
           {/* A/B Comparison Panel */}
           {abComparison.length > 0 && (
-            <div className="rounded-lg border border-line bg-surface p-4">
-              <h3 className="text-sm font-medium text-fg mb-4">A/B Test Results</h3>
-              <div className="space-y-4">
+            <Section title="A/B Test Results">
+              <div className="divide-y divide-divider">
                 {abComparison.map((s) => (
-                  <div key={s.stepOrder} className="border border-line rounded p-4">
+                  <div key={s.stepOrder} className="py-4 first:pt-0 last:pb-0">
                     <p className="text-xs font-medium text-fg-secondary mb-3">Step {s.stepOrder}</p>
                     <div className="grid grid-cols-2 gap-3">
                       <div className={cn("p-3 rounded border", s.winner === "A" ? "border-success bg-success-surface" : "border-line")}>
@@ -1647,7 +1631,7 @@ export function SequenceDetailClient({
                   </div>
                 ))}
               </div>
-            </div>
+            </Section>
           )}
         </motion.div>
       )}
@@ -1660,12 +1644,10 @@ export function SequenceDetailClient({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.15 }}
-          className="space-y-4"
         >
           {/* Sending Schedule */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <h3 className="text-sm font-medium text-fg mb-4">Sending Schedule</h3>
-            <div className="space-y-4">
+          <Section title="Sending Schedule">
+            <div className="max-w-[560px] space-y-4">
               <div>
                 <label className="block text-sm text-fg-secondary mb-2">Active Days</label>
                 <div className="flex flex-wrap gap-2">
@@ -1710,12 +1692,11 @@ export function SequenceDetailClient({
                 </Select>
               </div>
             </div>
-          </div>
+          </Section>
 
           {/* Sending Limits */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <h3 className="text-sm font-medium text-fg mb-4">Sending Limits</h3>
-            <div className="grid grid-cols-2 gap-4">
+          <Section title="Sending Limits">
+            <div className="grid max-w-[560px] grid-cols-2 gap-4">
               <Input
                 label="Daily Send Limit"
                 type="number"
@@ -1731,16 +1712,15 @@ export function SequenceDetailClient({
                 onChange={(e) => setSettMaxNewLeads(e.target.value)}
               />
             </div>
-          </div>
+          </Section>
 
           {/* Email Accounts */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <h3 className="text-sm font-medium text-fg mb-2">Email Accounts</h3>
-            <p className="text-xs text-fg-secondary mb-4">
-              Select accounts to rotate between when sending. If none selected, the default org account is used.
-            </p>
+          <Section
+            title="Email Accounts"
+            description="Select accounts to rotate between when sending. If none selected, the default org account is used."
+          >
             {emailAccounts.length > 0 ? (
-              <div className="space-y-2">
+              <div className="max-w-[560px] space-y-2">
                 {emailAccounts.map((acc) => (
                   <label
                     key={acc.id}
@@ -1770,11 +1750,10 @@ export function SequenceDetailClient({
                 No active email accounts found. Connect an account in Settings.
               </p>
             )}
-          </div>
+          </Section>
 
           {/* Stop Conditions */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <h3 className="text-sm font-medium text-fg mb-4">Stop Conditions</h3>
+          <Section title="Stop Conditions">
             <div className="space-y-3">
               {[
                 { label: "Stop on reply", value: settStopOnReply, setter: setSettStopOnReply },
@@ -1792,40 +1771,43 @@ export function SequenceDetailClient({
                 </label>
               ))}
             </div>
-          </div>
+          </Section>
 
           {/* Timezone */}
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <h3 className="text-sm font-medium text-fg mb-4">Timezone</h3>
-            <Select
-              label="Sending Timezone"
-              value={settTimezone}
-              onChange={(e) => setSettTimezone(e.target.value)}
-            >
-              {[
-                { label: "US/Eastern (EST)", value: "America/New_York" },
-                { label: "US/Central (CST)", value: "America/Chicago" },
-                { label: "US/Mountain (MST)", value: "America/Denver" },
-                { label: "US/Pacific (PST)", value: "America/Los_Angeles" },
-                { label: "UTC", value: "UTC" },
-                { label: "Europe/London (GMT)", value: "Europe/London" },
-                { label: "Europe/Berlin (CET)", value: "Europe/Berlin" },
-                { label: "Asia/Kolkata (IST)", value: "Asia/Kolkata" },
-                { label: "Asia/Tokyo (JST)", value: "Asia/Tokyo" },
-                { label: "Australia/Sydney (AEST)", value: "Australia/Sydney" },
-              ].map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </Select>
-          </div>
+          <Section title="Timezone">
+            <div className="max-w-[560px]">
+              <Select
+                label="Sending Timezone"
+                value={settTimezone}
+                onChange={(e) => setSettTimezone(e.target.value)}
+              >
+                {[
+                  { label: "US/Eastern (EST)", value: "America/New_York" },
+                  { label: "US/Central (CST)", value: "America/Chicago" },
+                  { label: "US/Mountain (MST)", value: "America/Denver" },
+                  { label: "US/Pacific (PST)", value: "America/Los_Angeles" },
+                  { label: "UTC", value: "UTC" },
+                  { label: "Europe/London (GMT)", value: "Europe/London" },
+                  { label: "Europe/Berlin (CET)", value: "Europe/Berlin" },
+                  { label: "Asia/Kolkata (IST)", value: "Asia/Kolkata" },
+                  { label: "Asia/Tokyo (JST)", value: "Asia/Tokyo" },
+                  { label: "Australia/Sydney (AEST)", value: "Australia/Sydney" },
+                ].map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </Section>
 
           {/* Save Button */}
-          <div className="flex justify-end">
-            <Button onClick={handleSaveSettings} disabled={isPending}>
-              {isPending ? "Saving..." : "Save Settings"}
-            </Button>
+          <div className="px-8 py-6 border-t border-divider max-sm:px-4">
+            <div className="flex max-w-[560px] justify-end">
+              <Button onClick={handleSaveSettings} disabled={isPending}>
+                {isPending ? "Saving..." : "Save Settings"}
+              </Button>
+            </div>
           </div>
         </motion.div>
       )}
@@ -2314,6 +2296,6 @@ export function SequenceDetailClient({
           )}
         </div>
       </Drawer>
-    </div>
+    </Page>
   );
 }
