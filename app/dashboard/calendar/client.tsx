@@ -29,11 +29,9 @@ interface CalendarEventRecord {
   title: string;
   type: string;
   date: string;
-  duration?: string | null;
   start_time?: string | null;
   end_time?: string | null;
   status: string;
-  notes?: string | null;
   description?: string | null;
   related_type?: string | null;
   related_id?: string | null;
@@ -88,16 +86,56 @@ const MONTHS = [
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+const DEFAULT_DURATION_MIN = 30;
+
+function toMinutes(time: string | null | undefined): number | null {
+  const m = /^(\d{1,2}):(\d{2})/.exec(time ?? "");
+  return m ? parseInt(m[1]) * 60 + parseInt(m[2]) : null;
+}
+
+function formatDurationLabel(durationMin: number): string {
+  return durationMin >= 60
+    ? `${durationMin / 60} hour${durationMin > 60 ? "s" : ""}`
+    : `${durationMin} minutes`;
+}
+
+function computeEndTime(startTime: string, durationMin: number): string {
+  const start = toMinutes(startTime) ?? 0;
+  const end = Math.min(start + durationMin, 23 * 60 + 59);
+  return `${String(Math.floor(end / 60)).padStart(2, "0")}:${String(end % 60).padStart(2, "0")}`;
+}
+
+// calendar_events has no duration/notes/location columns: duration lives in
+// start_time/end_time, notes and location live in description.
+function buildTimingAndDescription(data: Record<string, unknown>) {
+  const durationMin = parseInt(data.duration as string) || DEFAULT_DURATION_MIN;
+  const notes = (data.notes as string) || "";
+  const location = ((data.location as string) || "").trim();
+  return {
+    start_time: data.time,
+    end_time: computeEndTime(data.time as string, durationMin),
+    description: location
+      ? [notes, `Location: ${location}`].filter(Boolean).join("\n")
+      : notes,
+  };
+}
+
 function mapEvent(e: CalendarEventRecord): MappedEvent {
+  const startMin = toMinutes(e.start_time);
+  const endMin = toMinutes(e.end_time);
+  const durationMin =
+    startMin !== null && endMin !== null && endMin > startMin
+      ? endMin - startMin
+      : DEFAULT_DURATION_MIN;
   return {
     id: e.id,
     title: e.title || "",
     type: (e.type || "task") as CalendarEventType,
     date: e.date || "",
     startTime: (e.start_time || "09:00").slice(0, 5),
-    duration: e.duration || "30 minutes",
+    duration: formatDurationLabel(durationMin),
     status: e.status || "scheduled",
-    notes: (e.notes as string) || "",
+    notes: e.description || "",
     relatedTo: e.related_type
       ? {
           id: e.related_id || "",
@@ -241,20 +279,12 @@ export function CalendarPageClient({
   // Handle schedule event
   const handleScheduleEvent = async (data: Record<string, unknown>) => {
     startTransition(async () => {
-      const durationMin = parseInt(data.duration as string) || 30;
-      const durationLabel =
-        durationMin >= 60
-          ? `${durationMin / 60} hour${durationMin > 60 ? "s" : ""}`
-          : `${durationMin} minutes`;
-
       const result = await createCalendarEvent({
         title: data.title,
         type: data.type,
         date: data.date,
-        start_time: data.time,
-        duration: durationLabel,
+        ...buildTimingAndDescription(data),
         status: "scheduled",
-        notes: data.notes || "",
         related_type: (data.relatedTo as { type: string } | null)?.type,
         related_id: (data.relatedTo as { id: string } | null)?.id,
         related_name: (data.relatedTo as { name: string } | null)?.name,
@@ -273,19 +303,11 @@ export function CalendarPageClient({
   const handleEditEvent = async (data: Record<string, unknown>) => {
     if (!editEvent) return;
     startTransition(async () => {
-      const durationMin = parseInt(data.duration as string) || 30;
-      const durationLabel =
-        durationMin >= 60
-          ? `${durationMin / 60} hour${durationMin > 60 ? "s" : ""}`
-          : `${durationMin} minutes`;
-
       const result = await updateCalendarEvent(editEvent.id, {
         title: data.title,
         type: data.type,
         date: data.date,
-        start_time: data.time,
-        duration: durationLabel,
-        notes: data.notes || "",
+        ...buildTimingAndDescription(data),
         related_type: (data.relatedTo as { type: string } | null)?.type,
         related_id: (data.relatedTo as { id: string } | null)?.id,
         related_name: (data.relatedTo as { name: string } | null)?.name,

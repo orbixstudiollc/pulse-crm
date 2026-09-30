@@ -8,6 +8,31 @@ import type { Database } from "@/types/database";
 type CalendarEventInsert = Database["public"]["Tables"]["calendar_events"]["Insert"];
 type CalendarEventUpdate = Database["public"]["Tables"]["calendar_events"]["Update"];
 
+// Only these columns exist on calendar_events; any other key would fail the whole write.
+const CALENDAR_EVENT_COLUMNS = [
+  "id",
+  "organization_id",
+  "created_by",
+  "title",
+  "description",
+  "date",
+  "start_time",
+  "end_time",
+  "type",
+  "status",
+  "related_type",
+  "related_name",
+  "related_id",
+] as const;
+
+function pickCalendarColumns(data: Record<string, unknown>) {
+  return Object.fromEntries(
+    Object.entries(data).filter(([key]) =>
+      (CALENDAR_EVENT_COLUMNS as readonly string[]).includes(key),
+    ),
+  );
+}
+
 // ── Read ─────────────────────────────────────────────────────────────────────
 
 export async function getCalendarEvents(month: number, year: number) {
@@ -80,7 +105,7 @@ export async function createCalendarEvent(eventData: Record<string, unknown>) {
   const { data, error } = await supabase
     .from("calendar_events")
     .insert({
-      ...eventData,
+      ...pickCalendarColumns(eventData),
       organization_id: orgId,
       created_by: user.id,
     } as CalendarEventInsert)
@@ -102,7 +127,7 @@ export async function updateCalendarEvent(
 
   const { data, error } = await supabase
     .from("calendar_events")
-    .update(updates as CalendarEventUpdate)
+    .update(pickCalendarColumns(updates) as CalendarEventUpdate)
     .eq("id", id)
     .select()
     .single();
