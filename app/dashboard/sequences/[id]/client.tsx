@@ -1233,12 +1233,12 @@ export function SequenceDetailClient({
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-muted">
-                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Lead</th>
-                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Current Step</th>
-                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Status</th>
-                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Enrolled</th>
-                      <th className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary">Actions</th>
+                    <tr>
+                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Lead</th>
+                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Current Step</th>
+                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Status</th>
+                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Enrolled</th>
+                      <th className="h-10 px-3 text-center text-[13px] font-medium text-fg-secondary border-b border-divider">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1247,8 +1247,8 @@ export function SequenceDetailClient({
                       const enrollStatus = enrollmentStatusConfig[enrollment.status] || enrollmentStatusConfig.active;
 
                       return (
-                        <tr key={enrollment.id} className="hover:bg-muted transition-colors">
-                          <td className="px-3 py-2 border-t border-row">
+                        <tr key={enrollment.id} className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors">
+                          <td className="px-3 py-2 text-[14px] text-fg">
                             <div className="flex items-center gap-3">
                               <Avatar name={lead?.name || "Unknown"} />
                               <div>
@@ -1257,20 +1257,20 @@ export function SequenceDetailClient({
                               </div>
                             </div>
                           </td>
-                          <td className="px-3 py-2 border-t border-row">
+                          <td className="px-3 py-2 text-[14px] text-fg">
                             <span className="text-sm font-semibold text-fg">
                               {enrollment.current_step} / {steps.length}
                             </span>
                           </td>
-                          <td className="px-3 py-2 border-t border-row">
+                          <td className="px-3 py-2 text-[14px] text-fg">
                             <Badge variant={enrollStatus.variant} dot>{enrollStatus.label}</Badge>
                           </td>
-                          <td className="px-3 py-2 border-t border-row">
+                          <td className="px-3 py-2 text-[14px] text-fg">
                             <span className="text-sm text-fg-secondary">
                               {new Date(enrollment.enrolled_at).toLocaleDateString()}
                             </span>
                           </td>
-                          <td className="px-3 py-2 border-t border-row">
+                          <td className="px-3 py-2 text-[14px] text-fg">
                             <div className="flex justify-center">
                               <ActionMenu
                                 items={[

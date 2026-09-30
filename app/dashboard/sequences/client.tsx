@@ -493,26 +493,26 @@ export function SequencesPageClient({
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-muted">
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                  <tr>
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Name
                     </th>
-                    <th className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-center text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Status
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Progress
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Sent
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Open Rate
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Reply Rate
                     </th>
-                    <th className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-center text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Actions
                     </th>
                   </tr>
@@ -536,10 +536,10 @@ export function SequencesPageClient({
                             `/dashboard/sequences/${seq.id}`,
                           )
                         }
-                        className="hover:bg-muted transition-colors cursor-pointer"
+                        className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors cursor-pointer"
                       >
                         {/* Name + Description + Category — inline editing */}
-                        <td className="px-3 py-2 border-t border-row">
+                        <td className="px-3 py-2 text-[14px] text-fg">
                           <div>
                             {editingName?.id === seq.id ? (
                               <input
@@ -580,7 +580,7 @@ export function SequencesPageClient({
                           </div>
                         </td>
                         {/* Inline Status Toggle */}
-                        <td className="px-3 py-2 border-t border-row">
+                        <td className="px-3 py-2 text-[14px] text-fg">
                           <div className="flex justify-center">
                             <StatusToggle
                               status={seq.status}
@@ -592,7 +592,7 @@ export function SequencesPageClient({
                           </div>
                         </td>
                         {/* Progress bar — enrolled vs replied */}
-                        <td className="px-3 py-2 border-t border-row">
+                        <td className="px-3 py-2 text-[14px] text-fg">
                           <div className="min-w-[100px]">
                             <div className="flex items-center justify-between text-xs text-fg-secondary mb-1">
                               <span>{enrolled} enrolled</span>
@@ -606,13 +606,13 @@ export function SequencesPageClient({
                           </div>
                         </td>
                         {/* Sent */}
-                        <td className="px-3 py-2 border-t border-row">
+                        <td className="px-3 py-2 text-[14px] text-fg">
                           <span className="text-sm font-semibold text-fg">
                             {(seq.total_sent || 0).toLocaleString()}
                           </span>
                         </td>
                         {/* Open Rate */}
-                        <td className="px-3 py-2 border-t border-row">
+                        <td className="px-3 py-2 text-[14px] text-fg">
                           <span
                             className={cn(
                               "text-sm font-semibold",
@@ -627,7 +627,7 @@ export function SequencesPageClient({
                           </span>
                         </td>
                         {/* Reply Rate */}
-                        <td className="px-3 py-2 border-t border-row">
+                        <td className="px-3 py-2 text-[14px] text-fg">
                           <span
                             className={cn(
                               "text-sm font-semibold",
@@ -643,7 +643,7 @@ export function SequencesPageClient({
                         </td>
                         {/* Actions */}
                         <td
-                          className="px-3 py-2 border-t border-row"
+                          className="px-3 py-2 text-[14px] text-fg"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <div className="flex justify-center">

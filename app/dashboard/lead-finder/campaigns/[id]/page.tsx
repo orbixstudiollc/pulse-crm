@@ -957,18 +957,18 @@ export default function CampaignDetailPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-row">
-                <th className="p-3 w-9">
+              <tr>
+                <th className="h-10 px-3 w-9 border-b border-divider">
                   <input type="checkbox" checked={selectedLeads.size === filteredLeads.length && filteredLeads.length > 0} onChange={() => setSelectedLeads(selectedLeads.size === filteredLeads.length ? new Set() : new Set(filteredLeads.map((l) => l.id)))} className="rounded" />
                 </th>
-                <th className="p-3 text-xs font-medium text-fg-secondary whitespace-nowrap">Label</th>
+                <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider whitespace-nowrap">Label</th>
                 {fields.filter((f) => extraColumns.has(f._id)).map((f) => (
-                  <th key={f._id} className="p-3 text-xs font-medium text-fg-secondary whitespace-nowrap">{f.label}</th>
+                  <th key={f._id} className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider whitespace-nowrap">{f.label}</th>
                 ))}
-                <th className="p-3 text-xs font-medium text-fg-secondary whitespace-nowrap">Added</th>
-                <th className="p-3 text-xs font-medium text-fg-secondary whitespace-nowrap">Score</th>
-                <th className="p-3 text-xs font-medium text-fg-secondary whitespace-nowrap">Status</th>
-                <th className="p-3 w-20" />
+                <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider whitespace-nowrap">Added</th>
+                <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider whitespace-nowrap">Score</th>
+                <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider whitespace-nowrap">Status</th>
+                <th className="h-10 px-3 w-20 border-b border-divider" />
               </tr>
             </thead>
             <tbody>
@@ -986,11 +986,11 @@ export default function CampaignDetailPage() {
                   const status = displayStatus(lead);
                   const isRe = reEnrichingLeads.has(lead.id);
                   return (
-                    <tr key={lead.id} className="border-b border-row hover:bg-muted transition-colors cursor-pointer" onClick={() => setDrawerLeadId(lead.id)}>
-                      <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                    <tr key={lead.id} className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors cursor-pointer" onClick={() => setDrawerLeadId(lead.id)}>
+                      <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                         <input type="checkbox" checked={selectedLeads.has(lead.id)} onChange={() => setSelectedLeads((prev) => { const n = new Set(prev); if (n.has(lead.id)) n.delete(lead.id); else n.add(lead.id); return n; })} className="rounded" />
                       </td>
-                      <td className="p-3 max-w-[200px]">
+                      <td className="px-3 py-2 max-w-[200px]">
                         <button type="button" onClick={(e) => { e.stopPropagation(); setDrawerLeadId(lead.id); }} className="text-sm font-medium text-fg hover:underline break-words line-clamp-2 text-left cursor-pointer">
                           {lead.display_name || "Unknown"}
                         </button>
@@ -1007,7 +1007,7 @@ export default function CampaignDetailPage() {
                       {fields.filter((f) => extraColumns.has(f._id)).map((f) => {
                         const { display, isUrl } = resolveFieldValue(lead, f);
                         return (
-                          <td key={f._id} className="p-3 text-xs max-w-[160px]">
+                          <td key={f._id} className="px-3 py-2 text-xs max-w-[160px]">
                             {isUrl && display !== "—" ? (
                               <a href={display} target="_blank" rel="noopener noreferrer" className="text-accent-strong hover:underline truncate block" onClick={(e) => e.stopPropagation()}>
                                 {display.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}
@@ -1018,18 +1018,18 @@ export default function CampaignDetailPage() {
                           </td>
                         );
                       })}
-                      <td className="p-3 text-xs text-fg-secondary whitespace-nowrap">{formatRelativeTime(lead.created_at)}</td>
-                      <td className="p-3">
+                      <td className="px-3 py-2 text-xs text-fg-secondary whitespace-nowrap">{formatRelativeTime(lead.created_at)}</td>
+                      <td className="px-3 py-2">
                         {lead.status === "new" || lead.status === "enriching"
                           ? <span className="text-xs text-fg-muted">—</span>
                           : <ScoreBadge score={lead.score} />}
                       </td>
-                      <td className="p-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_STYLES[status] || "text-fg-secondary bg-muted"}`}>
+                      <td className="px-3 py-2">
+                        <span className={`inline-flex items-center px-2 h-5 rounded-full text-[12px] font-medium capitalize ${STATUS_STYLES[status] || "text-fg-secondary bg-muted"}`}>
                           {status}
                         </span>
                       </td>
-                      <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                         {isRe ? (
                           <CircleNotchIcon size={14} className="animate-spin text-fg-muted" />
                         ) : lead.status === "new" ? (
@@ -1073,9 +1073,9 @@ export default function CampaignDetailPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-row">
+                <tr>
                   {["Actor", "Status", "Results", "Cost", "Started"].map((h) => (
-                    <th key={h} className="p-3 text-xs font-medium text-fg-secondary">{h}</th>
+                    <th key={h} className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -1083,17 +1083,17 @@ export default function CampaignDetailPage() {
                 {campaign.runs.slice(0, 5).map((run) => {
                   const actor = getActorById(run.actor_id);
                   return (
-                    <tr key={run.id} className="border-b border-row">
-                      <td className="p-3 text-sm text-fg">{actor?.name || run.actor_id}</td>
-                      <td className="p-3">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${run.status === "succeeded" ? "text-success bg-success-surface" : run.status === "running" ? "text-warning bg-warning-surface" : "text-danger bg-danger-surface"}`}>
+                    <tr key={run.id} className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors">
+                      <td className="px-3 py-2 text-sm text-fg">{actor?.name || run.actor_id}</td>
+                      <td className="px-3 py-2">
+                        <span className={`inline-flex items-center gap-1 px-2 h-5 rounded-full text-[12px] font-medium capitalize ${run.status === "succeeded" ? "text-success bg-success-surface" : run.status === "running" ? "text-warning bg-warning-surface" : "text-danger bg-danger-surface"}`}>
                           {run.status === "running" && <CircleNotchIcon size={10} className="animate-spin" />}
                           {run.status}
                         </span>
                       </td>
-                      <td className="p-3 text-sm text-fg-secondary">{run.result_count ?? "—"}</td>
-                      <td className="p-3 text-sm text-fg-secondary">{run.cost_usd != null ? `$${run.cost_usd.toFixed(4)}` : "—"}</td>
-                      <td className="p-3 text-xs text-fg-secondary">{new Date(run.started_at).toLocaleString()}</td>
+                      <td className="px-3 py-2 text-sm text-fg-secondary">{run.result_count ?? "—"}</td>
+                      <td className="px-3 py-2 text-sm text-fg-secondary">{run.cost_usd != null ? `$${run.cost_usd.toFixed(4)}` : "—"}</td>
+                      <td className="px-3 py-2 text-xs text-fg-secondary">{new Date(run.started_at).toLocaleString()}</td>
                     </tr>
                   );
                 })}

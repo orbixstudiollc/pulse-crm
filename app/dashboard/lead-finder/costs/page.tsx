@@ -239,11 +239,11 @@ export default function CostsPage() {
               <h3 className="text-sm font-semibold text-fg">Campaign Cost Breakdown</h3>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-[14px]">
                 <thead>
-                  <tr className="border-b border-line">
+                  <tr>
                     {["Campaign", "Leads", "Apify Cost", "LLM Cost", "Total Cost", "Avg/Lead"].map((h, i) => (
-                      <th key={h} className={`py-3 px-4 font-medium text-fg-secondary ${i > 0 ? "text-right" : "text-left"}`}>{h}</th>
+                      <th key={h} className={`h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider ${i > 0 ? "text-right" : "text-left"}`}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -252,26 +252,26 @@ export default function CostsPage() {
                     <tr><td colSpan={6} className="py-10 text-center text-sm text-fg-secondary">No cost data yet</td></tr>
                   ) : (
                     Object.entries(data.costByCampaign).sort(([, a], [, b]) => b.totalCost - a.totalCost).map(([id, info]) => (
-                      <tr key={id} className="border-b border-row last:border-0 hover:bg-muted transition-colors">
-                        <td className="py-3 px-4 font-medium text-fg">{info.name}</td>
-                        <td className="py-3 px-4 text-right text-fg-secondary">{info.leadCount}</td>
-                        <td className="py-3 px-4 text-right text-warning">${info.apifyCost.toFixed(4)}</td>
-                        <td className="py-3 px-4 text-right text-accent-strong">${info.llmCost.toFixed(4)}</td>
-                        <td className="py-3 px-4 text-right font-medium text-fg">${info.totalCost.toFixed(4)}</td>
-                        <td className="py-3 px-4 text-right text-fg-secondary">${info.leadCount > 0 ? (info.totalCost / info.leadCount).toFixed(4) : "0.0000"}</td>
+                      <tr key={id} className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors">
+                        <td className="py-2 px-4 font-medium text-fg">{info.name}</td>
+                        <td className="py-2 px-4 text-right text-fg-secondary">{info.leadCount}</td>
+                        <td className="py-2 px-4 text-right text-warning">${info.apifyCost.toFixed(4)}</td>
+                        <td className="py-2 px-4 text-right text-accent-strong">${info.llmCost.toFixed(4)}</td>
+                        <td className="py-2 px-4 text-right font-medium text-fg">${info.totalCost.toFixed(4)}</td>
+                        <td className="py-2 px-4 text-right text-fg-secondary">${info.leadCount > 0 ? (info.totalCost / info.leadCount).toFixed(4) : "0.0000"}</td>
                       </tr>
                     ))
                   )}
                 </tbody>
                 {Object.keys(data.costByCampaign).length > 0 && (
                   <tfoot>
-                    <tr className="border-t border-line bg-subtle">
-                      <td className="py-3 px-4 font-semibold text-fg">Total</td>
-                      <td className="py-3 px-4 text-right font-medium text-fg">{Object.values(data.costByCampaign).reduce((s, c) => s + c.leadCount, 0)}</td>
-                      <td className="py-3 px-4 text-right font-medium text-warning">${data.totalApifyCost.toFixed(4)}</td>
-                      <td className="py-3 px-4 text-right font-medium text-accent-strong">${data.totalLlmCost.toFixed(4)}</td>
-                      <td className="py-3 px-4 text-right font-semibold text-fg">${data.totalCost.toFixed(4)}</td>
-                      <td className="py-3 px-4 text-right font-medium text-fg-secondary">${avgCostPerLead.toFixed(4)}</td>
+                    <tr className="h-10 border-t border-divider bg-subtle">
+                      <td className="py-2 px-4 font-semibold text-fg">Total</td>
+                      <td className="py-2 px-4 text-right font-medium text-fg">{Object.values(data.costByCampaign).reduce((s, c) => s + c.leadCount, 0)}</td>
+                      <td className="py-2 px-4 text-right font-medium text-warning">${data.totalApifyCost.toFixed(4)}</td>
+                      <td className="py-2 px-4 text-right font-medium text-accent-strong">${data.totalLlmCost.toFixed(4)}</td>
+                      <td className="py-2 px-4 text-right font-semibold text-fg">${data.totalCost.toFixed(4)}</td>
+                      <td className="py-2 px-4 text-right font-medium text-fg-secondary">${avgCostPerLead.toFixed(4)}</td>
                     </tr>
                   </tfoot>
                 )}
@@ -286,22 +286,22 @@ export default function CostsPage() {
                 <h3 className="text-sm font-semibold text-fg">LLM Cost by Operation</h3>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-[14px]">
                   <thead>
-                    <tr className="border-b border-line">
+                    <tr>
                       {["Operation", "Calls", "Input Tokens", "Output Tokens", "Cost"].map((h, i) => (
-                        <th key={h} className={`py-3 px-4 font-medium text-fg-secondary ${i > 0 ? "text-right" : "text-left"}`}>{h}</th>
+                        <th key={h} className={`h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider ${i > 0 ? "text-right" : "text-left"}`}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {Object.entries(data.llmCostByOperation).sort(([, a], [, b]) => b.totalCost - a.totalCost).map(([op, info]) => (
-                      <tr key={op} className="border-b border-row last:border-0 hover:bg-muted transition-colors">
-                        <td className="py-3 px-4 text-fg capitalize">{op.replace(/-/g, " ")}</td>
-                        <td className="py-3 px-4 text-right text-fg-secondary">{info.count}</td>
-                        <td className="py-3 px-4 text-right text-fg-secondary">{info.inputTokens.toLocaleString()}</td>
-                        <td className="py-3 px-4 text-right text-fg-secondary">{info.outputTokens.toLocaleString()}</td>
-                        <td className="py-3 px-4 text-right font-medium text-accent-strong">${info.totalCost.toFixed(4)}</td>
+                      <tr key={op} className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors">
+                        <td className="py-2 px-4 text-fg capitalize">{op.replace(/-/g, " ")}</td>
+                        <td className="py-2 px-4 text-right text-fg-secondary">{info.count}</td>
+                        <td className="py-2 px-4 text-right text-fg-secondary">{info.inputTokens.toLocaleString()}</td>
+                        <td className="py-2 px-4 text-right text-fg-secondary">{info.outputTokens.toLocaleString()}</td>
+                        <td className="py-2 px-4 text-right font-medium text-accent-strong">${info.totalCost.toFixed(4)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -316,11 +316,11 @@ export default function CostsPage() {
               <h3 className="text-sm font-semibold text-fg">Recent Apify Runs</h3>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-[14px]">
                 <thead>
-                  <tr className="border-b border-line">
+                  <tr>
                     {["Actor", "Campaign", "Status", "Results", "Cost", "When"].map((h, i) => (
-                      <th key={h} className={`py-3 px-4 font-medium text-fg-secondary ${i >= 3 ? "text-right" : "text-left"}`}>{h}</th>
+                      <th key={h} className={`h-10 px-4 text-[13px] font-medium text-fg-secondary border-b border-divider ${i >= 3 ? "text-right" : "text-left"}`}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -332,17 +332,17 @@ export default function CostsPage() {
                       const statusInfo = RUN_STATUS[run.status] ?? RUN_STATUS["ready"];
                       const StatusIcon = statusInfo.icon;
                       return (
-                        <tr key={run.id} className="border-b border-row last:border-0 hover:bg-muted transition-colors">
-                          <td className="py-3 px-4 font-mono text-xs text-fg">{run.actorId}</td>
-                          <td className="py-3 px-4 text-fg-secondary">{run.campaignName}</td>
-                          <td className="py-3 px-4">
+                        <tr key={run.id} className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors">
+                          <td className="py-2 px-4 font-mono text-xs text-fg">{run.actorId}</td>
+                          <td className="py-2 px-4 text-fg-secondary">{run.campaignName}</td>
+                          <td className="py-2 px-4">
                             <span className={`flex items-center gap-1.5 text-xs font-medium ${statusInfo.color}`}>
                               <StatusIcon size={12} weight="fill" />{run.status}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-right text-fg-secondary">{run.resultCount}</td>
-                          <td className="py-3 px-4 text-right text-warning">${run.costUsd.toFixed(4)}</td>
-                          <td className="py-3 px-4 text-right text-fg-secondary">{timeAgo(run.startedAt)}</td>
+                          <td className="py-2 px-4 text-right text-fg-secondary">{run.resultCount}</td>
+                          <td className="py-2 px-4 text-right text-warning">${run.costUsd.toFixed(4)}</td>
+                          <td className="py-2 px-4 text-right text-fg-secondary">{timeAgo(run.startedAt)}</td>
                         </tr>
                       );
                     })

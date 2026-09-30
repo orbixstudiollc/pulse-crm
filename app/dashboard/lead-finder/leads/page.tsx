@@ -853,8 +853,8 @@ export default function AllLeadsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-line">
-                  <th className="p-3 w-10">
+                <tr>
+                  <th className="h-10 px-3 w-10 border-b border-divider">
                     <input
                       type="checkbox"
                       checked={
@@ -865,39 +865,39 @@ export default function AllLeadsPage() {
                       className="rounded border-line bg-subtle"
                     />
                   </th>
-                  <th className="p-3 text-xs font-medium text-fg-secondary min-w-[180px]">
+                  <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider min-w-[180px]">
                     Name
                   </th>
                   {/* Dynamic campaign columns */}
                   {dynFields.map((f) => (
                     <th
                       key={f.id}
-                      className="p-3 text-xs font-medium text-fg-secondary min-w-[120px]"
+                      className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider min-w-[120px]"
                     >
                       {f.label}
                     </th>
                   ))}
-                  <th className="p-3 text-xs font-medium text-fg-secondary">
+                  <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Email
                   </th>
                   {!campaignFilter && (
-                    <th className="p-3 text-xs font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Campaign
                     </th>
                   )}
-                  <th className="p-3 text-xs font-medium text-fg-secondary min-w-[70px]">
+                  <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider min-w-[70px]">
                     Score
                   </th>
-                  <th className="p-3 text-xs font-medium text-fg-secondary min-w-[80px]">
+                  <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider min-w-[80px]">
                     Cost
                   </th>
-                  <th className="p-3 text-xs font-medium text-fg-secondary min-w-[100px]">
+                  <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider min-w-[100px]">
                     Status
                   </th>
-                  <th className="p-3 text-xs font-medium text-fg-secondary">
+                  <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Source
                   </th>
-                  <th className="p-3 text-xs font-medium text-fg-secondary">
+                  <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Created
                   </th>
                 </tr>
@@ -912,11 +912,11 @@ export default function AllLeadsPage() {
                   return (
                     <tr
                       key={lead.id}
-                      className="border-b border-line hover:bg-muted transition-colors cursor-pointer"
+                      className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors cursor-pointer"
                       onClick={() => setDrawerLeadId(lead.id)}
                     >
                       <td
-                        className="p-3"
+                        className="px-3 py-2"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <input
@@ -926,7 +926,7 @@ export default function AllLeadsPage() {
                           className="rounded border-line bg-subtle"
                         />
                       </td>
-                      <td className="p-3">
+                      <td className="px-3 py-2">
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setDrawerLeadId(lead.id); }}
@@ -948,7 +948,7 @@ export default function AllLeadsPage() {
                           return (
                             <td
                               key={f.id}
-                              className="p-3 text-xs truncate max-w-[180px]"
+                              className="px-3 py-2 text-xs truncate max-w-[180px]"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <a
@@ -968,13 +968,13 @@ export default function AllLeadsPage() {
                         return (
                           <td
                             key={f.id}
-                            className="p-3 text-sm text-fg truncate max-w-[180px]"
+                            className="px-3 py-2 text-sm text-fg truncate max-w-[180px]"
                           >
                             {val}
                           </td>
                         );
                       })}
-                      <td className="p-3">
+                      <td className="px-3 py-2">
                         {lead.email ? (
                           <span className="text-sm text-fg-secondary flex items-center gap-1">
                             <EnvelopeIcon size={12} />
@@ -987,20 +987,20 @@ export default function AllLeadsPage() {
                         )}
                       </td>
                       {!campaignFilter && (
-                        <td className="p-3">
+                        <td className="px-3 py-2">
                           <span className="text-xs text-fg-secondary">
                             {campaignNameMap[lead.campaign_id] || "Unknown"}
                           </span>
                         </td>
                       )}
-                      <td className="p-3">
+                      <td className="px-3 py-2">
                         <ScoreBadge score={lead.score} />
                       </td>
-                      <td className="p-3 text-xs text-fg-secondary tabular-nums">
+                      <td className="px-3 py-2 text-xs text-fg-secondary tabular-nums">
                         {totalCost > 0 ? `$${totalCost.toFixed(4)}` : "\u2014"}
                       </td>
                       <td
-                        className="p-3"
+                        className="px-3 py-2"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <StatusDropdown
@@ -1008,12 +1008,12 @@ export default function AllLeadsPage() {
                           onSelect={(s) => updateLeadStatus(lead.id, s)}
                         />
                       </td>
-                      <td className="p-3">
+                      <td className="px-3 py-2">
                         <span className="text-xs text-fg-secondary capitalize">
                           {lead.source?.replace(/_/g, " ") || "--"}
                         </span>
                       </td>
-                      <td className="p-3">
+                      <td className="px-3 py-2">
                         <span className="text-xs text-fg-secondary">
                           {new Date(lead.created_at).toLocaleDateString()}
                         </span>
