@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
   AddressBookIcon,
+  CalendarBlankIcon,
   ChartBarIcon,
   CrosshairIcon,
   CursorClickIcon,
@@ -18,6 +19,7 @@ import {
   GaugeIcon,
   MagnifyingGlassIcon,
   MegaphoneSimpleIcon,
+  NoteIcon,
   PaperPlaneTiltIcon,
   PulseIcon,
   RobotIcon,
@@ -38,10 +40,12 @@ const navigation = [
   { name: "ICP", href: "/dashboard/icp", icon: CrosshairIcon },
   { name: "Campaigns", href: "/dashboard/campaigns", icon: PaperPlaneTiltIcon },
   { name: "Sequences", href: "/dashboard/sequences", icon: EnvelopeIcon },
+  { name: "Templates", href: "/dashboard/templates", icon: NoteIcon },
   { name: "Inbox", href: "/dashboard/inbox", icon: TrayIcon },
   { name: "Contacts", href: "/dashboard/contacts", icon: AddressBookIcon },
   { name: "Sales", href: "/dashboard/sales", icon: CurrencyDollarIcon },
   { name: "Activity", href: "/dashboard/activity", icon: PulseIcon },
+  { name: "Calendar", href: "/dashboard/calendar", icon: CalendarBlankIcon },
   { name: "Analytics", href: "/dashboard/analytics", icon: ChartBarIcon },
   { name: "Proposals", href: "/dashboard/proposals", icon: ScrollIcon },
   { name: "Playbook", href: "/dashboard/playbook", icon: FileTextIcon },
