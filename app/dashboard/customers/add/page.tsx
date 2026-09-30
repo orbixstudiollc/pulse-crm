@@ -7,7 +7,6 @@ import {
   Input,
   Select,
   Textarea,
-  FormSection,
   RadioGroup,
   TagInput,
   UserIcon,
@@ -15,7 +14,9 @@ import {
   PlusIcon,
   XIcon,
   CircleNotchIcon,
+  UsersIcon,
 } from "@/components/ui";
+import { Page, PageHeader, Section } from "@/components/dashboard";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { usePageHeader } from "@/hooks";
@@ -206,15 +207,13 @@ export default function AddCustomerPage() {
   });
 
   return (
-    <div className="min-h-full p-6">
-      <div className="max-w-3xl mx-auto space-y-6">
-        {/* Page Title */}
-        <h1 className="text-xl font-semibold text-fg">
-          Add Customer
-        </h1>
+    <Page>
+      {/* Page Title */}
+      <PageHeader title="Add Customer" icon={<UsersIcon size={18} />} />
 
+      <div className="max-w-[560px]">
         {/* Basic Information */}
-        <FormSection
+        <Section
           title="Basic information"
           description="Customer's personal and contact details"
         >
@@ -304,10 +303,10 @@ export default function AddCustomerPage() {
               onChange={(e) => setPhone(e.target.value)}
             />
           </div>
-        </FormSection>
+        </Section>
 
         {/* Company Information */}
-        <FormSection
+        <Section
           title="Company information"
           description="Details about the customer's organization"
         >
@@ -361,10 +360,10 @@ export default function AddCustomerPage() {
             value={website}
             onChange={(e) => setWebsite(e.target.value)}
           />
-        </FormSection>
+        </Section>
 
         {/* Address */}
-        <FormSection
+        <Section
           title="Address"
           description="Customer's location information"
         >
@@ -413,10 +412,10 @@ export default function AddCustomerPage() {
               ))}
             </Select>
           </div>
-        </FormSection>
+        </Section>
 
         {/* Account Settings */}
-        <FormSection
+        <Section
           title="Account Settings"
           description="Configure customer's plan and status"
         >
@@ -450,18 +449,18 @@ export default function AddCustomerPage() {
               onChange={(e) => setMonthlyRevenue(e.target.value)}
             />
           </div>
-        </FormSection>
+        </Section>
 
         {/* Tags */}
-        <FormSection
+        <Section
           title="Tags"
           description="Add tags to categorize this customer"
         >
           <TagInput tags={tags} onChange={setTags} placeholder="Add a tag..." />
-        </FormSection>
+        </Section>
 
         {/* Notes */}
-        <FormSection
+        <Section
           title="Notes"
           description="Add any additional information about this customer"
         >
@@ -471,10 +470,10 @@ export default function AddCustomerPage() {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
-        </FormSection>
+        </Section>
 
         {/* Custom Fields */}
-        <FormSection
+        <Section
           title="Custom Fields"
           description="Add custom data fields for this customer"
         >
@@ -520,28 +519,26 @@ export default function AddCustomerPage() {
             <PlusIcon size={18} />
             Add Custom Field
           </button>
-        </FormSection>
+        </Section>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-6 border-t border-line">
+        <div className="flex items-center justify-end gap-3 px-8 py-6 border-t border-divider max-sm:px-4">
           <Link href="/dashboard/customers">
-            <Button variant="ghost">Cancel</Button>
+            <Button variant="outline">Cancel</Button>
           </Link>
-          <div className="flex items-center gap-3">
-            <Button
-              leftIcon={
-                isPending ? (
-                  <CircleNotchIcon size={18} className="animate-spin" />
-                ) : undefined
-              }
-              onClick={handleSave}
-              disabled={isPending}
-            >
-              {isPending ? "Saving Customer" : "Save Customer"}
-            </Button>
-          </div>
+          <Button
+            leftIcon={
+              isPending ? (
+                <CircleNotchIcon size={18} className="animate-spin" />
+              ) : undefined
+            }
+            onClick={handleSave}
+            disabled={isPending}
+          >
+            {isPending ? "Saving Customer" : "Save Customer"}
+          </Button>
         </div>
       </div>
-    </div>
+    </Page>
   );
 }

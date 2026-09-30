@@ -7,7 +7,6 @@ import {
   Input,
   Select,
   Textarea,
-  FormSection,
   RadioGroup,
   TagInput,
   UserIcon,
@@ -18,7 +17,9 @@ import {
   CircleNotchIcon,
   TrashIcon,
   DeleteConfirmModal,
+  UsersIcon,
 } from "@/components/ui";
+import { Page, PageHeader, Section } from "@/components/dashboard";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { usePageHeader } from "@/hooks";
@@ -253,14 +254,12 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
   };
 
   return (
-    <div className="min-h-full p-6">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <h1 className="text-xl font-semibold text-fg">
-          Edit Customer
-        </h1>
+    <Page>
+      <PageHeader title="Edit Customer" icon={<UsersIcon size={18} />} />
 
+      <div className="max-w-[560px]">
         {/* Basic Information */}
-        <FormSection
+        <Section
           title="Basic information"
           description="Customer's personal and contact details"
         >
@@ -346,10 +345,10 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
               optional
             />
           </div>
-        </FormSection>
+        </Section>
 
         {/* Company Information */}
-        <FormSection
+        <Section
           title="Company information"
           description="Details about the customer's organization"
         >
@@ -398,10 +397,10 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
             onChange={(e) => setWebsite(e.target.value)}
             optional
           />
-        </FormSection>
+        </Section>
 
         {/* Address */}
-        <FormSection
+        <Section
           title="Address"
           description="Customer's location information"
         >
@@ -445,10 +444,10 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
               ))}
             </Select>
           </div>
-        </FormSection>
+        </Section>
 
         {/* Account Settings */}
-        <FormSection
+        <Section
           title="Account Settings"
           description="Configure customer's plan and status"
         >
@@ -480,18 +479,18 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
               optional
             />
           </div>
-        </FormSection>
+        </Section>
 
         {/* Tags */}
-        <FormSection
+        <Section
           title="Tags"
           description="Add tags to categorize this customer"
         >
           <TagInput tags={tags} onChange={setTags} placeholder="Add a tag..." />
-        </FormSection>
+        </Section>
 
         {/* Notes */}
-        <FormSection
+        <Section
           title="Notes"
           description="Add any additional information about this customer"
         >
@@ -500,10 +499,10 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
             onChange={(e) => setNotes(e.target.value)}
             rows={4}
           />
-        </FormSection>
+        </Section>
 
         {/* Custom Fields */}
-        <FormSection
+        <Section
           title="Custom Fields"
           description="Add custom data fields for this customer"
         >
@@ -549,39 +548,12 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
             <PlusIcon size={18} />
             Add Custom Field
           </button>
-        </FormSection>
-
-        {/* Danger Zone */}
-        <div className="rounded-lg border border-danger bg-surface p-4">
-          <h3 className="text-base font-medium text-danger mb-2">
-            Delete Customer
-          </h3>
-          <p className="text-sm text-fg-secondary mb-4">
-            Once you delete a customer, there is no going back. All associated
-            data including notes, activity history, and deals will be
-            permanently removed.
-          </p>
-          <Button
-            variant="outline"
-            leftIcon={
-              deleting ? (
-                <CircleNotchIcon size={18} className="animate-spin" />
-              ) : (
-                <TrashIcon size={18} />
-              )
-            }
-            onClick={() => setShowDeleteModal(true)}
-            disabled={deleting}
-            className="bg-danger border-danger text-on-inverse hover:bg-danger hover:border-danger"
-          >
-            {deleting ? "Deleting..." : "Delete Customer"}
-          </Button>
-        </div>
+        </Section>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-6 border-t border-line">
+        <div className="flex items-center justify-end gap-3 px-8 py-6 border-t border-divider max-sm:px-4">
           <Link href={`/dashboard/customers/${customer.id}`}>
-            <Button variant="ghost">Cancel</Button>
+            <Button variant="outline">Cancel</Button>
           </Link>
           <Button
             leftIcon={
@@ -597,6 +569,34 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
             {isPending ? "Saving Changes" : "Save Changes"}
           </Button>
         </div>
+
+        {/* Danger Zone */}
+        <Section
+          title={<span className="text-danger">Delete Customer</span>}
+          description={
+            <>
+              Once you delete a customer, there is no going back. All associated
+              data including notes, activity history, and deals will be
+              permanently removed.
+            </>
+          }
+        >
+          <Button
+            variant="outline"
+            leftIcon={
+              deleting ? (
+                <CircleNotchIcon size={18} className="animate-spin" />
+              ) : (
+                <TrashIcon size={18} />
+              )
+            }
+            onClick={() => setShowDeleteModal(true)}
+            disabled={deleting}
+            className="bg-danger border-danger text-on-inverse hover:bg-danger hover:border-danger"
+          >
+            {deleting ? "Deleting..." : "Delete Customer"}
+          </Button>
+        </Section>
       </div>
 
       <DeleteConfirmModal
@@ -607,6 +607,6 @@ export function EditCustomerClient({ customer }: { customer: CustomerRow }) {
         itemName={customerName}
         loading={deleting}
       />
-    </div>
+    </Page>
   );
 }

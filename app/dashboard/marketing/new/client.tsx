@@ -9,8 +9,9 @@ import {
   ArrowLeftIcon,
   SparkleIcon,
   GlobeIcon,
+  MegaphoneSimpleIcon,
 } from "@/components/ui";
-import { PageHeader } from "@/components/dashboard";
+import { Page, PageHeader, Section } from "@/components/dashboard";
 import { cn } from "@/lib/utils";
 import { createMarketingAudit, getMarketingAuditById, updateMarketingAudit } from "@/lib/actions/marketing";
 import { aiRunQuickSnapshot, fetchWebsiteContent, aiRunSingleDimension, finalizeFullAudit } from "@/lib/actions/ai-marketing";
@@ -147,8 +148,8 @@ export function NewAuditClient() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6 lg:p-6">
-      <PageHeader title="New Marketing Audit">
+    <Page>
+      <PageHeader title="New Marketing Audit" icon={<MegaphoneSimpleIcon size={18} />}>
         <Button variant="ghost" onClick={() => router.push("/dashboard/marketing")}>
           <ArrowLeftIcon className="h-4 w-4 mr-2" weight="bold" />
           Back
@@ -157,7 +158,7 @@ export function NewAuditClient() {
 
       {isRunning ? (
         /* Running State */
-        <div className="flex flex-col items-center justify-center py-20">
+        <div className="flex flex-col items-center justify-center px-8 py-20 max-sm:px-4">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
@@ -196,74 +197,78 @@ export function NewAuditClient() {
         </div>
       ) : (
         /* Form */
-        <form onSubmit={handleSubmit} className="mx-auto w-full max-w-lg space-y-5">
-          {/* URL */}
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-fg">
-              Website URL <span className="text-danger ml-0.5">*</span>
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted">
-                <GlobeIcon className="h-4 w-4" weight="regular" />
-              </span>
+        <form onSubmit={handleSubmit} className="w-full max-w-[560px]">
+          <Section className="space-y-5">
+            {/* URL */}
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-fg">
+                Website URL <span className="text-danger ml-0.5">*</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted">
+                  <GlobeIcon className="h-4 w-4" weight="regular" />
+                </span>
+                <input
+                  type="text"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="example.com"
+                  className="w-full rounded border border-line bg-surface pl-10 pr-3 py-2.5 text-sm text-fg placeholder:text-fg-muted transition-shadow focus:outline-none focus:border-line focus:shadow-focus"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Business Name */}
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-fg">
+                Business Name
+                <span className="text-fg-muted font-normal ml-1">(optional)</span>
+              </label>
               <input
                 type="text"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="example.com"
-                className="w-full rounded border border-line bg-surface pl-10 pr-3 py-2.5 text-sm text-fg placeholder:text-fg-muted transition-shadow focus:outline-none focus:border-line focus:shadow-focus"
-                required
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                placeholder="Acme Inc."
+                className="w-full rounded border border-line bg-surface px-3 py-2.5 text-sm text-fg placeholder:text-fg-muted transition-shadow focus:outline-none focus:border-line focus:shadow-focus"
               />
             </div>
-          </div>
 
-          {/* Business Name */}
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-fg">
-              Business Name
-              <span className="text-fg-muted font-normal ml-1">(optional)</span>
-            </label>
-            <input
-              type="text"
-              value={businessName}
-              onChange={(e) => setBusinessName(e.target.value)}
-              placeholder="Acme Inc."
-              className="w-full rounded border border-line bg-surface px-3 py-2.5 text-sm text-fg placeholder:text-fg-muted transition-shadow focus:outline-none focus:border-line focus:shadow-focus"
-            />
-          </div>
-
-          {/* Audit Type */}
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-fg">
-              Audit Type
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              {AUDIT_TYPES.map((type) => (
-                <button
-                  key={type.id}
-                  type="button"
-                  onClick={() => setAuditType(type.id)}
-                  className={cn(
-                    "rounded border p-3 text-left transition-all",
-                    auditType === type.id
-                      ? "border-inverse bg-subtle shadow-focus"
-                      : "border-line hover:border-fg-muted",
-                  )}
-                >
-                  <p className="text-sm font-medium text-fg">{type.label}</p>
-                  <p className="mt-0.5 text-xs text-fg-secondary">{type.description}</p>
-                  <p className="mt-1 text-xs text-fg-muted">{type.time}</p>
-                </button>
-              ))}
+            {/* Audit Type */}
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-fg">
+                Audit Type
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {AUDIT_TYPES.map((type) => (
+                  <button
+                    key={type.id}
+                    type="button"
+                    onClick={() => setAuditType(type.id)}
+                    data-clay-box className={cn(
+                      "rounded border p-3 text-left transition-all",
+                      auditType === type.id
+                        ? "border-inverse bg-subtle shadow-focus"
+                        : "border-line hover:border-fg-muted",
+                    )}
+                  >
+                    <p className="text-sm font-medium text-fg">{type.label}</p>
+                    <p className="mt-0.5 text-xs text-fg-secondary">{type.description}</p>
+                    <p className="mt-1 text-xs text-fg-muted">{type.time}</p>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <Button type="submit" disabled={isPending} className="w-full">
-            <SparkleIcon className="h-4 w-4 mr-2" weight="fill" />
-            {isPending ? "Starting..." : "Run Audit"}
-          </Button>
+            <div className="flex justify-end">
+              <Button type="submit" disabled={isPending}>
+                <SparkleIcon className="h-4 w-4 mr-2" weight="fill" />
+                {isPending ? "Starting..." : "Run Audit"}
+              </Button>
+            </div>
+          </Section>
         </form>
       )}
-    </div>
+    </Page>
   );
 }

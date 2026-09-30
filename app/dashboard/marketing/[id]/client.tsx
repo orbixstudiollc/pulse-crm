@@ -15,8 +15,9 @@ import {
   EnvelopeIcon,
   CheckCircleIcon,
   WarningIcon,
+  MegaphoneSimpleIcon,
 } from "@/components/ui";
-import { PageHeader } from "@/components/dashboard";
+import { Page, PageHeader, PageTabs, Section, DetailLayout } from "@/components/dashboard";
 import { cn } from "@/lib/utils";
 import { chartAccent, chartGrid, axisTick } from "@/lib/design-system/chart-colors";
 import { updateMarketingActionItem } from "@/lib/actions/marketing";
@@ -267,37 +268,40 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
 
   function renderOverview() {
     return (
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Score + Radar */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="rounded-lg border border-line bg-surface p-4 flex flex-col items-center">
-            <LargeScoreGauge score={audit.overall_score} grade={audit.grade} />
-            <p className="mt-4 text-sm text-center text-fg-secondary">{audit.summary}</p>
-          </div>
+      <DetailLayout
+        aside={
+          <>
+            {/* Score + Radar */}
+            <div className="flex flex-col items-center px-6 py-5">
+              <LargeScoreGauge score={audit.overall_score} grade={audit.grade} />
+              <p className="mt-4 text-sm text-center text-fg-secondary">{audit.summary}</p>
+            </div>
 
-          <div className="rounded-lg border border-line bg-surface p-4">
-            <ResponsiveContainer width="100%" height={250}>
-              <RadarChart data={radarData}>
-                <PolarGrid stroke={chartGrid} />
-                <PolarAngleAxis dataKey="dimension" tick={axisTick} />
-                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                <Radar name="Score" dataKey="score" stroke={chartAccent} fill={chartAccent} fillOpacity={0.2} strokeWidth={2} />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
+            <div className="px-6 py-5 border-t border-divider">
+              <ResponsiveContainer width="100%" height={250}>
+                <RadarChart data={radarData}>
+                  <PolarGrid stroke={chartGrid} />
+                  <PolarAngleAxis dataKey="dimension" tick={axisTick} />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                  <Radar name="Score" dataKey="score" stroke={chartAccent} fill={chartAccent} fillOpacity={0.2} strokeWidth={2} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          </>
+        }
+      >
         {/* Dimension Scores */}
-        <div className="lg:col-span-2 rounded-lg border border-line bg-surface p-4 space-y-4">
-          <h3 className="font-semibold text-fg">Score Breakdown</h3>
-          <ScoreBar label="Content & Messaging" score={audit.content_score} weight="25%" />
-          <ScoreBar label="Conversion Optimization" score={audit.conversion_score} weight="20%" />
-          <ScoreBar label="SEO & Discoverability" score={audit.seo_score} weight="20%" />
-          <ScoreBar label="Competitive Positioning" score={audit.competitive_score} weight="15%" />
-          <ScoreBar label="Brand & Trust" score={audit.brand_score} weight="10%" />
-          <ScoreBar label="Growth & Strategy" score={audit.growth_score} weight="10%" />
-        </div>
-      </div>
+        <Section title="Score Breakdown">
+          <div className="space-y-4">
+            <ScoreBar label="Content & Messaging" score={audit.content_score} weight="25%" />
+            <ScoreBar label="Conversion Optimization" score={audit.conversion_score} weight="20%" />
+            <ScoreBar label="SEO & Discoverability" score={audit.seo_score} weight="20%" />
+            <ScoreBar label="Competitive Positioning" score={audit.competitive_score} weight="15%" />
+            <ScoreBar label="Brand & Trust" score={audit.brand_score} weight="10%" />
+            <ScoreBar label="Growth & Strategy" score={audit.growth_score} weight="10%" />
+          </div>
+        </Section>
+      </DetailLayout>
     );
   }
 
@@ -317,9 +321,9 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
     });
 
     return (
-      <div className="space-y-3">
+      <div>
         {sorted.map((f, i) => (
-          <div key={i} className="rounded-lg border border-line bg-surface p-4">
+          <div key={i} className="px-8 py-4 border-b border-divider max-sm:px-4">
             <div className="flex items-center gap-2 mb-2">
               <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", severityColor(f.severity))}>
                 {f.severity}
@@ -329,7 +333,7 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
             <p className="font-medium text-fg">{f.finding}</p>
             {f.evidence && <p className="mt-1 text-sm text-fg-secondary">{f.evidence}</p>}
             {f.recommendation && (
-              <div className="mt-2 rounded-lg bg-accent-surface border border-accent p-3">
+              <div className="mt-2 rounded-md bg-accent-surface p-3">
                 <p className="text-sm text-accent-strong"><strong>Recommendation:</strong> {f.recommendation}</p>
                 {f.impact_estimate && <p className="mt-1 text-xs text-accent-strong">Estimated impact: {f.impact_estimate}</p>}
               </div>
@@ -354,25 +358,24 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
     const tierLabels: Record<string, string> = { quick_win: "Quick Wins", medium_term: "Medium Term", strategic: "Strategic" };
 
     return (
-      <div className="space-y-6">
+      <div>
         {tiers.map((tier) => {
           const items = actionItems.filter((a) => a.tier === tier);
           if (items.length === 0) return null;
           return (
-            <div key={tier}>
-              <h3 className="text-sm font-semibold text-fg mb-3">
-                {tierLabels[tier]} ({items.length})
-              </h3>
-              <div className="space-y-2">
+            <Section
+              key={tier}
+              title={
+                <>
+                  {tierLabels[tier]} ({items.length})
+                </>
+              }
+            >
+              <div className="divide-y divide-divider">
                 {items.map((item) => (
                   <div
                     key={item.id}
-                    className={cn(
-                      "flex items-start gap-3 rounded-lg border p-3",
-                      item.status === "completed"
-                        ? "border-success bg-success-surface"
-                        : "border-line bg-surface",
-                    )}
+                    className="flex items-start gap-3 py-3 first:pt-0 last:pb-0"
                   >
                     <button
                       onClick={() => handleToggleAction(item.id, item.status)}
@@ -394,7 +397,7 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
                   </div>
                 ))}
               </div>
-            </div>
+            </Section>
           );
         })}
       </div>
@@ -412,9 +415,9 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
     }
 
     return (
-      <div className="space-y-4">
+      <div>
         {reports.map((r) => (
-          <div key={r.id} className="rounded-lg border border-line bg-surface p-4">
+          <div key={r.id} className="px-8 py-4 border-b border-divider max-sm:px-4">
             <div className="flex items-center gap-3">
               <FileTextIcon className="h-6 w-6 text-accent-strong" weight="regular" />
               <div>
@@ -433,7 +436,7 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
           </div>
         ))}
         {content.map((c) => (
-          <div key={c.id} className="rounded-lg border border-line bg-surface p-4">
+          <div key={c.id} className="px-8 py-4 border-b border-divider max-sm:px-4">
             <div className="flex items-center gap-3">
               <SparkleIcon className="h-6 w-6 text-warning" weight="regular" />
               <div>
@@ -463,31 +466,35 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
     ];
 
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {generators.map((gen) => (
-          <button
-            key={gen.id}
-            onClick={() => handleGenerate(gen.id)}
-            disabled={generating !== null}
-            className={cn(
-              "rounded-lg border border-line bg-surface p-4 text-left hover:border-accent transition-colors",
-              generating === gen.id && "border-accent bg-accent-surface",
-            )}
-          >
-            <gen.icon className="h-8 w-8 text-accent-strong mb-3" weight="regular" />
-            <p className="font-medium text-fg">{gen.label}</p>
-            <p className="mt-1 text-sm text-fg-secondary">{gen.description}</p>
-            {generating === gen.id && (
-              <div className="mt-3 flex items-center gap-2 text-sm text-accent-strong">
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
-                  <SparkleIcon className="h-4 w-4" weight="fill" />
-                </motion.div>
-                Generating...
+      <Section>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {generators.map((gen) => (
+            <button
+              key={gen.id}
+              onClick={() => handleGenerate(gen.id)}
+              disabled={generating !== null}
+              data-clay-box className={cn(
+                "flex items-start gap-3 rounded-lg bg-subtle p-4 text-left shadow-card transition-colors hover:bg-muted",
+                generating === gen.id && "bg-accent-surface",
+              )}
+            >
+              <gen.icon className="mt-0.5 h-[18px] w-[18px] shrink-0 text-accent-strong" weight="regular" />
+              <div className="min-w-0">
+                <p className="text-[14px] font-semibold text-fg">{gen.label}</p>
+                <p className="mt-0.5 text-[13px] text-fg-muted">{gen.description}</p>
+                {generating === gen.id && (
+                  <div className="mt-3 flex items-center gap-2 text-sm text-accent-strong">
+                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+                      <SparkleIcon className="h-4 w-4" weight="fill" />
+                    </motion.div>
+                    Generating...
+                  </div>
+                )}
               </div>
-            )}
-          </button>
-        ))}
-      </div>
+            </button>
+          ))}
+        </div>
+      </Section>
     );
   }
 
@@ -502,47 +509,38 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 lg:p-6">
-      <PageHeader title={audit.business_name || audit.website_url}>
+    <Page>
+      <PageHeader
+        title={audit.business_name || audit.website_url}
+        icon={<MegaphoneSimpleIcon size={18} />}
+        description={
+          /* URL + meta */
+          <div className="flex flex-wrap items-center gap-x-2">
+            <a href={audit.website_url} target="_blank" rel="noopener noreferrer" className="text-accent-strong hover:underline">
+              {audit.website_url}
+            </a>
+            <span>·</span>
+            <span className="capitalize">{audit.audit_type} audit</span>
+            <span>·</span>
+            <span>{new Date(audit.created_at).toLocaleDateString()}</span>
+          </div>
+        }
+      >
         <Button variant="ghost" onClick={() => router.push("/dashboard/marketing")}>
           <ArrowLeftIcon className="h-4 w-4 mr-2" weight="bold" />
           Back
         </Button>
       </PageHeader>
 
-      {/* URL + meta */}
-      <div className="flex items-center gap-3 text-sm text-fg-secondary">
-        <a href={audit.website_url} target="_blank" rel="noopener noreferrer" className="text-accent-strong hover:underline">
-          {audit.website_url}
-        </a>
-        <span>·</span>
-        <span className="capitalize">{audit.audit_type} audit</span>
-        <span>·</span>
-        <span>{new Date(audit.created_at).toLocaleDateString()}</span>
-      </div>
-
       {/* Tabs */}
-      <div className="flex items-center gap-1 rounded border border-line bg-subtle p-1 overflow-x-auto">
-        {TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded transition-colors whitespace-nowrap",
-                isActive
-                  ? "bg-surface text-fg"
-                  : "text-fg-secondary hover:text-fg",
-              )}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      <PageTabs
+        tabs={[...TABS]}
+        value={activeTab}
+        onChange={setActiveTab}
+        className="max-sm:overflow-x-auto max-sm:overflow-y-hidden"
+      />
 
       {renderTabContent()}
-    </div>
+    </Page>
   );
 }

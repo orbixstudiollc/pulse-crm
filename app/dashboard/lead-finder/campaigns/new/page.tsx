@@ -29,6 +29,7 @@ import {
   Textarea,
   Button,
 } from "@/components/ui";
+import { Page, PageHeader, Section, KeyValueList, KeyValue } from "@/components/dashboard";
 import { useLeadFinderActors } from "@/hooks/use-lead-finder-actors";
 import type { ActorDefinition } from "@/lib/lead-finder/apify/registry";
 
@@ -72,7 +73,7 @@ const STEPS = [
 
 function StepIndicator({ current }: { current: number }) {
   return (
-    <div className="flex items-center gap-2 mb-8">
+    <div className="flex h-10 items-center gap-2 px-8 border-b border-divider max-sm:px-4 max-sm:overflow-x-auto">
       {STEPS.map((step, i) => {
         const Icon = step.icon;
         const isActive = step.id === current;
@@ -81,16 +82,16 @@ function StepIndicator({ current }: { current: number }) {
           <div key={step.id} className="flex items-center gap-2">
             {i > 0 && (
               <div
-                className={`w-8 h-px ${isCompleted || isActive ? "bg-active" : "bg-muted"}`}
+                className={`w-8 h-px shrink-0 ${isCompleted || isActive ? "bg-active" : "bg-muted"}`}
               />
             )}
             <div
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex shrink-0 items-center gap-2 text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-accent-surface text-accent-on-surface"
+                  ? "text-accent-strong"
                   : isCompleted
-                    ? "bg-success-surface text-success"
-                    : "bg-muted text-fg-secondary"
+                    ? "text-success"
+                    : "text-fg-muted"
               }`}
             >
               {isCompleted ? (
@@ -564,7 +565,7 @@ export default function NewCampaignPage() {
     return (
       <div
         key={actor.id}
-        className={`rounded-lg border transition-colors ${
+        data-clay-box className={`rounded-lg border transition-colors ${
           isSelected
             ? "border-fg-muted bg-subtle"
             : "border-line hover:border-fg-muted"
@@ -628,664 +629,636 @@ export default function NewCampaignPage() {
   // ── Render ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 lg:p-6 space-y-6">
+    <Page>
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <PageHeader
+        title="New Campaign"
+        icon={<MagnifyingGlassIcon size={18} />}
+        description={
+          step === 1
+            ? "Describe what leads you want to find"
+            : step === 2
+              ? "Configure actors and campaign settings"
+              : step === 3
+                ? "Configure lead data fields and KPIs"
+                : "Review and create your campaign"
+        }
+      >
         <Link
           href="/dashboard/lead-finder/campaigns"
-          className="p-2 rounded-lg bg-surface border border-line text-fg-secondary hover:text-fg transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-line text-fg-secondary hover:bg-subtle hover:text-fg transition-colors"
         >
           <ArrowLeftIcon size={16} />
         </Link>
-        <div>
-          <h1 className="text-xl font-semibold text-fg">
-            New Campaign
-          </h1>
-          <p className="text-sm text-fg-secondary">
-            {step === 1
-              ? "Describe what leads you want to find"
-              : step === 2
-                ? "Configure actors and campaign settings"
-                : step === 3
-                  ? "Configure lead data fields and KPIs"
-                  : "Review and create your campaign"}
-          </p>
-        </div>
-      </div>
+      </PageHeader>
 
       {/* Step indicator */}
       <StepIndicator current={step} />
 
-      {/* ── Step 1: Describe + AI Plan ───────────────────────────────────── */}
-      {step === 1 && (
-        <div className="max-w-2xl">
-          <div className="bg-surface border border-line rounded-lg p-4 space-y-5">
-            <Input
-              label="Campaign Name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Miami Dentists Q1 2026"
-            />
-
-            <div>
-              <Textarea
-                label="What leads do you want to find?"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={6}
-                placeholder="Find dentists and orthodontists in Miami FL. I need their email addresses, phone numbers, and websites. Focus on practices with good ratings that might need help with their online presence."
-              />
-              <p className="text-xs text-fg-secondary mt-1.5">
-                Describe in plain English what you are looking for. Be specific about the
-                business type, location, and what information you need. AI will generate
-                search terms, select actors, and configure the campaign for you.
-              </p>
-            </div>
-
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={handlePlanWithAI}
-              disabled={planning || !description.trim()}
-              className="w-full"
-              leftIcon={planning ? <CircleNotchIcon size={16} className="animate-spin" /> : <SparkleIcon size={16} />}
-            >
-              {planning ? "AI is analyzing your campaign..." : "Plan Campaign with AI"}
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setStep(2)}
-              className="w-full text-xs"
-            >
-              Skip AI planning and configure manually
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Step 2: Actors + Campaign Settings ───────────────────────────── */}
-      {step === 2 && (
-        <div className="max-w-3xl space-y-6">
-          {/* AI Reasoning / Plan summary */}
-          {plan && (
-            <div className="flex items-start gap-3 p-4 rounded-lg bg-success-surface border border-success">
-              <SparkleIcon size={16} className="text-success mt-0.5 flex-shrink-0" />
-              <div className="text-xs">
-                <p className="font-semibold text-success mb-0.5">
-                  AI Recommendation
-                </p>
-                {plan.reasoning ? (
-                  <p className="text-success mb-2">{plan.reasoning}</p>
-                ) : (
-                  <p className="text-success mb-2">
-                    Target niche: <strong>{plan.target_niche}</strong> &middot;{" "}
-                    {plan.suggested_actors.length} actors suggested &middot;{" "}
-                    {plan.suggested_search_terms.length} search terms
-                  </p>
-                )}
-                {searchTerms.length > 0 && (
-                  <div>
-                    <p className="text-success font-medium mb-1.5">
-                      Suggested search terms (pre-filled in actors below):
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {searchTerms.map((term, i) => (
-                        <span
-                          key={i}
-                          className="px-2 py-0.5 rounded-md bg-success-surface text-success text-xs"
-                        >
-                          {term}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Campaign Settings */}
-          <div className="bg-surface border border-line rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-fg mb-4 flex items-center gap-2">
-              <TargetIcon size={16} className="text-fg-secondary" />
-              Campaign Settings
-            </h3>
-            <div className="space-y-4">
+      <div className="max-w-[720px]">
+        {/* ── Step 1: Describe + AI Plan ───────────────────────────────────── */}
+        {step === 1 && (
+          <Section>
+            <div className="space-y-5">
               <Input
-                label="Target Niche"
+                label="Campaign Name"
                 type="text"
-                value={editableNiche}
-                onChange={(e) => setEditableNiche(e.target.value)}
-                placeholder="e.g., B2B SaaS Founders, Miami Dentists"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g., Miami Dentists Q1 2026"
               />
 
               <div>
-                <label className="block text-xs font-medium text-fg-secondary mb-1.5">
-                  Search Terms
-                </label>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {searchTerms.map((term, i) => (
-                    <span
-                      key={i}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-muted text-fg text-xs"
-                    >
-                      {term}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          setSearchTerms((prev) => prev.filter((_, j) => j !== i))
-                        }
-                        className="p-0 h-auto text-fg-secondary hover:text-danger"
-                      >
-                        <XIcon size={10} />
-                      </Button>
-                    </span>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    type="text"
-                    value={newSearchTerm}
-                    onChange={(e) => setNewSearchTerm(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && addSearchTerm()}
-                    placeholder="Add search term..."
-                    className="flex-1"
-                  />
-                  <Button
-                    variant="secondary"
-                    size="md"
-                    onClick={addSearchTerm}
-                  >
-                    <PlusIcon size={14} />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <Select
-                  label="Schedule"
-                  value={editableSchedule}
-                  onChange={(e) => setEditableSchedule(e.target.value)}
-                >
-                  {[
-                    { label: "Run Once", value: "once" },
-                    { label: "Daily", value: "daily" },
-                    { label: "Weekly", value: "weekly" },
-                    { label: "Bi-weekly", value: "biweekly" },
-                    { label: "Monthly", value: "monthly" },
-                  ].map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </Select>
-                <div>
-                  <label className="block text-xs font-medium text-fg-secondary mb-1.5">
-                    Auto-Enrich Leads
-                  </label>
-                  <Button
-                    variant="outline"
-                    size="md"
-                    onClick={() => setEditableAutoEnrich(!editableAutoEnrich)}
-                    className={
-                      editableAutoEnrich
-                        ? "bg-success-surface text-success border-success hover:bg-success-surface"
-                        : ""
-                    }
-                    leftIcon={
-                      <span
-                        className={`w-2 h-2 rounded-full flex-shrink-0 ${editableAutoEnrich ? "bg-success" : "bg-fg-muted"}`}
-                      />
-                    }
-                  >
-                    {editableAutoEnrich ? "Enabled" : "Disabled"}
-                  </Button>
-                </div>
+                <Textarea
+                  label="What leads do you want to find?"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={6}
+                  placeholder="Find dentists and orthodontists in Miami FL. I need their email addresses, phone numbers, and websites. Focus on practices with good ratings that might need help with their online presence."
+                />
+                <p className="text-xs text-fg-secondary mt-1.5">
+                  Describe in plain English what you are looking for. Be specific about the
+                  business type, location, and what information you need. AI will generate
+                  search terms, select actors, and configure the campaign for you.
+                </p>
               </div>
             </div>
-          </div>
+          </Section>
+        )}
 
-          {/* Find Leads - Discovery Actors */}
-          <div className="bg-surface border border-line rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-fg mb-1 flex items-center gap-2">
-              <MagnifyingGlassIcon size={16} className="text-fg-secondary" />
-              Step 1 -- Find Leads
-              <span className="text-xs text-fg-secondary font-normal">
-                ({[...selectedActors].filter((id) => {
-                  const a = getActorById(id);
-                  return a?.phase === "find";
-                }).length} selected)
-              </span>
-            </h3>
-            <p className="text-xs text-fg-secondary mb-4">
-              Select which tools to use for discovering leads. These run first to find
-              businesses matching your criteria.
-            </p>
+        {/* ── Step 2: Actors + Campaign Settings ───────────────────────────── */}
+        {step === 2 && (
+          <div>
+            {/* AI Reasoning / Plan summary */}
+            {plan && (
+              <Section>
+                <div className="flex items-start gap-3 p-4 rounded-md bg-success-surface">
+                  <SparkleIcon size={16} className="text-success mt-0.5 flex-shrink-0" />
+                  <div className="text-xs">
+                    <p className="font-semibold text-success mb-0.5">
+                      AI Recommendation
+                    </p>
+                    {plan.reasoning ? (
+                      <p className="text-success mb-2">{plan.reasoning}</p>
+                    ) : (
+                      <p className="text-success mb-2">
+                        Target niche: <strong>{plan.target_niche}</strong> &middot;{" "}
+                        {plan.suggested_actors.length} actors suggested &middot;{" "}
+                        {plan.suggested_search_terms.length} search terms
+                      </p>
+                    )}
+                    {searchTerms.length > 0 && (
+                      <div>
+                        <p className="text-success font-medium mb-1.5">
+                          Suggested search terms (pre-filled in actors below):
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {searchTerms.map((term, i) => (
+                            <span
+                              key={i}
+                              className="px-2 py-0.5 rounded-md bg-success-surface text-success text-xs"
+                            >
+                              {term}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Section>
+            )}
 
-            {allActors.length === 0 ? (
-              <div className="text-center py-8 text-fg-secondary text-sm">
-                <CircleNotchIcon size={20} className="animate-spin mx-auto mb-2" />
-                Loading actors...
+            {/* Campaign Settings */}
+            <Section title="Campaign Settings" icon={<TargetIcon size={16} />}>
+              <div className="space-y-4">
+                <Input
+                  label="Target Niche"
+                  type="text"
+                  value={editableNiche}
+                  onChange={(e) => setEditableNiche(e.target.value)}
+                  placeholder="e.g., B2B SaaS Founders, Miami Dentists"
+                />
+
+                <div>
+                  <label className="block text-xs font-medium text-fg-secondary mb-1.5">
+                    Search Terms
+                  </label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {searchTerms.map((term, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-muted text-fg text-xs"
+                      >
+                        {term}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setSearchTerms((prev) => prev.filter((_, j) => j !== i))
+                          }
+                          className="p-0 h-auto text-fg-secondary hover:text-danger"
+                        >
+                          <XIcon size={10} />
+                        </Button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      value={newSearchTerm}
+                      onChange={(e) => setNewSearchTerm(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addSearchTerm()}
+                      placeholder="Add search term..."
+                      className="flex-1"
+                    />
+                    <Button
+                      variant="secondary"
+                      size="md"
+                      onClick={addSearchTerm}
+                    >
+                      <PlusIcon size={14} />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Select
+                    label="Schedule"
+                    value={editableSchedule}
+                    onChange={(e) => setEditableSchedule(e.target.value)}
+                  >
+                    {[
+                      { label: "Run Once", value: "once" },
+                      { label: "Daily", value: "daily" },
+                      { label: "Weekly", value: "weekly" },
+                      { label: "Bi-weekly", value: "biweekly" },
+                      { label: "Monthly", value: "monthly" },
+                    ].map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </Select>
+                  <div>
+                    <label className="block text-xs font-medium text-fg-secondary mb-1.5">
+                      Auto-Enrich Leads
+                    </label>
+                    <Button
+                      variant="outline"
+                      size="md"
+                      onClick={() => setEditableAutoEnrich(!editableAutoEnrich)}
+                      className={
+                        editableAutoEnrich
+                          ? "bg-success-surface text-success border-success hover:bg-success-surface"
+                          : ""
+                      }
+                      leftIcon={
+                        <span
+                          className={`w-2 h-2 rounded-full flex-shrink-0 ${editableAutoEnrich ? "bg-success" : "bg-fg-muted"}`}
+                        />
+                      }
+                    >
+                      {editableAutoEnrich ? "Enabled" : "Disabled"}
+                    </Button>
+                  </div>
+                </div>
               </div>
-            ) : (
+            </Section>
+
+            {/* Find Leads - Discovery Actors */}
+            <Section
+              icon={<MagnifyingGlassIcon size={16} />}
+              title={
+                <>
+                  Step 1 -- Find Leads
+                  <span className="text-xs text-fg-secondary font-normal">
+                    ({[...selectedActors].filter((id) => {
+                      const a = getActorById(id);
+                      return a?.phase === "find";
+                    }).length} selected)
+                  </span>
+                </>
+              }
+              description={
+                <>
+                  Select which tools to use for discovering leads. These run first to find
+                  businesses matching your criteria.
+                </>
+              }
+            >
+
+              {allActors.length === 0 ? (
+                <div className="text-center py-8 text-fg-secondary text-sm">
+                  <CircleNotchIcon size={20} className="animate-spin mx-auto mb-2" />
+                  Loading actors...
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {findActors.map((actor) =>
+                    renderActorCard(actor, selectedActors.has(actor.id))
+                  )}
+                </div>
+              )}
+            </Section>
+
+            {/* Enrich Leads - Enrichment Actors */}
+            <Section
+              icon={<LightningIcon size={16} />}
+              title={
+                <>
+                  Step 2 -- Enrich Leads
+                  <span className="text-xs text-fg-secondary font-normal">
+                    ({[...selectedActors].filter((id) => {
+                      const a = getActorById(id);
+                      return a?.phase === "enrich";
+                    }).length} selected)
+                  </span>
+                </>
+              }
+              description={
+                <>
+                  Select which tools to use for enriching leads with additional data.
+                  {editableAutoEnrich
+                    ? " Enrichment runs automatically after discovery."
+                    : " Enrichment can be triggered manually from the campaign page."}
+                </>
+              }
+            >
               <div className="space-y-3">
-                {findActors.map((actor) =>
+                {enrichActors.map((actor) =>
                   renderActorCard(actor, selectedActors.has(actor.id))
                 )}
               </div>
-            )}
+            </Section>
           </div>
+        )}
 
-          {/* Enrich Leads - Enrichment Actors */}
-          <div className="bg-surface border border-line rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-fg mb-1 flex items-center gap-2">
-              <LightningIcon size={16} className="text-fg-secondary" />
-              Step 2 -- Enrich Leads
-              <span className="text-xs text-fg-secondary font-normal">
-                ({[...selectedActors].filter((id) => {
-                  const a = getActorById(id);
-                  return a?.phase === "enrich";
-                }).length} selected)
-              </span>
-            </h3>
-            <p className="text-xs text-fg-secondary mb-4">
-              Select which tools to use for enriching leads with additional data.
-              {editableAutoEnrich
-                ? " Enrichment runs automatically after discovery."
-                : " Enrichment can be triggered manually from the campaign page."}
-            </p>
-
-            <div className="space-y-3">
-              {enrichActors.map((actor) =>
-                renderActorCard(actor, selectedActors.has(actor.id))
-              )}
+        {/* ── Step 3: Lead Fields + KPIs ───────────────────────────────────── */}
+        {step === 3 && (
+          <div>
+            {/* AI suggest button */}
+            <div className="flex justify-end px-8 pt-6 max-sm:px-4">
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={handleSuggestFields}
+                disabled={suggestingFields || !editableNiche}
+                leftIcon={suggestingFields ? <CircleNotchIcon size={14} className="animate-spin" /> : <SparkleIcon size={14} />}
+              >
+                Re-suggest with AI
+              </Button>
             </div>
-          </div>
 
-          {/* Next button */}
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={handleGoToStep3}
-            disabled={selectedActors.size === 0}
-            className="w-full"
-          >
-            Next: Configure Fields & KPIs
-          </Button>
-        </div>
-      )}
-
-      {/* ── Step 3: Lead Fields + KPIs ───────────────────────────────────── */}
-      {step === 3 && (
-        <div className="max-w-3xl space-y-6">
-          {/* AI suggest button */}
-          <div className="flex justify-end">
-            <Button
-              variant="secondary"
-              size="md"
-              onClick={handleSuggestFields}
-              disabled={suggestingFields || !editableNiche}
-              leftIcon={suggestingFields ? <CircleNotchIcon size={14} className="animate-spin" /> : <SparkleIcon size={14} />}
+            {/* Lead Data Fields */}
+            <Section
+              title="Lead Data Fields"
+              icon={<HardDrivesIcon size={16} />}
+              actions={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={addField}
+                  leftIcon={<PlusIcon size={12} />}
+                >
+                  Add Field
+                </Button>
+              }
             >
-              Re-suggest with AI
-            </Button>
-          </div>
 
-          {/* Lead Data Fields */}
-          <div className="bg-surface border border-line rounded-lg p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-fg flex items-center gap-2">
-                <HardDrivesIcon size={16} className="text-fg-secondary" />
-                Lead Data Fields
-              </h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={addField}
-                leftIcon={<PlusIcon size={12} />}
-              >
-                Add Field
-              </Button>
-            </div>
-
-            {suggestingFields ? (
-              <div className="flex items-center justify-center py-8 gap-2 text-sm text-fg-secondary">
-                <CircleNotchIcon size={16} className="animate-spin" />
-                AI is analyzing your actors to suggest relevant fields...
-              </div>
-            ) : fieldDefinitions.length === 0 ? (
-              <p className="text-sm text-fg-secondary text-center py-6">
-                No additional lead fields configured. Click &quot;Add Field&quot; to track
-                extra data per lead.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {fieldDefinitions.map((field, i) => (
-                  <div
-                    key={field.id}
-                    className="flex gap-3 items-start p-3 rounded-lg bg-subtle border border-line"
-                  >
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
+              {suggestingFields ? (
+                <div className="flex items-center justify-center py-8 gap-2 text-sm text-fg-secondary">
+                  <CircleNotchIcon size={16} className="animate-spin" />
+                  AI is analyzing your actors to suggest relevant fields...
+                </div>
+              ) : fieldDefinitions.length === 0 ? (
+                <p className="text-sm text-fg-secondary text-center py-6">
+                  No additional lead fields configured. Click &quot;Add Field&quot; to track
+                  extra data per lead.
+                </p>
+              ) : (
+                <div className="divide-y divide-divider">
+                  {fieldDefinitions.map((field, i) => (
+                    <div
+                      key={field.id}
+                      className="flex gap-3 items-start py-3 first:pt-0 last:pb-0"
+                    >
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="text"
+                            value={field.label}
+                            onChange={(e) => updateField(i, "label", e.target.value)}
+                            placeholder="Field label, e.g. Instagram Handle"
+                            className="flex-1 text-xs font-medium py-1.5 px-2"
+                          />
+                          <TypeToggle
+                            value={field.type}
+                            options={[
+                              { value: "text", label: "Text", icon: <TextTIcon size={10} /> },
+                              { value: "number", label: "Num", icon: <HashIcon size={10} /> },
+                              { value: "boolean", label: "Bool", icon: <ToggleRightIcon size={10} /> },
+                              { value: "url", label: "URL", icon: <LinkIcon size={10} /> },
+                            ]}
+                            onChange={(v) => updateField(i, "type", v)}
+                          />
+                        </div>
                         <Input
                           type="text"
-                          value={field.label}
-                          onChange={(e) => updateField(i, "label", e.target.value)}
-                          placeholder="Field label, e.g. Instagram Handle"
-                          className="flex-1 text-xs font-medium py-1.5 px-2"
-                        />
-                        <TypeToggle
-                          value={field.type}
-                          options={[
-                            { value: "text", label: "Text", icon: <TextTIcon size={10} /> },
-                            { value: "number", label: "Num", icon: <HashIcon size={10} /> },
-                            { value: "boolean", label: "Bool", icon: <ToggleRightIcon size={10} /> },
-                            { value: "url", label: "URL", icon: <LinkIcon size={10} /> },
-                          ]}
-                          onChange={(v) => updateField(i, "type", v)}
+                          value={field.description}
+                          onChange={(e) => updateField(i, "description", e.target.value)}
+                          placeholder="Description (helps AI understand what to extract)"
+                          className="text-xs py-1.5 px-2"
                         />
                       </div>
-                      <Input
-                        type="text"
-                        value={field.description}
-                        onChange={(e) => updateField(i, "description", e.target.value)}
-                        placeholder="Description (helps AI understand what to extract)"
-                        className="text-xs py-1.5 px-2"
-                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeField(i)}
+                        className="p-1 h-auto text-fg-secondary hover:text-danger mt-0.5"
+                      >
+                        <TrashIcon size={14} />
+                      </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeField(i)}
-                      className="p-1 h-auto text-fg-secondary hover:text-danger mt-0.5"
-                    >
-                      <TrashIcon size={14} />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* KPI Definitions */}
-          <div className="bg-surface border border-line rounded-lg p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-fg flex items-center gap-2">
-                <ChartBarIcon size={16} className="text-fg-secondary" />
-                Lead KPIs to Track
-              </h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={addKpi}
-                leftIcon={<PlusIcon size={12} />}
-              >
-                Add KPI
-              </Button>
-            </div>
-
-            <p className="text-xs text-fg-secondary mb-3">
-              These KPIs will be automatically filled by AI during lead enrichment. You
-              can edit them per-lead later.
-            </p>
-
-            {kpiDefinitions.length === 0 ? (
-              <p className="text-sm text-fg-secondary text-center py-6">
-                No KPIs configured. Click &quot;Add KPI&quot; to track custom metrics for
-                your leads.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {kpiDefinitions.map((kpi, i) => (
-                  <div
-                    key={kpi.id}
-                    className="flex gap-3 items-start p-3 rounded-lg bg-subtle border border-line"
-                  >
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="text"
-                          value={kpi.label}
-                          onChange={(e) => updateKpi(i, "label", e.target.value)}
-                          placeholder="KPI label, e.g. Has online booking"
-                          className="flex-1 text-xs font-medium py-1.5 px-2"
-                        />
-                        <TypeToggle
-                          value={kpi.type}
-                          options={[
-                            { value: "boolean", label: "Yes/No", icon: <ToggleLeftIcon size={10} /> },
-                            { value: "text", label: "Text", icon: <TextTIcon size={10} /> },
-                          ]}
-                          onChange={(v) => updateKpi(i, "type", v)}
-                        />
-                      </div>
-                      <Input
-                        type="text"
-                        value={kpi.description}
-                        onChange={(e) => updateKpi(i, "description", e.target.value)}
-                        placeholder="Description (e.g., Does the company have more than 10 employees?)"
-                        className="text-xs py-1.5 px-2"
-                      />
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeKpi(i)}
-                      className="p-1 h-auto text-fg-secondary hover:text-danger mt-0.5"
-                    >
-                      <TrashIcon size={14} />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Next button */}
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={() => setStep(4)}
-            className="w-full"
-          >
-            Next: Review & Create
-          </Button>
-        </div>
-      )}
-
-      {/* ── Step 4: Review & Create ──────────────────────────────────────── */}
-      {step === 4 && (
-        <div className="max-w-3xl space-y-6">
-          <div className="bg-surface border border-line rounded-lg p-4 space-y-5">
-            <h3 className="text-sm font-semibold text-fg">
-              Campaign Summary
-            </h3>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-fg-secondary mb-1">Name</p>
-                <p className="text-sm text-fg font-medium">
-                  {name || "Untitled"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-fg-secondary mb-1">
-                  Target Niche
-                </p>
-                <p className="text-sm text-fg font-medium">
-                  {editableNiche || "Not set"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-fg-secondary mb-1">
-                  AI Provider
-                </p>
-                <p className="text-sm text-fg font-medium capitalize">
-                  {aiProvider}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-fg-secondary mb-1">
-                  Schedule
-                </p>
-                <p className="text-sm text-fg font-medium capitalize">
-                  {editableSchedule}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-fg-secondary mb-1">
-                  Auto-Enrich
-                </p>
-                <p className="text-sm text-fg font-medium">
-                  {editableAutoEnrich ? "Yes" : "No"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-fg-secondary mb-1">
-                  Actors
-                </p>
-                <p className="text-sm text-fg font-medium">
-                  {selectedActors.size} selected
-                </p>
-              </div>
-            </div>
-
-            {/* Search terms */}
-            {searchTerms.length > 0 && (
-              <div>
-                <p className="text-xs text-fg-secondary mb-2">
-                  Search Terms
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {searchTerms.map((term, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-0.5 rounded-md bg-muted text-fg text-xs"
-                    >
-                      {term}
-                    </span>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </Section>
 
-            {/* Actors list */}
-            {selectedActors.size > 0 && (
-              <div>
-                <p className="text-xs text-fg-secondary mb-2">
-                  Selected Actors
+            {/* KPI Definitions */}
+            <Section
+              title="Lead KPIs to Track"
+              icon={<ChartBarIcon size={16} />}
+              description={
+                <>
+                  These KPIs will be automatically filled by AI during lead enrichment. You
+                  can edit them per-lead later.
+                </>
+              }
+              actions={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={addKpi}
+                  leftIcon={<PlusIcon size={12} />}
+                >
+                  Add KPI
+                </Button>
+              }
+            >
+
+              {kpiDefinitions.length === 0 ? (
+                <p className="text-sm text-fg-secondary text-center py-6">
+                  No KPIs configured. Click &quot;Add KPI&quot; to track custom metrics for
+                  your leads.
                 </p>
-                <div className="space-y-1.5">
-                  {[...selectedActors].map((id) => {
-                    const actor = getActorById(id);
-                    return (
-                      <div
-                        key={id}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-subtle border border-line"
-                      >
-                        <LightningIcon
-                          size={12}
-                          className="text-fg-secondary"
+              ) : (
+                <div className="divide-y divide-divider">
+                  {kpiDefinitions.map((kpi, i) => (
+                    <div
+                      key={kpi.id}
+                      className="flex gap-3 items-start py-3 first:pt-0 last:pb-0"
+                    >
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="text"
+                            value={kpi.label}
+                            onChange={(e) => updateKpi(i, "label", e.target.value)}
+                            placeholder="KPI label, e.g. Has online booking"
+                            className="flex-1 text-xs font-medium py-1.5 px-2"
+                          />
+                          <TypeToggle
+                            value={kpi.type}
+                            options={[
+                              { value: "boolean", label: "Yes/No", icon: <ToggleLeftIcon size={10} /> },
+                              { value: "text", label: "Text", icon: <TextTIcon size={10} /> },
+                            ]}
+                            onChange={(v) => updateKpi(i, "type", v)}
+                          />
+                        </div>
+                        <Input
+                          type="text"
+                          value={kpi.description}
+                          onChange={(e) => updateKpi(i, "description", e.target.value)}
+                          placeholder="Description (e.g., Does the company have more than 10 employees?)"
+                          className="text-xs py-1.5 px-2"
                         />
-                        <span className="text-xs text-fg">
-                          {actor?.name || id}
-                        </span>
-                        <span className="text-xs text-fg-secondary capitalize">
-                          ({actor?.phase})
-                        </span>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* KPIs */}
-            {kpiDefinitions.filter((k) => k.label).length > 0 && (
-              <div>
-                <p className="text-xs text-fg-secondary mb-2">
-                  KPIs ({kpiDefinitions.filter((k) => k.label).length})
-                </p>
-                <div className="space-y-1">
-                  {kpiDefinitions
-                    .filter((k) => k.label)
-                    .map((kpi, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between px-3 py-2 rounded-lg bg-subtle border border-line"
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeKpi(i)}
+                        className="p-1 h-auto text-fg-secondary hover:text-danger mt-0.5"
                       >
-                        <span className="text-xs text-fg">
-                          {kpi.label}
-                        </span>
-                        <span className="text-xs text-fg-secondary">
-                          {kpi.type}
-                        </span>
-                      </div>
-                    ))}
+                        <TrashIcon size={14} />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            )}
-
-            {/* Fields */}
-            {fieldDefinitions.filter((f) => f.label).length > 0 && (
-              <div>
-                <p className="text-xs text-fg-secondary mb-2">
-                  Custom Fields ({fieldDefinitions.filter((f) => f.label).length})
-                </p>
-                <div className="space-y-1">
-                  {fieldDefinitions
-                    .filter((f) => f.label)
-                    .map((field, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between px-3 py-2 rounded-lg bg-subtle border border-line"
-                      >
-                        <span className="text-xs text-fg">
-                          {field.label}
-                        </span>
-                        <span className="text-xs text-fg-secondary capitalize">
-                          {field.type}
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
+              )}
+            </Section>
           </div>
+        )}
 
-          {/* Create button */}
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={handleCreate}
-            disabled={creating || !name.trim() || !editableNiche.trim()}
-            className="w-full"
-            leftIcon={creating ? <CircleNotchIcon size={16} className="animate-spin" /> : <CheckCircleIcon size={16} />}
-          >
-            {creating
-              ? "Creating campaign..."
-              : `Create Campaign${kpiDefinitions.filter((k) => k.label).length > 0 ? ` with ${kpiDefinitions.filter((k) => k.label).length} KPI${kpiDefinitions.filter((k) => k.label).length > 1 ? "s" : ""}` : ""}`}
-          </Button>
-        </div>
-      )}
+        {/* ── Step 4: Review & Create ──────────────────────────────────────── */}
+        {step === 4 && (
+          <Section title="Campaign Summary">
+            <div className="space-y-5">
+              <KeyValueList>
+                <KeyValue label="Name">
+                  <span className="font-medium">{name || "Untitled"}</span>
+                </KeyValue>
+                <KeyValue label="Target Niche">
+                  <span className="font-medium">{editableNiche || "Not set"}</span>
+                </KeyValue>
+                <KeyValue label="AI Provider">
+                  <span className="font-medium capitalize">{aiProvider}</span>
+                </KeyValue>
+                <KeyValue label="Schedule">
+                  <span className="font-medium capitalize">{editableSchedule}</span>
+                </KeyValue>
+                <KeyValue label="Auto-Enrich">
+                  <span className="font-medium">{editableAutoEnrich ? "Yes" : "No"}</span>
+                </KeyValue>
+                <KeyValue label="Actors">
+                  <span className="font-medium">{selectedActors.size} selected</span>
+                </KeyValue>
+              </KeyValueList>
 
-      {/* ── Navigation buttons ─────────────────────────────────────────── */}
-      {step > 1 && (
-        <div className="flex items-center justify-between max-w-3xl pt-2">
-          <Button
-            variant="outline"
-            size="md"
-            onClick={() => setStep((s) => s - 1)}
-            leftIcon={<ArrowLeftIcon size={14} />}
-          >
-            Back
-          </Button>
+              {/* Search terms */}
+              {searchTerms.length > 0 && (
+                <div>
+                  <p className="text-xs text-fg-secondary mb-2">
+                    Search Terms
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {searchTerms.map((term, i) => (
+                      <span
+                        key={i}
+                        className="px-2 py-0.5 rounded-md bg-muted text-fg text-xs"
+                      >
+                        {term}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Actors list */}
+              {selectedActors.size > 0 && (
+                <div>
+                  <p className="text-xs text-fg-secondary mb-2">
+                    Selected Actors
+                  </p>
+                  <div className="divide-y divide-divider border-y border-divider">
+                    {[...selectedActors].map((id) => {
+                      const actor = getActorById(id);
+                      return (
+                        <div
+                          key={id}
+                          className="flex items-center gap-2 py-2"
+                        >
+                          <LightningIcon
+                            size={12}
+                            className="text-fg-secondary"
+                          />
+                          <span className="text-xs text-fg">
+                            {actor?.name || id}
+                          </span>
+                          <span className="text-xs text-fg-secondary capitalize">
+                            ({actor?.phase})
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* KPIs */}
+              {kpiDefinitions.filter((k) => k.label).length > 0 && (
+                <div>
+                  <p className="text-xs text-fg-secondary mb-2">
+                    KPIs ({kpiDefinitions.filter((k) => k.label).length})
+                  </p>
+                  <div className="divide-y divide-divider border-y border-divider">
+                    {kpiDefinitions
+                      .filter((k) => k.label)
+                      .map((kpi, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between py-2"
+                        >
+                          <span className="text-xs text-fg">
+                            {kpi.label}
+                          </span>
+                          <span className="text-xs text-fg-secondary">
+                            {kpi.type}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Fields */}
+              {fieldDefinitions.filter((f) => f.label).length > 0 && (
+                <div>
+                  <p className="text-xs text-fg-secondary mb-2">
+                    Custom Fields ({fieldDefinitions.filter((f) => f.label).length})
+                  </p>
+                  <div className="divide-y divide-divider border-y border-divider">
+                    {fieldDefinitions
+                      .filter((f) => f.label)
+                      .map((field, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between py-2"
+                        >
+                          <span className="text-xs text-fg">
+                            {field.label}
+                          </span>
+                          <span className="text-xs text-fg-secondary capitalize">
+                            {field.type}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Section>
+        )}
+
+        {/* ── Navigation buttons ─────────────────────────────────────────── */}
+        <div className="flex flex-wrap items-center justify-end gap-2 px-8 py-6 border-t border-divider max-sm:px-4">
+          {step === 1 && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setStep(2)}
+                className="text-xs"
+              >
+                Skip AI planning and configure manually
+              </Button>
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={handlePlanWithAI}
+                disabled={planning || !description.trim()}
+                leftIcon={planning ? <CircleNotchIcon size={16} className="animate-spin" /> : <SparkleIcon size={16} />}
+              >
+                {planning ? "AI is analyzing your campaign..." : "Plan Campaign with AI"}
+              </Button>
+            </>
+          )}
+          {step > 1 && (
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => setStep((s) => s - 1)}
+              leftIcon={<ArrowLeftIcon size={14} />}
+            >
+              Back
+            </Button>
+          )}
+          {step === 2 && (
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={handleGoToStep3}
+              disabled={selectedActors.size === 0}
+            >
+              Next: Configure Fields & KPIs
+            </Button>
+          )}
+          {step === 3 && (
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => setStep(4)}
+            >
+              Next: Review & Create
+            </Button>
+          )}
+          {step === 4 && (
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={handleCreate}
+              disabled={creating || !name.trim() || !editableNiche.trim()}
+              leftIcon={creating ? <CircleNotchIcon size={16} className="animate-spin" /> : <CheckCircleIcon size={16} />}
+            >
+              {creating
+                ? "Creating campaign..."
+                : `Create Campaign${kpiDefinitions.filter((k) => k.label).length > 0 ? ` with ${kpiDefinitions.filter((k) => k.label).length} KPI${kpiDefinitions.filter((k) => k.label).length > 1 ? "s" : ""}` : ""}`}
+            </Button>
+          )}
         </div>
-      )}
-    </div>
+      </div>
+    </Page>
   );
 }
