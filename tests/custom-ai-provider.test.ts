@@ -38,9 +38,18 @@ describe("normalizeCustomBaseUrl", () => {
     ["https://relay.example.com/anthropic/", "https://relay.example.com/anthropic"],
     ["https://API.LLMSRELAY.COM", "https://api.llmsrelay.com"],
     ["https://api.llmsrelay.com:443", "https://api.llmsrelay.com"],
+    ["https://relay.example.com/v1/v1/", "https://relay.example.com"],
   ])("normalizes %s to %s", (input, expected) => {
     expect(normalizeCustomBaseUrl(input)).toBe(expected);
   });
+
+  it.each(["https://relay.example.com/v1/v1/v1", "https://relay.example.com/anthropic/v1/", "https://api.llmsrelay.com"])(
+    "is idempotent for %s",
+    (input) => {
+      const once = normalizeCustomBaseUrl(input);
+      expect(normalizeCustomBaseUrl(once)).toBe(once);
+    },
+  );
 
   it.each([
     "http://api.llmsrelay.com",

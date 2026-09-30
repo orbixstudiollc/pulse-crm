@@ -41,7 +41,9 @@ export function normalizeCustomBaseUrl(input: string): string {
   if (url.search || url.hash || /[?#]/.test(trimmed)) {
     throw new Error("Base URL must not contain a query string or fragment");
   }
-  const path = url.pathname.replace(/\/+$/, "").replace(/\/v1$/i, "").replace(/\/+$/, "");
+  // Strip every trailing /v1 (and slash) so normalizing a stored value is a no-op:
+  // the sealed key's AAD depends on this exact string.
+  const path = url.pathname.replace(/(?:\/+|\/v1)+$/i, "");
   return `${url.origin}${path}`;
 }
 
