@@ -2838,7 +2838,7 @@ function EmailAccountsSection() {
     imap_password: "",
     smtp_host: "",
     smtp_port: 587,
-    smtp_secure: true,
+    smtp_secure: false,
     smtp_username: "",
     smtp_password: "",
     daily_send_limit: 50,
@@ -2858,6 +2858,12 @@ function EmailAccountsSection() {
     if (connected) {
       setToastMessage(`${connected === "gmail" ? "Gmail" : "Email"} account connected successfully`);
       setToastVariant("success");
+      setShowToast(true);
+    }
+    const oauthError = searchParams.get("error");
+    if (oauthError) {
+      setToastMessage(oauthError === "forbidden" ? "Only organization admins can connect email accounts" : `Email connection failed: ${oauthError}`);
+      setToastVariant("error");
       setShowToast(true);
     }
   }, [searchParams]);
@@ -2894,7 +2900,7 @@ function EmailAccountsSection() {
         setCustomForm({
           email_address: "", display_name: "",
           imap_host: "", imap_port: 993, imap_secure: true, imap_username: "", imap_password: "",
-          smtp_host: "", smtp_port: 587, smtp_secure: true, smtp_username: "", smtp_password: "",
+          smtp_host: "", smtp_port: 587, smtp_secure: false, smtp_username: "", smtp_password: "",
           daily_send_limit: 50,
         });
         fetchAccounts();
@@ -3108,7 +3114,7 @@ function EmailAccountsSection() {
                 onChange={(e) => setCustomForm({ ...customForm, smtp_password: e.target.value })}
               />
             </div>
-            <p className="text-xs text-fg-secondary mt-2">Allowed ports: 25, 465, 587, 2525. Port 465 uses TLS; the other ports require STARTTLS.</p>
+            <p className="text-xs text-fg-secondary mt-2">Allowed ports: 25, 465, 587, 2525. Tick the SSL/TLS box below for port 465; leave it unticked for the other ports (STARTTLS).</p>
             <label className="flex items-center gap-2 mt-3 text-sm text-fg-secondary">
               <input
                 type="checkbox"

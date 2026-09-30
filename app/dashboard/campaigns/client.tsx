@@ -281,7 +281,7 @@ function AddAccountModal({
                     className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent" />
                 </div>
               </div>
-              <p className="text-xs text-fg-secondary mt-2">Allowed ports: 25, 465, 587, 2525. Port 465 uses TLS; the other ports require STARTTLS.</p>
+              <p className="text-xs text-fg-secondary">Allowed ports: 25, 465, 587, 2525. Port 465 uses SSL/TLS; the other ports use STARTTLS.</p>
             </>
           )}
           <div className="grid grid-cols-2 gap-3">
@@ -310,7 +310,7 @@ function AddAccountModal({
                   email_address: email.trim(),
                   display_name: displayName || undefined,
                   provider,
-                  smtp_config: provider === "custom_imap" ? { host: smtpHost, port: parseInt(smtpPort) } : undefined,
+                  smtp_config: provider === "custom_imap" ? { host: smtpHost, port: parseInt(smtpPort), secure: parseInt(smtpPort) === 465 } : undefined,
                   daily_send_limit: parseInt(dailyLimit) || 50,
                   warmup_enabled: warmup,
                 });
