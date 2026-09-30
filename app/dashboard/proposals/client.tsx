@@ -17,12 +17,17 @@ import {
   PencilSimpleIcon,
   TrashIcon,
   FileTextIcon,
+  ScrollIcon,
   CheckCircleIcon,
   ClockIcon,
   XIcon,
 } from "@/components/ui";
 import {
+  Page,
   PageHeader,
+  MetricStrip,
+  PageTabs,
+  TableSection,
   StatCard,
   TableHeader,
   TableFooter,
@@ -37,7 +42,6 @@ import {
   markProposalSent,
 } from "@/lib/actions/proposals";
 import { aiGenerateProposal } from "@/lib/actions/ai-proposals";
-import { cn } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -83,12 +87,12 @@ const statusConfig: Record<
 };
 
 const statusTabs = [
-  { label: "All", value: "all" },
-  { label: "Draft", value: "draft" },
-  { label: "Sent", value: "sent" },
-  { label: "Viewed", value: "viewed" },
-  { label: "Accepted", value: "accepted" },
-  { label: "Rejected", value: "rejected" },
+  { label: "All", id: "all" },
+  { label: "Draft", id: "draft" },
+  { label: "Sent", id: "sent" },
+  { label: "Viewed", id: "viewed" },
+  { label: "Accepted", id: "accepted" },
+  { label: "Rejected", id: "rejected" },
 ];
 
 const statusOptions = [
@@ -325,9 +329,9 @@ export function ProposalsPageClient({
   // ── Render ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
+    <Page>
       {/* Header */}
-      <PageHeader title="Proposals">
+      <PageHeader title="Proposals" icon={<ScrollIcon size={18} />}>
         <Button
           variant="outline"
           leftIcon={<SparkleIcon size={18} />}
@@ -344,7 +348,7 @@ export function ProposalsPageClient({
       </PageHeader>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <MetricStrip>
         <StatCard
           label="Total Proposals"
           value={totalProposals.toString()}
@@ -385,31 +389,20 @@ export function ProposalsPageClient({
             />
           }
         />
-      </div>
+      </MetricStrip>
 
       {/* Status Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto">
-        {statusTabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => {
-              setActiveTab(tab.value);
-              setCurrentPage(1);
-            }}
-            className={cn(
-              "h-7 px-3 text-[13px] font-medium rounded-md border whitespace-nowrap transition-colors",
-              activeTab === tab.value
-                ? "border-accent bg-surface text-accent-strong"
-                : "border-line text-fg-secondary hover:text-fg hover:bg-subtle"
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <PageTabs
+        tabs={statusTabs}
+        value={activeTab}
+        onChange={(id) => {
+          setActiveTab(id);
+          setCurrentPage(1);
+        }}
+        className="max-sm:overflow-x-auto max-sm:overflow-y-hidden"
+      />
 
       {/* Table */}
-      <div className="rounded-lg border border-line bg-surface overflow-hidden">
         <TableHeader
           title="All Proposals"
           rowsPerPage={rowsPerPage}
@@ -421,23 +414,24 @@ export function ProposalsPageClient({
 
         {filteredProposals.length > 0 ? (
           <>
-            <div className="overflow-x-auto">
+            <TableSection>
+              <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
                       Title
                     </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
                       Status
                     </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
                       Valid Until
                     </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
                       Created
                     </th>
-                    <th className="h-10 px-3 text-center text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-right text-[13px] font-medium text-fg-secondary">
                       Actions
                     </th>
                   </tr>
@@ -455,19 +449,22 @@ export function ProposalsPageClient({
                             `/dashboard/proposals/${proposal.id}`
                           )
                         }
-                        className="h-10 hover:bg-subtle transition-colors cursor-pointer"
+                        className="hover:bg-subtle transition-colors cursor-pointer"
                       >
-                        <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
-                          <p className="text-[14px] font-medium text-fg">
-                            {proposal.title}
-                          </p>
+                        <td className="py-2 text-[14px] text-fg">
+                          <div className="flex items-center gap-2">
+                            <ScrollIcon size={16} className="shrink-0 text-fg-muted" />
+                            <p className="text-[14px] font-medium text-fg">
+                              {proposal.title}
+                            </p>
+                          </div>
                         </td>
-                        <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
+                        <td className="py-2 text-[14px] text-fg">
                           <Badge variant={status.variant} dot>
                             {status.label}
                           </Badge>
                         </td>
-                        <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
+                        <td className="py-2 text-[14px] text-fg">
                           <span className="text-[14px] text-fg-secondary">
                             {proposal.valid_until
                               ? new Date(
@@ -476,7 +473,7 @@ export function ProposalsPageClient({
                               : "\u2014"}
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
+                        <td className="py-2 text-[14px] text-fg">
                           <span className="text-[14px] text-fg-secondary">
                             {new Date(
                               proposal.created_at
@@ -484,10 +481,10 @@ export function ProposalsPageClient({
                           </span>
                         </td>
                         <td
-                          className="px-3 py-2 text-[14px] text-fg border-b border-divider"
+                          className="py-2 text-[14px] text-fg"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <div className="flex justify-center">
+                          <div className="flex justify-end">
                             <ActionMenu
                               items={[
                                 {
@@ -549,7 +546,8 @@ export function ProposalsPageClient({
                   })}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </TableSection>
 
             <TableFooter
               currentPage={currentPage}
@@ -584,7 +582,6 @@ export function ProposalsPageClient({
             ]}
           />
         )}
-      </div>
 
       {/* Create / Edit Proposal Modal */}
       <Modal open={showModal} onClose={closeModal}>
@@ -780,7 +777,7 @@ export function ProposalsPageClient({
       {/* Deal Selector for AI - shown when AI modal opens without a pre-selected deal */}
       {aiProposalOpen && !selectedDealIdForAI && deals.length > 0 && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="rounded-lg border border-line bg-surface shadow-modal p-4 w-full max-w-md mx-4 z-[61]">
+          <div className="rounded-lg border border-line bg-surface shadow-modal p-4 w-full max-w-md mx-4 z-[61]" data-clay-box>
             <h3 className="text-sm font-semibold text-fg mb-3">
               Select a Deal
             </h3>
@@ -817,6 +814,6 @@ export function ProposalsPageClient({
           </div>
         </div>
       )}
-    </div>
+    </Page>
   );
 }

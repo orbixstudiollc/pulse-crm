@@ -16,10 +16,15 @@ import {
   PencilSimpleIcon,
   TrashIcon,
   EnvelopeIcon,
+  NoteIcon,
   XIcon,
 } from "@/components/ui";
 import {
+  Page,
   PageHeader,
+  MetricStrip,
+  PageTabs,
+  TableSection,
   StatCard,
   TableHeader,
   TableFooter,
@@ -30,7 +35,6 @@ import {
   updateEmailTemplate,
   deleteEmailTemplate,
 } from "@/lib/actions/email-templates";
-import { cn } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -58,13 +62,13 @@ const categoryConfig: Record<string, string> = {
 };
 
 const categoryTabs = [
-  { label: "All", value: "all" },
-  { label: "Cold Outreach", value: "cold_outreach" },
-  { label: "Follow-Up", value: "follow_up" },
-  { label: "Nurture", value: "nurture" },
-  { label: "Re-engagement", value: "re_engagement" },
-  { label: "Meeting", value: "meeting" },
-  { label: "General", value: "general" },
+  { label: "All", id: "all" },
+  { label: "Cold Outreach", id: "cold_outreach" },
+  { label: "Follow-Up", id: "follow_up" },
+  { label: "Nurture", id: "nurture" },
+  { label: "Re-engagement", id: "re_engagement" },
+  { label: "Meeting", id: "meeting" },
+  { label: "General", id: "general" },
 ];
 
 const categoryOptions = [
@@ -212,9 +216,9 @@ export function TemplatesPageClient({
   };
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
+    <Page>
       {/* Header */}
-      <PageHeader title="Email Templates">
+      <PageHeader title="Email Templates" icon={<NoteIcon size={18} />}>
         <Button
           leftIcon={<PlusIcon size={20} weight="bold" />}
           onClick={openCreate}
@@ -224,7 +228,7 @@ export function TemplatesPageClient({
       </PageHeader>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <MetricStrip>
         <StatCard
           label="Total Templates"
           value={totalTemplates.toString()}
@@ -245,31 +249,20 @@ export function TemplatesPageClient({
             />
           }
         />
-      </div>
+      </MetricStrip>
 
       {/* Category Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto">
-        {categoryTabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => {
-              setActiveTab(tab.value);
-              setCurrentPage(1);
-            }}
-            className={cn(
-              "h-8 px-3 text-[13px] font-medium rounded-md border whitespace-nowrap transition-colors",
-              activeTab === tab.value
-                ? "border-accent bg-surface text-accent-strong"
-                : "border-line bg-surface text-fg-secondary hover:bg-subtle"
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <PageTabs
+        tabs={categoryTabs}
+        value={activeTab}
+        onChange={(id) => {
+          setActiveTab(id);
+          setCurrentPage(1);
+        }}
+        className="max-sm:overflow-x-auto max-sm:overflow-y-hidden"
+      />
 
       {/* Table */}
-      <div className="rounded-lg border border-line bg-surface overflow-hidden">
         <TableHeader
           title="All Templates"
           rowsPerPage={rowsPerPage}
@@ -281,26 +274,27 @@ export function TemplatesPageClient({
 
         {filteredTemplates.length > 0 ? (
           <>
-            <div className="overflow-x-auto">
+            <TableSection>
+              <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
                       Name
                     </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
                       Subject
                     </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
                       Category
                     </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
                       Merge Fields
                     </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
                       Used
                     </th>
-                    <th className="h-10 px-3 text-center text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-right text-[13px] font-medium text-fg-secondary">
                       Actions
                     </th>
                   </tr>
@@ -309,25 +303,28 @@ export function TemplatesPageClient({
                   {paginatedTemplates.map((template) => (
                     <tr
                       key={template.id}
-                      className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors"
+                      className="hover:bg-subtle transition-colors"
                     >
-                      <td className="px-3 py-2 text-[14px] text-fg">
-                        <p className="text-[14px] font-medium text-fg">
-                          {template.name}
-                        </p>
+                      <td className="py-2 text-[14px] text-fg">
+                        <div className="flex items-center gap-2">
+                          <NoteIcon size={16} className="shrink-0 text-fg-muted" />
+                          <p className="text-[14px] font-medium text-fg">
+                            {template.name}
+                          </p>
+                        </div>
                       </td>
-                      <td className="px-3 py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[14px] text-fg">
                         <p className="text-[14px] text-fg-secondary line-clamp-1 max-w-[250px]">
                           {template.subject}
                         </p>
                       </td>
-                      <td className="px-3 py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[14px] text-fg">
                         <span className="text-[14px] text-fg-secondary">
                           {categoryConfig[template.category] ||
                             template.category}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[14px] text-fg">
                         <div className="flex flex-wrap gap-1">
                           {(template.merge_fields || [])
                             .slice(0, 3)
@@ -346,13 +343,13 @@ export function TemplatesPageClient({
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[14px] text-fg">
                         <span className="text-[14px] font-medium text-fg">
                           {template.usage_count || 0}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-[14px] text-fg">
-                        <div className="flex justify-center">
+                      <td className="py-2 text-[14px] text-fg">
+                        <div className="flex justify-end">
                           <ActionMenu
                             items={[
                               {
@@ -379,7 +376,8 @@ export function TemplatesPageClient({
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </TableSection>
 
             <TableFooter
               currentPage={currentPage}
@@ -410,7 +408,6 @@ export function TemplatesPageClient({
             ]}
           />
         )}
-      </div>
 
       {/* Create/Edit Modal */}
       <Modal open={showModal} onClose={() => setShowModal(false)}>
@@ -574,6 +571,6 @@ export function TemplatesPageClient({
           </div>
         )}
       </Modal>
-    </div>
+    </Page>
   );
 }

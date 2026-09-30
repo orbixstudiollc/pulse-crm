@@ -16,9 +16,13 @@ import {
   TrashIcon,
   XIcon,
   SparkleIcon,
+  FileTextIcon,
 } from "@/components/ui";
 import {
+  Page,
   PageHeader,
+  MetricStrip,
+  PageTabs,
   StatCard,
   EmptyState,
 } from "@/components/dashboard";
@@ -29,7 +33,6 @@ import {
   deleteObjection,
 } from "@/lib/actions/objections";
 import { aiGenerateResponse } from "@/lib/actions/ai-objections";
-import { cn } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -62,13 +65,13 @@ const categoryConfig: Record<
 };
 
 const categoryTabs = [
-  { label: "All", value: "all" },
-  { label: "Pricing", value: "pricing" },
-  { label: "Competition", value: "competition" },
-  { label: "Timing", value: "timing" },
-  { label: "Authority", value: "authority" },
-  { label: "Need", value: "need" },
-  { label: "Implementation", value: "implementation" },
+  { label: "All", id: "all" },
+  { label: "Pricing", id: "pricing" },
+  { label: "Competition", id: "competition" },
+  { label: "Timing", id: "timing" },
+  { label: "Authority", id: "authority" },
+  { label: "Need", id: "need" },
+  { label: "Implementation", id: "implementation" },
 ];
 
 const categoryOptions = [
@@ -205,9 +208,9 @@ export function PlaybookPageClient({
   };
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
+    <Page>
       {/* Header */}
-      <PageHeader title="Objection Playbook">
+      <PageHeader title="Objection Playbook" icon={<FileTextIcon size={18} />}>
         <Button
           leftIcon={<PlusIcon size={20} weight="bold" />}
           onClick={openCreate}
@@ -217,7 +220,7 @@ export function PlaybookPageClient({
       </PageHeader>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <MetricStrip>
         <StatCard
           label="Total Objections"
           value={totalObjections.toString()}
@@ -258,29 +261,19 @@ export function PlaybookPageClient({
             <div className="h-3 w-3 rounded-full bg-danger" />
           }
         />
-      </div>
+      </MetricStrip>
 
       {/* Category Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto">
-        {categoryTabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setActiveTab(tab.value)}
-            className={cn(
-              "h-8 px-3 text-[13px] font-medium rounded-md border whitespace-nowrap transition-colors",
-              activeTab === tab.value
-                ? "border-accent text-accent-strong bg-surface"
-                : "border-line text-fg-secondary hover:bg-subtle",
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <PageTabs
+        tabs={categoryTabs}
+        value={activeTab}
+        onChange={setActiveTab}
+        className="max-sm:overflow-x-auto max-sm:overflow-y-hidden"
+      />
 
       {/* Objection Cards */}
       {filtered.length > 0 ? (
-        <div className="space-y-3">
+        <div>
           {filtered.map((obj) => {
             const cat =
               categoryConfig[obj.category] || categoryConfig.pricing;
@@ -289,14 +282,14 @@ export function PlaybookPageClient({
             return (
               <div
                 key={obj.id}
-                className="rounded-lg border border-line bg-surface overflow-hidden"
+                className="border-b border-divider"
               >
                 {/* Header (always visible) */}
                 <button
                   onClick={() =>
                     setExpandedId(isExpanded ? null : obj.id)
                   }
-                  className="w-full flex items-start justify-between p-5 text-left hover:bg-muted transition-colors"
+                  className="w-full flex items-start justify-between px-8 py-4 max-sm:px-4 text-left hover:bg-subtle transition-colors"
                 >
                   <div className="flex-1 min-w-0 space-y-1.5">
                     <div className="flex items-center gap-2">
@@ -346,7 +339,7 @@ export function PlaybookPageClient({
 
                 {/* Expanded content */}
                 {isExpanded && (
-                  <div className="border-t border-line p-5 space-y-4">
+                  <div className="px-8 pb-5 max-sm:px-4 space-y-4">
                     {/* FFR Response */}
                     {obj.ffr_response && (
                       <div>
@@ -415,7 +408,7 @@ export function PlaybookPageClient({
           })}
         </div>
       ) : (
-        <div className="rounded-lg border border-line bg-surface overflow-hidden">
+        <div>
           <EmptyState
             icon={
               <svg
@@ -569,6 +562,6 @@ export function PlaybookPageClient({
         }}
         editable={true}
       />
-    </div>
+    </Page>
   );
 }

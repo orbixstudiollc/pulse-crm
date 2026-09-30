@@ -21,6 +21,7 @@ import {
   WhatsappLogoIcon,
   LinkedinLogoIcon,
   TrashIcon,
+  SegmentedControl,
 } from "@/components/ui";
 import {
   getEmailThreads,
@@ -345,12 +346,12 @@ export function InboxClient() {
       {/* Thread List (left panel) */}
       <div
         className={cn(
-          "w-96 max-lg:w-80 shrink-0 border-r border-line flex flex-col",
+          "w-96 max-lg:w-80 shrink-0 border-r border-divider flex flex-col",
           selectedThread ? "max-md:hidden" : "max-md:w-full",
         )}
       >
         {/* Inbox Header */}
-        <div className="px-4 py-4 border-b border-line">
+        <div className="px-4 py-4 border-b border-divider">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-xl font-semibold text-fg">
               Inbox
@@ -375,32 +376,18 @@ export function InboxClient() {
           </div>
 
           {/* Channel filter tabs */}
-          <div className="flex gap-1 mb-3">
-            {([
-              { id: "all_channels" as const, label: "All", icon: null },
-              { id: "email" as const, label: "Email", icon: <EnvelopeIcon size={12} /> },
-              { id: "whatsapp" as const, label: "WhatsApp", icon: <WhatsappLogoIcon size={12} /> },
-              { id: "linkedin" as const, label: "LinkedIn", icon: <LinkedinLogoIcon size={12} /> },
-            ]).map(({ id, label, icon }) => (
-              <button
-                key={id}
-                onClick={() => setChannelFilter(id)}
-                className={cn(
-                  "flex items-center gap-1.5 h-8 px-3 text-[13px] font-medium rounded-full border transition-colors",
-                  channelFilter === id
-                    ? id === "whatsapp"
-                      ? "bg-success text-on-inverse"
-                      : id === "linkedin"
-                        ? "bg-accent-strong text-on-inverse"
-                        : "border-accent text-accent-strong bg-surface"
-                    : "border-line text-fg-secondary hover:bg-subtle",
-                )}
-              >
-                {icon}
-                {label}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            aria-label="Channel"
+            className="mb-3 max-w-full overflow-x-auto"
+            options={[
+              { value: "all_channels" as const, label: "All" },
+              { value: "email" as const, label: "Email", icon: <EnvelopeIcon size={12} /> },
+              { value: "whatsapp" as const, label: "WhatsApp", icon: <WhatsappLogoIcon size={12} /> },
+              { value: "linkedin" as const, label: "LinkedIn", icon: <LinkedinLogoIcon size={12} /> },
+            ]}
+            value={channelFilter}
+            onChange={setChannelFilter}
+          />
 
           {/* Search */}
           <div className="relative mb-3">
@@ -416,28 +403,21 @@ export function InboxClient() {
 
           {/* Email filter tabs (only when email channel is selected) */}
           {isEmailView && (
-            <div className="flex gap-1">
-              {(["all", "unread", "starred"] as const).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setFilterView(v)}
-                  className={cn(
-                    "h-8 px-3 text-[13px] font-medium rounded-md border transition-colors",
-                    filterView === v
-                      ? "border-accent text-accent-strong bg-surface"
-                      : "border-line text-fg-secondary hover:bg-subtle",
-                  )}
-                >
-                  {v.charAt(0).toUpperCase() + v.slice(1)}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              aria-label="Email filter"
+              options={(["all", "unread", "starred"] as const).map((v) => ({
+                value: v,
+                label: v.charAt(0).toUpperCase() + v.slice(1),
+              }))}
+              value={filterView}
+              onChange={setFilterView}
+            />
           )}
         </div>
 
         {/* Thread / Activity list */}
         <div className="flex-1 overflow-y-auto">
-          <p className="px-4 py-2 text-xs text-fg-secondary border-b border-line">
+          <p className="px-4 py-2 text-xs text-fg-secondary border-b border-divider">
             Showing messages sent from Pulse. Reply sync isn&apos;t connected yet.
           </p>
           {loading ? (
@@ -462,7 +442,7 @@ export function InboxClient() {
                   key={thread.id}
                   onClick={() => openThread(thread)}
                   className={cn(
-                    "w-full text-left px-4 py-3 border-b border-row hover:bg-subtle transition-colors",
+                    "w-full text-left px-4 py-3 border-b border-divider hover:bg-subtle transition-colors",
                     selectedThread?.id === thread.id && "bg-muted",
                     !thread.is_read && "bg-accent-surface",
                   )}
@@ -554,7 +534,7 @@ export function InboxClient() {
                   key={`${item.channel}-${item.id}`}
                   onClick={() => selectUnifiedItem(item)}
                   className={cn(
-                    "w-full text-left px-4 py-3 border-b border-row hover:bg-subtle transition-colors",
+                    "w-full text-left px-4 py-3 border-b border-divider hover:bg-subtle transition-colors",
                     selectedUnifiedItem?.id === item.id && selectedUnifiedItem?.channel === item.channel &&
                       "bg-muted",
                   )}
@@ -613,7 +593,7 @@ export function InboxClient() {
         {selectedThread ? (
           <>
             {/* Thread header */}
-            <div className="px-6 py-4 border-b border-line flex items-center gap-3">
+            <div className="px-6 py-4 border-b border-divider flex items-center gap-3">
               <button
                 onClick={() => { setSelectedThread(null); setMessages([]); }}
                 className="md:hidden p-1.5 rounded hover:bg-muted"
@@ -664,7 +644,7 @@ export function InboxClient() {
                 messages.map((msg) => (
                   <div
                     key={msg.id}
-                    className={cn(
+                    data-clay-box className={cn(
                       "rounded border p-4",
                       msg.direction === "outbound"
                         ? "border-line bg-subtle"
@@ -825,7 +805,7 @@ function UnifiedItemDetail({
   return (
     <div className="flex-1 flex flex-col">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-line flex items-center gap-3">
+      <div className="px-6 py-4 border-b border-divider flex items-center gap-3">
         <button
           onClick={onBack}
           className="p-1.5 rounded hover:bg-muted"
@@ -864,7 +844,7 @@ function UnifiedItemDetail({
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
         {/* Lead info card */}
-        <div className="rounded-lg border border-line p-4 mb-6">
+        <div className="pb-6 mb-6 border-b border-divider">
           <div className="flex items-center gap-3">
             <div className={cn(
               "w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold",
@@ -887,7 +867,7 @@ function UnifiedItemDetail({
         </div>
 
         {/* Message detail card */}
-        <div className={cn("rounded-lg border p-4", colors.border, colors.bg)}>
+        <div data-clay-box className={cn("rounded-lg border p-4", colors.border, colors.bg)}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               {colors.icon}
@@ -908,7 +888,7 @@ function UnifiedItemDetail({
           </div>
 
           {/* Preview content */}
-          <div className="rounded-lg border border-line bg-surface p-4">
+          <div className="rounded-lg border border-line bg-surface p-4" data-clay-box>
             <p className="text-sm text-fg whitespace-pre-wrap">
               {item.preview}
             </p>
@@ -967,7 +947,7 @@ function ReplyBox({
   };
 
   return (
-    <div className="border-t border-line px-6 py-4 bg-subtle">
+    <div className="border-t border-divider px-6 py-4 bg-subtle">
       <div className="flex items-center gap-3 mb-3">
         <Input
           placeholder="To"
@@ -1041,7 +1021,7 @@ function ComposeModal({
   if (accounts.length === 0) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-        <div className="rounded-lg border border-line bg-surface shadow-modal p-4 max-w-md w-full mx-4">
+        <div className="rounded-lg border border-line bg-surface shadow-modal p-4 max-w-md w-full mx-4" data-clay-box>
           <div className="flex items-center gap-3 mb-4">
             <WarningIcon size={24} className="text-warning" />
             <h3 className="text-base font-semibold text-fg">No Email Accounts</h3>
@@ -1057,7 +1037,7 @@ function ComposeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30">
-      <div className="rounded-t-lg sm:rounded-lg border border-line bg-surface shadow-modal w-full max-w-2xl mx-0 sm:mx-4 max-h-[90vh] flex flex-col">
+      <div className="rounded-t-lg sm:rounded-lg border border-line bg-surface shadow-modal w-full max-w-2xl mx-0 sm:mx-4 max-h-[90vh] flex flex-col" data-clay-box>
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-line">
           <h3 className="text-sm font-semibold text-fg">New Email</h3>
