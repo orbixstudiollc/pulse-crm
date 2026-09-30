@@ -39,23 +39,31 @@ export async function createConversation(title?: string) {
 
 export async function updateConversation(id: string, updates: { title?: string; is_pinned?: boolean; summary?: string }) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const orgId = await getOrgId();
+  const { data, error } = await supabase
     .from("copilot_conversations")
     .update(updates)
-    .eq("id", id);
+    .eq("id", id)
+    .eq("organization_id", orgId)
+    .select("id");
 
   if (error) return { error: error.message };
+  if (!data?.length) return { error: "Not found" };
   return { success: true };
 }
 
 export async function deleteConversation(id: string) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const orgId = await getOrgId();
+  const { data, error } = await supabase
     .from("copilot_conversations")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("organization_id", orgId)
+    .select("id");
 
   if (error) return { error: error.message };
+  if (!data?.length) return { error: "Not found" };
   return { success: true };
 }
 
@@ -63,11 +71,13 @@ export async function deleteConversation(id: string) {
 
 export async function getMessages(conversationId: string) {
   const supabase = await createClient();
+  const orgId = await getOrgId();
 
   const { data, error } = await supabase
     .from("copilot_messages")
     .select("*")
     .eq("conversation_id", conversationId)
+    .eq("organization_id", orgId)
     .order("created_at", { ascending: true });
 
   if (error) return { error: error.message, data: [] };
@@ -77,6 +87,14 @@ export async function getMessages(conversationId: string) {
 export async function saveMessage(conversationId: string, role: "user" | "assistant", content: string, extras?: { tool_calls?: unknown; tool_results?: unknown; tokens_used?: number }) {
   const supabase = await createClient();
   const orgId = await getOrgId();
+
+  const { data: conversation } = await supabase
+    .from("copilot_conversations")
+    .select("id")
+    .eq("id", conversationId)
+    .eq("organization_id", orgId)
+    .maybeSingle();
+  if (!conversation) return { error: "Not found", data: null };
 
   const { data, error } = await supabase
     .from("copilot_messages")
@@ -96,7 +114,8 @@ export async function saveMessage(conversationId: string, role: "user" | "assist
   await supabase
     .from("copilot_conversations")
     .update({ updated_at: new Date().toISOString() })
-    .eq("id", conversationId);
+    .eq("id", conversationId)
+    .eq("organization_id", orgId);
 
   if (error) return { error: error.message, data: null };
   return { data };
@@ -151,23 +170,31 @@ export async function updateMemoryItem(id: string, updates: {
   is_active?: boolean;
 }) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const orgId = await getOrgId();
+  const { data, error } = await supabase
     .from("copilot_memory")
     .update(updates)
-    .eq("id", id);
+    .eq("id", id)
+    .eq("organization_id", orgId)
+    .select("id");
 
   if (error) return { error: error.message };
+  if (!data?.length) return { error: "Not found" };
   return { success: true };
 }
 
 export async function deleteMemoryItem(id: string) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const orgId = await getOrgId();
+  const { data, error } = await supabase
     .from("copilot_memory")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("organization_id", orgId)
+    .select("id");
 
   if (error) return { error: error.message };
+  if (!data?.length) return { error: "Not found" };
   return { success: true };
 }
 
@@ -368,22 +395,30 @@ export async function updateCopilotTask(id: string, updates: {
   last_result?: string;
 }) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const orgId = await getOrgId();
+  const { data, error } = await supabase
     .from("copilot_tasks")
     .update(updates)
-    .eq("id", id);
+    .eq("id", id)
+    .eq("organization_id", orgId)
+    .select("id");
 
   if (error) return { error: error.message };
+  if (!data?.length) return { error: "Not found" };
   return { success: true };
 }
 
 export async function deleteCopilotTask(id: string) {
   const supabase = await createClient();
-  const { error } = await supabase
+  const orgId = await getOrgId();
+  const { data, error } = await supabase
     .from("copilot_tasks")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("organization_id", orgId)
+    .select("id");
 
   if (error) return { error: error.message };
+  if (!data?.length) return { error: "Not found" };
   return { success: true };
 }
