@@ -139,15 +139,15 @@ export function CopilotClient({ initialConversations, initialMemory, initialTask
   ];
 
   return (
-    <div className="flex h-full bg-surface">
+    <div className="flex h-full bg-surface max-md:flex-col">
       {/* Left column: conversation list (Clay Sculptor panel) */}
-      <div className="w-64 shrink-0 border-r border-divider flex flex-col bg-surface">
+      <div className="w-64 shrink-0 border-r border-divider flex flex-col bg-surface max-md:w-full max-md:border-r-0 max-md:border-b max-md:max-h-56 max-md:overflow-y-auto">
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-4 border-b border-divider">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-subtle text-fg-secondary">
             <RobotIcon size={18} />
           </div>
-          <h1 className="text-[16px] leading-6 font-semibold text-fg">Pulse Copilot</h1>
+          <p className="text-[16px] leading-6 font-semibold text-fg">Pulse Copilot</p>
         </div>
 
         {/* Navigation */}
