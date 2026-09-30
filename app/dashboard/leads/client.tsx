@@ -21,7 +21,10 @@ import {
   PaperPlaneTiltIcon,
 } from "@/components/ui";
 import {
+  Page,
   PageHeader,
+  MetricStrip,
+  TableSection,
   FilterBar,
   StatCard,
   TableHeader,
@@ -443,9 +446,9 @@ export function LeadsPageClient() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <Page>
       {/* Header */}
-      <PageHeader title="Leads">
+      <PageHeader title="Leads" icon={<FunnelIcon size={18} />}>
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
@@ -495,8 +498,8 @@ export function LeadsPageClient() {
         </div>
       </PageHeader>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Metrics */}
+      <MetricStrip>
         <StatCard
           label="Total Leads"
           value={allLeads.length.toString()}
@@ -529,10 +532,21 @@ export function LeadsPageClient() {
             />
           }
         />
-      </div>
+      </MetricStrip>
 
-      {/* Filters */}
+      {/* Table heading row */}
+      <TableHeader
+        title="All Leads"
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={(value) => {
+          setRowsPerPage(value);
+          setCurrentPage(1);
+        }}
+      />
+
+      {/* Filter row */}
       <FilterBar
+        className="px-8 max-sm:px-4 border-t border-divider"
         searchPlaceholder="Search leads..."
         onSearchChange={(value) => {
           setSearchValue(value);
@@ -558,124 +572,112 @@ export function LeadsPageClient() {
         onFilterChange={handleFilterChange}
       />
 
-      {/* Leads Table */}
-      <div className="rounded-lg border border-line bg-surface overflow-hidden">
-        {/* Bulk Actions */}
-        {selectedRows.length > 0 && (
-          <div className="flex items-center justify-between px-4 py-2 border-b border-divider bg-subtle">
-            <span className="text-[13px] font-medium text-fg">
-              {selectedRows.length} item{selectedRows.length > 1 ? "s" : ""}{" "}
-              selected
-            </span>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => {
-                  const selected = filteredLeads.filter((l) => selectedRows.includes(l.id));
-                  const emails = selected.map((l) => l.email).filter(Boolean).join(",");
-                  if (emails) {
-                    window.location.href = `mailto:${emails}`;
-                  } else {
-                    toast.error("No email addresses found for selected leads");
-                  }
-                }}
-                className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
-              >
-                Email
-              </button>
-              <button
-                onClick={async () => {
-                  const result = await exportLeadsToCSV();
-                  if (result.error) { toast.error(result.error); return; }
-                  const blob = new Blob([result.csv], { type: "text/csv" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url; a.download = `leads-export-${new Date().toISOString().slice(0, 10)}.csv`;
-                  a.click(); URL.revokeObjectURL(url);
-                  toast.success("Leads exported successfully");
-                }}
-                className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
-              >
-                Export
-              </button>
-              <button
-                onClick={() => setShowSequencePicker(true)}
-                className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
-              >
-                Add to Sequence
-              </button>
-              <button
-                onClick={() => setConfirmDelete({ type: "bulk" })}
-                className="text-[13px] text-danger hover:opacity-80 transition-colors"
-              >
-                Delete
-              </button>
-              <button
-                onClick={() => setSelectedRows([])}
-                className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
-              >
-                Clear selection
-              </button>
+      {/* Bulk Actions */}
+      {selectedRows.length > 0 && (
+        <div className="flex h-10 items-center justify-between gap-4 px-8 max-sm:px-4 border-t border-divider">
+          <span className="text-[13px] font-medium text-fg">
+            {selectedRows.length} item{selectedRows.length > 1 ? "s" : ""}{" "}
+            selected
+          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                const selected = filteredLeads.filter((l) => selectedRows.includes(l.id));
+                const emails = selected.map((l) => l.email).filter(Boolean).join(",");
+                if (emails) {
+                  window.location.href = `mailto:${emails}`;
+                } else {
+                  toast.error("No email addresses found for selected leads");
+                }
+              }}
+              className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
+            >
+              Email
+            </button>
+            <button
+              onClick={async () => {
+                const result = await exportLeadsToCSV();
+                if (result.error) { toast.error(result.error); return; }
+                const blob = new Blob([result.csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url; a.download = `leads-export-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click(); URL.revokeObjectURL(url);
+                toast.success("Leads exported successfully");
+              }}
+              className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
+            >
+              Export
+            </button>
+            <button
+              onClick={() => setShowSequencePicker(true)}
+              className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
+            >
+              Add to Sequence
+            </button>
+            <button
+              onClick={() => setConfirmDelete({ type: "bulk" })}
+              className="text-[13px] text-danger hover:opacity-80 transition-colors"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => setSelectedRows([])}
+              className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
+            >
+              Clear selection
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Table, Loading Skeleton, or Empty State */}
+      {leadsLoading ? (
+        <div className="border-t border-divider">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex h-11 items-center gap-3 px-8 max-sm:px-4 border-b border-divider">
+              <div className="h-4 w-4 animate-pulse rounded bg-active" />
+              <div className="h-4 w-40 animate-pulse rounded bg-active" />
+              <div className="h-4 w-32 animate-pulse rounded bg-active max-sm:hidden" />
+              <div className="ml-auto h-4 w-16 animate-pulse rounded bg-active" />
             </div>
-          </div>
-        )}
-
-        {/* Table Header */}
-        <TableHeader
-          title="All Leads"
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={(value) => {
-            setRowsPerPage(value);
-            setCurrentPage(1);
-          }}
-        />
-
-        {/* Table, Loading Skeleton, or Empty State */}
-        {leadsLoading ? (
-          <div className="divide-y divide-line">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3 px-3 py-3">
-                <div className="h-4 w-4 animate-pulse rounded bg-active" />
-                <div className="h-4 w-40 animate-pulse rounded bg-active" />
-                <div className="h-4 w-32 animate-pulse rounded bg-active max-sm:hidden" />
-                <div className="ml-auto h-4 w-16 animate-pulse rounded bg-active" />
-              </div>
-            ))}
-          </div>
-        ) : filteredLeads.length > 0 ? (
-          <>
-            {/* Table */}
+          ))}
+        </div>
+      ) : filteredLeads.length > 0 ? (
+        <>
+          <TableSection>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr>
-                    <th className="w-10 h-10 px-3 border-b border-divider">
+                    <th className="w-10">
                       <Checkbox
                         checked={isAllSelected}
                         onChange={toggleSelectAll}
                       />
                     </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
                       Lead
                     </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
                       Status
                     </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
                       Source
                     </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
                       Est. Value
                     </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
                       Score
                     </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
                       Grade
                     </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-left text-[13px] font-medium text-fg-secondary">
                       Created
                     </th>
-                    <th className="h-10 px-3 text-center text-[13px] font-medium text-fg-secondary border-b border-divider">
+                    <th className="text-right text-[13px] font-medium text-fg-secondary">
                       Actions
                     </th>
                   </tr>
@@ -688,10 +690,10 @@ export function LeadsPageClient() {
                         setSelectedLead(lead);
                         setDrawerOpen(true);
                       }}
-                      className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors cursor-pointer"
+                      className="hover:bg-subtle transition-colors cursor-pointer"
                     >
                       <td
-                        className="w-10 px-3 py-2 text-[14px] text-fg"
+                        className="w-10 py-2 text-[14px] text-fg"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Checkbox
@@ -699,7 +701,7 @@ export function LeadsPageClient() {
                           onChange={() => toggleSelectRow(lead.id)}
                         />
                       </td>
-                      <td className="px-3 py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[14px] text-fg">
                         <div className="flex items-center gap-3">
                           <Avatar name={lead.name} />
                           <div>
@@ -712,7 +714,7 @@ export function LeadsPageClient() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[14px] text-fg">
                         <Badge
                           variant={
                             leadStatusConfig[lead.status as keyof typeof leadStatusConfig]
@@ -724,18 +726,18 @@ export function LeadsPageClient() {
                             ?.label ?? lead.status}
                         </Badge>
                       </td>
-                      <td className="px-3 py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[14px] text-fg">
                         <span className="text-[13px] text-fg-secondary">
                           {lead.source}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[14px] text-fg">
                         <span className="text-[14px] font-medium text-fg">
                           {formatCurrency(lead.estimatedValue)}
                         </span>
                       </td>
                       <td
-                        className="px-3 py-2 text-[14px] text-fg"
+                        className="py-2 text-[14px] text-fg"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="relative">
@@ -759,7 +761,7 @@ export function LeadsPageClient() {
                           {scorePopoverId === lead.id && (
                             <div
                               ref={scorePopoverRef}
-                              className="absolute left-0 top-full mt-2 w-72 rounded-lg border border-line bg-surface shadow-dropdown p-4 z-50"
+                              className="absolute left-0 top-full mt-2 w-72 rounded-lg border border-line bg-surface shadow-dropdown p-4 z-50" data-clay-box
                             >
                               <ScoreBreakdown
                                 breakdown={lead.scoreBreakdown}
@@ -769,7 +771,7 @@ export function LeadsPageClient() {
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[14px] text-fg">
                         {lead.qualificationGrade ? (
                           <span
                             className={cn(
@@ -789,17 +791,18 @@ export function LeadsPageClient() {
                           <span className="text-[13px] text-fg-muted">—</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[14px] text-fg">
                         <span className="text-[13px] text-fg-secondary">
                           {lead.createdDate}
                         </span>
                       </td>
                       <td
-                        className="px-3 py-2 text-[14px] text-fg"
+                        className="py-2 text-[14px] text-fg"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="flex justify-center">
+                        <div className="flex justify-end">
                           <ActionMenu
+                            className="h-6 w-6"
                             items={[
                               {
                                 label: "View Details",
@@ -837,72 +840,72 @@ export function LeadsPageClient() {
                 </tbody>
               </table>
             </div>
+          </TableSection>
 
-            {/* Table Footer with Pagination */}
-            <TableFooter
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={filteredLeads.length}
-              startIndex={displayStart}
-              endIndex={displayEnd}
-              onPageChange={setCurrentPage}
-              itemLabel="leads"
-            />
-          </>
-        ) : (
-          <EmptyState
-            icon={<FunnelIcon size={24} />}
-            title={
-              searchValue ||
-              statusFilter !== "all" ||
-              sourceFilter !== "all" ||
-              scoreFilter !== "all"
-                ? "No leads found"
-                : "No leads yet"
-            }
-            description={
-              searchValue ||
-              statusFilter !== "all" ||
-              sourceFilter !== "all" ||
-              scoreFilter !== "all"
-                ? "Try adjusting your search or filters to find what you're looking for."
-                : "Start building your pipeline by importing leads or adding your first one manually."
-            }
-            actions={
-              searchValue ||
-              statusFilter !== "all" ||
-              sourceFilter !== "all" ||
-              scoreFilter !== "all"
-                ? [
-                    {
-                      label: "Clear Filters",
-                      variant: "outline",
-                      onClick: () => {
-                        setSearchValue("");
-                        setStatusFilter("all");
-                        setSourceFilter("all");
-                        setScoreFilter("all");
-                      },
-                    },
-                  ]
-                : [
-                    {
-                      label: "Import Leads",
-                      icon: <UploadIcon size={18} />,
-                      variant: "outline",
-                      onClick: () => setShowImport(true),
-                    },
-                    {
-                      label: "Add Lead",
-                      icon: <PlusIcon size={18} weight="bold" />,
-                      variant: "primary",
-                      onClick: () => setShowAddLead(true),
-                    },
-                  ]
-            }
+          {/* Table Footer with Pagination */}
+          <TableFooter
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredLeads.length}
+            startIndex={displayStart}
+            endIndex={displayEnd}
+            onPageChange={setCurrentPage}
+            itemLabel="leads"
           />
-        )}
-      </div>
+        </>
+      ) : (
+        <EmptyState
+          icon={<FunnelIcon size={24} />}
+          title={
+            searchValue ||
+            statusFilter !== "all" ||
+            sourceFilter !== "all" ||
+            scoreFilter !== "all"
+              ? "No leads found"
+              : "No leads yet"
+          }
+          description={
+            searchValue ||
+            statusFilter !== "all" ||
+            sourceFilter !== "all" ||
+            scoreFilter !== "all"
+              ? "Try adjusting your search or filters to find what you're looking for."
+              : "Start building your pipeline by importing leads or adding your first one manually."
+          }
+          actions={
+            searchValue ||
+            statusFilter !== "all" ||
+            sourceFilter !== "all" ||
+            scoreFilter !== "all"
+              ? [
+                  {
+                    label: "Clear Filters",
+                    variant: "outline",
+                    onClick: () => {
+                      setSearchValue("");
+                      setStatusFilter("all");
+                      setSourceFilter("all");
+                      setScoreFilter("all");
+                    },
+                  },
+                ]
+              : [
+                  {
+                    label: "Import Leads",
+                    icon: <UploadIcon size={18} />,
+                    variant: "outline",
+                    onClick: () => setShowImport(true),
+                  },
+                  {
+                    label: "Add Lead",
+                    icon: <PlusIcon size={18} weight="bold" />,
+                    variant: "primary",
+                    onClick: () => setShowAddLead(true),
+                  },
+                ]
+          }
+        />
+      )}
 
       {/* Add Lead Modal */}
       <AddLeadModal
@@ -972,6 +975,6 @@ export function LeadsPageClient() {
         onConfirm={executeDeleteConfirmed}
         onCancel={() => setConfirmDelete(null)}
       />
-    </div>
+    </Page>
   );
 }

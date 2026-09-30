@@ -36,7 +36,11 @@ import {
   ArrowPathIcon,
 } from "@/components/ui";
 import {
+  Page,
   PageHeader,
+  MetricStrip,
+  PageTabs,
+  TableSection,
   StatCard,
   TableHeader,
   TableFooter,
@@ -74,12 +78,12 @@ const categoryConfig: Record<string, string> = {
 };
 
 const categoryTabs = [
-  { label: "All", value: "all" },
-  { label: "Cold Outreach", value: "cold_outreach" },
-  { label: "Warm Follow-up", value: "warm_followup" },
-  { label: "Re-engagement", value: "re_engagement" },
-  { label: "Post-Demo", value: "post_demo" },
-  { label: "Nurture", value: "nurture" },
+  { label: "All", id: "all" },
+  { label: "Cold Outreach", id: "cold_outreach" },
+  { label: "Warm Follow-up", id: "warm_followup" },
+  { label: "Re-engagement", id: "re_engagement" },
+  { label: "Post-Demo", id: "post_demo" },
+  { label: "Nurture", id: "nurture" },
 ];
 
 const categoryOptions = [
@@ -405,9 +409,9 @@ export function SequencesPageClient({
   };
 
   return (
-    <div className="py-6 px-4 sm:px-6 lg:px-6 space-y-4">
+    <Page>
       {/* Header */}
-      <PageHeader title="Sequences">
+      <PageHeader title="Sequences" icon={<EnvelopeIcon size={18} />}>
         <Button
           leftIcon={<PlusIcon size={20} weight="bold" />}
           onClick={() => setShowCreateModal(true)}
@@ -416,8 +420,8 @@ export function SequencesPageClient({
         </Button>
       </PageHeader>
 
-      {/* 6 KPI Stat Cards — Animated Count-Up */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      {/* 6 KPI Metrics — Animated Count-Up */}
+      <MetricStrip>
         <StatCard
           label="Total Sequences"
           value={animTotalSeq.toString()}
@@ -448,28 +452,18 @@ export function SequencesPageClient({
           value={`${animReplyRate}%`}
           icon={<ChatCircleIcon size={24} className="text-fg" />}
         />
-      </div>
+      </MetricStrip>
 
       {/* Category Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto rounded-lg border border-line bg-surface p-1.5">
-        {categoryTabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => {
-              setActiveTab(tab.value);
-              setCurrentPage(1);
-            }}
-            className={cn(
-              "h-8 px-3 text-[13px] font-medium rounded-md border whitespace-nowrap transition-colors",
-              activeTab === tab.value
-                ? "border-accent text-accent-strong bg-surface"
-                : "border-line text-fg-secondary hover:bg-subtle",
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <PageTabs
+        tabs={categoryTabs}
+        value={activeTab}
+        onChange={(id) => {
+          setActiveTab(id);
+          setCurrentPage(1);
+        }}
+        className="max-sm:overflow-x-auto max-sm:overflow-y-hidden"
+      />
 
       {/* Enhanced Table — Instantly-style columns */}
       <motion.div
@@ -477,7 +471,6 @@ export function SequencesPageClient({
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.15 }}
-        className="rounded-lg border border-line bg-surface overflow-hidden"
       >
         <TableHeader
           title="All Sequences"
@@ -490,201 +483,207 @@ export function SequencesPageClient({
 
         {filteredSequences.length > 0 ? (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
-                      Name
-                    </th>
-                    <th className="h-10 px-3 text-center text-[13px] font-medium text-fg-secondary border-b border-divider">
-                      Status
-                    </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
-                      Progress
-                    </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
-                      Sent
-                    </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
-                      Open Rate
-                    </th>
-                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
-                      Reply Rate
-                    </th>
-                    <th className="h-10 px-3 text-center text-[13px] font-medium text-fg-secondary border-b border-divider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedSequences.map((seq) => {
-                    const status =
-                      statusConfig[seq.status] || statusConfig.draft;
-                    const enrolled = seq.total_enrolled || 0;
-                    const completed = seq.total_replied || 0;
-                    const progressPct =
-                      enrolled > 0
-                        ? Math.round((completed / enrolled) * 100)
-                        : 0;
+            <TableSection>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr>
+                      <th className="text-left text-[13px] font-medium text-fg-secondary">
+                        Name
+                      </th>
+                      <th className="text-center text-[13px] font-medium text-fg-secondary">
+                        Status
+                      </th>
+                      <th className="text-left text-[13px] font-medium text-fg-secondary">
+                        Progress
+                      </th>
+                      <th className="text-left text-[13px] font-medium text-fg-secondary">
+                        Sent
+                      </th>
+                      <th className="text-left text-[13px] font-medium text-fg-secondary">
+                        Open Rate
+                      </th>
+                      <th className="text-left text-[13px] font-medium text-fg-secondary">
+                        Reply Rate
+                      </th>
+                      <th className="text-right text-[13px] font-medium text-fg-secondary">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedSequences.map((seq) => {
+                      const status =
+                        statusConfig[seq.status] || statusConfig.draft;
+                      const enrolled = seq.total_enrolled || 0;
+                      const completed = seq.total_replied || 0;
+                      const progressPct =
+                        enrolled > 0
+                          ? Math.round((completed / enrolled) * 100)
+                          : 0;
 
-                    return (
-                      <tr
-                        key={seq.id}
-                        onClick={() =>
-                          router.push(
-                            `/dashboard/sequences/${seq.id}`,
-                          )
-                        }
-                        className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors cursor-pointer"
-                      >
-                        {/* Name + Description + Category — inline editing */}
-                        <td className="px-3 py-2 text-[14px] text-fg">
-                          <div>
-                            {editingName?.id === seq.id ? (
-                              <input
-                                ref={editNameRef}
-                                autoFocus
-                                defaultValue={editingName.value}
-                                className="text-sm font-medium text-fg bg-transparent border-b border-inverse outline-none w-full"
-                                onClick={(e) => e.stopPropagation()}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") handleInlineNameSave(seq.id, e.currentTarget.value);
-                                  if (e.key === "Escape") setEditingName(null);
-                                }}
-                                onBlur={(e) => handleInlineNameSave(seq.id, e.currentTarget.value)}
-                              />
-                            ) : (
-                              <p
-                                className="text-sm font-medium text-fg cursor-text"
-                                onDoubleClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingName({ id: seq.id, value: seq.name });
-                                }}
-                              >
-                                {seq.name}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-2 mt-0.5">
-                              {seq.description && (
-                                <p className="text-xs text-fg-secondary line-clamp-1">
-                                  {seq.description}
-                                </p>
-                              )}
-                              {seq.category && (
-                                <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-fg-secondary whitespace-nowrap">
-                                  {categoryConfig[seq.category] || seq.category}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        {/* Inline Status Toggle */}
-                        <td className="px-3 py-2 text-[14px] text-fg">
-                          <div className="flex justify-center">
-                            <StatusToggle
-                              status={seq.status}
-                              onToggle={() =>
-                                handleToggleStatus(seq.id, seq.status)
-                              }
-                              isPending={isPending}
-                            />
-                          </div>
-                        </td>
-                        {/* Progress bar — enrolled vs replied */}
-                        <td className="px-3 py-2 text-[14px] text-fg">
-                          <div className="min-w-[100px]">
-                            <div className="flex items-center justify-between text-xs text-fg-secondary mb-1">
-                              <span>{enrolled} enrolled</span>
-                              <span>{progressPct}%</span>
-                            </div>
-                            <Progress
-                              value={completed}
-                              max={enrolled || 1}
-                              className="h-1.5"
-                            />
-                          </div>
-                        </td>
-                        {/* Sent */}
-                        <td className="px-3 py-2 text-[14px] text-fg">
-                          <span className="text-sm font-semibold text-fg">
-                            {(seq.total_sent || 0).toLocaleString()}
-                          </span>
-                        </td>
-                        {/* Open Rate */}
-                        <td className="px-3 py-2 text-[14px] text-fg">
-                          <span
-                            className={cn(
-                              "text-sm font-semibold",
-                              (seq.open_rate || 0) >= 50
-                                ? "text-success"
-                                : (seq.open_rate || 0) >= 25
-                                  ? "text-warning"
-                                  : "text-fg",
-                            )}
-                          >
-                            {seq.open_rate || 0}%
-                          </span>
-                        </td>
-                        {/* Reply Rate */}
-                        <td className="px-3 py-2 text-[14px] text-fg">
-                          <span
-                            className={cn(
-                              "text-sm font-semibold",
-                              (seq.reply_rate || 0) >= 10
-                                ? "text-success"
-                                : (seq.reply_rate || 0) >= 5
-                                  ? "text-warning"
-                                  : "text-fg",
-                            )}
-                          >
-                            {seq.reply_rate || 0}%
-                          </span>
-                        </td>
-                        {/* Actions */}
-                        <td
-                          className="px-3 py-2 text-[14px] text-fg"
-                          onClick={(e) => e.stopPropagation()}
+                      return (
+                        <tr
+                          key={seq.id}
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/sequences/${seq.id}`,
+                            )
+                          }
+                          className="hover:bg-subtle transition-colors cursor-pointer"
                         >
-                          <div className="flex justify-center">
-                            <ActionMenu
-                              items={[
-                                {
-                                  label: "View Details",
-                                  icon: <EyeIcon size={18} />,
-                                  href: `/dashboard/sequences/${seq.id}`,
-                                },
-                                {
-                                  label: "Clone",
-                                  icon: <CopyIcon size={18} />,
-                                  onClick: () => handleClone(seq.id),
-                                },
-                                {
-                                  label: "Performance",
-                                  icon: <ChartBarIcon size={18} />,
-                                  onClick: () =>
-                                    openPerformanceDrawer(seq.id, seq.name),
-                                },
-                                {
-                                  label: "Delete",
-                                  icon: <TrashIcon size={18} />,
-                                  onClick: () =>
-                                    setDeleteTarget({
-                                      id: seq.id,
-                                      name: seq.name,
-                                    }),
-                                  variant: "danger",
-                                },
-                              ]}
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          {/* Name + Description + Category — inline editing */}
+                          <td className="py-2 text-[14px] text-fg">
+                            <div className="flex items-start gap-2">
+                              <EnvelopeIcon size={16} className="mt-0.5 shrink-0 text-fg-muted" />
+                              <div className="min-w-0">
+                                {editingName?.id === seq.id ? (
+                                  <input
+                                    ref={editNameRef}
+                                    autoFocus
+                                    defaultValue={editingName.value}
+                                    className="text-sm font-medium text-fg bg-transparent border-b border-inverse outline-none w-full"
+                                    onClick={(e) => e.stopPropagation()}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") handleInlineNameSave(seq.id, e.currentTarget.value);
+                                      if (e.key === "Escape") setEditingName(null);
+                                    }}
+                                    onBlur={(e) => handleInlineNameSave(seq.id, e.currentTarget.value)}
+                                  />
+                                ) : (
+                                  <p
+                                    className="text-sm font-medium text-fg cursor-text"
+                                    onDoubleClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingName({ id: seq.id, value: seq.name });
+                                    }}
+                                  >
+                                    {seq.name}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  {seq.description && (
+                                    <p className="text-xs text-fg-secondary line-clamp-1">
+                                      {seq.description}
+                                    </p>
+                                  )}
+                                  {seq.category && (
+                                    <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-fg-secondary whitespace-nowrap">
+                                      {categoryConfig[seq.category] || seq.category}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          {/* Inline Status Toggle */}
+                          <td className="py-2 text-[14px] text-fg">
+                            <div className="flex justify-center">
+                              <StatusToggle
+                                status={seq.status}
+                                onToggle={() =>
+                                  handleToggleStatus(seq.id, seq.status)
+                                }
+                                isPending={isPending}
+                              />
+                            </div>
+                          </td>
+                          {/* Progress bar — enrolled vs replied */}
+                          <td className="py-2 text-[14px] text-fg">
+                            <div className="min-w-[100px]">
+                              <div className="flex items-center justify-between text-xs text-fg-secondary mb-1">
+                                <span>{enrolled} enrolled</span>
+                                <span>{progressPct}%</span>
+                              </div>
+                              <Progress
+                                value={completed}
+                                max={enrolled || 1}
+                                className="h-1.5"
+                              />
+                            </div>
+                          </td>
+                          {/* Sent */}
+                          <td className="py-2 text-[14px] text-fg">
+                            <span className="text-sm font-semibold text-fg">
+                              {(seq.total_sent || 0).toLocaleString()}
+                            </span>
+                          </td>
+                          {/* Open Rate */}
+                          <td className="py-2 text-[14px] text-fg">
+                            <span
+                              className={cn(
+                                "text-sm font-semibold",
+                                (seq.open_rate || 0) >= 50
+                                  ? "text-success"
+                                  : (seq.open_rate || 0) >= 25
+                                    ? "text-warning"
+                                    : "text-fg",
+                              )}
+                            >
+                              {seq.open_rate || 0}%
+                            </span>
+                          </td>
+                          {/* Reply Rate */}
+                          <td className="py-2 text-[14px] text-fg">
+                            <span
+                              className={cn(
+                                "text-sm font-semibold",
+                                (seq.reply_rate || 0) >= 10
+                                  ? "text-success"
+                                  : (seq.reply_rate || 0) >= 5
+                                    ? "text-warning"
+                                    : "text-fg",
+                              )}
+                            >
+                              {seq.reply_rate || 0}%
+                            </span>
+                          </td>
+                          {/* Actions */}
+                          <td
+                            className="py-2 text-[14px] text-fg"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex justify-end">
+                              <ActionMenu
+                                className="h-6 w-6"
+                                items={[
+                                  {
+                                    label: "View Details",
+                                    icon: <EyeIcon size={18} />,
+                                    href: `/dashboard/sequences/${seq.id}`,
+                                  },
+                                  {
+                                    label: "Clone",
+                                    icon: <CopyIcon size={18} />,
+                                    onClick: () => handleClone(seq.id),
+                                  },
+                                  {
+                                    label: "Performance",
+                                    icon: <ChartBarIcon size={18} />,
+                                    onClick: () =>
+                                      openPerformanceDrawer(seq.id, seq.name),
+                                  },
+                                  {
+                                    label: "Delete",
+                                    icon: <TrashIcon size={18} />,
+                                    onClick: () =>
+                                      setDeleteTarget({
+                                        id: seq.id,
+                                        name: seq.name,
+                                      }),
+                                    variant: "danger",
+                                  },
+                                ]}
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </TableSection>
 
             <TableFooter
               currentPage={currentPage}
@@ -977,6 +976,6 @@ export function SequencesPageClient({
           </p>
         )}
       </Drawer>
-    </div>
+    </Page>
   );
 }
