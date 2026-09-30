@@ -4,13 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { LightningIcon, XIcon, CircleNotchIcon, Button } from "@/components/ui";
 import { Progress } from "@/components/ui/Progress";
+import { POLL_MIN_MS, nextPollDelay } from "@/lib/lead-finder/poll-delay";
 
 // ── localStorage-based active batch registry ──────────────────────────────
 
 const STORAGE_KEY = "activeBatchId";
-const POLL_INTERVAL_MS = 2000;
 const STATUS_POLL_INTERVAL_MS = 5000;
-const STATUS_POLL_MAX_INTERVAL_MS = 60_000;
 
 /**
  * Call this after a successful POST that enqueues an enrichment batch
@@ -131,7 +130,7 @@ export function EnrichmentProgressBanner({
   const [cancelling, setCancelling] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [active, setActive] = useState(false);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const statusInFlightRef = useRef(false);
   const finishedSignalled = useRef<string | null>(null);
   const batchIdRef = useRef<string | null>(batchId);
   const statusRef = useRef<BatchStatus | null>(status);
@@ -177,7 +176,12 @@ export function EnrichmentProgressBanner({
   // the tab becomes visible, and every few seconds only while a batch is active.
 
   const refreshStatus = useCallback(async () => {
+    // Single-flight: callers (mount, visibility, back-off loop) never stack
+    // requests. fetchEnrichmentStatus never throws, so the flag always clears.
+    if (statusInFlightRef.current) return;
+    statusInFlightRef.current = true;
     const data = await fetchEnrichmentStatus();
+    statusInFlightRef.current = false;
     if (!data) return;
     const batches = campaignId
       ? data.batches.filter((b) => b.campaignId === campaignId)
@@ -235,19 +239,23 @@ export function EnrichmentProgressBanner({
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
+    let refreshing = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
     let delay = STATUS_POLL_INTERVAL_MS;
     let lastSignature = progressSignatureRef.current;
 
     const schedule = () => {
       timer = setTimeout(async () => {
+        timer = null;
+        refreshing = true;
         await refreshStatus();
+        refreshing = false;
         if (cancelled) return;
         const signature = progressSignatureRef.current;
         delay =
           signature !== lastSignature
             ? STATUS_POLL_INTERVAL_MS
-            : Math.min(delay * 2, STATUS_POLL_MAX_INTERVAL_MS);
+            : nextPollDelay(delay, false);
         lastSignature = signature;
         schedule();
       }, delay);
@@ -256,6 +264,9 @@ export function EnrichmentProgressBanner({
     const onVisibility = () => {
       if (document.visibilityState !== "visible") return;
       delay = STATUS_POLL_INTERVAL_MS;
+      // A refresh in progress reschedules itself when it settles; starting
+      // another chain here would leave an orphaned timer.
+      if (refreshing) return;
       if (timer) clearTimeout(timer);
       schedule();
     };
@@ -270,34 +281,68 @@ export function EnrichmentProgressBanner({
   }, [active, refreshStatus]);
 
   // ── Poll the tracked batch's details until it finishes ─────────────────
+  // setTimeout chain: the next request is scheduled only after the previous
+  // one settles, backing off (2s doubling to 60s) while the batch is idle.
+  // Skipped while the tab is hidden; stops once the batch is terminal.
 
   useEffect(() => {
     if (!batchId) return;
 
-    let cancelled = false;
+    let stopped = false;
+    let loading = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let delay = POLL_MIN_MS;
+    let last: BatchStatus | null = null;
+
+    const schedule = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => void load(), delay);
+    };
 
     const load = async () => {
+      timer = null;
+      if (stopped || loading) return;
+      if (document.visibilityState === "hidden") {
+        schedule();
+        return;
+      }
+      loading = true;
       const fresh = await fetchBatchStatus(batchId);
-      if (cancelled || !fresh) return;
-      setStatus(fresh);
-      if (isTerminal(fresh.status) && pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
+      loading = false;
+      if (stopped) return;
+      if (fresh) {
+        setStatus(fresh);
+        if (isTerminal(fresh.status)) {
+          stopped = true;
+          return;
+        }
       }
+      const progressed =
+        !!fresh &&
+        (!last ||
+          fresh.done !== last.done ||
+          fresh.failed !== last.failed ||
+          fresh.status !== last.status);
+      if (fresh) last = fresh;
+      delay = nextPollDelay(delay, progressed);
+      schedule();
     };
-    void load();
 
-    if (pollRef.current) clearInterval(pollRef.current);
-    pollRef.current = setInterval(() => {
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible" || stopped) return;
+      delay = POLL_MIN_MS;
+      // An in-flight request schedules the next poll when it settles.
+      if (loading) return;
+      if (timer) clearTimeout(timer);
       void load();
-    }, POLL_INTERVAL_MS);
+    };
 
+    void load();
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
-      cancelled = true;
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [batchId]);
 
