@@ -60,3 +60,9 @@ export const SETTINGS_GROUPS: { label: string; items: SettingsNavItem[] }[] = [
     ],
   },
 ];
+
+// Maps a raw ?tab= value to a known tab id; anything else falls back to "profile".
+export function parseSettingsTab(value: string | null): SettingsTab {
+  const match = SETTINGS_GROUPS.flatMap((group) => group.items).find((item) => item.id === value);
+  return match ? match.id : "profile";
+}

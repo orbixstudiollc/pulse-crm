@@ -32,7 +32,7 @@ import {
   XIcon,
 } from "../ui";
 import { useSidebar } from "./SidebarContext";
-import { SETTINGS_GROUPS } from "./settings-nav";
+import { SETTINGS_GROUPS, parseSettingsTab } from "./settings-nav";
 
 type NavItem = { name: string; href: string; icon: Icon };
 
@@ -201,7 +201,7 @@ function SettingsNavList({
 }
 
 function ActiveSettingsNav({ onNavClick }: { onNavClick?: () => void }) {
-  const activeTab = useSearchParams().get("tab") || "profile";
+  const activeTab = parseSettingsTab(useSearchParams().get("tab"));
   return <SettingsNavList activeTab={activeTab} onNavClick={onNavClick} />;
 }
 

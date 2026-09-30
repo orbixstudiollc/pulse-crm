@@ -47,7 +47,7 @@ import {
 } from "@/components/ui";
 import { DeleteConfirmModal } from "@/components/ui";
 import { PageTabs, Section, TableSection } from "@/components/dashboard";
-import { SETTINGS_GROUPS, type SettingsTab } from "@/components/layout/settings-nav";
+import { SETTINGS_GROUPS, parseSettingsTab } from "@/components/layout/settings-nav";
 import {
   updateProfile,
   uploadAvatar,
@@ -3358,7 +3358,7 @@ export function SettingsPageClient({
 }: SettingsPageClientProps) {
   const searchParams = useSearchParams();
   // Read on every render so the sidebar's ?tab= links switch sections.
-  const activeTab = (searchParams.get("tab") as SettingsTab) || "profile";
+  const activeTab = parseSettingsTab(searchParams.get("tab"));
   const tabsRef = useRef<HTMLDivElement>(null);
 
   // Keep the active mobile tab visible when it changes (and on mount).
