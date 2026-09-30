@@ -181,6 +181,103 @@
     "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'hover:bg-subtle' 'app/dashboard/leads/client.tsx' && grep -q 'hover:bg-subtle' 'app/dashboard/settings/client.tsx' && grep -q 'hover:bg-subtle' 'app/dashboard/templates/client.tsx' && grep -q 'hover:bg-subtle' 'app/dashboard/website-visitors/client.tsx' && npx tsc --noEmit && npx eslint 'app/dashboard/leads/client.tsx' 'app/dashboard/settings/client.tsx' 'app/dashboard/templates/client.tsx' 'app/dashboard/website-visitors/client.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/dashboard/leads/client.tsx' 'app/dashboard/settings/client.tsx' 'app/dashboard/templates/client.tsx' 'app/dashboard/website-visitors/client.tsx' && git commit -q -m 'style(clay): tables on leads, settings, templates and website visitors' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K11-OK"
   },
   {
+    "id": "K13",
+    "model": "sonnet",
+    "depends_on": [
+      "K1",
+      "K2",
+      "K5"
+    ],
+    "title": "Clay: full-width content; activity, competitors, copilot, inbox",
+    "files": [
+      "app/dashboard/layout.tsx",
+      "app/dashboard/activity/client.tsx",
+      "app/dashboard/competitors/client.tsx",
+      "app/dashboard/copilot/client.tsx",
+      "app/dashboard/inbox/client.tsx"
+    ],
+    "interface": "Read docs/design/clay.md. The old monochrome look used `bg-inverse text-on-inverse` (a black fill in light mode) for primary buttons, selected tabs and selected states; Clay uses blue and outlined segments instead. In the listed files replace every `bg-inverse text-on-inverse` usage by role: (a) selected tab / segment / filter pill -> active `border border-accent text-accent-strong bg-surface`, and make the inactive siblings `border border-line text-fg-secondary hover:bg-subtle` (rounded-md, h-8, text-[13px] or text-[14px]); (b) solid primary action button -> the shared Button primary variant from @/components/ui, or where a plain element must stay (Link, submit inside a form library) the recipe `bg-accent-strong text-on-inverse hover:bg-accent-strong/90 rounded-md`; (c) selected list row, calendar day or chosen option -> `bg-accent-surface text-accent-on-surface`; (d) chat user message bubble -> `bg-accent-surface text-fg`; (e) tooltips may keep bg-inverse (mark them with a tooltip class or aria role so they are recognisable). Also replace `hover:bg-inverse`-style hovers with hover:bg-subtle. className changes and swaps to shared components only; no logic changes; keep token classes only (scripts/restyle/scan.mjs must pass). app/dashboard/layout.tsx: the page container is `mx-auto h-full w-full max-w-[1120px] has-[[data-full-bleed]]:max-w-none`; Clay content is left-aligned at full width, so make it `h-full w-full` (drop mx-auto and the 1120px cap, keep nothing else changed there).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! (grep -n 'bg-inverse text-on-inverse' 'app/dashboard/layout.tsx' 'app/dashboard/activity/client.tsx' 'app/dashboard/competitors/client.tsx' 'app/dashboard/copilot/client.tsx' 'app/dashboard/inbox/client.tsx' | grep -vi tooltip | grep -q .) && npx tsc --noEmit && npx eslint 'app/dashboard/layout.tsx' 'app/dashboard/activity/client.tsx' 'app/dashboard/competitors/client.tsx' 'app/dashboard/copilot/client.tsx' 'app/dashboard/inbox/client.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/dashboard/layout.tsx' 'app/dashboard/activity/client.tsx' 'app/dashboard/competitors/client.tsx' 'app/dashboard/copilot/client.tsx' 'app/dashboard/inbox/client.tsx' && git commit -q -m 'style(clay): full-width content and outlined segments on activity, competitors, copilot and inbox' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K13-OK"
+  },
+  {
+    "id": "K14",
+    "model": "sonnet",
+    "depends_on": [
+      "K1",
+      "K2",
+      "K5"
+    ],
+    "title": "Clay: Lead Finder new/leads/settings, playbook, sales, sequences",
+    "files": [
+      "app/dashboard/lead-finder/campaigns/new/page.tsx",
+      "app/dashboard/lead-finder/leads/page.tsx",
+      "app/dashboard/lead-finder/settings/page.tsx",
+      "app/dashboard/playbook/client.tsx",
+      "app/dashboard/sales/client.tsx",
+      "app/dashboard/sequences/client.tsx",
+      "app/dashboard/sequences/[id]/client.tsx"
+    ],
+    "interface": "Read docs/design/clay.md. The old monochrome look used `bg-inverse text-on-inverse` (a black fill in light mode) for primary buttons, selected tabs and selected states; Clay uses blue and outlined segments instead. In the listed files replace every `bg-inverse text-on-inverse` usage by role: (a) selected tab / segment / filter pill -> active `border border-accent text-accent-strong bg-surface`, and make the inactive siblings `border border-line text-fg-secondary hover:bg-subtle` (rounded-md, h-8, text-[13px] or text-[14px]); (b) solid primary action button -> the shared Button primary variant from @/components/ui, or where a plain element must stay (Link, submit inside a form library) the recipe `bg-accent-strong text-on-inverse hover:bg-accent-strong/90 rounded-md`; (c) selected list row, calendar day or chosen option -> `bg-accent-surface text-accent-on-surface`; (d) chat user message bubble -> `bg-accent-surface text-fg`; (e) tooltips may keep bg-inverse (mark them with a tooltip class or aria role so they are recognisable). Also replace `hover:bg-inverse`-style hovers with hover:bg-subtle. className changes and swaps to shared components only; no logic changes; keep token classes only (scripts/restyle/scan.mjs must pass).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! (grep -n 'bg-inverse text-on-inverse' 'app/dashboard/lead-finder/campaigns/new/page.tsx' 'app/dashboard/lead-finder/leads/page.tsx' 'app/dashboard/lead-finder/settings/page.tsx' 'app/dashboard/playbook/client.tsx' 'app/dashboard/sales/client.tsx' 'app/dashboard/sequences/client.tsx' 'app/dashboard/sequences/[id]/client.tsx' | grep -vi tooltip | grep -q .) && npx tsc --noEmit && npx eslint 'app/dashboard/lead-finder/campaigns/new/page.tsx' 'app/dashboard/lead-finder/leads/page.tsx' 'app/dashboard/lead-finder/settings/page.tsx' 'app/dashboard/playbook/client.tsx' 'app/dashboard/sales/client.tsx' 'app/dashboard/sequences/client.tsx' 'app/dashboard/sequences/[id]/client.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/dashboard/lead-finder/campaigns/new/page.tsx' 'app/dashboard/lead-finder/leads/page.tsx' 'app/dashboard/lead-finder/settings/page.tsx' 'app/dashboard/playbook/client.tsx' 'app/dashboard/sales/client.tsx' 'app/dashboard/sequences/client.tsx' 'app/dashboard/sequences/[id]/client.tsx' && git commit -q -m 'style(clay): outlined segments and blue actions on Lead Finder, playbook, sales and sequences' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K14-OK"
+  },
+  {
+    "id": "K15",
+    "model": "sonnet",
+    "depends_on": [
+      "K1",
+      "K2",
+      "K5"
+    ],
+    "title": "Clay: settings, automation, confirm modal, chat cards, calendar popover",
+    "files": [
+      "app/dashboard/settings/client.tsx",
+      "components/automation/AutomationSection.tsx",
+      "components/dashboard/ConfirmModal.tsx",
+      "components/features/AIChat/ChatCards.tsx",
+      "components/features/CalendarDropdown.tsx"
+    ],
+    "interface": "Read docs/design/clay.md. The old monochrome look used `bg-inverse text-on-inverse` (a black fill in light mode) for primary buttons, selected tabs and selected states; Clay uses blue and outlined segments instead. In the listed files replace every `bg-inverse text-on-inverse` usage by role: (a) selected tab / segment / filter pill -> active `border border-accent text-accent-strong bg-surface`, and make the inactive siblings `border border-line text-fg-secondary hover:bg-subtle` (rounded-md, h-8, text-[13px] or text-[14px]); (b) solid primary action button -> the shared Button primary variant from @/components/ui, or where a plain element must stay (Link, submit inside a form library) the recipe `bg-accent-strong text-on-inverse hover:bg-accent-strong/90 rounded-md`; (c) selected list row, calendar day or chosen option -> `bg-accent-surface text-accent-on-surface`; (d) chat user message bubble -> `bg-accent-surface text-fg`; (e) tooltips may keep bg-inverse (mark them with a tooltip class or aria role so they are recognisable). Also replace `hover:bg-inverse`-style hovers with hover:bg-subtle. className changes and swaps to shared components only; no logic changes; keep token classes only (scripts/restyle/scan.mjs must pass). settings/client.tsx: keep its existing line endings.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! (grep -n 'bg-inverse text-on-inverse' 'app/dashboard/settings/client.tsx' 'components/automation/AutomationSection.tsx' 'components/dashboard/ConfirmModal.tsx' 'components/features/AIChat/ChatCards.tsx' 'components/features/CalendarDropdown.tsx' | grep -vi tooltip | grep -q .) && npx tsc --noEmit && npx eslint 'app/dashboard/settings/client.tsx' 'components/automation/AutomationSection.tsx' 'components/dashboard/ConfirmModal.tsx' 'components/features/AIChat/ChatCards.tsx' 'components/features/CalendarDropdown.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/dashboard/settings/client.tsx' 'components/automation/AutomationSection.tsx' 'components/dashboard/ConfirmModal.tsx' 'components/features/AIChat/ChatCards.tsx' 'components/features/CalendarDropdown.tsx' && git commit -q -m 'style(clay): outlined segments and blue actions in settings, automation, confirm modal, chat cards and calendar popover' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K15-OK"
+  },
+  {
+    "id": "K16",
+    "model": "sonnet",
+    "depends_on": [
+      "K1",
+      "K2",
+      "K5"
+    ],
+    "title": "Clay: import, log activity, MEDDIC and sequence picker modals",
+    "files": [
+      "components/features/ImportLeadsModal.tsx",
+      "components/features/LogActivityModal.tsx",
+      "components/features/MEDDICEditor.tsx",
+      "components/features/SequencePickerModal.tsx"
+    ],
+    "interface": "Read docs/design/clay.md. The old monochrome look used `bg-inverse text-on-inverse` (a black fill in light mode) for primary buttons, selected tabs and selected states; Clay uses blue and outlined segments instead. In the listed files replace every `bg-inverse text-on-inverse` usage by role: (a) selected tab / segment / filter pill -> active `border border-accent text-accent-strong bg-surface`, and make the inactive siblings `border border-line text-fg-secondary hover:bg-subtle` (rounded-md, h-8, text-[13px] or text-[14px]); (b) solid primary action button -> the shared Button primary variant from @/components/ui, or where a plain element must stay (Link, submit inside a form library) the recipe `bg-accent-strong text-on-inverse hover:bg-accent-strong/90 rounded-md`; (c) selected list row, calendar day or chosen option -> `bg-accent-surface text-accent-on-surface`; (d) chat user message bubble -> `bg-accent-surface text-fg`; (e) tooltips may keep bg-inverse (mark them with a tooltip class or aria role so they are recognisable). Also replace `hover:bg-inverse`-style hovers with hover:bg-subtle. className changes and swaps to shared components only; no logic changes; keep token classes only (scripts/restyle/scan.mjs must pass).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! (grep -n 'bg-inverse text-on-inverse' 'components/features/ImportLeadsModal.tsx' 'components/features/LogActivityModal.tsx' 'components/features/MEDDICEditor.tsx' 'components/features/SequencePickerModal.tsx' | grep -vi tooltip | grep -q .) && npx tsc --noEmit && npx eslint 'components/features/ImportLeadsModal.tsx' 'components/features/LogActivityModal.tsx' 'components/features/MEDDICEditor.tsx' 'components/features/SequencePickerModal.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'components/features/ImportLeadsModal.tsx' 'components/features/LogActivityModal.tsx' 'components/features/MEDDICEditor.tsx' 'components/features/SequencePickerModal.tsx' && git commit -q -m 'style(clay): blue actions and outlined selections in import, activity, MEDDIC and sequence picker modals' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K16-OK"
+  },
+  {
+    "id": "K17",
+    "model": "sonnet",
+    "depends_on": [
+      "K1",
+      "K2",
+      "K5"
+    ],
+    "title": "Clay: auth and onboarding pages",
+    "files": [
+      "app/(auth)/forgot-password/page.tsx",
+      "app/(auth)/login/page.tsx",
+      "app/(auth)/onboarding/page.tsx",
+      "app/(auth)/reset-password/page.tsx",
+      "app/(auth)/signup/page.tsx",
+      "app/(auth)/verify-email/page.tsx"
+    ],
+    "interface": "Read docs/design/clay.md. The old monochrome look used `bg-inverse text-on-inverse` (a black fill in light mode) for primary buttons, selected tabs and selected states; Clay uses blue and outlined segments instead. In the listed files replace every `bg-inverse text-on-inverse` usage by role: (a) selected tab / segment / filter pill -> active `border border-accent text-accent-strong bg-surface`, and make the inactive siblings `border border-line text-fg-secondary hover:bg-subtle` (rounded-md, h-8, text-[13px] or text-[14px]); (b) solid primary action button -> the shared Button primary variant from @/components/ui, or where a plain element must stay (Link, submit inside a form library) the recipe `bg-accent-strong text-on-inverse hover:bg-accent-strong/90 rounded-md`; (c) selected list row, calendar day or chosen option -> `bg-accent-surface text-accent-on-surface`; (d) chat user message bubble -> `bg-accent-surface text-fg`; (e) tooltips may keep bg-inverse (mark them with a tooltip class or aria role so they are recognisable). Also replace `hover:bg-inverse`-style hovers with hover:bg-subtle. className changes and swaps to shared components only; no logic changes; keep token classes only (scripts/restyle/scan.mjs must pass). These pages are hidden in open-access mode but must match when login returns: primary submit buttons become the Clay blue primary; the Clay sign-up screen (white form column, blue Continue) is the model.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! (grep -n 'bg-inverse text-on-inverse' 'app/(auth)/forgot-password/page.tsx' 'app/(auth)/login/page.tsx' 'app/(auth)/onboarding/page.tsx' 'app/(auth)/reset-password/page.tsx' 'app/(auth)/signup/page.tsx' 'app/(auth)/verify-email/page.tsx' | grep -vi tooltip | grep -q .) && npx tsc --noEmit && npx eslint 'app/(auth)/forgot-password/page.tsx' 'app/(auth)/login/page.tsx' 'app/(auth)/onboarding/page.tsx' 'app/(auth)/reset-password/page.tsx' 'app/(auth)/signup/page.tsx' 'app/(auth)/verify-email/page.tsx' && node scripts/restyle/scan.mjs app components && git add -A -- 'app/(auth)/forgot-password/page.tsx' 'app/(auth)/login/page.tsx' 'app/(auth)/onboarding/page.tsx' 'app/(auth)/reset-password/page.tsx' 'app/(auth)/signup/page.tsx' 'app/(auth)/verify-email/page.tsx' && git commit -q -m 'style(clay): auth and onboarding pages use Clay blue actions' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo K17-OK"
+  },
+  {
     "id": "K12",
     "model": "sonnet",
     "depends_on": [
@@ -194,7 +291,12 @@
       "K8",
       "K9",
       "K10",
-      "K11"
+      "K11",
+      "K13",
+      "K14",
+      "K15",
+      "K16",
+      "K17"
     ],
     "title": "Final gate: lint, tests, build, restyle scan, contrast, audit",
     "files": [],
