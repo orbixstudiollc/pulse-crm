@@ -19,12 +19,8 @@ import {
   TrashIcon,
   CircleNotchIcon,
   UploadSimpleIcon,
-  BellIcon,
   XIcon,
   LockIcon,
-  GearSixIcon,
-  PuzzlePieceIcon,
-  CreditCardIcon,
   MonitorIcon,
   EyeIcon,
   EyeSlashIcon,
@@ -32,7 +28,6 @@ import {
   Toggle,
   StarIcon,
   LightningIcon,
-  SparkleIcon,
   Progress,
   EnvelopeIcon,
   PlugsConnectedIcon,
@@ -47,12 +42,12 @@ import {
   LinkedinLogoIcon,
   SlidersHorizontalIcon,
   SignOutIcon,
-  CrosshairIcon,
   MagnifyingGlassIcon,
   FloppyDiskIcon,
 } from "@/components/ui";
 import { DeleteConfirmModal } from "@/components/ui";
-import type { IconWeight } from "@phosphor-icons/react";
+import { PageTabs, Section, TableSection } from "@/components/dashboard";
+import { SETTINGS_GROUPS, type SettingsTab } from "@/components/layout/settings-nav";
 import {
   updateProfile,
   uploadAvatar,
@@ -149,42 +144,23 @@ interface SettingsPageClientProps {
 }
 
 // ── Settings navigation tabs ────────────────────────────────────────────────
-type SettingsTab =
-  | "profile"
-  | "security"
-  | "preferences"
-  | "notifications"
-  | "integrations"
-  | "email-accounts"
-  | "whatsapp"
-  | "linkedin"
-  | "billing"
-  | "ai"
-  | "automation"
-  | "lead-finder";
+// The tab list lives in components/layout/settings-nav.ts (the sidebar renders it).
+const settingsTabs = SETTINGS_GROUPS.flatMap((group) => group.items);
 
-const settingsTabs: {
-  id: SettingsTab;
-  label: string;
-  icon: React.ComponentType<{
-    size?: number;
-    weight?: IconWeight;
-    className?: string;
-  }>;
-}[] = [
-  { id: "profile", label: "Profile", icon: UserIcon },
-  { id: "security", label: "Security", icon: LockIcon },
-  { id: "preferences", label: "Preferences", icon: GearSixIcon },
-  { id: "notifications", label: "Notifications", icon: BellIcon },
-  { id: "integrations", label: "Integrations", icon: PuzzlePieceIcon },
-  { id: "email-accounts", label: "Email Accounts", icon: EnvelopeIcon },
-  { id: "whatsapp", label: "WhatsApp", icon: WhatsappLogoIcon },
-  { id: "linkedin", label: "LinkedIn", icon: LinkedinLogoIcon },
-  { id: "billing", label: "Billing", icon: CreditCardIcon },
-  { id: "ai", label: "AI Assistant", icon: SparkleIcon },
-  { id: "automation", label: "Automation", icon: LightningIcon },
-  { id: "lead-finder", label: "Lead Finder", icon: CrosshairIcon },
-];
+// The settings content column already carries the page gutter, so Sections drop theirs.
+function SettingsSection({ className, ...props }: React.ComponentProps<typeof Section>) {
+  return (
+    <Section
+      {...props}
+      className={cn("px-0 max-sm:px-0 first-of-type:border-t-0", className)}
+    />
+  );
+}
+
+// Intro line under the page title (the title itself is the tab label).
+function SettingsIntro({ children }: { children: React.ReactNode }) {
+  return <p className="mt-1 text-[13px] text-fg-muted">{children}</p>;
+}
 
 // ── Profile Section ─────────────────────────────────────────────────────────
 function ProfileSection({ profile }: { profile: ProfileData | null }) {
@@ -265,16 +241,11 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
 
   return (
     <>
-      {/* Profile header */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-fg">
-          Profile
-        </h2>
-        <p className="text-sm text-fg-secondary mt-1">
-          Manage your personal information and account settings
-        </p>
-      </div>
+      <SettingsIntro>
+        Manage your personal information and account settings
+      </SettingsIntro>
 
+      <SettingsSection>
       {/* Avatar section */}
       <div className="flex items-center gap-5 mb-8">
         <div className="relative w-24 h-24 rounded-full bg-muted flex items-center justify-center border border-line overflow-hidden">
@@ -372,6 +343,7 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
           />
         </div>
 
+        <div className="flex justify-end">
         <Button
           onClick={handleSave}
           disabled={isPending}
@@ -383,20 +355,16 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
         >
           {isPending ? "Saving..." : "Save Changes"}
         </Button>
+        </div>
       </div>
-
-      {/* Divider */}
-      <div className="border-t border-line my-10" />
+      </SettingsSection>
 
       {/* Seed Demo Data */}
-      <div className="mb-10">
-        <h3 className="text-base font-medium text-fg mb-1">
-          Demo Data
-        </h3>
-        <p className="text-sm text-fg-secondary mb-4">
-          Populate your workspace with realistic sample data including leads, customers, deals, contacts, competitors, sequences, proposals, and more.
-        </p>
-        <div className="flex items-center gap-3">
+      <SettingsSection
+        title="Demo Data"
+        description="Populate your workspace with realistic sample data including leads, customers, deals, contacts, competitors, sequences, proposals, and more."
+      >
+        <div className="flex items-center justify-end gap-3">
           <Button
             variant="outline"
             leftIcon={isPending ? <CircleNotchIcon size={18} className="animate-spin" /> : <LightningIcon size={18} />}
@@ -438,19 +406,14 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
             Clear All Data
           </Button>
         </div>
-      </div>
-
-      {/* Divider */}
-      <div className="border-t border-line my-10" />
+      </SettingsSection>
 
       {/* Export Data */}
-      <div className="mb-10">
-        <h3 className="text-base font-medium text-fg mb-1">
-          Export Your Data
-        </h3>
-        <p className="text-sm text-fg-secondary mb-4">
-          Download your leads as CSV.
-        </p>
+      <SettingsSection
+        title="Export Your Data"
+        description="Download your leads as CSV."
+      >
+        <div className="flex justify-end">
         <Button
           variant="outline"
           leftIcon={<ExportIcon size={18} />}
@@ -477,16 +440,15 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
         >
           Export Data
         </Button>
-      </div>
+        </div>
+      </SettingsSection>
 
       {/* Danger Zone - Delete Account */}
-      <div className="rounded-lg border border-danger bg-surface p-4">
-        <h3 className="text-base font-medium text-danger mb-2">
-          Delete Account
-        </h3>
-        <p className="text-sm text-fg-secondary mb-4">
-          Account deletion is coming soon. Contact support to delete your data.
-        </p>
+      <SettingsSection
+        title={<span className="text-danger">Delete Account</span>}
+        description="Account deletion is coming soon. Contact support to delete your data."
+      >
+        <div className="flex justify-end">
         <Button
           variant="outline"
           leftIcon={<TrashIcon size={18} />}
@@ -494,7 +456,8 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
         >
           Delete My Account
         </Button>
-      </div>
+        </div>
+      </SettingsSection>
 
       {/* Toast */}
       <Toast
@@ -552,19 +515,13 @@ function SecuritySection({ email }: { email: string | null }) {
 
   return (
     <>
-      {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-fg">
-          Security
-        </h2>
-        <p className="text-sm text-fg-secondary mt-1">
-          Manage your password and account security
-        </p>
-      </div>
+      <SettingsIntro>
+        Manage your password and account security
+      </SettingsIntro>
 
       {/* Password fields (guests have no password to change) */}
       {!isGuest && (
-      <>
+      <SettingsSection>
       <div className="space-y-5">
         <Input
           label="Current Password"
@@ -639,6 +596,7 @@ function SecuritySection({ email }: { email: string | null }) {
           />
         </div>
 
+        <div className="flex justify-end">
         <Button
           onClick={handleUpdatePassword}
           disabled={isPending}
@@ -650,46 +608,33 @@ function SecuritySection({ email }: { email: string | null }) {
         >
           {isPending ? "Updating..." : "Update Password"}
         </Button>
+        </div>
       </div>
-
-      {/* Divider */}
-      <div className="border-t border-line my-10" />
-      </>
+      </SettingsSection>
       )}
 
       {/* Two Factor Authentication */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-base font-medium text-fg">
-            Two factor authentication
-          </h3>
-          <p className="text-sm text-fg-secondary mt-0.5">
-            Add an extra layer of security to your account
-          </p>
-        </div>
-        <Button variant="outline" size="sm" disabled>
-          Enable
-        </Button>
-      </div>
-      <p className="text-xs text-fg-secondary mt-2">
+      <SettingsSection
+        title="Two factor authentication"
+        description="Add an extra layer of security to your account"
+        actions={
+          <Button variant="outline" size="sm" disabled>
+            Enable
+          </Button>
+        }
+      >
+      <p className="text-xs text-fg-secondary">
         Two-factor authentication is coming soon.
       </p>
-
-      {/* Divider */}
-      <div className="border-t border-line my-10" />
+      </SettingsSection>
 
       {/* Active Sessions */}
-      <div className="mb-6">
-        <h3 className="text-base font-medium text-fg">
-          Active Sessions
-        </h3>
-        <p className="text-sm text-fg-secondary mt-0.5">
-          Devices where you&apos;re currently logged in
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center justify-between rounded-lg border border-line bg-surface p-4">
+      <SettingsSection
+        title="Active Sessions"
+        description={<>Devices where you&apos;re currently logged in</>}
+      >
+      <div className="border-t border-divider">
+        <div className="flex items-center justify-between py-3 border-b border-divider">
           <div className="flex items-center gap-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
               <MonitorIcon size={20} className="text-fg-secondary" />
@@ -701,6 +646,7 @@ function SecuritySection({ email }: { email: string | null }) {
           </div>
         </div>
       </div>
+      </SettingsSection>
 
       {/* Toast */}
       <Toast
@@ -833,21 +779,12 @@ function PreferencesSection({
 
   return (
     <>
-      {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-fg">
-          Preferences
-        </h2>
-        <p className="text-sm text-fg-secondary mt-1">
-          Customize your experience and display settings
-        </p>
-      </div>
+      <SettingsIntro>
+        Customize your experience and display settings
+      </SettingsIntro>
 
       {/* Theme selector */}
-      <div className="mb-10">
-        <p className="text-sm font-medium text-fg mb-3">
-          Theme
-        </p>
+      <SettingsSection title="Theme">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {themes.map((t) => {
             const isSelected = mounted && theme === t.id;
@@ -856,8 +793,7 @@ function PreferencesSection({
                 key={t.id}
                 type="button"
                 onClick={() => setTheme(t.id)}
-                className={cn(
-                  "relative rounded-lg border bg-surface p-4 text-left transition-colors",
+                data-clay-box className={cn("relative rounded-lg border bg-surface p-4 text-left transition-colors",
                   isSelected
                     ? "border-accent"
                     : "border-line hover:border-fg-muted",
@@ -891,12 +827,10 @@ function PreferencesSection({
             );
           })}
         </div>
-      </div>
-
-      {/* Divider */}
-      <div className="border-t border-line my-10" />
+      </SettingsSection>
 
       {/* Dropdowns */}
+      <SettingsSection>
       <div className="space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
@@ -951,6 +885,7 @@ function PreferencesSection({
           </Select>
         </div>
 
+        <div className="flex justify-end">
         <Button
           onClick={handleSave}
           disabled={isPending}
@@ -962,7 +897,9 @@ function PreferencesSection({
         >
           {isPending ? "Saving..." : "Save Preferences"}
         </Button>
+        </div>
       </div>
+      </SettingsSection>
 
       {/* Toast */}
       <Toast
@@ -1045,18 +982,13 @@ function NotificationsSection({
 
   return (
     <>
-      {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-fg">
-          Notifications
-        </h2>
-        <p className="text-sm text-fg-secondary mt-1">
-          Choose what you want to be notified about
-        </p>
-      </div>
+      <SettingsIntro>
+        Choose what you want to be notified about
+      </SettingsIntro>
 
       {/* Notification rows */}
-      <div className="divide-y divide-row rounded-lg border border-line bg-surface px-4">
+      <SettingsSection>
+      <div className="divide-y divide-divider border-y border-divider">
         {notificationSettings.map((item) => (
           <div key={item.id} className="flex items-center justify-between gap-4 py-4">
             <div>
@@ -1074,6 +1006,7 @@ function NotificationsSection({
           </div>
         ))}
       </div>
+      </SettingsSection>
     </>
   );
 }
@@ -1122,24 +1055,19 @@ const integrationDefaults = [
 function IntegrationsSection() {
   return (
     <>
-      {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-fg">
-          Integrations
-        </h2>
-        <p className="text-sm text-fg-secondary mt-1">
-          Third-party integrations are coming soon. Email and LinkedIn can
-          already be set up from their own tabs.
-        </p>
-      </div>
+      <SettingsIntro>
+        Third-party integrations are coming soon. Email and LinkedIn can
+        already be set up from their own tabs.
+      </SettingsIntro>
 
-      {/* Integration cards */}
-      <div className="space-y-3">
+      {/* Integration rows */}
+      <SettingsSection>
+      <div className="divide-y divide-divider border-y border-divider">
         {integrationDefaults.map((item) => {
           return (
             <div
               key={item.id}
-              className="flex items-center justify-between rounded-lg border border-line bg-surface p-4"
+              className="flex items-center justify-between gap-4 py-3"
             >
               <div className="flex items-center gap-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-md border border-line bg-surface overflow-hidden">
@@ -1170,6 +1098,7 @@ function IntegrationsSection() {
           );
         })}
       </div>
+      </SettingsSection>
     </>
   );
 }
@@ -1216,20 +1145,13 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
 
   return (
     <>
-      {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-fg">
-          Billing
-        </h2>
-        <p className="text-sm text-fg-secondary mt-1">
-          Manage your subscription and payment methods
-        </p>
-      </div>
+      <SettingsIntro>
+        Manage your subscription and payment methods
+      </SettingsIntro>
 
-      {/* Plan card */}
-      <div className="rounded-lg border border-line bg-surface">
-        {/* Plan header */}
-        <div className="flex items-start justify-between p-4">
+      {/* Plan */}
+      <SettingsSection>
+        <div className="flex items-start justify-between gap-4">
           <div>
             <div className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 mb-3", planColor.bg, planColor.border)}>
               <StarIcon size={14} weight="fill" className={planColor.text} />
@@ -1253,15 +1175,10 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
             )}
           </div>
         </div>
+      </SettingsSection>
 
-        {/* Divider */}
-        <div className="border-t border-line" />
-
-        {/* Usage section */}
-        <div className="p-4">
-          <p className="text-xs font-medium text-fg-secondary mb-3">
-            Current Usage
-          </p>
+      {/* Usage section */}
+      <SettingsSection title="Current Usage">
           <div className="space-y-5">
             {usageItems.map((item, i) => {
               const isUnlimited = item.total === -1;
@@ -1285,13 +1202,11 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
               );
             })}
           </div>
-        </div>
+      </SettingsSection>
 
-        {/* Divider */}
-        <div className="border-t border-line" />
-
-        {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-3 bg-subtle rounded-b-lg">
+      {/* Footer */}
+      <SettingsSection>
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <p className="text-sm text-fg-secondary">
             {plan.price > 0 ? (
               <>
@@ -1313,11 +1228,12 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
             </Button>
           </div>
         </div>
-      </div>
+      </SettingsSection>
 
       {/* Upgrade banner */}
       {upgradePlanId && (
-        <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border border-dashed border-line bg-surface p-4">
+        <SettingsSection>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-md bg-accent-surface border border-accent">
               <LightningIcon
@@ -1344,6 +1260,7 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
             <Button disabled>Upgrade Now</Button>
           </div>
         </div>
+        </SettingsSection>
       )}
     </>
   );
@@ -1462,27 +1379,18 @@ function AISettingsSection({
   const limitMonthly = settings?.monthly_token_limit ?? 2000000;
 
   return (
-    <div className="max-w-2xl space-y-8">
-      <div>
-        <h2 className="text-xl font-semibold text-fg">
-          AI Assistant
-        </h2>
-        <p className="mt-1 text-sm text-fg-secondary">
-          Configure AI-powered features across your CRM. Pulse AI uses Claude to
-          score leads, write emails, generate proposals, and provide strategic
-          insights.
-        </p>
-      </div>
+    <>
+      <SettingsIntro>
+        Configure AI-powered features across your CRM. Pulse AI uses Claude to
+        score leads, write emails, generate proposals, and provide strategic
+        insights.
+      </SettingsIntro>
 
       {/* AI Provider */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-fg">
-          AI Provider
-        </h3>
-        <p className="text-xs text-fg-secondary">
-          Choose your AI provider. Anthropic (direct) or OpenRouter for access to
-          multiple models.
-        </p>
+      <SettingsSection
+        title="AI Provider"
+        description="Choose your AI provider. Anthropic (direct) or OpenRouter for access to multiple models."
+      >
         <div className="flex gap-2">
           <button
             type="button"
@@ -1507,18 +1415,14 @@ function AISettingsSection({
             OpenRouter
           </button>
         </div>
-      </div>
+      </SettingsSection>
 
       {/* API Key — conditional on provider */}
       {aiProvider !== "openrouter" ? (
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-fg">
-            Anthropic API Key
-          </h3>
-          <p className="text-xs text-fg-secondary">
-            Enter your Anthropic API key for AI features. If not set, the app-level
-            key will be used.
-          </p>
+        <SettingsSection
+          title="Anthropic API Key"
+          description="Enter your Anthropic API key for AI features. If not set, the app-level key will be used."
+        >
           <div className="flex gap-2">
             <div className="flex-1 relative">
               <input
@@ -1541,23 +1445,24 @@ function AISettingsSection({
               </button>
             </div>
           </div>
-        </div>
+        </SettingsSection>
       ) : (
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-fg">
-            OpenRouter API Key
-          </h3>
-          <p className="text-xs text-fg-secondary">
-            Enter your OpenRouter API key. Get one at{" "}
-            <a
-              href="https://openrouter.ai/keys"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-fg underline"
-            >
-              openrouter.ai/keys
-            </a>
-          </p>
+        <SettingsSection
+          title="OpenRouter API Key"
+          description={
+            <>
+              Enter your OpenRouter API key. Get one at{" "}
+              <a
+                href="https://openrouter.ai/keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-fg underline"
+              >
+                openrouter.ai/keys
+              </a>
+            </>
+          }
+        >
           <div className="flex gap-2">
             <div className="flex-1 relative">
               <input
@@ -1580,18 +1485,14 @@ function AISettingsSection({
               </button>
             </div>
           </div>
-        </div>
+        </SettingsSection>
       )}
 
       {/* Apify API Key */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-fg">
-          Apify Integration
-        </h3>
-        <p className="text-xs text-fg-secondary">
-          Enter your Apify API token to enable lead scraping from Google Maps,
-          LinkedIn, Instagram, and more.
-        </p>
+      <SettingsSection
+        title="Apify Integration"
+        description="Enter your Apify API token to enable lead scraping from Google Maps, LinkedIn, Instagram, and more."
+      >
         <div className="flex gap-2">
           <div className="flex-1 relative">
             <input
@@ -1614,17 +1515,13 @@ function AISettingsSection({
             </button>
           </div>
         </div>
-      </div>
+      </SettingsSection>
 
       {/* Default Model */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-fg">
-          Default Model
-        </h3>
-        <p className="text-xs text-fg-secondary">
-          Pulse AI uses smart routing (Haiku for quick tasks, Sonnet for complex).
-          Override the default here.
-        </p>
+      <SettingsSection
+        title="Default Model"
+        description="Pulse AI uses smart routing (Haiku for quick tasks, Sonnet for complex). Override the default here."
+      >
         <Select
           value={defaultModel}
           onChange={(e) => setDefaultModel(e.target.value as "haiku" | "sonnet")}
@@ -1638,21 +1535,18 @@ function AISettingsSection({
             </option>
           ))}
         </Select>
-      </div>
+      </SettingsSection>
 
       {/* Feature Toggles + Autonomy */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-fg">
-          AI Features & Autonomy
-        </h3>
-        <p className="text-xs text-fg-secondary">
-          Enable or disable AI features and set how autonomous each should be.
-        </p>
-        <div className="space-y-3">
+      <SettingsSection
+        title="AI Features & Autonomy"
+        description="Enable or disable AI features and set how autonomous each should be."
+      >
+        <div className="divide-y divide-divider border-y border-divider">
           {Object.entries(featureLabels).map(([key, label]) => (
             <div
               key={key}
-              className="flex items-center justify-between rounded-lg border border-line bg-surface p-3"
+              className="flex h-11 items-center justify-between gap-4"
             >
               <div className="flex items-center gap-3">
                 <Toggle
@@ -1683,15 +1577,12 @@ function AISettingsSection({
             </div>
           ))}
         </div>
-      </div>
+      </SettingsSection>
 
       {/* Token Usage */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-fg">
-          Token Usage
-        </h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-lg border border-line bg-surface p-4">
+      <SettingsSection title="Token Usage">
+        <div className="grid grid-cols-2 gap-8">
+          <div>
             <p className="text-xs text-fg-secondary mb-2">
               Today
             </p>
@@ -1706,7 +1597,7 @@ function AISettingsSection({
               className="mt-2"
             />
           </div>
-          <div className="rounded-lg border border-line bg-surface p-4">
+          <div>
             <p className="text-xs text-fg-secondary mb-2">
               This Month
             </p>
@@ -1726,20 +1617,21 @@ function AISettingsSection({
         </div>
 
         {usageStats.length > 0 && (
-          <div className="rounded-lg border border-line bg-surface overflow-x-auto">
+          <TableSection className="mt-6 -mx-8 max-lg:-mx-4">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr>
-                  <th className="text-left h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-left">
                     Feature
                   </th>
-                  <th className="text-right h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-right">
                     Requests
                   </th>
-                  <th className="text-right h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-right">
                     Tokens
                   </th>
-                  <th className="text-right h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-right">
                     Success
                   </th>
                 </tr>
@@ -1748,35 +1640,33 @@ function AISettingsSection({
                 {usageStats.map((stat) => (
                   <tr
                     key={stat.feature}
-                    className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors"
+                    className="transition-colors"
                   >
-                    <td className="px-3 py-2 text-[14px] text-fg capitalize">
+                    <td className="py-2 text-[14px] text-fg capitalize">
                       {stat.feature.replace(/_/g, " ")}
                     </td>
-                    <td className="px-3 py-2 text-right text-[13px] text-fg-secondary">
+                    <td className="py-2 text-right text-[13px] text-fg-secondary">
                       {stat.total_requests}
                     </td>
-                    <td className="px-3 py-2 text-right text-[13px] text-fg-secondary">
+                    <td className="py-2 text-right text-[13px] text-fg-secondary">
                       {stat.total_tokens.toLocaleString()}
                     </td>
-                    <td className="px-3 py-2 text-right text-[13px] text-fg-secondary">
+                    <td className="py-2 text-right text-[13px] text-fg-secondary">
                       {stat.success_rate}%
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </TableSection>
         )}
-      </div>
+      </SettingsSection>
 
       {/* Usage Chart (last 14 days) */}
       {dailyChart.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-fg">
-            Token Usage (Last 14 Days)
-          </h3>
-          <div className="rounded-lg border border-line bg-surface p-4">
+        <SettingsSection title="Token Usage (Last 14 Days)">
+          <div>
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={dailyChart}>
                 <defs>
@@ -1785,7 +1675,7 @@ function AISettingsSection({
                     <stop offset="95%" stopColor={chartAccent} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartGrid} vertical={false} />
                 <XAxis
                   dataKey="date"
                   tick={axisTick}
@@ -1829,35 +1719,33 @@ function AISettingsSection({
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </SettingsSection>
       )}
 
       {/* Recent Usage Log */}
       {usageLog.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-fg">
-            Recent Activity
-          </h3>
-          <div className="rounded-lg border border-line bg-surface overflow-x-auto max-h-[320px] overflow-y-auto">
+        <SettingsSection title="Recent Activity">
+          <TableSection className="-mx-8 max-lg:-mx-4">
+          <div className="overflow-x-auto overflow-y-auto max-h-[320px]">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-surface">
                 <tr>
-                  <th className="text-left h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-left">
                     Feature
                   </th>
-                  <th className="text-left h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-left">
                     Model
                   </th>
-                  <th className="text-right h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-right">
                     Tokens
                   </th>
-                  <th className="text-right h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-right">
                     Time
                   </th>
-                  <th className="text-center h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-center">
                     Status
                   </th>
-                  <th className="text-right h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">
+                  <th className="text-right">
                     When
                   </th>
                 </tr>
@@ -1866,30 +1754,30 @@ function AISettingsSection({
                 {usageLog.map((entry) => (
                   <tr
                     key={entry.id}
-                    className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors"
+                    className="transition-colors"
                   >
-                    <td className="px-3 py-2 text-[14px] text-fg capitalize">
+                    <td className="py-2 text-[14px] text-fg capitalize">
                       {entry.feature.replace(/_/g, " ")}
                     </td>
-                    <td className="px-3 py-2 text-fg-secondary text-xs">
+                    <td className="py-2 text-fg-secondary text-xs">
                       {entry.model.split("-").pop() || entry.model}
                     </td>
-                    <td className="px-3 py-2 text-right text-[13px] text-fg-secondary">
+                    <td className="py-2 text-right text-[13px] text-fg-secondary">
                       {entry.total_tokens.toLocaleString()}
                     </td>
-                    <td className="px-3 py-2 text-right text-[13px] text-fg-secondary">
+                    <td className="py-2 text-right text-[13px] text-fg-secondary">
                       {entry.duration_ms < 1000
                         ? `${entry.duration_ms}ms`
                         : `${(entry.duration_ms / 1000).toFixed(1)}s`}
                     </td>
-                    <td className="px-3 py-2 text-center">
+                    <td className="py-2 text-center">
                       {entry.success ? (
                         <Badge variant="success">OK</Badge>
                       ) : (
                         <Badge variant="error">Fail</Badge>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-right text-xs text-fg-muted">
+                    <td className="py-2 text-right text-xs text-fg-muted">
                       {new Date(entry.created_at).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
@@ -1902,11 +1790,13 @@ function AISettingsSection({
               </tbody>
             </table>
           </div>
-        </div>
+          </TableSection>
+        </SettingsSection>
       )}
 
       {/* Save Button */}
-      <div className="flex justify-end pt-4 border-t border-line">
+      <SettingsSection>
+      <div className="flex justify-end">
         <Button onClick={handleSave} disabled={isPending}>
           {isPending ? (
             <CircleNotchIcon size={16} className="animate-spin mr-2" />
@@ -1914,6 +1804,7 @@ function AISettingsSection({
           Save AI Settings
         </Button>
       </div>
+      </SettingsSection>
 
       <Toast
         open={showToast}
@@ -1921,7 +1812,7 @@ function AISettingsSection({
         message={toastMessage}
         variant={toastMessage.includes("Failed") ? "error" : "success"}
       />
-    </div>
+    </>
   );
 }
 
@@ -2084,17 +1975,15 @@ function WhatsAppSection() {
   };
 
   return (
-    <div className="space-y-8 max-w-2xl">
-      <div>
-        <h2 className="text-lg font-semibold text-fg">WhatsApp Business</h2>
-        <p className="text-sm text-fg-secondary mt-1">
-          Connect your WhatsApp Business API account to send messages from sequences.
-        </p>
-      </div>
+    <>
+      <SettingsIntro>
+        <span className="font-medium text-fg">WhatsApp Business</span>
+        {" · "}
+        Connect your WhatsApp Business API account to send messages from sequences.
+      </SettingsIntro>
 
       {/* Connect Button */}
-      <div className="space-y-3">
-        <p className="text-sm font-medium text-fg">Connect Account</p>
+      <SettingsSection title="Connect Account">
         <button
           onClick={() => setShowAddForm(!showAddForm)}
           className="flex h-8 items-center gap-2 px-3 rounded-md border border-line bg-surface hover:bg-muted transition-colors text-sm font-medium text-fg"
@@ -2102,15 +1991,14 @@ function WhatsAppSection() {
           <WhatsappLogoIcon size={18} weight="bold" />
           {showAddForm ? "Cancel" : "Connect WhatsApp Business"}
         </button>
-      </div>
+      </SettingsSection>
 
       {/* Connect Form */}
       {showAddForm && (
-        <div className="rounded-lg border border-line bg-surface p-4 space-y-4">
-          <h3 className="text-sm font-semibold text-fg">Meta Cloud API Credentials</h3>
-          <p className="text-xs text-fg-secondary">
-            Find these in your Meta Business Suite → WhatsApp → API Setup.
-          </p>
+        <SettingsSection
+          title="Meta Cloud API Credentials"
+          description="Find these in your Meta Business Suite → WhatsApp → API Setup."
+        >
           <div className="grid grid-cols-1 gap-4">
             <Input
               label="Phone Number ID"
@@ -2139,26 +2027,25 @@ function WhatsAppSection() {
               Connect Account
             </Button>
           </div>
-        </div>
+        </SettingsSection>
       )}
 
       {/* Connected Accounts */}
-      <div className="space-y-3">
-        <p className="text-sm font-medium text-fg">Connected Accounts</p>
+      <SettingsSection title="Connected Accounts">
         {loading ? (
           <div className="flex items-center justify-center py-12 text-fg-muted">
             <CircleNotchIcon size={24} className="animate-spin" />
           </div>
         ) : accounts.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-line rounded-lg">
+          <div className="text-center py-12">
             <WhatsappLogoIcon size={32} className="mx-auto text-fg-disabled mb-3" />
             <p className="text-sm text-fg-secondary">No WhatsApp accounts connected yet.</p>
             <p className="text-xs text-fg-muted mt-1">Connect your Meta Cloud API credentials above.</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="divide-y divide-divider border-y border-divider">
             {accounts.map((acct) => (
-              <div key={acct.id} className="flex items-center gap-4 max-sm:flex-col max-sm:items-start rounded-lg border border-line bg-surface p-4">
+              <div key={acct.id} className="flex items-center gap-4 max-sm:flex-col max-sm:items-start py-4">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <div className="w-9 h-9 rounded-md bg-success-surface flex items-center justify-center shrink-0">
                     <WhatsappLogoIcon size={18} className="text-success" />
@@ -2227,15 +2114,14 @@ function WhatsAppSection() {
             ))}
           </div>
         )}
-      </div>
+      </SettingsSection>
 
       {/* Templates */}
       {templates.length > 0 && (
-        <div className="space-y-3">
-          <p className="text-sm font-medium text-fg">Message Templates</p>
-          <div className="space-y-2">
+        <SettingsSection title="Message Templates">
+          <div className="divide-y divide-divider border-y border-divider">
             {templates.map((tpl) => (
-              <div key={tpl.id} className="rounded-lg border border-line bg-surface p-3">
+              <div key={tpl.id} className="py-3">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm font-medium text-fg">{tpl.name}</span>
                   {tplStatusBadge(tpl.status)}
@@ -2248,16 +2134,14 @@ function WhatsAppSection() {
               </div>
             ))}
           </div>
-        </div>
+        </SettingsSection>
       )}
 
       {/* Webhook URL */}
-      <div className="space-y-3">
-        <p className="text-sm font-medium text-fg">Webhook Configuration</p>
-        <div className="rounded-lg border border-line bg-surface p-4">
-          <p className="text-xs text-fg-secondary mb-2">
-            Set this URL in your Meta App Dashboard → WhatsApp → Configuration → Callback URL:
-          </p>
+      <SettingsSection
+        title="Webhook Configuration"
+        description="Set this URL in your Meta App Dashboard → WhatsApp → Configuration → Callback URL:"
+      >
           <div className="flex items-center gap-2">
             <code className="flex-1 text-xs bg-code border border-line rounded-md px-3 py-2 text-fg font-mono break-all">
               {webhookUrl}
@@ -2269,8 +2153,7 @@ function WhatsAppSection() {
               Copy
             </button>
           </div>
-        </div>
-      </div>
+      </SettingsSection>
 
       <DeleteConfirmModal
         open={showDeleteModal}
@@ -2282,7 +2165,7 @@ function WhatsAppSection() {
       />
 
       <Toast open={showToast} onClose={() => setShowToast(false)} message={toastMessage} variant={toastVariant} />
-    </div>
+    </>
   );
 }
 
@@ -2444,17 +2327,13 @@ function LinkedInSection() {
   };
 
   return (
-    <div className="space-y-8 max-w-2xl">
-      <div>
-        <h2 className="text-lg font-semibold text-fg">LinkedIn</h2>
-        <p className="text-sm text-fg-secondary mt-1">
-          Connect your LinkedIn account for automated outreach — connections, messages, profile views, and endorsements.
-        </p>
-      </div>
+    <>
+      <SettingsIntro>
+        Connect your LinkedIn account for automated outreach — connections, messages, profile views, and endorsements.
+      </SettingsIntro>
 
       {/* Connect Button */}
-      <div className="space-y-3">
-        <p className="text-sm font-medium text-fg">Connect Account</p>
+      <SettingsSection title="Connect Account">
         <button
           onClick={handleConnectLinkedIn}
           className="flex h-8 items-center gap-2 px-3 rounded-md border border-line bg-surface hover:bg-muted transition-colors text-sm font-medium text-fg"
@@ -2462,27 +2341,26 @@ function LinkedInSection() {
           <LinkedinLogoIcon size={18} weight="bold" />
           Connect with LinkedIn
         </button>
-      </div>
+      </SettingsSection>
 
       {/* Connected Accounts */}
-      <div className="space-y-3">
-        <p className="text-sm font-medium text-fg">Connected Accounts</p>
+      <SettingsSection title="Connected Accounts">
         {loading ? (
           <div className="flex items-center justify-center py-12 text-fg-muted">
             <CircleNotchIcon size={24} className="animate-spin" />
           </div>
         ) : accounts.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-line rounded-lg">
+          <div className="text-center py-12">
             <LinkedinLogoIcon size={32} className="mx-auto text-fg-disabled mb-3" />
             <p className="text-sm text-fg-secondary">No LinkedIn accounts connected yet.</p>
             <p className="text-xs text-fg-muted mt-1">Connect via OAuth to start LinkedIn outreach.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="divide-y divide-divider border-y border-divider">
             {accounts.map((acct) => (
-              <div key={acct.id} className="rounded-lg border border-line bg-surface">
+              <div key={acct.id}>
                 {/* Account Header */}
-                <div className="flex items-center gap-4 max-sm:flex-col max-sm:items-start p-4">
+                <div className="flex items-center gap-4 max-sm:flex-col max-sm:items-start py-4">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-9 h-9 rounded-md bg-accent-surface flex items-center justify-center shrink-0">
                       <LinkedinLogoIcon size={18} className="text-accent-strong" />
@@ -2547,7 +2425,7 @@ function LinkedInSection() {
                 </div>
 
                 {/* Rate Limit Counters */}
-                <div className="px-4 pb-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="pb-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <LimitBar label="Connections (Daily)" used={acct.daily_connection_requests} limit={acct.daily_connection_limit} />
                   <LimitBar label="Messages (Daily)" used={acct.daily_messages_sent} limit={acct.daily_message_limit} />
                   <LimitBar label="Connections (Weekly)" used={acct.weekly_connection_requests} limit={acct.weekly_connection_limit} />
@@ -2557,7 +2435,7 @@ function LinkedInSection() {
 
                 {/* Rate Limits Editor */}
                 {editingLimitsId === acct.id && (
-                  <div className="border-t border-line p-4 bg-subtle space-y-4">
+                  <div className="border-t border-divider py-4 space-y-4">
                     <p className="text-xs font-medium text-fg-secondary">Configure Rate Limits</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       <Input
@@ -2608,15 +2486,13 @@ function LinkedInSection() {
             ))}
           </div>
         )}
-      </div>
+      </SettingsSection>
 
       {/* Safety Notice */}
-      <div className="rounded-lg border border-warning bg-warning-surface p-4">
-        <p className="text-xs font-medium text-warning mb-1">Safety Notice</p>
-        <p className="text-xs text-warning">
-          LinkedIn automation carries account risk. Pulse CRM enforces conservative rate limits and random delays (2-5 min) between actions to mimic human behavior. Counters reset daily at midnight UTC.
-        </p>
-      </div>
+      <SettingsSection
+        title={<span className="flex items-center gap-2 text-warning"><WarningIcon size={16} />Safety Notice</span>}
+        description="LinkedIn automation carries account risk. Pulse CRM enforces conservative rate limits and random delays (2-5 min) between actions to mimic human behavior. Counters reset daily at midnight UTC."
+      />
 
       <DeleteConfirmModal
         open={showDeleteModal}
@@ -2628,7 +2504,7 @@ function LinkedInSection() {
       />
 
       <Toast open={showToast} onClose={() => setShowToast(false)} message={toastMessage} variant={toastVariant} />
-    </div>
+    </>
   );
 }
 
@@ -2834,18 +2710,13 @@ function EmailAccountsSection() {
   };
 
   return (
-    <div className="space-y-8 max-w-2xl">
-      {/* Header */}
-      <div>
-        <h2 className="text-lg font-semibold text-fg">Email Accounts</h2>
-        <p className="text-sm text-fg-secondary mt-1">
-          Connect your email accounts to send emails from sequences and manage your unified inbox.
-        </p>
-      </div>
+    <>
+      <SettingsIntro>
+        Connect your email accounts to send emails from sequences and manage your unified inbox.
+      </SettingsIntro>
 
       {/* Connect Buttons */}
-      <div className="space-y-3">
-        <p className="text-sm font-medium text-fg">Connect an Account</p>
+      <SettingsSection title="Connect an Account">
         <div className="flex flex-wrap gap-3">
           <Button
             variant="outline"
@@ -2862,12 +2733,12 @@ function EmailAccountsSection() {
             {showAddForm ? "Cancel" : "Add Custom IMAP/SMTP"}
           </Button>
         </div>
-      </div>
+      </SettingsSection>
 
       {/* Custom IMAP/SMTP Form */}
       {showAddForm && (
-        <div className="rounded-lg border border-line bg-surface p-4 space-y-4">
-          <h3 className="text-sm font-semibold text-fg">Custom IMAP/SMTP Configuration</h3>
+        <SettingsSection title="Custom IMAP/SMTP Configuration">
+        <div className="space-y-4">
 
           <div className="grid grid-cols-2 max-sm:grid-cols-1 gap-4">
             <Input
@@ -2981,30 +2852,29 @@ function EmailAccountsSection() {
             </Button>
           </div>
         </div>
+        </SettingsSection>
       )}
 
       {/* Connected Accounts List */}
-      <div className="space-y-3">
-        <p className="text-sm font-medium text-fg">Connected Accounts</p>
+      <SettingsSection title="Connected Accounts">
 
         {loading ? (
           <div className="flex items-center justify-center py-12 text-fg-muted">
             <CircleNotchIcon size={24} className="animate-spin" />
           </div>
         ) : accounts.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-line rounded-lg">
+          <div className="text-center py-12">
             <EnvelopeIcon size={32} className="mx-auto text-fg-disabled mb-3" />
             <p className="text-sm text-fg-secondary">No email accounts connected yet.</p>
             <p className="text-xs text-fg-muted mt-1">Connect a Gmail or custom IMAP/SMTP account above.</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="divide-y divide-divider border-y border-divider">
             {accounts.map((acct) => (
               <div
                 key={acct.id}
-                className="rounded-lg border border-line bg-surface"
               >
-                <div className="flex items-center gap-4 max-sm:flex-col max-sm:items-start p-4">
+                <div className="flex items-center gap-4 max-sm:flex-col max-sm:items-start py-4">
                   {/* Provider icon + info */}
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-9 h-9 rounded-md bg-muted flex items-center justify-center shrink-0">
@@ -3078,7 +2948,7 @@ function EmailAccountsSection() {
                 </div>
 
                 {/* Tracking Domain */}
-                <div className="border-t border-row px-4 py-3">
+                <div className="pb-4">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="text-xs font-medium text-fg-secondary">Tracking Domain:</span>
@@ -3161,7 +3031,7 @@ function EmailAccountsSection() {
             ))}
           </div>
         )}
-      </div>
+      </SettingsSection>
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
@@ -3179,7 +3049,7 @@ function EmailAccountsSection() {
         message={toastMessage}
         variant={toastVariant}
       />
-    </div>
+    </>
   );
 }
 
@@ -3449,47 +3319,34 @@ function LeadFinderSettingsSection() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h2 className="text-lg font-semibold text-fg">
-          Lead Finder
-        </h2>
-        <p className="text-sm text-fg-secondary">
-          Configure API keys, AI provider, and agency profile for lead discovery & enrichment
-        </p>
-      </div>
+    <>
+      <SettingsIntro>
+        Configure API keys, AI provider, and agency profile for lead discovery & enrichment
+      </SettingsIntro>
 
       {groups.map((g) => (
-        <div
+        <SettingsSection
           key={g.key}
-          className="rounded-lg border border-line bg-surface overflow-hidden"
+          icon={g.icon}
+          title={g.title}
+          description={g.description}
         >
-          <div className="px-4 py-3 border-b border-divider">
-            <div className="flex items-center gap-2">
-              {g.icon}
-              <h3 className="text-sm font-semibold text-fg">
-                {g.title}
-              </h3>
-            </div>
-            <p className="text-xs text-fg-secondary mt-0.5">
-              {g.description}
-            </p>
-          </div>
-          <div className="p-4 space-y-4">
+          <div className="space-y-4">
             {g.fields.map(renderField)}
+            <div className="flex justify-end">
             <Button
               variant="primary"
               onClick={() => saveGroup(g.key, g.fields)}
               disabled={saving === g.key}
               leftIcon={saving === g.key ? <CircleNotchIcon size={14} className="animate-spin" /> : <FloppyDiskIcon size={14} />}
-              className="w-full"
             >
               {saving === g.key ? "Saving..." : `Save ${g.title}`}
             </Button>
+            </div>
           </div>
-        </div>
+        </SettingsSection>
       ))}
-    </div>
+    </>
   );
 }
 
@@ -3499,9 +3356,12 @@ export function SettingsPageClient({
   initialAISettings,
   initialBillingData,
 }: SettingsPageClientProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const initialTab = (searchParams.get("tab") as SettingsTab) || "profile";
-  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+  // Read on every render so the sidebar's ?tab= links switch sections.
+  const activeTab = (searchParams.get("tab") as SettingsTab) || "profile";
+  const activeLabel =
+    settingsTabs.find((tab) => tab.id === activeTab)?.label ?? "Profile";
 
   const renderContent = () => {
     switch (activeTab) {
@@ -3545,42 +3405,20 @@ export function SettingsPageClient({
   };
 
   return (
-    <div className="flex flex-row max-md:flex-col h-full bg-page">
-      {/* Settings sidebar — horizontal scroll on mobile, vertical on desktop */}
-      <div className="w-60 shrink-0 max-md:w-full max-md:shrink border-r max-md:border-r-0 max-md:border-b border-divider">
-        <div className="px-4 pt-6 pb-3 max-md:pb-0">
-          <p className="text-xs font-medium text-fg-secondary px-1">
-            Settings
-          </p>
-        </div>
-        <nav className="overflow-x-visible max-md:overflow-x-auto px-4 pb-0 max-md:pb-4">
-          <ul className="flex flex-col max-md:flex-row gap-0.5 rounded-md bg-muted p-0.5 min-w-0 max-md:min-w-max">
-            {settingsTabs.map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
-                <li key={tab.id}>
-                  <button
-                    onClick={() => setActiveTab(tab.id)}
-                    className={cn(
-                      "flex w-full h-7 items-center whitespace-nowrap rounded-sm px-3 text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
-                      "transition-colors duration-150",
-                      isActive
-                        ? "bg-surface text-fg"
-                        : "text-fg-secondary hover:text-fg",
-                    )}
-                  >
-                    <tab.icon className="h-4 w-4 shrink-0" weight="regular" />
-                    <span className="ml-2">{tab.label}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-      </div>
+    <div className="min-h-full bg-page">
+      {/* Below lg the sidebar is a drawer, so the sections stay one tap away here. */}
+      <PageTabs
+        tabs={settingsTabs.map((tab) => ({ id: tab.id, label: tab.label }))}
+        value={activeTab}
+        onChange={(id) => router.replace(`/dashboard/settings?tab=${id}`)}
+        className="lg:hidden px-4 max-sm:px-4 overflow-x-auto overflow-y-hidden"
+      />
 
-      {/* Content area */}
-      <div className="flex-1 min-w-0 overflow-y-auto py-6 px-4 sm:py-8 sm:px-6 lg:py-10 lg:px-10">
+      {/* Content column */}
+      <div className="px-12 pt-8 pb-10 max-w-[880px] max-lg:px-4">
+        <h1 className="text-[20px] leading-7 font-semibold text-fg">
+          {activeLabel}
+        </h1>
         {renderContent()}
       </div>
     </div>

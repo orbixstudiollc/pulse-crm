@@ -11,10 +11,10 @@ import {
   TrashIcon,
   LightningIcon,
   CircleNotchIcon,
-  CheckIcon,
   XIcon,
   CaretDownIcon,
 } from "@/components/ui";
+import { Metric, MetricStrip, PageTabs } from "@/components/dashboard";
 import {
   getAutomationRules,
   createAutomationRule,
@@ -177,89 +177,39 @@ export function AutomationSection() {
   };
 
   return (
-    <div className="space-y-6">
+    <>
       {/* Header */}
-      <div className="flex flex-row items-center justify-between gap-4 max-sm:flex-col max-sm:items-start">
-        <div>
-          <h2 className="text-heading-md text-fg">
-            Automation Rules
-          </h2>
-          <p className="text-sm text-fg-secondary mt-1">
-            Automate lead management with trigger-based rules.
-          </p>
-        </div>
-      </div>
+      <p className="mt-1 text-[13px] text-fg-muted">
+        <span className="font-medium text-fg">Automation Rules</span>
+        {" · "}
+        Automate lead management with trigger-based rules.
+      </p>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-lg border border-line bg-surface overflow-hidden">
-          <div className="flex items-start justify-between p-4">
-            <div className="space-y-2">
-              <p className="text-xs font-normal leading-5 text-fg-secondary">Total Rules</p>
-              <p className="text-[22px] font-semibold text-fg">{stats.totalRules}</p>
-            </div>
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line">
-              <LightningIcon size={16} className="text-fg" />
-            </div>
-          </div>
-        </div>
-        <div className="rounded-lg border border-line bg-surface overflow-hidden">
-          <div className="flex items-start justify-between p-4">
-            <div className="space-y-2">
-              <p className="text-xs font-normal leading-5 text-fg-secondary">Active</p>
-              <p className="text-[22px] font-semibold text-success">{stats.activeRules}</p>
-            </div>
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line">
-              <CheckIcon size={16} className="text-success" />
-            </div>
-          </div>
-        </div>
-        <div className="rounded-lg border border-line bg-surface overflow-hidden">
-          <div className="flex items-start justify-between p-4">
-            <div className="space-y-2">
-              <p className="text-xs font-normal leading-5 text-fg-secondary">Executions</p>
-              <p className="text-[22px] font-semibold text-fg">{stats.totalExecutions}</p>
-            </div>
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line">
-              <CircleNotchIcon size={16} className="text-fg" />
-            </div>
-          </div>
-        </div>
-      </div>
+      <MetricStrip className="px-0 pt-6 max-sm:px-0">
+        <Metric label="Total Rules" value={stats.totalRules} />
+        <Metric label="Active" value={<span className="text-success">{stats.activeRules}</span>} />
+        <Metric label="Executions" value={stats.totalExecutions} />
+      </MetricStrip>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-divider">
-        <button
-          onClick={() => setActiveView("rules")}
-          className={cn(
-            "px-3 py-2 text-sm font-medium border-b -mb-px transition-colors",
-            activeView === "rules"
-              ? "border-accent text-fg"
-              : "border-transparent text-fg-secondary hover:text-fg",
-          )}
-        >
-          Rules
-        </button>
-        <button
-          onClick={() => {
-            setActiveView("log");
-            loadExecutions();
-          }}
-          className={cn(
-            "px-3 py-2 text-sm font-medium border-b -mb-px transition-colors",
-            activeView === "log"
-              ? "border-accent text-fg"
-              : "border-transparent text-fg-secondary hover:text-fg",
-          )}
-        >
-          Execution Log
-        </button>
-      </div>
+      <PageTabs
+        tabs={[
+          { id: "rules", label: "Rules" },
+          { id: "log", label: "Execution Log" },
+        ]}
+        value={activeView}
+        onChange={(id) => {
+          setActiveView(id);
+          if (id === "log") loadExecutions();
+        }}
+        className="px-0 max-sm:px-0 max-sm:overflow-x-auto max-sm:overflow-y-hidden"
+      />
 
       {activeView === "rules" ? (
         <>
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-end gap-3 py-4">
             <Button onClick={() => { setEditingRule(null); setShowCreate(true); }}>
               <PlusIcon size={16} className="mr-1.5" />
               Create Rule
@@ -267,7 +217,7 @@ export function AutomationSection() {
           </div>
 
           {/* Rules List */}
-          <div className="space-y-3">
+          <div className="divide-y divide-divider border-y border-divider">
             {rules.length === 0 ? (
               <div className="text-center py-12 text-fg-secondary">
                 <LightningIcon size={40} className="mx-auto mb-3 opacity-40" />
@@ -278,7 +228,7 @@ export function AutomationSection() {
               rules.map((rule) => (
                 <div
                   key={rule.id}
-                  className="flex items-center justify-between p-4 rounded-lg border border-line bg-surface hover:bg-muted transition-colors"
+                  className="flex items-center justify-between gap-4 py-4"
                 >
                   <div className="flex items-center gap-4 flex-1 min-w-0">
                     <Toggle
@@ -330,14 +280,14 @@ export function AutomationSection() {
         </>
       ) : (
         /* Execution Log */
-        <div className="space-y-2">
+        <div className="divide-y divide-divider border-b border-divider">
           {executions.length === 0 ? (
             <p className="text-center py-8 text-sm text-fg-secondary">No executions yet.</p>
           ) : (
             executions.map((exec) => (
               <div
                 key={exec.id as string}
-                className="flex items-center justify-between p-3 rounded-lg border border-line bg-surface text-sm"
+                className="flex items-center justify-between gap-4 py-3 text-sm"
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -394,7 +344,7 @@ export function AutomationSection() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -481,7 +431,7 @@ function RuleEditor({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-surface rounded-lg border border-line shadow-modal w-full max-w-2xl max-h-[85vh] overflow-y-auto mx-4">
+      <div data-clay-box className="bg-surface rounded-lg border border-line shadow-modal w-full max-w-2xl max-h-[85vh] overflow-y-auto mx-4">
         <div className="flex h-12 items-center justify-between px-4 border-b border-divider">
           <h3 className="text-heading-md text-fg">
             {rule ? "Edit Rule" : "Create Automation Rule"}

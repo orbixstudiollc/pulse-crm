@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Icon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import {
   AddressBookIcon,
   CalendarBlankIcon,
+  CaretLeftIcon,
   ChartBarIcon,
   CrosshairIcon,
   CursorClickIcon,
@@ -31,6 +32,7 @@ import {
   XIcon,
 } from "../ui";
 import { useSidebar } from "./SidebarContext";
+import { SETTINGS_GROUPS } from "./settings-nav";
 
 type NavItem = { name: string; href: string; icon: Icon };
 
@@ -72,7 +74,48 @@ const bottomNavigation: NavItem[] = [
   { name: "Settings", href: "/dashboard/settings", icon: GearIcon },
 ];
 
+const SETTINGS_PATH = "/dashboard/settings";
+
 // ── Shared sidebar content ──────────────────────────────────────────────────
+
+function NavLink({
+  href,
+  label,
+  icon: ItemIcon,
+  isActive,
+  onNavClick,
+  className,
+}: {
+  href: string;
+  label: string;
+  icon: Icon;
+  isActive: boolean;
+  onNavClick?: () => void;
+  className?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onNavClick}
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
+        "relative flex h-9 items-center gap-2.5 px-6 text-[14px] text-fg transition-colors duration-150 hover:bg-subtle",
+        isActive && "font-medium",
+        className,
+      )}
+    >
+      {isActive && (
+        <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-sm bg-fg" />
+      )}
+      <ItemIcon
+        size={16}
+        weight={isActive ? "fill" : "regular"}
+        className={cn("shrink-0", isActive ? "text-fg" : "text-fg-muted")}
+      />
+      <span className="truncate">{label}</span>
+    </Link>
+  );
+}
 
 function NavList({
   items,
@@ -89,25 +132,13 @@ function NavList({
         const isActive = pathname.startsWith(item.href);
         return (
           <li key={item.name}>
-            <Link
+            <NavLink
               href={item.href}
-              onClick={onNavClick}
-              aria-current={isActive ? "page" : undefined}
-              className={cn(
-                "relative flex h-9 items-center gap-2.5 px-6 text-[14px] text-fg transition-colors duration-150 hover:bg-subtle",
-                isActive && "font-medium",
-              )}
-            >
-              {isActive && (
-                <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-sm bg-fg" />
-              )}
-              <item.icon
-                size={16}
-                weight={isActive ? "fill" : "regular"}
-                className={cn("shrink-0", isActive ? "text-fg" : "text-fg-muted")}
-              />
-              <span className="truncate">{item.name}</span>
-            </Link>
+              label={item.name}
+              icon={item.icon}
+              isActive={isActive}
+              onNavClick={onNavClick}
+            />
           </li>
         );
       })}
@@ -115,8 +146,64 @@ function NavList({
   );
 }
 
+// ── Settings nav: replaces the app nav on /dashboard/settings ────────────────
+
+function SettingsNavList({
+  activeTab,
+  onNavClick,
+}: {
+  activeTab: string | null;
+  onNavClick?: () => void;
+}) {
+  return (
+    <nav className="flex-1 overflow-y-auto pb-2">
+      <Link
+        href="/dashboard/overview"
+        onClick={onNavClick}
+        className="flex h-11 items-center gap-2 border-b border-divider px-6 text-[14px] text-fg-secondary transition-colors duration-150 hover:text-fg"
+      >
+        <CaretLeftIcon size={14} className="shrink-0" />
+        Back to app
+      </Link>
+      {SETTINGS_GROUPS.map((group) => (
+        <div key={group.label}>
+          <p className="px-6 pt-4 pb-1 text-[13px] text-fg-muted">{group.label}</p>
+          <ul>
+            {group.items.map((item) => (
+              <li key={item.id}>
+                <NavLink
+                  href={`${SETTINGS_PATH}?tab=${item.id}`}
+                  label={item.label}
+                  icon={item.icon}
+                  isActive={activeTab === item.id}
+                  onNavClick={onNavClick}
+                  className="hover:bg-muted"
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  );
+}
+
+function ActiveSettingsNav({ onNavClick }: { onNavClick?: () => void }) {
+  const activeTab = useSearchParams().get("tab") || "profile";
+  return <SettingsNavList activeTab={activeTab} onNavClick={onNavClick} />;
+}
+
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const pathname = usePathname();
+
+  if (pathname.startsWith(SETTINGS_PATH)) {
+    // useSearchParams needs a Suspense boundary when a route renders statically.
+    return (
+      <Suspense fallback={<SettingsNavList activeTab={null} onNavClick={onNavClick} />}>
+        <ActiveSettingsNav onNavClick={onNavClick} />
+      </Suspense>
+    );
+  }
 
   return (
     <>
@@ -143,8 +230,14 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
 // ── Desktop Sidebar (inline) ────────────────────────────────────────────────
 
 export function Sidebar() {
+  const isSettings = usePathname().startsWith(SETTINGS_PATH);
   return (
-    <aside className="hidden lg:flex w-[240px] shrink-0 flex-col bg-surface border-r border-divider">
+    <aside
+      className={cn(
+        "hidden lg:flex w-[240px] shrink-0 flex-col border-r border-divider",
+        isSettings ? "bg-subtle" : "bg-surface",
+      )}
+    >
       <SidebarContent />
     </aside>
   );
@@ -155,6 +248,7 @@ export function Sidebar() {
 export function MobileSidebar() {
   const { mobileOpen, closeMobile } = useSidebar();
   const pathname = usePathname();
+  const isSettings = pathname.startsWith(SETTINGS_PATH);
 
   // Close when route changes
   useEffect(() => {
@@ -193,7 +287,10 @@ export function MobileSidebar() {
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="fixed left-0 top-0 h-full w-[240px] bg-surface border-r border-divider z-50 flex flex-col lg:hidden"
+            className={cn(
+              "fixed left-0 top-0 h-full w-[240px] border-r border-divider z-50 flex flex-col lg:hidden",
+              isSettings ? "bg-subtle" : "bg-surface",
+            )}
           >
             {/* Wordmark row: the top bar sits behind the overlay */}
             <div className="flex h-11 shrink-0 items-center justify-between border-b border-divider px-6">
