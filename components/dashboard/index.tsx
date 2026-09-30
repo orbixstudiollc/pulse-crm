@@ -15,3 +15,15 @@ export { TableHeader } from "./TableHeader";
 export { TableFooter } from "./TableFooter";
 export { EmptyState } from "./EmptyState";
 export { ConfirmModal } from "./ConfirmModal";
+export {
+  Page,
+  MetricStrip,
+  Metric,
+  PageTabs,
+  TableSection,
+  Section,
+  DetailLayout,
+  PanelSection,
+  KeyValueList,
+  KeyValue,
+} from "./Page";

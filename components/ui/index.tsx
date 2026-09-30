@@ -24,3 +24,4 @@ export * from "./Card";
 export * from "./Tabs";
 export * from "./Spinner";
 export * from "./Skeleton";
+export * from "./SegmentedControl";

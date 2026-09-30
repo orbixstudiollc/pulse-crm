@@ -31,13 +31,13 @@ export function TableHeader({
   return (
     <div
       className={cn(
-        "flex h-12 items-center justify-between px-4 border-b border-divider",
+        "flex h-14 items-center justify-between gap-4 px-8 max-sm:px-4",
         className,
       )}
     >
-      <h3 className="text-[16px] leading-6 font-semibold text-fg">
+      <h2 className="text-[18px] leading-6 font-semibold text-fg">
         {title}
-      </h3>
+      </h2>
       <div className="flex items-center gap-3">
         {actions}
         <div className="flex items-center gap-2">

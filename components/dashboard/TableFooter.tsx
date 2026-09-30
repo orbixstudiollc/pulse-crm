@@ -29,7 +29,7 @@ export function TableFooter({
   return (
     <div
       className={cn(
-        "flex items-center justify-between px-4 py-3 border-t border-divider text-[13px] text-fg-muted",
+        "flex h-12 items-center justify-between gap-4 px-8 max-sm:px-4 text-[13px] text-fg-muted",
         className,
       )}
     >

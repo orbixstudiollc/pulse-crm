@@ -27,29 +27,29 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      className={cn("py-12 flex flex-col items-center text-center", className)}
+      className={cn("py-16 flex flex-col items-center text-center", className)}
     >
-      {/* Icon Container */}
-      <div className="h-10 w-10 rounded-lg bg-subtle text-fg-muted flex items-center justify-center mb-4">
+      {/* Icon */}
+      <div className="mb-3 flex text-fg-muted [&_svg]:size-6">
         {icon}
       </div>
 
       {/* Title */}
-      <h3 className="text-[16px] leading-6 font-semibold text-fg mb-1">
+      <h3 className="text-[14px] font-medium text-fg">
         {title}
       </h3>
 
       {/* Description */}
-      <p className="text-[13px] text-fg-muted max-w-xs mb-4">
+      <p className="mt-1 text-[13px] text-fg-muted max-w-xs">
         {description}
       </p>
 
       {/* Actions */}
       {actions.length > 0 && (
-        <div className="flex items-center gap-2">
+        <div className="mt-4 flex items-center gap-2">
           {actions.map((action, index) => {
-            // First action is the primary CTA unless the caller says otherwise.
-            const variant = action.variant ?? (index === 0 ? "primary" : "outline");
+            // Actions are secondary (outlined) unless the caller sets a variant.
+            const variant = action.variant ?? "outline";
             if (action.href) {
               return (
                 <a key={index} href={action.href}>

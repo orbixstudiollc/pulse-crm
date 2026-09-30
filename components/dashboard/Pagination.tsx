@@ -46,7 +46,7 @@ export function Pagination({
       <button
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface text-fg-secondary hover:bg-subtle hover:text-fg disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="flex h-7 w-7 items-center justify-center rounded-md border border-line bg-surface text-fg-secondary hover:bg-subtle hover:text-fg disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         <CaretLeftIcon size={14} />
       </button>
@@ -55,7 +55,7 @@ export function Pagination({
         page === "..." ? (
           <span
             key={`ellipsis-${index}`}
-            className="flex h-8 w-8 items-center justify-center text-[13px] text-fg-muted"
+            className="flex h-7 w-7 items-center justify-center text-[13px] text-fg-muted"
           >
             ...
           </span>
@@ -64,10 +64,10 @@ export function Pagination({
             key={page}
             onClick={() => onPageChange(page as number)}
             className={cn(
-              "flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+              "flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
               currentPage === page
-                ? "border border-accent bg-surface text-accent-strong"
-                : "text-fg-secondary hover:bg-subtle hover:text-fg",
+                ? "border border-accent text-accent-strong"
+                : "text-fg-secondary hover:bg-subtle",
             )}
           >
             {page}
@@ -78,7 +78,7 @@ export function Pagination({
       <button
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
-        className="flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface text-fg-secondary hover:bg-subtle hover:text-fg disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="flex h-7 w-7 items-center justify-center rounded-md border border-line bg-surface text-fg-secondary hover:bg-subtle hover:text-fg disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         <CaretRightIcon size={14} />
       </button>
