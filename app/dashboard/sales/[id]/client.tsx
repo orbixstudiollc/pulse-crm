@@ -29,6 +29,7 @@ import {
 } from "@/components/features";
 import { usePageHeader } from "@/hooks";
 import { addDealNote, deleteDeal, updateDeal, updateDealStage } from "@/lib/actions/deals";
+import { deleteActivity } from "@/lib/actions/activities";
 import { toast } from "sonner";
 
 // --- Types ---
@@ -268,6 +269,17 @@ export function DealDetailClient({
     });
   };
 
+  const handleDeleteActivity = (id: string) => {
+    startTransition(async () => {
+      const res = await deleteActivity(id);
+      if (res.error) {
+        toast.error(res.error);
+      } else {
+        router.refresh();
+      }
+    });
+  };
+
   const handleStageChange = (newStage: DealStage) => {
     setCurrentStage(newStage);
     startTransition(async () => {
@@ -437,7 +449,7 @@ export function DealDetailClient({
                         setSelectedActivity(item);
                         setShowActivityDrawer(true);
                       }}
-                      onDelete={() => {}}
+                      onDelete={() => handleDeleteActivity(item.id)}
                     />
                   ))}
                 </div>
@@ -610,12 +622,16 @@ export function DealDetailClient({
         open={showMeetingModal}
         onClose={() => setShowMeetingModal(false)}
         customerName={contactName}
+        link={{ dealId: deal.id }}
+        onSaved={() => router.refresh()}
       />
 
       <CreateTaskModal
         open={showTaskModal}
         onClose={() => setShowTaskModal(false)}
         customerName={contactName}
+        link={{ dealId: deal.id }}
+        onSaved={() => router.refresh()}
       />
 
       <ActivityDetailDrawer

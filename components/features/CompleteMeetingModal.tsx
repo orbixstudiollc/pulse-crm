@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Modal, Button, Select, Textarea, XIcon } from "@/components/ui";
 import {
   ThumbsUpIcon,
@@ -8,31 +9,91 @@ import {
   MinusCircleIcon,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { createActivity, updateActivity } from "@/lib/actions/activities";
+import { type RecordLink, recordLinkToRelated } from "./ScheduleMeetingModal";
+
+const DURATION_LABELS: Record<string, string> = {
+  "15": "15 mins",
+  "30": "30 mins",
+  "45": "45 mins",
+  "60": "1 hour",
+  "90": "1.5 hours",
+  "120": "2 hours",
+};
+
+const FOLLOW_UP_LABELS: Record<string, string> = {
+  none: "No follow-up",
+  email: "Send email",
+  meeting: "Schedule meeting",
+  task: "Create task",
+};
 
 interface CompleteMeetingModalProps {
   open: boolean;
   onClose: () => void;
-  onComplete: (data: {
+  onComplete?: (data: {
     sentiment: string;
     duration: string;
     followUp: string;
     notes: string;
   }) => void;
+  /** `activities` row to mark completed. Without it, a completed meeting is logged against `link`. */
+  activityId?: string;
+  link?: RecordLink;
+  customerName?: string;
+  onSaved?: () => void;
 }
 
 export function CompleteMeetingModal({
   open,
   onClose,
   onComplete,
+  activityId,
+  link,
+  customerName = "",
+  onSaved,
 }: CompleteMeetingModalProps) {
   const [sentiment, setSentiment] = useState("positive");
   const [duration, setDuration] = useState("30");
   const [followUp, setFollowUp] = useState("none");
   const [notes, setNotes] = useState("");
 
+  const [isPending, startTransition] = useTransition();
+
   const handleComplete = () => {
-    onComplete({ sentiment, duration, followUp, notes });
-    onClose();
+    const data = { sentiment, duration, followUp, notes };
+    if (!activityId && !link) {
+      onComplete?.(data);
+      onClose();
+      return;
+    }
+    const description = [
+      `Outcome: ${sentiment.charAt(0).toUpperCase() + sentiment.slice(1)} · Duration: ${DURATION_LABELS[duration] ?? duration} · Follow-up: ${FOLLOW_UP_LABELS[followUp] ?? followUp}`,
+      notes.trim(),
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    const related = recordLinkToRelated(link, customerName);
+    startTransition(async () => {
+      const res = activityId
+        ? await updateActivity(activityId, { status: "completed", description, ...related })
+        : await createActivity({
+            type: "meeting",
+            status: "completed",
+            title: customerName ? `Meeting with ${customerName}` : "Meeting",
+            description,
+            date: new Date().toISOString().split("T")[0],
+            ...related,
+          });
+      if (res.error) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success("Meeting completed");
+      onComplete?.(data);
+      onSaved?.();
+      onClose();
+    });
   };
 
   const sentimentOptions = [
@@ -154,7 +215,9 @@ export function CompleteMeetingModal({
         <Button variant="ghost" className="shrink-0" onClick={onClose}>
           Cancel
         </Button>
-        <Button onClick={handleComplete}>Complete Meeting</Button>
+        <Button onClick={handleComplete} disabled={isPending}>
+          {isPending ? "Saving..." : "Complete Meeting"}
+        </Button>
       </div>
     </Modal>
   );

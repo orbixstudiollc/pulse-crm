@@ -14,7 +14,6 @@ import {
   CalendarBlankIcon,
   CheckCircleIcon,
   CurrencyDollarIcon,
-  FileTextIcon,
   ActionMenu,
   TrashIcon,
   PencilSimpleIcon,
@@ -27,13 +26,13 @@ import {
   ScheduleMeetingModal,
   ActivityDetailDrawer,
   CreateTaskModal,
-  CreateInvoiceModal,
   AddDealModal,
   type DealFormData,
 } from "@/components/features";
 import { usePageHeader } from "@/hooks";
 import { addCustomerNote, deleteCustomer } from "@/lib/actions/customers";
 import { createDeal } from "@/lib/actions/deals";
+import { deleteActivity } from "@/lib/actions/activities";
 import { toast } from "sonner";
 
 // --- Types matching DB rows ---
@@ -122,6 +121,17 @@ const stageConfig: Record<string, { label: string; variant: BadgeVariant }> = {
   closed_lost: { label: "Closed Lost", variant: "error" },
 };
 
+// --- Helpers ---
+
+function monthsSince(dateStr: string) {
+  const start = new Date(dateStr);
+  const now = new Date();
+  const months =
+    (now.getFullYear() - start.getFullYear()) * 12 +
+    (now.getMonth() - start.getMonth());
+  return Math.max(0, months);
+}
+
 // --- Component ---
 
 export function CustomerDetailClient({
@@ -150,7 +160,6 @@ export function CustomerDetailClient({
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showDealModal, setShowDealModal] = useState(false);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -185,6 +194,17 @@ export function CustomerDetailClient({
 
   const handleDelete = () => {
     setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteActivity = (id: string) => {
+    startTransition(async () => {
+      const res = await deleteActivity(id);
+      if (res.error) {
+        toast.error(res.error);
+      } else {
+        router.refresh();
+      }
+    });
   };
 
   const executeDelete = () => {
@@ -254,8 +274,11 @@ export function CustomerDetailClient({
 
   const mrr = customer.mrr || customer.monthly_revenue || 0;
   const healthScore = customer.health_score || 0;
-  const ltv = customer.lifetime_value || 0;
-  const tenure = customer.tenure || customer.tenure_months || 0;
+  const closedWonValue = customerDeals
+    .filter((d) => d.stage === "closed_won")
+    .reduce((sum, d) => sum + (d.value || 0), 0);
+  const ltv = closedWonValue || customer.lifetime_value || 0;
+  const tenure = monthsSince(customer.created_at) || customer.tenure || customer.tenure_months || 0;
 
   return (
     <div className="min-h-full p-6">
@@ -308,12 +331,20 @@ export function CustomerDetailClient({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" leftIcon={<PhoneIcon size={18} />}>
-              <span className="hidden sm:inline">Call</span>
-            </Button>
-            <Button leftIcon={<EnvelopeIcon size={18} />}>
-              <span className="hidden sm:inline">Send Email</span>
-            </Button>
+            {customer.phone && (
+              <a href={`tel:${customer.phone}`}>
+                <Button variant="outline" leftIcon={<PhoneIcon size={18} />}>
+                  <span className="hidden sm:inline">Call</span>
+                </Button>
+              </a>
+            )}
+            {customer.email && (
+              <a href={`mailto:${customer.email}`}>
+                <Button leftIcon={<EnvelopeIcon size={18} />}>
+                  <span className="hidden sm:inline">Send Email</span>
+                </Button>
+              </a>
+            )}
           </div>
         </div>
 
@@ -329,7 +360,7 @@ export function CustomerDetailClient({
           </div>
           <div className="rounded-lg border border-line p-4 text-center">
             <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
-              {healthScore}
+              {healthScore || "—"}
             </p>
             <p className="text-xs text-fg-secondary">
               Health Score
@@ -337,7 +368,7 @@ export function CustomerDetailClient({
           </div>
           <div className="rounded-lg border border-line p-4 text-center">
             <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
-              ${(ltv / 1000).toFixed(1)}K
+              {ltv ? `$${(ltv / 1000).toFixed(1)}K` : "—"}
             </p>
             <p className="text-xs text-fg-secondary">
               Lifetime Value
@@ -345,7 +376,7 @@ export function CustomerDetailClient({
           </div>
           <div className="rounded-lg border border-line p-4 text-center">
             <p className="text-[22px] leading-7 font-semibold text-fg mb-1">
-              {tenure} mo
+              {tenure ? `${tenure} mo` : "—"}
             </p>
             <p className="text-xs text-fg-secondary">
               Tenure
@@ -398,7 +429,7 @@ export function CustomerDetailClient({
                             setSelectedActivity(item);
                             setShowActivityDrawer(true);
                           }}
-                          onDelete={() => {}}
+                          onDelete={() => handleDeleteActivity(item.id)}
                         />
                       ))}
                     </div>
@@ -695,20 +726,6 @@ export function CustomerDetailClient({
                   Create Deal
                 </span>
               </button>
-              <button
-                onClick={() => setShowInvoiceModal(true)}
-                className="flex flex-col items-center gap-2 p-4 rounded-lg border border-line bg-subtle hover:bg-muted transition-colors"
-              >
-                <div className="w-10 h-10 rounded-full border border-line bg-surface flex items-center justify-center">
-                  <FileTextIcon
-                    size={18}
-                    className="text-fg-secondary"
-                  />
-                </div>
-                <span className="text-sm font-medium text-fg">
-                  Send Invoice
-                </span>
-              </button>
             </div>
           </div>
 
@@ -720,19 +737,23 @@ export function CustomerDetailClient({
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-full bg-success-surface flex items-center justify-center">
                 <span className="text-xl font-semibold text-success">
-                  {healthScore}
+                  {healthScore || "—"}
                 </span>
               </div>
               <div>
                 <p className="text-sm font-medium text-fg">
-                  {healthScore >= 80
+                  {!healthScore
+                    ? "Not scored"
+                    : healthScore >= 80
                     ? "Excellent"
                     : healthScore >= 60
                       ? "Good"
                       : "At Risk"}
                 </p>
                 <p className="text-xs text-fg-secondary">
-                  {healthScore >= 80
+                  {!healthScore
+                    ? "No health score yet"
+                    : healthScore >= 80
                     ? "High engagement, active user"
                     : "Needs attention"}
                 </p>
@@ -759,7 +780,7 @@ export function CustomerDetailClient({
                   Lifetime Value
                 </p>
                 <p className="text-xl font-semibold text-fg">
-                  {formatCurrency(ltv)}
+                  {ltv ? formatCurrency(ltv) : "—"}
                 </p>
               </div>
             </div>
@@ -824,6 +845,8 @@ export function CustomerDetailClient({
         open={showMeetingModal}
         onClose={() => setShowMeetingModal(false)}
         customerName={customerName}
+        link={{ customerId: customer.id }}
+        onSaved={() => router.refresh()}
       />
 
       {/* Activity Detail Drawer */}
@@ -846,9 +869,9 @@ export function CustomerDetailClient({
       <CompleteMeetingModal
         open={showCompleteModal}
         onClose={() => setShowCompleteModal(false)}
-        onComplete={(data) => {
-          setShowCompleteModal(false);
-        }}
+        link={{ customerId: customer.id }}
+        customerName={customerName}
+        onSaved={() => router.refresh()}
       />
 
       {/* Create Task Modal */}
@@ -856,6 +879,8 @@ export function CustomerDetailClient({
         open={showTaskModal}
         onClose={() => setShowTaskModal(false)}
         customerName={customerName}
+        link={{ customerId: customer.id }}
+        onSaved={() => router.refresh()}
       />
 
       {/* Create Deal Modal */}
@@ -875,13 +900,6 @@ export function CustomerDetailClient({
         onSubmit={handleCreateDeal}
       />
 
-      {/* Create Invoice Modal */}
-      <CreateInvoiceModal
-        open={showInvoiceModal}
-        onClose={() => setShowInvoiceModal(false)}
-        customerPlan={customer.plan}
-        customerMrr={mrr}
-      />
       <ConfirmModal
         open={showDeleteConfirm}
         title="Delete Customer"

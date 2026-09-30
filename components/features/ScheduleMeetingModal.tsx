@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import {
   Modal,
   Button,
@@ -13,17 +14,43 @@ import {
   ClockIcon,
   CalendarBlankIcon,
 } from "@/components/ui";
+import { createCalendarEvent } from "@/lib/actions/calendar";
+
+/** The record a meeting/task/activity is attached to. */
+export interface RecordLink {
+  leadId?: string;
+  customerId?: string;
+  dealId?: string;
+}
+
+/** Maps a RecordLink onto the related_type/related_id/related_name columns. */
+export function recordLinkToRelated(link: RecordLink | undefined, name: string) {
+  if (link?.dealId) return { related_type: "deal", related_id: link.dealId, related_name: name };
+  if (link?.customerId) return { related_type: "customer", related_id: link.customerId, related_name: name };
+  if (link?.leadId) return { related_type: "lead", related_id: link.leadId, related_name: name };
+  return {};
+}
+
+function addMinutes(time: string, minutes: number) {
+  const [h, m] = time.split(":").map(Number);
+  const total = (h * 60 + m + minutes) % (24 * 60);
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
 
 interface ScheduleMeetingModalProps {
   open: boolean;
   onClose: () => void;
   customerName: string;
+  link?: RecordLink;
+  onSaved?: () => void;
 }
 
 export function ScheduleMeetingModal({
   open,
   onClose,
   customerName,
+  link,
+  onSaved,
 }: ScheduleMeetingModalProps) {
   const [title, setTitle] = useState(`Meeting with ${customerName}`);
   const [date, setDate] = useState("");
@@ -33,9 +60,38 @@ export function ScheduleMeetingModal({
   const [notes, setNotes] = useState("");
   const [addToCalendar, setAddToCalendar] = useState(true);
 
+  const [isPending, startTransition] = useTransition();
+
   const handleSchedule = () => {
-    // Handle scheduling logic
-    onClose();
+    if (!title.trim() || !date) {
+      toast.error("Title and date are required");
+      return;
+    }
+    const description = [
+      notes.trim(),
+      attendees.length ? `Attendees: ${attendees.join(", ")}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    startTransition(async () => {
+      const res = await createCalendarEvent({
+        title: title.trim(),
+        type: "meeting",
+        status: "scheduled",
+        date,
+        start_time: time || null,
+        end_time: time ? addMinutes(time, Number(duration)) : null,
+        description: description || null,
+        ...recordLinkToRelated(link, customerName),
+      });
+      if (res.error) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success("Meeting scheduled");
+      onSaved?.();
+      onClose();
+    });
   };
 
   return (
@@ -131,7 +187,9 @@ export function ScheduleMeetingModal({
         <Button variant="ghost" className="shrink-0" onClick={onClose}>
           Cancel
         </Button>
-        <Button onClick={handleSchedule}>Schedule Meeting</Button>
+        <Button onClick={handleSchedule} disabled={isPending}>
+          {isPending ? "Scheduling..." : "Schedule Meeting"}
+        </Button>
       </div>
     </Modal>
   );

@@ -46,6 +46,7 @@ import { cn } from "@/lib/utils";
 import { usePageHeader } from "@/hooks";
 import { addLeadNote, deleteLead, updateLead, convertLeadToCustomer } from "@/lib/actions/leads";
 import { calculateLeadScore } from "@/lib/actions/scoring";
+import { deleteActivity } from "@/lib/actions/activities";
 import { toast } from "sonner";
 
 // --- Types matching DB rows ---
@@ -252,6 +253,17 @@ export function LeadDetailClient({
       } else {
         toast.success("Lead deleted");
         router.push("/dashboard/leads");
+      }
+    });
+  };
+
+  const handleDeleteActivity = (id: string) => {
+    startTransition(async () => {
+      const res = await deleteActivity(id);
+      if (res.error) {
+        toast.error(res.error);
+      } else {
+        router.refresh();
       }
     });
   };
@@ -466,12 +478,20 @@ export function LeadDetailClient({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" leftIcon={<PhoneIcon size={18} />}>
-              Call
-            </Button>
-            <Button variant="outline" leftIcon={<EnvelopeIcon size={18} />}>
-              Email
-            </Button>
+            {lead.phone && (
+              <a href={`tel:${lead.phone}`}>
+                <Button variant="outline" leftIcon={<PhoneIcon size={18} />}>
+                  Call
+                </Button>
+              </a>
+            )}
+            {lead.email && (
+              <a href={`mailto:${lead.email}`}>
+                <Button variant="outline" leftIcon={<EnvelopeIcon size={18} />}>
+                  Email
+                </Button>
+              </a>
+            )}
             <Button
               variant="outline"
               leftIcon={<LightningIcon size={18} />}
@@ -611,7 +631,7 @@ export function LeadDetailClient({
                         setSelectedActivity(item);
                         setShowActivityDrawer(true);
                       }}
-                      onDelete={() => {}}
+                      onDelete={() => handleDeleteActivity(item.id)}
                     />
                   ))}
                 </div>
@@ -764,6 +784,8 @@ export function LeadDetailClient({
         open={showMeetingModal}
         onClose={() => setShowMeetingModal(false)}
         customerName={lead.name}
+        link={{ leadId: lead.id }}
+        onSaved={() => router.refresh()}
       />
 
       <ActivityDetailDrawer
@@ -784,13 +806,17 @@ export function LeadDetailClient({
       <CompleteMeetingModal
         open={showCompleteModal}
         onClose={() => setShowCompleteModal(false)}
-        onComplete={() => setShowCompleteModal(false)}
+        link={{ leadId: lead.id }}
+        customerName={lead.name}
+        onSaved={() => router.refresh()}
       />
 
       <CreateTaskModal
         open={showTaskModal}
         onClose={() => setShowTaskModal(false)}
         customerName={lead.name}
+        link={{ leadId: lead.id }}
+        onSaved={() => router.refresh()}
       />
 
       <ConvertLeadModal
