@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition, useSyncExternalStore } from "react";
+import { useState, useEffect, useRef, useTransition, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -3356,10 +3356,17 @@ export function SettingsPageClient({
   initialAISettings,
   initialBillingData,
 }: SettingsPageClientProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   // Read on every render so the sidebar's ?tab= links switch sections.
   const activeTab = (searchParams.get("tab") as SettingsTab) || "profile";
+  const tabsRef = useRef<HTMLDivElement>(null);
+
+  // Keep the active mobile tab visible when it changes (and on mount).
+  useEffect(() => {
+    tabsRef.current
+      ?.querySelector<HTMLElement>('[aria-selected="true"]')
+      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [activeTab]);
   const activeLabel =
     settingsTabs.find((tab) => tab.id === activeTab)?.label ?? "Profile";
 
@@ -3407,12 +3414,14 @@ export function SettingsPageClient({
   return (
     <div className="min-h-full bg-page">
       {/* Below lg the sidebar is a drawer, so the sections stay one tap away here. */}
-      <PageTabs
-        tabs={settingsTabs.map((tab) => ({ id: tab.id, label: tab.label }))}
-        value={activeTab}
-        onChange={(id) => router.replace(`/dashboard/settings?tab=${id}`)}
-        className="lg:hidden px-4 max-sm:px-4 overflow-x-auto overflow-y-hidden"
-      />
+      <div ref={tabsRef}>
+        <PageTabs
+          tabs={settingsTabs.map((tab) => ({ id: tab.id, label: tab.label }))}
+          value={activeTab}
+          onChange={(id) => window.history.pushState(null, "", `/dashboard/settings?tab=${id}`)}
+          className="lg:hidden px-4 max-sm:px-4 overflow-x-auto overflow-y-hidden"
+        />
+      </div>
 
       {/* Content column */}
       <div className="px-12 pt-8 pb-10 max-w-[880px] max-lg:px-4">

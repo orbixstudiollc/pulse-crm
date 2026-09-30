@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, type MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -84,6 +84,7 @@ function NavLink({
   icon: ItemIcon,
   isActive,
   onNavClick,
+  shallow,
   className,
 }: {
   href: string;
@@ -91,12 +92,22 @@ function NavLink({
   icon: Icon;
   isActive: boolean;
   onNavClick?: () => void;
+  /** Update the URL via the History API (no server round trip) on a plain left click. */
+  shallow?: boolean;
   className?: string;
 }) {
+  const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (shallow && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+      e.preventDefault();
+      window.history.pushState(null, "", href);
+    }
+    onNavClick?.();
+  };
+
   return (
     <Link
       href={href}
-      onClick={onNavClick}
+      onClick={handleClick}
       aria-current={isActive ? "page" : undefined}
       className={cn(
         "relative flex h-9 items-center gap-2.5 px-6 text-[14px] text-fg transition-colors duration-150 hover:bg-subtle",
@@ -177,6 +188,7 @@ function SettingsNavList({
                   icon={item.icon}
                   isActive={activeTab === item.id}
                   onNavClick={onNavClick}
+                  shallow
                   className="hover:bg-muted"
                 />
               </li>
