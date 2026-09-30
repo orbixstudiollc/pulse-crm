@@ -13,7 +13,9 @@ import {
 } from "@/components/ui/Icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useMemo } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { describeChatError } from "@/lib/ai/chat-error";
 import type { PageContext } from "@/lib/ai/types";
 
 const PAGE_MAP: Record<string, string> = {
@@ -70,6 +72,7 @@ export function AIChatPanel() {
 
   // Auto-detect page context from URL on navigation
   const pathname = usePathname();
+  const isCopilotPage = pathname.startsWith("/dashboard/copilot");
   useEffect(() => {
     const ctx = autoDetectPageContext(pathname);
     setPageContext(ctx);
@@ -84,11 +87,12 @@ export function AIChatPanel() {
     [pageContext]
   );
 
-  const { messages, sendMessage, status, setMessages } = useChat({
+  const { messages, sendMessage, status, setMessages, error } = useChat({
     transport,
   });
 
   const isLoading = status === "submitted" || status === "streaming";
+  const chatError = error ? describeChatError(error) : null;
 
   // Keyboard shortcuts: Cmd+J / Ctrl+J to toggle, Escape to close
   useEffect(() => {
@@ -115,7 +119,7 @@ export function AIChatPanel() {
     <>
       {/* FAB Button */}
       <AnimatePresence>
-        {!isOpen && (
+        {!isOpen && !isCopilotPage && (
           <motion.button
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -200,6 +204,20 @@ export function AIChatPanel() {
               pageContext={pageContext}
               onSuggestionClick={handleSend}
             />
+
+            {chatError && (
+              <div role="alert" className="mx-3 mb-2 shrink-0 rounded-md border border-danger bg-danger-surface px-3 py-2 text-xs text-danger">
+                {chatError.message}
+                {chatError.needsKey && (
+                  <>
+                    {" "}
+                    <Link href="/dashboard/settings?tab=ai" className="font-medium underline">
+                      Open AI settings
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Input */}
             <AIChatInput

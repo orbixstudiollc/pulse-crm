@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import Link from "next/link";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { describeChatError } from "@/lib/ai/chat-error";
 import { toast } from "sonner";
 import {
   SparkleIcon,
@@ -329,8 +331,9 @@ function ChatView({
     body: { data: { pageContext: { page: "Copilot" }, conversationId } },
   }), [conversationId]);
 
-  const { messages, sendMessage, status, setMessages } = useChat({ transport, id: conversationId });
+  const { messages, sendMessage, status, setMessages, error } = useChat({ transport, id: conversationId });
   const isLoading = status === "submitted" || status === "streaming";
+  const chatError = error ? describeChatError(error) : null;
 
   // Load existing messages
   useEffect(() => {
@@ -443,6 +446,19 @@ function ChatView({
                   <span className="w-2 h-2 rounded-full bg-fg-muted animate-bounce" style={{ animationDelay: "150ms" }} />
                   <span className="w-2 h-2 rounded-full bg-fg-muted animate-bounce" style={{ animationDelay: "300ms" }} />
                 </div>
+              </div>
+            )}
+            {chatError && (
+              <div role="alert" className="rounded-md border border-danger bg-danger-surface px-3 py-2 text-sm text-danger">
+                {chatError.message}
+                {chatError.needsKey && (
+                  <>
+                    {" "}
+                    <Link href="/dashboard/settings?tab=ai" className="font-medium underline">
+                      Open AI settings
+                    </Link>
+                  </>
+                )}
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -1194,8 +1210,6 @@ function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks: React.
 // ── Settings View ──────────────────────────────────────────────────────────
 
 function SettingsView() {
-  const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
-
   return (
     <div className="flex-1 overflow-y-auto flex items-center justify-center">
       <div className="max-w-2xl w-full mx-auto p-8">
@@ -1206,7 +1220,9 @@ function SettingsView() {
           </p>
         </div>
 
-        <div className="space-y-4">
+        <p className="mb-4 text-sm text-fg-secondary">These settings are coming soon.</p>
+
+        <fieldset disabled className="min-w-0 space-y-4 opacity-60">
           {/* Analytics Toggle */}
           <div className="flex items-center justify-between p-4 rounded-lg border border-line bg-surface">
             <div>
@@ -1216,26 +1232,10 @@ function SettingsView() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setAnalyticsEnabled(false)}
-                className={cn(
-                  "px-3 py-1.5 rounded text-xs font-medium transition-colors",
-                  !analyticsEnabled
-                    ? "bg-active text-fg"
-                    : "text-fg-secondary hover:bg-muted"
-                )}
-              >
+              <button className="text-fg-secondary px-3 py-1.5 rounded text-xs font-medium transition-colors">
                 Disable
               </button>
-              <button
-                onClick={() => setAnalyticsEnabled(true)}
-                className={cn(
-                  "px-3 py-1.5 rounded text-xs font-medium transition-colors",
-                  analyticsEnabled
-                    ? "bg-success text-on-inverse"
-                    : "text-fg-secondary hover:bg-muted"
-                )}
-              >
+              <button className="bg-success text-on-inverse px-3 py-1.5 rounded text-xs font-medium transition-colors">
                 Enable
               </button>
             </div>
@@ -1264,7 +1264,7 @@ function SettingsView() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button className="text-fg-secondary hover:bg-muted px-3 py-1.5 rounded text-xs font-medium transition-colors">
+              <button className="text-fg-secondary px-3 py-1.5 rounded text-xs font-medium transition-colors">
                 Disable
               </button>
               <button className="bg-success text-on-inverse px-3 py-1.5 rounded text-xs font-medium transition-colors">
@@ -1275,14 +1275,11 @@ function SettingsView() {
 
           {/* Save */}
           <div className="flex justify-end pt-4">
-            <button
-              onClick={() => toast.success("Settings saved")}
-              className="px-4 py-2 rounded bg-inverse text-on-inverse text-sm font-medium hover:bg-inverse transition-colors"
-            >
+            <button className="px-4 py-2 rounded bg-inverse text-on-inverse text-sm font-medium transition-colors">
               Save
             </button>
           </div>
-        </div>
+        </fieldset>
       </div>
     </div>
   );
