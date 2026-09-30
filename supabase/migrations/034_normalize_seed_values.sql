@@ -23,7 +23,10 @@
 --   icp_profiles.criteria        legacy {industry, company_size, revenue,
 --                                tech_stack, geography, pain_points,
 --                                growth_rate} -> ICPCriteria
---   icp_profiles.weights         legacy {company_size, ...} -> ICPWeights
+--   icp_profiles.weights         legacy {company_size, ...} -> ICPWeights; the two
+--                                seeded profiles (Enterprise SaaS, Growth-Stage
+--                                Startup) get exactly the seed's weights, any
+--                                other profile is derived by formula
 --
 -- DATA-ONLY: no schema, grant or RLS changes. Idempotent: every UPDATE only
 -- matches rows still holding the old values, so re-running changes nothing.
@@ -156,17 +159,27 @@ WHERE p.criteria ? 'industry'
   AND NOT p.criteria ? 'firmographic';
 
 -- ── icp_profiles.weights ────────────────────────────────────
--- {industry, size, revenue, title, geography, tech}; title is fixed at 10 and
--- tech takes the remainder of 100, floored at 0.
+-- The two seeded profiles get exactly the weights lib/seed/generate.ts writes.
+-- Any other legacy row is derived by formula: {industry, size, revenue, title,
+-- geography, tech}; title is fixed at 10 and tech takes the remainder of 100,
+-- floored at 0.
 UPDATE icp_profiles p
-SET weights = jsonb_build_object(
-  'industry',  v.industry,
-  'size',      v.size,
-  'revenue',   v.revenue,
-  'title',     10,
-  'geography', v.geography,
-  'tech',      GREATEST(100 - v.industry - v.size - v.revenue - 10 - v.geography, 0)
-)
+SET weights = CASE p.name
+  WHEN 'Enterprise SaaS' THEN jsonb_build_object(
+    'industry', 20, 'size', 25, 'revenue', 20, 'title', 10, 'geography', 10, 'tech', 15
+  )
+  WHEN 'Growth-Stage Startup' THEN jsonb_build_object(
+    'industry', 20, 'size', 20, 'revenue', 15, 'title', 15, 'geography', 15, 'tech', 15
+  )
+  ELSE jsonb_build_object(
+    'industry',  v.industry,
+    'size',      v.size,
+    'revenue',   v.revenue,
+    'title',     10,
+    'geography', v.geography,
+    'tech',      GREATEST(100 - v.industry - v.size - v.revenue - 10 - v.geography, 0)
+  )
+END
 FROM (
   SELECT id,
          COALESCE((weights ->> 'industry')::numeric, 0)     AS industry,
