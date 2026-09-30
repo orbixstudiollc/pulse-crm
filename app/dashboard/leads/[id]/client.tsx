@@ -47,6 +47,8 @@ import { usePageHeader } from "@/hooks";
 import { addLeadNote, deleteLead, updateLead, convertLeadToCustomer } from "@/lib/actions/leads";
 import { calculateLeadScore } from "@/lib/actions/scoring";
 import { deleteActivity } from "@/lib/actions/activities";
+import { deleteCalendarEvent } from "@/lib/actions/calendar";
+import { deleteRecordActivity, type LinkedItem } from "@/lib/actions/record-activities";
 import { toast } from "sonner";
 
 // --- Types matching DB rows ---
@@ -129,7 +131,11 @@ interface LeadDetailClientProps {
   activities: ActivityRow2[] | undefined;
   scoreHistory?: ScoreHistoryEntry[];
   qualificationData?: QualificationDataProp;
+  linkedItems?: LinkedItem[];
 }
+
+// Per-record activities ("record") merged with linked org activities / calendar events.
+type FeedItem = ActivityRow2 & { source: "record" | LinkedItem["source"] };
 
 // --- Lead status config ---
 
@@ -147,6 +153,7 @@ export function LeadDetailClient({
   lead,
   notes,
   activities,
+  linkedItems,
   scoreHistory,
   qualificationData,
 }: LeadDetailClientProps) {
@@ -155,7 +162,14 @@ export function LeadDetailClient({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const leadNotes = notes || [];
-  const activityItems = activities || [];
+  const activityItems = useMemo<FeedItem[]>(
+    () =>
+      [
+        ...(activities || []).map((a) => ({ ...a, source: "record" as const })),
+        ...(linkedItems || []),
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    [activities, linkedItems],
+  );
 
   const [newNote, setNewNote] = useState("");
   const [showMeetingModal, setShowMeetingModal] = useState(false);
@@ -257,9 +271,14 @@ export function LeadDetailClient({
     });
   };
 
-  const handleDeleteActivity = (id: string) => {
+  const handleDeleteActivity = (item: FeedItem) => {
     startTransition(async () => {
-      const res = await deleteActivity(id);
+      const res =
+        item.source === "record"
+          ? await deleteRecordActivity("lead", item.id)
+          : item.source === "activity"
+            ? await deleteActivity(item.id)
+            : await deleteCalendarEvent(item.id);
       if (res.error) {
         toast.error(res.error);
       } else {
@@ -622,7 +641,7 @@ export function LeadDetailClient({
                 <div>
                   {activityItems.map((item) => (
                     <ActivityRow
-                      key={item.id}
+                      key={`${item.source}-${item.id}`}
                       id={item.id}
                       type={item.type as ActivityRowType}
                       title={item.title}
@@ -631,7 +650,7 @@ export function LeadDetailClient({
                         setSelectedActivity(item);
                         setShowActivityDrawer(true);
                       }}
-                      onDelete={() => handleDeleteActivity(item.id)}
+                      onDelete={() => handleDeleteActivity(item)}
                     />
                   ))}
                 </div>

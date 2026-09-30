@@ -5,6 +5,7 @@ import {
 } from "@/lib/actions/leads";
 import { getLeadScoreHistory } from "@/lib/actions/scoring";
 import { getQualificationData } from "@/lib/actions/qualification";
+import { getLinkedItems } from "@/lib/actions/record-activities";
 import { LeadDetailClient } from "./client";
 import { notFound } from "next/navigation";
 
@@ -15,12 +16,13 @@ export default async function LeadDetailPage({
 }) {
   const { id } = await params;
 
-  const [leadRes, notesRes, activitiesRes, scoreHistoryRes, qualRes] = await Promise.all([
+  const [leadRes, notesRes, activitiesRes, scoreHistoryRes, qualRes, linkedRes] = await Promise.all([
     getLeadById(id),
     getLeadNotes(id),
     getLeadActivities(id),
     getLeadScoreHistory(id),
     getQualificationData(id),
+    getLinkedItems("lead", id),
   ]);
 
   if (!leadRes.data) {
@@ -32,6 +34,7 @@ export default async function LeadDetailPage({
       lead={leadRes.data}
       notes={notesRes.data}
       activities={activitiesRes.data}
+      linkedItems={linkedRes.data}
       scoreHistory={scoreHistoryRes.data}
       qualificationData={qualRes.data ?? undefined}
     />

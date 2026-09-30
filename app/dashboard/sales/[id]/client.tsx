@@ -30,6 +30,8 @@ import {
 import { usePageHeader } from "@/hooks";
 import { addDealNote, deleteDeal, updateDeal, updateDealStage } from "@/lib/actions/deals";
 import { deleteActivity } from "@/lib/actions/activities";
+import { deleteCalendarEvent } from "@/lib/actions/calendar";
+import { deleteRecordActivity, type LinkedItem } from "@/lib/actions/record-activities";
 import { toast } from "sonner";
 
 // --- Types ---
@@ -75,7 +77,11 @@ interface DealDetailClientProps {
   deal: DealRow;
   notes: NoteRow[] | undefined;
   activities: ActivityRow2[] | undefined;
+  linkedItems?: LinkedItem[];
 }
+
+// Per-record activities ("record") merged with linked org activities / calendar events.
+type FeedItem = ActivityRow2 & { source: "record" | LinkedItem["source"] };
 
 // --- Stage config ---
 
@@ -201,13 +207,21 @@ export function DealDetailClient({
   deal,
   notes,
   activities,
+  linkedItems,
 }: DealDetailClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const dealNotes = notes || [];
-  const activityItems = activities || [];
+  const activityItems = useMemo<FeedItem[]>(
+    () =>
+      [
+        ...(activities || []).map((a) => ({ ...a, source: "record" as const })),
+        ...(linkedItems || []),
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    [activities, linkedItems],
+  );
 
   const [newNote, setNewNote] = useState("");
   const [showMeetingModal, setShowMeetingModal] = useState(false);
@@ -269,9 +283,14 @@ export function DealDetailClient({
     });
   };
 
-  const handleDeleteActivity = (id: string) => {
+  const handleDeleteActivity = (item: FeedItem) => {
     startTransition(async () => {
-      const res = await deleteActivity(id);
+      const res =
+        item.source === "record"
+          ? await deleteRecordActivity("deal", item.id)
+          : item.source === "activity"
+            ? await deleteActivity(item.id)
+            : await deleteCalendarEvent(item.id);
       if (res.error) {
         toast.error(res.error);
       } else {
@@ -440,7 +459,7 @@ export function DealDetailClient({
                 <div>
                   {activityItems.map((item) => (
                     <ActivityRow
-                      key={item.id}
+                      key={`${item.source}-${item.id}`}
                       id={item.id}
                       type={item.type as ActivityRowType}
                       title={item.title}
@@ -449,7 +468,7 @@ export function DealDetailClient({
                         setSelectedActivity(item);
                         setShowActivityDrawer(true);
                       }}
-                      onDelete={() => handleDeleteActivity(item.id)}
+                      onDelete={() => handleDeleteActivity(item)}
                     />
                   ))}
                 </div>
