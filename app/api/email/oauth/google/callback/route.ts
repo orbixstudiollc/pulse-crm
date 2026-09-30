@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { sealOAuthTokens } from "@/lib/email/oauth-tokens";
+import { hasRequiredRole } from "@/lib/auth/roles";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -23,12 +24,16 @@ export async function GET(request: Request) {
   // Get org_id from profile
   const { data: profile } = await supabase
     .from("profiles")
-    .select("organization_id")
+    .select("organization_id, role")
     .eq("id", user.id)
     .single();
 
   if (!profile?.organization_id) {
     redirect("/dashboard/settings?error=no_org");
+  }
+
+  if (!hasRequiredRole(profile.role)) {
+    redirect("/dashboard/settings?error=forbidden");
   }
 
   // Exchange code for tokens
