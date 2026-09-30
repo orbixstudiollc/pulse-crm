@@ -15,6 +15,9 @@ interface StatCardProps {
   className?: string;
 }
 
+// Only numeric changes ("+12%", "-3", "5") read as "... from last month"; text like "New this month" stands alone.
+const HAS_NUMERIC_CHANGE = /^[+-]?\d/;
+
 // `icon` stays in the props so existing call sites compile; the flat tile does not render it.
 export function StatCard({
   label,
@@ -53,10 +56,12 @@ export function StatCard({
           >
             {change.value}
           </span>
-          <span className="text-fg-secondary">
-            {" "}
-            from last month
-          </span>
+          {HAS_NUMERIC_CHANGE.test(change.value) && (
+            <span className="text-fg-secondary">
+              {" "}
+              from last month
+            </span>
+          )}
         </p>
       )}
 
