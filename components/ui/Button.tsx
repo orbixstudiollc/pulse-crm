@@ -33,23 +33,21 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || loading}
         className={cn(
-          "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page disabled:pointer-events-none disabled:opacity-50",
+          "inline-flex items-center justify-center rounded-md text-[14px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page disabled:pointer-events-none disabled:opacity-50",
           {
-            "bg-accent-strong text-on-inverse hover:opacity-90":
+            "bg-accent-strong text-on-inverse hover:bg-accent-strong/90":
               variant === "primary",
-            "bg-inverse text-on-inverse hover:opacity-90":
-              variant === "secondary",
-            "text-fg-secondary hover:bg-muted hover:text-fg":
+            "text-fg-secondary hover:bg-subtle hover:text-fg":
               variant === "ghost",
-            "border border-line bg-surface text-fg hover:bg-muted":
-              variant === "outline",
+            "border border-line bg-surface text-fg hover:bg-subtle":
+              variant === "secondary" || variant === "outline",
             "bg-danger text-on-inverse hover:opacity-90":
               variant === "danger",
           },
           {
             "h-7 px-2.5 text-[13px] gap-1.5": size === "sm",
             "h-8 px-3 gap-1.5": size === "md",
-            "h-10 px-4 gap-2": size === "lg",
+            "h-9 px-4 gap-2": size === "lg",
           },
           fullWidth && "w-full",
           className,
