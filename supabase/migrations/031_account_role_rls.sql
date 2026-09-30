@@ -17,8 +17,8 @@
 --
 --   Table              SELECT   INSERT            UPDATE   DELETE
 --   email_accounts     member   member AND admin  member   member AND admin
---   whatsapp_accounts  member   member            member   member AND admin
---   linkedin_accounts  member   member            member   member AND admin
+--   whatsapp_accounts  member   member AND admin  member   member AND admin
+--   linkedin_accounts  member   member AND admin  member   member AND admin
 --
 --   Mapping to code:
 --     email_accounts INSERT  -> addCustomEmailAccount (lib/actions/
@@ -28,9 +28,20 @@
 --       campaigns.ts).
 --     whatsapp_accounts / linkedin_accounts DELETE -> disconnect* / delete*
 --       in lib/actions/whatsapp-accounts.ts and linkedin-accounts.ts.
---     whatsapp_accounts / linkedin_accounts INSERT stay member-only because
---       connectWhatsAppAccount and saveLinkedInAccount are not role-gated.
+--     whatsapp_accounts / linkedin_accounts INSERT -> no application path.
+--       connectWhatsAppAccount and saveLinkedInAccount insert through
+--       createAdminClient (service role, RLS bypassed), so the member-level
+--       INSERT policy only served direct PostgREST calls; it now requires
+--       admin as well.
 --     UPDATE stays member-only on all three tables.
+--
+--   email_accounts credential columns (trigger
+--   protect_email_account_credentials, section B): smtp_config, imap_config,
+--   oauth_tokens, provider, email_address and organization_id can only be
+--   changed by an admin or owner (or service_role). Member-level updates to
+--   status, is_default, tracking_domain, last_error, daily_send_limit,
+--   display_name and signature_html keep working. updateEmailAccount
+--   (lib/actions/email-accounts.ts) is admin-gated in the app as well.
 --
 --   Service-role writers (cron routes, lib/email/sender.ts,
 --   lib/whatsapp/sender.ts, lib/linkedin/*) bypass RLS and are unaffected.
@@ -38,7 +49,9 @@
 --   (lib/auth/guest-workspace.ts; 030 backfills sole members), so guest
 --   flows are unaffected.
 --
--- Safe to re-run: every CREATE POLICY is preceded by DROP POLICY IF EXISTS.
+-- Safe to re-run: every CREATE POLICY is preceded by DROP POLICY IF EXISTS,
+-- the trigger function uses CREATE OR REPLACE, and CREATE TRIGGER is
+-- preceded by DROP TRIGGER IF EXISTS.
 -- Apply by hand in the Supabase SQL editor (paste the whole file, Run).
 -- App code is safe before and after applying.
 -- ============================================================
@@ -88,7 +101,10 @@ CREATE POLICY "whatsapp_accounts_select" ON public.whatsapp_accounts
 DROP POLICY IF EXISTS "whatsapp_accounts_insert" ON public.whatsapp_accounts;
 CREATE POLICY "whatsapp_accounts_insert" ON public.whatsapp_accounts
   FOR INSERT
-  WITH CHECK (organization_id IN (SELECT organization_id FROM public.profiles WHERE id = auth.uid()));
+  WITH CHECK (
+    organization_id IN (SELECT organization_id FROM public.profiles WHERE id = auth.uid())
+    AND EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin','owner'))
+  );
 
 DROP POLICY IF EXISTS "whatsapp_accounts_update" ON public.whatsapp_accounts;
 CREATE POLICY "whatsapp_accounts_update" ON public.whatsapp_accounts
@@ -117,7 +133,10 @@ CREATE POLICY "linkedin_accounts_select" ON public.linkedin_accounts
 DROP POLICY IF EXISTS "linkedin_accounts_insert" ON public.linkedin_accounts;
 CREATE POLICY "linkedin_accounts_insert" ON public.linkedin_accounts
   FOR INSERT
-  WITH CHECK (organization_id IN (SELECT organization_id FROM public.profiles WHERE id = auth.uid()));
+  WITH CHECK (
+    organization_id IN (SELECT organization_id FROM public.profiles WHERE id = auth.uid())
+    AND EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin','owner'))
+  );
 
 DROP POLICY IF EXISTS "linkedin_accounts_update" ON public.linkedin_accounts;
 CREATE POLICY "linkedin_accounts_update" ON public.linkedin_accounts
@@ -132,6 +151,36 @@ CREATE POLICY "linkedin_accounts_delete" ON public.linkedin_accounts
     organization_id IN (SELECT organization_id FROM public.profiles WHERE id = auth.uid())
     AND EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin','owner'))
   );
+
+
+-- ─── (B) email_accounts credential columns: admin/owner only ────────────────
+
+CREATE OR REPLACE FUNCTION public.protect_email_account_credentials()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF (NEW.smtp_config IS DISTINCT FROM OLD.smtp_config
+      OR NEW.imap_config IS DISTINCT FROM OLD.imap_config
+      OR NEW.oauth_tokens IS DISTINCT FROM OLD.oauth_tokens
+      OR NEW.provider IS DISTINCT FROM OLD.provider
+      OR NEW.email_address IS DISTINCT FROM OLD.email_address
+      OR NEW.organization_id IS DISTINCT FROM OLD.organization_id)
+     AND auth.role() IS NOT NULL AND auth.role() <> 'service_role'
+     AND NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin','owner')) THEN
+    RAISE EXCEPTION 'mail account credentials can only be changed by an organization admin'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END
+$$;
+
+DROP TRIGGER IF EXISTS protect_email_account_credentials ON public.email_accounts;
+CREATE TRIGGER protect_email_account_credentials
+  BEFORE UPDATE ON public.email_accounts
+  FOR EACH ROW EXECUTE FUNCTION public.protect_email_account_credentials();
 
 
 -- ─── Verification (comments only -- not executed) ──────────────────────────
@@ -151,3 +200,7 @@ CREATE POLICY "linkedin_accounts_delete" ON public.linkedin_accounts
 --   WHERE schemaname = 'public'
 --     AND tablename IN ('email_accounts', 'whatsapp_accounts', 'linkedin_accounts')
 --     AND cmd = 'ALL';
+--
+-- Expect one row (credential-column trigger installed):
+--
+--   SELECT tgname FROM pg_trigger WHERE tgrelid = 'public.email_accounts'::regclass AND tgname = 'protect_email_account_credentials';

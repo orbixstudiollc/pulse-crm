@@ -167,7 +167,13 @@ export async function updateEmailAccount(
   },
 ) {
   const supabase = await createClient();
-  const orgId = await getOrgId();
+  let orgId: string;
+  try {
+    ({ orgId } = await requireRole("admin", "owner"));
+  } catch (err) {
+    unstable_rethrow(err);
+    return { error: err instanceof Error ? err.message : "Forbidden: admin role required" };
+  }
 
   // Server actions receive untyped input, so a mail config may still be present
   const raw = updates as Record<string, unknown>;
