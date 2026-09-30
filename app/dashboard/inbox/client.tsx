@@ -437,6 +437,9 @@ export function InboxClient() {
 
         {/* Thread / Activity list */}
         <div className="flex-1 overflow-y-auto">
+          <p className="px-4 py-2 text-xs text-fg-secondary border-b border-line">
+            Showing messages sent from Pulse. Reply sync isn&apos;t connected yet.
+          </p>
           {loading ? (
             <div className="flex items-center justify-center py-12 text-fg-muted">
               <CircleNotchIcon size={24} className="animate-spin" />

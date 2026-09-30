@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -40,7 +41,6 @@ import {
   deleteCampaignTag,
   updateSequenceTags,
   getEmailAccounts,
-  createEmailAccount,
   updateEmailAccount,
   deleteEmailAccount,
   testEmailAccount,
@@ -216,121 +216,6 @@ function TagManagerModal({
   );
 }
 
-// ── Add Email Account Modal ─────────────────────────────────────────────────
-
-function AddAccountModal({
-  open,
-  onClose,
-  onRefresh,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onRefresh: () => void;
-}) {
-  const [email, setEmail] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [provider, setProvider] = useState<"gmail" | "microsoft" | "custom_imap">("custom_imap");
-  const [smtpHost, setSmtpHost] = useState("");
-  const [smtpPort, setSmtpPort] = useState("587");
-  const [dailyLimit, setDailyLimit] = useState("50");
-  const [warmup, setWarmup] = useState(false);
-  const [isPending, startTransition] = useTransition();
-
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative rounded-lg border border-line bg-surface shadow-modal p-4 max-w-lg w-full mx-4">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-fg">Add Email Account</h3>
-          <button onClick={onClose} className="text-fg-secondary hover:text-fg"><XIcon className="w-5 h-5" /></button>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm text-fg-secondary mb-1">Email Address</label>
-            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com"
-              className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent" />
-          </div>
-          <div>
-            <label className="block text-sm text-fg-secondary mb-1">Display Name</label>
-            <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="John Doe"
-              className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent" />
-          </div>
-          <div>
-            <label className="block text-sm text-fg-secondary mb-1">Provider</label>
-            <select value={provider} onChange={(e) => setProvider(e.target.value as "gmail" | "microsoft" | "custom_imap")}
-              className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg focus:outline-none focus:border-accent">
-              <option value="gmail">Google Workspace</option>
-              <option value="microsoft">Microsoft Outlook</option>
-              <option value="custom_imap">Custom SMTP/IMAP</option>
-            </select>
-          </div>
-          {provider === "custom_imap" && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm text-fg-secondary mb-1">SMTP Host</label>
-                  <input value={smtpHost} onChange={(e) => setSmtpHost(e.target.value)} placeholder="smtp.example.com"
-                    className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent" />
-                </div>
-                <div>
-                  <label className="block text-sm text-fg-secondary mb-1">Port</label>
-                  <input value={smtpPort} onChange={(e) => setSmtpPort(e.target.value)} placeholder="587"
-                    className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent" />
-                </div>
-              </div>
-              <p className="text-xs text-fg-secondary">Allowed ports: 25, 465, 587, 2525. Port 465 uses SSL/TLS; the other ports use STARTTLS.</p>
-            </>
-          )}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm text-fg-secondary mb-1">Daily Send Limit</label>
-              <input value={dailyLimit} onChange={(e) => setDailyLimit(e.target.value)} type="number"
-                className="w-full px-3 py-2 bg-muted border border-line rounded text-sm text-fg focus:outline-none focus:border-accent" />
-            </div>
-            <div className="flex items-end pb-1">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={warmup} onChange={(e) => setWarmup(e.target.checked)}
-                  className="rounded border-line bg-muted text-fg" />
-                <span className="text-sm text-fg-secondary">Enable Warmup</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-3 justify-end mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-fg-secondary hover:text-fg">Cancel</button>
-          <button
-            onClick={() => {
-              if (!email.trim()) return;
-              startTransition(async () => {
-                const res = await createEmailAccount({
-                  email_address: email.trim(),
-                  display_name: displayName || undefined,
-                  provider,
-                  smtp_config: provider === "custom_imap" ? { host: smtpHost, port: parseInt(smtpPort), secure: parseInt(smtpPort) === 465 } : undefined,
-                  daily_send_limit: parseInt(dailyLimit) || 50,
-                  warmup_enabled: warmup,
-                });
-                if (res.error) { toast.error(res.error); return; }
-                toast.success("Email account added");
-                onClose();
-                onRefresh();
-              });
-            }}
-            disabled={isPending}
-            className="px-4 py-2 text-sm bg-inverse hover:opacity-90 text-on-inverse rounded disabled:opacity-50"
-          >
-            {isPending ? "Adding..." : "Add Account"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Performance Drawer ──────────────────────────────────────────────────────
 
 function PerformanceDrawer({
@@ -495,7 +380,6 @@ export function CampaignsPageClient({
   const [drawerCampaign, setDrawerCampaign] = useState<CampaignWithTags | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [showTagManager, setShowTagManager] = useState(false);
-  const [showAddAccount, setShowAddAccount] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
 
   // Animated stats
@@ -714,20 +598,20 @@ export function CampaignsPageClient({
                     </span>
                   </div>
                 </div>
-                <button onClick={() => setShowAddAccount(true)}
+                <Link href="/dashboard/settings?tab=email-accounts"
                   className="flex items-center gap-2 px-3 py-1.5 bg-inverse hover:opacity-90 text-on-inverse text-sm rounded">
                   <PlusIcon className="w-4 h-4" /> Add Account
-                </button>
+                </Link>
               </div>
 
               {accounts.length === 0 ? (
                 <div className="p-12 text-center">
                   <PlugsConnectedIcon className="w-10 h-10 text-fg-muted mx-auto mb-3" />
                   <p className="text-sm text-fg-secondary mb-4">No email accounts connected yet</p>
-                  <button onClick={() => setShowAddAccount(true)}
-                    className="px-4 py-2 bg-inverse hover:opacity-90 text-on-inverse text-sm rounded">
+                  <Link href="/dashboard/settings?tab=email-accounts"
+                    className="inline-block px-4 py-2 bg-inverse hover:opacity-90 text-on-inverse text-sm rounded">
                     Add Your First Account
-                  </button>
+                  </Link>
                 </div>
               ) : (
                 <table className="w-full">
@@ -942,7 +826,6 @@ export function CampaignsPageClient({
         isPending={isPending}
       />
       <TagManagerModal open={showTagManager} onClose={() => setShowTagManager(false)} tags={tags} onRefresh={refresh} />
-      <AddAccountModal open={showAddAccount} onClose={() => setShowAddAccount(false)} onRefresh={refresh} />
     </div>
   );
 }

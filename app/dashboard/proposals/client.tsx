@@ -316,7 +316,7 @@ export function ProposalsPageClient({
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success("Proposal marked as sent");
+        toast.success("Marked as sent");
         router.refresh();
       }
     });
@@ -520,7 +520,7 @@ export function ProposalsPageClient({
                                 ...(proposal.status === "draft"
                                   ? [
                                       {
-                                        label: "Mark as Sent",
+                                        label: "Mark as sent",
                                         icon: (
                                           <CheckCircleIcon
                                             size={18}
