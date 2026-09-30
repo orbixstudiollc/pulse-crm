@@ -58,6 +58,7 @@ import {
 } from "@/lib/actions/profile";
 import { exportLeadsToCSV } from "@/lib/actions/export";
 import { isGuestEmail } from "@/lib/auth/open-access";
+import { normalizeTimezone } from "@/lib/settings/timezone";
 import { seedAllData, clearAllSeedData } from "@/lib/actions/seed-data";
 import {
   getEmailAccounts,
@@ -685,12 +686,11 @@ function ThemePreview({ theme }: { theme: ThemeOption }) {
 }
 
 const fallbackTimezoneOptions = [
-  { label: "Pacific Time (PT)", value: "pt" },
-  { label: "Mountain Time (MT)", value: "mt" },
-  { label: "Central Time (CT)", value: "ct" },
-  { label: "Eastern Time (ET)", value: "et" },
-  { label: "UTC", value: "utc" },
-  { label: "GMT", value: "gmt" },
+  { label: "Pacific Time (PT)", value: "America/Los_Angeles" },
+  { label: "Mountain Time (MT)", value: "America/Denver" },
+  { label: "Central Time (CT)", value: "America/Chicago" },
+  { label: "Eastern Time (ET)", value: "America/New_York" },
+  { label: "UTC", value: "UTC" },
 ];
 
 function buildTimezoneOptions(): { label: string; value: string }[] {
@@ -708,6 +708,14 @@ function buildTimezoneOptions(): { label: string; value: string }[] {
 }
 
 const timezoneOptions = buildTimezoneOptions();
+
+function browserTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
 
 const dateFormatOptions = [
   { label: "MM/DD/YYYY", value: "mm/dd/yyyy" },
@@ -742,7 +750,9 @@ function PreferencesSection({
     () => true,
     () => false,
   );
-  const [timezone, setTimezone] = useState(preferences?.timezone ?? "pt");
+  const [timezone, setTimezone] = useState(() =>
+    normalizeTimezone(preferences?.timezone, browserTimezone()),
+  );
   const [dateFormat, setDateFormat] = useState(
     preferences?.date_format ?? "mm/dd/yyyy",
   );
