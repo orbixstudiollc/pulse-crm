@@ -1,4 +1,5 @@
-# Runs the two lead-finder crons every 5 minutes.
+# Runs four cron calls every 5 minutes: the lead-finder worker, the lead-finder
+# scheduler, the automation executor and the sequence executor.
 #
 # Vercel's Hobby plan only allows the two daily crons in vercel.json, so these
 # routes are triggered from GitHub Actions instead. The repo is public, so
@@ -8,7 +9,7 @@
 #
 # The repo owner must add a CRON_SECRET repository secret (same value as the
 # CRON_SECRET env var in Vercel). Without it the workflow warns and skips.
-name: lead-finder-cron
+name: crm-cron
 
 on:
   schedule:
@@ -24,7 +25,7 @@ concurrency:
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 11
     env:
       CRON_SECRET: ${{ secrets.CRON_SECRET }}
     steps:
@@ -50,6 +51,20 @@ jobs:
         run: |
           curl -fsS --max-time 295 -H "Authorization: Bearer $CRON_SECRET" https://pulse-crm-weld.vercel.app/api/cron/lead-finder
 
+      - name: Call automation executor
+        id: automation
+        if: steps.check.outputs.skip != 'true'
+        continue-on-error: true
+        run: |
+          curl -fsS --max-time 120 -H "Authorization: Bearer $CRON_SECRET" https://pulse-crm-weld.vercel.app/api/cron/automation-executor
+
+      - name: Call sequence executor
+        id: sequences
+        if: steps.check.outputs.skip != 'true'
+        continue-on-error: true
+        run: |
+          curl -fsS --max-time 120 -H "Authorization: Bearer $CRON_SECRET" https://pulse-crm-weld.vercel.app/api/cron/sequence-executor
+
       - name: Fail if any request failed
-        if: steps.check.outputs.skip != 'true' && (steps.worker.outcome == 'failure' || steps.scheduler.outcome == 'failure')
+        if: steps.check.outputs.skip != 'true' && (steps.worker.outcome == 'failure' || steps.scheduler.outcome == 'failure' || steps.automation.outcome == 'failure' || steps.sequences.outcome == 'failure')
         run: echo '::error::a cron request failed' && exit 1
