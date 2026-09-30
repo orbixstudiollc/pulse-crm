@@ -17,6 +17,7 @@ interface ActionMenuItem {
 interface ActionMenuProps {
   items: ActionMenuItem[];
   className?: string;
+  label?: string;
 }
 
 // Gap between the trigger and the menu, and the minimum distance kept from the viewport edge.
@@ -26,7 +27,7 @@ const VIEWPORT_MARGIN = 8;
 const menuItems = (menu: HTMLElement | null) =>
   Array.from(menu?.querySelectorAll<HTMLElement>("a, button") ?? []);
 
-export function ActionMenu({ items, className }: ActionMenuProps) {
+export function ActionMenu({ items, className, label = "More actions" }: ActionMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -56,6 +57,12 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
       setOpen(false);
     };
 
+    // A fixed menu would drift away from its trigger (and over the top bar) on scroll, so close it instead.
+    const handleScroll = (e: Event) => {
+      if (menuRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    };
+
     const handleEscape = (e: globalThis.KeyboardEvent) => {
       if (e.key !== "Escape") return;
       setOpen(false);
@@ -63,12 +70,12 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
     };
 
     place();
-    window.addEventListener("scroll", place, true);
+    window.addEventListener("scroll", handleScroll, true);
     window.addEventListener("resize", place);
     document.addEventListener("mousedown", handlePointerDown);
     document.addEventListener("keydown", handleEscape);
     return () => {
-      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("scroll", handleScroll, true);
       window.removeEventListener("resize", place);
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("keydown", handleEscape);
@@ -77,7 +84,12 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
 
   // The portalled menu sits at the end of <body>, so bridge Tab order between trigger and items.
   const handleTriggerKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
-    if (!open || e.key !== "Tab" || e.shiftKey) return;
+    if (!open || e.key !== "Tab") return;
+    if (e.shiftKey) {
+      // Focus is leaving backwards, away from the menu.
+      setOpen(false);
+      return;
+    }
     const first = menuItems(menuRef.current)[0];
     if (!first) return;
     e.preventDefault();
@@ -128,6 +140,9 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
         ref={buttonRef}
         onClick={() => setOpen((prev) => !prev)}
         onKeyDown={handleTriggerKeyDown}
+        aria-label={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
         className={cn(
           "inline-flex h-6 w-6 items-center justify-center rounded-md border border-line text-fg-secondary hover:bg-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
           className,
@@ -140,6 +155,7 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
         createPortal(
           <div
             ref={menuRef}
+            role="menu"
             onKeyDown={handleMenuKeyDown}
             className="fixed min-w-45 rounded-lg border border-line bg-surface shadow-dropdown overflow-hidden z-50 p-1"
           >
@@ -149,6 +165,7 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
                   <Link
                     key={index}
                     href={item.href}
+                    role="menuitem"
                     onClick={() => setOpen(false)}
                     className={itemClassName(item.variant)}
                   >
@@ -157,6 +174,7 @@ export function ActionMenu({ items, className }: ActionMenuProps) {
                 ) : (
                   <button
                     key={index}
+                    role="menuitem"
                     onClick={() => {
                       item.onClick?.();
                       setOpen(false);
