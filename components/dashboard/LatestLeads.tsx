@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { Badge, Avatar } from "@/components/ui";
 import { cn } from "@/lib/utils";
@@ -9,7 +8,6 @@ import {
   getLeadScoreStyle,
   type Lead,
 } from "@/lib/data/leads";
-import { TableFooter } from "./TableFooter";
 
 interface LatestLeadsProps {
   leads?: Lead[];
@@ -22,12 +20,6 @@ export function LatestLeads({
   totalLeads = 0,
   className,
 }: LatestLeadsProps) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const leadsPerPage = 6;
-  const startIndex = (currentPage - 1) * leadsPerPage + 1;
-  const endIndex = Math.min(currentPage * leadsPerPage, totalLeads);
-  const totalPages = Math.ceil(totalLeads / leadsPerPage);
-
   return (
     <div className={className}>
       <div className="overflow-x-auto">
@@ -94,15 +86,11 @@ export function LatestLeads({
         </table>
       </div>
 
-      <TableFooter
-        currentPage={currentPage}
-        totalPages={totalPages}
-        totalItems={totalLeads}
-        startIndex={startIndex}
-        endIndex={endIndex}
-        onPageChange={setCurrentPage}
-        itemLabel="leads"
-      />
+      {leads.length > 0 && (
+        <div className="flex h-12 items-center px-8 max-sm:px-4 text-[13px] text-fg-muted">
+          Showing {leads.length} of {totalLeads} leads
+        </div>
+      )}
     </div>
   );
 }

@@ -25,7 +25,7 @@ export function PageHeader({ title, description, icon, children }: PageHeaderPro
           )}
         </div>
       </div>
-      {children && <div className="flex items-center gap-2">{children}</div>}
+      {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
     </div>
   );
 }

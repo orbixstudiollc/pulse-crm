@@ -272,7 +272,7 @@ export function ContactsPageClient({
     <Page>
       {/* Header */}
       <PageHeader title="Contacts" icon={<AddressBookIcon size={18} />}>
-        <div className="w-48">
+        <div className="w-48 max-sm:w-full">
           <Input
             placeholder="Search contacts..."
             value={searchValue}

@@ -2,11 +2,11 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Button,
   Badge,
+  Avatar,
   Progress,
   Textarea,
   EnvelopeIcon,
@@ -329,14 +329,12 @@ export function CustomerDetailClient({
       <PageHeader
         title={customerName}
         icon={
-          <div className="relative h-9 w-9 overflow-hidden rounded-full">
-            <Image
-              src={customer.avatar_url || "/images/avatars/default.svg"}
-              alt={customerName}
-              fill
-              className="object-cover"
-            />
-          </div>
+          <Avatar
+            src={customer.avatar_url || undefined}
+            name={customerName}
+            size="sm"
+            className="h-9! w-9! text-[13px]!"
+          />
         }
         description={
           <div className="mt-1 flex flex-wrap items-center gap-2">
