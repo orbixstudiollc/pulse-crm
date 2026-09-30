@@ -321,7 +321,7 @@ export function CustomersTable({
                       {/* Last Contact */}
                       <td className="py-2 text-[14px] text-fg">
                         <span className="text-[13px] text-fg-secondary">
-                          {customer.lastContact}
+                          {customer.lastContact || "—"}
                         </span>
                       </td>
                       {/* Actions */}

@@ -282,7 +282,7 @@ export function CustomerDetailClient({
     () => (
       <>
         <Link href={`/dashboard/customers/${customer.id}/edit`}>
-          <Button variant="outline" leftIcon={<PencilSimpleIcon size={16} />}>
+          <Button variant="outline" className="whitespace-nowrap" leftIcon={<PencilSimpleIcon size={16} />}>
             Edit Customer
           </Button>
         </Link>
