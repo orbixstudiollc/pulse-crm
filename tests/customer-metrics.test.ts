@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   customerLifetimeValue,
   customerTenureMonths,
@@ -34,6 +34,32 @@ describe("customerTenureMonths", () => {
 
   it("returns 0 within the same calendar month", () => {
     expect(customerTenureMonths("2026-10-01T12:00:00", null, NOW)).toBe(0);
+  });
+});
+
+describe("customerTenureMonths with date-only values (west of UTC)", () => {
+  let previousTz: string | undefined;
+
+  beforeAll(() => {
+    previousTz = process.env.TZ;
+    process.env.TZ = "America/New_York";
+  });
+
+  afterAll(() => {
+    if (previousTz === undefined) delete process.env.TZ;
+    else process.env.TZ = previousTz;
+  });
+
+  it("parses a date-only customerSince as a local date", () => {
+    expect(customerTenureMonths("2026-03-01", null, NOW)).toBe(7);
+  });
+
+  it("returns 0 for a date-only value on the first of the current month", () => {
+    expect(customerTenureMonths("2026-10-01", null, NOW)).toBe(0);
+  });
+
+  it("parses a date-only createdAt fallback as a local date", () => {
+    expect(customerTenureMonths(null, "2026-03-01", NOW)).toBe(7);
   });
 });
 
