@@ -9,7 +9,7 @@ import {
   CheckCircleIcon,
 } from "@phosphor-icons/react";
 import { ReactNode, useSyncExternalStore } from "react";
-import { parseLocalDate, relativeDayLabel } from "@/lib/utils/local-date";
+import { absoluteDayLabel, parseLocalDate, relativeDayLabel } from "@/lib/utils/local-date";
 
 type ActivityType = "email" | "call" | "note" | "meeting" | "task";
 
@@ -37,7 +37,7 @@ function formatActivityDate(value: string, today: Date | null): string {
   const date = parseLocalDate(value);
   if (!date) return value;
   if (today) return relativeDayLabel(date, today);
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return absoluteDayLabel(value);
 }
 
 const activityIcons: Record<ActivityType, ReactNode> = {

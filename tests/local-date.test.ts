@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { parseLocalDate, relativeDayLabel } from "@/lib/utils/local-date";
+import { absoluteDayLabel, parseLocalDate, relativeDayLabel } from "@/lib/utils/local-date";
 
 // West of UTC, so a DATE parsed as UTC midnight would land on the previous day.
 // Set here rather than with a TZ= prefix because Git Bash drops that prefix.
@@ -76,5 +76,18 @@ describe("relativeDayLabel", () => {
     expect(relativeDayLabel(new Date(2025, 2, 8), new Date(2025, 2, 10))).toBe("2 days ago");
     // Clocks fall back on 2025-11-02, so the gap is 25 hours.
     expect(relativeDayLabel(new Date(2025, 10, 1), new Date(2025, 10, 2))).toBe("Yesterday");
+  });
+});
+
+describe("absoluteDayLabel", () => {
+  it("formats a YYYY-MM-DD value from its own year, month and day", () => {
+    expect(absoluteDayLabel("2025-10-01")).toBe("Oct 1");
+    expect(absoluteDayLabel("2025-12-31")).toBe("Dec 31");
+  });
+
+  it("formats a timestamp in UTC so it does not depend on the renderer's zone", () => {
+    // 02:00 UTC is still Sep 30 in New York, but the label must match the UTC server render.
+    expect(absoluteDayLabel("2025-10-01T02:00:00Z")).toBe("Oct 1");
+    expect(absoluteDayLabel("2025-10-01T23:30:00Z")).toBe("Oct 1");
   });
 });

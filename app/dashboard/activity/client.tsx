@@ -25,7 +25,7 @@ import {
   CompleteMeetingModal,
 } from "@/components/features";
 import { cn } from "@/lib/utils";
-import { parseLocalDate, relativeDayLabel } from "@/lib/utils/local-date";
+import { absoluteDayLabel, parseLocalDate, relativeDayLabel } from "@/lib/utils/local-date";
 import {
   createActivity,
   updateActivity,
@@ -126,10 +126,7 @@ function formatActivityDate(value: string, today: Date | null): string {
   const date = parseLocalDate(value);
   if (!date) return value;
   if (today) return relativeDayLabel(date, today);
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
+  return absoluteDayLabel(value);
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
