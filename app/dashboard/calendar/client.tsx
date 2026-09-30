@@ -14,6 +14,7 @@ import {
   CalendarBlankIcon,
   CaretLeftIcon,
   CaretRightIcon,
+  Skeleton,
 } from "@/components/ui";
 import { Page, PageHeader, DetailLayout, PanelSection } from "@/components/dashboard";
 import { LogActivityModal, ActivityDetailDrawer } from "@/components/features";
@@ -293,7 +294,8 @@ export function CalendarPageClient({
     return mappedEvents.filter((e) => e.date === dateStr);
   };
 
-  // Every open event from now on, soonest first (empty until the local time is known)
+  // Every open event from now on, soonest first (the panel shows a placeholder
+  // until the local time is known)
   const upcomingEvents = today
     ? initialUpcoming
         .map(mapEvent)
@@ -455,7 +457,20 @@ export function CalendarPageClient({
         aside={
           <PanelSection title="Upcoming">
             <div className="space-y-6">
-              {Object.entries(groupedUpcoming).length === 0 ? (
+              {!isMounted ? (
+                <div aria-hidden="true">
+                  <Skeleton variant="text" width="35%" className="mb-3" />
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="flex items-start gap-3 py-2.5">
+                      <Skeleton variant="text" className="w-16 shrink-0" />
+                      <div className="flex-1 space-y-1.5">
+                        <Skeleton variant="text" width="80%" />
+                        <Skeleton variant="text" width="45%" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : upcomingEvents.length === 0 ? (
                 <p className="text-sm text-fg-secondary">
                   No upcoming events
                 </p>

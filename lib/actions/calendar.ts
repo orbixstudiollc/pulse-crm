@@ -82,21 +82,29 @@ export async function getCalendarEventById(id: string) {
   return { data };
 }
 
-export async function getUpcomingEvents(limit: number = 5) {
+// Every open event on or after fromDate ('YYYY-MM-DD'). The default is yesterday
+// in UTC, which is on or before "today" in every time zone; the client trims to
+// "from now onward" in local time.
+export async function getUpcomingEvents(fromDate?: string) {
+  if (fromDate !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(fromDate)) {
+    return { error: "Invalid date", data: [] };
+  }
+
   const supabase = await createClient();
   const orgId = await getOrgId();
 
-  const today = new Date().toISOString().split("T")[0];
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const from = fromDate ?? yesterday.toISOString().split("T")[0];
 
   const { data, error } = await supabase
     .from("calendar_events")
     .select("*")
     .eq("organization_id", orgId)
-    .eq("status", "scheduled")
-    .gte("date", today)
+    .not("status", "in", '("completed","cancelled")')
+    .gte("date", from)
     .order("date", { ascending: true })
     .order("start_time", { ascending: true })
-    .limit(limit);
+    .limit(50);
 
   if (error) return { error: error.message, data: [] };
   return { data: data ?? [] };
