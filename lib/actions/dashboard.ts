@@ -215,8 +215,6 @@ export async function getLatestLeads(limit: number = 5) {
 
 // ── Activity Feed ────────────────────────────────────────────────────────────
 
-// Same order as the Activity page's default (date desc) so the feed is its
-// first rows and the date labels it shows run in order; created_at breaks ties.
 export async function getActivityFeed(limit: number = 10) {
   const supabase = await createClient();
   const orgId = await getOrgId();
@@ -225,7 +223,6 @@ export async function getActivityFeed(limit: number = 10) {
     .from("activities")
     .select("*")
     .eq("organization_id", orgId)
-    .order("date", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(limit);
 
