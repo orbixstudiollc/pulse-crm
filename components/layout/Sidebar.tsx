@@ -84,7 +84,7 @@ function NavList({
   onNavClick?: () => void;
 }) {
   return (
-    <ul className="space-y-0.5">
+    <ul>
       {items.map((item) => {
         const isActive = pathname.startsWith(item.href);
         return (
@@ -94,11 +94,18 @@ function NavList({
               onClick={onNavClick}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[14px] text-fg transition-colors duration-150",
-                isActive ? "bg-active font-medium" : "hover:bg-subtle",
+                "relative flex h-9 items-center gap-2.5 px-6 text-[14px] text-fg transition-colors duration-150 hover:bg-subtle",
+                isActive && "font-medium",
               )}
             >
-              <item.icon size={16} weight="regular" className="shrink-0" />
+              {isActive && (
+                <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-sm bg-fg" />
+              )}
+              <item.icon
+                size={16}
+                weight={isActive ? "fill" : "regular"}
+                className={cn("shrink-0", isActive ? "text-fg" : "text-fg-muted")}
+              />
               <span className="truncate">{item.name}</span>
             </Link>
           </li>
@@ -113,22 +120,12 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
 
   return (
     <>
-      <div className="flex h-14 shrink-0 items-center px-3">
-        <Link
-          href="/dashboard/overview"
-          className="flex h-8 items-center px-2.5 text-[16px] font-semibold text-fg"
-          onClick={onNavClick}
-        >
-          Pulse
-        </Link>
-      </div>
-
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 pb-2">
+      <nav className="flex-1 overflow-y-auto">
         {navigationGroups.map((group, index) => (
           <div
             key={group[0].href}
-            className={cn(index > 0 && "border-t border-divider my-2 pt-2")}
+            className={cn("py-2", index > 0 && "border-t border-divider")}
           >
             <NavList items={group} pathname={pathname} onNavClick={onNavClick} />
           </div>
@@ -136,7 +133,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       </nav>
 
       {/* Bottom group: pinned to the sidebar bottom */}
-      <div className="shrink-0 border-t border-divider px-3 py-2">
+      <div className="mt-auto shrink-0 border-t border-divider py-2">
         <NavList items={bottomNavigation} pathname={pathname} onNavClick={onNavClick} />
       </div>
     </>
@@ -198,7 +195,17 @@ export function MobileSidebar() {
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="fixed left-0 top-0 h-full w-[240px] bg-surface border-r border-divider z-50 flex flex-col lg:hidden"
           >
-            <button type="button" onClick={closeMobile} aria-label="Close menu" className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:bg-subtle hover:text-fg"><XIcon size={16} /></button>
+            {/* Wordmark row: the top bar sits behind the overlay */}
+            <div className="flex h-11 shrink-0 items-center justify-between border-b border-divider px-6">
+              <Link
+                href="/dashboard/overview"
+                className="text-[18px] font-semibold text-fg"
+                onClick={closeMobile}
+              >
+                Pulse
+              </Link>
+              <button type="button" onClick={closeMobile} aria-label="Close menu" className="-mr-3 flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:bg-subtle hover:text-fg"><XIcon size={16} /></button>
+            </div>
             <SidebarContent onNavClick={closeMobile} />
           </motion.aside>
         </>

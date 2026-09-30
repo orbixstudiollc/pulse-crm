@@ -35,17 +35,19 @@ export default async function DashboardLayout({
       <SidebarProvider>
         <HeaderProvider>
           <AIChatProvider>
-            <div className="flex h-screen overflow-hidden bg-page">
-              <Sidebar />
-              <MobileSidebar />
-              <div className="flex flex-1 flex-col overflow-hidden">
-                <div className="px-4 pt-4 empty:hidden lead-finder-banner-slot">
-                  <EnrichmentProgressBanner />
+            <div className="flex h-screen flex-col overflow-hidden bg-page">
+              <Header />
+              <div className="flex flex-1 overflow-hidden">
+                <Sidebar />
+                <MobileSidebar />
+                <div className="flex flex-1 flex-col overflow-hidden">
+                  <div className="px-4 pt-4 empty:hidden lead-finder-banner-slot">
+                    <EnrichmentProgressBanner />
+                  </div>
+                  <main className="flex-1 overflow-auto bg-page">
+                    <div className="h-full w-full">{children}</div>
+                  </main>
                 </div>
-                <Header />
-                <main className="flex-1 overflow-auto bg-page">
-                  <div className="h-full w-full">{children}</div>
-                </main>
               </div>
             </div>
             <AIChatPanel />

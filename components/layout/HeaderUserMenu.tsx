@@ -43,7 +43,7 @@ export function HeaderUserMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         className={cn(
-          "flex h-10 items-center gap-2 rounded-md px-1.5 text-left transition-colors duration-150",
+          "flex h-9 items-center gap-2 rounded-md px-1.5 text-left transition-colors duration-150",
           "hover:bg-subtle",
           open && "bg-subtle",
         )}
