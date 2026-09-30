@@ -51,7 +51,7 @@ interface DealRecord {
   close_date?: string | null;
   owner_avatar?: string | null;
   created_at: string;
-  days_in_stage?: number | null;
+  stage_changed_at?: string | null;
   [key: string]: unknown;
 }
 
@@ -87,7 +87,7 @@ function mapDeal(d: DealRecord, now: Date | null): MappedDeal {
       : "",
     ownerAvatar: d.owner_avatar || "/images/avatars/user.jpg",
     createdAt: d.created_at,
-    daysInStage: now ? stageDays(d.days_in_stage, d.created_at, now) : null,
+    daysInStage: now ? stageDays(d.stage_changed_at, d.created_at, now) : null,
   };
 }
 

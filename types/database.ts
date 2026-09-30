@@ -525,6 +525,7 @@ export type Database = {
           close_date: string | null;
           owner_id: string | null;
           days_in_stage: number;
+          stage_changed_at: string | null;
           days_to_close: number;
           last_activity: string | null;
           contact_name: string | null;
@@ -547,6 +548,7 @@ export type Database = {
           close_date?: string | null;
           owner_id?: string | null;
           days_in_stage?: number;
+          stage_changed_at?: string | null;
           days_to_close?: number;
           last_activity?: string | null;
           contact_name?: string | null;
@@ -566,6 +568,7 @@ export type Database = {
           close_date?: string | null;
           owner_id?: string | null;
           days_in_stage?: number;
+          stage_changed_at?: string | null;
           days_to_close?: number;
           last_activity?: string | null;
           contact_name?: string | null;

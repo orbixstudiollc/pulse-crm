@@ -64,7 +64,7 @@ interface DealRow {
   probability: number | null;
   expected_close_date?: string | null;
   close_date?: string | null;
-  days_in_stage?: number | null;
+  stage_changed_at?: string | null;
   owner_name?: string | null;
   owner_avatar?: string | null;
   owner_id?: string | null;
@@ -264,7 +264,7 @@ export function DealDetailClient({
     () => false,
   );
   const now = isMounted ? new Date() : null;
-  const daysInStageLabel = now ? stageDays(deal.days_in_stage, deal.created_at, now) : "—";
+  const daysInStageLabel = now ? stageDays(deal.stage_changed_at, deal.created_at, now) : "—";
   const closeDays = now ? daysToClose(expectedClose, now) : null;
   const closeDaysLabel = isClosed
     ? "Closed"
