@@ -11,6 +11,7 @@ const AIProviderEnum = z.enum([
   "groq",
   "ollama",
   "ollama_cloud",
+  "custom",
 ]);
 
 const BodySchema = z.object({

@@ -640,6 +640,7 @@ function LeadFinderSettingsPageInner() {
                       <option value="groq">Groq</option>
                       <option value="ollama">Ollama</option>
                       <option value="ollama_cloud">Ollama Cloud</option>
+                      <option value="custom">Custom (from AI Assistant settings)</option>
                     </select>
                   </Field>
                   <Field label="Default model">

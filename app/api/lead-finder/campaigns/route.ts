@@ -32,6 +32,7 @@ const BodySchema = z.object({
       "groq",
       "ollama",
       "ollama_cloud",
+      "custom",
     ])
     .optional(),
   auto_enrich: z.boolean().optional(),

@@ -11,6 +11,12 @@ import {
 import { assertSafeFetchTarget } from "@/lib/security/fetch-target";
 import { createPinnedFetch } from "@/lib/security/safe-fetch";
 import { resolveAIProvider } from "@/lib/ai/provider-resolver";
+import {
+  anthropicSdkBaseUrl,
+  createCustomFetch,
+  customModelFor,
+  openCustomApiKey,
+} from "@/lib/ai/custom-provider";
 import { getModelId, MODEL_MAP } from "@/lib/ai/models";
 import type { AIModel } from "@/lib/ai/types";
 
@@ -47,6 +53,18 @@ const MODEL_PRICING: Record<
   "mixtral-8x7b-32768": { inputPer1M: 0.24, outputPer1M: 0.24 },
   "llama3-70b-8192": { inputPer1M: 0.59, outputPer1M: 0.79 },
 };
+
+/**
+ * Custom endpoints serve Anthropic models under their own names (e.g.
+ * "claude-sonnet-4.6"), so price by family using the Anthropic rates above.
+ * Unknown families (including opus, which has no rate here) cost 0.
+ */
+function customPricingKey(model: string): string {
+  const m = model.toLowerCase();
+  if (m.includes("sonnet")) return "claude-sonnet-4-6";
+  if (m.includes("haiku")) return "claude-haiku-4-5-20251001";
+  return "";
+}
 
 function calculateCost(
   model: string,
@@ -130,6 +148,10 @@ export type OrgAiSettings = {
   groq_api_key: string | null;
   ollama_base_url: string | null;
   apify_api_key: string | null;
+  custom_base_url: string | null;
+  custom_api_key: string | null;
+  custom_model: string | null;
+  custom_fast_model: string | null;
 };
 
 async function loadOrgSettings(orgId: string): Promise<OrgAiSettings | null> {
@@ -138,7 +160,7 @@ async function loadOrgSettings(orgId: string): Promise<OrgAiSettings | null> {
   const { data } = await supabase
     .from("ai_settings")
     .select(
-      "ai_provider, default_model, api_key, openai_api_key, openrouter_api_key, openrouter_oauth_token, openrouter_expires_at, groq_api_key, ollama_base_url, apify_api_key"
+      "ai_provider, default_model, api_key, openai_api_key, openrouter_api_key, openrouter_oauth_token, openrouter_expires_at, groq_api_key, ollama_base_url, apify_api_key, custom_base_url, custom_api_key, custom_model, custom_fast_model"
     )
     .eq("organization_id", orgId)
     .limit(1)
@@ -154,6 +176,8 @@ async function getApiKeys(orgId: string): Promise<{
   ollamaBaseUrl?: string;
   ollamaCloudKey?: string;
   apifyToken?: string;
+  customBaseUrl?: string;
+  customKey?: string;
 }> {
   const data = await loadOrgSettings(orgId);
 
@@ -184,6 +208,9 @@ async function getApiKeys(orgId: string): Promise<{
     ollamaCloudKey: process.env.OLLAMA_CLOUD_API_KEY || undefined,
     apifyToken:
       data?.apify_api_key || getApifyTokenFromEnv() || undefined,
+    // SECURITY: no env fallback; a server key never goes to a tenant URL.
+    customBaseUrl: data?.custom_base_url || undefined,
+    customKey: openCustomApiKey(data?.custom_api_key) ?? undefined,
   };
 }
 
@@ -230,6 +257,10 @@ export async function resolveProviderAndModel(
       ? getModelId(defaultModel as AIModel, provider)
       : ""
     : (defaultModel ?? "");
+  // Custom endpoints use their own model names; an alias maps to custom_model.
+  if (provider === "custom" && !model) {
+    model = customModelFor("sonnet", settings ?? {}) ?? "";
+  }
   if (!model) {
     switch (provider) {
       case "openrouter":
@@ -446,6 +477,64 @@ export async function generateCompletion(
       outputTokens,
       costUsd: calculateCost(model, inputTokens, outputTokens),
     };
+  }
+
+  // --- Custom Anthropic-compatible endpoint (org-configured) ---
+  if (provider === "custom") {
+    const { customBaseUrl, customKey } = keys;
+    if (!customBaseUrl || !customKey) {
+      throw new Error(
+        "Custom AI provider not configured. Set it in Settings > AI Assistant."
+      );
+    }
+    if (!model) {
+      throw new Error(
+        "Custom AI model not configured. Set it in Settings > AI Assistant."
+      );
+    }
+    // SECURITY (SSRF): the base URL is tenant-supplied; requests are pinned
+    // to its validated public addresses.
+    const pinned = await createCustomFetch(customBaseUrl);
+    try {
+      const client = new Anthropic({
+        apiKey: customKey,
+        baseURL: anthropicSdkBaseUrl(customBaseUrl),
+        fetch: pinned.fetch,
+      });
+      const systemMessage =
+        messages.find((m) => m.role === "system")?.content ?? "";
+      const nonSystemMessages = messages
+        .filter((m) => m.role !== "system")
+        .map((m) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        }));
+      const res = await client.messages.create({
+        model,
+        max_tokens: maxTokens,
+        system: systemMessage,
+        messages: nonSystemMessages,
+      });
+      const textBlock = res.content.find(
+        (b): b is Anthropic.TextBlock => b.type === "text"
+      );
+      const inputTokens = res.usage?.input_tokens ?? 0;
+      const outputTokens = res.usage?.output_tokens ?? 0;
+      return {
+        content: textBlock?.text ?? "",
+        provider: "custom",
+        model,
+        inputTokens,
+        outputTokens,
+        costUsd: calculateCost(
+          customPricingKey(model),
+          inputTokens,
+          outputTokens
+        ),
+      };
+    } finally {
+      await pinned.close();
+    }
   }
 
   // --- Anthropic direct SDK ---

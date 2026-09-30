@@ -12,6 +12,7 @@ const AIProviderEnum = z.enum([
   "groq",
   "ollama",
   "ollama_cloud",
+  "custom",
 ]);
 
 const KeysSection = z.object({
