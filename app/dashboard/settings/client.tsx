@@ -26,7 +26,6 @@ import {
   PuzzlePieceIcon,
   CreditCardIcon,
   MonitorIcon,
-  DeviceMobileIcon,
   EyeIcon,
   EyeSlashIcon,
   CheckIcon,
@@ -62,8 +61,8 @@ import {
   updateNotificationPreferences,
   updatePassword,
 } from "@/lib/actions/profile";
-import { toggleIntegration } from "@/lib/actions/integrations";
 import { exportLeadsToCSV } from "@/lib/actions/export";
+import { isGuestEmail } from "@/lib/auth/open-access";
 import { seedAllData, clearAllSeedData } from "@/lib/actions/seed-data";
 import {
   getEmailAccounts,
@@ -200,8 +199,6 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
   const [isPending, startTransition] = useTransition();
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -264,16 +261,6 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
       setShowToast(true);
       router.refresh();
     });
-  };
-
-  const handleDeleteAccount = () => {
-    setDeleting(true);
-    setTimeout(() => {
-      setDeleting(false);
-      setShowDeleteModal(false);
-      setToastMessage("Account deletion requested");
-      setShowToast(true);
-    }, 1200);
   };
 
   return (
@@ -462,8 +449,7 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
           Export Your Data
         </h3>
         <p className="text-sm text-fg-secondary mb-4">
-          Download all your data including leads, customers, deals, and
-          activities as a CSV file.
+          Download your leads as CSV.
         </p>
         <Button
           variant="outline"
@@ -499,36 +485,16 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
           Delete Account
         </h3>
         <p className="text-sm text-fg-secondary mb-4">
-          Once you delete your account, there is no going back. All your data
-          including leads, customers, deals, activities, and settings will be
-          permanently removed. Please be certain.
+          Account deletion is coming soon. Contact support to delete your data.
         </p>
         <Button
           variant="outline"
-          leftIcon={
-            deleting ? (
-              <CircleNotchIcon size={18} className="animate-spin" />
-            ) : (
-              <TrashIcon size={18} />
-            )
-          }
-          onClick={() => setShowDeleteModal(true)}
-          disabled={deleting}
-          className="bg-danger border-danger text-on-inverse! hover:bg-danger hover:border-danger"
+          leftIcon={<TrashIcon size={18} />}
+          disabled
         >
           Delete My Account
         </Button>
       </div>
-
-      {/* Delete confirmation modal */}
-      <DeleteConfirmModal
-        open={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={handleDeleteAccount}
-        title="Delete Account"
-        description="Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be lost forever."
-        loading={deleting}
-      />
 
       {/* Toast */}
       <Toast
@@ -542,37 +508,8 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
 
 // ── Security Section ─────────────────────────────────────────────────────────
 
-const sessions = [
-  {
-    id: "s1",
-    device: "MacBook Pro",
-    location: "San Francisco, CA",
-    status: "Current session",
-    lastActive: "Last active now",
-    icon: MonitorIcon,
-    isCurrent: true,
-  },
-  {
-    id: "s2",
-    device: "iPhone 15 Pro",
-    location: "San Francisco, CA",
-    status: "",
-    lastActive: "Last active 2 hours ago",
-    icon: DeviceMobileIcon,
-    isCurrent: false,
-  },
-  {
-    id: "s3",
-    device: "Windows Desktop",
-    location: "New York, NY",
-    status: "",
-    lastActive: "Last active 3 days ago",
-    icon: MonitorIcon,
-    isCurrent: false,
-  },
-];
-
-function SecuritySection() {
+function SecuritySection({ email }: { email: string | null }) {
+  const isGuest = isGuestEmail(email);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -580,7 +517,6 @@ function SecuritySection() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
@@ -614,21 +550,6 @@ function SecuritySection() {
     });
   };
 
-  const handleToggle2FA = () => {
-    setTwoFactorEnabled(!twoFactorEnabled);
-    setToastMessage(
-      twoFactorEnabled
-        ? "Two factor authentication disabled"
-        : "Two factor authentication enabled",
-    );
-    setShowToast(true);
-  };
-
-  const handleRevokeSession = (deviceName: string) => {
-    setToastMessage(`Session on ${deviceName} revoked`);
-    setShowToast(true);
-  };
-
   return (
     <>
       {/* Header */}
@@ -641,7 +562,9 @@ function SecuritySection() {
         </p>
       </div>
 
-      {/* Password fields */}
+      {/* Password fields (guests have no password to change) */}
+      {!isGuest && (
+      <>
       <div className="space-y-5">
         <Input
           label="Current Password"
@@ -731,6 +654,8 @@ function SecuritySection() {
 
       {/* Divider */}
       <div className="border-t border-line my-10" />
+      </>
+      )}
 
       {/* Two Factor Authentication */}
       <div className="flex items-center justify-between">
@@ -742,10 +667,13 @@ function SecuritySection() {
             Add an extra layer of security to your account
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleToggle2FA}>
-          {twoFactorEnabled ? "Disable" : "Enable"}
+        <Button variant="outline" size="sm" disabled>
+          Enable
         </Button>
       </div>
+      <p className="text-xs text-fg-secondary mt-2">
+        Two-factor authentication is coming soon.
+      </p>
 
       {/* Divider */}
       <div className="border-t border-line my-10" />
@@ -761,43 +689,17 @@ function SecuritySection() {
       </div>
 
       <div className="space-y-3">
-        {sessions.map((session) => (
-          <div
-            key={session.id}
-            className={cn(
-              "flex items-center justify-between rounded-lg border border-line bg-surface p-4",
-            )}
-          >
-            <div className="flex items-center gap-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
-                <session.icon
-                  size={20}
-                  className="text-fg-secondary"
-                />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-fg">
-                  {session.device} &bull; {session.location}
-                </p>
-                <p className="text-xs text-fg-secondary">
-                  {session.isCurrent && "Current session · "}
-                  {session.lastActive}
-                </p>
-              </div>
+        <div className="flex items-center justify-between rounded-lg border border-line bg-surface p-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
+              <MonitorIcon size={20} className="text-fg-secondary" />
             </div>
-            {session.isCurrent ? (
-              <Badge variant="success">This Device</Badge>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleRevokeSession(session.device)}
-              >
-                Revoke
-              </Button>
-            )}
+            <div>
+              <p className="text-sm font-medium text-fg">This device</p>
+              <p className="text-xs text-fg-secondary">Current session</p>
+            </div>
           </div>
-        ))}
+        </div>
       </div>
 
       {/* Toast */}
@@ -835,7 +737,7 @@ function ThemePreview({ theme }: { theme: ThemeOption }) {
   );
 }
 
-const timezoneOptions = [
+const fallbackTimezoneOptions = [
   { label: "Pacific Time (PT)", value: "pt" },
   { label: "Mountain Time (MT)", value: "mt" },
   { label: "Central Time (CT)", value: "ct" },
@@ -843,6 +745,22 @@ const timezoneOptions = [
   { label: "UTC", value: "utc" },
   { label: "GMT", value: "gmt" },
 ];
+
+function buildTimezoneOptions(): { label: string; value: string }[] {
+  try {
+    const zones = (
+      Intl as unknown as { supportedValuesOf?: (key: string) => string[] }
+    ).supportedValuesOf?.("timeZone");
+    if (zones && zones.length > 0) {
+      return zones.map((z) => ({ label: z.replace(/_/g, " "), value: z }));
+    }
+  } catch {
+    // fall through to the static list
+  }
+  return fallbackTimezoneOptions;
+}
+
+const timezoneOptions = buildTimezoneOptions();
 
 const dateFormatOptions = [
   { label: "MM/DD/YYYY", value: "mm/dd/yyyy" },
@@ -986,6 +904,9 @@ function PreferencesSection({
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
           >
+            {!timezoneOptions.some((o) => o.value === timezone) && (
+              <option value={timezone}>{timezone}</option>
+            )}
             {timezoneOptions.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
@@ -1198,43 +1119,7 @@ const integrationDefaults = [
   },
 ];
 
-function IntegrationsSection({
-  integrations,
-}: {
-  integrations: IntegrationData[] | undefined;
-}) {
-  const router = useRouter();
-  const [connectionState, setConnectionState] = useState<
-    Record<string, boolean>
-  >(() => {
-    const state: Record<string, boolean> = {};
-    for (const def of integrationDefaults) {
-      const dbRecord = integrations?.find((i) => (i.name || i.integration_name) === def.name);
-      state[def.id] = dbRecord?.connected ?? false;
-    }
-    return state;
-  });
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-
-  const handleToggleConnection = async (id: string, name: string) => {
-    const isConnected = connectionState[id];
-    const newState = !isConnected;
-    setConnectionState((prev) => ({ ...prev, [id]: newState }));
-
-    const result = await toggleIntegration(name, newState);
-    if (result.error) {
-      setConnectionState((prev) => ({ ...prev, [id]: isConnected }));
-      setToastMessage(result.error);
-    } else {
-      setToastMessage(
-        isConnected ? `${name} disconnected` : `${name} connected`,
-      );
-    }
-    setShowToast(true);
-    router.refresh();
-  };
-
+function IntegrationsSection() {
   return (
     <>
       {/* Header */}
@@ -1243,14 +1128,14 @@ function IntegrationsSection({
           Integrations
         </h2>
         <p className="text-sm text-fg-secondary mt-1">
-          Connect your favorite tools to Pulse
+          Third-party integrations are coming soon. Email and LinkedIn can
+          already be set up from their own tabs.
         </p>
       </div>
 
       {/* Integration cards */}
       <div className="space-y-3">
         {integrationDefaults.map((item) => {
-          const isConnected = connectionState[item.id];
           return (
             <div
               key={item.id}
@@ -1275,35 +1160,16 @@ function IntegrationsSection({
                   </p>
                 </div>
               </div>
-              {isConnected ? (
-                <button
-                  type="button"
-                  onClick={() => handleToggleConnection(item.id, item.name)}
-                >
-                  <Badge variant="success" className="cursor-pointer">
-                    Connected
-                  </Badge>
-                </button>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleToggleConnection(item.id, item.name)}
-                >
+              <div className="flex items-center gap-3">
+                <Badge variant="neutral">Coming soon</Badge>
+                <Button variant="outline" size="sm" disabled>
                   Connect
                 </Button>
-              )}
+              </div>
             </div>
           );
         })}
       </div>
-
-      {/* Toast */}
-      <Toast
-        open={showToast}
-        onClose={() => setShowToast(false)}
-        message={toastMessage}
-      />
     </>
   );
 }
@@ -1320,9 +1186,6 @@ const PLAN_COLORS: Record<string, { bg: string; text: string; border: string }> 
 const USAGE_COLORS: ("green" | "blue" | "yellow" | "amber")[] = ["green", "blue", "yellow", "amber"];
 
 function BillingSection({ billingData }: { billingData: BillingData | null }) {
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-
   if (!billingData) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -1349,7 +1212,6 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
   const upgradeOrder = ["free", "starter", "pro", "enterprise"];
   const currentIdx = upgradeOrder.indexOf(plan.id);
   const upgradePlanId = currentIdx < upgradeOrder.length - 1 ? upgradeOrder[currentIdx + 1] : null;
-  const UPGRADE_PRICES: Record<string, number> = { starter: 19, pro: 49, enterprise: 149 };
   const UPGRADE_NAMES: Record<string, string> = { starter: "Starter", pro: "Professional", enterprise: "Enterprise" };
 
   return (
@@ -1443,24 +1305,10 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
             )}
           </p>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setToastMessage("Redirecting to plan management...");
-                setShowToast(true);
-              }}
-            >
+            <Button variant="outline" size="sm" disabled>
               Manage Plan
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setToastMessage("Opening invoices...");
-                setShowToast(true);
-              }}
-            >
+            <Button variant="outline" size="sm" disabled>
               View Invoices
             </Button>
           </div>
@@ -1490,32 +1338,13 @@ function BillingSection({ billingData }: { billingData: BillingData | null }) {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-right">
-              <span className="text-[22px] leading-7 font-semibold text-fg">
-                ${UPGRADE_PRICES[upgradePlanId] ?? 0}
-              </span>
-              <span className="text-sm text-fg-secondary ml-1">
-                / month
-              </span>
-            </div>
-            <Button
-              onClick={() => {
-                setToastMessage("Redirecting to upgrade...");
-                setShowToast(true);
-              }}
-            >
-              Upgrade Now
-            </Button>
+            <p className="text-xs text-fg-secondary">
+              Billing is not connected to a payment provider.
+            </p>
+            <Button disabled>Upgrade Now</Button>
           </div>
         </div>
       )}
-
-      {/* Toast */}
-      <Toast
-        open={showToast}
-        onClose={() => setShowToast(false)}
-        message={toastMessage}
-      />
     </>
   );
 }
@@ -1526,7 +1355,7 @@ function AISettingsSection({
 }: {
   settings: AISettingsData | null | undefined;
 }) {
-  const [aiProvider, setAiProvider] = useState(settings?.ai_provider ?? "anthropic");
+  const [aiProvider, setAiProvider] = useState(settings?.ai_provider ?? "");
   const [apiKey, setApiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [openrouterKey, setOpenrouterKey] = useState("");
@@ -1581,9 +1410,9 @@ function AISettingsSection({
   const handleSave = () => {
     startTransition(async () => {
       const updates: Record<string, unknown> = {
-        ai_provider: aiProvider || "anthropic",
         default_model: defaultModel,
       };
+      if (aiProvider) updates.ai_provider = aiProvider;
       if (apiKey.trim()) updates.api_key = apiKey.trim();
       if (openrouterKey.trim()) updates.openrouter_api_key = openrouterKey.trim();
       if (apifyKey.trim()) updates.apify_api_key = apifyKey.trim();
@@ -1681,7 +1510,7 @@ function AISettingsSection({
       </div>
 
       {/* API Key — conditional on provider */}
-      {aiProvider === "anthropic" ? (
+      {aiProvider !== "openrouter" ? (
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-fg">
             Anthropic API Key
@@ -2481,6 +2310,7 @@ interface LIAccount {
 }
 
 function LinkedInSection() {
+  const searchParams = useSearchParams();
   const [accounts, setAccounts] = useState<LIAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
@@ -2514,6 +2344,15 @@ function LinkedInSection() {
     setToastVariant(variant);
     setShowToast(true);
   };
+
+  useEffect(() => {
+    // The OAuth route redirects back with ?tab=linkedin&error=...
+    const oauthError = searchParams.get("error");
+    if (oauthError) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- surfaces the OAuth redirect error once on arrival
+      toast(`LinkedIn connection failed: ${oauthError}`, "error");
+    }
+  }, [searchParams]);
 
   const handleConnectLinkedIn = () => {
     window.location.href = "/api/linkedin/oauth";
@@ -3657,7 +3496,6 @@ function LeadFinderSettingsSection() {
 // ── Main Settings Page ──────────────────────────────────────────────────────
 export function SettingsPageClient({
   initialProfile,
-  initialIntegrations,
   initialAISettings,
   initialBillingData,
 }: SettingsPageClientProps) {
@@ -3670,7 +3508,7 @@ export function SettingsPageClient({
       case "profile":
         return <ProfileSection profile={initialProfile} />;
       case "security":
-        return <SecuritySection />;
+        return <SecuritySection email={initialProfile?.email ?? null} />;
       case "preferences":
         return (
           <PreferencesSection
@@ -3686,7 +3524,7 @@ export function SettingsPageClient({
           />
         );
       case "integrations":
-        return <IntegrationsSection integrations={initialIntegrations} />;
+        return <IntegrationsSection />;
       case "email-accounts":
         return <EmailAccountsSection />;
       case "whatsapp":

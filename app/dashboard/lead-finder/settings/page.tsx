@@ -1249,6 +1249,7 @@ function ObsidianSyncSection({
           />
           Enable Obsidian sync for this organization
         </label>
+        <p className="text-xs text-fg-secondary">Obsidian sync writes files on the server and only works on self-hosted deployments.</p>
         <Button
           onClick={onSave}
           disabled={saving}
