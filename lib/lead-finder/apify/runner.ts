@@ -124,10 +124,115 @@ export function parseApifyError(body: string, statusCode: number): ApifyError {
 }
 
 // ---------------------------------------------------------------------------
-// Start an actor run
+// Start an actor run (no waiting, no DB record)
 // ---------------------------------------------------------------------------
 
+/**
+ * Start an Apify actor run and return the Apify run id without waiting for it
+ * to finish. The caller supplies a token obtained via `authorizeActors`.
+ */
 export async function startActorRun(
+  actorId: string,
+  input: Record<string, unknown>,
+  token: string
+): Promise<string> {
+  // Actor IDs are of the form "owner/name"; Apify accepts "owner~name" in the URL.
+  const encodedActorId = actorId.replace("/", "~");
+  const res = await fetch(
+    `${APIFY_BASE}/acts/${encodedActorId}/runs`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(input),
+    }
+  );
+
+  if (!res.ok) {
+    throw parseApifyError(await res.text(), res.status);
+  }
+
+  const json = await res.json();
+  const apifyRunId: unknown = json?.data?.id;
+  if (typeof apifyRunId !== "string" || apifyRunId.length === 0) {
+    throw new ApifyError("Apify did not return a run id.", res.status);
+  }
+  return apifyRunId;
+}
+
+// ---------------------------------------------------------------------------
+// Run status (single check, no polling)
+// ---------------------------------------------------------------------------
+
+export type RunStatus = {
+  status: "running" | "succeeded" | "failed";
+  datasetId?: string;
+  error?: string;
+  costUsd?: number;
+};
+
+const FAILED_APIFY_STATUSES = new Set(["FAILED", "ABORTED", "TIMED-OUT"]);
+
+/**
+ * Map an Apify run object (`data` of GET /actor-runs/:id) to a RunStatus.
+ * READY, RUNNING and the transitional TIMING-OUT / ABORTING map to running.
+ */
+export function mapApifyRunStatus(data: unknown): RunStatus {
+  const run = (data ?? {}) as {
+    status?: unknown;
+    defaultDatasetId?: unknown;
+    statusMessage?: unknown;
+    usageTotalUsd?: unknown;
+  };
+  const apifyStatus = typeof run.status === "string" ? run.status : "";
+
+  if (apifyStatus === "SUCCEEDED") {
+    const result: RunStatus = { status: "succeeded" };
+    if (typeof run.defaultDatasetId === "string") {
+      result.datasetId = run.defaultDatasetId;
+    }
+    if (typeof run.usageTotalUsd === "number") {
+      result.costUsd = run.usageTotalUsd;
+    }
+    return result;
+  }
+
+  if (FAILED_APIFY_STATUSES.has(apifyStatus)) {
+    const message =
+      typeof run.statusMessage === "string" && run.statusMessage
+        ? run.statusMessage
+        : `Actor run ${apifyStatus}`;
+    return { status: "failed", error: message };
+  }
+
+  return { status: "running" };
+}
+
+/** Check an Apify run once and return its mapped status. */
+export async function getRunStatus(
+  runId: string,
+  token: string
+): Promise<RunStatus> {
+  const res = await fetch(
+    `${APIFY_BASE}/actor-runs/${encodeURIComponent(runId)}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+
+  if (!res.ok) {
+    throw parseApifyError(await res.text(), res.status);
+  }
+
+  const json = await res.json();
+  return mapApifyRunStatus(json?.data);
+}
+
+// ---------------------------------------------------------------------------
+// Start an actor run and record it in lf_apify_runs (used by runActorAndCollect)
+// ---------------------------------------------------------------------------
+
+async function startRecordedActorRun(
   actorId: string,
   input: Record<string, unknown>,
   orgId: string,
@@ -157,31 +262,16 @@ export async function startActorRun(
     throw new Error(`Failed to create apify run record: ${dbErr?.message}`);
   }
 
-  // Call Apify – actor IDs are of the form "owner/name"; Apify accepts "owner~name" in the URL.
-  const encodedActorId = actorId.replace("/", "~");
-  const res = await fetch(
-    `${APIFY_BASE}/acts/${encodedActorId}/runs`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${cred.token}`,
-      },
-      body: JSON.stringify(input),
-    }
-  );
-
-  if (!res.ok) {
-    const body = await res.text();
+  let apifyRunId: string;
+  try {
+    apifyRunId = await startActorRun(actorId, input, cred.token);
+  } catch (err) {
     await supabase
       .from("lf_apify_runs")
       .update({ status: "failed" })
       .eq("id", dbRow.id);
-    throw parseApifyError(body, res.status);
+    throw err;
   }
-
-  const json = await res.json();
-  const apifyRunId: string = json.data?.id;
 
   // Update DB with the actual run ID
   await supabase
@@ -311,7 +401,7 @@ export async function runActorAndCollect(
   dbId: string;
   costUsd: number | null;
 }> {
-  const { runId, dbId } = await startActorRun(
+  const { runId, dbId } = await startRecordedActorRun(
     actorId,
     input,
     orgId,

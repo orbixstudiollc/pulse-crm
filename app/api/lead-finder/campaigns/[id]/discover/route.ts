@@ -3,11 +3,12 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/actions/helpers";
 import { isUuid } from "@/lib/security";
-import {
-  runCampaignDiscovery,
-  runSingleActorDiscovery,
-} from "@/lib/lead-finder/apify/discovery";
-import { writeCampaignObservation } from "@/lib/lead-finder/obsidian/observer";
+import { startDiscoveryRun } from "@/lib/lead-finder/apify/discovery";
+import { authorizeActors } from "@/lib/lead-finder/apify/policy-server";
+import { ApifyError } from "@/lib/lead-finder/apify/runner";
+
+// Starting an Apify run is a single HTTP call; the cron route finalises it.
+export const maxDuration = 60;
 
 const BodySchema = z
   .object({
@@ -41,7 +42,7 @@ export async function POST(
 
     const { data: campRows } = await supabase
       .from("lf_campaigns")
-      .select("status, apify_actors, actor_configs")
+      .select("status, apify_actors, actor_configs, max_pages_per_search")
       .eq("id", id)
       .eq("organization_id", orgId)
       .limit(1);
@@ -89,78 +90,66 @@ export async function POST(
       }
     }
 
-    if (actorId) {
-      // Per-actor discovery
-      if (!actors.includes(actorId)) {
-        return NextResponse.json(
-          { error: "Actor not in campaign" },
-          { status: 400 }
-        );
-      }
-      const actorConfigs =
-        (campaign.actor_configs as Record<string, Record<string, unknown>>) ||
-        {};
-      const input = actorConfigs[actorId] ?? {};
-      const result = await runSingleActorDiscovery(actorId, input, id, orgId);
-      return NextResponse.json({
-        success: true,
-        inserted: result.inserted,
-        totalResults: result.totalResults,
-        deduplicated: result.deduplicated,
-      });
+    if (actorId && !actors.includes(actorId)) {
+      return NextResponse.json(
+        { error: "Actor not in campaign" },
+        { status: 400 }
+      );
     }
 
-    // Full campaign discovery
-    const result = await runCampaignDiscovery(id, orgId);
+    // Per-actor discovery when actorId is given, otherwise every campaign actor.
+    const actorIds = actorId ? [actorId] : actors;
 
-    // Best-effort Obsidian observation (no-op when the org hasn't enabled it)
+    // Resolves the Apify token and checks the actor policy.
+    let token: string;
     try {
-      const { data: campMeta } = await supabase
-        .from("lf_campaigns")
-        .select("name, obsidian_sync_enabled")
-        .eq("id", id)
-        .eq("organization_id", orgId)
-        .maybeSingle();
-
-      if (!campMeta || campMeta.obsidian_sync_enabled !== false) {
-        const { data: allLeads } = await supabase
-          .from("lf_leads")
-          .select("display_name, score")
-          .eq("campaign_id", id)
-          .eq("organization_id", orgId);
-
-        const scoredLeads = (allLeads ?? []).filter(
-          (l) => l.score !== null && l.score !== undefined
-        );
-        const avgScore = scoredLeads.length
-          ? Math.round(
-              scoredLeads.reduce((sum, l) => sum + (l.score ?? 0), 0) /
-                scoredLeads.length
-            )
-          : null;
-        const topLeads = scoredLeads
-          .slice()
-          .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-          .slice(0, 5)
-          .map((l) => ({
-            name: l.display_name || "Unknown",
-            score: (l.score as number) ?? 0,
-          }));
-
-        await writeCampaignObservation(orgId, {
-          campaignId: id,
-          campaignName: campMeta?.name ?? "Campaign",
-          totalLeads: (allLeads ?? []).length,
-          newLeads: result.totalInserted,
-          avgScore,
-          topLeads,
-        });
-      }
-    } catch (obsErr) {
-      console.error("[campaign-discover] obsidian write failed", obsErr);
+      token = (await authorizeActors(orgId, actorIds)).token;
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : "Apify is not configured" },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json({ success: true, ...result });
+    const actorConfigs =
+      (campaign.actor_configs as Record<string, Record<string, unknown>>) ||
+      {};
+    // The page limit applies to full-campaign discovery only, as before.
+    const maxPages = actorId
+      ? undefined
+      : (campaign.max_pages_per_search as number | null) ?? undefined;
+
+    const runIds: string[] = [];
+    for (const aid of actorIds) {
+      try {
+        const { runId } = await startDiscoveryRun(
+          {
+            actorId: aid,
+            input: actorConfigs[aid] ?? {},
+            campaignId: id,
+            orgId,
+            token,
+            maxPages,
+          },
+          supabase
+        );
+        runIds.push(runId);
+      } catch (err) {
+        console.error("[lead-finder/campaigns/:id/discover] start failed", err);
+        if (err instanceof ApifyError) {
+          return NextResponse.json(
+            { error: err.message, runIds },
+            { status: 502 }
+          );
+        }
+        throw err;
+      }
+    }
+
+    return NextResponse.json(
+      { started: true, runId: runIds[0], runIds },
+      { status: 202 }
+    );
   } catch (err) {
     console.error("[lead-finder/campaigns/:id/discover] error", err);
     return NextResponse.json(

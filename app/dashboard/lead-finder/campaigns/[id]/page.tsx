@@ -218,7 +218,6 @@ export default function CampaignDetailPage() {
 
   // Discovery / Enrichment
   const [runningActor, setRunningActor] = useState<string | null>(null);
-  const [lastActorResult, setLastActorResult] = useState<{ actorId: string; inserted: number; total: number } | null>(null);
   const [discoveryProgress, setDiscoveryProgress] = useState<{ current: number; total: number } | null>(null);
   const [discoveryError, setDiscoveryError] = useState<string | null>(null);
   const [enrichingAll, setEnrichingAll] = useState(false);
@@ -399,21 +398,16 @@ export default function CampaignDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ actorId }),
       });
-      const data = await res.json();
       if (!res.ok) {
-        setDiscoveryError(data.error || "Actor run failed");
+        let message = `Request failed (${res.status})`;
+        if ((res.headers.get("content-type") ?? "").includes("application/json")) {
+          const data = await res.json().catch(() => null);
+          if (data && typeof data.error === "string" && data.error) message = data.error;
+        }
+        setDiscoveryError(message);
         return;
       }
-      const inserted = data.inserted ?? 0;
-      const total = data.totalResults ?? 0;
-      setLastActorResult({ actorId, inserted, total });
-      setTimeout(() => setLastActorResult(null), 10000);
-      if (inserted > 0) {
-        toast.success(`${inserted} new leads from ${getActorById(actorId)?.name || actorId}`);
-        if (campaign.auto_enrich && !enrichingAll) triggerEnrichment();
-      } else {
-        toast.info("Actor completed — no new leads found");
-      }
+      toast.success("Discovery started. New leads will appear in a few minutes.");
       fetch300();
     } catch (err) {
       toast.error(String(err));
@@ -796,11 +790,6 @@ export default function CampaignDetailPage() {
                     </Button>
                   </div>
                 </div>
-                {lastActorResult?.actorId === actorId && (
-                  <p className="text-xs text-success mt-2">
-                    Found {lastActorResult.total} results — {lastActorResult.inserted} new leads added
-                  </p>
-                )}
                 {actorIsRunning && (
                   <p className="text-xs text-fg-secondary mt-2">
                     {discoveryProgress

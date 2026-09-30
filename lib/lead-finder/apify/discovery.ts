@@ -1,7 +1,9 @@
 import "server-only";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { runActorAndCollect } from "./runner";
+import type { Database } from "@/types/database";
+import { runActorAndCollect, startActorRun } from "./runner";
 import { normalizeSingleItem } from "./normalizer";
 import { coerceActorInput } from "./coerce-input";
 import { getActorById } from "./registry-server";
@@ -42,47 +44,17 @@ export async function runSingleActorDiscovery(
       campaignId
     );
 
-    if (items.length === 0) {
-      return {
-        actorId,
-        status: "succeeded",
-        runId,
-        totalResults: 0,
-        inserted: 0,
-        deduplicated: 0,
-      };
-    }
-
-    // Normalize all items
-    const normalizedLeads: NewLFLead[] = items.map((item) =>
-      normalizeSingleItem(item, actorId, orgId, campaignId, dbId)
+    const counts = await ingestDiscoveredItems(
+      items,
+      { actorId, campaignId, orgId, dbId, costUsd },
+      supabase
     );
-
-    // Deduplicate against existing leads in this org
-    const { inserted, deduplicated } = await insertWithDedup(
-      normalizedLeads,
-      campaignId,
-      orgId
-    );
-
-    // Update run cost on leads
-    if (costUsd && inserted > 0) {
-      const costPerLead = costUsd / inserted;
-      await supabase
-        .from("lf_leads")
-        .update({ discovery_apify_cost_usd: costPerLead })
-        .eq("campaign_id", campaignId)
-        .eq("source_run_id", dbId)
-        .eq("organization_id", orgId);
-    }
 
     return {
       actorId,
       status: "succeeded",
       runId,
-      totalResults: items.length,
-      inserted,
-      deduplicated,
+      ...counts,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
@@ -188,15 +160,124 @@ export async function runCampaignDiscovery(
 }
 
 // =============================================================================
+// Asynchronous discovery: start a run now, ingest its items later (cron)
+// =============================================================================
+
+type LeadFinderDb = SupabaseClient<Database>;
+
+/**
+ * Start an Apify discovery run for one actor without waiting for it, and
+ * record it in lf_apify_runs with status "running". The cron finaliser picks
+ * it up and hands the dataset items to `ingestDiscoveredItems`.
+ *
+ * `token` must come from `authorizeActors(orgId, [actorId, ...])`.
+ * Throws ApifyError when Apify rejects the start, Error when recording fails.
+ */
+export async function startDiscoveryRun(
+  params: {
+    actorId: string;
+    input: Record<string, unknown>;
+    campaignId: string;
+    orgId: string;
+    token: string;
+    maxPages?: number;
+  },
+  db: LeadFinderDb
+): Promise<{ runId: string; dbId: string }> {
+  const { actorId, campaignId, orgId, token, maxPages } = params;
+
+  const actorDef = await getActorById(actorId, orgId);
+  const input: Record<string, unknown> = { ...params.input };
+  if (actorDef?.pageLimitKey && maxPages && maxPages > 0) {
+    input[actorDef.pageLimitKey] = maxPages;
+  }
+  const coercedInput = coerceActorInput(input, actorDef);
+
+  const runId = await startActorRun(actorId, coercedInput, token);
+
+  const runInsert = {
+    organization_id: orgId,
+    campaign_id: campaignId,
+    actor_id: actorId,
+    run_id: runId,
+    status: "running",
+    input_params: coercedInput,
+    result_count: 0,
+    started_at: new Date().toISOString(),
+  };
+  const { data: dbRow, error: dbErr } = await db
+    .from("lf_apify_runs")
+    .insert(runInsert as never)
+    .select("id")
+    .single();
+
+  if (dbErr || !dbRow) {
+    throw new Error(
+      `Apify run ${runId} started but could not be recorded: ${dbErr?.message ?? "no row returned"}`
+    );
+  }
+
+  return { runId, dbId: (dbRow as { id: string }).id };
+}
+
+/**
+ * Normalize, deduplicate and insert the dataset items of a finished discovery
+ * run, then spread the run cost over the inserted leads.
+ */
+export async function ingestDiscoveredItems(
+  items: Record<string, unknown>[],
+  run: {
+    actorId: string;
+    campaignId: string;
+    orgId: string;
+    dbId: string;
+    costUsd?: number | null;
+  },
+  db: LeadFinderDb
+): Promise<{ totalResults: number; inserted: number; deduplicated: number }> {
+  const { actorId, campaignId, orgId, dbId, costUsd } = run;
+
+  if (items.length === 0) {
+    return { totalResults: 0, inserted: 0, deduplicated: 0 };
+  }
+
+  // Normalize all items
+  const normalizedLeads: NewLFLead[] = items.map((item) =>
+    normalizeSingleItem(item, actorId, orgId, campaignId, dbId)
+  );
+
+  // Deduplicate against existing leads in this org
+  const { inserted, deduplicated } = await insertWithDedup(
+    normalizedLeads,
+    campaignId,
+    orgId,
+    db
+  );
+
+  // Update run cost on leads
+  if (costUsd && inserted > 0) {
+    const costPerLead = costUsd / inserted;
+    await db
+      .from("lf_leads")
+      .update({ discovery_apify_cost_usd: costPerLead })
+      .eq("campaign_id", campaignId)
+      .eq("source_run_id", dbId)
+      .eq("organization_id", orgId);
+  }
+
+  return { totalResults: items.length, inserted, deduplicated };
+}
+
+// =============================================================================
 // Deduplication & insertion
 // =============================================================================
 
 async function insertWithDedup(
   leads: NewLFLead[],
   campaignId: string,
-  orgId: string
+  orgId: string,
+  supabase: LeadFinderDb
 ): Promise<{ inserted: number; deduplicated: number }> {
-  const supabase = await createClient();
 
   // Load existing emails + websites + display_names for dedup
   const { data: existingLeads } = await supabase
