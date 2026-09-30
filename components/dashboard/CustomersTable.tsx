@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import {
   Avatar,
   Badge,
   Checkbox,
   Progress,
   ActionMenu,
+  DeleteConfirmModal,
   EyeIcon,
   PencilSimpleIcon,
   TrashIcon,
@@ -16,12 +18,18 @@ import { TableHeader } from "./TableHeader";
 import { TableFooter } from "./TableFooter";
 import { cn } from "@/lib/utils";
 import { Customer } from "@/lib/data/customers";
+import { deleteCustomer } from "@/lib/actions/customers";
 
 type CustomerStatus = "active" | "pending" | "inactive";
 
+export type CustomerRow = Customer & { createdAt?: string | null };
+
 interface CustomersTableProps {
-  customers?: Customer[];
+  customers?: CustomerRow[];
   totalCustomers?: number;
+  rowsPerPage: string;
+  onRowsPerPageChange: (value: string) => void;
+  onChanged?: () => void;
   className?: string;
 }
 
@@ -45,14 +53,33 @@ function formatMRR(value: number) {
   return `$${value.toLocaleString()}`;
 }
 
+function csvCell(value: string | null | undefined) {
+  const text = (value ?? "").replace(/^([=+\-@])/, "'$1");
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function buildCustomersCsv(rows: CustomerRow[]) {
+  const header = ["name", "company", "email", "phone", "status", "created_at"];
+  const lines = rows.map((c) =>
+    [c.name, c.company, c.email, c.phone, c.status, c.createdAt]
+      .map(csvCell)
+      .join(","),
+  );
+  return [header.join(","), ...lines].join("\n");
+}
+
 export function CustomersTable({
   customers = [],
   totalCustomers = 0,
+  rowsPerPage,
+  onRowsPerPageChange,
+  onChanged,
   className,
 }: CustomersTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState("5");
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  const [deleteIds, setDeleteIds] = useState<string[] | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null,
@@ -60,8 +87,10 @@ export function CustomersTable({
 
   const perPage = parseInt(rowsPerPage);
   const totalPages = Math.ceil(totalCustomers / perPage);
-  const startIndex = (currentPage - 1) * perPage + 1;
-  const endIndex = Math.min(currentPage * perPage, totalCustomers);
+  const page = Math.min(currentPage, Math.max(totalPages, 1));
+  const startIndex = (page - 1) * perPage + 1;
+  const endIndex = Math.min(page * perPage, totalCustomers);
+  const pagedCustomers = customers.slice(startIndex - 1, endIndex);
 
   const toggleSelectAll = () => {
     if (selectedRows.length === customers.length) {
@@ -82,7 +111,48 @@ export function CustomersTable({
     setDrawerOpen(true);
   };
 
-  const isAllSelected = selectedRows.length === customers.length;
+  const isAllSelected =
+    customers.length > 0 && selectedRows.length === customers.length;
+
+  const handleExportSelected = () => {
+    const rows = customers.filter((c) => selectedRows.includes(c.id));
+    const blob = new Blob([buildCustomersCsv(rows)], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `customers-selected-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(
+      `Exported ${rows.length} customer${rows.length > 1 ? "s" : ""}`,
+    );
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteIds) return;
+    setIsDeleting(true);
+    let deleted = 0;
+    let failure: string | null = null;
+    for (const id of deleteIds) {
+      const result = await deleteCustomer(id);
+      if ("error" in result && result.error) {
+        failure = result.error;
+        break;
+      }
+      deleted += 1;
+    }
+    setIsDeleting(false);
+    setDeleteIds(null);
+    setSelectedRows((prev) => prev.filter((id) => !deleteIds.includes(id)));
+    if (deleted > 0) onChanged?.();
+    if (failure) {
+      toast.error(failure);
+      return;
+    }
+    toast.success(
+      deleted > 1 ? `${deleted} customers deleted` : "Customer deleted",
+    );
+  };
 
   return (
     <div
@@ -99,16 +169,16 @@ export function CustomersTable({
             selected
           </span>
           <div className="flex items-center gap-3">
-            <button className="text-[13px] text-fg-secondary hover:text-fg transition-colors">
-              Email
-            </button>
-            <button className="text-[13px] text-fg-secondary hover:text-fg transition-colors">
-              Edit
-            </button>
-            <button className="text-[13px] text-fg-secondary hover:text-fg transition-colors">
+            <button
+              onClick={handleExportSelected}
+              className="text-[13px] text-fg-secondary hover:text-fg transition-colors"
+            >
               Export
             </button>
-            <button className="text-[13px] text-danger hover:opacity-80 transition-colors">
+            <button
+              onClick={() => setDeleteIds(selectedRows)}
+              className="text-[13px] text-danger hover:opacity-80 transition-colors"
+            >
               Delete
             </button>
             <button
@@ -126,7 +196,7 @@ export function CustomersTable({
         title="All Customers"
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={(value) => {
-          setRowsPerPage(value);
+          onRowsPerPageChange(value);
           setCurrentPage(1);
         }}
       />
@@ -164,7 +234,7 @@ export function CustomersTable({
             </tr>
           </thead>
           <tbody>
-            {customers.map((customer) => (
+            {pagedCustomers.map((customer) => (
               <tr
                 key={customer.id}
                 onClick={() => handleViewDetails(customer)}
@@ -256,7 +326,7 @@ export function CustomersTable({
                         {
                           label: "Delete Customer",
                           icon: <TrashIcon size={18} />,
-                          onClick: () => console.log("Delete", customer.id),
+                          onClick: () => setDeleteIds([customer.id]),
                           variant: "danger",
                         },
                       ]}
@@ -271,13 +341,35 @@ export function CustomersTable({
 
       {/* Table Footer with Pagination */}
       <TableFooter
-        currentPage={currentPage}
+        currentPage={page}
         totalPages={totalPages}
         totalItems={totalCustomers}
         startIndex={startIndex}
         endIndex={endIndex}
         onPageChange={setCurrentPage}
         itemLabel="customers"
+      />
+
+      <DeleteConfirmModal
+        open={deleteIds !== null}
+        onClose={() => setDeleteIds(null)}
+        onConfirm={handleConfirmDelete}
+        title={
+          deleteIds && deleteIds.length > 1
+            ? "Delete Customers"
+            : "Delete Customer"
+        }
+        description={
+          deleteIds && deleteIds.length > 1
+            ? `Are you sure you want to delete ${deleteIds.length} customers? This action cannot be undone and will permanently remove all associated data.`
+            : undefined
+        }
+        itemName={
+          deleteIds?.length === 1
+            ? customers.find((c) => c.id === deleteIds[0])?.name
+            : undefined
+        }
+        loading={isDeleting}
       />
 
       {/* Customer Details Drawer */}

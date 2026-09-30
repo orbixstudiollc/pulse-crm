@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   customerPlanOptions,
   customerScoreOptions,
@@ -24,6 +25,7 @@ import {
   UploadIcon,
 } from "@/components/ui";
 import type { Customer } from "@/lib/data/customers";
+import type { CustomerRow } from "@/components/dashboard/CustomersTable";
 import { exportCustomersToCSV } from "@/lib/actions/export";
 import { toast } from "sonner";
 import { countInMonth, monthOverMonth } from "@/lib/stats/period-delta";
@@ -48,7 +50,7 @@ function monthChange(dates: (string | null | undefined)[]) {
 }
 
 // Map DB record to the shape CustomersTable expects
-function mapCustomer(c: CustomerRecord): Customer {
+function mapCustomer(c: CustomerRecord): CustomerRow {
   return {
     id: c.id,
     name: `${c.first_name || ""} ${c.last_name || ""}`.trim(),
@@ -59,6 +61,8 @@ function mapCustomer(c: CustomerRecord): Customer {
     healthScore: c.health_score ?? 80,
     mrr: (c.mrr as number) ?? 0,
     lastContact: (c.last_contact as string) ?? "",
+    phone: (c.phone as string | null) ?? "",
+    createdAt: (c.created_at as string | null) ?? null,
   };
 }
 
@@ -73,6 +77,8 @@ export function CustomersPageClient({
   const [statusFilter, setStatusFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
   const [healthFilter, setHealthFilter] = useState("all");
+  const [rowsPerPage, setRowsPerPage] = useState("5");
+  const router = useRouter();
 
   const allCustomers = initialCustomers.map(mapCustomer);
 
@@ -226,13 +232,16 @@ export function CustomersPageClient({
         <CustomersTable
           customers={filteredCustomers}
           totalCustomers={filteredCustomers.length}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={setRowsPerPage}
+          onChanged={() => router.refresh()}
         />
       ) : (
         <div className="rounded-lg border border-line bg-surface overflow-hidden">
           <TableHeader
             title="All Customers"
-            rowsPerPage="5"
-            onRowsPerPageChange={() => {}}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={setRowsPerPage}
           />
           <EmptyState
             icon={<UsersThreeIcon size={24} />}
