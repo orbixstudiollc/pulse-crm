@@ -155,7 +155,7 @@ export default function CostsPage() {
       {data && (
         <>
           {/* KPI Metrics */}
-          <MetricStrip>
+          <MetricStrip className="pt-6">
             <StatCard label="Total Cost" value={`$${(data.totalCost ?? 0).toFixed(4)}`} icon={<CurrencyDollarIcon size={20} className="text-fg-secondary" />} />
             <StatCard label="Apify Cost" value={`$${(data.totalApifyCost ?? 0).toFixed(4)}`} icon={<LightningIcon size={20} className="text-fg-secondary" />} />
             <StatCard label="LLM Cost" value={`$${(data.totalLlmCost ?? 0).toFixed(4)}`} icon={<SparkleIcon size={20} className="text-fg-secondary" />} />

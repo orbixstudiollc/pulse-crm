@@ -205,7 +205,7 @@ export default function LeadFinderOverviewPage() {
       {!loading && data && (
         <>
           {/* KPI Metrics */}
-          <MetricStrip>
+          <MetricStrip className="pt-6">
             <StatCard
               label="Total Leads"
               value={data.totalLeads.toLocaleString()}
