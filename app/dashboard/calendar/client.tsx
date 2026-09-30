@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useTransition, useEffect, useMemo } from "react";
+import {
+  useState,
+  useTransition,
+  useEffect,
+  useMemo,
+  useSyncExternalStore,
+} from "react";
 import {
   Button,
   ExportIcon,
@@ -147,15 +153,29 @@ function mapEvent(e: CalendarEventRecord): MappedEvent {
   };
 }
 
+// Local-time YYYY-MM-DD (toISOString would shift the day to UTC).
+function toDateKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// Local start of the event, parsed from the same date/startTime the grid uses.
+function eventStart(event: MappedEvent): Date {
+  const [y, m, d] = event.date.split("-").map(Number);
+  const minutes = toMinutes(event.startTime) ?? 0;
+  return new Date(y, m - 1, d, Math.floor(minutes / 60), minutes % 60);
+}
+
+const DONE_STATUSES = new Set(["completed", "cancelled"]);
+
 function formatDateLabel(dateStr: string): string {
   const date = new Date(dateStr + "T00:00:00");
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const todayStr = today.toISOString().split("T")[0];
+  const todayStr = toDateKey(today);
 
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().split("T")[0];
+  const tomorrowStr = toDateKey(tomorrow);
 
   if (dateStr === todayStr) {
     return `TODAY, ${MONTHS[date.getMonth()].toUpperCase().slice(0, 3)} ${date.getDate()}`;
@@ -166,12 +186,23 @@ function formatDateLabel(dateStr: string): string {
   return `${MONTHS[date.getMonth()].toUpperCase().slice(0, 3)} ${date.getDate()}`;
 }
 
-function formatTime(time: string): string {
-  const [hours, minutes] = time.split(":");
-  const hour = parseInt(hours);
-  const displayHour = hour % 12 || 12;
-  return `${displayHour}:${minutes}`;
+function formatTime(event: MappedEvent): string {
+  return eventStart(event).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
+
+function formatDateTime(event: MappedEvent): string {
+  const date = eventStart(event).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  return `${date} at ${formatTime(event)}`;
+}
+
+const subscribeNoop = () => () => {};
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
@@ -189,39 +220,61 @@ export function CalendarPageClient({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const [currentMonth, setCurrentMonth] = useState(initialMonth);
-  const [currentYear, setCurrentYear] = useState(initialYear);
-  const [events, setEvents] = useState<CalendarEventRecord[]>(initialEvents);
+  // "Today" and the default month come from the browser's time zone, so they
+  // are only known after hydration (the server renders in UTC).
+  const isMounted = useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false,
+  );
+  const today = isMounted ? new Date() : null;
+
+  // null = follow today's local month
+  const [viewMonth, setViewMonth] = useState<{
+    month: number;
+    year: number;
+  } | null>(null);
+  const currentMonth =
+    viewMonth?.month ?? (today ? today.getMonth() + 1 : initialMonth);
+  const currentYear =
+    viewMonth?.year ?? (today ? today.getFullYear() : initialYear);
+
+  // Events plus the month they were loaded for (initialMonth/Year = server preload)
+  const [loaded, setLoaded] = useState({
+    month: initialMonth,
+    year: initialYear,
+    events: initialEvents,
+  });
+  const events = loaded.events;
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showEventDrawer, setShowEventDrawer] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<MappedEvent | null>(null);
   const [editEvent, setEditEvent] = useState<MappedEvent | null>(null);
 
   const mappedEvents = useMemo(() => events.map(mapEvent), [events]);
-  const mappedUpcoming = useMemo(
-    () => initialUpcoming.map(mapEvent),
-    [initialUpcoming],
-  );
 
-  // Re-fetch events when month changes
+  const reloadEvents = async () => {
+    const res = await getCalendarEvents(currentMonth, currentYear);
+    if (res.data) {
+      setLoaded({ month: currentMonth, year: currentYear, events: res.data });
+    }
+  };
+
+  // Fetch events whenever the visible month is not the loaded one
   useEffect(() => {
-    if (
-      currentMonth === initialMonth &&
-      currentYear === initialYear
-    )
-      return;
+    if (loaded.month === currentMonth && loaded.year === currentYear) return;
 
     let cancelled = false;
     (async () => {
       const res = await getCalendarEvents(currentMonth, currentYear);
       if (!cancelled && res.data) {
-        setEvents(res.data);
+        setLoaded({ month: currentMonth, year: currentYear, events: res.data });
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [currentMonth, currentYear, initialMonth, initialYear]);
+  }, [currentMonth, currentYear, loaded.month, loaded.year]);
 
   // Calendar grid
   const month = currentMonth - 1; // 0-based for Date constructor
@@ -240,10 +293,18 @@ export function CalendarPageClient({
     return mappedEvents.filter((e) => e.date === dateStr);
   };
 
-  const today = new Date();
+  // Every open event from now on, soonest first (empty until the local time is known)
+  const upcomingEvents = today
+    ? initialUpcoming
+        .map(mapEvent)
+        .filter(
+          (e) => !DONE_STATUSES.has(e.status) && eventStart(e) >= today,
+        )
+        .sort((a, b) => eventStart(a).getTime() - eventStart(b).getTime())
+    : [];
 
-  // Group upcoming events by date
-  const groupedUpcoming = mappedUpcoming.reduce(
+  // Group upcoming events by date (insertion order keeps the sort)
+  const groupedUpcoming = upcomingEvents.reduce(
     (acc, event) => {
       if (!acc[event.date]) acc[event.date] = [];
       acc[event.date].push(event);
@@ -255,26 +316,22 @@ export function CalendarPageClient({
   // Navigation
   const goToPreviousMonth = () => {
     if (currentMonth === 1) {
-      setCurrentMonth(12);
-      setCurrentYear(currentYear - 1);
+      setViewMonth({ month: 12, year: currentYear - 1 });
     } else {
-      setCurrentMonth(currentMonth - 1);
+      setViewMonth({ month: currentMonth - 1, year: currentYear });
     }
   };
 
   const goToNextMonth = () => {
     if (currentMonth === 12) {
-      setCurrentMonth(1);
-      setCurrentYear(currentYear + 1);
+      setViewMonth({ month: 1, year: currentYear + 1 });
     } else {
-      setCurrentMonth(currentMonth + 1);
+      setViewMonth({ month: currentMonth + 1, year: currentYear });
     }
   };
 
   const goToToday = () => {
-    const now = new Date();
-    setCurrentMonth(now.getMonth() + 1);
-    setCurrentYear(now.getFullYear());
+    setViewMonth(null);
   };
 
   // Handle schedule event
@@ -294,8 +351,7 @@ export function CalendarPageClient({
         setShowScheduleModal(false);
         router.refresh();
         // Re-fetch events for current month
-        const res = await getCalendarEvents(currentMonth, currentYear);
-        if (res.data) setEvents(res.data);
+        await reloadEvents();
       }
     });
   };
@@ -317,8 +373,7 @@ export function CalendarPageClient({
         setEditEvent(null);
         setShowScheduleModal(false);
         router.refresh();
-        const res = await getCalendarEvents(currentMonth, currentYear);
-        if (res.data) setEvents(res.data);
+        await reloadEvents();
       }
     });
   };
@@ -418,8 +473,8 @@ export function CalendarPageClient({
                           className="w-full border-b border-divider py-2.5 text-left hover:bg-subtle transition-colors last:border-b-0"
                         >
                           <div className="flex items-start gap-3">
-                            <span className="text-sm text-fg-secondary w-11 shrink-0">
-                              {formatTime(event.startTime)}
+                            <span className="text-sm text-fg-secondary w-16 shrink-0 whitespace-nowrap">
+                              {formatTime(event)}
                             </span>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-fg truncate">
@@ -470,6 +525,7 @@ export function CalendarPageClient({
             {calendarDays.map((day, index) => {
               const dayEvents = day ? getEventsForDay(day) : [];
               const isToday =
+                today !== null &&
                 day === today.getDate() &&
                 month === today.getMonth() &&
                 year === today.getFullYear();
@@ -584,7 +640,9 @@ export function CalendarPageClient({
                   variant:
                     selectedEvent.status === "completed" ? "neutral" : "success",
                 },
-                meta: `${selectedEvent.date} at ${selectedEvent.startTime}`,
+                meta: formatDateTime(selectedEvent),
+                date: selectedEvent.date,
+                time: selectedEvent.startTime,
               }
             : null
         }
@@ -597,8 +655,7 @@ export function CalendarPageClient({
               });
               setShowEventDrawer(false);
               router.refresh();
-              const res = await getCalendarEvents(currentMonth, currentYear);
-              if (res.data) setEvents(res.data);
+              await reloadEvents();
             });
           }
         }}

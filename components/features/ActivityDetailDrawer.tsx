@@ -12,6 +12,8 @@ interface ActivityDetail {
     variant: BadgeVariant;
   };
   meta?: string;
+  /** Task priority (low/medium/high); shown as an em dash when missing. */
+  priority?: string | null;
   /** Event date (YYYY-MM-DD); enables the Add to Calendar actions. */
   date?: string | null;
   /** Event start time (HH:MM); omitted means an all-day event. */
@@ -76,11 +78,15 @@ function DescriptionBlock({ label, text }: { label: string; text: string }) {
   return (
     <div className="mb-6">
       <SectionHeader>{label}</SectionHeader>
-      <div className="rounded-md bg-subtle p-4">
-        <p className="text-sm text-fg-secondary leading-relaxed">
-          {text}
-        </p>
-      </div>
+      {text.trim() ? (
+        <div className="rounded-md bg-subtle p-4">
+          <p className="text-sm text-fg-secondary leading-relaxed">
+            {text}
+          </p>
+        </div>
+      ) : (
+        <p className="text-[13px] text-fg-muted">No description</p>
+      )}
     </div>
   );
 }
@@ -252,8 +258,21 @@ function TaskDetails({ activity }: { activity: ActivityDetail }) {
             <DetailRow label="Due Date" value={activity.meta} />
           )}
           {activity.badge && (
-            <DetailRow label="Priority" value={activity.badge.label} />
+            <BadgeRow
+              label="Status"
+              badgeLabel={activity.badge.label}
+              badgeVariant={activity.badge.variant}
+            />
           )}
+          <DetailRow
+            label="Priority"
+            value={
+              activity.priority
+                ? activity.priority.charAt(0).toUpperCase() +
+                  activity.priority.slice(1)
+                : "—"
+            }
+          />
         </div>
       </div>
 
