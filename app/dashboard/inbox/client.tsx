@@ -378,7 +378,8 @@ export function InboxClient() {
           {/* Channel filter tabs */}
           <SegmentedControl
             aria-label="Channel"
-            className="mb-3 max-w-full overflow-x-auto"
+            size="sm"
+            className="mb-3"
             options={[
               { value: "all_channels" as const, label: "All" },
               { value: "email" as const, label: "Email", icon: <EnvelopeIcon size={12} /> },
