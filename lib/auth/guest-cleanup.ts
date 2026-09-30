@@ -8,6 +8,7 @@ import { GUEST_EMAIL_DOMAIN, isGuestEmail } from "@/lib/auth/open-access";
 
 export const GUEST_RETENTION_DAYS_DEFAULT = 7;
 export const GUEST_CLEANUP_BATCH = 200;
+export const GUEST_CLEANUP_MAX_PAGES = 5;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -38,67 +39,77 @@ export async function purgeExpiredGuests(
   const retentionDays = guestRetentionDays();
   const cutoffIso = new Date(now.getTime() - retentionDays * DAY_MS).toISOString();
 
-  const { data: rows, error } = await admin
-    .from("profiles")
-    .select("id, email, organization_id, created_at")
-    .like("email", `%@${GUEST_EMAIL_DOMAIN}`)
-    .lt("created_at", cutoffIso)
-    .limit(GUEST_CLEANUP_BATCH);
-  if (error) {
-    result.errors.push(`scan: ${error.message}`);
-    return result;
-  }
+  // Pages by id so rows that are skipped forever (non-anonymous or shared
+  // workspace) cannot fill every batch and starve older guests behind them.
+  let lastId: string | null = null;
+  for (let page = 0; page < GUEST_CLEANUP_MAX_PAGES; page++) {
+    let query = admin
+      .from("profiles")
+      .select("id, email, organization_id, created_at")
+      .like("email", `%@${GUEST_EMAIL_DOMAIN}`)
+      .lt("created_at", cutoffIso);
+    if (lastId !== null) query = query.gt("id", lastId);
+    const { data: rows, error } = await query.order("id", { ascending: true }).limit(GUEST_CLEANUP_BATCH);
+    if (error) {
+      result.errors.push(`scan: ${error.message}`);
+      return result;
+    }
 
-  const expired = selectExpiredGuests(rows ?? [], now, retentionDays);
-  result.scanned = expired.length;
+    const pageRows = rows ?? [];
+    const expired = selectExpiredGuests(pageRows, now, retentionDays);
+    result.scanned += expired.length;
 
-  for (const row of expired) {
-    try {
-      const { data, error: userError } = await admin.auth.admin.getUserById(row.id);
-      if (userError) {
-        result.errors.push(`${row.id}: ${userError.message}`);
-        continue;
-      }
-      const isAnonymous = data.user?.is_anonymous === true;
-      if (!isAnonymous) {
-        result.skipped++;
-        continue;
-      }
-
-      if (row.organization_id) {
-        const { count, error: countError } = await admin
-          .from("profiles")
-          .select("id", { count: "exact", head: true })
-          .eq("organization_id", row.organization_id)
-          .neq("id", row.id);
-        if (countError) {
-          result.errors.push(`${row.id}: ${countError.message}`);
+    for (const row of expired) {
+      try {
+        const { data, error: userError } = await admin.auth.admin.getUserById(row.id);
+        if (userError) {
+          result.errors.push(`${row.id}: ${userError.message}`);
           continue;
         }
-        if ((count ?? 0) > 0) {
+        const isAnonymous = data.user?.is_anonymous === true;
+        if (!isAnonymous) {
           result.skipped++;
           continue;
         }
 
-        // FK cascades remove the workspace data; profiles.organization_id -> NULL.
-        const { error: orgError } = await admin.from("organizations").delete().eq("id", row.organization_id);
-        if (orgError) {
-          result.errors.push(`${row.id}: ${orgError.message}`);
+        if (row.organization_id) {
+          const { count, error: countError } = await admin
+            .from("profiles")
+            .select("id", { count: "exact", head: true })
+            .eq("organization_id", row.organization_id)
+            .neq("id", row.id);
+          if (countError) {
+            result.errors.push(`${row.id}: ${countError.message}`);
+            continue;
+          }
+          if ((count ?? 0) > 0) {
+            result.skipped++;
+            continue;
+          }
+
+          // FK cascades remove the workspace data; profiles.organization_id -> NULL.
+          const { error: orgError } = await admin.from("organizations").delete().eq("id", row.organization_id);
+          if (orgError) {
+            result.errors.push(`${row.id}: ${orgError.message}`);
+            continue;
+          }
+          result.deletedOrgs++;
+        }
+
+        // Cascades the profile row.
+        const { error: deleteError } = await admin.auth.admin.deleteUser(row.id);
+        if (deleteError) {
+          result.errors.push(`${row.id}: ${deleteError.message}`);
           continue;
         }
-        result.deletedOrgs++;
+        result.deletedUsers++;
+      } catch (err) {
+        result.errors.push(`${row.id}: ${err instanceof Error ? err.message : "error"}`);
       }
-
-      // Cascades the profile row.
-      const { error: deleteError } = await admin.auth.admin.deleteUser(row.id);
-      if (deleteError) {
-        result.errors.push(`${row.id}: ${deleteError.message}`);
-        continue;
-      }
-      result.deletedUsers++;
-    } catch (err) {
-      result.errors.push(`${row.id}: ${err instanceof Error ? err.message : "error"}`);
     }
+
+    if (pageRows.length < GUEST_CLEANUP_BATCH) break;
+    lastId = pageRows[pageRows.length - 1].id;
   }
 
   return result;
