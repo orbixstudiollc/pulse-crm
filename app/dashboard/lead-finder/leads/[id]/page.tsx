@@ -30,9 +30,21 @@ import {
   FloppyDiskIcon,
   ArrowPathIcon,
   ChevronsRightIcon,
+  UserIcon,
   Input,
   Button,
 } from "@/components/ui";
+import {
+  Page,
+  PageHeader,
+  MetricStrip,
+  Metric,
+  Section,
+  DetailLayout,
+  PanelSection,
+  KeyValueList,
+  KeyValue,
+} from "@/components/dashboard";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 import { ScoreBadge } from "@/components/lead-finder/ScoreBadge";
 import { useLeadEvents } from "@/hooks/use-lead-events";
@@ -176,13 +188,13 @@ function CollapsibleSection({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="bg-surface border border-line rounded-lg overflow-hidden">
+    <Section>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between p-4 text-left"
+        className="w-full flex items-center justify-between gap-4 text-left"
       >
-        <span className="flex items-center gap-2 text-sm font-semibold text-fg">
-          {Icon && <Icon size={14} className="text-fg-muted" />}
+        <span className="flex items-center gap-2 text-[16px] leading-6 font-semibold text-fg">
+          {Icon && <Icon size={16} className="text-fg-secondary" />}
           {title}
         </span>
         <div className="flex items-center gap-2">
@@ -194,8 +206,8 @@ function CollapsibleSection({
           )}
         </div>
       </button>
-      {open && <div className="px-4 pb-4">{children}</div>}
-    </div>
+      {open && <div className="mt-4">{children}</div>}
+    </Section>
   );
 }
 
@@ -214,26 +226,31 @@ function InfoRow({
 }) {
   const strVal = typeof value === "string" ? value : null;
   return (
-    <div className="flex items-start gap-3 py-2">
-      {Icon && <Icon size={14} className="text-fg-muted mt-0.5 shrink-0" />}
-      <span className="text-xs text-fg-muted w-28 shrink-0 mt-0.5">{label}</span>
+    <KeyValue
+      label={
+        <span className="flex items-start gap-1.5">
+          {Icon && <Icon size={14} className="text-fg-muted mt-0.5 shrink-0" />}
+          {label}
+        </span>
+      }
+    >
       {value ? (
         link && strVal ? (
           <a
             href={strVal.startsWith("http") ? strVal : `https://${strVal}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-accent-strong hover:underline min-w-0 break-all"
+            className="text-accent-strong hover:underline break-all"
           >
             {strVal}
           </a>
         ) : (
-          <span className="text-sm text-fg min-w-0 break-all">{value}</span>
+          <span className="text-fg break-all">{value}</span>
         )
       ) : (
-        <span className="text-sm text-fg-secondary italic">Not set</span>
+        <span className="text-fg-secondary italic">Not set</span>
       )}
-    </div>
+    </KeyValue>
   );
 }
 
@@ -253,16 +270,21 @@ function EditableRow({
   placeholder?: string;
 }) {
   return (
-    <div className="flex items-start gap-3 py-1">
-      {Icon && <Icon size={14} className="text-fg-muted mt-2.5 shrink-0" />}
-      <span className="text-xs text-fg-muted w-28 shrink-0 mt-2">{label}</span>
+    <KeyValue
+      label={
+        <span className="flex items-start gap-1.5 pt-2">
+          {Icon && <Icon size={14} className="text-fg-muted mt-0.5 shrink-0" />}
+          {label}
+        </span>
+      }
+    >
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="h-8 text-sm"
       />
-    </div>
+    </KeyValue>
   );
 }
 
@@ -294,7 +316,7 @@ function RawDataBlock({
           </button>
         </div>
       </div>
-      <pre className="max-h-64 overflow-auto rounded-lg bg-subtle border border-line p-3 text-xs text-fg-secondary">
+      <pre className="max-h-64 overflow-auto rounded-md bg-subtle p-3 text-xs text-fg-secondary">
         {json}
       </pre>
     </div>
@@ -314,7 +336,7 @@ function JsonModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
       <div
-        className="bg-surface border border-line rounded-lg shadow-modal w-full max-w-2xl max-h-[80vh] flex flex-col"
+        className="bg-surface border border-line rounded-lg shadow-modal w-full max-w-2xl max-h-[80vh] flex flex-col" data-clay-box
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-divider">
@@ -562,26 +584,30 @@ export default function LeadDetailPage() {
 
   if (loading) {
     return (
-      <div className="p-6 lg:p-6">
-        <LeadFinderSubNav />
+      <Page>
+        <div className="px-8 pt-6 max-sm:px-4">
+          <LeadFinderSubNav />
+        </div>
         <div className="flex items-center justify-center h-64">
           <CircleNotchIcon size={32} className="animate-spin text-fg-muted" />
         </div>
-      </div>
+      </Page>
     );
   }
 
   if (!lead) {
     return (
-      <div className="p-6 lg:p-6">
-        <LeadFinderSubNav />
+      <Page>
+        <div className="px-8 pt-6 max-sm:px-4">
+          <LeadFinderSubNav />
+        </div>
         <div className="flex flex-col items-center justify-center h-64">
           <p className="text-fg-muted mb-4">Lead not found</p>
           <Link href="/dashboard/lead-finder/leads" className="text-sm text-accent-strong hover:underline">
             Back to leads
           </Link>
         </div>
-      </div>
+      </Page>
     );
   }
 
@@ -628,32 +654,31 @@ export default function LeadDetailPage() {
   // ── Render ────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 lg:p-6">
-      <LeadFinderSubNav />
+    <Page>
+      <div className="flex items-start gap-3 px-8 pt-6 max-sm:px-4">
+        <button
+          onClick={() => router.back()}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface border border-line text-fg-secondary hover:bg-muted hover:text-fg transition-colors"
+        >
+          <ArrowLeftIcon size={16} />
+        </button>
+        <LeadFinderSubNav />
+      </div>
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            className="p-2 rounded-md bg-surface border border-line text-fg-secondary hover:bg-muted hover:text-fg transition-colors"
-          >
-            <ArrowLeftIcon size={16} />
-          </button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-semibold text-fg">
-                {ld.displayName || "Unknown Lead"}
-              </h1>
-              <ScoreBadge score={ld.score} />
-            </div>
-            <p className="text-sm text-fg-secondary mt-0.5">
+      <PageHeader
+        icon={<UserIcon size={18} />}
+        title={ld.displayName || "Unknown Lead"}
+        description={
+          <div className="flex flex-wrap items-center gap-2">
+            <ScoreBadge score={ld.score} />
+            <span>
               Source: {ld.source?.replace(/_/g, " ") || "Unknown"} | Created:{" "}
               {ld.createdAt ? new Date(ld.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "--"}
-            </p>
+            </span>
           </div>
-        </div>
-
+        }
+      >
         {/* Actions */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Status dropdown */}
@@ -668,7 +693,7 @@ export default function LeadDetailPage() {
               {lead.status}
             </Button>
             {statusMenuOpen && (
-              <div className="absolute right-0 mt-1 w-44 bg-surface border border-line rounded-lg shadow-dropdown z-30 py-1">
+              <div className="absolute right-0 mt-1 w-44 bg-surface border border-line rounded-lg shadow-dropdown z-30 py-1" data-clay-box>
                 {ALL_STATUSES.map((s) => (
                   <button
                     key={s}
@@ -688,7 +713,7 @@ export default function LeadDetailPage() {
           {lead.status === "new" || lead.status === "enriching" ? (
             <>
               <Button
-                variant="primary"
+                variant="outline"
                 size="sm"
                 onClick={() => handleEnrich()}
                 disabled={isEnrichingState}
@@ -709,7 +734,7 @@ export default function LeadDetailPage() {
           ) : (
             <div className="flex gap-1">
               <Button
-                variant="primary"
+                variant="outline"
                 size="sm"
                 onClick={() => handleEnrich()}
                 disabled={isEnrichingState}
@@ -722,12 +747,12 @@ export default function LeadDetailPage() {
                   <button
                     onClick={() => setActorMenuOpen(!actorMenuOpen)}
                     disabled={isEnrichingState}
-                    className="inline-flex h-7 items-center px-1.5 rounded-md bg-accent-strong text-on-inverse hover:opacity-90 disabled:opacity-50 transition-colors"
+                    className="inline-flex h-7 items-center px-1.5 rounded-md border border-line bg-surface text-fg hover:bg-subtle disabled:opacity-50 transition-colors"
                   >
                     <CaretDownIcon size={14} />
                   </button>
                   {actorMenuOpen && (
-                    <div className="absolute right-0 mt-1 w-56 bg-surface border border-line rounded-lg shadow-dropdown z-30 py-1">
+                    <div className="absolute right-0 mt-1 w-56 bg-surface border border-line rounded-lg shadow-dropdown z-30 py-1" data-clay-box>
                       <button
                         onClick={() => { setActorMenuOpen(false); handleEnrich(); }}
                         className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2 text-fg"
@@ -764,374 +789,354 @@ export default function LeadDetailPage() {
             Import to CRM
           </Button>
         </div>
-      </div>
+      </PageHeader>
 
-      {/* Two column layout */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left column (2/3) */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Contact Information */}
-          <div className="bg-surface border border-line rounded-lg p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-fg">Contact Information</h3>
-              {isEditingContact ? (
-                <div className="flex items-center gap-1">
+      {/* Record numbers */}
+      <MetricStrip>
+        <Metric label="Lead Score" value={<ScoreBadge score={ld.score} />} />
+        {totalCost > 0 && (
+          <Metric label="Total Cost" value={<span className="tabular-nums">${totalCost.toFixed(4)}</span>} />
+        )}
+      </MetricStrip>
+
+      <DetailLayout
+        className="border-t border-divider"
+        aside={
+          <>
+            {/* Contact Information */}
+            <PanelSection
+              title="Contact Information"
+              actions={
+                isEditingContact ? (
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={discardContactEdit}
+                      disabled={savingContact}
+                      leftIcon={<XIcon size={12} />}
+                    >
+                      Discard
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={saveContactEdit}
+                      disabled={savingContact}
+                      leftIcon={savingContact ? <CircleNotchIcon size={12} className="animate-spin" /> : <CheckIcon size={12} />}
+                    >
+                      Save
+                    </Button>
+                  </div>
+                ) : (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={discardContactEdit}
-                    disabled={savingContact}
-                    leftIcon={<XIcon size={12} />}
+                    onClick={startEditingContact}
+                    leftIcon={<PencilSimpleIcon size={12} />}
                   >
-                    Discard
+                    Edit
                   </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={saveContactEdit}
-                    disabled={savingContact}
-                    leftIcon={savingContact ? <CircleNotchIcon size={12} className="animate-spin" /> : <CheckIcon size={12} />}
-                  >
-                    Save
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={startEditingContact}
-                  leftIcon={<PencilSimpleIcon size={12} />}
-                >
-                  Edit
-                </Button>
-              )}
-            </div>
-
-            <div className="space-y-0 divide-y divide-row">
-              {isEditingContact ? (
-                <>
-                  <EditableRow icon={EnvelopeIcon} label="Email" value={editContactValues.email || ""} onChange={(v) => setEditContactValues({ ...editContactValues, email: v })} placeholder="email@example.com" />
-                  <EditableRow icon={PhoneIcon} label="Phone" value={editContactValues.phone || ""} onChange={(v) => setEditContactValues({ ...editContactValues, phone: v })} placeholder="+1 (555) 000-0000" />
-                  <EditableRow icon={GlobeIcon} label="Website" value={editContactValues.website || ""} onChange={(v) => setEditContactValues({ ...editContactValues, website: v })} placeholder="https://example.com" />
-                  {ld.leadFieldDefinitions.map((field) => {
-                    const FieldIcon = field.type === "number" ? HashIcon : field.type === "url" ? LinkIcon : TagIcon;
-                    return (
-                      <EditableRow
-                        key={field.id}
-                        icon={FieldIcon}
-                        label={field.label}
-                        value={editContactValues[`field:${field.id}`] || ""}
-                        onChange={(v) => setEditContactValues({ ...editContactValues, [`field:${field.id}`]: v })}
-                        placeholder={field.description || field.label}
-                      />
-                    );
-                  })}
-                </>
-              ) : (
-                <>
-                  <InfoRow icon={EnvelopeIcon} label="Email" value={lead.email} />
-                  <InfoRow icon={PhoneIcon} label="Phone" value={lead.phone} />
-                  <InfoRow icon={GlobeIcon} label="Website" value={lead.website} link />
-                  {ld.leadFieldDefinitions.length > 0 && (() => {
-                    const mapped = ld.mappedData as Record<string, unknown> | undefined;
-                    const raw = ld.rawData as Record<string, unknown> | undefined;
-                    return ld.leadFieldDefinitions.map((field) => {
-                      const val = mapped?.[field.id] ?? raw?.[field.id];
-                      const strVal = val != null ? formatVal(val, field.type) : "";
-                      const isUrl = field.type === "url" || (typeof strVal === "string" && strVal.startsWith("http"));
-                      const FieldIcon = field.type === "number" ? HashIcon : isUrl ? LinkIcon : TagIcon;
-                      return <InfoRow key={field.id} icon={FieldIcon} label={field.label} value={strVal || undefined} link={isUrl} />;
-                    });
-                  })()}
-                </>
-              )}
-            </div>
-
-            {/* Score in contact card */}
-            <div className="mt-4 pt-4 border-t border-line">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-fg-muted">Lead Score</span>
-                <ScoreBadge score={ld.score} />
-              </div>
-            </div>
-          </div>
-
-          {/* Personalization Insights */}
-          {p && (
-            <div className="bg-surface border border-line rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-fg mb-4 flex items-center gap-2">
-                <SparkleIcon size={14} className="text-fg-muted" />
-                Personalization Insights
-              </h3>
-              <div className="space-y-4">
-                {persSum && (
-                  <div>
-                    <p className="text-xs text-fg-muted mb-1">Summary</p>
-                    <p className="text-sm text-fg leading-relaxed whitespace-pre-wrap">{persSum}</p>
-                  </div>
-                )}
-                {p.companyDescription && (
-                  <div>
-                    <p className="text-xs text-fg-muted mb-1">About</p>
-                    <p className="text-sm text-fg">{p.companyDescription}</p>
-                  </div>
-                )}
-                {painPoints.length > 0 && (
-                  <div>
-                    <p className="text-xs text-fg-muted mb-2">Pain Points</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {painPoints.map((pp, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded-md bg-danger-surface text-danger text-xs">{pp}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {techStack.length > 0 && (
-                  <div>
-                    <p className="text-xs text-fg-muted mb-2">Tech Stack</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {techStack.map((t, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded-md bg-accent-surface text-accent-strong text-xs">{t}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {(p.hasChatbot || p.hasBookingSystem) && (
-                  <div>
-                    <p className="text-xs text-fg-muted mb-2">Detections</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {p.hasChatbot && (
-                        <span className="px-2 py-0.5 rounded-md bg-accent-surface text-accent-strong text-xs">Chatbot Detected</span>
-                      )}
-                      {p.hasBookingSystem && (
-                        <span className="px-2 py-0.5 rounded-md bg-accent-surface text-accent-strong text-xs">Booking System Detected</span>
-                      )}
-                    </div>
-                  </div>
-                )}
-                {p.lastBlogPost && (
-                  <div>
-                    <p className="text-xs text-fg-muted mb-1">Last Blog Post</p>
-                    <p className="text-sm text-fg">{p.lastBlogPost}</p>
-                  </div>
-                )}
-                {/* Enrichment actors */}
-                {p.enrichment_actors && p.enrichment_actors.length > 0 && (
-                  <div>
-                    <p className="text-xs text-fg-muted mb-2">Enrichment Actors Used</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {p.enrichment_actors.map((actor, i) => (
-                        <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-fg-secondary text-xs">
-                          <LightningIcon size={10} />
-                          {actor}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Campaign KPIs (inline editing) */}
-          {ld.kpiDefinitions.length > 0 && (
-            <CollapsibleSection
-              title="Campaign KPIs"
-              icon={ChartBarIcon}
-              defaultOpen={true}
-              action={
-                kpiDirty ? (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={saveKpis}
-                    disabled={savingKpis}
-                    leftIcon={<FloppyDiskIcon size={12} />}
-                  >
-                    {savingKpis ? "Saving..." : "Save"}
-                  </Button>
-                ) : null
+                )
               }
             >
-              <div className="space-y-3">
-                {ld.kpiDefinitions.map((kpi) => (
-                  <div key={kpi.id} className="flex items-center gap-4">
-                    {kpi.type === "boolean" ? (
-                      <div className="flex items-center justify-between w-full">
-                        <div>
-                          <p className="text-sm text-fg">{kpi.label}</p>
-                          {kpi.description && <p className="text-xs text-fg-secondary">{kpi.description}</p>}
-                        </div>
-                        <button
-                          onClick={() => updateKpiValue(kpi.id, kpiValues[kpi.id] !== true)}
-                          className={`relative w-10 h-5 rounded-full transition-colors ${kpiValues[kpi.id] === true ? "bg-success" : "bg-fg-muted"}`}
-                        >
-                          <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-surface transition-transform ${kpiValues[kpi.id] === true ? "translate-x-5" : ""}`} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="w-full space-y-1">
+              <KeyValueList>
+                {isEditingContact ? (
+                  <>
+                    <EditableRow icon={EnvelopeIcon} label="Email" value={editContactValues.email || ""} onChange={(v) => setEditContactValues({ ...editContactValues, email: v })} placeholder="email@example.com" />
+                    <EditableRow icon={PhoneIcon} label="Phone" value={editContactValues.phone || ""} onChange={(v) => setEditContactValues({ ...editContactValues, phone: v })} placeholder="+1 (555) 000-0000" />
+                    <EditableRow icon={GlobeIcon} label="Website" value={editContactValues.website || ""} onChange={(v) => setEditContactValues({ ...editContactValues, website: v })} placeholder="https://example.com" />
+                    {ld.leadFieldDefinitions.map((field) => {
+                      const FieldIcon = field.type === "number" ? HashIcon : field.type === "url" ? LinkIcon : TagIcon;
+                      return (
+                        <EditableRow
+                          key={field.id}
+                          icon={FieldIcon}
+                          label={field.label}
+                          value={editContactValues[`field:${field.id}`] || ""}
+                          onChange={(v) => setEditContactValues({ ...editContactValues, [`field:${field.id}`]: v })}
+                          placeholder={field.description || field.label}
+                        />
+                      );
+                    })}
+                  </>
+                ) : (
+                  <>
+                    <InfoRow icon={EnvelopeIcon} label="Email" value={lead.email} />
+                    <InfoRow icon={PhoneIcon} label="Phone" value={lead.phone} />
+                    <InfoRow icon={GlobeIcon} label="Website" value={lead.website} link />
+                    {ld.leadFieldDefinitions.length > 0 && (() => {
+                      const mapped = ld.mappedData as Record<string, unknown> | undefined;
+                      const raw = ld.rawData as Record<string, unknown> | undefined;
+                      return ld.leadFieldDefinitions.map((field) => {
+                        const val = mapped?.[field.id] ?? raw?.[field.id];
+                        const strVal = val != null ? formatVal(val, field.type) : "";
+                        const isUrl = field.type === "url" || (typeof strVal === "string" && strVal.startsWith("http"));
+                        const FieldIcon = field.type === "number" ? HashIcon : isUrl ? LinkIcon : TagIcon;
+                        return <InfoRow key={field.id} icon={FieldIcon} label={field.label} value={strVal || undefined} link={isUrl} />;
+                      });
+                    })()}
+                  </>
+                )}
+              </KeyValueList>
+            </PanelSection>
+
+            {/* Cost Breakdown */}
+            {totalCost > 0 && (
+              <PanelSection
+                title={
+                  <span className="flex items-center gap-2">
+                    <CurrencyDollarIcon size={14} className="text-fg-muted" />
+                    Cost Breakdown
+                  </span>
+                }
+              >
+                <div className="space-y-4">
+                  <div>
+                    <p className="mb-2 text-xs font-medium text-fg-muted">Discovery</p>
+                    <KeyValueList>
+                      <KeyValue label="LLM"><span className="tabular-nums">${discoveryLlm.toFixed(4)}</span></KeyValue>
+                      <KeyValue label="Apify"><span className="tabular-nums">${discoveryApify.toFixed(4)}</span></KeyValue>
+                      <KeyValue label="Subtotal"><span className="font-medium tabular-nums">${discoveryCost.toFixed(4)}</span></KeyValue>
+                    </KeyValueList>
+                  </div>
+                  {isEnrichedStatus && enrichmentCost > 0 && (
+                    <div>
+                      <p className="mb-2 text-xs font-medium text-fg-muted">Enrichment</p>
+                      <KeyValueList>
+                        <KeyValue label="LLM"><span className="tabular-nums">${enrichmentLlm.toFixed(4)}</span></KeyValue>
+                        <KeyValue label="Apify"><span className="tabular-nums">${enrichmentApify.toFixed(4)}</span></KeyValue>
+                        <KeyValue label="Subtotal"><span className="font-medium tabular-nums">${enrichmentCost.toFixed(4)}</span></KeyValue>
+                      </KeyValueList>
+                    </div>
+                  )}
+                </div>
+              </PanelSection>
+            )}
+
+            {/* Source & Created meta */}
+            <div className="px-6 py-5 border-t border-divider first:border-t-0">
+              <KeyValueList>
+                <KeyValue label="Source">
+                  <a
+                    href={`https://apify.com/${ld.source}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-accent-strong hover:underline break-all"
+                  >
+                    {ld.source}
+                    <ArrowSquareOutIcon size={12} className="shrink-0" />
+                  </a>
+                </KeyValue>
+                <KeyValue label="Created">
+                  {ld.createdAt
+                    ? new Date(ld.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
+                    : "--"}
+                </KeyValue>
+              </KeyValueList>
+            </div>
+          </>
+        }
+      >
+        {/* Personalization Insights */}
+        {p && (
+          <Section title="Personalization Insights" icon={<SparkleIcon size={16} />}>
+            <div className="space-y-4">
+              {persSum && (
+                <div>
+                  <p className="text-xs text-fg-muted mb-1">Summary</p>
+                  <p className="text-sm text-fg leading-relaxed whitespace-pre-wrap">{persSum}</p>
+                </div>
+              )}
+              {p.companyDescription && (
+                <div>
+                  <p className="text-xs text-fg-muted mb-1">About</p>
+                  <p className="text-sm text-fg">{p.companyDescription}</p>
+                </div>
+              )}
+              {painPoints.length > 0 && (
+                <div>
+                  <p className="text-xs text-fg-muted mb-2">Pain Points</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {painPoints.map((pp, i) => (
+                      <span key={i} className="px-2 py-0.5 rounded-md bg-danger-surface text-danger text-xs">{pp}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {techStack.length > 0 && (
+                <div>
+                  <p className="text-xs text-fg-muted mb-2">Tech Stack</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {techStack.map((t, i) => (
+                      <span key={i} className="px-2 py-0.5 rounded-md bg-accent-surface text-accent-strong text-xs">{t}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(p.hasChatbot || p.hasBookingSystem) && (
+                <div>
+                  <p className="text-xs text-fg-muted mb-2">Detections</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {p.hasChatbot && (
+                      <span className="px-2 py-0.5 rounded-md bg-accent-surface text-accent-strong text-xs">Chatbot Detected</span>
+                    )}
+                    {p.hasBookingSystem && (
+                      <span className="px-2 py-0.5 rounded-md bg-accent-surface text-accent-strong text-xs">Booking System Detected</span>
+                    )}
+                  </div>
+                </div>
+              )}
+              {p.lastBlogPost && (
+                <div>
+                  <p className="text-xs text-fg-muted mb-1">Last Blog Post</p>
+                  <p className="text-sm text-fg">{p.lastBlogPost}</p>
+                </div>
+              )}
+              {/* Enrichment actors */}
+              {p.enrichment_actors && p.enrichment_actors.length > 0 && (
+                <div>
+                  <p className="text-xs text-fg-muted mb-2">Enrichment Actors Used</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {p.enrichment_actors.map((actor, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted text-fg-secondary text-xs">
+                        <LightningIcon size={10} />
+                        {actor}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Section>
+        )}
+
+        {/* Campaign KPIs (inline editing) */}
+        {ld.kpiDefinitions.length > 0 && (
+          <CollapsibleSection
+            title="Campaign KPIs"
+            icon={ChartBarIcon}
+            defaultOpen={true}
+            action={
+              kpiDirty ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={saveKpis}
+                  disabled={savingKpis}
+                  leftIcon={<FloppyDiskIcon size={12} />}
+                >
+                  {savingKpis ? "Saving..." : "Save"}
+                </Button>
+              ) : null
+            }
+          >
+            <div className="space-y-3">
+              {ld.kpiDefinitions.map((kpi) => (
+                <div key={kpi.id} className="flex items-center gap-4">
+                  {kpi.type === "boolean" ? (
+                    <div className="flex items-center justify-between w-full">
+                      <div>
                         <p className="text-sm text-fg">{kpi.label}</p>
                         {kpi.description && <p className="text-xs text-fg-secondary">{kpi.description}</p>}
-                        <Input
-                          value={typeof kpiValues[kpi.id] === "string" ? (kpiValues[kpi.id] as string) : ""}
-                          onChange={(e) => updateKpiValue(kpi.id, e.target.value)}
-                          placeholder="Not set"
-                          className="h-8 text-sm"
-                        />
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CollapsibleSection>
-          )}
-
-          {/* KPI values from personalization (read-only, when no kpiDefinitions) */}
-          {ld.kpiDefinitions.length === 0 && Object.keys(campaignKpis).length > 0 && (
-            <div className="bg-surface border border-line rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-fg mb-4 flex items-center gap-2">
-                <ChartBarIcon size={14} className="text-fg-muted" />
-                KPI Values
-              </h3>
-              <div className="space-y-1">
-                {Object.entries(campaignKpis).map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between py-2 border-b border-line/30 last:border-0">
-                    <span className="text-xs text-fg-muted capitalize">{key.replace(/_/g, " ")}</span>
-                    {typeof value === "boolean" ? (
-                      value ? (
-                        <CheckCircleIcon size={16} className="text-success" />
-                      ) : (
-                        <XCircleIcon size={16} className="text-danger" />
-                      )
-                    ) : (
-                      <span className="text-xs text-fg">{String(value)}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Mapped Data */}
-          <CollapsibleSection title="Mapped Data" defaultOpen={true}>
-            {ld.mappedData && Object.keys(ld.mappedData).length > 0 ? (
-              <div className="space-y-1">
-                {Object.entries(ld.mappedData).map(([key, value]) => (
-                  <div key={key} className="flex items-start justify-between py-1.5 border-b border-line/30 last:border-0">
-                    <span className="text-xs text-fg-muted capitalize">{key.replace(/_/g, " ")}</span>
-                    <span className="text-xs text-fg text-right max-w-[60%] break-all">
-                      {typeof value === "object" ? JSON.stringify(value) : String(value ?? "")}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-fg-muted">No mapped data available.</p>
-            )}
-          </CollapsibleSection>
-        </div>
-
-        {/* Right column (1/3) */}
-        <div className="space-y-6">
-          {/* Cost Breakdown */}
-          {totalCost > 0 && (
-            <div className="bg-surface border border-line rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-fg mb-4 flex items-center gap-2">
-                <CurrencyDollarIcon size={14} className="text-fg-muted" />
-                Cost Breakdown
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm font-medium text-fg">Total Cost</span>
-                  <span className="text-lg font-semibold tabular-nums text-fg">${totalCost.toFixed(4)}</span>
-                </div>
-                <div className="border-t border-line" />
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-fg-muted">Discovery</p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                    <span className="text-fg-muted">LLM</span>
-                    <span className="text-right tabular-nums text-fg">${discoveryLlm.toFixed(4)}</span>
-                    <span className="text-fg-muted">Apify</span>
-                    <span className="text-right tabular-nums text-fg">${discoveryApify.toFixed(4)}</span>
-                    <span className="font-medium text-fg">Subtotal</span>
-                    <span className="text-right font-medium tabular-nums text-fg">${discoveryCost.toFixed(4)}</span>
-                  </div>
-                </div>
-                {isEnrichedStatus && enrichmentCost > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-fg-muted">Enrichment</p>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                      <span className="text-fg-muted">LLM</span>
-                      <span className="text-right tabular-nums text-fg">${enrichmentLlm.toFixed(4)}</span>
-                      <span className="text-fg-muted">Apify</span>
-                      <span className="text-right tabular-nums text-fg">${enrichmentApify.toFixed(4)}</span>
-                      <span className="font-medium text-fg">Subtotal</span>
-                      <span className="text-right font-medium tabular-nums text-fg">${enrichmentCost.toFixed(4)}</span>
+                      <button
+                        onClick={() => updateKpiValue(kpi.id, kpiValues[kpi.id] !== true)}
+                        className={`relative w-10 h-5 rounded-full transition-colors ${kpiValues[kpi.id] === true ? "bg-success" : "bg-fg-muted"}`}
+                      >
+                        <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-surface transition-transform ${kpiValues[kpi.id] === true ? "translate-x-5" : ""}`} />
+                      </button>
                     </div>
-                  </div>
-                )}
-              </div>
+                  ) : (
+                    <div className="w-full space-y-1">
+                      <p className="text-sm text-fg">{kpi.label}</p>
+                      {kpi.description && <p className="text-xs text-fg-secondary">{kpi.description}</p>}
+                      <Input
+                        value={typeof kpiValues[kpi.id] === "string" ? (kpiValues[kpi.id] as string) : ""}
+                        onChange={(e) => updateKpiValue(kpi.id, e.target.value)}
+                        placeholder="Not set"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CollapsibleSection>
+        )}
+
+        {/* KPI values from personalization (read-only, when no kpiDefinitions) */}
+        {ld.kpiDefinitions.length === 0 && Object.keys(campaignKpis).length > 0 && (
+          <Section title="KPI Values" icon={<ChartBarIcon size={16} />}>
+            <div className="space-y-1">
+              {Object.entries(campaignKpis).map(([key, value]) => (
+                <div key={key} className="flex items-center justify-between py-2 border-b border-line/30 last:border-0">
+                  <span className="text-xs text-fg-muted capitalize">{key.replace(/_/g, " ")}</span>
+                  {typeof value === "boolean" ? (
+                    value ? (
+                      <CheckCircleIcon size={16} className="text-success" />
+                    ) : (
+                      <XCircleIcon size={16} className="text-danger" />
+                    )
+                  ) : (
+                    <span className="text-xs text-fg">{String(value)}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Mapped Data */}
+        <CollapsibleSection title="Mapped Data" defaultOpen={true}>
+          {ld.mappedData && Object.keys(ld.mappedData).length > 0 ? (
+            <div className="space-y-1">
+              {Object.entries(ld.mappedData).map(([key, value]) => (
+                <div key={key} className="flex items-start justify-between py-1.5 border-b border-line/30 last:border-0">
+                  <span className="text-xs text-fg-muted capitalize">{key.replace(/_/g, " ")}</span>
+                  <span className="text-xs text-fg text-right max-w-[60%] break-all">
+                    {typeof value === "object" ? JSON.stringify(value) : String(value ?? "")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-fg-muted">No mapped data available.</p>
+          )}
+        </CollapsibleSection>
+
+        {/* Raw Data */}
+        <Section>
+          <button
+            onClick={() => setShowRaw(!showRaw)}
+            className="w-full flex items-center justify-between gap-4 text-left"
+          >
+            <span className="text-[16px] leading-6 font-semibold text-fg">Raw Data</span>
+            <span className="text-xs text-fg-muted">{showRaw ? "Hide" : "Show"}</span>
+          </button>
+          {showRaw && (
+            <div className="mt-4 space-y-3">
+              {ld.rawData && <RawDataBlock title="Source Data" data={ld.rawData} onExpand={setJsonDialog} />}
+              {p?.rawEnrichmentData && Object.keys(p.rawEnrichmentData).length > 0 && (() => {
+                const entries = Object.entries(p.rawEnrichmentData);
+                const isPerActor = entries.every(([k, v]) => k.includes("/") && v != null && typeof v === "object" && !Array.isArray(v));
+                if (isPerActor) {
+                  return entries.map(([actorId, data]) => (
+                    <RawDataBlock key={actorId} title={`Enrichment: ${actorId}`} data={data} onExpand={setJsonDialog} />
+                  ));
+                }
+                return <RawDataBlock title="Enrichment Data" data={p.rawEnrichmentData} onExpand={setJsonDialog} />;
+              })()}
+              {ld.mappedData && Object.keys(ld.mappedData).length > 0 && (
+                <RawDataBlock title="Mapped Data" data={ld.mappedData} onExpand={setJsonDialog} />
+              )}
             </div>
           )}
-
-          {/* Raw Data */}
-          <div className="bg-surface border border-line rounded-lg overflow-hidden">
-            <button
-              onClick={() => setShowRaw(!showRaw)}
-              className="w-full flex items-center justify-between p-4 text-left"
-            >
-              <span className="text-sm font-semibold text-fg">Raw Data</span>
-              <span className="text-xs text-fg-muted">{showRaw ? "Hide" : "Show"}</span>
-            </button>
-            {showRaw && (
-              <div className="px-4 pb-4 space-y-3">
-                {ld.rawData && <RawDataBlock title="Source Data" data={ld.rawData} onExpand={setJsonDialog} />}
-                {p?.rawEnrichmentData && Object.keys(p.rawEnrichmentData).length > 0 && (() => {
-                  const entries = Object.entries(p.rawEnrichmentData);
-                  const isPerActor = entries.every(([k, v]) => k.includes("/") && v != null && typeof v === "object" && !Array.isArray(v));
-                  if (isPerActor) {
-                    return entries.map(([actorId, data]) => (
-                      <RawDataBlock key={actorId} title={`Enrichment: ${actorId}`} data={data} onExpand={setJsonDialog} />
-                    ));
-                  }
-                  return <RawDataBlock title="Enrichment Data" data={p.rawEnrichmentData} onExpand={setJsonDialog} />;
-                })()}
-                {ld.mappedData && Object.keys(ld.mappedData).length > 0 && (
-                  <RawDataBlock title="Mapped Data" data={ld.mappedData} onExpand={setJsonDialog} />
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Source & Created meta */}
-          <div className="bg-surface border border-line rounded-lg p-4 space-y-3">
-            <div>
-              <p className="text-xs text-fg-muted">Source</p>
-              <a
-                href={`https://apify.com/${ld.source}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm text-accent-strong hover:underline"
-              >
-                {ld.source}
-                <ArrowSquareOutIcon size={12} />
-              </a>
-            </div>
-            <div>
-              <p className="text-xs text-fg-muted">Created</p>
-              <p className="text-sm text-fg">
-                {ld.createdAt
-                  ? new Date(ld.createdAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
-                  : "--"}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+        </Section>
+      </DetailLayout>
 
       {/* JSON viewer modal */}
       <JsonModal dialog={jsonDialog} onClose={() => setJsonDialog(null)} />
-    </div>
+    </Page>
   );
 }

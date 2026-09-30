@@ -8,10 +8,7 @@ import {
   ArrowLeftIcon,
   PlayIcon,
   PauseIcon,
-  SparkleIcon,
-  UsersIcon,
-  ChartBarIcon,
-  CurrencyDollarIcon,
+  UserIcon,
   CircleNotchIcon,
   CheckCircleIcon,
   XCircleIcon,
@@ -42,6 +39,7 @@ import {
   InfoIcon,
 } from "@/components/ui";
 import { Button, Input, Select, Textarea } from "@/components/ui";
+import { Page, PageHeader, MetricStrip, Metric, TableSection, DetailLayout, PanelSection } from "@/components/dashboard";
 import { ScoreBadge } from "@/components/lead-finder/ScoreBadge";
 import { LeadDetailDrawer } from "@/components/lead-finder/LeadDetailDrawer";
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
@@ -652,28 +650,32 @@ export default function CampaignDetailPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 lg:p-6 space-y-5">
-      <LeadFinderSubNav />
+    <Page>
+      <div className="flex items-start gap-3 px-8 pt-6 max-sm:px-4">
+        <Link href="/dashboard/lead-finder/campaigns" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface border border-line text-fg-secondary hover:bg-muted hover:text-fg transition-colors">
+          <ArrowLeftIcon size={16} />
+        </Link>
+        <LeadFinderSubNav />
+      </div>
 
-      <EnrichmentProgressBanner campaignId={id} />
+      <div className="px-8 max-sm:px-4">
+        <EnrichmentProgressBanner campaignId={id} />
+      </div>
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard/lead-finder/campaigns" className="p-2 rounded-md bg-surface border border-line text-fg-secondary hover:bg-muted hover:text-fg transition-colors">
-            <ArrowLeftIcon size={16} />
-          </Link>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-semibold text-fg">{campaign.name}</h1>
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${campaign.status === "active" ? "text-success bg-success-surface" : campaign.status === "paused" ? "text-warning bg-warning-surface" : "text-fg-secondary bg-muted"}`}>
-                {campaign.status}
-              </span>
-            </div>
-            <p className="text-sm text-fg-secondary mt-0.5">{campaign.target_niche}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        icon={<MagnifyingGlassIcon size={18} />}
+        title={campaign.name}
+        description={
+          <span className="flex flex-wrap items-center gap-2">
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${campaign.status === "active" ? "text-success bg-success-surface" : campaign.status === "paused" ? "text-warning bg-warning-surface" : "text-fg-secondary bg-muted"}`}>
+              {campaign.status}
+            </span>
+            <span>{campaign.target_niche}</span>
+          </span>
+        }
+      >
+        <div className="flex flex-wrap items-center gap-2">
           <Button onClick={() => setShowClearLeadsConfirm(true)} disabled={campaign.leads.length === 0} variant="ghost" size="sm" leftIcon={<TrashIcon size={14} />} className="text-fg-secondary hover:text-danger hover:bg-danger-surface">
             Clear Leads
           </Button>
@@ -687,197 +689,187 @@ export default function CampaignDetailPage() {
             {campaign.status === "active" ? <><PauseIcon size={14} /> Pause</> : <><PlayIcon size={14} /> Activate</>}
           </Button>
         </div>
-      </div>
+      </PageHeader>
 
-      {/* ── Stats bar ── */}
-      <div className="bg-surface border border-line rounded-lg">
-        <div className="flex flex-wrap items-stretch divide-x divide-row">
-          {[
-            { label: "Leads", value: campaign.stats.totalLeads, icon: <UsersIcon size={12} /> },
-            { label: "Enriched", value: campaign.stats.enrichedLeads, icon: <SparkleIcon size={12} /> },
-            { label: "Avg Score", value: campaign.stats.avgScore, icon: <ChartBarIcon size={12} /> },
-          ].map((s) => (
-            <div key={s.label} className="flex-1 min-w-[90px] p-4">
-              <div className="flex items-center gap-1 text-fg-secondary mb-1">
-                {s.icon}
-                <span className="text-xs">{s.label}</span>
-              </div>
-              <p className="text-[22px] leading-7 font-semibold text-fg">{s.value}</p>
-            </div>
-          ))}
-          <div className="relative flex-1 min-w-[120px] p-4 cursor-pointer hover:bg-muted transition-colors" onClick={() => setShowCostBreakdown((v) => !v)}>
-            <div className="flex items-center gap-1 text-fg-secondary mb-1">
-              <CurrencyDollarIcon size={12} />
-              <span className="text-xs">Total Cost</span>
-              <InfoIcon size={10} className="ml-0.5" />
-            </div>
-            <p className="text-[22px] leading-7 font-semibold text-fg">${campaign.stats.totalCost.toFixed(4)}</p>
-            {showCostBreakdown && (
-              <>
-                <div className="fixed inset-0 z-30" onClick={(e) => { e.stopPropagation(); setShowCostBreakdown(false); }} />
-                <div className="absolute left-0 top-full z-40 mt-1 w-52 bg-surface border border-line rounded-lg shadow-dropdown p-3 space-y-2">
-                  <p className="text-xs text-fg-secondary font-medium">Cost Breakdown</p>
-                  {[
-                    ["Avg / Lead", `$${campaign.stats.avgCostPerLead.toFixed(4)}`],
-                    ["Apify", `$${campaign.stats.apifyCost.toFixed(4)}`],
-                    ["LLM", `$${campaign.stats.llmCost.toFixed(4)}`],
-                  ].map(([label, val]) => (
-                    <div key={label} className="flex justify-between text-sm">
-                      <span className="text-fg-secondary">{label}</span>
-                      <span className="font-medium text-fg">{val}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Discovery Configuration ── */}
-      <div className="bg-surface border border-line rounded-lg overflow-hidden">
-        <div className="px-4 py-3 border-b border-divider flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-fg">Discovery Configuration</h2>
-            {campaign.last_discovery_at && (
-              <p className="text-xs text-fg-secondary mt-0.5">
-                Last run: {new Date(campaign.last_discovery_at).toLocaleString()}
-              </p>
-            )}
-          </div>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-fg-secondary bg-muted border border-line">
-            <ClockIcon size={10} /> {formatEnumLabel(campaign.schedule_frequency)}
-          </span>
-        </div>
-        <div className="p-4 space-y-3">
-          {/* Find actors */}
-          {findActors.map((actorId) => {
-            const actor = getActorById(actorId);
-            const latestRun = latestRunByActor.get(actorId);
-            const actorIsRunning = runningActor === actorId || latestRun?.status === "running";
-            const anyRunning = runningActor !== null;
-            return (
-              <div key={actorId} className="rounded-lg border border-line p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-fg">{actor?.name || actorId}</p>
-                    <p className="text-xs text-fg-secondary mt-0.5">{actor?.description || ""}</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {actorIsRunning ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-warning">
-                        <CircleNotchIcon size={12} className="animate-spin" /> Running
-                      </span>
-                    ) : latestRun?.status === "succeeded" ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-success">
-                        <CheckCircleIcon size={12} /> {latestRun.result_count} results
-                      </span>
-                    ) : latestRun?.status === "failed" ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-danger">
-                        <XCircleIcon size={12} /> Failed
-                      </span>
-                    ) : (
-                      <span className="text-xs text-fg-muted">Not run yet</span>
-                    )}
-                    <Button
-                      onClick={() => handleRunActor(actorId)}
-                      disabled={anyRunning || campaign.status !== "active"}
-                      variant="secondary"
-                      size="sm"
-                      className="h-8 text-xs"
-                    >
-                      {actorIsRunning ? <><CircleNotchIcon size={12} className="animate-spin" /> Running...</> : <><PlayIcon size={12} /> Run Scraper</>}
-                    </Button>
-                  </div>
-                </div>
-                {actorIsRunning && (
-                  <p className="text-xs text-fg-secondary mt-2">
-                    {discoveryProgress
-                      ? `Processing lead ${discoveryProgress.current} of ${discoveryProgress.total}...`
-                      : "Scraping in progress — this may take 1–2 minutes..."}
-                  </p>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Discovery error */}
-          {discoveryError && (
-            <div className="flex items-start gap-2 p-3 rounded-lg bg-danger-surface border border-danger text-sm text-danger">
-              <WarningCircleIcon size={16} className="shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium">Discovery Error</p>
-                <p className="text-xs mt-0.5">{discoveryError}</p>
-              </div>
-              <Button onClick={() => setDiscoveryError(null)} variant="ghost" size="sm" className="ml-auto text-danger hover:text-danger px-1">
-                <XIcon size={14} />
-              </Button>
-            </div>
-          )}
-
-          {/* Enrich actors */}
-          {enrichActors.length > 0 && (
+      {/* ── Stats ── */}
+      <MetricStrip>
+        <Metric label="Leads" value={campaign.stats.totalLeads} />
+        <Metric label="Enriched" value={campaign.stats.enrichedLeads} />
+        <Metric label="Avg Score" value={campaign.stats.avgScore} />
+        <div className="relative cursor-pointer" onClick={() => setShowCostBreakdown((v) => !v)}>
+          <Metric
+            label="Total Cost"
+            value={
+              <span className="flex items-center gap-1">
+                ${campaign.stats.totalCost.toFixed(4)}
+                <InfoIcon size={12} className="text-fg-muted" />
+              </span>
+            }
+          />
+          {showCostBreakdown && (
             <>
-              <div className="border-t border-row pt-3 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-fg">Lead Enrichment</p>
-                  <p className="text-xs text-fg-secondary mt-0.5">
-                    {isEnrichmentActive ? (
-                      <span className="flex items-center gap-1"><CircleNotchIcon size={10} className="animate-spin" /> Enriching {unenrichedCount} leads...</span>
-                    ) : hasUnenrichedLeads ? (
-                      `${unenrichedCount} leads awaiting enrichment`
-                    ) : "All leads enriched"}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {campaign.auto_enrich && isEnrichmentActive ? (
-                    <Button onClick={handlePauseEnrichment} variant="outline" size="sm" leftIcon={<PauseIcon size={12} />} className="h-8 text-xs">
-                      Pause
-                    </Button>
-                  ) : campaign.auto_enrich && !isEnrichmentActive && hasUnenrichedLeads ? (
-                    <Button onClick={triggerEnrichment} variant="primary" size="sm" leftIcon={<PlayIcon size={12} />} className="h-8 text-xs">
-                      Resume
-                    </Button>
-                  ) : !campaign.auto_enrich && isEnrichmentActive ? (
-                    <Button onClick={handlePauseEnrichment} variant="outline" size="sm" leftIcon={<PowerIcon size={12} />} className="h-8 text-xs">
-                      Stop
-                    </Button>
-                  ) : !campaign.auto_enrich && !isEnrichmentActive && hasUnenrichedLeads ? (
-                    <Button onClick={triggerEnrichment} variant="primary" size="sm" leftIcon={<LightningIcon size={12} />} className="h-8 text-xs">
-                      Start Enrichment
-                    </Button>
-                  ) : null}
-                </div>
-              </div>
-              <div className="space-y-2">
-                {enrichActors.map((actorId) => {
-                  const actor = getActorById(actorId);
-                  return (
-                    <div key={actorId} className="rounded-lg border border-line p-3 flex items-center justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-fg">{actor?.name || actorId}</p>
-                        <p className="text-xs text-fg-secondary mt-0.5">{actor?.description || ""}</p>
-                      </div>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-fg-secondary bg-muted">enrich</span>
-                    </div>
-                  );
-                })}
+              <div className="fixed inset-0 z-30" onClick={(e) => { e.stopPropagation(); setShowCostBreakdown(false); }} />
+              <div className="absolute left-0 top-full z-40 mt-1 w-52 bg-surface border border-line rounded-lg shadow-dropdown p-3 space-y-2" data-clay-box>
+                <p className="text-xs text-fg-secondary font-medium">Cost Breakdown</p>
+                {[
+                  ["Avg / Lead", `$${campaign.stats.avgCostPerLead.toFixed(4)}`],
+                  ["Apify", `$${campaign.stats.apifyCost.toFixed(4)}`],
+                  ["LLM", `$${campaign.stats.llmCost.toFixed(4)}`],
+                ].map(([label, val]) => (
+                  <div key={label} className="flex justify-between text-sm">
+                    <span className="text-fg-secondary">{label}</span>
+                    <span className="font-medium text-fg">{val}</span>
+                  </div>
+                ))}
               </div>
             </>
           )}
-
-          {findActors.length === 0 && enrichActors.length === 0 && (
-            <p className="text-sm text-fg-secondary py-4 text-center">
-              No actors configured. Open Settings to add actors.
-            </p>
-          )}
         </div>
-      </div>
+      </MetricStrip>
 
-      {/* ── Leads Table ── */}
-      <div className="bg-surface border border-line rounded-lg overflow-hidden">
+      <DetailLayout
+        className="border-t border-divider"
+        aside={
+          <>
+            {/* ── Discovery Configuration ── */}
+            <PanelSection
+              title="Discovery Configuration"
+              actions={
+                <span className="inline-flex shrink-0 items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-fg-secondary bg-muted border border-line">
+                  <ClockIcon size={10} /> {formatEnumLabel(campaign.schedule_frequency)}
+                </span>
+              }
+            >
+              {campaign.last_discovery_at && (
+                <p className="mb-3 text-xs text-fg-secondary">
+                  Last run: {new Date(campaign.last_discovery_at).toLocaleString()}
+                </p>
+              )}
+              <div className="space-y-4">
+                {/* Find actors */}
+                {findActors.map((actorId) => {
+                  const actor = getActorById(actorId);
+                  const latestRun = latestRunByActor.get(actorId);
+                  const actorIsRunning = runningActor === actorId || latestRun?.status === "running";
+                  const anyRunning = runningActor !== null;
+                  return (
+                    <div key={actorId}>
+                      <p className="text-sm font-medium text-fg">{actor?.name || actorId}</p>
+                      <p className="text-xs text-fg-secondary mt-0.5">{actor?.description || ""}</p>
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        {actorIsRunning ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-warning">
+                            <CircleNotchIcon size={12} className="animate-spin" /> Running
+                          </span>
+                        ) : latestRun?.status === "succeeded" ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-success">
+                            <CheckCircleIcon size={12} /> {latestRun.result_count} results
+                          </span>
+                        ) : latestRun?.status === "failed" ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-danger">
+                            <XCircleIcon size={12} /> Failed
+                          </span>
+                        ) : (
+                          <span className="text-xs text-fg-muted">Not run yet</span>
+                        )}
+                        <Button
+                          onClick={() => handleRunActor(actorId)}
+                          disabled={anyRunning || campaign.status !== "active"}
+                          variant="secondary"
+                          size="sm"
+                          className="h-8 text-xs"
+                        >
+                          {actorIsRunning ? <><CircleNotchIcon size={12} className="animate-spin" /> Running...</> : <><PlayIcon size={12} /> Run Scraper</>}
+                        </Button>
+                      </div>
+                      {actorIsRunning && (
+                        <p className="text-xs text-fg-secondary mt-2">
+                          {discoveryProgress
+                            ? `Processing lead ${discoveryProgress.current} of ${discoveryProgress.total}...`
+                            : "Scraping in progress — this may take 1–2 minutes..."}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Discovery error */}
+                {discoveryError && (
+                  <div className="flex items-start gap-2 p-3 rounded-md bg-danger-surface text-sm text-danger">
+                    <WarningCircleIcon size={16} className="shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium">Discovery Error</p>
+                      <p className="text-xs mt-0.5">{discoveryError}</p>
+                    </div>
+                    <Button onClick={() => setDiscoveryError(null)} variant="ghost" size="sm" className="ml-auto text-danger hover:text-danger px-1">
+                      <XIcon size={14} />
+                    </Button>
+                  </div>
+                )}
+
+                {findActors.length === 0 && enrichActors.length === 0 && (
+                  <p className="text-sm text-fg-secondary py-4 text-center">
+                    No actors configured. Open Settings to add actors.
+                  </p>
+                )}
+              </div>
+            </PanelSection>
+
+            {/* ── Lead Enrichment ── */}
+            {enrichActors.length > 0 && (
+              <PanelSection
+                title="Lead Enrichment"
+                actions={
+                  <div className="flex items-center gap-2">
+                    {campaign.auto_enrich && isEnrichmentActive ? (
+                      <Button onClick={handlePauseEnrichment} variant="outline" size="sm" leftIcon={<PauseIcon size={12} />} className="h-8 text-xs">
+                        Pause
+                      </Button>
+                    ) : campaign.auto_enrich && !isEnrichmentActive && hasUnenrichedLeads ? (
+                      <Button onClick={triggerEnrichment} variant="primary" size="sm" leftIcon={<PlayIcon size={12} />} className="h-8 text-xs">
+                        Resume
+                      </Button>
+                    ) : !campaign.auto_enrich && isEnrichmentActive ? (
+                      <Button onClick={handlePauseEnrichment} variant="outline" size="sm" leftIcon={<PowerIcon size={12} />} className="h-8 text-xs">
+                        Stop
+                      </Button>
+                    ) : !campaign.auto_enrich && !isEnrichmentActive && hasUnenrichedLeads ? (
+                      <Button onClick={triggerEnrichment} variant="primary" size="sm" leftIcon={<LightningIcon size={12} />} className="h-8 text-xs">
+                        Start Enrichment
+                      </Button>
+                    ) : null}
+                  </div>
+                }
+              >
+                <p className="text-xs text-fg-secondary">
+                  {isEnrichmentActive ? (
+                    <span className="flex items-center gap-1"><CircleNotchIcon size={10} className="animate-spin" /> Enriching {unenrichedCount} leads...</span>
+                  ) : hasUnenrichedLeads ? (
+                    `${unenrichedCount} leads awaiting enrichment`
+                  ) : "All leads enriched"}
+                </p>
+                <div className="mt-3 space-y-3">
+                  {enrichActors.map((actorId) => {
+                    const actor = getActorById(actorId);
+                    return (
+                      <div key={actorId} className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-fg">{actor?.name || actorId}</p>
+                          <p className="text-xs text-fg-secondary mt-0.5">{actor?.description || ""}</p>
+                        </div>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-fg-secondary bg-muted">enrich</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </PanelSection>
+            )}
+          </>
+        }
+      >
+        {/* ── Leads Table ── */}
         {/* Table toolbar */}
-        <div className="px-4 py-3 border-b border-row flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-8 py-3 max-sm:px-4">
           <div className="flex items-center gap-2 flex-wrap">
             <Input
               leftIcon={<MagnifyingGlassIcon size={14} />}
@@ -914,7 +906,7 @@ export default function CampaignDetailPage() {
                 {showColumnMenu && (
                   <>
                     <div className="fixed inset-0 z-30" onClick={() => setShowColumnMenu(false)} />
-                    <div className="absolute left-0 top-full z-40 mt-1 w-48 bg-surface border border-line rounded-lg shadow-dropdown py-1.5">
+                    <div className="absolute left-0 top-full z-40 mt-1 w-48 bg-surface border border-line rounded-lg shadow-dropdown py-1.5" data-clay-box>
                       <p className="px-3 py-1 text-xs font-medium text-fg-muted">Toggle columns</p>
                       {fields.map((f) => (
                         <label key={f._id} className="flex items-center gap-2 px-3 py-1.5 text-sm text-fg hover:bg-muted cursor-pointer">
@@ -954,154 +946,165 @@ export default function CampaignDetailPage() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr>
-                <th className="h-10 px-3 w-9 border-b border-divider">
-                  <input type="checkbox" checked={selectedLeads.size === filteredLeads.length && filteredLeads.length > 0} onChange={() => setSelectedLeads(selectedLeads.size === filteredLeads.length ? new Set() : new Set(filteredLeads.map((l) => l.id)))} className="rounded" />
-                </th>
-                <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider whitespace-nowrap">Label</th>
-                {fields.filter((f) => extraColumns.has(f._id)).map((f) => (
-                  <th key={f._id} className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider whitespace-nowrap">{f.label}</th>
-                ))}
-                <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider whitespace-nowrap">Added</th>
-                <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider whitespace-nowrap">Score</th>
-                <th className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider whitespace-nowrap">Status</th>
-                <th className="h-10 px-3 w-20 border-b border-divider" />
-              </tr>
-            </thead>
-            <tbody>
-              {filteredLeads.length === 0 ? (
-                <tr>
-                  <td colSpan={6 + fields.filter((f) => extraColumns.has(f._id)).length} className="p-12 text-center text-sm text-fg-secondary">
-                    {campaign.leads.length === 0
-                      ? runningActor ? <span className="flex items-center justify-center gap-2"><CircleNotchIcon size={14} className="animate-spin" /> Discovery running — leads will appear here shortly</span>
-                      : "No leads yet. Run a scraper from Discovery Configuration above."
-                      : "No leads match your filters."}
-                  </td>
-                </tr>
-              ) : (
-                filteredLeads.map((lead) => {
-                  const status = displayStatus(lead);
-                  const isRe = reEnrichingLeads.has(lead.id);
-                  return (
-                    <tr key={lead.id} className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors cursor-pointer" onClick={() => setDrawerLeadId(lead.id)}>
-                      <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                        <input type="checkbox" checked={selectedLeads.has(lead.id)} onChange={() => setSelectedLeads((prev) => { const n = new Set(prev); if (n.has(lead.id)) n.delete(lead.id); else n.add(lead.id); return n; })} className="rounded" />
-                      </td>
-                      <td className="px-3 py-2 max-w-[200px]">
-                        <button type="button" onClick={(e) => { e.stopPropagation(); setDrawerLeadId(lead.id); }} className="text-sm font-medium text-fg hover:underline break-words line-clamp-2 text-left cursor-pointer">
-                          {lead.display_name || "Unknown"}
-                        </button>
-                        {lead.email && <p className="text-xs text-fg-secondary flex items-center gap-1 mt-0.5"><EnvelopeIcon size={10} />{lead.email}</p>}
-                        {lead.website && (
-                          <p className="text-xs text-fg-secondary flex items-center gap-1 mt-0.5 truncate max-w-[180px]">
-                            <GlobeIcon size={10} />
-                            <a href={lead.website} target="_blank" rel="noopener noreferrer" className="hover:underline" onClick={(e) => e.stopPropagation()}>
-                              {lead.website.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}
-                            </a>
-                          </p>
-                        )}
-                      </td>
-                      {fields.filter((f) => extraColumns.has(f._id)).map((f) => {
-                        const { display, isUrl } = resolveFieldValue(lead, f);
-                        return (
-                          <td key={f._id} className="px-3 py-2 text-xs max-w-[160px]">
-                            {isUrl && display !== "—" ? (
-                              <a href={display} target="_blank" rel="noopener noreferrer" className="text-accent-strong hover:underline truncate block" onClick={(e) => e.stopPropagation()}>
-                                {display.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}
-                              </a>
-                            ) : (
-                              <span className="text-fg-secondary truncate block">{display}</span>
-                            )}
-                          </td>
-                        );
-                      })}
-                      <td className="px-3 py-2 text-xs text-fg-secondary whitespace-nowrap">{formatRelativeTime(lead.created_at)}</td>
-                      <td className="px-3 py-2">
-                        {lead.status === "new" || lead.status === "enriching"
-                          ? <span className="text-xs text-fg-muted">—</span>
-                          : <ScoreBadge score={lead.score} />}
-                      </td>
-                      <td className="px-3 py-2">
-                        <span className={`inline-flex items-center px-2 h-5 rounded-full text-[12px] font-medium capitalize ${STATUS_STYLES[status] || "text-fg-secondary bg-muted"}`}>
-                          {status}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                        {isRe ? (
-                          <CircleNotchIcon size={14} className="animate-spin text-fg-muted" />
-                        ) : lead.status === "new" ? (
-                          <div className="flex items-center gap-0.5">
-                            <Button onClick={() => handleReEnrich(lead.id)} title="Enrich" variant="ghost" size="sm" className="p-1 h-auto">
-                              <LightningIcon size={14} />
-                            </Button>
-                            <Button onClick={() => handleSkip(lead.id)} title="Skip enrichment" variant="ghost" size="sm" className="p-1 h-auto">
-                              <ArrowRightIcon size={14} />
-                            </Button>
-                            <Button onClick={() => handleDeleteLead(lead.id)} title="Delete" variant="ghost" size="sm" className="p-1 h-auto text-fg-muted hover:text-danger hover:bg-danger-surface">
-                              <TrashIcon size={13} />
-                            </Button>
-                          </div>
-                        ) : (lead.status === "qualified" || lead.status === "converted" || lead.status === "disqualified" || lead.status === "declined") ? (
-                          <div className="flex items-center gap-0.5">
-                            <Button onClick={() => handleReEnrich(lead.id)} title="Re-enrich" variant="ghost" size="sm" className="p-1 h-auto">
-                              <ArrowCounterClockwiseIcon size={14} />
-                            </Button>
-                            <Button onClick={() => handleDeleteLead(lead.id)} title="Delete" variant="ghost" size="sm" className="p-1 h-auto text-fg-muted hover:text-danger hover:bg-danger-surface">
-                              <TrashIcon size={13} />
-                            </Button>
-                          </div>
-                        ) : null}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* ── Run History ── */}
-      {campaign.runs.length > 0 && (
-        <div className="bg-surface border border-line rounded-lg overflow-hidden">
-          <div className="px-4 py-3 border-b border-divider">
-            <h2 className="text-sm font-semibold text-fg">Run History</h2>
-          </div>
+        <TableSection>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr>
-                  {["Actor", "Status", "Results", "Cost", "Started"].map((h) => (
-                    <th key={h} className="h-10 px-3 text-[13px] font-medium text-fg-secondary border-b border-divider">{h}</th>
+                  <th className="w-9">
+                    <input type="checkbox" checked={selectedLeads.size === filteredLeads.length && filteredLeads.length > 0} onChange={() => setSelectedLeads(selectedLeads.size === filteredLeads.length ? new Set() : new Set(filteredLeads.map((l) => l.id)))} className="rounded" />
+                  </th>
+                  <th className="text-[13px] font-medium text-fg-secondary whitespace-nowrap">Label</th>
+                  {fields.filter((f) => extraColumns.has(f._id)).map((f) => (
+                    <th key={f._id} className="text-[13px] font-medium text-fg-secondary whitespace-nowrap">{f.label}</th>
                   ))}
+                  <th className="text-[13px] font-medium text-fg-secondary whitespace-nowrap">Added</th>
+                  <th className="text-[13px] font-medium text-fg-secondary whitespace-nowrap">Score</th>
+                  <th className="text-[13px] font-medium text-fg-secondary whitespace-nowrap">Status</th>
+                  <th className="w-20 text-right" />
                 </tr>
               </thead>
               <tbody>
-                {campaign.runs.slice(0, 5).map((run) => {
-                  const actor = getActorById(run.actor_id);
-                  return (
-                    <tr key={run.id} className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors">
-                      <td className="px-3 py-2 text-sm text-fg">{actor?.name || run.actor_id}</td>
-                      <td className="px-3 py-2">
-                        <span className={`inline-flex items-center gap-1 px-2 h-5 rounded-full text-[12px] font-medium capitalize ${run.status === "succeeded" ? "text-success bg-success-surface" : run.status === "running" ? "text-warning bg-warning-surface" : "text-danger bg-danger-surface"}`}>
-                          {run.status === "running" && <CircleNotchIcon size={10} className="animate-spin" />}
-                          {run.status}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-sm text-fg-secondary">{run.result_count ?? "—"}</td>
-                      <td className="px-3 py-2 text-sm text-fg-secondary">{run.cost_usd != null ? `$${run.cost_usd.toFixed(4)}` : "—"}</td>
-                      <td className="px-3 py-2 text-xs text-fg-secondary">{new Date(run.started_at).toLocaleString()}</td>
-                    </tr>
-                  );
-                })}
+                {filteredLeads.length === 0 ? (
+                  <tr>
+                    <td colSpan={6 + fields.filter((f) => extraColumns.has(f._id)).length} className="py-12 text-center text-sm text-fg-secondary">
+                      {campaign.leads.length === 0
+                        ? runningActor ? <span className="flex items-center justify-center gap-2"><CircleNotchIcon size={14} className="animate-spin" /> Discovery running — leads will appear here shortly</span>
+                        : "No leads yet. Run a scraper from Discovery Configuration above."
+                        : "No leads match your filters."}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredLeads.map((lead) => {
+                    const status = displayStatus(lead);
+                    const isRe = reEnrichingLeads.has(lead.id);
+                    return (
+                      <tr key={lead.id} className="hover:bg-subtle transition-colors cursor-pointer" onClick={() => setDrawerLeadId(lead.id)}>
+                        <td className="py-2" onClick={(e) => e.stopPropagation()}>
+                          <input type="checkbox" checked={selectedLeads.has(lead.id)} onChange={() => setSelectedLeads((prev) => { const n = new Set(prev); if (n.has(lead.id)) n.delete(lead.id); else n.add(lead.id); return n; })} className="rounded" />
+                        </td>
+                        <td className="py-2 max-w-[220px]">
+                          <div className="flex items-start gap-2">
+                            <UserIcon size={16} className="mt-0.5 shrink-0 text-fg-muted" />
+                            <div className="min-w-0">
+                              <button type="button" onClick={(e) => { e.stopPropagation(); setDrawerLeadId(lead.id); }} className="text-sm font-medium text-fg hover:underline break-words line-clamp-2 text-left cursor-pointer">
+                                {lead.display_name || "Unknown"}
+                              </button>
+                              {lead.email && <p className="text-xs text-fg-secondary flex items-center gap-1 mt-0.5"><EnvelopeIcon size={10} />{lead.email}</p>}
+                              {lead.website && (
+                                <p className="text-xs text-fg-secondary flex items-center gap-1 mt-0.5 truncate max-w-[180px]">
+                                  <GlobeIcon size={10} />
+                                  <a href={lead.website} target="_blank" rel="noopener noreferrer" className="hover:underline" onClick={(e) => e.stopPropagation()}>
+                                    {lead.website.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}
+                                  </a>
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        {fields.filter((f) => extraColumns.has(f._id)).map((f) => {
+                          const { display, isUrl } = resolveFieldValue(lead, f);
+                          return (
+                            <td key={f._id} className="py-2 text-xs max-w-[160px]">
+                              {isUrl && display !== "—" ? (
+                                <a href={display} target="_blank" rel="noopener noreferrer" className="text-accent-strong hover:underline truncate block" onClick={(e) => e.stopPropagation()}>
+                                  {display.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}
+                                </a>
+                              ) : (
+                                <span className="text-fg-secondary truncate block">{display}</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td className="py-2 text-xs text-fg-secondary whitespace-nowrap">{formatRelativeTime(lead.created_at)}</td>
+                        <td className="py-2">
+                          {lead.status === "new" || lead.status === "enriching"
+                            ? <span className="text-xs text-fg-muted">—</span>
+                            : <ScoreBadge score={lead.score} />}
+                        </td>
+                        <td className="py-2">
+                          <span className={`inline-flex items-center px-2 h-5 rounded-full text-[12px] font-medium capitalize ${STATUS_STYLES[status] || "text-fg-secondary bg-muted"}`}>
+                            {status}
+                          </span>
+                        </td>
+                        <td className="py-2" onClick={(e) => e.stopPropagation()}>
+                          {isRe ? (
+                            <div className="flex justify-end">
+                              <CircleNotchIcon size={14} className="animate-spin text-fg-muted" />
+                            </div>
+                          ) : lead.status === "new" ? (
+                            <div className="flex items-center justify-end gap-0.5">
+                              <Button onClick={() => handleReEnrich(lead.id)} title="Enrich" variant="ghost" size="sm" className="p-1 h-auto">
+                                <LightningIcon size={14} />
+                              </Button>
+                              <Button onClick={() => handleSkip(lead.id)} title="Skip enrichment" variant="ghost" size="sm" className="p-1 h-auto">
+                                <ArrowRightIcon size={14} />
+                              </Button>
+                              <Button onClick={() => handleDeleteLead(lead.id)} title="Delete" variant="ghost" size="sm" className="p-1 h-auto text-fg-muted hover:text-danger hover:bg-danger-surface">
+                                <TrashIcon size={13} />
+                              </Button>
+                            </div>
+                          ) : (lead.status === "qualified" || lead.status === "converted" || lead.status === "disqualified" || lead.status === "declined") ? (
+                            <div className="flex items-center justify-end gap-0.5">
+                              <Button onClick={() => handleReEnrich(lead.id)} title="Re-enrich" variant="ghost" size="sm" className="p-1 h-auto">
+                                <ArrowCounterClockwiseIcon size={14} />
+                              </Button>
+                              <Button onClick={() => handleDeleteLead(lead.id)} title="Delete" variant="ghost" size="sm" className="p-1 h-auto text-fg-muted hover:text-danger hover:bg-danger-surface">
+                                <TrashIcon size={13} />
+                              </Button>
+                            </div>
+                          ) : null}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        </TableSection>
+
+        {/* ── Run History ── */}
+        {campaign.runs.length > 0 && (
+          <TableSection title="Run History" className="mt-6">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr>
+                    {["Actor", "Status", "Results", "Cost", "Started"].map((h) => (
+                      <th key={h} className="text-[13px] font-medium text-fg-secondary">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {campaign.runs.slice(0, 5).map((run) => {
+                    const actor = getActorById(run.actor_id);
+                    return (
+                      <tr key={run.id} className="hover:bg-subtle transition-colors">
+                        <td className="py-2 text-sm text-fg">
+                          <div className="flex items-center gap-2">
+                            <PlayIcon size={16} className="shrink-0 text-fg-muted" />
+                            {actor?.name || run.actor_id}
+                          </div>
+                        </td>
+                        <td className="py-2">
+                          <span className={`inline-flex items-center gap-1 px-2 h-5 rounded-full text-[12px] font-medium capitalize ${run.status === "succeeded" ? "text-success bg-success-surface" : run.status === "running" ? "text-warning bg-warning-surface" : "text-danger bg-danger-surface"}`}>
+                            {run.status === "running" && <CircleNotchIcon size={10} className="animate-spin" />}
+                            {run.status}
+                          </span>
+                        </td>
+                        <td className="py-2 text-sm text-fg-secondary">{run.result_count ?? "—"}</td>
+                        <td className="py-2 text-sm text-fg-secondary">{run.cost_usd != null ? `$${run.cost_usd.toFixed(4)}` : "—"}</td>
+                        <td className="py-2 text-xs text-fg-secondary">{new Date(run.started_at).toLocaleString()}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </TableSection>
+        )}
+      </DetailLayout>
 
       {/* ── Settings Panel ── */}
       {showSettings && (
@@ -1151,7 +1154,7 @@ export default function CampaignDetailPage() {
                             {addActorOpen && (
                               <>
                                 <div className="fixed inset-0 z-10" onClick={() => setAddActorOpen(false)} />
-                                <div className="absolute right-0 top-full z-20 mt-1 w-64 bg-surface border border-line rounded-lg shadow-dropdown py-1.5">
+                                <div className="absolute right-0 top-full z-20 mt-1 w-64 bg-surface border border-line rounded-lg shadow-dropdown py-1.5" data-clay-box>
                                   {avFind.length > 0 && (
                                     <>
                                       <p className="px-3 py-1 text-xs font-medium text-fg-muted">Scraping</p>
@@ -1188,7 +1191,7 @@ export default function CampaignDetailPage() {
                     </div>
                     <p className="text-xs text-fg-secondary">Drag the handle to reorder. Actors run top-to-bottom during discovery and enrichment.</p>
                     {editSettings.actorOrder.length === 0 ? (
-                      <p className="text-sm text-fg-secondary py-4 text-center border border-dashed border-line rounded-lg">No actors. Click &quot;Add Actor&quot; to get started.</p>
+                      <p className="text-sm text-fg-secondary py-4 text-center">No actors. Click &quot;Add Actor&quot; to get started.</p>
                     ) : (
                       <SortableList
                         items={editSettings.actorOrder}
@@ -1204,7 +1207,7 @@ export default function CampaignDetailPage() {
                           const hasFields = def.phase !== "enrich" && Object.keys(def.inputFieldDescriptions || {}).length > 0;
                           const fieldVals = editSettings.actorConfigs[actorId] || {};
                           return (
-                            <div className="rounded-lg border border-line">
+                            <div className="rounded-lg border border-line" data-clay-box>
                               <div className="flex items-center">
                                 <button onClick={() => setCollapsedActors((prev) => { const n = new Set(prev); if (n.has(actorId)) n.delete(actorId); else n.add(actorId); return n; })} className="flex-1 flex items-center justify-between p-3 text-left hover:bg-muted transition-colors min-w-0">
                                   <div className="flex-1 min-w-0">
@@ -1287,11 +1290,11 @@ export default function CampaignDetailPage() {
                     </div>
                     <p className="text-xs text-fg-secondary">Fields extracted from each lead during enrichment.</p>
                     {editLeadFields.length === 0 ? (
-                      <p className="text-sm text-fg-secondary py-3 text-center border border-dashed border-line rounded-lg">No custom fields. Click &quot;Add&quot; to track extra data per lead.</p>
+                      <p className="text-sm text-fg-secondary py-3 text-center">No custom fields. Click &quot;Add&quot; to track extra data per lead.</p>
                     ) : (
-                      <div className="space-y-2">
+                      <div>
                         {editLeadFields.map((f) => (
-                          <div key={f.id} className="rounded-lg border border-line p-3 space-y-2">
+                          <div key={f.id} className="py-3 border-t border-divider first:border-t-0 first:pt-0 space-y-2">
                             <div className="flex items-start gap-2">
                               <div className="flex-1 space-y-1.5 min-w-0">
                                 <Input value={f.label} onChange={(e) => setEditLeadFields((prev) => prev.map((x) => x.id === f.id ? { ...x, label: e.target.value } : x))} placeholder="Field label" className="h-8 font-medium" />
@@ -1327,11 +1330,11 @@ export default function CampaignDetailPage() {
                     </div>
                     <p className="text-xs text-fg-secondary">KPIs automatically filled by AI during enrichment.</p>
                     {editKpis.length === 0 ? (
-                      <p className="text-sm text-fg-secondary py-3 text-center border border-dashed border-line rounded-lg">No KPIs configured. Click &quot;Add&quot; to track custom metrics.</p>
+                      <p className="text-sm text-fg-secondary py-3 text-center">No KPIs configured. Click &quot;Add&quot; to track custom metrics.</p>
                     ) : (
-                      <div className="space-y-2">
+                      <div>
                         {editKpis.map((k) => (
-                          <div key={k.id} className="rounded-lg border border-line p-3">
+                          <div key={k.id} className="py-3 border-t border-divider first:border-t-0 first:pt-0">
                             <div className="flex items-start gap-2">
                               <div className="flex-1 space-y-1.5 min-w-0">
                                 <Input value={k.label} onChange={(e) => setEditKpis((prev) => prev.map((x) => x.id === k.id ? { ...x, label: e.target.value } : x))} placeholder="KPI label" className="h-8 font-medium" />
@@ -1371,7 +1374,7 @@ export default function CampaignDetailPage() {
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowDeleteConfirm(false)} />
-          <div className="relative bg-surface border border-line rounded-lg shadow-modal p-4 max-w-sm w-full mx-4">
+          <div className="relative bg-surface border border-line rounded-lg shadow-modal p-4 max-w-sm w-full mx-4" data-clay-box>
             <h3 className="text-base font-semibold text-fg mb-2">Delete Campaign</h3>
             <p className="text-sm text-fg-secondary mb-5">
               This will permanently delete <span className="font-medium text-fg">{campaign.name}</span> and all its leads. This cannot be undone.
@@ -1390,7 +1393,7 @@ export default function CampaignDetailPage() {
       {showClearLeadsConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowClearLeadsConfirm(false)} />
-          <div className="relative bg-surface border border-line rounded-lg shadow-modal p-4 max-w-sm w-full mx-4">
+          <div className="relative bg-surface border border-line rounded-lg shadow-modal p-4 max-w-sm w-full mx-4" data-clay-box>
             <h3 className="text-base font-semibold text-fg mb-2">Delete All Leads</h3>
             <p className="text-sm text-fg-secondary mb-5">
               This will permanently delete all <span className="font-medium text-fg">{campaign.leads.length} leads</span>. The campaign will remain. This cannot be undone.
@@ -1411,6 +1414,6 @@ export default function CampaignDetailPage() {
         leadId={drawerLeadId}
         campaignId={id as string}
       />
-    </div>
+    </Page>
   );
 }
