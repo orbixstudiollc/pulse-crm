@@ -32,6 +32,7 @@ import {
   GoogleLogoIcon,
   MicrosoftOutlookLogoIcon,
   FunnelSimpleIcon,
+  Button,
 } from "@/components/ui";
 import {
   getCampaignsWithTags,
@@ -255,8 +256,8 @@ function PerformanceDrawer({
           {/* Status + Tags */}
           <div className="flex items-center gap-2 mb-6">
             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-              campaign.status === "active" ? "border border-success bg-success-surface text-success" :
-              campaign.status === "paused" ? "border border-warning bg-warning-surface text-warning" :
+              campaign.status === "active" ? "bg-success-surface text-success" :
+              campaign.status === "paused" ? "bg-warning-surface text-warning" :
               "bg-muted text-fg-secondary"
             }`}>{campaign.status}</span>
             {campaign.tags.map((t) => (
@@ -506,17 +507,16 @@ export function CampaignsPageClient({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-fg">Campaigns</h1>
-          <p className="text-sm text-fg-secondary mt-1">Manage your outreach campaigns, email accounts, and send schedules</p>
+          <h1 className="text-[22px] leading-7 font-semibold text-fg">Campaigns</h1>
+          <p className="text-[13px] text-fg-muted mt-1">Manage your outreach campaigns, email accounts, and send schedules</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setShowTagManager(true)} className="px-3 py-2 text-sm text-fg-secondary hover:text-fg border border-line rounded hover:bg-muted transition-colors">
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={() => setShowTagManager(true)}>
             Tags
-          </button>
-          <button onClick={handleNewCampaign} disabled={isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-inverse hover:opacity-90 text-on-inverse text-sm font-medium rounded transition-colors disabled:opacity-50">
-            <PlusIcon className="w-4 h-4" /> New Campaign
-          </button>
+          </Button>
+          <Button onClick={handleNewCampaign} disabled={isPending} leftIcon={<PlusIcon className="w-4 h-4" />}>
+            New Campaign
+          </Button>
         </div>
       </div>
 
@@ -539,13 +539,13 @@ export function CampaignsPageClient({
 
       {/* Tabs + Search */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-1 bg-muted rounded p-1">
+        <div className="flex items-center gap-1">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => { setActiveTab(tab.key); setSelectedRows(new Set()); }}
-              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                activeTab === tab.key ? "bg-inverse text-on-inverse" : "text-fg-secondary hover:text-fg"
+              className={`h-7 px-3 text-[13px] rounded-md border transition-colors ${
+                activeTab === tab.key ? "border-accent text-accent-strong bg-surface font-medium" : "border-line text-fg-secondary hover:bg-subtle hover:text-fg"
               }`}
             >
               {tab.label} <span className="text-xs opacity-70">({tab.count})</span>
@@ -590,16 +590,16 @@ export function CampaignsPageClient({
                 <div className="flex items-center gap-4">
                   <h3 className="text-sm font-medium text-fg">Email Accounts</h3>
                   <div className="flex items-center gap-2 text-xs text-fg-secondary">
-                    <span className="px-2 py-0.5 border border-success bg-success-surface text-success rounded-full">
+                    <span className="px-2 py-0.5 bg-success-surface text-success rounded-full">
                       {accounts.filter((a) => a.status === "active").length} active
                     </span>
-                    <span className="px-2 py-0.5 border border-warning bg-warning-surface text-warning rounded-full">
+                    <span className="px-2 py-0.5 bg-warning-surface text-warning rounded-full">
                       {accounts.filter((a) => a.status === "warming_up").length} warming
                     </span>
                   </div>
                 </div>
                 <Link href="/dashboard/settings?tab=email-accounts"
-                  className="flex items-center gap-2 px-3 py-1.5 bg-inverse hover:opacity-90 text-on-inverse text-sm rounded">
+                  className="inline-flex items-center gap-1.5 h-8 px-3 bg-accent-strong hover:bg-accent-strong/90 text-on-inverse text-[14px] font-medium rounded-md transition-colors">
                   <PlusIcon className="w-4 h-4" /> Add Account
                 </Link>
               </div>
@@ -609,27 +609,27 @@ export function CampaignsPageClient({
                   <PlugsConnectedIcon className="w-10 h-10 text-fg-muted mx-auto mb-3" />
                   <p className="text-sm text-fg-secondary mb-4">No email accounts connected yet</p>
                   <Link href="/dashboard/settings?tab=email-accounts"
-                    className="inline-block px-4 py-2 bg-inverse hover:opacity-90 text-on-inverse text-sm rounded">
+                    className="inline-flex items-center h-8 px-3 bg-accent-strong hover:bg-accent-strong/90 text-on-inverse text-[14px] font-medium rounded-md transition-colors">
                     Add Your First Account
                   </Link>
                 </div>
               ) : (
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-muted">
-                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Email</th>
-                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Provider</th>
-                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Status</th>
-                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Daily Limit</th>
-                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Reputation</th>
-                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Warmup</th>
-                      <th className="px-3 py-2 text-right text-[13px] font-medium text-fg-secondary">Actions</th>
+                    <tr>
+                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Email</th>
+                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Provider</th>
+                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Status</th>
+                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Daily Limit</th>
+                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Reputation</th>
+                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Warmup</th>
+                      <th className="h-10 px-3 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {accounts.map((acc) => (
-                      <tr key={acc.id} className="hover:bg-muted transition-colors">
-                        <td className="px-3 py-2 border-t border-row">
+                      <tr key={acc.id} className="h-10 hover:bg-subtle transition-colors">
+                        <td className="px-3 py-2 border-b border-divider">
                           <div className="flex items-center gap-2">
                             {acc.provider === "gmail" ? <GoogleLogoIcon className="w-4 h-4 text-fg-secondary" /> :
                              acc.provider === "microsoft" ? <MicrosoftOutlookLogoIcon className="w-4 h-4 text-fg-secondary" /> :
@@ -640,16 +640,16 @@ export function CampaignsPageClient({
                             </div>
                           </div>
                         </td>
-                        <td className="px-3 py-2 text-[13px] text-fg-secondary capitalize border-t border-row">{acc.provider}</td>
-                        <td className="px-3 py-2 border-t border-row">
+                        <td className="px-3 py-2 text-[14px] text-fg-secondary capitalize border-b border-divider">{acc.provider}</td>
+                        <td className="px-3 py-2 border-b border-divider">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            acc.status === "active" ? "border border-success bg-success-surface text-success" :
-                            acc.status === "warming_up" ? "border border-warning bg-warning-surface text-warning" :
-                            acc.status === "error" ? "border border-danger bg-danger-surface text-danger" :
+                            acc.status === "active" ? "bg-success-surface text-success" :
+                            acc.status === "warming_up" ? "bg-warning-surface text-warning" :
+                            acc.status === "error" ? "bg-danger-surface text-danger" :
                             "bg-muted text-fg-secondary"
                           }`}>{acc.status}</span>
                         </td>
-                        <td className="px-3 py-2 border-t border-row">
+                        <td className="px-3 py-2 border-b border-divider">
                           <div className="flex items-center gap-2">
                             <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
                               <div className="h-full bg-accent-strong rounded-full" style={{ width: `${Math.min((acc.daily_sent_count / acc.daily_send_limit) * 100, 100)}%` }} />
@@ -657,7 +657,7 @@ export function CampaignsPageClient({
                             <span className="text-xs text-fg-secondary">{acc.daily_sent_count}/{acc.daily_send_limit}</span>
                           </div>
                         </td>
-                        <td className="px-3 py-2 border-t border-row">
+                        <td className="px-3 py-2 border-b border-divider">
                           <div className="flex items-center gap-2">
                             <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
                               <div className={`h-full rounded-full ${Number(acc.reputation_score) >= 80 ? "bg-success" : Number(acc.reputation_score) >= 50 ? "bg-warning" : "bg-danger"}`}
@@ -666,16 +666,16 @@ export function CampaignsPageClient({
                             <span className="text-xs text-fg-secondary">{Math.round(Number(acc.reputation_score))}</span>
                           </div>
                         </td>
-                        <td className="px-3 py-2 border-t border-row">
+                        <td className="px-3 py-2 border-b border-divider">
                           {acc.warmup_enabled ? (
-                            <span className="px-2 py-0.5 border border-warning bg-warning-surface text-warning rounded-full text-xs">
+                            <span className="px-2 py-0.5 bg-warning-surface text-warning rounded-full text-xs">
                               {acc.warmup_limit}/day
                             </span>
                           ) : (
                             <span className="text-xs text-fg-muted">Off</span>
                           )}
                         </td>
-                        <td className="px-3 py-2 text-right border-t border-row">
+                        <td className="px-3 py-2 text-right border-b border-divider">
                           <button onClick={() => handleDeleteAccount(acc.id)} className="text-fg-muted hover:text-danger">
                             <TrashIcon className="w-4 h-4" />
                           </button>
@@ -706,57 +706,57 @@ export function CampaignsPageClient({
                     {searchQuery || selectedTag ? "No campaigns match your filters" : "No campaigns yet"}
                   </p>
                   {!searchQuery && !selectedTag && (
-                    <button onClick={handleNewCampaign} className="px-4 py-2 bg-inverse hover:opacity-90 text-on-inverse text-sm rounded">
+                    <Button onClick={handleNewCampaign}>
                       Create Your First Campaign
-                    </button>
+                    </Button>
                   )}
                 </div>
               ) : (
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-muted">
-                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary w-10">
+                    <tr>
+                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider w-10">
                         <input type="checkbox" checked={selectedRows.size === filtered.length && filtered.length > 0} onChange={toggleSelectAll}
                           className="rounded border-line bg-muted text-fg" />
                       </th>
-                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Campaign</th>
-                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Status</th>
-                      <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">Tags</th>
-                      <th className="px-3 py-2 text-right text-[13px] font-medium text-fg-secondary">Enrolled</th>
-                      <th className="px-3 py-2 text-right text-[13px] font-medium text-fg-secondary">Sent</th>
-                      <th className="px-3 py-2 text-right text-[13px] font-medium text-fg-secondary">Opened</th>
-                      <th className="px-3 py-2 text-right text-[13px] font-medium text-fg-secondary">Replied</th>
-                      <th className="px-3 py-2 text-right text-[13px] font-medium text-fg-secondary">Reply Rate</th>
-                      <th className="px-3 py-2 text-right text-[13px] font-medium text-fg-secondary">Actions</th>
+                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Campaign</th>
+                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Status</th>
+                      <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">Tags</th>
+                      <th className="h-10 px-3 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">Enrolled</th>
+                      <th className="h-10 px-3 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">Sent</th>
+                      <th className="h-10 px-3 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">Opened</th>
+                      <th className="h-10 px-3 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">Replied</th>
+                      <th className="h-10 px-3 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">Reply Rate</th>
+                      <th className="h-10 px-3 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.map((campaign) => (
-                      <tr key={campaign.id} className="hover:bg-muted transition-colors cursor-pointer"
+                      <tr key={campaign.id} className="h-10 hover:bg-subtle transition-colors cursor-pointer"
                         onClick={() => setDrawerCampaign(campaign)}>
-                        <td className="px-3 py-2 border-t border-row" onClick={(e) => e.stopPropagation()}>
+                        <td className="px-3 py-2 border-b border-divider" onClick={(e) => e.stopPropagation()}>
                           <input type="checkbox" checked={selectedRows.has(campaign.id)} onChange={() => toggleSelect(campaign.id)}
                             className="rounded border-line bg-muted text-fg" />
                         </td>
-                        <td className="px-3 py-2 border-t border-row">
+                        <td className="px-3 py-2 border-b border-divider">
                           <div>
                             <span className="text-sm font-medium text-fg">{campaign.name}</span>
                             {campaign.description && <p className="text-xs text-fg-muted mt-0.5 truncate max-w-[200px]">{campaign.description}</p>}
                           </div>
                         </td>
-                        <td className="px-3 py-2 border-t border-row" onClick={(e) => e.stopPropagation()}>
+                        <td className="px-3 py-2 border-b border-divider" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => handleToggleStatus(campaign.id, campaign.status)}
                             className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
-                              campaign.status === "active" ? "border border-success bg-success-surface text-success hover:bg-success-surface" :
-                              campaign.status === "paused" ? "border border-warning bg-warning-surface text-warning hover:bg-warning-surface" :
+                              campaign.status === "active" ? "bg-success-surface text-success hover:bg-success-surface" :
+                              campaign.status === "paused" ? "bg-warning-surface text-warning hover:bg-warning-surface" :
                               "bg-muted text-fg-secondary"
                             }`}
                           >
                             {campaign.status}
                           </button>
                         </td>
-                        <td className="px-3 py-2 border-t border-row">
+                        <td className="px-3 py-2 border-b border-divider">
                           <div className="flex items-center gap-1">
                             {campaign.tags.slice(0, 3).map((t) => (
                               <span key={t.id} className="px-1.5 py-0.5 rounded text-xs font-medium"
@@ -769,17 +769,17 @@ export function CampaignsPageClient({
                             )}
                           </div>
                         </td>
-                        <td className="px-3 py-2 text-right text-[13px] text-fg border-t border-row">{campaign.total_enrolled.toLocaleString()}</td>
-                        <td className="px-3 py-2 text-right text-[13px] text-fg border-t border-row">{campaign.total_sent.toLocaleString()}</td>
-                        <td className="px-3 py-2 text-right text-[13px] text-fg border-t border-row">{campaign.total_opened.toLocaleString()}</td>
-                        <td className="px-3 py-2 text-right text-[13px] text-fg border-t border-row">{campaign.total_replied.toLocaleString()}</td>
-                        <td className="px-3 py-2 text-right border-t border-row">
+                        <td className="px-3 py-2 text-right text-[14px] text-fg border-b border-divider">{campaign.total_enrolled.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right text-[14px] text-fg border-b border-divider">{campaign.total_sent.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right text-[14px] text-fg border-b border-divider">{campaign.total_opened.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right text-[14px] text-fg border-b border-divider">{campaign.total_replied.toLocaleString()}</td>
+                        <td className="px-3 py-2 text-right border-b border-divider">
                           <span className={`text-sm font-medium ${
                             campaign.reply_rate >= 10 ? "text-success" :
                             campaign.reply_rate >= 5 ? "text-warning" : "text-fg-secondary"
                           }`}>{campaign.reply_rate.toFixed(1)}%</span>
                         </td>
-                        <td className="px-3 py-2 text-right border-t border-row" onClick={(e) => e.stopPropagation()}>
+                        <td className="px-3 py-2 text-right border-b border-divider" onClick={(e) => e.stopPropagation()}>
                           <div className="relative">
                             <button onClick={() => setActionMenuId(actionMenuId === campaign.id ? null : campaign.id)}
                               className="text-fg-muted hover:text-fg p-1">

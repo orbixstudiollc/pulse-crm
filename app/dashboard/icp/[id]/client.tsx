@@ -746,8 +746,8 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
 
       {/* Matched Leads Table */}
       <div className="rounded-lg border border-line bg-surface overflow-hidden">
-        <div className="px-6 py-4 border-b border-line">
-          <h3 className="text-base font-semibold text-fg">
+        <div className="px-6 py-4 border-b border-divider">
+          <h3 className="text-[16px] leading-6 font-semibold text-fg">
             Matched Leads ({matchedLeads.length})
           </h3>
         </div>
@@ -756,23 +756,23 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-line">
-                  <th className="text-left text-xs font-medium text-fg-secondary px-6 py-3">
+                <tr>
+                  <th className="h-10 px-6 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Name
                   </th>
-                  <th className="text-left text-xs font-medium text-fg-secondary px-6 py-3">
+                  <th className="h-10 px-6 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Company
                   </th>
-                  <th className="text-left text-xs font-medium text-fg-secondary px-6 py-3">
+                  <th className="h-10 px-6 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Match Score
                   </th>
-                  <th className="text-left text-xs font-medium text-fg-secondary px-6 py-3">
+                  <th className="h-10 px-6 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Industry
                   </th>
-                  <th className="text-left text-xs font-medium text-fg-secondary px-6 py-3">
+                  <th className="h-10 px-6 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Employees
                   </th>
-                  <th className="text-right text-xs font-medium text-fg-secondary px-6 py-3">
+                  <th className="h-10 px-6 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Value
                   </th>
                 </tr>
@@ -786,9 +786,9 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
                   return (
                     <tr
                       key={lead.id}
-                      className="border-b border-row hover:bg-muted transition-colors"
+                      className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors"
                     >
-                      <td className="px-6 py-3">
+                      <td className="px-6 py-2 text-[14px] text-fg">
                         <div>
                           <p className="text-sm font-medium text-fg">
                             {lead.name}
@@ -798,10 +798,10 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
                           </p>
                         </div>
                       </td>
-                      <td className="px-6 py-3 text-sm text-fg-secondary">
+                      <td className="px-6 py-2 text-[14px] text-fg-secondary">
                         {lead.company || "--"}
                       </td>
-                      <td className="px-6 py-3">
+                      <td className="px-6 py-2 text-[14px] text-fg">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold text-fg">
                             {score}%
@@ -809,13 +809,13 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
                           <Badge variant={gradeVariant}>{grade}</Badge>
                         </div>
                       </td>
-                      <td className="px-6 py-3 text-sm text-fg-secondary">
+                      <td className="px-6 py-2 text-[14px] text-fg-secondary">
                         {lead.industry || "--"}
                       </td>
-                      <td className="px-6 py-3 text-sm text-fg-secondary">
+                      <td className="px-6 py-2 text-[14px] text-fg-secondary">
                         {lead.employees || "--"}
                       </td>
-                      <td className="px-6 py-3 text-right text-sm font-medium text-fg">
+                      <td className="px-6 py-2 text-right text-[14px] font-medium text-fg">
                         {formatCurrency(lead.estimated_value)}
                       </td>
                     </tr>

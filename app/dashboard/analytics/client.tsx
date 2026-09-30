@@ -523,17 +523,17 @@ function SourcesTab({ data }: { data: SourceData[] }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-line">
-                <th className="text-left py-3 px-4 font-medium text-fg-secondary">
+              <tr>
+                <th className="h-10 px-4 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                   Source
                 </th>
-                <th className="text-right py-3 px-4 font-medium text-fg-secondary">
+                <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
                   Leads
                 </th>
-                <th className="text-right py-3 px-4 font-medium text-fg-secondary">
+                <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
                   Avg Score
                 </th>
-                <th className="text-right py-3 px-4 font-medium text-fg-secondary">
+                <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
                   Hot Rate
                 </th>
               </tr>
@@ -542,18 +542,18 @@ function SourcesTab({ data }: { data: SourceData[] }) {
               {data.map((source) => (
                 <tr
                   key={source.source}
-                  className="border-b border-row last:border-0"
+                  className="h-10 border-b border-divider last:border-0 hover:bg-subtle transition-colors"
                 >
-                  <td className="py-3 px-4 font-medium text-fg">
+                  <td className="py-2 px-4 font-medium text-fg">
                     {source.source}
                   </td>
-                  <td className="py-3 px-4 text-right text-fg-secondary">
+                  <td className="py-2 px-4 text-right text-fg-secondary">
                     {source.count}
                   </td>
-                  <td className="py-3 px-4 text-right text-fg-secondary">
+                  <td className="py-2 px-4 text-right text-fg-secondary">
                     {source.avgScore}
                   </td>
-                  <td className="py-3 px-4 text-right">
+                  <td className="py-2 px-4 text-right">
                     <span
                       className={cn(
                         "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
@@ -600,20 +600,20 @@ function ForecastTab({ data }: { data: ForecastData }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-line">
-                <th className="text-left py-3 px-4 font-medium text-fg-secondary">
+              <tr>
+                <th className="h-10 px-4 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                   Stage
                 </th>
-                <th className="text-right py-3 px-4 font-medium text-fg-secondary">
+                <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
                   Value
                 </th>
-                <th className="text-right py-3 px-4 font-medium text-fg-secondary">
+                <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
                   Probability
                 </th>
-                <th className="text-right py-3 px-4 font-medium text-fg-secondary">
+                <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
                   Weighted
                 </th>
-                <th className="text-right py-3 px-4 font-medium text-fg-secondary">
+                <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
                   Expected Close
                 </th>
               </tr>
@@ -622,9 +622,9 @@ function ForecastTab({ data }: { data: ForecastData }) {
               {data.deals.map((deal, i) => (
                 <tr
                   key={i}
-                  className="border-b border-row last:border-0"
+                  className="h-10 border-b border-divider last:border-0 hover:bg-subtle transition-colors"
                 >
-                  <td className="py-3 px-4">
+                  <td className="py-2 px-4">
                     <span
                       className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
                       style={{
@@ -637,16 +637,16 @@ function ForecastTab({ data }: { data: ForecastData }) {
                       {formatStageName(deal.stage)}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-right font-medium text-fg">
+                  <td className="py-2 px-4 text-right font-medium text-fg">
                     {formatCurrency(deal.value)}
                   </td>
-                  <td className="py-3 px-4 text-right text-fg-secondary">
+                  <td className="py-2 px-4 text-right text-fg-secondary">
                     {deal.probability}%
                   </td>
-                  <td className="py-3 px-4 text-right font-medium text-fg">
+                  <td className="py-2 px-4 text-right font-medium text-fg">
                     {formatCurrency(deal.weightedValue)}
                   </td>
-                  <td className="py-3 px-4 text-right text-fg-secondary">
+                  <td className="py-2 px-4 text-right text-fg-secondary">
                     {deal.expectedClose
                       ? new Date(deal.expectedClose).toLocaleDateString(
                           "en-US",
@@ -839,17 +839,17 @@ function SequencesTab({ data }: { data: SequenceData[] }) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-line">
-              <th className="text-left py-3 px-4 font-medium text-fg-secondary">
+            <tr>
+              <th className="h-10 px-4 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                 Sequence
               </th>
-              <th className="text-left py-3 px-4 font-medium text-fg-secondary">
+              <th className="h-10 px-4 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                 Status
               </th>
-              <th className="text-right py-3 px-4 font-medium text-fg-secondary">
+              <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
                 Enrolled
               </th>
-              <th className="text-right py-3 px-4 font-medium text-fg-secondary">
+              <th className="h-10 px-4 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
                 Reply Rate
               </th>
             </tr>
@@ -858,12 +858,12 @@ function SequencesTab({ data }: { data: SequenceData[] }) {
             {data.map((seq) => (
               <tr
                 key={seq.id}
-                className="border-b border-row last:border-0"
+                className="h-10 border-b border-divider last:border-0 hover:bg-subtle transition-colors"
               >
-                <td className="py-3 px-4 font-medium text-fg">
+                <td className="py-2 px-4 font-medium text-fg">
                   {seq.name}
                 </td>
-                <td className="py-3 px-4">
+                <td className="py-2 px-4">
                   <span
                     className={cn(
                       "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
@@ -877,10 +877,10 @@ function SequencesTab({ data }: { data: SequenceData[] }) {
                     {seq.status.charAt(0).toUpperCase() + seq.status.slice(1)}
                   </span>
                 </td>
-                <td className="py-3 px-4 text-right text-fg-secondary">
+                <td className="py-2 px-4 text-right text-fg-secondary">
                   {seq.total_enrolled}
                 </td>
-                <td className="py-3 px-4 text-right">
+                <td className="py-2 px-4 text-right">
                   <span
                     className={cn(
                       "font-medium",
@@ -1071,26 +1071,26 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-line">
-                  <th className="text-left py-2 font-medium text-fg-secondary">
+                <tr>
+                  <th className="h-10 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Account
                   </th>
-                  <th className="text-left py-2 font-medium text-fg-secondary">
+                  <th className="h-10 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Provider
                   </th>
-                  <th className="text-right py-2 font-medium text-fg-secondary">
+                  <th className="h-10 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Sent Today
                   </th>
-                  <th className="text-right py-2 font-medium text-fg-secondary">
+                  <th className="h-10 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Total Sent
                   </th>
-                  <th className="text-right py-2 font-medium text-fg-secondary">
+                  <th className="h-10 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Open Rate
                   </th>
-                  <th className="text-right py-2 font-medium text-fg-secondary">
+                  <th className="h-10 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Bounce Rate
                   </th>
-                  <th className="text-right py-2 font-medium text-fg-secondary">
+                  <th className="h-10 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Status
                   </th>
                 </tr>
@@ -1099,21 +1099,21 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
                 {accounts.map((acc) => (
                   <tr
                     key={acc.id}
-                    className="border-b border-row"
+                    className="h-10 border-b border-divider hover:bg-subtle transition-colors"
                   >
-                    <td className="py-3 text-fg font-medium">
+                    <td className="py-2 text-fg font-medium">
                       {acc.email}
                     </td>
-                    <td className="py-3 text-fg-secondary capitalize">
+                    <td className="py-2 text-fg-secondary capitalize">
                       {acc.provider}
                     </td>
-                    <td className="py-3 text-right text-fg">
+                    <td className="py-2 text-right text-fg">
                       {acc.dailySent}/{acc.dailySendLimit}
                     </td>
-                    <td className="py-3 text-right text-fg">
+                    <td className="py-2 text-right text-fg">
                       {acc.totalSent}
                     </td>
-                    <td className="py-3 text-right">
+                    <td className="py-2 text-right">
                       <span
                         className={cn(
                           "font-medium",
@@ -1127,7 +1127,7 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
                         {acc.openRate}%
                       </span>
                     </td>
-                    <td className="py-3 text-right">
+                    <td className="py-2 text-right">
                       <span
                         className={cn(
                           "font-medium",
@@ -1141,7 +1141,7 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
                         {acc.bounceRate}%
                       </span>
                     </td>
-                    <td className="py-3 text-right">
+                    <td className="py-2 text-right">
                       <span
                         className={cn(
                           "inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full",

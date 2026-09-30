@@ -282,10 +282,10 @@ export function ContactsPageClient({
               setSearchValue("");
             }}
             className={cn(
-              "inline-flex h-7 items-center rounded-md px-3 text-[13px] font-medium whitespace-nowrap transition-colors",
+              "inline-flex h-7 items-center rounded-md border px-3 text-[13px] font-medium whitespace-nowrap transition-colors",
               activeTab === tab.value
-                ? "bg-active text-fg"
-                : "text-fg-secondary hover:bg-muted hover:text-fg",
+                ? "border-accent bg-surface text-accent-strong"
+                : "border-line text-fg-secondary hover:bg-subtle hover:text-fg",
             )}
           >
             {tab.label}
@@ -336,26 +336,26 @@ export function ContactsPageClient({
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-muted">
-                  <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                <tr>
+                  <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Name
                   </th>
-                  <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                  <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Title
                   </th>
-                  <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                  <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Email
                   </th>
-                  <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                  <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Company
                   </th>
-                  <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                  <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Buying Role
                   </th>
-                  <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                  <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Influence
                   </th>
-                  <th className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary">
+                  <th className="h-10 px-3 text-center text-[13px] font-medium text-fg-secondary border-b border-divider">
                     Actions
                   </th>
                 </tr>
@@ -369,10 +369,10 @@ export function ContactsPageClient({
                   return (
                     <tr
                       key={contact.id}
-                      className="hover:bg-subtle transition-colors"
+                      className="h-10 hover:bg-subtle transition-colors"
                     >
                       {/* Name */}
-                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                      <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
                         <div className="flex items-center gap-3">
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted">
                             <UserIcon
@@ -387,21 +387,21 @@ export function ContactsPageClient({
                       </td>
 
                       {/* Title */}
-                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                      <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
                         <span className="text-[13px] text-fg-secondary">
                           {contact.title || "—"}
                         </span>
                       </td>
 
                       {/* Email */}
-                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                      <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
                         <span className="text-[13px] text-fg-secondary">
                           {contact.email || "—"}
                         </span>
                       </td>
 
                       {/* Company (lead/customer badge) */}
-                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                      <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
                         <div className="flex items-center gap-1.5">
                           {contact.lead_id && (
                             <span className="inline-flex items-center rounded-full bg-accent-surface px-2 py-0.5 text-xs font-medium text-accent-on-surface">
@@ -422,14 +422,14 @@ export function ContactsPageClient({
                       </td>
 
                       {/* Buying Role */}
-                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                      <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
                         <Badge variant={roleConfig?.variant ?? "neutral"} dot>
                           {roleConfig?.label ?? contact.buying_role}
                         </Badge>
                       </td>
 
                       {/* Influence Level */}
-                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                      <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
                         <Badge
                           variant={influenceConfig?.variant ?? "neutral"}
                         >
@@ -438,7 +438,7 @@ export function ContactsPageClient({
                       </td>
 
                       {/* Actions */}
-                      <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                      <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
                         <div className="flex justify-center">
                           <ActionMenu
                             items={[

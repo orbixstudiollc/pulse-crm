@@ -388,7 +388,7 @@ export function ProposalsPageClient({
       </div>
 
       {/* Status Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto rounded-lg border border-line bg-surface p-1.5">
+      <div className="flex items-center gap-1 overflow-x-auto">
         {statusTabs.map((tab) => (
           <button
             key={tab.value}
@@ -397,10 +397,10 @@ export function ProposalsPageClient({
               setCurrentPage(1);
             }}
             className={cn(
-              "px-4 py-2 text-sm font-medium rounded whitespace-nowrap transition-colors",
+              "h-7 px-3 text-[13px] font-medium rounded-md border whitespace-nowrap transition-colors",
               activeTab === tab.value
-                ? "bg-inverse text-on-inverse"
-                : "text-fg-secondary hover:text-fg hover:bg-muted"
+                ? "border-accent bg-surface text-accent-strong"
+                : "border-line text-fg-secondary hover:text-fg hover:bg-subtle"
             )}
           >
             {tab.label}
@@ -424,20 +424,20 @@ export function ProposalsPageClient({
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-muted">
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                  <tr>
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Title
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Status
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Valid Until
                     </th>
-                    <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Created
                     </th>
-                    <th className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary">
+                    <th className="h-10 px-3 text-center text-[13px] font-medium text-fg-secondary border-b border-divider">
                       Actions
                     </th>
                   </tr>
@@ -455,20 +455,20 @@ export function ProposalsPageClient({
                             `/dashboard/proposals/${proposal.id}`
                           )
                         }
-                        className="hover:bg-muted transition-colors cursor-pointer"
+                        className="h-10 hover:bg-subtle transition-colors cursor-pointer"
                       >
-                        <td className="px-3 py-2 border-t border-row">
-                          <p className="text-sm font-medium text-fg">
+                        <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
+                          <p className="text-[14px] font-medium text-fg">
                             {proposal.title}
                           </p>
                         </td>
-                        <td className="px-3 py-2 border-t border-row">
+                        <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
                           <Badge variant={status.variant} dot>
                             {status.label}
                           </Badge>
                         </td>
-                        <td className="px-3 py-2 border-t border-row">
-                          <span className="text-sm text-fg-secondary">
+                        <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
+                          <span className="text-[14px] text-fg-secondary">
                             {proposal.valid_until
                               ? new Date(
                                   proposal.valid_until
@@ -476,15 +476,15 @@ export function ProposalsPageClient({
                               : "\u2014"}
                           </span>
                         </td>
-                        <td className="px-3 py-2 border-t border-row">
-                          <span className="text-sm text-fg-secondary">
+                        <td className="px-3 py-2 text-[14px] text-fg border-b border-divider">
+                          <span className="text-[14px] text-fg-secondary">
                             {new Date(
                               proposal.created_at
                             ).toLocaleDateString()}
                           </span>
                         </td>
                         <td
-                          className="px-3 py-2 border-t border-row"
+                          className="px-3 py-2 text-[14px] text-fg border-b border-divider"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <div className="flex justify-center">
