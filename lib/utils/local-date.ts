@@ -39,12 +39,15 @@ export function relativeDayLabel(date: Date, today: Date): string {
 }
 
 /**
- * Short month and day for the pre-mount render. A 'YYYY-MM-DD' value is read
- * from its own y/m/d; any other value (e.g. a created_at timestamp) is
- * formatted in UTC so the server and the browser print the same day.
+ * Short month and day (or other date `options`) for the pre-mount render. A
+ * 'YYYY-MM-DD' value is read from its own y/m/d; any other value (e.g. a
+ * created_at timestamp) is formatted in UTC so the server and the browser
+ * print the same day.
  */
-export function absoluteDayLabel(value: string): string {
-  const options: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+export function absoluteDayLabel(
+  value: string,
+  options: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" },
+): string {
   if (DATE_ONLY.test(value)) {
     return (parseLocalDate(value) ?? new Date(NaN)).toLocaleDateString("en-US", options);
   }

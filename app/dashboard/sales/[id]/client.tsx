@@ -48,6 +48,7 @@ import { deleteActivity } from "@/lib/actions/activities";
 import { deleteCalendarEvent } from "@/lib/actions/calendar";
 import { deleteRecordActivity, type LinkedItem } from "@/lib/actions/record-activities";
 import { daysToClose, parseDealDate, stageDays } from "@/lib/deals/metrics";
+import { absoluteDayLabel } from "@/lib/utils/local-date";
 import { toast } from "sonner";
 
 // --- Types ---
@@ -282,13 +283,13 @@ export function DealDetailClient({
     }).format(value);
   };
 
+  // Before mount, timestamps (created_at) are printed in UTC so the server
+  // and the browser render the same day; the local day replaces it after.
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "—";
-    return parseDealDate(dateStr).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    const options: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", year: "numeric" };
+    if (!isMounted) return absoluteDayLabel(dateStr, options);
+    return parseDealDate(dateStr).toLocaleDateString("en-US", options);
   };
 
   const handleAddNote = () => {

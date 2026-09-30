@@ -707,7 +707,13 @@ function buildTimezoneOptions(): { label: string; value: string }[] {
   return fallbackTimezoneOptions;
 }
 
-const timezoneOptions = buildTimezoneOptions();
+// Built on first use in the browser: the server's zone list can differ from
+// the browser's, so the pre-mount render uses the fallback list.
+let allTimezoneOptions: { label: string; value: string }[] | null = null;
+function getAllTimezoneOptions() {
+  allTimezoneOptions ??= buildTimezoneOptions();
+  return allTimezoneOptions;
+}
 
 function browserTimezone(): string {
   try {
@@ -766,6 +772,7 @@ function PreferencesSection({
     preferences?.time_format ?? "12h",
   );
   const [language, setLanguage] = useState(preferences?.language ?? "en-us");
+  const timezoneOptions = mounted ? getAllTimezoneOptions() : fallbackTimezoneOptions;
   const [isPending, startTransition] = useTransition();
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
