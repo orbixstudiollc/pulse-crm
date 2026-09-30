@@ -28,7 +28,7 @@ const variantStyles: Record<BadgeVariant, string> = {
   warning: "bg-warning-surface text-warning",
   error: "bg-danger-surface text-danger",
   info: "bg-accent-surface text-accent-on-surface",
-  neutral: "bg-muted text-fg-secondary",
+  neutral: "bg-subtle text-fg-secondary",
   primary: "bg-accent-surface text-accent-on-surface",
 };
 
@@ -42,9 +42,9 @@ const dotStyles: Record<BadgeVariant, string> = {
 };
 
 const sizeStyles: Record<BadgeSize, string> = {
-  sm: "px-1.5 py-0.5 text-xs",
-  md: "px-2 py-0.5 text-xs",
-  lg: "px-2.5 py-1 text-[13px]",
+  sm: "h-5 px-1.5 text-xs",
+  md: "h-5 px-2 text-xs",
+  lg: "h-6 px-2.5 text-[13px]",
 };
 
 export function Badge({

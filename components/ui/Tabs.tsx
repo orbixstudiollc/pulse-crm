@@ -61,7 +61,7 @@ export function TabsList({ children, className }: TabsListProps) {
     <div
       role="tablist"
       className={cn(
-        "inline-flex h-8 items-center gap-0.5 rounded-md bg-muted p-0.5",
+        "flex items-center gap-4 border-b border-divider",
         className,
       )}
     >
@@ -113,15 +113,21 @@ export function TabsTrigger({
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={cn(
-        "inline-flex h-7 items-center gap-2 rounded-sm px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-50",
+        "relative inline-flex h-9 items-center gap-2 px-1 text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-50",
         isActive
-          ? "bg-surface text-fg"
+          ? "font-medium text-fg"
           : "text-fg-secondary hover:text-fg",
         className,
       )}
     >
       {icon}
       {children}
+      {isActive && (
+        <span
+          aria-hidden
+          className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-accent"
+        />
+      )}
     </button>
   );
 }

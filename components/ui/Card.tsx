@@ -58,12 +58,12 @@ export function CardHeader({
     >
       <div className="space-y-1 min-w-0 flex-1">
         {title && (
-          <h3 className="text-heading-md text-fg">
+          <h3 className="text-heading-sm text-fg">
             {title}
           </h3>
         )}
         {description && (
-          <p className="text-sm text-fg-secondary">
+          <p className="text-[13px] text-fg-muted">
             {description}
           </p>
         )}

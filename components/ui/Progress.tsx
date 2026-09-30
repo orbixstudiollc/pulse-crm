@@ -31,7 +31,7 @@ const sizeClasses = {
 export function Progress({
   value,
   max = 100,
-  color = "green",
+  color = "blue",
   size = "md",
   className,
 }: ProgressProps) {
@@ -43,7 +43,7 @@ export function Progress({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-full bg-muted",
+        "overflow-hidden rounded-full bg-active",
         sizeClasses[size],
         className,
       )}

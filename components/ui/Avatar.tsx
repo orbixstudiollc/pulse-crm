@@ -61,7 +61,7 @@ export function Avatar({
       {showInitials ? (
         <div
           className={cn(
-            "flex shrink-0 items-center justify-center rounded-full border border-line bg-accent-surface font-medium text-accent-on-surface",
+            "flex shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-fg-secondary",
             sizeClasses[size],
           )}
         >

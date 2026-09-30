@@ -37,8 +37,10 @@ export function Toast({
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
           className={cn(
-            "flex items-center gap-2 rounded-full border bg-inverse text-on-inverse px-4 py-2 text-sm shadow-dropdown",
-            variant === "success" ? "border-success" : "border-danger",
+            "flex items-center gap-2 rounded-lg px-4 py-2 text-sm",
+            variant === "success"
+              ? "bg-success-fill text-white"
+              : "border border-line bg-surface text-fg shadow-modal",
           )}
         >
           {variant === "success" ? (
@@ -57,7 +59,12 @@ export function Toast({
           <span className="font-medium flex-1">{message}</span>
           <button
             onClick={onClose}
-            className="ml-1 shrink-0 rounded-full text-on-inverse/70 hover:text-on-inverse transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className={cn(
+              "ml-1 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+              variant === "success"
+                ? "text-white/80 hover:text-white"
+                : "text-fg-muted hover:text-fg",
+            )}
           >
             <XIcon size={16} />
           </button>
