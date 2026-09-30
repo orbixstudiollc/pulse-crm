@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import {
+  clientFetchRecoveryInit,
   guestSignupsPerHour,
   guestWorkspaceSlug,
   isAuthPage,
@@ -173,5 +174,22 @@ describe("isClientFetch", () => {
     for (const method of ["POST", "HEAD", "OPTIONS", "PUT"]) {
       expect(isClientFetch({ method, secFetchMode: "cors", secFetchDest: "empty" })).toBe(false);
     }
+  });
+});
+
+describe("clientFetchRecoveryInit", () => {
+  // Mirrors the Next router's check (fetch-server-response.js): a response that
+  // is not ok or not text/x-component triggers a full page load of the URL.
+  const res = new Response(null, clientFetchRecoveryInit());
+
+  it("is a non-2xx response", () => {
+    expect(res.ok).toBe(false);
+    expect(res.status).toBe(401);
+  });
+
+  it("is not an RSC payload and is never cached", () => {
+    expect(res.headers.get("content-type")).toBe("text/plain");
+    expect(res.headers.get("content-type")?.startsWith("text/x-component")).toBe(false);
+    expect(res.headers.get("cache-control")).toBe("no-store");
   });
 });
