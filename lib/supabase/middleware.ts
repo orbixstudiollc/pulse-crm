@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   guestSignupsPerHour,
   isAuthPage,
+  isClientFetch,
   isGuestCapReached,
   isOpenAccess,
   shouldProvisionGuest,
@@ -96,15 +97,29 @@ export async function updateSession(request: NextRequest) {
   const openAccess = isOpenAccess();
   // /api/* never triggers a sign-in: this only matches protected paths, "/" and auth pages.
   if (openAccess && !user && (isProtectedPath(pathname) || pathname === "/" || isAuthPage(pathname))) {
+    const secFetchMode = request.headers.get("sec-fetch-mode");
+    const secFetchDest = request.headers.get("sec-fetch-dest");
+    if (isClientFetch({ method, secFetchMode, secFetchDest })) {
+      // A client-side navigation or prefetch after the session vanished. A
+      // non-RSC response makes the Next router do a full page load of this URL,
+      // which arrives as a real navigation and can be provisioned; prefetches
+      // discard it. Stale auth cookies cleared above are still sent.
+      const res = new NextResponse(null, {
+        status: 200,
+        headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" },
+      });
+      for (const cookie of supabaseResponse.cookies.getAll()) res.cookies.set(cookie);
+      return res;
+    }
     const provision = shouldProvisionGuest({
       method,
       accept: request.headers.get("accept"),
-      secFetchMode: request.headers.get("sec-fetch-mode"),
-      secFetchDest: request.headers.get("sec-fetch-dest"),
+      secFetchMode,
+      secFetchDest,
       userAgent: request.headers.get("user-agent"),
     });
     if (!provision) {
-      // No session for bots, HEAD, curl/monitors or prefetch/RSC fetches; they
+      // No session for bots, HEAD, curl/monitors or non-GET fetches; they
       // fall through to the /login redirect.
     } else if (
       isGuestCapReached(await countRecentGuestWorkspaces(new Date(Date.now() - 3_600_000)), guestSignupsPerHour())

@@ -5,6 +5,7 @@ import {
   guestWorkspaceSlug,
   isAuthPage,
   isBotUserAgent,
+  isClientFetch,
   isGuestCapReached,
   isGuestEmail,
   isOpenAccess,
@@ -147,5 +148,30 @@ describe("shouldProvisionGuest", () => {
 
   it("is false for bot user agents even when they look like a navigation", () => {
     expect(shouldProvisionGuest({ ...navigation, userAgent: "Googlebot/2.1" })).toBe(false);
+  });
+});
+
+describe("isClientFetch", () => {
+  it("is true for a GET fetch() that is not a navigation", () => {
+    for (const secFetchMode of ["cors", "same-origin", "no-cors"]) {
+      expect(isClientFetch({ method: "GET", secFetchMode, secFetchDest: "empty" })).toBe(true);
+    }
+    expect(isClientFetch({ method: "get", secFetchMode: "cors", secFetchDest: null })).toBe(true);
+  });
+
+  it("is false for page navigations", () => {
+    expect(isClientFetch({ method: "GET", secFetchMode: "navigate", secFetchDest: "document" })).toBe(false);
+    expect(isClientFetch({ method: "GET", secFetchMode: "navigate", secFetchDest: "iframe" })).toBe(false);
+  });
+
+  it("is false without Fetch Metadata", () => {
+    expect(isClientFetch({ method: "GET", secFetchMode: null, secFetchDest: null })).toBe(false);
+    expect(isClientFetch({ method: "GET", secFetchMode: undefined, secFetchDest: "empty" })).toBe(false);
+  });
+
+  it("is false for POST server actions, HEAD and other methods", () => {
+    for (const method of ["POST", "HEAD", "OPTIONS", "PUT"]) {
+      expect(isClientFetch({ method, secFetchMode: "cors", secFetchDest: "empty" })).toBe(false);
+    }
   });
 });

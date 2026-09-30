@@ -62,6 +62,14 @@ export function shouldProvisionGuest(req: GuestRequestInfo): boolean {
   return true;
 }
 
+// A client-side fetch() (Next router navigation or prefetch), not a page load.
+// Next strips its RSC headers before middleware, so Fetch Metadata is the
+// signal. GET only: POST server actions keep their current handling.
+export function isClientFetch(req: Pick<GuestRequestInfo, "method" | "secFetchMode" | "secFetchDest">): boolean {
+  if (req.method.toUpperCase() !== "GET") return false;
+  return req.secFetchMode != null && req.secFetchMode !== "navigate";
+}
+
 export const GUEST_SIGNUPS_PER_HOUR_DEFAULT = 200;
 
 export function guestSignupsPerHour(env: string | undefined = process.env.GUEST_SIGNUPS_PER_HOUR): number {
