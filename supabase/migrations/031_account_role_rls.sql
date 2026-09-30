@@ -61,6 +61,14 @@
 
 DROP POLICY IF EXISTS "org_email_accounts" ON public.email_accounts;
 
+-- Production also carried four dashboard-created member-level policies that
+-- no repo migration defines. Policies are permissive, so the INSERT/DELETE
+-- ones would reopen what this file closes; drop them wherever they exist.
+DROP POLICY IF EXISTS "Users can view own org email_accounts"   ON public.email_accounts;
+DROP POLICY IF EXISTS "Users can insert own org email_accounts" ON public.email_accounts;
+DROP POLICY IF EXISTS "Users can update own org email_accounts" ON public.email_accounts;
+DROP POLICY IF EXISTS "Users can delete own org email_accounts" ON public.email_accounts;
+
 DROP POLICY IF EXISTS "email_accounts_select" ON public.email_accounts;
 CREATE POLICY "email_accounts_select" ON public.email_accounts
   FOR SELECT

@@ -35,6 +35,13 @@ Closes the four findings the 2026-09-29 follow-up review left open (see
 - **L6** Migration 030 still grants `obsidian_vault_path` to `authenticated`; harmless, since nothing reads it. Drop the column or the grant in a later migration.
 - **Pre-existing** The campaigns-page custom SMTP modal sends no username or password, so accounts created there cannot authenticate. Not introduced here.
 
+## Deploy record (2026-09-30)
+
+- Pushed `32e9ea0` to `origin/main` (Vercel production deploy).
+- Applying 030 in the Supabase SQL editor failed twice on missing prerequisites: the production database had never received 017 (email counter RPCs), 026 or 027 (lead-finder columns and tables), although 025 and 028 were present. Applied in order: 026 + 027, then 017 + the automation counter RPC, then 030, then 031. All idempotent.
+- After 031, `pg_policies` showed four extra member-level policies on `email_accounts` ("Users can view/insert/update/delete own org email_accounts") that exist in no repo migration; they were dashboard-created and would have reopened INSERT/DELETE to members. Dropped by hand and the drops were added to 031 so other environments match. Final state: 12 policies across the three tables, 0 FOR ALL, credential trigger present.
+- Lesson: the production schema and the repo migrations had drifted; before the next migration, run a prerequisite check (the read-only queries used here are in the session record) rather than assuming every earlier file was applied.
+
 ## Owner actions at deploy
 
 - Apply `supabase/migrations/030_followup.sql` and `supabase/migrations/031_account_role_rls.sql` in the Supabase SQL editor in the same session as the production deploy. Both are idempotent; 031 ends with verification queries.
