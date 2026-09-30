@@ -92,7 +92,7 @@ export async function getSalesForecast() {
 
   const { data: deals } = await supabase
     .from("deals")
-    .select("stage, value, probability, close_date")
+    .select("id, name, company, contact_name, stage, value, probability, close_date")
     .eq("organization_id", orgId)
     .not("stage", "in", '("closed_won","closed_lost")');
 
@@ -107,6 +107,9 @@ export async function getSalesForecast() {
     data: {
       weighted: Math.round(weighted),
       deals: deals.map((d) => ({
+        id: d.id,
+        name: d.name,
+        company: d.company || d.contact_name || null,
         stage: d.stage,
         value: d.value || 0,
         probability: d.probability || 0,

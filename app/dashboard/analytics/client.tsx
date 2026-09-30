@@ -64,6 +64,9 @@ interface SourceData {
 interface ForecastData {
   weighted: number;
   deals: {
+    id: string;
+    name: string;
+    company: string | null;
     stage: string;
     value: number;
     probability: number;
@@ -538,6 +541,9 @@ function ForecastTab({ data }: { data: ForecastData }) {
             <thead>
               <tr>
                 <th className="text-left text-[13px] font-medium text-fg-secondary">
+                  Deal
+                </th>
+                <th className="text-left text-[13px] font-medium text-fg-secondary">
                   Stage
                 </th>
                 <th className="text-right text-[13px] font-medium text-fg-secondary">
@@ -555,11 +561,17 @@ function ForecastTab({ data }: { data: ForecastData }) {
               </tr>
             </thead>
             <tbody>
-              {data.deals.map((deal, i) => (
+              {data.deals.map((deal) => (
                 <tr
-                  key={i}
+                  key={deal.id}
                   className="hover:bg-subtle transition-colors"
                 >
+                  <td className="py-2">
+                    <p className="font-medium text-fg">{deal.name}</p>
+                    {deal.company && (
+                      <p className="text-[12px] text-fg-muted">{deal.company}</p>
+                    )}
+                  </td>
                   <td className="py-2">
                     <span
                       className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
@@ -902,62 +914,73 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
   }
 
   const { overview, accounts, dailyVolume } = data;
+  const hasEmailActivity = Object.values(overview).some((v) => v > 0);
 
   return (
     <div>
-      {/* KPI row */}
-      <MetricStrip className="pt-6">
-        <StatBox label="Total Sent" value={overview.totalSent.toLocaleString()} />
-        <StatBox label="Delivered" value={overview.totalDelivered.toLocaleString()} />
-        <StatBox
-          label="Open Rate"
-          value={`${overview.openRate}%`}
-          subValue={`${overview.totalOpened} opened`}
+      {!hasEmailActivity ? (
+        <PageEmptyState
+          icon={<EnvelopeIcon size={24} />}
+          title="No emails sent yet"
+          description="Email metrics appear once emails are sent from Pulse. Emails logged as activities are not counted here."
         />
-        <StatBox
-          label="Click Rate"
-          value={`${overview.clickRate}%`}
-          subValue={`${overview.totalClicked} clicked`}
-        />
-        <StatBox
-          label="Reply Rate"
-          value={`${overview.replyRate}%`}
-          subValue={`${overview.totalReplied} replies`}
-        />
-        <StatBox
-          label="Bounce Rate"
-          value={`${overview.bounceRate}%`}
-          subValue={`${overview.totalBounced} bounced`}
-        />
-      </MetricStrip>
+      ) : (
+        <>
+          {/* KPI row */}
+          <MetricStrip className="pt-6">
+            <StatBox label="Total Sent" value={overview.totalSent.toLocaleString()} />
+            <StatBox label="Delivered" value={overview.totalDelivered.toLocaleString()} />
+            <StatBox
+              label="Open Rate"
+              value={`${overview.openRate}%`}
+              subValue={`${overview.totalOpened} opened`}
+            />
+            <StatBox
+              label="Click Rate"
+              value={`${overview.clickRate}%`}
+              subValue={`${overview.totalClicked} clicked`}
+            />
+            <StatBox
+              label="Reply Rate"
+              value={`${overview.replyRate}%`}
+              subValue={`${overview.totalReplied} replies`}
+            />
+            <StatBox
+              label="Bounce Rate"
+              value={`${overview.bounceRate}%`}
+              subValue={`${overview.totalBounced} bounced`}
+            />
+          </MetricStrip>
 
-      {/* Daily volume chart */}
-      {dailyVolume.length > 0 && (
-        <Section title="Daily Email Volume (Last 30 Days)">
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dailyVolume}>
-                <CartesianGrid vertical={false} stroke={chartGrid} />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 11 }}
-                  tickFormatter={(v: string) => {
-                    const d = new Date(v);
-                    return `${d.getMonth() + 1}/${d.getDate()}`;
-                  }}
-                  className="text-fg-secondary"
-                />
-                <YAxis axisLine={false} tickLine={false} tick={axisTick} />
-                <Tooltip
-                  contentStyle={chartTooltipStyle}
-                />
-                <Bar dataKey="sent" fill={CHART_COLORS.indigo} name="Sent" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="opened" fill={CHART_COLORS.green} name="Opened" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="clicked" fill={CHART_COLORS.amber} name="Clicked" radius={[2, 2, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Section>
+          {/* Daily volume chart */}
+          {dailyVolume.length > 0 && (
+            <Section title="Daily Email Volume (Last 30 Days)">
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={dailyVolume}>
+                    <CartesianGrid vertical={false} stroke={chartGrid} />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 11 }}
+                      tickFormatter={(v: string) => {
+                        const d = new Date(v);
+                        return `${d.getMonth() + 1}/${d.getDate()}`;
+                      }}
+                      className="text-fg-secondary"
+                    />
+                    <YAxis axisLine={false} tickLine={false} tick={axisTick} />
+                    <Tooltip
+                      contentStyle={chartTooltipStyle}
+                    />
+                    <Bar dataKey="sent" fill={CHART_COLORS.indigo} name="Sent" radius={[2, 2, 0, 0]} />
+                    <Bar dataKey="opened" fill={CHART_COLORS.green} name="Opened" radius={[2, 2, 0, 0]} />
+                    <Bar dataKey="clicked" fill={CHART_COLORS.amber} name="Clicked" radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Section>
+          )}
+        </>
       )}
 
       {/* Account health */}
@@ -1115,6 +1138,7 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
   ];
 
   const totalMessages = channelDistribution.reduce((s, c) => s + c.value, 0);
+  const hasReplyRate = channelComparison.some((c) => c.replyRate > 0);
 
   return (
     <div>
@@ -1135,24 +1159,28 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
           value={`${data.summary.overallReplyRate}%`}
           subValue="Combined average"
         />
-        <Metric
-          label="Best Channel"
-          value={
-            <div className="flex items-center gap-2">
-              {data.summary.bestChannel === "email" && (
-                <EnvelopeIcon size={20} className="text-accent-strong" />
-              )}
-              {data.summary.bestChannel === "whatsapp" && (
-                <WhatsappLogoIcon size={20} className="text-success" />
-              )}
-              {data.summary.bestChannel === "linkedin" && (
-                <LinkedinLogoIcon size={20} className="text-accent-strong" />
-              )}
-              <span className="capitalize">{data.summary.bestChannel}</span>
-            </div>
-          }
-          hint="Highest reply rate"
-        />
+        {hasReplyRate ? (
+          <Metric
+            label="Best Channel"
+            value={
+              <div className="flex items-center gap-2">
+                {data.summary.bestChannel === "email" && (
+                  <EnvelopeIcon size={20} className="text-accent-strong" />
+                )}
+                {data.summary.bestChannel === "whatsapp" && (
+                  <WhatsappLogoIcon size={20} className="text-success" />
+                )}
+                {data.summary.bestChannel === "linkedin" && (
+                  <LinkedinLogoIcon size={20} className="text-accent-strong" />
+                )}
+                <span className="capitalize">{data.summary.bestChannel}</span>
+              </div>
+            }
+            hint="Highest reply rate"
+          />
+        ) : (
+          <StatBox label="Best Channel" value="—" subValue="Not enough data" />
+        )}
       </MetricStrip>
 
       {/* Channel distribution bar */}
@@ -1222,36 +1250,44 @@ function ChannelsTab({ data }: { data?: ChannelAnalyticsData }) {
 
       {/* Channel Comparison */}
       <Section title="Channel Comparison — Reply Rates">
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={channelComparison} layout="vertical" barCategoryGap="30%">
-            <CartesianGrid vertical={false} stroke={chartGrid} />
-            <XAxis axisLine={false} tickLine={false} type="number" tick={axisTick} unit="%" />
-            <YAxis axisLine={false} tickLine={false}
-              type="category"
-              dataKey="channel"
-              tick={axisTick}
-              width={80}
-            />
-            <Tooltip
-              contentStyle={chartTooltipStyle}
-              formatter={(value: unknown) => [`${value}%`, "Reply Rate"]}
-            />
-            <Bar dataKey="replyRate" name="Reply Rate" radius={[0, 2, 2, 0]}>
-              {channelComparison.map((entry, idx) => (
-                <Cell
-                  key={idx}
-                  fill={
-                    entry.channel === "Email"
-                      ? CHANNEL_COLORS.email
-                      : entry.channel === "WhatsApp"
-                        ? CHANNEL_COLORS.whatsapp
-                        : CHANNEL_COLORS.linkedin
-                  }
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        {!hasReplyRate ? (
+          <PageEmptyState
+            icon={<ChatCircleIcon size={24} />}
+            title="No replies yet"
+            description="Reply rates by channel appear here once contacts reply to your outreach."
+          />
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={channelComparison} layout="vertical" barCategoryGap="30%">
+              <CartesianGrid vertical={false} stroke={chartGrid} />
+              <XAxis axisLine={false} tickLine={false} type="number" tick={axisTick} unit="%" />
+              <YAxis axisLine={false} tickLine={false}
+                type="category"
+                dataKey="channel"
+                tick={axisTick}
+                width={80}
+              />
+              <Tooltip
+                contentStyle={chartTooltipStyle}
+                formatter={(value: unknown) => [`${value}%`, "Reply Rate"]}
+              />
+              <Bar dataKey="replyRate" name="Reply Rate" radius={[0, 2, 2, 0]}>
+                {channelComparison.map((entry, idx) => (
+                  <Cell
+                    key={idx}
+                    fill={
+                      entry.channel === "Email"
+                        ? CHANNEL_COLORS.email
+                        : entry.channel === "WhatsApp"
+                          ? CHANNEL_COLORS.whatsapp
+                          : CHANNEL_COLORS.linkedin
+                    }
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </Section>
 
       {/* Per-channel detail cards */}
