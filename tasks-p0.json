@@ -67,5 +67,46 @@
     ],
     "interface": "(1) lib/actions/analytics.ts, the funnel function around line 195: dealToCustomerRate is customers/deals (showed 120%). Add a fourth count query in the same Promise.all: deals with .eq('stage', 'closed_won') (same organization_id filter, head count), and compute dealToCustomerRate = totalDeals > 0 ? Math.round((wonDeals / totalDeals) * 100) : 0. Leave the other fields as they are. (2) New pure module lib/customers/metrics.ts, test-first in tests/customer-metrics.test.ts: export function customerTenureMonths(customerSince: string | null | undefined, createdAt: string | null | undefined, now: Date = new Date()): number = whole calendar months from customerSince (fallback createdAt) to now, same arithmetic as monthsSince in app/dashboard/customers/[id]/client.tsx, never below 0, 0 when both are missing or invalid; export function customerLifetimeValue(stored: number | null | undefined, closedWonTotal = 0): number = stored when it is a number > 0, else closedWonTotal. (3) app/dashboard/customers/[id]/client.tsx: replace the ltv and tenure lines (~323-324) with customerLifetimeValue(customer.lifetime_value, closedWonValue) and customerTenureMonths(customer.customer_since, customer.created_at); delete monthsSince if nothing else uses it. (4) app/dashboard/customers/client.tsx, the row-to-Customer mapping around line 63: add lifetimeValue: customerLifetimeValue(c.lifetime_value) and tenure: customerTenureMonths(c.customer_since, c.created_at) (widen the local row type there if it lacks those columns). Do not change CustomerDrawer.tsx or CustomersTable.tsx.",
     "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q closed_won lib/actions/analytics.ts && grep -q customerTenureMonths 'app/dashboard/customers/[id]/client.tsx' && grep -q customerTenureMonths app/dashboard/customers/client.tsx && grep -q customerLifetimeValue app/dashboard/customers/client.tsx && npx tsc --noEmit && npx eslint 'lib/actions/analytics.ts' 'lib/customers/metrics.ts' 'app/dashboard/customers/client.tsx' 'app/dashboard/customers/[id]/client.tsx' && npm test && git add -A -- 'lib/actions/analytics.ts' 'lib/customers/metrics.ts' 'tests/customer-metrics.test.ts' 'app/dashboard/customers/client.tsx' 'app/dashboard/customers/[id]/client.tsx' && git commit -q -m 'fix(analytics): correct D-to-C rate and customer LTV and tenure' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "R1",
+    "model": "sonnet",
+    "depends_on": [
+      "P3"
+    ],
+    "title": "Review fix: Copilot clearance on Page, not on main (Inbox and Copilot were 96px short)",
+    "files": [
+      "app/dashboard/layout.tsx",
+      "components/dashboard/Page.tsx"
+    ],
+    "interface": "Two edits only. (1) app/dashboard/layout.tsx line ~47: remove the pb-24 that P3 added to <main className=\"flex-1 overflow-auto bg-page pb-24\"> (back to \"flex-1 overflow-auto bg-page\"). Full-height workspaces (inbox, copilot) size themselves with h-full against main and must not lose 96px. (2) components/dashboard/Page.tsx line ~14: in export function Page, change the wrapper class \"min-h-full pb-10\" to \"min-h-full pb-24\" so list/detail/settings pages (which render inside Page) scroll their last content (pagination, Billing's Upgrade Now) clear of the 48px Copilot button at bottom-6.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'className=\"flex-1 overflow-auto bg-page\"' app/dashboard/layout.tsx && ! grep -q 'bg-page pb-24' app/dashboard/layout.tsx && grep -q 'min-h-full pb-24' components/dashboard/Page.tsx && node scripts/restyle/scan.mjs app components && npx tsc --noEmit && npx eslint 'app/dashboard/layout.tsx' 'components/dashboard/Page.tsx' && npm test && git add -A -- 'app/dashboard/layout.tsx' 'components/dashboard/Page.tsx' && git commit -q -m 'fix(layout): Copilot clearance on Page so full-height workspaces keep their height' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "R2",
+    "model": "sonnet",
+    "depends_on": [
+      "P5"
+    ],
+    "title": "Review fix: date-only customer_since parses as a local date",
+    "files": [
+      "lib/customers/metrics.ts",
+      "tests/customer-metrics.test.ts"
+    ],
+    "interface": "customers.customer_since is a Postgres DATE, returned as 'YYYY-MM-DD'. new Date('2026-03-01') parses as UTC midnight while customerTenureMonths uses local getFullYear/getMonth, so west of UTC it is one month high and server (UTC) and browser render different values (hydration mismatch). Test-first in tests/customer-metrics.test.ts: add date-only cases, e.g. customerTenureMonths('2026-03-01', null, new Date(2026, 9, 15)) === 7 and customerTenureMonths('2026-10-01', null, new Date(2026, 9, 15)) === 0; run the file with TZ=America/New_York npx vitest run tests/customer-metrics.test.ts and see it fail; then fix lib/customers/metrics.ts with a small internal parser: a string matching /^\\d{4}-\\d{2}-\\d{2}$/ becomes new Date(y, m - 1, d) (local), anything else new Date(value); invalid dates still fall through to the createdAt fallback / 0. No other changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && TZ=America/New_York npx vitest run tests/customer-metrics.test.ts && TZ=UTC npx vitest run tests/customer-metrics.test.ts && grep -q '2026-03-01' tests/customer-metrics.test.ts && npx tsc --noEmit && npx eslint 'lib/customers/metrics.ts' 'tests/customer-metrics.test.ts' && npm test && git add -A -- 'lib/customers/metrics.ts' 'tests/customer-metrics.test.ts' && git commit -q -m 'fix(customers): parse date-only customer_since as a local date' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "R3",
+    "model": "sonnet",
+    "depends_on": [
+      "P2"
+    ],
+    "title": "Review fix: migration 034 gives seeded ICP profiles the same weights as the new seed",
+    "files": [
+      "supabase/migrations/034_normalize_seed_values.sql"
+    ],
+    "interface": "In supabase/migrations/034_normalize_seed_values.sql the icp_profiles.weights UPDATE (section 'icp_profiles.weights', ~line 158) derives weights by formula, which gives Growth-Stage Startup {industry 20, size 20, revenue 15, title 10, geography 10, tech 25} while lib/seed/generate.ts now seeds {industry 20, size 20, revenue 15, title 15, geography 15, tech 15}. Change that UPDATE so rows WHERE weights ? 'company_size' get: name = 'Enterprise SaaS' -> exactly the seed's Enterprise SaaS weights object; name = 'Growth-Stage Startup' -> exactly the seed's Growth-Stage Startup weights object (read both literals from lib/seed/generate.ts); any other name keeps the existing formula. Keep it idempotent and inside the existing transaction; update the header comment line about weights to say this. Touch nothing else in the file.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'Growth-Stage Startup' supabase/migrations/034_normalize_seed_values.sql && grep -q 'Enterprise SaaS' supabase/migrations/034_normalize_seed_values.sql && npx tsc --noEmit && npx eslint 'lib/seed/generate.ts' && npm test && git add -A -- 'supabase/migrations/034_normalize_seed_values.sql' && git commit -q -m 'fix(migration): 034 gives seeded ICP profiles the same weights as the seed' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
   }
 ]
