@@ -2,11 +2,11 @@ import {
   ActiveDeals,
   ActivityFeed,
   LatestLeads,
-  PageHeader,
   PageHeaderActions,
   RevenueChart,
   StatCard,
 } from "@/components/dashboard";
+import { OverviewHome } from "@/components/dashboard/OverviewHome";
 import {
   CurrencyDollarIcon,
   TrophyIcon,
@@ -38,7 +38,7 @@ export default async function OverviewPage() {
     .eq("id", user!.id)
     .single();
 
-  const firstName = profile?.first_name || "there";
+  const firstName = profile?.first_name ?? null;
 
   const [statsRes, revenueRes, dealsRes, leadsRes, activityRes, stagesRes] = await Promise.all([
     getDashboardStats(),
@@ -54,10 +54,8 @@ export default async function OverviewPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Page Header */}
-      <PageHeader title={`Welcome back, ${firstName}`}>
-        <PageHeaderActions />
-      </PageHeader>
+      {/* Greeting, ask box and quick actions */}
+      <OverviewHome firstName={firstName} actions={<PageHeaderActions />} />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

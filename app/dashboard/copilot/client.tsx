@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { motion, AnimatePresence } from "framer-motion";
@@ -98,6 +99,21 @@ export function CopilotClient({ initialConversations, initialMemory, initialTask
       setView("chat");
     }
   };
+
+  // Deep link from Overview's ask box: /dashboard/copilot?prompt=<text>.
+  // Start one chat with it, then drop the param so a refresh does not resend.
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const promptParamHandled = useRef(false);
+
+  useEffect(() => {
+    const prompt = searchParams.get("prompt");
+    if (!prompt || promptParamHandled.current) return;
+    promptParamHandled.current = true;
+    router.replace("/dashboard/copilot");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- state updates happen after the awaited createConversation, not synchronously
+    void handleSendFromEmpty(prompt);
+  }, [searchParams, router]);
 
   const handleDeleteConversation = async (id: string) => {
     await deleteConversation(id);

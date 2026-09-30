@@ -45,6 +45,7 @@ import { aiScoreLead, aiScoreLeadsBatch } from "@/lib/actions/ai-scoring";
 import { exportLeadsToCSV } from "@/lib/actions/export";
 import { useClickOutside } from "@/hooks";
 // useRouter removed — data refresh via fetchLeads()
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { countInMonth, monthOverMonth } from "@/lib/stats/period-delta";
 
@@ -166,7 +167,21 @@ export function LeadsPageClient() {
   const [aiScoreDrawerOpen, setAIScoreDrawerOpen] = useState(false);
   const [aiScoreData, setAIScoreData] = useState<unknown>(null);
   const [aiScoringLeadId, setAIScoringLeadId] = useState<string | null>(null);
-  const [showImport, setShowImport] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const importParamHandled = useRef(false);
+  const [showImport, setShowImport] = useState(
+    () => searchParams.get("import") === "1",
+  );
+
+  // Deep link from Overview's "Import data" card: /dashboard/leads?import=1.
+  // The modal opens via the initial state above; drop the param once so a
+  // refresh does not reopen it.
+  useEffect(() => {
+    if (importParamHandled.current || searchParams.get("import") !== "1") return;
+    importParamHandled.current = true;
+    router.replace("/dashboard/leads");
+  }, [searchParams, router]);
   const [showSequencePicker, setShowSequencePicker] = useState(false);
   const scorePopoverRef = useRef<HTMLDivElement>(null);
 
