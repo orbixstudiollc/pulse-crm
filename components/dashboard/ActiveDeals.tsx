@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUpRightIcon, IconButton } from "@/components/ui";
+import Link from "next/link";
+import { ArrowUpRightIcon } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 interface DealStage {
@@ -49,10 +50,13 @@ export function ActiveDeals({
           Active Deals
         </h3>
 
-        <IconButton
-          icon={<ArrowUpRightIcon size={20} />}
+        <Link
+          href="/dashboard/sales"
           aria-label="View all deals"
-        />
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface text-fg-secondary transition-colors duration-150 hover:bg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
+        >
+          <ArrowUpRightIcon size={20} />
+        </Link>
       </div>
 
       {/* Content */}

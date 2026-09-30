@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowUpRightIcon, Badge, IconButton, type BadgeVariant } from "@/components/ui";
+import Link from "next/link";
+import { ArrowUpRightIcon, Badge, type BadgeVariant } from "@/components/ui";
 import {
   EnvelopeIcon,
   PhoneIcon,
@@ -76,15 +77,13 @@ export function ActivityFeed({
           Activity Feed
         </h3>
 
-        <IconButton
-          icon={
-            <ArrowUpRightIcon
-              size={16}
-              className="text-fg-secondary"
-            />
-          }
+        <Link
+          href="/dashboard/activity"
           aria-label="View all activity"
-        />
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface text-fg-secondary transition-colors duration-150 hover:bg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
+        >
+          <ArrowUpRightIcon size={16} className="text-fg-secondary" />
+        </Link>
       </div>
 
       {/* Activities */}

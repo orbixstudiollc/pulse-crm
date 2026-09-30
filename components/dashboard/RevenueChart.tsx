@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import {
   AreaChart,
   Area,
@@ -10,12 +10,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import {
-  ArrowUpRightIcon,
-  IconButton,
-  Dropdown,
-  yearOptions,
-} from "@/components/ui";
+import { ArrowUpRightIcon } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { chartAccent, chartGrid, chartSurface, axisTick } from "@/lib/design-system/chart-colors";
 
@@ -82,8 +77,6 @@ export function RevenueChart({
   data = defaultData,
   className,
 }: RevenueChartProps) {
-  const [year, setYear] = useState("this_year");
-
   return (
     <div
       className={cn(
@@ -97,13 +90,13 @@ export function RevenueChart({
           Revenue Trend
         </h3>
 
-        <div className="flex items-center gap-2">
-          <Dropdown options={yearOptions} value={year} onChange={setYear} />
-          <IconButton
-            icon={<ArrowUpRightIcon size={20} />}
-            aria-label="Open in new tab"
-          />
-        </div>
+        <Link
+          href="/dashboard/analytics"
+          aria-label="Open analytics"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface text-fg-secondary transition-colors duration-150 hover:bg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
+        >
+          <ArrowUpRightIcon size={20} />
+        </Link>
       </div>
 
       {/* Chart */}
