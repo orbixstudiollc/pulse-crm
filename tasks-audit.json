@@ -304,6 +304,20 @@
     "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'export function resolveAIProvider' lib/ai/provider-resolver.ts && grep -q 'resolveAIProvider' lib/ai/client.ts && grep -q 'resolveAIProvider' lib/lead-finder/ai-provider.ts && grep -q 'resolveAIProvider' app/api/ai/chat/route.ts && grep -q 'No AI API key configured' app/api/ai/chat/route.ts && ! grep -q 'pulse-crm-rosy' lib/ai/client.ts && npx vitest run tests/ai-provider-resolver.test.ts && npx tsc --noEmit && npx eslint 'lib/ai/provider-resolver.ts' 'lib/ai/client.ts' 'app/api/ai/chat/route.ts' 'lib/lead-finder/ai-provider.ts' && git add -A -- 'lib/ai/provider-resolver.ts' 'tests/ai-provider-resolver.test.ts' 'lib/ai/client.ts' 'app/api/ai/chat/route.ts' 'lib/lead-finder/ai-provider.ts' && git commit -q -m 'fix(ai): one provider resolver for CRM and Lead Finder, with fallback across configured keys' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F19-OK"
   },
   {
+    "id": "F21",
+    "model": "sonnet",
+    "depends_on": [
+      "F5"
+    ],
+    "title": "Calendar queries order by a column that exists",
+    "files": [
+      "lib/actions/calendar.ts",
+      "app/dashboard/calendar/client.tsx"
+    ],
+    "interface": "lib/actions/calendar.ts orders calendar_events by .order(\"time\"), but the table has no time column (types/database.ts has date, start_time, end_time; verified live: ordering by time fails in production while start_time and date succeed), so getCalendarEvents and getUpcomingEvents return errors and the Calendar page and the header calendar popover show no events. Replace every .order(\"time\", ...) with .order(\"start_time\", ...) keeping the same direction, and replace any other reference to a time column in this file (select lists, filters, inserts) with start_time only where the intent is the event start time. Do not change function signatures. app/dashboard/calendar/client.tsx displays formatTime(event.time) (around line 477); display start_time instead (and end_time if the component shows a range), keeping formatTime; fix any local type that declares time accordingly.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! grep -q 'order(\"time\"' lib/actions/calendar.ts && grep -q 'order(\"start_time\"' lib/actions/calendar.ts && npx tsc --noEmit && ! grep -q 'event.time)' app/dashboard/calendar/client.tsx && npx eslint 'lib/actions/calendar.ts' 'app/dashboard/calendar/client.tsx' && git add -A -- 'lib/actions/calendar.ts' 'app/dashboard/calendar/client.tsx' && git commit -q -m 'fix(calendar): order events by start_time, the column that exists' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' && echo F21-OK"
+  },
+  {
     "id": "F20",
     "model": "sonnet",
     "depends_on": [
@@ -325,7 +339,8 @@
       "F16",
       "F17",
       "F18",
-      "F19"
+      "F19",
+      "F21"
     ],
     "title": "Final gate: lint, tests, build, restyle scan, contrast, audit",
     "files": [],
