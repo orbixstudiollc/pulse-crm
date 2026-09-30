@@ -43,7 +43,6 @@ export const AI_SETTINGS_WRITABLE_COLUMNS = [
   "ai_provider",
   "default_model",
   "ollama_base_url",
-  "obsidian_vault_path",
   "obsidian_sync_enabled",
   "parallel_enrichment_limit",
   "feature_lead_scoring",

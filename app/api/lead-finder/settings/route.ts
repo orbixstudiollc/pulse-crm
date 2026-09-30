@@ -68,7 +68,6 @@ const AgencySection = z.object({
 
 const ObsidianSection = z.object({
   section: z.literal("obsidian"),
-  obsidian_vault_path: z.string().trim().max(500).optional(),
   obsidian_sync_enabled: z.boolean().optional(),
 });
 
@@ -102,7 +101,7 @@ export async function GET() {
     const { data: aiRows } = await admin
       .from("ai_settings")
       .select(
-        "api_key, apify_api_key, openrouter_api_key, openrouter_oauth_token, openrouter_expires_at, openai_api_key, groq_api_key, ollama_base_url, obsidian_vault_path, obsidian_sync_enabled, default_model, ai_provider, parallel_enrichment_limit"
+        "api_key, apify_api_key, openrouter_api_key, openrouter_oauth_token, openrouter_expires_at, openai_api_key, groq_api_key, ollama_base_url, obsidian_sync_enabled, default_model, ai_provider, parallel_enrichment_limit"
       )
       .eq("organization_id", profile.organization_id)
       .limit(1);
@@ -151,7 +150,6 @@ export async function GET() {
           agency_results: org?.results_case_studies ?? "",
           agency_target_industries: org?.target_industries ?? "",
           agency_website: org?.agency_website ?? "",
-          obsidian_vault_path: ai?.obsidian_vault_path ?? "",
           obsidian_sync_enabled: !!ai?.obsidian_sync_enabled,
         },
       },
@@ -319,8 +317,6 @@ export async function PUT(req: NextRequest) {
 
     if (body.section === "obsidian") {
       const aiUpdates: Record<string, unknown> = {};
-      if (typeof body.obsidian_vault_path === "string")
-        aiUpdates.obsidian_vault_path = body.obsidian_vault_path;
       if (typeof body.obsidian_sync_enabled === "boolean")
         aiUpdates.obsidian_sync_enabled = body.obsidian_sync_enabled;
 

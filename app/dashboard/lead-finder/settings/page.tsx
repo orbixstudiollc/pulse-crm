@@ -60,7 +60,6 @@ interface SettingsData {
   agency_results: string;
   agency_target_industries: string;
   agency_website: string;
-  obsidian_vault_path: string;
   obsidian_sync_enabled: boolean;
 }
 
@@ -268,7 +267,6 @@ function LeadFinderSettingsPageInner() {
   const [validatingId, setValidatingId] = useState<string | null>(null);
 
   // Obsidian
-  const [vaultPath, setVaultPath] = useState("");
   const [vaultEnabled, setVaultEnabled] = useState(false);
   const [savingObsidian, setSavingObsidian] = useState(false);
 
@@ -305,7 +303,6 @@ function LeadFinderSettingsPageInner() {
       setAgencyResults(d.agency_results || "");
       setAgencyTargetIndustries(d.agency_target_industries || "");
       setAgencyWebsite(d.agency_website || "");
-      setVaultPath(d.obsidian_vault_path || "");
       setVaultEnabled(!!d.obsidian_sync_enabled);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to load settings");
@@ -419,7 +416,6 @@ function LeadFinderSettingsPageInner() {
     await putSettings(
       {
         section: "obsidian",
-        obsidian_vault_path: vaultPath,
         obsidian_sync_enabled: vaultEnabled,
       },
       setSavingObsidian
@@ -1128,8 +1124,6 @@ function LeadFinderSettingsPageInner() {
 
           {tab === "obsidian" && (
             <ObsidianSyncSection
-              vaultPath={vaultPath}
-              setVaultPath={setVaultPath}
               enabled={vaultEnabled}
               setEnabled={setVaultEnabled}
               saving={savingObsidian}
@@ -1160,15 +1154,11 @@ interface ObsidianFile {
 }
 
 function ObsidianSyncSection({
-  vaultPath,
-  setVaultPath,
   enabled,
   setEnabled,
   saving,
   onSave,
 }: {
-  vaultPath: string;
-  setVaultPath: (v: string) => void;
   enabled: boolean;
   setEnabled: (v: boolean) => void;
   saving: boolean;
@@ -1250,18 +1240,7 @@ function ObsidianSyncSection({
       </div>
 
       <div className="space-y-4 mb-6">
-        <Field label="Vault path">
-          <input
-            type="text"
-            value={vaultPath}
-            onChange={(e) => setVaultPath(e.target.value)}
-            placeholder="/Users/you/Obsidian/Vault"
-            className={inputCls}
-          />
-          <p className="text-xs text-fg-secondary mt-1">
-            Absolute server-side path to the Obsidian vault root.
-          </p>
-        </Field>
+        <p className="text-xs text-fg-secondary">Observation files are written to a server-managed vault folder for this organization.</p>
         <label className="flex items-center gap-2 text-sm text-fg">
           <input
             type="checkbox"
