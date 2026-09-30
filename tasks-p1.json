@@ -242,5 +242,21 @@
     ],
     "interface": "This is a review fix. The findings come from an adversarial review of commits b7f83ec..HEAD; the finding text is quoted in this interface. Pages are client components that are also server-rendered in UTC on Vercel, so anything that depends on the current date or the local time zone must not render differently on the server and in the browser (compute it after mount with the useSyncExternalStore mounted-flag pattern that app/dashboard/calendar/client.tsx uses, and render a neutral placeholder before). Postgres DATE columns arrive as 'YYYY-MM-DD'; new Date('YYYY-MM-DD') is UTC midnight and shows the previous day west of UTC, so parse them as local dates. (L3) app/dashboard/analytics/client.tsx ~line 1141: the Channels empty state ('No replies yet', no best channel) is gated on the rounded replyRate, so 1 reply out of 250 sends (0.4% rounds to 0) hides real replies. Gate on the channels' reply counts instead (read the channel data shape returned by lib/actions/analytics.ts; use its replies/replied count field): show the empty state only when no channel has replies > 0. (Timezone) app/dashboard/settings/client.tsx: when preferences.timezone is null the initial value comes from browserTimezone(), which is UTC on the server and the local zone in the browser -> hydration mismatch on the select. Initialise with normalizeTimezone(preferences?.timezone, 'UTC') and, only when preferences.timezone is blank, switch to the browser zone after mount (useEffect setting state once). No other changes.",
     "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q normalizeTimezone app/dashboard/settings/client.tsx && npx tsc --noEmit && npx eslint 'app/dashboard/analytics/client.tsx' 'app/dashboard/settings/client.tsx' && node scripts/restyle/boxes.mjs 'app/dashboard/analytics/client.tsx' 'app/dashboard/settings/client.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'app/dashboard/analytics/client.tsx' 'app/dashboard/settings/client.tsx' && git commit -q -m 'fix(analytics,settings): reply-count empty state and hydration-safe timezone' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "V6",
+    "model": "sonnet",
+    "depends_on": [
+      "V1"
+    ],
+    "title": "Review fix: pre-mount activity date is identical on server and browser for timestamp fallbacks",
+    "files": [
+      "lib/utils/local-date.ts",
+      "tests/local-date.test.ts",
+      "components/dashboard/ActivityFeed.tsx",
+      "app/dashboard/activity/client.tsx"
+    ],
+    "interface": "Finding (MEDIUM): when activities.date is NULL (e.g. CreateTaskModal saves date: dueDate || null), ActivityFeed (components/dashboard/ActivityFeed.tsx ~:40, :100) and the Activity page (app/dashboard/activity/client.tsx ~:106, :129) fall back to created_at, a full timestamp, and the pre-mount absolute date is formatted with toLocaleDateString in the renderer's zone (UTC on the server, local in the browser) -> e.g. server 'Oct 1', browser 'Sep 30' -> hydration mismatch. Fix, test-first in tests/local-date.test.ts (keep the TZ=America/New_York beforeAll pattern): add export function absoluteDayLabel(value: string): string in lib/utils/local-date.ts that formats a 'YYYY-MM-DD' value from its local y/m/d (as today) and any other value with toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }) so the result does not depend on the renderer's zone; use it for the pre-mount label in both files (post-mount relative labels unchanged). No other changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q absoluteDayLabel components/dashboard/ActivityFeed.tsx && grep -q absoluteDayLabel app/dashboard/activity/client.tsx && npx vitest run tests/local-date.test.ts && npx tsc --noEmit && npx eslint 'lib/utils/local-date.ts' 'tests/local-date.test.ts' 'components/dashboard/ActivityFeed.tsx' 'app/dashboard/activity/client.tsx' && npm test && git add -A -- 'lib/utils/local-date.ts' 'tests/local-date.test.ts' 'components/dashboard/ActivityFeed.tsx' 'app/dashboard/activity/client.tsx' && git commit -q -m 'fix(activity): pre-mount dates do not depend on the renderer time zone' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
   }
 ]
