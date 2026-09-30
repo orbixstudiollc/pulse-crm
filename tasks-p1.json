@@ -1,0 +1,168 @@
+[
+  {
+    "id": "Q1",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Breadcrumb shows the record name, never the raw UUID",
+    "files": [
+      "components/layout/Header.tsx",
+      "app/dashboard/icp/[id]/client.tsx",
+      "app/dashboard/sequences/[id]/client.tsx"
+    ],
+    "interface": "Repro steps and observed values are in docs/audits/2026-10-01/{A-core-crm,B-growth-outreach,C-mobile-tablet,D-code-config-security}.md; read the matching finding before changing code. Follow docs/design/clay-layout.md for any UI. components/layout/Header.tsx (~line 60-75) title-cases the URL segment, so ID segments render as 'Ffb8cd74-c641-...' until (or unless) a page sets breadcrumbLabel. (1) In Header, when a segment is an ID segment (existing isIdSegment test; also treat a UUID-shaped segment as an ID) and config.breadcrumbLabel is not set, render nothing for that crumb's text other than a muted ellipsis placeholder ('...' as a real ellipsis character, aria-hidden, with the crumb keeping its separator), never the raw id; do not capitalise ID segments. (2) The ICP detail (app/dashboard/icp/[id]/client.tsx) and sequence detail (app/dashboard/sequences/[id]/client.tsx) never call usePageHeader: add a usePageHeader({ backHref, breadcrumbLabel }) call exactly like app/dashboard/customers/[id]/client.tsx does (backHref '/dashboard/icp' and '/dashboard/sequences'; breadcrumbLabel = the profile / sequence name). Keep existing page content; if a page already renders its own back link, leave it. No other changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q breadcrumbLabel 'app/dashboard/icp/[id]/client.tsx' && grep -q breadcrumbLabel 'app/dashboard/sequences/[id]/client.tsx' && npx tsc --noEmit && npx eslint 'components/layout/Header.tsx' 'app/dashboard/icp/[id]/client.tsx' 'app/dashboard/sequences/[id]/client.tsx' && node scripts/restyle/boxes.mjs 'components/layout/Header.tsx' 'app/dashboard/icp/[id]/client.tsx' 'app/dashboard/sequences/[id]/client.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'components/layout/Header.tsx' 'app/dashboard/icp/[id]/client.tsx' 'app/dashboard/sequences/[id]/client.tsx' && git commit -q -m 'fix(header): breadcrumb shows record names, never raw ids' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "Q2",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Competitor detail: same strengths/weaknesses as the list, properties panel, breadcrumb",
+    "files": [
+      "app/dashboard/competitors/[id]/client.tsx",
+      "app/dashboard/competitors/[id]/page.tsx"
+    ],
+    "interface": "Repro steps and observed values are in docs/audits/2026-10-01/{A-core-crm,B-growth-outreach,C-mobile-tablet,D-code-config-security}.md; read the matching finding before changing code. Follow docs/design/clay-layout.md for any UI. Audit B: the competitor detail page shows battle-card strengths/weaknesses ('Market presence, Brand recognition') while the list card shows the competitor's own strengths/weaknesses columns ('Strong brand recognition, Large partner ecosystem, Mobile app'), and it has no right-hand properties panel. Fix: (1) the detail's Strengths and Weaknesses come from the competitor row's own columns (the ones the list at app/dashboard/competitors/client.tsx reads), and battle-card-only fields (our advantages, landmine questions, switching triggers, positioning, etc.) stay as they are, labelled as the battle card; (2) restructure into DetailLayout with a 320px aside: PanelSection 'Details' with KeyValueList (category badge using the list's labels direct/indirect/aspirational, website link if present, pricing / market position or other scalar competitor columns that exist, created date), following app/dashboard/customers/[id]/client.tsx; (3) usePageHeader({ backHref: '/dashboard/competitors', breadcrumbLabel: competitor name }). Do not edit the list page.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q breadcrumbLabel 'app/dashboard/competitors/[id]/client.tsx' && grep -q DetailLayout 'app/dashboard/competitors/[id]/client.tsx' && npx tsc --noEmit && npx eslint 'app/dashboard/competitors/[id]/client.tsx' 'app/dashboard/competitors/[id]/page.tsx' && node scripts/restyle/boxes.mjs 'app/dashboard/competitors/[id]/client.tsx' 'app/dashboard/competitors/[id]/page.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'app/dashboard/competitors/[id]/client.tsx' 'app/dashboard/competitors/[id]/page.tsx' && git commit -q -m 'fix(competitors): detail matches the list and gains a properties panel' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "Q3",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Leads: no fake zeros while loading; lead detail empty chart panes aligned",
+    "files": [
+      "app/dashboard/leads/client.tsx",
+      "app/dashboard/leads/[id]/client.tsx",
+      "components/features/ScoreBreakdown.tsx",
+      "components/features/ScoreHistoryChart.tsx"
+    ],
+    "interface": "Repro steps and observed values are in docs/audits/2026-10-01/{A-core-crm,B-growth-outreach,C-mobile-tablet,D-code-config-security}.md; read the matching finding before changing code. Follow docs/design/clay-layout.md for any UI. Audit A: (1) /dashboard/leads metric strip shows 'Total Leads 0, Hot Leads 0, Converted 0' for 3-5 s before jumping to real numbers, because the client metric state defaults to 0. Show a skeleton/placeholder (em dash or the existing skeleton primitive) until the data has loaded, never a real-looking 0. (2) On /dashboard/leads/[id] the chart area is two half-width empty panes, 'No score data available' (vertically centred) and 'No score history' (top-aligned), which look broken. When neither has data, render one full-width muted empty line instead of two panes; when only one has data, the other pane's empty state must be aligned the same way (both top-aligned, same padding and type). Keep behaviour with data unchanged.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx tsc --noEmit && npx eslint 'app/dashboard/leads/client.tsx' 'app/dashboard/leads/[id]/client.tsx' 'components/features/ScoreBreakdown.tsx' 'components/features/ScoreHistoryChart.tsx' && node scripts/restyle/boxes.mjs 'app/dashboard/leads/client.tsx' 'app/dashboard/leads/[id]/client.tsx' 'components/features/ScoreBreakdown.tsx' 'components/features/ScoreHistoryChart.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'app/dashboard/leads/client.tsx' 'app/dashboard/leads/[id]/client.tsx' 'components/features/ScoreBreakdown.tsx' 'components/features/ScoreHistoryChart.tsx' && git commit -q -m 'fix(leads): no placeholder zeros and aligned empty score panes' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "Q4",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Customers: blank Last Contact shows an em dash; Edit Customer label does not wrap on phones",
+    "files": [
+      "components/dashboard/CustomersTable.tsx",
+      "app/dashboard/customers/[id]/client.tsx"
+    ],
+    "interface": "Repro steps and observed values are in docs/audits/2026-10-01/{A-core-crm,B-growth-outreach,C-mobile-tablet,D-code-config-security}.md; read the matching finding before changing code. Follow docs/design/clay-layout.md for any UI. (1) components/dashboard/CustomersTable.tsx ~line 321-325, the Last Contact cell renders {customer.lastContact}, which is empty for every row; render customer.lastContact || '\\u2014' (the em dash the other empty cells use). (2) app/dashboard/customers/[id]/client.tsx headerActions: the 'Edit Customer' action wraps onto two lines at 375px; add whitespace-nowrap to that action's className (and to any other text action in the same headerActions block). No other changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'lastContact ||' components/dashboard/CustomersTable.tsx && grep -q whitespace-nowrap 'app/dashboard/customers/[id]/client.tsx' && npx tsc --noEmit && npx eslint 'components/dashboard/CustomersTable.tsx' 'app/dashboard/customers/[id]/client.tsx' && node scripts/restyle/boxes.mjs 'components/dashboard/CustomersTable.tsx' 'app/dashboard/customers/[id]/client.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'components/dashboard/CustomersTable.tsx' 'app/dashboard/customers/[id]/client.tsx' && git commit -q -m 'fix(customers): em dash for missing last contact and no wrapped header action' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "Q5",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Sales: deal drawer fields and deal detail metrics are consistent",
+    "files": [
+      "components/features/DealDrawer.tsx",
+      "app/dashboard/sales/[id]/client.tsx",
+      "lib/deals/metrics.ts",
+      "tests/deal-metrics.test.ts"
+    ],
+    "interface": "Repro steps and observed values are in docs/audits/2026-10-01/{A-core-crm,B-growth-outreach,C-mobile-tablet,D-code-config-security}.md; read the matching finding before changing code. Follow docs/design/clay-layout.md for any UI. Audit A: (1) deal drawer (components/features/DealDrawer.tsx): contact avatar is an empty circle (no image, no initials), the email line is empty, and Created / Last Activity are blank, while the deal detail page shows Created Sep 30, 2026 and 'JA' initials. Map the same fields the detail page uses; avatar falls back to initials like the rest of the app; hide the email line when there is no email; Created and Last Activity show a formatted date or an em dash. (2) deal detail (app/dashboard/sales/[id]/client.tsx) says 'Days in Stage 12' on a deal created yesterday and 'Days to Close 0' with Expected Close 5 days away, and Owner '-' while the kanban card shows an owner avatar. Put the math in a new pure module lib/deals/metrics.ts, test-first in tests/deal-metrics.test.ts: daysInStage(stageChangedAt, createdAt, now) = whole days since the stage change (fallback created_at), never more than days since created_at, >= 0; daysToClose(expectedClose, now) = whole days until the expected close date (date-only strings parsed as local dates), negative when overdue, null when missing. Use them in the detail page (show 'Overdue by N days' style text when negative, em dash when null). Owner: show the same owner the kanban card shows (read how app/dashboard/sales/client.tsx derives it).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q daysToClose 'app/dashboard/sales/[id]/client.tsx' && npx vitest run tests/deal-metrics.test.ts && npx tsc --noEmit && npx eslint 'components/features/DealDrawer.tsx' 'app/dashboard/sales/[id]/client.tsx' 'lib/deals/metrics.ts' 'tests/deal-metrics.test.ts' && node scripts/restyle/boxes.mjs 'components/features/DealDrawer.tsx' 'app/dashboard/sales/[id]/client.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'components/features/DealDrawer.tsx' 'app/dashboard/sales/[id]/client.tsx' 'lib/deals/metrics.ts' 'tests/deal-metrics.test.ts' && git commit -q -m 'fix(sales): consistent deal drawer fields and deal detail metrics' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "Q6",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Calendar: local month, complete Upcoming list, AM/PM times, correct task drawer fields",
+    "files": [
+      "app/dashboard/calendar/client.tsx",
+      "app/dashboard/calendar/page.tsx",
+      "components/features/ActivityDetailDrawer.tsx"
+    ],
+    "interface": "Repro steps and observed values are in docs/audits/2026-10-01/{A-core-crm,B-growth-outreach,C-mobile-tablet,D-code-config-security}.md; read the matching finding before changing code. Follow docs/design/clay-layout.md for any UI. Audit A: (1) the calendar opens on the previous month when the local date is already the 1st but UTC is still the last day (initial month computed in UTC on the server); compute the initial month and 'today' in the browser's local time zone (avoid a hydration mismatch, e.g. derive after mount or pass no server month). (2) The Upcoming panel misses events shown on the grid (Pipeline Review Oct 2, Strategy Plan Oct 6) while showing later ones; it must list every event/task from now onward, sorted by start date-time ascending, using the same data and date parsing as the grid. (3) Times like '1:00' have no AM/PM and sort after '9:00'; format times with toLocaleTimeString hour numeric + minute 2-digit (which yields AM/PM in en-US) and sort by the real timestamp. (4) The task drawer (components/features/ActivityDetailDrawer.tsx) shows the status ('Scheduled') in the Priority row, an empty grey bar for a missing description, and a raw '2026-10-02 at 13:00' due date: Priority shows the priority (or em dash), Status keeps the status, a missing description shows a muted 'No description', and the due date uses the same formatted date + time as elsewhere.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx tsc --noEmit && npx eslint 'app/dashboard/calendar/client.tsx' 'app/dashboard/calendar/page.tsx' 'components/features/ActivityDetailDrawer.tsx' && node scripts/restyle/boxes.mjs 'app/dashboard/calendar/client.tsx' 'app/dashboard/calendar/page.tsx' 'components/features/ActivityDetailDrawer.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'app/dashboard/calendar/client.tsx' 'app/dashboard/calendar/page.tsx' 'components/features/ActivityDetailDrawer.tsx' && git commit -q -m 'fix(calendar): local month, complete upcoming list, AM/PM, drawer fields' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "Q7",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Analytics: forecast deal names, honest Channels and Email empty states",
+    "files": [
+      "app/dashboard/analytics/client.tsx",
+      "lib/actions/analytics.ts"
+    ],
+    "interface": "Repro steps and observed values are in docs/audits/2026-10-01/{A-core-crm,B-growth-outreach,C-mobile-tablet,D-code-config-security}.md; read the matching finding before changing code. Follow docs/design/clay-layout.md for any UI. Audit A: (1) Forecast tab's deals table has no deal name or company, rows read only 'Discovery $19,817 ...'; getSalesForecast in lib/actions/analytics.ts must also return the deal name (and company/customer name when available) and the table's first column shows it. (2) Channels tab shows 'Best Channel: Email, Highest reply rate' when every channel is 0% and an empty chart with bare axes; when no channel has a reply rate above 0, show an em dash / 'Not enough data' instead of a best channel and replace the empty chart with the app's empty state ('No replies yet' style copy). (3) Email tab is all zeros with no explanation; when every email metric is 0, show an empty state explaining that email metrics appear once emails are sent from Pulse. Keep lib/actions/analytics.ts a 'use server' file that only exports async functions.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx tsc --noEmit && npx eslint 'app/dashboard/analytics/client.tsx' 'lib/actions/analytics.ts' && node scripts/restyle/boxes.mjs 'app/dashboard/analytics/client.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'app/dashboard/analytics/client.tsx' 'lib/actions/analytics.ts' && git commit -q -m 'fix(analytics): forecast deal names and honest empty states' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "Q8",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Overview: activity times match the Activity page; Create a campaign links to Campaigns",
+    "files": [
+      "components/dashboard/ActivityFeed.tsx",
+      "components/dashboard/OverviewHome.tsx",
+      "app/dashboard/overview/page.tsx"
+    ],
+    "interface": "Repro steps and observed values are in docs/audits/2026-10-01/{A-core-crm,B-growth-outreach,C-mobile-tablet,D-code-config-security}.md; read the matching finding before changing code. Follow docs/design/clay-layout.md for any UI. (1) components/dashboard/ActivityFeed.tsx shows getRelativeTime(activity.created_at), so every seeded item reads '4h ago', while /dashboard/activity shows the activity's own date. Read app/dashboard/activity (page and client) to find which activity date column it displays, select that column in app/dashboard/overview/page.tsx's activity query if missing, add it to the ActivityFeed item type, and use it (fallback created_at). (2) components/dashboard/OverviewHome.tsx ~line 42-44: the 'Create a campaign' tile links to /dashboard/sequences; change it to /dashboard/campaigns. No other changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q '/dashboard/campaigns' components/dashboard/OverviewHome.tsx && npx tsc --noEmit && npx eslint 'components/dashboard/ActivityFeed.tsx' 'components/dashboard/OverviewHome.tsx' 'app/dashboard/overview/page.tsx' && node scripts/restyle/boxes.mjs 'components/dashboard/ActivityFeed.tsx' 'components/dashboard/OverviewHome.tsx' 'app/dashboard/overview/page.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'components/dashboard/ActivityFeed.tsx' 'components/dashboard/OverviewHome.tsx' 'app/dashboard/overview/page.tsx' && git commit -q -m 'fix(overview): activity times match the Activity page' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "Q9",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Seed: leads get a qualification grade; activities get real descriptions",
+    "files": [
+      "lib/seed/generate.ts",
+      "tests/seed-generate.test.ts"
+    ],
+    "interface": "Repro steps and observed values are in docs/audits/2026-10-01/{A-core-crm,B-growth-outreach,C-mobile-tablet,D-code-config-security}.md; read the matching finding before changing code. Follow docs/design/clay-layout.md for any UI. Test-first in tests/seed-generate.test.ts. (1) Seeded leads have no qualification_grade, so the Leads Grade column is empty for everyone. Set qualification_grade on every seeded lead from its score: >= 80 'A', >= 60 'B', >= 40 'C', else 'D' (read the leads builder for the score field name). (2) Every seeded activity's description is 'Activity created during seed data generation.' (~line 512), which every guest sees. Replace it with a short realistic description per activity type (call/email/meeting/note/task, use whatever types the builder emits) that mentions the company, e.g. 'Discussed renewal timeline with <company>.'; keep it deterministic with the existing Rand. Do not change any other seed values (categories, ICP shapes and weights were just fixed and are tested).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! grep -q 'Activity created during seed' lib/seed/generate.ts && grep -q qualification_grade lib/seed/generate.ts && npx tsc --noEmit && npx eslint 'lib/seed/generate.ts' 'tests/seed-generate.test.ts' && npm test && git add -A -- 'lib/seed/generate.ts' 'tests/seed-generate.test.ts' && git commit -q -m 'fix(seed): lead grades and real activity descriptions' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "Q10",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Modals close on Escape with dialog semantics; Campaigns empty tabs say so",
+    "files": [
+      "app/dashboard/campaigns/client.tsx",
+      "app/dashboard/website-visitors/client.tsx",
+      "app/dashboard/inbox/client.tsx"
+    ],
+    "interface": "Repro steps and observed values are in docs/audits/2026-10-01/{A-core-crm,B-growth-outreach,C-mobile-tablet,D-code-config-security}.md; read the matching finding before changing code. Follow docs/design/clay-layout.md for any UI. Audit B: (1) the 'Manage Tags' modal (campaigns), 'Setup Website Tracking' (website-visitors) and 'No Email Accounts' (inbox compose) are hand-rolled fixed inset-0 overlays: Escape does not close them, they have no role='dialog'/aria-modal, and the X button has no aria-label. Move each onto components/ui/Modal.tsx (which already handles Escape and semantics; read its props) keeping the same content and actions; if a modal cannot use Modal without a visual regression, add the same Escape handling, role='dialog', aria-modal='true', aria-labelledby and an aria-label='Close' on the X instead. (2) Campaigns Paused and Drafts tabs show 'No campaigns yet' + 'Create Your First Campaign' although campaigns exist under All: when the org has campaigns but the active tab is empty, show 'No <tab> campaigns' without the first-campaign CTA; keep the current empty state only when there are no campaigns at all.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx tsc --noEmit && npx eslint 'app/dashboard/campaigns/client.tsx' 'app/dashboard/website-visitors/client.tsx' 'app/dashboard/inbox/client.tsx' && node scripts/restyle/boxes.mjs 'app/dashboard/campaigns/client.tsx' 'app/dashboard/website-visitors/client.tsx' 'app/dashboard/inbox/client.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'app/dashboard/campaigns/client.tsx' 'app/dashboard/website-visitors/client.tsx' 'app/dashboard/inbox/client.tsx' && git commit -q -m 'fix(a11y): modals close on Escape with dialog semantics; filter-aware campaign empty state' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "Q11",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Lead Finder: metric strip no longer flush against the tab bar",
+    "files": [
+      "app/dashboard/lead-finder/overview/page.tsx",
+      "app/dashboard/lead-finder/costs/page.tsx"
+    ],
+    "interface": "Repro steps and observed values are in docs/audits/2026-10-01/{A-core-crm,B-growth-outreach,C-mobile-tablet,D-code-config-security}.md; read the matching finding before changing code. Follow docs/design/clay-layout.md for any UI. On /dashboard/lead-finder/overview (~line 208) and /costs (~line 158) the <MetricStrip> sits directly under the underline tab bar with a 0px gap. Add className=\"pt-6\" to those two MetricStrip elements (MetricStrip merges className via cn). No other changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'MetricStrip className=\"pt-6\"' app/dashboard/lead-finder/overview/page.tsx && grep -q 'MetricStrip className=\"pt-6\"' app/dashboard/lead-finder/costs/page.tsx && npx tsc --noEmit && npx eslint 'app/dashboard/lead-finder/overview/page.tsx' 'app/dashboard/lead-finder/costs/page.tsx' && node scripts/restyle/boxes.mjs 'app/dashboard/lead-finder/overview/page.tsx' 'app/dashboard/lead-finder/costs/page.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'app/dashboard/lead-finder/overview/page.tsx' 'app/dashboard/lead-finder/costs/page.tsx' && git commit -q -m 'fix(lead-finder): space between tab bar and metric strip' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "Q12",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Settings: timezone select shows a real zone instead of 'pt'",
+    "files": [
+      "app/dashboard/settings/client.tsx",
+      "lib/settings/timezone.ts",
+      "tests/settings-timezone.test.ts"
+    ],
+    "interface": "Repro steps and observed values are in docs/audits/2026-10-01/{A-core-crm,B-growth-outreach,C-mobile-tablet,D-code-config-security}.md; read the matching finding before changing code. Follow docs/design/clay-layout.md for any UI. The profile timezone defaults to the legacy short code 'pt' (DB default and app/dashboard/settings/client.tsx ~line 745), and the select (built from Intl.supportedValuesOf('timeZone') when available, ~line 696-710) then shows 'pt' as an injected unknown option. Test-first in tests/settings-timezone.test.ts, new pure module lib/settings/timezone.ts: export function normalizeTimezone(value: string | null | undefined, fallback: string): string mapping legacy codes pt->America/Los_Angeles, mt->America/Denver, ct->America/Chicago, et->America/New_York, utc->UTC, gmt->UTC (case-insensitive), returning any other non-blank value unchanged and fallback when blank. In the settings client initialise the timezone state with normalizeTimezone(preferences?.timezone, <browser zone from Intl.DateTimeFormat().resolvedOptions().timeZone, or 'UTC'>); make the fallback option list use IANA values (America/Los_Angeles, America/Denver, America/Chicago, America/New_York, UTC) with the same labels. Saving then writes the IANA value. No migration.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q normalizeTimezone app/dashboard/settings/client.tsx && npx vitest run tests/settings-timezone.test.ts && npx tsc --noEmit && npx eslint 'app/dashboard/settings/client.tsx' 'lib/settings/timezone.ts' 'tests/settings-timezone.test.ts' && node scripts/restyle/boxes.mjs 'app/dashboard/settings/client.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'app/dashboard/settings/client.tsx' 'lib/settings/timezone.ts' 'tests/settings-timezone.test.ts' && git commit -q -m 'fix(settings): timezone uses IANA zones instead of legacy codes' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "Q13",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Open access: only real browser navigations create a guest workspace",
+    "files": [
+      "lib/supabase/middleware.ts",
+      "lib/auth/open-access.ts",
+      "tests/open-access.test.ts"
+    ],
+    "interface": "Repro steps and observed values are in docs/audits/2026-10-01/{A-core-crm,B-growth-outreach,C-mobile-tablet,D-code-config-security}.md; read the matching finding before changing code. Follow docs/design/clay-layout.md for any UI. Audit D: any cookie-less GET or HEAD to /, /dashboard/* or the auth pages from a non-bot user agent creates an anonymous user plus a seeded workspace (~110 rows), so curl, uptime monitors and link checkers each create one (116 guest orgs now). lib/supabase/middleware.ts ~lines 95-113 decides this; lib/auth/open-access.ts has BOT_UA_RE. Test-first in tests/open-access.test.ts: add a pure, exported predicate in lib/auth/open-access.ts, shouldProvisionGuest({ method, accept, secFetchMode, secFetchDest, userAgent }) that is true only for method GET, a non-bot user agent, an Accept header that includes text/html, and, when Sec-Fetch-Mode is present, Sec-Fetch-Mode 'navigate' (and Sec-Fetch-Dest 'document' when present); HEAD, prefetch/RSC requests (Sec-Fetch-Mode not navigate), curl-style '*/*' Accept and bot UAs are false. Use it in the middleware where provisioning is decided. A request that is not provisioned must behave exactly as today's non-provisioned path (read the code: do not break signed-in users, existing guest cookies, static assets, API routes, or the redirect flow). Keep all existing tests passing and existing exports intact.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q shouldProvisionGuest lib/supabase/middleware.ts && npx vitest run tests/open-access.test.ts && npx tsc --noEmit && npx eslint 'lib/supabase/middleware.ts' 'lib/auth/open-access.ts' 'tests/open-access.test.ts' && npm test && git add -A -- 'lib/supabase/middleware.ts' 'lib/auth/open-access.ts' 'tests/open-access.test.ts' && git commit -q -m 'fix(open-access): provision guest workspaces only for real browser navigations' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  }
+]
