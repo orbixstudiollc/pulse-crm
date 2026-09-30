@@ -47,6 +47,7 @@ import { addDealNote, deleteDeal, updateDeal, updateDealStage } from "@/lib/acti
 import { deleteActivity } from "@/lib/actions/activities";
 import { deleteCalendarEvent } from "@/lib/actions/calendar";
 import { deleteRecordActivity, type LinkedItem } from "@/lib/actions/record-activities";
+import { daysInStage, daysToClose, parseDealDate } from "@/lib/deals/metrics";
 import { toast } from "sonner";
 
 // --- Types ---
@@ -63,9 +64,9 @@ interface DealRow {
   probability: number | null;
   expected_close_date?: string | null;
   close_date?: string | null;
-  days_in_stage?: number | null;
-  days_to_close?: number | null;
+  stage_changed_at?: string | null;
   owner_name?: string | null;
+  owner_avatar?: string | null;
   owner_id?: string | null;
   notes?: string | null;
   customer_id: string | null;
@@ -250,6 +251,15 @@ export function DealDetailClient({
   const [currentStage, setCurrentStage] = useState(deal.stage);
 
   const contactName = deal.contact_name || "Unknown Contact";
+  const expectedClose = deal.expected_close_date ?? deal.close_date ?? null;
+  const stageDays = daysInStage(deal.stage_changed_at, deal.created_at);
+  const closeDays = daysToClose(expectedClose);
+  const closeDaysLabel =
+    closeDays === null
+      ? "—"
+      : closeDays < 0
+        ? `Overdue by ${-closeDays} ${closeDays === -1 ? "day" : "days"}`
+        : closeDays;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -261,7 +271,7 @@ export function DealDetailClient({
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "—";
-    return new Date(dateStr).toLocaleDateString("en-US", {
+    return parseDealDate(dateStr).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -434,8 +444,8 @@ export function DealDetailClient({
       </div>
 
       <MetricStrip>
-        <Metric label="Days in Stage" value={deal.days_in_stage || 0} />
-        <Metric label="Days to Close" value={deal.days_to_close || 0} />
+        <Metric label="Days in Stage" value={stageDays} />
+        <Metric label="Days to Close" value={closeDaysLabel} />
         <Metric label="Probability" value={`${deal.probability || 0}%`} />
         <Metric label="Activities" value={activityItems.length} />
       </MetricStrip>
@@ -500,10 +510,20 @@ export function DealDetailClient({
             <PanelSection title="Details">
               <KeyValueList>
                 <KeyValue label="Expected Close">
-                  {formatDate(deal.expected_close_date ?? deal.close_date ?? null)}
+                  {formatDate(expectedClose)}
                 </KeyValue>
                 <KeyValue label="Created">{formatDate(deal.created_at)}</KeyValue>
-                <KeyValue label="Owner">{deal.owner_name || "—"}</KeyValue>
+                <KeyValue label="Owner">
+                  <span className="flex items-center gap-2">
+                    {/* Same owner avatar the kanban card derives */}
+                    <Avatar
+                      src={deal.owner_avatar || "/images/avatars/user.jpg"}
+                      name={deal.owner_name || "Deal owner"}
+                      size="xs"
+                    />
+                    {deal.owner_name && <span>{deal.owner_name}</span>}
+                  </span>
+                </KeyValue>
               </KeyValueList>
             </PanelSection>
           </>

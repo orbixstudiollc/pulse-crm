@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { Drawer, Button, Badge, ArrowRightIcon, type BadgeVariant } from "@/components/ui";
+import { Drawer, Button, Badge, Avatar, ArrowRightIcon, type BadgeVariant } from "@/components/ui";
 import {
   type PipelineDeal,
   type PipelineStage,
@@ -12,6 +11,7 @@ import {
   formatDealCurrency,
 } from "@/lib/data/sales";
 import { cn } from "@/lib/utils";
+import { parseDealDate } from "@/lib/deals/metrics";
 import { KeyValue, KeyValueList, PageTabs, PanelSection } from "@/components/dashboard/Page";
 import { MarkDealLostModal } from "./MarkDealLostModal";
 import {
@@ -45,6 +45,28 @@ interface DealDrawerProps {
 }
 
 type DrawerTab = "overview" | "activity" | "notes";
+
+// Fields read from the deal row, the same source the deal detail page uses
+type DealRowDetails = {
+  customer_id?: string | null;
+  lead_id?: string | null;
+  created_at?: string | null;
+  last_activity?: string | null;
+  contact_name?: string | null;
+  contact_email?: string | null;
+  contact_avatar?: string | null;
+};
+
+function formatDate(value: string | null | undefined): string {
+  if (!value) return "—";
+  const date = parseDealDate(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
 type DealNoteRecord = {
   id: string;
@@ -130,6 +152,7 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
   const [newNote, setNewNote] = useState("");
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [contactHref, setContactHref] = useState<string | null>(null);
+  const [details, setDetails] = useState<DealRowDetails | null>(null);
 
   // Mark data as loading when the drawer opens (adjusted during render, not in an effect)
   const loadKey = open && deal?.id ? deal.id : null;
@@ -137,6 +160,7 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
   if (loadKey !== loadingKey) {
     setLoadingKey(loadKey);
     setContactHref(null);
+    setDetails(null);
     if (loadKey) setIsLoadingData(true);
   }
 
@@ -151,7 +175,8 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
         setNotes((notesRes.data ?? []) as DealNoteRecord[]);
         setActivities((activitiesRes.data ?? []) as DealActivityRecord[]);
         // Link the contact to the record this deal references, if any
-        const row = dealRes.data as { customer_id?: string | null; lead_id?: string | null } | null;
+        const row = dealRes.data as DealRowDetails | null;
+        setDetails(row);
         setContactHref(
           row?.customer_id
             ? `/dashboard/customers/${row.customer_id}`
@@ -168,6 +193,10 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
 
   const isClosed = deal.stage === "closed_won" || deal.stage === "closed_lost";
   const nextStage = getNextStage(deal.stage);
+  const contactName = deal.contact?.name || details?.contact_name || "Unknown Contact";
+  const contactEmail = deal.contact?.email || details?.contact_email || "";
+  const contactAvatar = deal.contact?.avatar || details?.contact_avatar || undefined;
+  const lastActivity = details?.last_activity ?? activities[0]?.created_at ?? null;
 
   const handleMoveStage = (newStage: PipelineStage) => {
     startTransition(async () => {
@@ -325,8 +354,8 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
               <KeyValueList>
                 <KeyValue label="Probability">{`${deal.probability}%`}</KeyValue>
                 <KeyValue label="Expected Close">{deal.closeDate}</KeyValue>
-                <KeyValue label="Created">{deal.createdDate}</KeyValue>
-                <KeyValue label="Last Activity">{deal.lastActivity}</KeyValue>
+                <KeyValue label="Created">{formatDate(details?.created_at)}</KeyValue>
+                <KeyValue label="Last Activity">{formatDate(lastActivity)}</KeyValue>
               </KeyValueList>
             </PanelSection>
 
@@ -334,23 +363,16 @@ export function DealDrawer({ open, onClose, deal }: DealDrawerProps) {
             <PanelSection title="Contact">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="relative h-10 w-10 rounded-full overflow-hidden border border-line">
-                    {deal.contact?.avatar && (
-                      <Image
-                        src={deal.contact.avatar}
-                        alt={deal.contact?.name ?? ""}
-                        fill
-                        className="object-cover"
-                      />
-                    )}
-                  </div>
+                  <Avatar src={contactAvatar} name={contactName} size="md" />
                   <div>
                     <p className="text-sm font-medium text-fg">
-                      {deal.contact?.name ?? ""}
+                      {contactName}
                     </p>
-                    <p className="text-xs text-fg-secondary">
-                      {deal.contact?.email ?? ""}
-                    </p>
+                    {contactEmail && (
+                      <p className="text-xs text-fg-secondary">
+                        {contactEmail}
+                      </p>
+                    )}
                   </div>
                 </div>
                 {contactHref && (
