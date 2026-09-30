@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "./helpers";
 import { getAIClient, checkAIAccess, logTokenUsage } from "@/lib/ai/client";
+import { getModelId } from "@/lib/ai/models";
 import { revalidatePath } from "next/cache";
 
 // ── Validate Scraped Leads with AI ────────────────────────────────────────────
@@ -33,6 +34,8 @@ export async function validateScrapedLeads(leadIds: string[]): Promise<{
     const startTime = Date.now();
     let totalInputTokens = 0;
     let totalOutputTokens = 0;
+    // settings.ai_provider is the resolved provider (see getAIClient).
+    const model = getModelId(settings.default_model === "haiku" ? "haiku" : "sonnet", settings.ai_provider, settings);
 
     // Process in batches of 5
     for (let i = 0; i < leads.length; i += 5) {
@@ -50,8 +53,6 @@ export async function validateScrapedLeads(leadIds: string[]): Promise<{
         phone: l.phone,
         source: l.source,
       }));
-
-      const model = settings.default_model === "haiku" ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-6";
 
       const response = await client.messages.create({
         model,
@@ -137,7 +138,7 @@ Return ONLY a valid JSON array with one object per lead:
       orgId,
       userId,
       feature: "lead_validation",
-      model: settings.default_model === "haiku" ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-6",
+      model,
       inputTokens: totalInputTokens,
       outputTokens: totalOutputTokens,
       durationMs: Date.now() - startTime,

@@ -11,6 +11,7 @@ export function toPublicAISettings(row: AISettings): PublicAISettings {
     openrouter_api_key,
     groq_api_key,
     apify_api_key,
+    custom_api_key,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars -- stripped on purpose
     openrouter_oauth_token: _oauthToken,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars -- stripped on purpose
@@ -24,6 +25,7 @@ export function toPublicAISettings(row: AISettings): PublicAISettings {
     has_openrouter_api_key: !!openrouter_api_key,
     has_groq_api_key: !!groq_api_key,
     has_apify_api_key: !!apify_api_key,
+    has_custom_api_key: !!custom_api_key,
   };
 }
 
@@ -43,6 +45,9 @@ export const AI_SETTINGS_WRITABLE_COLUMNS = [
   "ai_provider",
   "default_model",
   "ollama_base_url",
+  "custom_base_url",
+  "custom_model",
+  "custom_fast_model",
   "obsidian_sync_enabled",
   "parallel_enrichment_limit",
   "feature_lead_scoring",

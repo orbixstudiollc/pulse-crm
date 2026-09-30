@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { omitBlankAISecrets, pickWritableAISettings, toPublicAISettings } from "@/lib/ai/public-settings";
+import {
+  AI_SETTINGS_WRITABLE_COLUMNS,
+  omitBlankAISecrets,
+  pickWritableAISettings,
+  toPublicAISettings,
+} from "@/lib/ai/public-settings";
 import { AI_SETTINGS_SECRET_COLUMNS, type AISettings } from "@/lib/ai/types";
 
 function makeRow(secret: string | null): AISettings {
@@ -17,10 +22,17 @@ function makeRow(secret: string | null): AISettings {
   return row as unknown as AISettings;
 }
 
-const FLAGS = ["has_api_key", "has_openai_api_key", "has_openrouter_api_key", "has_groq_api_key", "has_apify_api_key"] as const;
+const FLAGS = [
+  "has_api_key",
+  "has_openai_api_key",
+  "has_openrouter_api_key",
+  "has_groq_api_key",
+  "has_apify_api_key",
+  "has_custom_api_key",
+] as const;
 
 describe("toPublicAISettings", () => {
-  it("removes all seven secret columns and sets every flag when keys are present", () => {
+  it("removes every secret column and sets every flag when keys are present", () => {
     const result = toPublicAISettings(makeRow("sk-secret"));
 
     for (const col of AI_SETTINGS_SECRET_COLUMNS) {
@@ -90,5 +102,36 @@ describe("pickWritableAISettings", () => {
 
     expect(result).toEqual({ feature_chat: false, ai_provider: "openrouter", api_key: "sk-new-key" });
     expect(result).not.toBe(input);
+  });
+});
+
+describe("custom provider settings", () => {
+  it("strips custom_api_key, sets has_custom_api_key and keeps the non-secret custom columns", () => {
+    const row = {
+      ...makeRow(null),
+      custom_base_url: "https://api.llmsrelay.com",
+      custom_api_key: "sealed-sk-cs4-test",
+      custom_model: "claude-sonnet-4.6",
+      custom_fast_model: "claude-haiku-4.5",
+    } as AISettings;
+
+    const result = toPublicAISettings(row);
+
+    expect("custom_api_key" in result).toBe(false);
+    expect(result.has_custom_api_key).toBe(true);
+    expect(JSON.stringify(result)).not.toContain("sk-cs4-test");
+    expect(result.custom_base_url).toBe("https://api.llmsrelay.com");
+    expect(result.custom_model).toBe("claude-sonnet-4.6");
+    expect(result.custom_fast_model).toBe("claude-haiku-4.5");
+
+    expect(toPublicAISettings({ ...row, custom_api_key: null }).has_custom_api_key).toBe(false);
+  });
+
+  it("treats custom_api_key as a secret and allows writing the four custom columns", () => {
+    expect(AI_SETTINGS_SECRET_COLUMNS).toContain("custom_api_key");
+    for (const col of ["custom_base_url", "custom_model", "custom_fast_model", "custom_api_key"]) {
+      expect(AI_SETTINGS_WRITABLE_COLUMNS).toContain(col);
+    }
+    expect(omitBlankAISecrets({ custom_api_key: "  ", custom_model: "m" })).toEqual({ custom_model: "m" });
   });
 });

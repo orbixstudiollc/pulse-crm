@@ -1,4 +1,5 @@
 import { AIFeature, AIModel } from "./types";
+import { customModelFor, type CustomModelSettings } from "./custom-provider";
 
 // Direct Anthropic API model IDs
 export const MODEL_MAP: Record<AIModel, string> = {
@@ -31,10 +32,16 @@ export const FEATURE_COMPLEXITY: Record<AIFeature, Complexity> = {
 };
 
 /**
- * Resolve the correct model ID string for a given provider.
+ * Resolve the correct model ID string for a given provider. For "custom" the
+ * org's configured model for the tier is used (Claude ID if none is known).
  */
-export function getModelId(model: AIModel, provider?: string | null): string {
+export function getModelId(
+  model: AIModel,
+  provider?: string | null,
+  settings?: CustomModelSettings | null
+): string {
   if (provider === "openrouter") return OPENROUTER_MODEL_MAP[model];
+  if (provider === "custom") return customModelFor(model, settings ?? {}) ?? MODEL_MAP[model];
   return MODEL_MAP[model];
 }
 
@@ -67,7 +74,13 @@ export function getModelName(modelId: string): AIModel {
  * Convert a model ID from one provider format to another.
  * Used by the fallback system to re-resolve the model for a different provider.
  */
-export function convertModelForProvider(modelId: string, targetProvider: string | null): string {
-  const internalModel = getModelName(modelId);
-  return getModelId(internalModel, targetProvider);
+export function convertModelForProvider(
+  modelId: string,
+  targetProvider: string | null,
+  settings?: CustomModelSettings | null
+): string {
+  // A configured custom fast model is the haiku tier even without "haiku" in its name.
+  const isCustomFast = !!settings?.custom_fast_model && modelId === settings.custom_fast_model.trim();
+  const internalModel: AIModel = isCustomFast ? "haiku" : getModelName(modelId);
+  return getModelId(internalModel, targetProvider, settings);
 }

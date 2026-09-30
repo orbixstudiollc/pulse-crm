@@ -1,6 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { resolveAIProvider } from "@/lib/ai/provider-resolver";
+
+process.env.ENCRYPTION_KEY = "test-encryption-key-for-provider-resolver";
+
+const { encrypt } = await import("@/lib/utils/encryption");
+const { AI_PROVIDER_ORDER, resolveAIProvider } = await import("@/lib/ai/provider-resolver");
 
 const NOW = Date.parse("2026-09-30T12:00:00Z");
 
@@ -94,5 +98,58 @@ describe("resolveAIProvider", () => {
   it("returns null when nothing is configured", () => {
     expect(resolveAIProvider({}, {}, NOW)).toBeNull();
     expect(resolveAIProvider({ ai_provider: "anthropic" }, {}, NOW)).toBeNull();
+  });
+
+  describe("custom provider", () => {
+    const BASE = "https://api.llmsrelay.com";
+    const FAKE_KEY = "sk-cs4-test";
+
+    it("needs both a base URL and a decryptable key", () => {
+      expect(resolveAIProvider({ ai_provider: "custom", custom_base_url: BASE }, {}, NOW)).toBeNull();
+      expect(
+        resolveAIProvider({ ai_provider: "custom", custom_api_key: encrypt(FAKE_KEY) }, {}, NOW)
+      ).toBeNull();
+      const sealed = encrypt(FAKE_KEY);
+      const [iv, tag, body] = sealed.split(":");
+      const tampered = `${iv}:${tag}:${(body[0] === "0" ? "1" : "0") + body.slice(1)}`;
+      expect(
+        resolveAIProvider({ ai_provider: "custom", custom_base_url: BASE, custom_api_key: tampered }, {}, NOW)
+      ).toBeNull();
+    });
+
+    it("uses an explicitly chosen custom provider and decrypts its key", () => {
+      expect(
+        resolveAIProvider(
+          { ai_provider: "custom", api_key: "sk-ant", custom_base_url: BASE, custom_api_key: encrypt(FAKE_KEY) },
+          { ANTHROPIC_API_KEY: "sk-env" },
+          NOW
+        )
+      ).toEqual({ provider: "custom", apiKey: FAKE_KEY, baseURL: BASE });
+    });
+
+    it("never uses an env key for the custom provider", () => {
+      const env = {
+        ANTHROPIC_API_KEY: "sk-env",
+        OPENAI_API_KEY: "sk-oai-env",
+        CUSTOM_API_KEY: "sk-cs4-env",
+        CUSTOM_BASE_URL: BASE,
+      };
+      const resolved = resolveAIProvider({ ai_provider: "custom", custom_base_url: BASE }, env, NOW);
+      expect(resolved?.provider).not.toBe("custom");
+      expect(resolved).toEqual({ provider: "anthropic", apiKey: "sk-env" });
+      expect(resolveAIProvider({ ai_provider: "custom" }, { CUSTOM_API_KEY: "sk-cs4-env" }, NOW)).toBeNull();
+    });
+
+    it("is last in the fallback order", () => {
+      expect(AI_PROVIDER_ORDER[AI_PROVIDER_ORDER.length - 1]).toBe("custom");
+      const custom = { custom_base_url: BASE, custom_api_key: encrypt(FAKE_KEY) };
+      expect(resolveAIProvider({ ...custom, groq_api_key: "gsk" }, {}, NOW)).toEqual({
+        provider: "groq",
+        apiKey: "gsk",
+      });
+      expect(resolveAIProvider(custom, {}, NOW)).toEqual({ provider: "custom", apiKey: FAKE_KEY, baseURL: BASE });
+      // An org custom credential still beats env credentials.
+      expect(resolveAIProvider(custom, { ANTHROPIC_API_KEY: "sk-env" }, NOW)?.provider).toBe("custom");
+    });
   });
 });

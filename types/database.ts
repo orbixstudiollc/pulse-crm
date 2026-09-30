@@ -1369,6 +1369,10 @@ export type Database = {
           openrouter_expires_at: string | null;
           groq_api_key: string | null;
           ollama_base_url: string | null;
+          custom_base_url: string | null;
+          custom_api_key: string | null;
+          custom_model: string | null;
+          custom_fast_model: string | null;
           obsidian_vault_path: string | null;
           obsidian_sync_enabled: boolean;
           openai_api_key: string | null;
@@ -1413,6 +1417,10 @@ export type Database = {
           openrouter_expires_at?: string | null;
           groq_api_key?: string | null;
           ollama_base_url?: string | null;
+          custom_base_url?: string | null;
+          custom_api_key?: string | null;
+          custom_model?: string | null;
+          custom_fast_model?: string | null;
           obsidian_vault_path?: string | null;
           obsidian_sync_enabled?: boolean;
           openai_api_key?: string | null;
@@ -1455,6 +1463,10 @@ export type Database = {
           openrouter_expires_at?: string | null;
           groq_api_key?: string | null;
           ollama_base_url?: string | null;
+          custom_base_url?: string | null;
+          custom_api_key?: string | null;
+          custom_model?: string | null;
+          custom_fast_model?: string | null;
           obsidian_vault_path?: string | null;
           obsidian_sync_enabled?: boolean;
           openai_api_key?: string | null;

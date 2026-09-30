@@ -8,7 +8,8 @@ export type AIProvider =
   | "openrouter"
   | "groq"
   | "ollama"
-  | "ollama_cloud";
+  | "ollama_cloud"
+  | "custom";
 export type CampaignStatus = "draft" | "active" | "paused" | "completed";
 export type LeadStatus =
   | "new"

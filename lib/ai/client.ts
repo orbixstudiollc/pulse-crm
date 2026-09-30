@@ -6,6 +6,11 @@ import { createPinnedFetch } from "@/lib/security/safe-fetch";
 import { AIFeature, AIModel, AISettings } from "./types";
 import { convertModelForProvider, getModelName } from "./models";
 import {
+  anthropicSdkBaseUrl,
+  createCustomFetch,
+  type CustomModelSettings,
+} from "./custom-provider";
+import {
   AI_PROVIDER_ORDER,
   resolveAIProvider,
   type ResolvedAIProvider,
@@ -140,8 +145,52 @@ function openAICompatibleClient(
   };
 }
 
-/** Build the client for a resolved provider. */
-export function createAIMessagesClient(resolved: ResolvedAIProvider): AIMessagesClient {
+/** Maps a requested model to the org's custom model for its tier, unless it already is one. */
+function toCustomModel(modelId: string, settings?: CustomModelSettings | null): string {
+  if (!settings) return modelId;
+  const configured = [settings.custom_model?.trim(), settings.custom_fast_model?.trim()];
+  if (configured.includes(modelId)) return modelId;
+  return convertModelForProvider(modelId, "custom", settings);
+}
+
+/**
+ * Anthropic SDK client for the org's Anthropic-compatible endpoint. Only the
+ * custom provider's own key is ever sent to the custom URL.
+ */
+function customClient(
+  resolved: ResolvedAIProvider,
+  settings?: CustomModelSettings | null
+): AIMessagesClient {
+  return {
+    messages: {
+      create: async (params) => {
+        // SECURITY (SSRF): the base URL is tenant-configurable. Validate it at
+        // use time and pin the resolved addresses for this call only.
+        const base = resolved.baseURL ?? "";
+        const pinned = await createCustomFetch(base);
+        try {
+          const client = new Anthropic({
+            apiKey: resolved.apiKey,
+            baseURL: anthropicSdkBaseUrl(base),
+            fetch: pinned.fetch,
+          });
+          return await client.messages.create({ ...params, model: toCustomModel(params.model, settings) });
+        } finally {
+          await pinned.close();
+        }
+      },
+    },
+  };
+}
+
+/**
+ * Build the client for a resolved provider. `settings` lets the custom
+ * provider map Claude model IDs to the org's configured models.
+ */
+export function createAIMessagesClient(
+  resolved: ResolvedAIProvider,
+  settings?: CustomModelSettings | null
+): AIMessagesClient {
   switch (resolved.provider) {
     case "openrouter":
       return new Anthropic({
@@ -154,6 +203,8 @@ export function createAIMessagesClient(resolved: ResolvedAIProvider): AIMessages
       });
     case "anthropic":
       return new Anthropic({ apiKey: resolved.apiKey });
+    case "custom":
+      return customClient(resolved, settings);
     default:
       return openAICompatibleClient(resolved.provider, resolved);
   }
@@ -209,6 +260,10 @@ export async function getAIClient(): Promise<AIClientResult> {
     openai_api_key: null,
     ai_provider: null,
     openrouter_api_key: null,
+    custom_base_url: null,
+    custom_api_key: null,
+    custom_model: null,
+    custom_fast_model: null,
     default_model: "sonnet",
     feature_lead_scoring: true,
     feature_icp_matching: true,
@@ -248,7 +303,7 @@ export async function getAIClient(): Promise<AIClientResult> {
   // Override the resolved provider so model resolution uses the correct map
   resolvedSettings.ai_provider = resolved.provider;
 
-  const client = createAIMessagesClient(resolved);
+  const client = createAIMessagesClient(resolved, resolvedSettings);
 
   return {
     client,
@@ -263,7 +318,8 @@ export async function getAIClient(): Promise<AIClientResult> {
  *
  * Tries the resolved provider first. If it fails with a retriable error
  * (network, 429, 500+, auth), falls back to each other provider that has a
- * credential, in the order anthropic, openrouter, openai, groq, ollama.
+ * credential, in the order anthropic, openrouter, openai, groq, ollama, custom.
+ * Each attempt uses only that provider's own credential and URL.
  *
  * Usage:
  *   const { client, settings, orgId, userId } = await getAIClient();
@@ -296,13 +352,17 @@ export async function callAIWithFallback(params: {
 
   for (let i = 0; i < providerOrder.length; i++) {
     const provider = providerOrder[i].provider;
-    const client = createAIMessagesClient(providerOrder[i]);
-    const modelId = modelOverride
-      ? (i === 0 ? modelOverride : convertModelForProvider(modelOverride, provider))
-      : convertModelForProvider(
-          createParams("placeholder").model,
-          provider
-        );
+    const client = createAIMessagesClient(providerOrder[i], settings);
+    // The custom provider always gets the org's configured model; the others
+    // get the Claude/OpenRouter ID for the same tier.
+    const modelId =
+      modelOverride && i === 0 && provider !== "custom"
+        ? modelOverride
+        : convertModelForProvider(
+            modelOverride || createParams("placeholder").model,
+            provider,
+            settings
+          );
 
     // Build params with the correct model for this provider
     const callParams = createParams(modelId);
