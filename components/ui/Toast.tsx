@@ -39,7 +39,7 @@ export function Toast({
           className={cn(
             "flex items-center gap-2 rounded-lg px-4 py-2 text-sm",
             variant === "success"
-              ? "bg-success-fill text-white"
+              ? "bg-success text-on-inverse"
               : "border border-line bg-surface text-fg shadow-modal",
           )}
         >

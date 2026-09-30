@@ -507,7 +507,7 @@ export function ImportLeadsModal({
                 <div
                   className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium ${
                     i < stepIndex
-                      ? "bg-success-fill text-on-inverse"
+                      ? "bg-success text-on-inverse"
                       : i === stepIndex
                         ? "bg-accent-strong text-on-inverse"
                         : "bg-muted text-fg-muted"

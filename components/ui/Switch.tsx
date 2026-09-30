@@ -29,10 +29,10 @@ export function Switch({
         disabled={disabled}
         onClick={() => onCheckedChange(!checked)}
         className={cn(
-          "relative inline-flex h-[18px] w-8 shrink-0 items-center rounded-full transition-colors duration-150 ease-in-out focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30",
+          "relative inline-flex h-[18px] w-8 shrink-0 items-center rounded-full transition-colors duration-150 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page",
           checked
             ? "bg-accent"
-            : "bg-active",
+            : "bg-fg-disabled",
           disabled && "opacity-50 cursor-not-allowed",
         )}
       >

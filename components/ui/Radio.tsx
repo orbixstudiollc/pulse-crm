@@ -18,7 +18,7 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
             type="radio"
             id={id}
             className={cn(
-              "peer h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-full border border-line bg-surface transition-colors duration-150 focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50",
+              "peer h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-full border border-line bg-surface transition-colors duration-150 focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50",
               "checked:bg-accent checked:border-accent",
               className,
             )}

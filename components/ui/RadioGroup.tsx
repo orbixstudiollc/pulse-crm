@@ -37,7 +37,7 @@ export function RadioGroup({
           <label
             key={option.value}
             className={cn(
-              "relative flex-1 flex items-center gap-3 px-3 py-2.5 rounded-md border cursor-pointer transition-colors duration-150 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent/30",
+              "relative flex-1 flex items-center gap-3 px-3 py-2.5 rounded-md border cursor-pointer transition-colors duration-150 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent",
               value === option.value
                 ? "border-accent bg-accent-surface"
                 : "border-line hover:bg-muted",
