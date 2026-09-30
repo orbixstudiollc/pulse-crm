@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   AreaChart,
   Area,
@@ -10,7 +9,6 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { ArrowUpRightIcon } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { chartAccent, chartGrid, chartSurface, axisTick } from "@/lib/design-system/chart-colors";
 
@@ -78,29 +76,9 @@ export function RevenueChart({
   className,
 }: RevenueChartProps) {
   return (
-    <div
-      className={cn(
-        "rounded-lg border border-line bg-surface overflow-hidden",
-        className,
-      )}
-    >
-      {/* Header */}
-      <div className="flex h-12 items-center justify-between px-4 border-b border-divider">
-        <h3 className="text-heading-md text-fg">
-          Revenue Trend
-        </h3>
-
-        <Link
-          href="/dashboard/analytics"
-          aria-label="Open analytics"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface text-fg-secondary transition-colors duration-150 hover:bg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
-        >
-          <ArrowUpRightIcon size={20} />
-        </Link>
-      </div>
-
+    <div className={cn("px-8 pt-4 max-sm:px-4", className)}>
       {/* Chart */}
-      <div className="p-4">
+      <div>
         <ResponsiveContainer width="100%" height={320}>
           <AreaChart
             data={data}
@@ -122,7 +100,6 @@ export function RevenueChart({
             </defs>
 
             <CartesianGrid
-              strokeDasharray="4 4"
               vertical={false}
               stroke={chartGrid}
             />

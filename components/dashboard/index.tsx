@@ -3,6 +3,7 @@ export { RevenueChart } from "./RevenueChart";
 export { ActiveDeals } from "./ActiveDeals";
 export { LatestLeads } from "./LatestLeads";
 export { ActivityFeed } from "./ActivityFeed";
+export { OverviewTabs } from "./OverviewTabs";
 export { PageHeader } from "./PageHeader";
 export { PageHeaderActions } from "./PageHeaderActions";
 export * from "./FilterBar";

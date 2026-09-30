@@ -30,25 +30,25 @@ const QUICK_ACTIONS: QuickAction[] = [
     title: "Find leads",
     description: "Find people, companies and prospects.",
     href: "/dashboard/lead-finder",
-    icon: <MagnifyingGlassIcon size={20} weight="bold" className="text-accent" />,
+    icon: <MagnifyingGlassIcon size={18} weight="bold" className="text-accent" />,
   },
   {
     title: "Import data",
     description: "Import your existing list from a CRM or CSV.",
     href: "/dashboard/leads?import=1",
-    icon: <UploadSimpleIcon size={20} weight="bold" className="text-accent" />,
+    icon: <UploadSimpleIcon size={18} weight="bold" className="text-accent" />,
   },
   {
     title: "Create a campaign",
     description: "Build and automate your outreach sequences.",
     href: "/dashboard/sequences",
-    icon: <MegaphoneSimpleIcon size={20} weight="bold" className="text-accent" />,
+    icon: <MegaphoneSimpleIcon size={18} weight="bold" className="text-accent" />,
   },
   {
     title: "Start from template",
     description: "Choose from pre-built templates to get started.",
     href: "/dashboard/templates",
-    icon: <CopyIcon size={20} weight="bold" className="text-accent" />,
+    icon: <CopyIcon size={18} weight="bold" className="text-accent" />,
   },
 ];
 
@@ -70,7 +70,7 @@ export function OverviewHome({ firstName, actions }: OverviewHomeProps) {
   };
 
   return (
-    <section className="space-y-6">
+    <section className="px-8 pt-7 max-sm:px-4">
       <div className="flex items-center justify-between gap-4 max-sm:flex-col max-sm:items-start">
         <h1 className="text-[22px] leading-7 font-semibold text-fg">
           {`Hey ${greetingName(firstName)}, ready to get started?`}
@@ -80,9 +80,9 @@ export function OverviewHome({ firstName, actions }: OverviewHomeProps) {
 
       <form
         onSubmit={handleSubmit}
-        className="flex h-10 w-full max-w-2xl items-center gap-2 rounded-md border border-line bg-surface pl-3 pr-1 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/30"
+        className="mt-5 flex h-12 w-full max-w-[660px] items-center gap-3 rounded-md border border-line bg-surface pl-4 pr-2 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/30"
       >
-        <SparkleIcon size={16} weight="fill" className="shrink-0 text-accent" />
+        <SparkleIcon size={18} weight="fill" className="shrink-0 text-accent" />
         <input
           type="text"
           value={prompt}
@@ -95,18 +95,18 @@ export function OverviewHome({ firstName, actions }: OverviewHomeProps) {
           type="submit"
           disabled={!prompt.trim()}
           aria-label="Send to Copilot"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-on-inverse transition-colors hover:bg-accent-strong disabled:opacity-50"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-on-inverse transition-colors hover:bg-accent-strong disabled:opacity-50"
         >
-          <ArrowUpIcon size={16} weight="bold" />
+          <ArrowUpIcon size={14} weight="bold" />
         </button>
       </form>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-8 flex flex-wrap gap-4">
         {QUICK_ACTIONS.map((action) => (
           <Link
             key={action.href}
             href={action.href}
-            className="flex gap-3 rounded-lg bg-subtle p-4 transition-colors hover:bg-muted"
+            data-clay-box className="flex w-[230px] items-start gap-3 rounded-lg bg-subtle p-4 shadow-card transition-colors hover:bg-muted max-sm:w-full"
           >
             <span className="mt-0.5 shrink-0">{action.icon}</span>
             <span className="min-w-0">
