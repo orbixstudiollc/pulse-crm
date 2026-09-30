@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { hasRequiredRole } from "@/lib/auth/roles";
 
 export async function GET() {
   const supabase = await createClient();
@@ -10,6 +11,18 @@ export async function GET() {
     return NextResponse.json(
       { error: "Unauthorized. Please log in first." },
       { status: 401 },
+    );
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (!hasRequiredRole(profile?.role)) {
+    return NextResponse.json(
+      { error: "Only organization admins can connect email accounts" },
+      { status: 403 },
     );
   }
 

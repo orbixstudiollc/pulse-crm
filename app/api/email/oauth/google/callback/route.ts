@@ -33,7 +33,7 @@ export async function GET(request: Request) {
   }
 
   if (!hasRequiredRole(profile.role)) {
-    redirect("/dashboard/settings?error=forbidden");
+    redirect("/dashboard/settings?tab=email-accounts&error=forbidden");
   }
 
   // Exchange code for tokens
