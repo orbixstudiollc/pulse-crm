@@ -253,7 +253,7 @@ export function ChatActionPreview({
           <button
             onClick={onConfirm}
             disabled={isPending}
-            className="flex-1 h-7 rounded-md bg-inverse text-on-inverse font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="flex-1 h-7 rounded-md bg-accent-strong text-on-inverse font-medium hover:bg-accent-strong/90 transition-colors disabled:opacity-50"
           >
             {isPending ? "Executing..." : "Confirm"}
           </button>

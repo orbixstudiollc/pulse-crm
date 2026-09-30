@@ -220,7 +220,7 @@ export function CalendarDropdown() {
                         ? "text-fg hover:bg-muted"
                         : "text-fg-disabled",
                       isTodayDate &&
-                        "bg-inverse text-on-inverse hover:bg-inverse",
+                        "bg-accent-surface text-accent-on-surface hover:bg-accent-surface",
                     )}
                   >
                     {day}
@@ -229,8 +229,8 @@ export function CalendarDropdown() {
                         className={cn(
                           "absolute bottom-1 h-1 w-1 rounded-full",
                           isTodayDate
-                            ? "bg-on-inverse"
-                            : "bg-inverse",
+                            ? "bg-accent-on-surface"
+                            : "bg-accent",
                         )}
                       />
                     )}

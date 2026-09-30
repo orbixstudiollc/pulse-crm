@@ -859,7 +859,7 @@ function PreferencesSection({
                 className={cn(
                   "relative rounded-lg border bg-surface p-4 text-left transition-colors",
                   isSelected
-                    ? "border-inverse"
+                    ? "border-accent"
                     : "border-line hover:border-fg-muted",
                 )}
               >
@@ -872,7 +872,7 @@ function PreferencesSection({
                     className={cn(
                       "flex h-5 w-5 items-center justify-center rounded border transition-colors",
                       isSelected
-                        ? "bg-inverse border-inverse"
+                        ? "bg-accent-strong border-accent-strong"
                         : "border-line",
                     )}
                   >
@@ -1489,8 +1489,8 @@ function AISettingsSection({
             onClick={() => setAiProvider("anthropic")}
             className={`flex-1 h-8 rounded-md border px-3 text-sm font-medium transition-colors ${
               aiProvider === "anthropic"
-                ? "border-inverse bg-inverse text-on-inverse"
-                : "border-line text-fg-secondary hover:border-fg-muted"
+                ? "border-accent bg-surface text-accent-strong"
+                : "border-line text-fg-secondary hover:bg-subtle"
             }`}
           >
             Anthropic (Direct)
@@ -1500,8 +1500,8 @@ function AISettingsSection({
             onClick={() => setAiProvider("openrouter")}
             className={`flex-1 h-8 rounded-md border px-3 text-sm font-medium transition-colors ${
               aiProvider === "openrouter"
-                ? "border-inverse bg-inverse text-on-inverse"
-                : "border-line text-fg-secondary hover:border-fg-muted"
+                ? "border-accent bg-surface text-accent-strong"
+                : "border-line text-fg-secondary hover:bg-subtle"
             }`}
           >
             OpenRouter

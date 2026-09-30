@@ -234,7 +234,7 @@ export function AutomationSection() {
           className={cn(
             "px-3 py-2 text-sm font-medium border-b -mb-px transition-colors",
             activeView === "rules"
-              ? "border-inverse text-fg"
+              ? "border-accent text-fg"
               : "border-transparent text-fg-secondary hover:text-fg",
           )}
         >
@@ -248,7 +248,7 @@ export function AutomationSection() {
           className={cn(
             "px-3 py-2 text-sm font-medium border-b -mb-px transition-colors",
             activeView === "log"
-              ? "border-inverse text-fg"
+              ? "border-accent text-fg"
               : "border-transparent text-fg-secondary hover:text-fg",
           )}
         >
@@ -562,10 +562,10 @@ function RuleEditor({
                         setTriggerConfig({ ...triggerConfig, grades: updated });
                       }}
                       className={cn(
-                        "h-7 px-2.5 rounded-md text-xs font-medium border transition-colors",
+                        "h-8 px-3 rounded-md text-[13px] font-medium border transition-colors",
                         ((triggerConfig.grades as string[]) || []).includes(g)
-                          ? "bg-inverse text-on-inverse border-inverse"
-                          : "border-line text-fg-secondary",
+                          ? "border-accent bg-surface text-accent-strong"
+                          : "border-line text-fg-secondary hover:bg-subtle",
                       )}
                     >
                       {g}

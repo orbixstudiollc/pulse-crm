@@ -46,7 +46,7 @@ export function ConfirmModal({
       ? "bg-danger text-on-inverse hover:opacity-90"
       : variant === "warning"
         ? "bg-warning text-on-inverse hover:opacity-90"
-        : "bg-inverse text-on-inverse hover:opacity-90";
+        : "bg-accent-strong text-on-inverse hover:bg-accent-strong/90";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
