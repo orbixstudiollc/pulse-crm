@@ -34,7 +34,7 @@ export function StatCard({
       )}
     >
       {/* Label */}
-      <p className="text-xs text-fg-secondary">
+      <p className="text-[13px] text-fg-secondary">
         {label}
       </p>
 
@@ -45,19 +45,19 @@ export function StatCard({
 
       {/* Change indicator */}
       {change && (
-        <p className="mt-2 text-xs">
+        <p className="mt-2 text-[13px]">
           <span
             className={cn(
               "font-medium",
               change.trend === "up" && "text-success",
               change.trend === "down" && "text-danger",
-              (change.trend === "neutral" || change.trend === "flat") && "text-fg-secondary",
+              (change.trend === "neutral" || change.trend === "flat") && "text-fg-muted",
             )}
           >
             {change.value}
           </span>
           {HAS_NUMERIC_CHANGE.test(change.value) && (
-            <span className="text-fg-secondary">
+            <span className="text-fg-muted">
               {" "}
               from last month
             </span>
@@ -66,7 +66,7 @@ export function StatCard({
       )}
 
       {hint && (
-        <p className="mt-2 text-xs text-fg-secondary">
+        <p className="mt-2 text-[13px] text-fg-muted">
           {hint}
         </p>
       )}

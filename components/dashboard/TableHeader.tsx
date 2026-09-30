@@ -35,13 +35,13 @@ export function TableHeader({
         className,
       )}
     >
-      <h3 className="text-heading-md text-fg">
+      <h3 className="text-[16px] leading-6 font-semibold text-fg">
         {title}
       </h3>
       <div className="flex items-center gap-3">
         {actions}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-fg-secondary">
+          <span className="text-[13px] text-fg-secondary">
             Show
           </span>
           <Dropdown
@@ -51,7 +51,7 @@ export function TableHeader({
             icon={null}
             size="md"
           />
-          <span className="text-sm text-fg-secondary">
+          <span className="text-[13px] text-fg-secondary">
             rows
           </span>
         </div>

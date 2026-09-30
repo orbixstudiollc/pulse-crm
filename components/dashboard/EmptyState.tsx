@@ -30,17 +30,17 @@ export function EmptyState({
       className={cn("py-12 flex flex-col items-center text-center", className)}
     >
       {/* Icon Container */}
-      <div className="h-10 w-10 rounded-md border border-line bg-subtle text-fg-secondary flex items-center justify-center mb-4">
+      <div className="h-10 w-10 rounded-lg bg-subtle text-fg-muted flex items-center justify-center mb-4">
         {icon}
       </div>
 
       {/* Title */}
-      <h3 className="text-heading-md text-fg mb-1">
+      <h3 className="text-[16px] leading-6 font-semibold text-fg mb-1">
         {title}
       </h3>
 
       {/* Description */}
-      <p className="text-sm text-fg-secondary max-w-xs mb-4">
+      <p className="text-[13px] text-fg-muted max-w-xs mb-4">
         {description}
       </p>
 
@@ -48,10 +48,12 @@ export function EmptyState({
       {actions.length > 0 && (
         <div className="flex items-center gap-2">
           {actions.map((action, index) => {
+            // First action is the primary CTA unless the caller says otherwise.
+            const variant = action.variant ?? (index === 0 ? "primary" : "outline");
             if (action.href) {
               return (
                 <a key={index} href={action.href}>
-                  <Button variant="outline" leftIcon={action.icon}>
+                  <Button variant={variant} leftIcon={action.icon}>
                     {action.label}
                   </Button>
                 </a>
@@ -61,7 +63,7 @@ export function EmptyState({
             return (
               <Button
                 key={index}
-                variant="outline"
+                variant={variant}
                 leftIcon={action.icon}
                 onClick={action.onClick}
               >

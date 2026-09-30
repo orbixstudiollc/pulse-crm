@@ -91,7 +91,7 @@ export function FilterBar({
       {/* Label */}
       <div className="flex items-center gap-1.5 text-fg-secondary">
         <FunnelIcon size={16} />
-        <span className="text-sm font-medium">Filters</span>
+        <span className="text-[13px] font-medium">Filters</span>
       </div>
 
       {/* Search */}
@@ -111,7 +111,7 @@ export function FilterBar({
           value={filterValues[filter.key]}
           onChange={(value) => handleFilterChange(filter.key, value)}
           icon={null}
-          size="md"
+          size="sm"
         />
       ))}
 
@@ -124,7 +124,7 @@ export function FilterBar({
           <button
             key={filter.key}
             onClick={() => clearFilter(filter.key)}
-            className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs text-fg hover:bg-active transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="inline-flex h-7 items-center gap-1 rounded-md border border-line bg-subtle px-2.5 text-[13px] text-fg hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <span>
               {filter.label}: {selectedOption?.label.toLowerCase()}
@@ -139,7 +139,7 @@ export function FilterBar({
 
       <button
         onClick={handleClearAll}
-        className="ml-auto text-sm text-fg-secondary hover:text-fg transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="ml-auto text-[13px] text-fg-secondary hover:text-fg transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         Clear all
       </button>

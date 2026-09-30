@@ -35,14 +35,14 @@ export function LatestLeads({
     >
       {/* Header */}
       <div className="flex h-12 items-center justify-between px-4 border-b border-divider">
-        <h3 className="text-heading-md text-fg">
+        <h3 className="text-[16px] leading-6 font-semibold text-fg">
           Latest Leads
         </h3>
 
         <Link
           href="/dashboard/leads"
           aria-label="View all leads"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface text-fg-secondary transition-colors duration-150 hover:bg-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface text-fg-secondary transition-colors duration-150 hover:bg-subtle hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
         >
           <ArrowUpRightIcon size={20} className="size-4 text-fg-secondary" />
         </Link>
@@ -52,20 +52,20 @@ export function LatestLeads({
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="bg-muted">
-              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary w-[200px]">
+            <tr>
+              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider w-[200px]">
                 Lead
               </th>
-              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                 Status
               </th>
-              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                 Source
               </th>
-              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                 Score
               </th>
-              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                 Contacted
               </th>
             </tr>
@@ -74,20 +74,20 @@ export function LatestLeads({
             {leads.map((lead) => (
               <tr
                 key={lead.id}
-                className="hover:bg-subtle transition-colors"
+                className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors"
               >
                 {/* Lead */}
-                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                <td className="px-3 py-2 text-[14px] text-fg">
                   <div className="flex items-center gap-3">
                     <Avatar name={lead.name} />
                     <Link
                       href={`/dashboard/leads/${lead.id}`}
                       className="block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                     >
-                      <p className="text-[13px] font-medium text-fg hover:underline">
+                      <p className="text-[14px] font-medium text-fg hover:underline">
                         {lead.name}
                       </p>
-                      <p className="text-xs text-fg-secondary">
+                      <p className="text-[13px] text-fg-secondary">
                         {lead.email}
                       </p>
                     </Link>
@@ -95,21 +95,21 @@ export function LatestLeads({
                 </td>
 
                 {/* Status */}
-                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                <td className="px-3 py-2 text-[14px] text-fg">
                   <Badge variant={leadStatusConfig[lead.status].variant} dot>
                     {leadStatusConfig[lead.status].label}
                   </Badge>
                 </td>
 
                 {/* Source */}
-                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
-                  <span className="text-[13px] text-fg">
+                <td className="px-3 py-2 text-[14px] text-fg">
+                  <span className="text-[14px] text-fg">
                     {lead.source}
                   </span>
                 </td>
 
                 {/* Score */}
-                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                <td className="px-3 py-2 text-[14px] text-fg">
                   <div
                     className={cn(
                       "flex h-7 w-7 items-center justify-center rounded-full border text-xs font-medium",
@@ -121,7 +121,7 @@ export function LatestLeads({
                 </td>
 
                 {/* Contacted */}
-                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                <td className="px-3 py-2 text-[14px] text-fg">
                   <span className="text-[13px] text-fg-secondary">
                     {lead.createdDate}
                   </span>
@@ -135,7 +135,7 @@ export function LatestLeads({
 
       {/* Pagination */}
       <div className="flex items-center justify-between px-4 py-3 border-t border-divider">
-        <p className="text-sm text-fg-secondary">
+        <p className="text-[13px] text-fg-muted">
           Showing{" "}
           <span className="font-medium text-fg">
             {startIndex}&ndash;{endIndex}
@@ -150,7 +150,7 @@ export function LatestLeads({
         <div className="flex items-center gap-2">
           <button
             className={cn(
-              "h-7 rounded-md border border-line bg-surface px-2.5 text-[13px] font-medium text-fg hover:bg-muted transition-colors",
+              "h-8 rounded-md border border-line bg-surface px-3 text-[13px] font-medium text-fg hover:bg-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
               currentPage === 1 && "opacity-50 cursor-not-allowed",
             )}
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -160,7 +160,7 @@ export function LatestLeads({
           </button>
           <button
             className={cn(
-              "h-7 rounded-md border border-line bg-surface px-2.5 text-[13px] font-medium text-fg hover:bg-muted transition-colors",
+              "h-8 rounded-md border border-line bg-surface px-3 text-[13px] font-medium text-fg hover:bg-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
               endIndex >= totalLeads && "opacity-50 cursor-not-allowed",
             )}
             onClick={() => setCurrentPage((p) => p + 1)}

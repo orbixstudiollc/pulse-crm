@@ -205,30 +205,30 @@ export function CustomersTable({
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="bg-muted">
+            <tr>
               {/* Checkbox */}
-              <th className="w-10 px-3 py-2">
+              <th className="w-10 h-10 px-3 border-b border-divider">
                 <Checkbox checked={isAllSelected} onChange={toggleSelectAll} />
               </th>
-              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                 Customer
               </th>
-              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                 Status
               </th>
-              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                 Plan
               </th>
-              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                 MRR
               </th>
-              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                 Health
               </th>
-              <th className="px-3 py-2 text-left text-[13px] font-medium text-fg-secondary">
+              <th className="h-10 px-3 text-left text-[13px] font-medium text-fg-secondary border-b border-divider">
                 Last Contact
               </th>
-              <th className="px-3 py-2 text-center text-[13px] font-medium text-fg-secondary">
+              <th className="h-10 px-3 text-right text-[13px] font-medium text-fg-secondary border-b border-divider">
                 Actions
               </th>
             </tr>
@@ -238,11 +238,11 @@ export function CustomersTable({
               <tr
                 key={customer.id}
                 onClick={() => handleViewDetails(customer)}
-                className="hover:bg-subtle transition-colors cursor-pointer"
+                className="h-10 border-b border-divider last:border-b-0 hover:bg-subtle transition-colors cursor-pointer"
               >
                 {/* Checkbox */}
                 <td
-                  className="w-10 px-3 py-2 text-[13px] text-fg border-t border-row"
+                  className="w-10 px-3 py-2 text-[14px] text-fg"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Checkbox
@@ -251,7 +251,7 @@ export function CustomersTable({
                   />
                 </td>
                 {/* Customer */}
-                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                <td className="px-3 py-2 text-[14px] text-fg">
                   <div className="flex items-center gap-3 [&>div:first-child>div]:size-8 [&>div:first-child>div]:text-xs">
                     <Avatar
                       src={customer.avatar}
@@ -259,35 +259,35 @@ export function CustomersTable({
                       size="lg"
                     />
                     <div>
-                      <p className="text-[13px] font-medium text-fg">
+                      <p className="text-[14px] font-medium text-fg">
                         {customer.name}
                       </p>
-                      <p className="text-xs text-fg-secondary">
+                      <p className="text-[13px] text-fg-secondary">
                         {customer.email}
                       </p>
                     </div>
                   </div>
                 </td>
                 {/* Status */}
-                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                <td className="px-3 py-2 text-[14px] text-fg">
                   <Badge variant={statusConfig[customer.status].variant}>
                     {statusConfig[customer.status].label}
                   </Badge>
                 </td>
                 {/* Plan */}
-                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                <td className="px-3 py-2 text-[14px] text-fg">
                   <Badge variant={planConfig[customer.plan].variant}>
                     {planConfig[customer.plan].label}
                   </Badge>
                 </td>
                 {/* MRR */}
-                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
-                  <span className="text-[13px] font-medium text-fg">
+                <td className="px-3 py-2 text-[14px] text-fg">
+                  <span className="text-[14px] font-medium text-fg">
                     {formatMRR(customer.mrr)}
                   </span>
                 </td>
                 {/* Health */}
-                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                <td className="px-3 py-2 text-[14px] text-fg">
                   <div className="flex items-center gap-2">
                     <Progress
                       value={customer.healthScore}
@@ -300,18 +300,19 @@ export function CustomersTable({
                   </div>
                 </td>
                 {/* Last Contact */}
-                <td className="px-3 py-2 text-[13px] text-fg border-t border-row">
+                <td className="px-3 py-2 text-[14px] text-fg">
                   <span className="text-[13px] text-fg-secondary">
                     {customer.lastContact}
                   </span>
                 </td>
                 {/* Actions */}
                 <td
-                  className="px-3 py-2 text-[13px] text-fg border-t border-row"
+                  className="px-3 py-2 text-[14px] text-fg"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex justify-center">
+                  <div className="flex justify-end">
                     <ActionMenu
+                      className="rounded-md border border-line bg-surface hover:bg-subtle"
                       items={[
                         {
                           label: "View Details",
