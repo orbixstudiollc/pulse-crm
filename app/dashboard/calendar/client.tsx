@@ -29,7 +29,6 @@ interface CalendarEventRecord {
   title: string;
   type: string;
   date: string;
-  time?: string | null;
   duration?: string | null;
   start_time?: string | null;
   end_time?: string | null;
@@ -47,7 +46,7 @@ interface MappedEvent {
   title: string;
   type: CalendarEventType;
   date: string;
-  time: string;
+  startTime: string;
   duration: string;
   status: string;
   notes: string;
@@ -95,7 +94,7 @@ function mapEvent(e: CalendarEventRecord): MappedEvent {
     title: e.title || "",
     type: (e.type || "task") as CalendarEventType,
     date: e.date || "",
-    time: e.time || "09:00",
+    startTime: (e.start_time || "09:00").slice(0, 5),
     duration: e.duration || "30 minutes",
     status: e.status || "scheduled",
     notes: (e.notes as string) || "",
@@ -252,7 +251,7 @@ export function CalendarPageClient({
         title: data.title,
         type: data.type,
         date: data.date,
-        time: data.time,
+        start_time: data.time,
         duration: durationLabel,
         status: "scheduled",
         notes: data.notes || "",
@@ -284,7 +283,7 @@ export function CalendarPageClient({
         title: data.title,
         type: data.type,
         date: data.date,
-        time: data.time,
+        start_time: data.time,
         duration: durationLabel,
         notes: data.notes || "",
         related_type: (data.relatedTo as { type: string } | null)?.type,
@@ -474,7 +473,7 @@ export function CalendarPageClient({
                         >
                           <div className="flex items-start gap-3">
                             <span className="text-sm text-fg-secondary w-11 shrink-0">
-                              {formatTime(event.time)}
+                              {formatTime(event.startTime)}
                             </span>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-fg truncate">
@@ -533,7 +532,7 @@ export function CalendarPageClient({
                     }
                   : null,
                 date: editEvent.date,
-                time: editEvent.time,
+                time: editEvent.startTime,
                 duration: editEvent.duration.includes("hour")
                   ? "60"
                   : editEvent.duration.replace(/\D/g, ""),
@@ -566,7 +565,7 @@ export function CalendarPageClient({
                   variant:
                     selectedEvent.status === "completed" ? "neutral" : "success",
                 },
-                meta: `${selectedEvent.date} at ${selectedEvent.time}`,
+                meta: `${selectedEvent.date} at ${selectedEvent.startTime}`,
               }
             : null
         }

@@ -30,7 +30,7 @@ export async function getCalendarEvents(month: number, year: number) {
     .gte("date", startStr)
     .lte("date", endStr)
     .order("date", { ascending: true })
-    .order("time", { ascending: true });
+    .order("start_time", { ascending: true });
 
   if (error) return { error: error.message, data: [] };
   return { data: data ?? [] };
@@ -63,7 +63,7 @@ export async function getUpcomingEvents(limit: number = 5) {
     .eq("status", "scheduled")
     .gte("date", today)
     .order("date", { ascending: true })
-    .order("time", { ascending: true })
+    .order("start_time", { ascending: true })
     .limit(limit);
 
   if (error) return { error: error.message, data: [] };
