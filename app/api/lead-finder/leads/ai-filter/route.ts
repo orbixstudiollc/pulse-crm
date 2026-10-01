@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "@/lib/actions/helpers";
 import { generateCompletion } from "@/lib/lead-finder/ai-provider";
+import { SharedBudgetError } from "@/lib/ai/shared-budget-core";
 
 const AIProviderEnum = z.enum([
   "openai",
@@ -117,6 +118,9 @@ Respond in JSON:
     const parsedResp = JSON.parse(jsonMatch[0]);
     return NextResponse.json({ data: parsedResp });
   } catch (err) {
+    if (err instanceof SharedBudgetError) {
+      return NextResponse.json({ error: err.message }, { status: 429 });
+    }
     console.error("[lead-finder/ai-filter] error", err);
     return NextResponse.json(
       { error: "AI filter generation failed" },

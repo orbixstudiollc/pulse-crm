@@ -7,6 +7,7 @@ import {
   logLlmCost,
   resolveProviderAndModel,
 } from "@/lib/lead-finder/ai-provider";
+import { SharedBudgetError } from "@/lib/ai/shared-budget-core";
 
 export const runtime = "nodejs";
 
@@ -102,6 +103,9 @@ Return ONLY valid JSON, no markdown, no code fences.`,
       );
     }
   } catch (err) {
+    if (err instanceof SharedBudgetError) {
+      return NextResponse.json({ error: err.message }, { status: 429 });
+    }
     console.error("[generate-profile]", err);
     return NextResponse.json(
       { error: "Failed to generate agency profile" },
