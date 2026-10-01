@@ -17,7 +17,7 @@ const SOURCE_LABELS: Record<CopilotSettings["provider"]["source"], string> = {
 };
 
 const BTN_DANGER =
-  "inline-flex h-8 items-center gap-1.5 rounded-md bg-danger px-3 text-[14px] font-medium text-on-inverse transition-colors hover:bg-danger/90 disabled:opacity-50";
+  "inline-flex h-8 items-center gap-1.5 rounded-md bg-danger px-3 text-[13px] font-medium text-on-inverse transition-colors hover:bg-danger/90 disabled:opacity-50";
 
 function formatTokens(value: number): string {
   return value.toLocaleString("en-US");
@@ -80,7 +80,7 @@ export function SettingsView({
         <Page>
           <PageHeader icon={<GearIcon size={18} />} title="Copilot Settings" />
           <Section>
-            <p className="text-[14px] text-fg">Copilot settings could not be loaded.</p>
+            <p className="text-[13px] text-fg">Copilot settings could not be loaded.</p>
             <p className="mt-0.5 text-[13px] text-fg-muted">Refresh the page to try again.</p>
           </Section>
         </Page>
@@ -164,7 +164,7 @@ export function SettingsView({
                 key={tool.name}
                 className="flex items-center justify-between gap-4 border-b border-divider py-3 first:pt-0 last:border-b-0"
               >
-                <span className="text-[14px] text-fg">{tool.label}</span>
+                <span className="text-[13px] text-fg">{tool.label}</span>
                 <Switch
                   label={tool.label}
                   checked={alwaysAllow.includes(tool.name)}

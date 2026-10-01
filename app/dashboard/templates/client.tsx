@@ -305,26 +305,26 @@ export function TemplatesPageClient({
                       key={template.id}
                       className="hover:bg-subtle transition-colors"
                     >
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <div className="flex items-center gap-2">
                           <NoteIcon size={16} className="shrink-0 text-fg-muted" />
-                          <p className="text-[14px] font-medium text-fg">
+                          <p className="text-[13px] font-medium text-fg">
                             {template.name}
                           </p>
                         </div>
                       </td>
-                      <td className="py-2 text-[14px] text-fg">
-                        <p className="text-[14px] text-fg-secondary line-clamp-1 max-w-[250px]">
+                      <td className="py-2 text-[13px] text-fg">
+                        <p className="text-[13px] text-fg-secondary line-clamp-1 max-w-[250px]">
                           {template.subject}
                         </p>
                       </td>
-                      <td className="py-2 text-[14px] text-fg">
-                        <span className="text-[14px] text-fg-secondary">
+                      <td className="py-2 text-[13px] text-fg">
+                        <span className="text-[13px] text-fg-secondary">
                           {categoryConfig[template.category] ||
                             template.category}
                         </span>
                       </td>
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <div className="flex flex-wrap gap-1">
                           {(template.merge_fields || [])
                             .slice(0, 3)
@@ -343,12 +343,12 @@ export function TemplatesPageClient({
                           )}
                         </div>
                       </td>
-                      <td className="py-2 text-[14px] text-fg">
-                        <span className="text-[14px] font-medium text-fg">
+                      <td className="py-2 text-[13px] text-fg">
+                        <span className="text-[13px] font-medium text-fg">
                           {template.usage_count || 0}
                         </span>
                       </td>
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <div className="flex justify-end">
                           <ActionMenu
                             items={[

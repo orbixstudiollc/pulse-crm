@@ -89,7 +89,7 @@ export function OverviewHome({ firstName, actions }: OverviewHomeProps) {
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="Ask Pulse anything or describe what you'd like to do…"
           aria-label="Ask Pulse"
-          className="h-full min-w-0 flex-1 bg-transparent text-[14px] text-fg placeholder:text-fg-muted focus:outline-none"
+          className="h-full min-w-0 flex-1 bg-transparent text-[13px] text-fg placeholder:text-fg-muted focus:outline-none"
         />
         <button
           type="submit"
@@ -110,7 +110,7 @@ export function OverviewHome({ firstName, actions }: OverviewHomeProps) {
           >
             <span className="mt-0.5 shrink-0">{action.icon}</span>
             <span className="min-w-0">
-              <span className="block text-[14px] font-semibold text-fg">{action.title}</span>
+              <span className="block text-[13px] font-semibold text-fg">{action.title}</span>
               <span className="mt-0.5 block text-[13px] text-fg-muted">{action.description}</span>
             </span>
           </Link>

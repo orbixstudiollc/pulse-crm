@@ -24,9 +24,9 @@ export function Header() {
   const hasCustomActions = !!config.actions;
 
   return (
-    <header className="h-11 flex shrink-0 items-center border-b border-divider bg-surface">
-      {/* Left: Mobile menu + wordmark */}
-      <div className="flex w-[240px] shrink-0 items-center gap-2 px-6 max-lg:w-auto max-lg:px-4">
+    <header className="h-11 flex shrink-0 items-center border-b border-line bg-surface">
+      {/* Left: mobile menu + wordmark. On desktop the wordmark lives in the sidebar. */}
+      <div className="flex shrink-0 items-center gap-2 px-4 lg:hidden">
         {/* Mobile hamburger */}
         <button
           onClick={openMobile}
@@ -38,7 +38,7 @@ export function Header() {
 
         <Link
           href="/dashboard/overview"
-          className="text-[18px] font-semibold text-fg"
+          className="text-[13px] font-semibold text-fg"
         >
           Pulse
         </Link>
@@ -46,7 +46,7 @@ export function Header() {
 
       {/* Back button + Breadcrumb */}
       {showTrail && (
-        <div className="flex min-w-0 items-center gap-2 lg:pl-8">
+        <div className="flex min-w-0 items-center gap-2 lg:pl-4">
           {config.backHref && (
             <Link
               href={config.backHref}
@@ -57,7 +57,7 @@ export function Header() {
             </Link>
           )}
 
-          <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-2 text-[14px]">
+          <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-2 text-[13px]">
             {crumbs.map((segment, index) => {
               // Replace ID-like segments (numeric or long hashes) with breadcrumbLabel
               const isIdSegment =
@@ -105,11 +105,12 @@ export function Header() {
 
       {/* Right: Custom actions or default toolbar */}
       <div className="ml-auto flex items-center gap-1 pr-4">
+        {/* Always mounted: it owns ⌘K and the sidebar's Search item. */}
+        <SearchBar />
         {hasCustomActions ? (
           config.actions
         ) : (
           <>
-            <SearchBar />
             <CalendarDropdown />
             <NotificationsDropdown />
           </>

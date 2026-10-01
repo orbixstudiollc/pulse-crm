@@ -451,21 +451,21 @@ export function ProposalsPageClient({
                         }
                         className="hover:bg-subtle transition-colors cursor-pointer"
                       >
-                        <td className="py-2 text-[14px] text-fg">
+                        <td className="py-2 text-[13px] text-fg">
                           <div className="flex items-center gap-2">
                             <ScrollIcon size={16} className="shrink-0 text-fg-muted" />
-                            <p className="text-[14px] font-medium text-fg">
+                            <p className="text-[13px] font-medium text-fg">
                               {proposal.title}
                             </p>
                           </div>
                         </td>
-                        <td className="py-2 text-[14px] text-fg">
+                        <td className="py-2 text-[13px] text-fg">
                           <Badge variant={status.variant} dot>
                             {status.label}
                           </Badge>
                         </td>
-                        <td className="py-2 text-[14px] text-fg">
-                          <span className="text-[14px] text-fg-secondary">
+                        <td className="py-2 text-[13px] text-fg">
+                          <span className="text-[13px] text-fg-secondary">
                             {proposal.valid_until
                               ? new Date(
                                   proposal.valid_until
@@ -473,15 +473,15 @@ export function ProposalsPageClient({
                               : "\u2014"}
                           </span>
                         </td>
-                        <td className="py-2 text-[14px] text-fg">
-                          <span className="text-[14px] text-fg-secondary">
+                        <td className="py-2 text-[13px] text-fg">
+                          <span className="text-[13px] text-fg-secondary">
                             {new Date(
                               proposal.created_at
                             ).toLocaleDateString()}
                           </span>
                         </td>
                         <td
-                          className="py-2 text-[14px] text-fg"
+                          className="py-2 text-[13px] text-fg"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <div className="flex justify-end">

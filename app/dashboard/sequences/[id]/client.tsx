@@ -1256,7 +1256,7 @@ export function SequenceDetailClient({
 
                         return (
                           <tr key={enrollment.id} className="hover:bg-subtle transition-colors">
-                            <td className="py-2 text-[14px] text-fg">
+                            <td className="py-2 text-[13px] text-fg">
                               <div className="flex items-center gap-3">
                                 <Avatar name={lead?.name || "Unknown"} />
                                 <div>
@@ -1265,20 +1265,20 @@ export function SequenceDetailClient({
                                 </div>
                               </div>
                             </td>
-                            <td className="py-2 text-[14px] text-fg">
+                            <td className="py-2 text-[13px] text-fg">
                               <span className="text-sm font-semibold text-fg">
                                 {enrollment.current_step} / {steps.length}
                               </span>
                             </td>
-                            <td className="py-2 text-[14px] text-fg">
+                            <td className="py-2 text-[13px] text-fg">
                               <Badge variant={enrollStatus.variant} dot>{enrollStatus.label}</Badge>
                             </td>
-                            <td className="py-2 text-[14px] text-fg">
+                            <td className="py-2 text-[13px] text-fg">
                               <span className="text-sm text-fg-secondary">
                                 {new Date(enrollment.enrolled_at).toLocaleDateString()}
                               </span>
                             </td>
-                            <td className="py-2 text-[14px] text-fg">
+                            <td className="py-2 text-[13px] text-fg">
                               <div className="flex justify-end">
                                 <ActionMenu
                                   items={[

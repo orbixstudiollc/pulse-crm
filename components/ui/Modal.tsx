@@ -136,7 +136,7 @@ export function Modal({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            data-clay-box className={cn("w-full max-w-[480px] overflow-hidden rounded-xl border border-line bg-surface shadow-modal focus:outline-none", className)}
+            data-clay-box className={cn("w-full max-w-[480px] overflow-hidden rounded-lg border border-line bg-surface shadow-modal focus:outline-none", className)}
             onClick={(e) => e.stopPropagation()}
           >
             {children}

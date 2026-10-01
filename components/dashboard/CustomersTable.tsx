@@ -261,7 +261,7 @@ export function CustomersTable({
                     >
                       {/* Checkbox */}
                       <td
-                        className="w-10 py-2 text-[14px] text-fg"
+                        className="w-10 py-2 text-[13px] text-fg"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Checkbox
@@ -270,7 +270,7 @@ export function CustomersTable({
                         />
                       </td>
                       {/* Customer */}
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <div className="flex items-center gap-3 [&>div:first-child>div]:size-8 [&>div:first-child>div]:text-xs">
                           <Avatar
                             src={customer.avatar}
@@ -278,7 +278,7 @@ export function CustomersTable({
                             size="lg"
                           />
                           <div>
-                            <p className="text-[14px] font-medium text-fg">
+                            <p className="text-[13px] font-medium text-fg">
                               {customer.name}
                             </p>
                             <p className="text-[13px] text-fg-secondary">
@@ -288,25 +288,25 @@ export function CustomersTable({
                         </div>
                       </td>
                       {/* Status */}
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <Badge variant={statusConfig[customer.status].variant}>
                           {statusConfig[customer.status].label}
                         </Badge>
                       </td>
                       {/* Plan */}
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <Badge variant={planConfig[customer.plan].variant}>
                           {planConfig[customer.plan].label}
                         </Badge>
                       </td>
                       {/* MRR */}
-                      <td className="py-2 text-[14px] text-fg">
-                        <span className="text-[14px] font-medium text-fg">
+                      <td className="py-2 text-[13px] text-fg">
+                        <span className="text-[13px] font-medium text-fg">
                           {formatMRR(customer.mrr)}
                         </span>
                       </td>
                       {/* Health */}
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <div className="flex items-center gap-2">
                           <Progress
                             value={customer.healthScore}
@@ -319,14 +319,14 @@ export function CustomersTable({
                         </div>
                       </td>
                       {/* Last Contact */}
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <span className="text-[13px] text-fg-secondary">
                           {customer.lastContact || "—"}
                         </span>
                       </td>
                       {/* Actions */}
                       <td
-                        className="py-2 text-[14px] text-fg"
+                        className="py-2 text-[13px] text-fg"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex justify-end">

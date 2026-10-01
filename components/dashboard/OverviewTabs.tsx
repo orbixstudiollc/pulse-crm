@@ -46,7 +46,7 @@ export function OverviewTabs({ leads, deals, activity, revenue, counts }: Overvi
         actions={
           <Link
             href={current.href}
-            className="inline-flex h-8 items-center justify-center rounded-md border border-line bg-surface px-3 text-[14px] font-medium text-fg transition-colors duration-150 hover:bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
+            className="inline-flex h-8 items-center justify-center rounded-md border border-line bg-surface px-3 text-[13px] font-medium text-fg transition-colors duration-150 hover:bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
           >
             View all
           </Link>

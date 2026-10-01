@@ -35,7 +35,7 @@ export function TableHeader({
         className,
       )}
     >
-      <h2 className="text-[18px] leading-6 font-semibold text-fg">
+      <h2 className="text-[15px] leading-6 font-semibold text-fg">
         {title}
       </h2>
       <div className="flex items-center gap-3">

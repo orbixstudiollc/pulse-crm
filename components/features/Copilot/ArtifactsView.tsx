@@ -102,7 +102,7 @@ function EmailDraftBody({ content }: { content: unknown }) {
         <dt className="text-fg-muted">Subject</dt>
         <dd className="min-w-0 break-words text-fg">{subject || "-"}</dd>
       </dl>
-      <p className="mt-4 whitespace-pre-wrap break-words border-t border-divider pt-4 text-[14px] leading-6 text-fg">{body}</p>
+      <p className="mt-4 whitespace-pre-wrap break-words border-t border-divider pt-4 text-[13px] leading-6 text-fg">{body}</p>
       <div className="mt-4">
         <Button size="sm" variant="secondary" leftIcon={<CopyIcon size={14} />} onClick={() => void copy()}>
           Copy
@@ -196,7 +196,7 @@ function ArtifactDetail({
         {artifact.kind === "email_draft" && <EmailDraftBody content={artifact.content} />}
         {artifact.kind === "lead_list" && <LeadListBody content={artifact.content} />}
         {(artifact.kind === "report" || artifact.kind === "note") && (
-          <p className="whitespace-pre-wrap break-words text-[14px] leading-6 text-fg">{contentText(artifact.content)}</p>
+          <p className="whitespace-pre-wrap break-words text-[13px] leading-6 text-fg">{contentText(artifact.content)}</p>
         )}
       </div>
     </div>
@@ -331,7 +331,7 @@ export function ArtifactsView({
                     onClick={() => setSelected(artifact)}
                     className="min-w-0 flex-1 py-3 pl-8 text-left max-sm:pl-4"
                   >
-                    <span className="block truncate text-[14px] font-medium text-fg">{artifact.title}</span>
+                    <span className="block truncate text-[13px] font-medium text-fg">{artifact.title}</span>
                     <span className="block text-[12px] text-fg-muted">
                       {KIND_LABELS[artifact.kind]} - {formatDate(artifact.created_at)}
                     </span>

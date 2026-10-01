@@ -169,7 +169,7 @@ export function ApiKeysSection() {
                 <tbody>
                   {keys.map((key) => (
                     <tr key={key.id} className={cn(key.revoked_at && "opacity-60")}>
-                      <td className="py-2 text-[14px] text-fg">{key.name}</td>
+                      <td className="py-2 text-[13px] text-fg">{key.name}</td>
                       <td className="py-2 font-mono text-[12px] text-fg-secondary">{key.key_prefix}…</td>
                       <td className="py-2">
                         <Badge variant={key.scope === "write" ? "primary" : "neutral"}>

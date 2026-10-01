@@ -133,7 +133,7 @@ function MemoryRow({
     <div className="flex items-start justify-between gap-3 border-b border-divider py-3">
       <div className={cn("min-w-0 flex-1", !item.is_active && "opacity-60")}>
         <div className="mb-1 flex items-center gap-2">
-          <h4 className="truncate text-[14px] font-medium text-fg">{item.title}</h4>
+          <h4 className="truncate text-[13px] font-medium text-fg">{item.title}</h4>
           {showSource && <span className={PILL}>{SOURCE_LABEL[item.source]}</span>}
           {!item.is_active && <span className={PILL}>Inactive</span>}
         </div>
@@ -256,7 +256,7 @@ function ScanWebsite({ onSaved, onExit }: { onSaved: (item: MemoryItem) => void;
                   type="text"
                   value={result.title}
                   onChange={e => patch(idx, { title: e.target.value })}
-                  className="w-full border-0 bg-transparent p-0 text-[14px] font-medium text-fg focus:outline-none focus:ring-0"
+                  className="w-full border-0 bg-transparent p-0 text-[13px] font-medium text-fg focus:outline-none focus:ring-0"
                 />
                 <textarea
                   value={result.content}
@@ -419,7 +419,7 @@ function ProfilesTab() {
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h4 className="truncate text-[14px] font-medium text-fg">{p.name}</h4>
+                  <h4 className="truncate text-[13px] font-medium text-fg">{p.name}</h4>
                   {p.is_primary && <span className={PILL}>Primary</span>}
                 </div>
                 {p.description && <p className="mt-1 line-clamp-2 text-[13px] text-fg-muted">{p.description}</p>}
@@ -519,7 +519,7 @@ function GuidanceTab({
               </div>
             ) : (
               <div key={rule.id} className="flex items-start justify-between gap-3 border-b border-divider py-3">
-                <p className={cn("min-w-0 flex-1 whitespace-pre-wrap text-[14px] text-fg", !rule.is_active && "opacity-60")}>
+                <p className={cn("min-w-0 flex-1 whitespace-pre-wrap text-[13px] text-fg", !rule.is_active && "opacity-60")}>
                   {rule.content}
                 </p>
                 <div className="flex shrink-0 items-center gap-1">

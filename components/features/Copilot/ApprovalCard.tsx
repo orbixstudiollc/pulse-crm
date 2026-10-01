@@ -88,7 +88,7 @@ export function ApprovalCard({ toolName, diff, onApprove, onDeny, responded, exp
   return (
     <section className="border-t border-divider py-3" aria-labelledby={titleId}>
       <div className="flex items-baseline justify-between gap-3">
-        <h3 id={titleId} className="text-[14px] font-semibold text-fg">
+        <h3 id={titleId} className="text-[13px] font-semibold text-fg">
           {title}
         </h3>
         <span role="status" className="text-[12px] text-fg-muted">

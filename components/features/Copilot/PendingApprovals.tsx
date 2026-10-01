@@ -67,7 +67,7 @@ export function PendingApprovals({
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        className="flex h-10 w-full items-center gap-2 px-8 text-left text-[14px] font-medium text-fg transition-colors hover:bg-subtle max-sm:px-4"
+        className="flex h-10 w-full items-center gap-2 px-8 text-left text-[13px] font-medium text-fg transition-colors hover:bg-subtle max-sm:px-4"
       >
         {open ? <CaretDownIcon size={14} className="text-fg-muted" /> : <CaretRightIcon size={14} className="text-fg-muted" />}
         Pending approvals

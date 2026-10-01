@@ -521,7 +521,7 @@ function ICPProfileRow({
   return (
     <tr className="hover:bg-subtle transition-colors">
       {/* Profile */}
-      <td className="py-2 text-[14px] text-fg">
+      <td className="py-2 text-[13px] text-fg">
         <div className="flex items-start gap-2">
           <div
             className="mt-1.5 h-3 w-3 rounded-full shrink-0"
@@ -529,7 +529,7 @@ function ICPProfileRow({
           />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[14px] font-medium text-fg">
+              <span className="text-[13px] font-medium text-fg">
                 {profile.name}
               </span>
               {profile.is_primary && (
@@ -600,10 +600,10 @@ function ICPProfileRow({
       </td>
 
       {/* Matched Leads */}
-      <td className="py-2 text-[14px] text-fg">{count}</td>
+      <td className="py-2 text-[13px] text-fg">{count}</td>
 
       {/* Avg Score */}
-      <td className="py-2 text-[14px] text-fg">
+      <td className="py-2 text-[13px] text-fg">
         {avgScore > 0 ? `${avgScore}%` : "--"}
       </td>
 
