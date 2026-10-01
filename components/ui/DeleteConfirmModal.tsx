@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { Button, Modal, TrashIcon, CircleNotchIcon } from "@/components/ui";
 
 interface DeleteConfirmModalProps {
@@ -21,12 +22,13 @@ export function DeleteConfirmModal({
   itemName,
   loading = false,
 }: DeleteConfirmModalProps) {
+  const titleId = useId();
   const defaultDescription = itemName
     ? `Are you sure you want to delete ${itemName}? This action cannot be undone and will permanently remove all associated data.`
     : "Are you sure you want to delete this item? This action cannot be undone and will permanently remove all associated data.";
 
   return (
-    <Modal open={open} onClose={onClose}>
+    <Modal open={open} onClose={onClose} role="alertdialog" aria-labelledby={titleId}>
       <div className="p-4 text-center sm:text-left">
         {/* Icon */}
         <div className="mx-auto sm:mx-0 w-8 h-8 rounded-full bg-danger-surface flex items-center justify-center mb-3">
@@ -34,7 +36,7 @@ export function DeleteConfirmModal({
         </div>
 
         {/* Title */}
-        <h3 className="text-heading-md text-fg mb-1">
+        <h3 id={titleId} className="text-heading-md text-fg mb-1">
           {title}
         </h3>
 

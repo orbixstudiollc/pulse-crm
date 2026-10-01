@@ -34,6 +34,7 @@ import {
   Button,
   ActionMenu,
   Modal,
+  Checkbox,
 } from "@/components/ui";
 import {
   Page,
@@ -156,8 +157,8 @@ function TagManagerModal({
   const titleId = useId();
 
   return (
-    <Modal open={open} onClose={onClose} className="max-w-md rounded-lg">
-      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="p-4">
+    <Modal open={open} onClose={onClose} className="max-w-md rounded-lg" aria-labelledby={titleId}>
+      <div className="p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 id={titleId} className="text-lg font-semibold text-fg">Manage Tags</h3>
           <button onClick={onClose} aria-label="Close" className="text-fg-secondary hover:text-fg"><XIcon className="w-5 h-5" /></button>
@@ -716,8 +717,11 @@ export function CampaignsPageClient({
                     <thead>
                       <tr>
                         <th className="text-left text-[13px] font-medium text-fg-secondary w-10">
-                          <input type="checkbox" checked={selectedRows.size === filtered.length && filtered.length > 0} onChange={toggleSelectAll}
-                            className="rounded border-line bg-muted text-fg" />
+                          <Checkbox
+                            aria-label="Select all campaigns"
+                            checked={selectedRows.size === filtered.length && filtered.length > 0}
+                            onChange={toggleSelectAll}
+                          />
                         </th>
                         <th className="text-left text-[13px] font-medium text-fg-secondary">Campaign</th>
                         <th className="text-left text-[13px] font-medium text-fg-secondary">Status</th>
@@ -735,8 +739,11 @@ export function CampaignsPageClient({
                         <tr key={campaign.id} className="hover:bg-subtle transition-colors cursor-pointer"
                           onClick={() => setDrawerCampaign(campaign)}>
                           <td className="py-2" onClick={(e) => e.stopPropagation()}>
-                            <input type="checkbox" checked={selectedRows.has(campaign.id)} onChange={() => toggleSelect(campaign.id)}
-                              className="rounded border-line bg-muted text-fg" />
+                            <Checkbox
+                              aria-label={`Select ${campaign.name}`}
+                              checked={selectedRows.has(campaign.id)}
+                              onChange={() => toggleSelect(campaign.id)}
+                            />
                           </td>
                           <td className="py-2">
                             <div className="flex items-start gap-2">

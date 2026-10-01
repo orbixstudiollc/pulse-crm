@@ -601,8 +601,8 @@ body:JSON.stringify(d),keepalive:true});
       )}
 
       {/* Setup Modal */}
-      <Modal open={showSetup} onClose={() => setShowSetup(false)} className="max-w-md rounded-lg">
-        <div role="dialog" aria-modal="true" aria-labelledby={setupTitleId} className="p-4">
+      <Modal open={showSetup} onClose={() => setShowSetup(false)} className="max-w-md rounded-lg" aria-labelledby={setupTitleId}>
+        <div className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h3 id={setupTitleId} className="text-lg font-semibold text-fg">Setup Website Tracking</h3>
             <button

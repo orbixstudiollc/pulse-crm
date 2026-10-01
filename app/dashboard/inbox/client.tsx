@@ -1005,7 +1005,17 @@ function ComposeModal({
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   const noAccountsTitleId = useId();
+  const composeTitleId = useId();
+
+  const requestClose = () => {
+    if (!to.trim() && !subject.trim() && !body.trim()) {
+      onClose();
+      return;
+    }
+    setConfirmingDiscard(true);
+  };
 
   const handleSend = async () => {
     if (!to.trim() || !subject.trim() || !body.trim()) return;
@@ -1023,8 +1033,8 @@ function ComposeModal({
 
   if (accounts.length === 0) {
     return (
-      <Modal open onClose={onClose} className="max-w-md rounded-lg">
-        <div role="dialog" aria-modal="true" aria-labelledby={noAccountsTitleId} className="p-4">
+      <Modal open onClose={onClose} className="max-w-md rounded-lg" aria-labelledby={noAccountsTitleId}>
+        <div className="p-4">
           <div className="flex items-center gap-3 mb-4">
             <WarningIcon size={24} className="text-warning" />
             <h3 id={noAccountsTitleId} className="text-base font-semibold text-fg">No Email Accounts</h3>
@@ -1039,56 +1049,64 @@ function ComposeModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/30">
-      <div className="rounded-t-lg sm:rounded-lg border border-line bg-surface shadow-modal w-full max-w-2xl mx-0 sm:mx-4 max-h-[90vh] flex flex-col" data-clay-box>
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-line">
-          <h3 className="text-sm font-semibold text-fg">New Email</h3>
-          <button onClick={onClose} className="p-1 rounded hover:bg-muted">
-            <XIcon size={16} className="text-fg-secondary" />
-          </button>
-        </div>
+    <Modal open onClose={requestClose} className="max-w-2xl rounded-lg max-h-[90vh] flex flex-col" aria-labelledby={composeTitleId}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-3 border-b border-line">
+        <h3 id={composeTitleId} className="text-sm font-semibold text-fg">New Email</h3>
+        <button onClick={requestClose} aria-label="Close" className="p-1 rounded hover:bg-muted">
+          <XIcon size={16} className="text-fg-secondary" />
+        </button>
+      </div>
 
-        {/* Form */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-3">
-          {accounts.length > 1 && (
-            <div>
-              <label className="text-xs font-medium text-fg-secondary mb-1 block">From</label>
-              <select
-                value={selectedAccount}
-                onChange={(e) => setSelectedAccount(e.target.value)}
-                className="w-full text-sm rounded border border-line bg-surface px-3 py-2 text-fg"
-              >
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.display_name ? `${a.display_name} <${a.email_address}>` : a.email_address}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          <Input label="To" value={to} onChange={(e) => setTo(e.target.value)} placeholder="recipient@example.com" />
-          <Input label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Email subject" />
+      {/* Form */}
+      <div className="flex-1 overflow-y-auto p-5 space-y-3">
+        {accounts.length > 1 && (
           <div>
-            <label className="text-xs font-medium text-fg-secondary mb-1 block">Body</label>
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="Write your email..."
-              className="w-full min-h-[200px] text-sm rounded border border-line bg-surface text-fg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-line resize-y"
-            />
+            <label className="text-xs font-medium text-fg-secondary mb-1 block">From</label>
+            <select
+              value={selectedAccount}
+              onChange={(e) => setSelectedAccount(e.target.value)}
+              className="w-full text-sm rounded border border-line bg-surface px-3 py-2 text-fg"
+            >
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.display_name ? `${a.display_name} <${a.email_address}>` : a.email_address}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        <Input label="To" value={to} onChange={(e) => setTo(e.target.value)} placeholder="recipient@example.com" />
+        <Input label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Email subject" />
+        <div>
+          <label className="text-xs font-medium text-fg-secondary mb-1 block">Body</label>
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="Write your email..."
+            className="w-full min-h-[200px] text-sm rounded border border-line bg-surface text-fg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-line resize-y"
+          />
+        </div>
+      </div>
+
+      {/* Footer */}
+      {confirmingDiscard ? (
+        <div role="alert" className="flex items-center justify-between gap-3 px-5 py-3 border-t border-line">
+          <p className="text-sm font-medium text-fg">Discard this draft?</p>
+          <div className="flex gap-2">
+            <Button variant="outline" autoFocus onClick={() => setConfirmingDiscard(false)}>Keep editing</Button>
+            <Button variant="danger" onClick={onClose}>Discard</Button>
           </div>
         </div>
-
-        {/* Footer */}
+      ) : (
         <div className="flex justify-end gap-2 px-5 py-3 border-t border-line">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="outline" onClick={requestClose}>Cancel</Button>
           <Button onClick={handleSend} disabled={sending || !to.trim() || !subject.trim()}>
             {sending ? <CircleNotchIcon size={14} className="animate-spin mr-1.5" /> : <PaperPlaneTiltIcon size={14} className="mr-1.5" />}
             Send
           </Button>
         </div>
-      </div>
-    </div>
+      )}
+    </Modal>
   );
 }
