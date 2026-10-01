@@ -48,8 +48,11 @@ export const NEVER_AUTO_ALLOW: readonly string[] = ["delete_record"];
 /** Most record-write proposals one turn may make. */
 export const WRITE_FANOUT_PER_TURN = 20;
 
-/** Tools a scheduled task run may not use (a task must not create more tasks). */
-export const TASK_MODE_EXCLUDED = ["create_task"] as const;
+/**
+ * Tools a scheduled task run may not use: a task must not create more tasks, and an
+ * unattended run must not persist workspace memory (which feeds every later prompt).
+ */
+export const TASK_MODE_EXCLUDED = ["create_task", "save_memory"] as const;
 
 /** Tool result for a record write proposed past WRITE_FANOUT_PER_TURN (returned, never thrown). */
 export const FANOUT_LIMIT_RESULT = {

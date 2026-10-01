@@ -348,8 +348,21 @@ export function registerWriteTools(server: McpServer, env: WriteToolEnv) {
       annotations: UPDATE,
     },
     safe(async (input) => {
-      const { patch } = WRITE_PATCHES.update_lead(input);
-      if (Object.keys(patch).length === 0) return fail("Nothing to update");
+      const patch: Record<string, unknown> = { ...WRITE_PATCHES.update_lead(input).patch };
+      const changed = Object.keys(patch);
+      if (changed.length === 0) return fail("Nothing to update");
+      if (input.status) {
+        const { data: current } = await db
+          .from("leads")
+          .select("status")
+          .eq("organization_id", orgId)
+          .eq("id", input.id)
+          .maybeSingle();
+        if (!current) return fail(missing("Lead not found"));
+        // Restart the days-in-status clock only on a real status change (as the automation
+        // runner does), so days_in_status rules cannot fire right after this change.
+        if (input.status !== current.status) patch.status_changed_at = new Date().toISOString();
+      }
       let q = db
         .from("leads")
         .update(patch as Tables["leads"]["Update"])
@@ -359,7 +372,7 @@ export function registerWriteTools(server: McpServer, env: WriteToolEnv) {
       const { data, error } = await q.select().maybeSingle();
       if (error) return fail(error.message);
       if (!data) return fail(missing("Lead not found"));
-      await fireLeadRules(input.id, "lead_updated", Object.keys(patch));
+      await fireLeadRules(input.id, "lead_updated", changed);
       return ok({ updated: data });
     }),
   );
@@ -427,18 +440,24 @@ export function registerWriteTools(server: McpServer, env: WriteToolEnv) {
         .select()
         .single();
       if (error) return fail(error.message);
-      // Keep the lead and its history and stamp it, as convertLeadToCustomer does (037).
-      const { error: markError } = await db
+      // Keep the lead and its history and stamp it, as convertLeadToCustomer does (037). The
+      // stamp only lands while the lead is still unconverted (and, for the Copilot, unchanged
+      // since its diff was shown): of two concurrent conversions only one keeps its customer.
+      let mark = db
         .from("leads")
         .update({
           ...WRITE_PATCHES.convert_lead_to_customer(input).patch,
           converted_customer_id: customer.id,
         } as Tables["leads"]["Update"])
         .eq("organization_id", orgId)
-        .eq("id", lead_id);
-      if (markError) {
+        .eq("id", lead_id)
+        .is("converted_at", null);
+      if (env.expectUpdatedAt) mark = mark.eq("updated_at", env.expectUpdatedAt);
+      const { data: marked, error: markError } = await mark.select("id").maybeSingle();
+      if (markError || !marked) {
         await db.from("customers").delete().eq("organization_id", orgId).eq("id", customer.id);
-        return fail(markError.message);
+        if (markError) return fail(markError.message);
+        return fail(env.expectUpdatedAt ? RECORD_CHANGED : "This lead has already been converted");
       }
       return ok({ customer });
     }),

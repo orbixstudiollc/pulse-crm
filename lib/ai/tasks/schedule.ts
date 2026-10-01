@@ -9,6 +9,7 @@ export const TASK_CAPS = {
   perOrg: 3,
   guestPerOrg: 1,
   perOrgRunsPerInvocation: 1,
+  guestRunsPerInvocation: 2,
   stepsPerRun: 4,
   maxOutputTokens: 1536,
   perTaskTimeoutMs: 30000,
@@ -182,12 +183,18 @@ function compareNumbers(a: number, b: number): number {
   return a < b ? -1 : 1
 }
 
-/** Least-recently-served first: last_run_at ascending (NULLs first), then next_run_at ascending. */
-export function orderForFairness<T extends { last_run_at: string | null; next_run_at: string | null }>(
-  tasks: T[],
-): T[] {
+/**
+ * Non-guest workspaces before guest workspaces (orgs in `guestOrgs`), then least-recently-served
+ * first: last_run_at ascending (NULLs first), then next_run_at ascending. Guest tasks never run
+ * before a paying workspace's, however long they have waited.
+ */
+export function orderForFairness<
+  T extends { last_run_at: string | null; next_run_at: string | null; organization_id?: string },
+>(tasks: T[], guestOrgs: ReadonlySet<string> = new Set()): T[] {
+  const guestRank = (t: T) => (t.organization_id !== undefined && guestOrgs.has(t.organization_id) ? 1 : 0)
   return [...tasks].sort(
     (a, b) =>
+      compareNumbers(guestRank(a), guestRank(b)) ||
       compareNumbers(timeOrNegInfinity(a.last_run_at), timeOrNegInfinity(b.last_run_at)) ||
       compareNumbers(timeOrNegInfinity(a.next_run_at), timeOrNegInfinity(b.next_run_at)),
   )

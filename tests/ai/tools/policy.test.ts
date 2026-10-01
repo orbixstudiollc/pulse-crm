@@ -55,7 +55,8 @@ describe("copilot tool allowlists", () => {
   it("pins the limits and the copilot-only lists", () => {
     expect(WRITE_FANOUT_PER_TURN).toBe(20);
     expect(LOW_RISK_WRITES).toEqual(["save_artifact", "save_memory", "draft_email"]);
-    expect(TASK_MODE_EXCLUDED).toEqual(["create_task"]);
+    // An unattended task run can neither create tasks nor persist workspace memory.
+    expect(TASK_MODE_EXCLUDED).toEqual(["create_task", "save_memory"]);
   });
 });
 

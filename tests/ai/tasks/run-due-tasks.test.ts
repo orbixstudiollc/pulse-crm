@@ -11,9 +11,11 @@ const fakes = vi.hoisted(() => ({
   resetWeeklyCounters: vi.fn(),
   verifyCronRequest: vi.fn(),
   createAdminClient: vi.fn(),
+  sharedCallerIsGuest: vi.fn(),
 }));
 
 vi.mock("@/lib/ai/tasks/run-task", () => ({ runCopilotTask: fakes.runCopilotTask }));
+vi.mock("@/lib/ai/shared-budget", () => ({ sharedCallerIsGuest: fakes.sharedCallerIsGuest }));
 vi.mock("@/lib/ai/approvals", () => ({ expireApprovals: fakes.expireApprovals }));
 vi.mock("@/lib/auth/guest-cleanup", () => ({ purgeExpiredGuests: fakes.purgeExpiredGuests }));
 vi.mock("@/lib/linkedin/rate-limiter", () => ({
@@ -100,6 +102,8 @@ const ranIds = () => fakes.runCopilotTask.mock.calls.map(([args]) => (args as { 
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Paying workspaces unless a test says otherwise ("guest-*" orgs in the guest tests).
+  fakes.sharedCallerIsGuest.mockImplementation(async (orgId: string) => orgId.startsWith("guest-"));
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(NOW);
 });
@@ -158,6 +162,36 @@ describe("runDueTasks", () => {
     expect(ranIds()).toEqual([a2.id, b1.id]);
     // a1 and a4 are over org-a's cap: not run, still due next time. a3 is not due at all.
     expect(result).toEqual({ attempted: 2, done: 2, skipped: 0, failed: 0, deferred: 2 });
+  });
+
+  it("serves a paying org's task before never-run guest tasks when there is room for one run", async () => {
+    runsTake30s();
+    const guestNever = task("guest-1", { last_run_at: null });
+    const paidYesterday = task("org-paid", { last_run_at: "2026-09-30T00:00:00.000Z" });
+    const { admin } = tasksAdmin([guestNever, paidYesterday]);
+
+    const result = await runDueTasks({ admin, now: NOW, deadlineAt: NOW.getTime() + 45_000 });
+
+    expect(fakes.sharedCallerIsGuest).toHaveBeenCalledWith("guest-1");
+    expect(fakes.sharedCallerIsGuest).toHaveBeenCalledWith("org-paid");
+    expect(ranIds()).toEqual([paidYesterday.id]);
+    expect(result).toMatchObject({ attempted: 1, deferred: 1 });
+  });
+
+  it("runs at most TASK_CAPS.guestRunsPerInvocation guest tasks across all guest orgs, after the paying orgs", async () => {
+    runsTake30s();
+    expect(TASK_CAPS.guestRunsPerInvocation).toBe(2);
+    const guests = [task("guest-1"), task("guest-2"), task("guest-3"), task("guest-4")];
+    const paid = task("org-paid", { last_run_at: "2026-09-30T00:00:00.000Z" });
+    const { admin } = tasksAdmin([...guests, paid]);
+
+    const result = await runDueTasks({ admin, now: NOW, deadlineAt: NOW.getTime() + 1_000_000 });
+
+    expect(ranIds()).toEqual([paid.id, guests[0].id, guests[1].id]);
+    // guest-3 and guest-4 are over the guest cap: deferred, still due next time.
+    expect(result).toEqual({ attempted: 3, done: 3, skipped: 0, failed: 0, deferred: 2 });
+    // Guest status is decided once per org.
+    expect(fakes.sharedCallerIsGuest).toHaveBeenCalledTimes(5);
   });
 
   it("selects active tasks whose next run has passed and drops ones isDue rejects", async () => {

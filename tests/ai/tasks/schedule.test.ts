@@ -131,6 +131,17 @@ describe('orderForFairness', () => {
     expect(orderForFairness(input).map((t) => t.id)).toEqual(['b', 'a'])
     expect(input.map((t) => t.id)).toEqual(['a', 'b'])
   })
+
+  it('puts every non-guest org task before any guest org task, fairness order within each group', () => {
+    const guestNever = { id: 'guest-never', organization_id: 'g', last_run_at: null, next_run_at: '2026-03-01T00:00:00Z' }
+    const guestOld = { id: 'guest-old', organization_id: 'g2', last_run_at: '2026-01-01T00:00:00Z', next_run_at: '2026-03-10T00:00:00Z' }
+    const paidToday = { id: 'paid-today', organization_id: 'p', last_run_at: '2026-03-10T00:00:00Z', next_run_at: '2026-03-10T00:00:00Z' }
+    const paidNever = { id: 'paid-never', organization_id: 'p2', last_run_at: null, next_run_at: '2026-03-10T00:00:00Z' }
+    const ordered = orderForFairness([guestNever, paidToday, guestOld, paidNever], new Set(['g', 'g2']))
+    expect(ordered.map((t) => t.id)).toEqual(['paid-never', 'paid-today', 'guest-never', 'guest-old'])
+    // Without guest orgs the never-run guest task would have come first.
+    expect(orderForFairness([guestNever, paidToday, guestOld, paidNever])[0].id).toBe('guest-never')
+  })
 })
 
 describe('TASK_CAPS', () => {
@@ -139,6 +150,7 @@ describe('TASK_CAPS', () => {
       perOrg: 3,
       guestPerOrg: 1,
       perOrgRunsPerInvocation: 1,
+      guestRunsPerInvocation: 2,
       stepsPerRun: 4,
       maxOutputTokens: 1536,
       perTaskTimeoutMs: 30000,

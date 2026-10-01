@@ -10,6 +10,8 @@ export interface MemoryBlockMemory {
   content: string;
   is_active: boolean;
   created_at?: string;
+  /** Who saved it; "copilot" items are labelled so the model knows it wrote them itself. */
+  source?: string | null;
 }
 
 export interface MemoryBlockIcp {
@@ -29,6 +31,7 @@ export interface MemoryBlockResult {
 const CHARS_PER_TOKEN = 3.5;
 const MAX_GUIDANCE_ITEMS = 10;
 const MAX_ITEM_CHARS = 600;
+const COPILOT_LABEL = "(saved by Copilot)";
 const OPEN_TAG = "<workspace_memory>";
 const CLOSE_TAG = "</workspace_memory>";
 const PREAMBLE =
@@ -68,6 +71,10 @@ function stringifyField(value: unknown): string {
   } catch {
     return "";
   }
+}
+
+function memoryToText(memory: MemoryBlockMemory): string {
+  return memory.source === "copilot" ? `${COPILOT_LABEL} ${memory.content}` : memory.content;
 }
 
 function icpToText(icp: MemoryBlockIcp): string {
@@ -113,10 +120,10 @@ export function buildMemoryBlock(args: {
     .map(({ memory }) => memory);
 
   const candidates = [
-    ...guidance.map((m) => m.content),
-    ...saved.map((m) => m.content),
+    ...guidance.map(memoryToText),
+    ...saved.map(memoryToText),
     ...icps.map(icpToText),
-    ...custom.map((m) => m.content),
+    ...custom.map(memoryToText),
   ]
     .map(toItemText)
     .filter((text) => text.length > 0);

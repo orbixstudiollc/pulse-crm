@@ -33,8 +33,30 @@ export function compact<T>(value: T): T {
   return value;
 }
 
+/** Most characters one tool result's text may carry, so a single result cannot flood the model's context. */
+export const MAX_RESULT_CHARS = 20_000;
+
+const TRUNCATION_NOTE =
+  `Result truncated to ${MAX_RESULT_CHARS} characters; "partial" is the start of the JSON. ` +
+  "Ask for less (a smaller limit, a narrower search or one record) to see the rest.";
+
+/**
+ * Keeps a result's JSON text within MAX_RESULT_CHARS. An oversized result becomes a still-valid
+ * JSON object { truncated: true, message, partial } (callers JSON.parse the text), with
+ * `partial` shortened until the whole object fits.
+ */
+function capResultText(json: string): string {
+  if (json.length <= MAX_RESULT_CHARS) return json;
+  let keep = MAX_RESULT_CHARS;
+  for (;;) {
+    const text = JSON.stringify({ truncated: true, message: TRUNCATION_NOTE, partial: json.slice(0, keep) });
+    if (text.length <= MAX_RESULT_CHARS) return text;
+    keep -= text.length - MAX_RESULT_CHARS;
+  }
+}
+
 export function ok(data: unknown): CallToolResult {
-  return { content: [{ type: "text", text: JSON.stringify(compact(data)) }] };
+  return { content: [{ type: "text", text: capResultText(JSON.stringify(compact(data))) }] };
 }
 
 export function fail(message: string): CallToolResult {
