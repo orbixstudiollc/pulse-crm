@@ -2,6 +2,7 @@ import { getMemoryItems, getCopilotTasks } from "@/lib/actions/copilot";
 import { listConversationMessages, listConversations } from "@/lib/actions/copilot-conversations";
 import { getArtifact, listArtifacts } from "@/lib/actions/copilot-artifacts";
 import { listPendingApprovalsAction } from "@/lib/actions/copilot-approvals";
+import { getCopilotSettings } from "@/lib/actions/copilot-settings";
 import { CopilotClient, type CopilotView } from "./client";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -20,12 +21,17 @@ export default async function CopilotPage({ searchParams }: { searchParams: Prom
   const requestedArtifact = single(params.artifact);
   const requestedView = single(params.view);
 
-  const [conversations, memoryResult, tasksResult, pending, artifacts] = await Promise.all([
+  const [conversations, memoryResult, tasksResult, pending, artifacts, settings] = await Promise.all([
     listConversations(),
     getMemoryItems(),
     getCopilotTasks(),
     listPendingApprovalsAction(),
     listArtifacts(),
+    // The settings view shows an error state when this cannot be read; it must not break the chat page.
+    getCopilotSettings().catch((error) => {
+      console.error("Copilot: loading settings failed:", error);
+      return null;
+    }),
   ]);
 
   // ?c=<id> opens that chat if it is one of this user's; a ?prompt= starts a new one instead.
@@ -64,6 +70,7 @@ export default async function CopilotPage({ searchParams }: { searchParams: Prom
       initialPending={pending}
       initialArtifacts={initialArtifacts}
       initialArtifactId={initialArtifactId}
+      initialSettings={settings}
       initialView={view}
       initialPrompt={prompt}
       approvalsOpen={approvalsOpen}

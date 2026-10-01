@@ -15,6 +15,7 @@ import { PendingApprovals, type PendingApproval } from "@/components/features/Co
 import { MemoryView } from "@/components/features/Copilot/MemoryView";
 import { TasksView } from "@/components/features/Copilot/TasksView";
 import { SettingsView } from "@/components/features/Copilot/SettingsView";
+import type { CopilotSettings } from "@/lib/actions/copilot-settings";
 import type { UndoInfo } from "@/components/features/Copilot/UndoButton";
 
 type Conversation = Awaited<ReturnType<typeof listConversations>>[number];
@@ -35,6 +36,7 @@ interface CopilotClientProps {
   initialPending: PendingApproval[];
   initialArtifacts: Artifact[];
   initialArtifactId: string | null;
+  initialSettings: CopilotSettings | null;
   initialView: CopilotView;
   /** Deep link from Overview's ask box: ?prompt=<text> starts a new chat with it. */
   initialPrompt: string | null;
@@ -59,6 +61,7 @@ export function CopilotClient({
   initialPending,
   initialArtifacts,
   initialArtifactId,
+  initialSettings,
   initialView,
   initialPrompt,
   approvalsOpen,
@@ -115,6 +118,14 @@ export function CopilotClient({
     } catch (error) {
       console.error("Copilot: refreshing the chat list failed:", error);
     }
+  }, []);
+
+  // Chat history was cleared in Settings: empty the list and leave any open chat for a fresh one.
+  const handleHistoryCleared = useCallback(() => {
+    openRequest.current++;
+    setConversations([]);
+    setPrompt(null);
+    setChat((current) => ({ id: null, messages: [], key: current.key + 1 }));
   }, []);
 
   const handleUndo = useCallback((info: UndoInfo) => {
@@ -221,7 +232,7 @@ export function CopilotClient({
         ) : view === "tasks" ? (
           <TasksView tasks={tasks} setTasks={setTasks} />
         ) : (
-          <SettingsView />
+          <SettingsView initial={initialSettings} onHistoryCleared={handleHistoryCleared} />
         )}
       </div>
     </div>
