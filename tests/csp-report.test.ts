@@ -122,6 +122,13 @@ describe("POST /api/csp-report", () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
+  it("logs at most 10 violations per request", async () => {
+    const batch = JSON.stringify(Array.from({ length: 15 }, () => JSON.parse(reportingApi)[0]));
+    const res = await POST(post(batch, "application/reports+json"));
+    expect(res.status).toBe(204);
+    expect(warn).toHaveBeenCalledTimes(10);
+  });
+
   it("needs no cookies or auth", async () => {
     const res = await POST(post(legacy, "application/csp-report"));
     expect(res.status).toBe(204);

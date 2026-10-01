@@ -10,6 +10,9 @@ const KINDS = {
   "application/reports+json": "reports+json",
 } as const;
 
+// A Reporting API batch can carry many violations; log at most this many per request.
+const MAX_LOGGED_VIOLATIONS = 10;
+
 function empty(status: number): Response {
   return new Response(null, { status });
 }
@@ -30,7 +33,7 @@ export async function POST(req: Request): Promise<Response> {
     return empty(400);
   }
 
-  for (const v of parseCspReports(body, kind)) {
+  for (const v of parseCspReports(body, kind).slice(0, MAX_LOGGED_VIOLATIONS)) {
     console.warn(`[csp-report] directive=${v.directive} blocked=${v.blocked} path=${v.documentPath}`);
   }
   return empty(204);
