@@ -461,7 +461,7 @@ const SAMPLE_INPUTS: Record<string, Record<string, unknown>> = {
 function exemption(chain: Chain): string | null {
   if (chain.table === "organizations" && chain.eqs.some(([c, v]) => c === "id" && v === ORG)) return "the org row itself";
   if (chain.table === "profiles" && chain.op === "select") return "note author lookup by the caller's own user id";
-  const childTables = ["lead_notes", "lead_activities", "deal_notes", "deal_activities", "customer_notes", "customer_activities"];
+  const childTables = ["lead_score_history", "lead_notes", "lead_activities", "deal_notes", "deal_activities", "customer_notes", "customer_activities"];
   if (childTables.includes(chain.table)) return "child rows keyed by a parent id the handler verified in-org first";
   return null;
 }
