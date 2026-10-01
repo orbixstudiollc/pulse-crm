@@ -4,7 +4,7 @@ A Next.js 16 (App Router) CRM backed by Supabase, with AI features (Anthropic, O
 
 ## Requirements
 
-- Node.js 20 or newer (tested on Node 22) and npm. The repo ships a `package-lock.json`, so use npm.
+- Node.js 22 (pinned in `.nvmrc` and `package.json` `engines`; run `nvm use` if you use nvm) and npm. The repo ships a `package-lock.json`, so use npm.
 - A Supabase project. The app will not start without one: every request goes through `middleware.ts`, which builds a Supabase client and returns a 500 if the Supabase URL or anon key is missing.
 
 ## Local setup
