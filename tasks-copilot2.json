@@ -49,7 +49,8 @@
       "id": "T4",
       "title": "Database types for new tables and columns",
       "files": [
-        "types/database.ts"
+        "types/database.ts",
+        "lib/ai/memory-block.ts"
       ],
       "interface": "Add Row/Insert/Update for copilot_approvals (tool_call_id: string; approval_id: string | null; ...), copilot_artifacts, notifications; add parts: Json | null, message_id: string | null, seq: number | null to copilot_messages; page_key: string | null, turn_lock_until: string | null to copilot_conversations; copilot_always_allow: Json to ai_settings; source and type union including 'guidance' to copilot_memory; prompt, locked_at, last_error, last_artifact_id to copilot_tasks. Export string unions: CopilotApprovalStatus, CopilotArtifactKind, NotificationKind, CopilotMemoryType.",
       "verify": "npx tsc --noEmit && grep -q \"copilot_approvals\" types/database.ts && grep -q \"copilot_artifacts\" types/database.ts && grep -q \"notifications:\" types/database.ts && grep -q \"tool_call_id\" types/database.ts",
