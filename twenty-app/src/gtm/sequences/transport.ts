@@ -60,4 +60,7 @@ export type OutreachMailer = {
   mailboxes: MailboxPicker;
   usage?: MailboxUsageRecorder;
   sender?: { name?: string | null };
+  // Public URL of the track-sequence-open route; when set, sent HTML gets a
+  // 1x1 pixel so opens are counted per variant.
+  openTrackingUrl?: string | null;
 };

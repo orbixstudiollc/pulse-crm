@@ -1,5 +1,6 @@
 // Runs every due sequence step once. Used by the sendSequenceSteps cron.
 
+import { chooseVariant, openPixelHtml } from 'src/gtm/sequences/ab-testing';
 import { transition } from 'src/gtm/sequences/enrollment-state';
 import {
   buildTemplateVariables,
@@ -24,6 +25,7 @@ export type SendDueStepsSummary = {
   finished: number;
   bounced: number;
   deferred: number;
+  awaitingApproval: number;
   failed: number;
   skipped: number;
   errors: { enrollmentId: string; error: string }[];
@@ -53,10 +55,12 @@ export const sendDueSteps = async ({
     finished: 0,
     bounced: 0,
     deferred: 0,
+    awaitingApproval: 0,
     failed: 0,
     skipped: 0,
     errors: [],
   };
+  const winnersMarked = new Set<string>();
 
   const due = await store.findDueEnrollments(now, limit);
   summary.due = due.length;
@@ -126,9 +130,26 @@ export const sendDueSteps = async ({
         summary.skipped += 1;
         continue;
       }
-      if (!step.template) {
+      if (sequence.requireApprovedOpener && enrollment.openerStatus !== 'APPROVED') {
+        // Wait for a person to review the opener; look again in an hour.
+        summary.awaitingApproval += 1;
         await store.updateEnrollment(enrollment.id, {
-          lastError: `Step ${enrollment.currentStep} has no email template`,
+          lastError: 'Waiting for an approved opener',
+          nextSendAt: retryAt(now).toISOString(),
+        });
+        continue;
+      }
+
+      const { variant, byWinner } = chooseVariant(step.variants ?? [], enrollment.id, step);
+      if (variant && byWinner && !variant.isWinner && !winnersMarked.has(variant.id)) {
+        winnersMarked.add(variant.id);
+        await store.setVariantWinner(step.id, variant.id);
+      }
+      const subjectTemplate = variant?.subject?.trim() ? variant.subject : step.template?.subject;
+      const bodyTemplate = variant?.body?.trim() ? variant.body : step.template?.body;
+      if (!bodyTemplate?.trim()) {
+        await store.updateEnrollment(enrollment.id, {
+          lastError: `Step ${enrollment.currentStep} has no email template or variant`,
           nextSendAt: retryAt(now).toISOString(),
         });
         summary.failed += 1;
@@ -149,16 +170,24 @@ export const sendDueSteps = async ({
         continue;
       }
 
-      const vars = buildTemplateVariables(person, { name: mailer.sender?.name, email: from }, now);
-      const subject = renderTemplate(step.template.subject, vars, { defaultFallback: '' }).text;
-      const text = renderTemplate(step.template.body, vars).text;
+      const vars = buildTemplateVariables(
+        person,
+        { name: mailer.sender?.name, email: from },
+        now,
+        enrollment,
+      );
+      const subject = renderTemplate(subjectTemplate, vars).text;
+      const text = renderTemplate(bodyTemplate, vars).text;
+      const pixel = mailer.openTrackingUrl
+        ? `\n${openPixelHtml(mailer.openTrackingUrl, enrollment.id, variant?.id ?? null)}`
+        : '';
 
       const result = await mailer.transport.send({
         from,
         to,
         subject,
         text,
-        html: textToHtml(text),
+        html: textToHtml(text) + pixel,
         enrollmentId: enrollment.id,
         sequenceId: sequence.id,
         stepNumber: enrollment.currentStep,
@@ -167,7 +196,13 @@ export const sendDueSteps = async ({
       if (result.ok) {
         summary.sent += 1;
         await mailer.usage?.recordSend(from, now);
-        await finish(enrollment, { ...advance(), mailboxEmail: from, lastError: null });
+        await finish(enrollment, {
+          ...advance(),
+          mailboxEmail: from,
+          lastError: null,
+          lastVariantId: variant?.id ?? null,
+        });
+        if (variant) await store.incrementVariantStats(variant.id, { sent: 1 });
         if (enrollment.campaignId) await store.incrementCampaignStats(enrollment.campaignId, { sent: 1 });
       } else if (result.bounced) {
         summary.bounced += 1;

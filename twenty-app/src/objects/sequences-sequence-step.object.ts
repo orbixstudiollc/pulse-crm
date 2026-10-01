@@ -1,7 +1,7 @@
 import { defineObject, FieldType, OnDeleteAction } from 'twenty-sdk/define';
 
 import * as ID from 'src/constants/sequences-ids';
-import { manyToOne } from 'src/gtm/sequences/relation-fields';
+import { manyToOne, oneToMany } from 'src/gtm/sequences/relation-fields';
 import { STEP_TYPES, toOptions } from 'src/gtm/sequences/values';
 
 // One step of a sequence. EMAIL steps send their template; TASK steps create a
@@ -56,6 +56,31 @@ export default defineObject({
       label: 'Task instructions',
       icon: 'IconChecklist',
     },
+    {
+      universalIdentifier: ID.SEQUENCE_STEP_AUTO_WINNER_UNIVERSAL_IDENTIFIER,
+      type: FieldType.BOOLEAN,
+      name: 'autoPickWinner',
+      label: 'Auto-pick winner',
+      icon: 'IconTrophy',
+      description: 'Once every variant has the minimum sends, send only the best reply rate',
+      defaultValue: false,
+    },
+    {
+      universalIdentifier: ID.SEQUENCE_STEP_WINNER_MIN_SENDS_UNIVERSAL_IDENTIFIER,
+      type: FieldType.NUMBER,
+      name: 'winnerMinSends',
+      label: 'Min sends per variant',
+      icon: 'IconUsers',
+      defaultValue: 50,
+    },
+    oneToMany({
+      universalIdentifier: ID.SEQUENCE_STEP_VARIANTS_UNIVERSAL_IDENTIFIER,
+      name: 'variants',
+      label: 'A/B variants',
+      icon: 'IconAB',
+      targetObject: ID.VARIANT_OBJECT_UNIVERSAL_IDENTIFIER,
+      targetField: ID.VARIANT_STEP_UNIVERSAL_IDENTIFIER,
+    }),
     manyToOne({
       universalIdentifier: ID.SEQUENCE_STEP_SEQUENCE_UNIVERSAL_IDENTIFIER,
       name: 'sequence',

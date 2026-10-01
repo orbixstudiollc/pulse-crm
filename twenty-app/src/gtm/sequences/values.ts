@@ -47,6 +47,12 @@ export const INBOX_ITEM_STATUSES = [
   { label: 'Archived', value: 'ARCHIVED', color: 'gray' },
 ] as const;
 
+export const OPENER_STATUSES = [
+  { label: 'Draft', value: 'DRAFT', color: 'yellow' },
+  { label: 'Approved', value: 'APPROVED', color: 'green' },
+] as const;
+
+export type OpenerStatus = (typeof OPENER_STATUSES)[number]['value'];
 export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[number]['value'];
 export type SequenceStatus = (typeof SEQUENCE_STATUSES)[number]['value'];
 export type StepType = (typeof STEP_TYPES)[number]['value'];

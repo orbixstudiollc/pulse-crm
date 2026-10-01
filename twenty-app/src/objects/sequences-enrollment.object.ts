@@ -2,7 +2,7 @@ import { defineObject, FieldType, OnDeleteAction, STANDARD_OBJECT } from 'twenty
 
 import * as ID from 'src/constants/sequences-ids';
 import { manyToOne, oneToMany } from 'src/gtm/sequences/relation-fields';
-import { ENROLLMENT_STATUSES, toOptions } from 'src/gtm/sequences/values';
+import { ENROLLMENT_STATUSES, OPENER_STATUSES, toOptions } from 'src/gtm/sequences/values';
 
 // A person going through a sequence. The sendSequenceSteps cron picks up
 // ACTIVE enrollments whose next send is due; a reply or bounce ends them.
@@ -109,6 +109,55 @@ export default defineObject({
       name: 'lastError',
       label: 'Last error',
       icon: 'IconAlertTriangle',
+    },
+    {
+      universalIdentifier: ID.ENROLLMENT_PERSONALIZED_OPENER_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'personalizedOpener',
+      label: 'Opener',
+      icon: 'IconSparkles',
+      description: 'Used as {{opener}} in templates',
+      universalSettings: { displayedMaxRows: 3 },
+    },
+    {
+      universalIdentifier: ID.ENROLLMENT_OPENER_STATUS_UNIVERSAL_IDENTIFIER,
+      type: FieldType.SELECT,
+      name: 'openerStatus',
+      label: 'Opener status',
+      icon: 'IconShieldCheck',
+      options: toOptions(OPENER_STATUSES),
+    },
+    {
+      universalIdentifier: ID.ENROLLMENT_CUSTOM_FIRST_LINE_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'customFirstLine',
+      label: 'Custom first line',
+      icon: 'IconTextCaption',
+      description: 'Used as {{firstLine}}; falls back to the opener',
+    },
+    {
+      universalIdentifier: ID.ENROLLMENT_CUSTOM_PS_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'customPs',
+      label: 'Custom P.S.',
+      icon: 'IconTextPlus',
+      description: 'Used as {{ps}}',
+    },
+    {
+      universalIdentifier: ID.ENROLLMENT_CUSTOM_VARIABLES_UNIVERSAL_IDENTIFIER,
+      type: FieldType.RAW_JSON,
+      name: 'customVariables',
+      label: 'Custom variables',
+      icon: 'IconBraces',
+      description: 'Extra {{key}} values for this person, e.g. {"painPoint": "slow onboarding"}',
+    },
+    {
+      universalIdentifier: ID.ENROLLMENT_LAST_VARIANT_ID_UNIVERSAL_IDENTIFIER,
+      type: FieldType.TEXT,
+      name: 'lastVariantId',
+      label: 'Last A/B variant',
+      icon: 'IconAB',
+      description: 'Variant of the last email sent; replies are credited to it',
     },
     oneToMany({
       universalIdentifier: ID.ENROLLMENT_INBOX_ITEMS_UNIVERSAL_IDENTIFIER,

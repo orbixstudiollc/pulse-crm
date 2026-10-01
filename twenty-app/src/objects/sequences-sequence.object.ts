@@ -48,6 +48,15 @@ export default defineObject({
       description: 'Count delays in weekdays and never send on Saturday or Sunday (UTC)',
       defaultValue: true,
     },
+    {
+      universalIdentifier: ID.SEQUENCE_REQUIRE_APPROVED_OPENER_UNIVERSAL_IDENTIFIER,
+      type: FieldType.BOOLEAN,
+      name: 'requireApprovedOpener',
+      label: 'Require approved opener',
+      icon: 'IconShieldCheck',
+      description: 'Hold each email until the enrollment opener is approved',
+      defaultValue: false,
+    },
     oneToMany({
       universalIdentifier: ID.SEQUENCE_STEPS_UNIVERSAL_IDENTIFIER,
       name: 'steps',

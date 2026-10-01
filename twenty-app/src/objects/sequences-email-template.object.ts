@@ -36,7 +36,7 @@ export default defineObject({
       name: 'body',
       label: 'Body',
       icon: 'IconAlignLeft',
-      description: 'Plain text. Variables: {{firstName}}, {{lastName}}, {{company}}, {{jobTitle}}, {{city}}, {{website}}, {{senderName}}. Fallback: {{firstName|there}}',
+      description: 'Plain text. Variables: {{firstName}}, {{lastName}}, {{company}}, {{jobTitle}}, {{city}}/{{location}}, {{industry}}, {{website}}, {{senderName}}, {{opener}}, {{firstLine}}, {{ps}}, plus custom per-enrollment keys. Fallback: {{opener|Hope your week is going well.}}',
       universalSettings: { displayedMaxRows: 12 },
     },
     {

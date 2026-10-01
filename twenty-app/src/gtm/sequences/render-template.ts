@@ -104,11 +104,33 @@ export type PersonForTemplate = {
   city?: string | null;
   company?: {
     name?: string | null;
+    industry?: string | null;
     domainName?: { primaryLinkUrl?: string | null } | null;
   } | null;
 };
 
 export type SenderForTemplate = { name?: string | null; email?: string | null };
+
+// Per-enrollment personalisation: the opener, a custom first line / P.S. and
+// free key/values (custom keys can override the built-in ones).
+export type EnrollmentForTemplate = {
+  personalizedOpener?: string | null;
+  customFirstLine?: string | null;
+  customPs?: string | null;
+  customVariables?: Record<string, unknown> | null;
+};
+
+const customValues = (custom: Record<string, unknown> | null | undefined): TemplateVariables => {
+  const out: TemplateVariables = {};
+  if (!custom || typeof custom !== 'object' || Array.isArray(custom)) return out;
+  for (const [k, v] of Object.entries(custom)) {
+    if (!/^[A-Za-z_]\w*$/.test(k)) continue;
+    if ((typeof v === 'string' && v.trim()) || typeof v === 'number' || typeof v === 'boolean') {
+      out[k] = typeof v === 'string' ? v.trim() : v;
+    }
+  }
+  return out;
+};
 
 const domainOf = (url: string | null | undefined) =>
   (url ?? '').replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/.*$/, '');
@@ -117,11 +139,18 @@ export const buildTemplateVariables = (
   person: PersonForTemplate,
   sender: SenderForTemplate = {},
   now: Date = new Date(),
+  enrollment: EnrollmentForTemplate = {},
 ): TemplateVariables => {
   const firstName = person.name?.firstName?.trim() ?? '';
   const lastName = person.name?.lastName?.trim() ?? '';
   const company = person.company?.name?.trim() ?? '';
-  return {
+  const opener = enrollment.personalizedOpener?.trim() ?? '';
+  const builtIn: TemplateVariables = {
+    opener,
+    personalizedOpener: opener,
+    firstLine: enrollment.customFirstLine?.trim() || opener,
+    ps: enrollment.customPs?.trim() ?? '',
+    industry: person.company?.industry?.trim() ?? '',
     firstName,
     lastName,
     fullName: [firstName, lastName].filter(Boolean).join(' '),
@@ -144,4 +173,5 @@ export const buildTemplateVariables = (
     }),
     dayOfWeek: now.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' }),
   };
+  return { ...builtIn, ...customValues(enrollment.customVariables) };
 };

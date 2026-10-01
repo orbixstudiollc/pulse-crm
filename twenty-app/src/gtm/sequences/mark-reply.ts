@@ -78,6 +78,10 @@ export const markReply = async ({
     if (kind === 'REPLY' && enrollment.campaignId) {
       await store.incrementCampaignStats(enrollment.campaignId, { replied: 1 });
     }
+    // Credit the A/B variant of the last email they got.
+    if (kind === 'REPLY' && enrollment.lastVariantId) {
+      await store.incrementVariantStats(enrollment.lastVariantId, { replied: 1 });
+    }
   }
 
   // A reply is a buying signal; never downgrade an existing customer.

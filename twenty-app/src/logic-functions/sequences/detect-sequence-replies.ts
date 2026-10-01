@@ -2,7 +2,7 @@ import { CoreApiClient } from 'twenty-client-sdk/core';
 import { defineLogicFunction, type DatabaseEventPayload } from 'twenty-sdk/define';
 
 import { DETECT_SEQUENCE_REPLIES_FUNCTION_UNIVERSAL_IDENTIFIER } from 'src/constants/sequences-ids';
-import { fetchSyncedMessage, toInboundEmail } from 'src/gtm/sequences/inbound';
+import { fetchSyncedMessage, isRole, toInboundEmail } from 'src/gtm/sequences/inbound';
 import { markReply } from 'src/gtm/sequences/mark-reply';
 import { createTwentyStore, type GraphqlClient } from 'src/gtm/sequences/twenty-store';
 
@@ -13,7 +13,7 @@ type ParticipantRecord = { role?: string | null; messageId?: string | null };
 // is written after the message itself.
 const handler = async (event: DatabaseEventPayload) => {
   const after = (event.properties as { after?: ParticipantRecord }).after;
-  if (after?.role !== 'from' || !after.messageId) return { ok: true, skipped: 'not a sender' };
+  if (!isRole(after?.role, 'from') || !after?.messageId) return { ok: true, skipped: 'not a sender' };
 
   const client = new CoreApiClient() as unknown as GraphqlClient;
   const message = await fetchSyncedMessage(client, after.messageId);

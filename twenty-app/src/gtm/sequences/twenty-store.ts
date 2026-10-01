@@ -20,7 +20,11 @@ import {
   type SequenceRecord,
   type SequenceStore,
   type StepRecord,
+  type VariantRecord,
+  type VariantStatsDelta,
 } from 'src/gtm/sequences/store';
+import { rate } from 'src/gtm/sequences/ab-testing';
+import type { OpenerContext } from 'src/gtm/sequences/openers';
 import type { LeadStatus } from 'src/gtm/lead-values';
 
 export type GraphqlClient = {
@@ -38,7 +42,8 @@ const PERSON_SELECTION = {
   jobTitle: true,
   city: true,
   leadStatus: true,
-  company: { name: true, domainName: { primaryLinkUrl: true } },
+  // company.industry comes from the lead-finder branch (leadfinder-company-industry.field.ts).
+  company: { name: true, industry: true, domainName: { primaryLinkUrl: true } },
 };
 
 const ENROLLMENT_SELECTION = {
@@ -54,6 +59,25 @@ const ENROLLMENT_SELECTION = {
   stopReason: true,
   mailboxEmail: true,
   lastError: true,
+  lastVariantId: true,
+  personalizedOpener: true,
+  customFirstLine: true,
+  customPs: true,
+  openerStatus: true,
+  customVariables: true,
+};
+
+const VARIANT_SELECTION = {
+  id: true,
+  name: true,
+  subject: true,
+  body: true,
+  weight: true,
+  isActive: true,
+  isWinner: true,
+  sent: true,
+  opened: true,
+  replied: true,
 };
 
 type RawEnrollment = Omit<EnrollmentRecord, 'currentStep'> & { currentStep: number | null };
@@ -131,6 +155,7 @@ export const createTwentyStore = (
             name: true,
             status: true,
             businessDaysOnly: true,
+            requireApprovedOpener: true,
             steps: {
               __args: { first: 100 },
               edges: {
@@ -141,6 +166,9 @@ export const createTwentyStore = (
                   stepType: true,
                   instructions: true,
                   template: { id: true, subject: true, body: true },
+                  autoPickWinner: true,
+                  winnerMinSends: true,
+                  variants: { __args: { first: 20 }, edges: { node: VARIANT_SELECTION } },
                 },
               },
             },
@@ -158,6 +186,9 @@ export const createTwentyStore = (
         type: s.stepType ?? null,
         instructions: s.instructions ?? null,
         template: s.template ?? null,
+        autoPickWinner: s.autoPickWinner ?? false,
+        winnerMinSends: s.winnerMinSends ?? null,
+        variants: nodes<VariantRecord>(s.variants),
       }),
     );
     return { ...raw, steps };
@@ -248,5 +279,122 @@ export const createTwentyStore = (
       },
     });
     return taskId;
+  },
+
+  async getEnrollmentsByIds(ids: string[]) {
+    if (ids.length === 0) return [];
+    const res = await client.query({
+      sequenceEnrollments: {
+        __args: { filter: { id: { in: ids } }, first: ids.length },
+        edges: { node: ENROLLMENT_SELECTION },
+      },
+    });
+    return nodes<RawEnrollment>(res.sequenceEnrollments).map(toEnrollment);
+  },
+
+  async incrementVariantStats(variantId: string, delta: VariantStatsDelta) {
+    const res = await client.query({
+      sequenceStepVariants: {
+        __args: { filter: { id: { eq: variantId } }, first: 1 },
+        edges: { node: { id: true, sent: true, opened: true, replied: true } },
+      },
+    });
+    const current = nodes<Record<string, number | null>>(res.sequenceStepVariants)[0];
+    if (!current) return;
+    const next = {
+      sent: (current.sent ?? 0) + (delta.sent ?? 0),
+      opened: (current.opened ?? 0) + (delta.opened ?? 0),
+      replied: (current.replied ?? 0) + (delta.replied ?? 0),
+    };
+    await client.mutation({
+      updateSequenceStepVariant: {
+        __args: {
+          id: variantId,
+          data: {
+            ...next,
+            replyRate: rate(next.replied, next.sent),
+            openRate: rate(next.opened, next.sent),
+          },
+        },
+        id: true,
+      },
+    });
+  },
+
+  async setVariantWinner(stepId: string, variantId: string) {
+    const res = await client.query({
+      sequenceStepVariants: {
+        __args: { filter: { stepId: { eq: stepId } }, first: 50 },
+        edges: { node: { id: true, isWinner: true } },
+      },
+    });
+    for (const v of nodes<{ id: string; isWinner: boolean | null }>(res.sequenceStepVariants)) {
+      const isWinner = v.id === variantId;
+      if (Boolean(v.isWinner) === isWinner) continue;
+      await client.mutation({
+        updateSequenceStepVariant: { __args: { id: v.id, data: { isWinner } }, id: true },
+      });
+    }
+  },
+
+  async variantExists(variantId: string) {
+    const res = await client.query({
+      sequenceStepVariants: {
+        __args: { filter: { id: { eq: variantId } }, first: 1 },
+        edges: { node: { id: true } },
+      },
+    });
+    return nodes(res.sequenceStepVariants).length > 0;
+  },
+
+  async getOpenerContexts(personIds: string[]) {
+    const out = new Map<string, OpenerContext>();
+    if (personIds.length === 0) return out;
+    const base = { ...PERSON_SELECTION, aiSummary: true };
+    // Website visits and notes come from other branches / schema versions;
+    // fall back to the basic facts if the richer query is rejected.
+    const rich = {
+      ...base,
+      websiteVisits: {
+        __args: { first: 5, orderBy: [{ visitedAt: 'DescNullsLast' }] },
+        edges: { node: { url: true } },
+      },
+      noteTargets: {
+        __args: { first: 5 },
+        edges: { node: { note: { title: true, bodyV2: { markdown: true } } } },
+      },
+    };
+    const run = (node: Record<string, unknown>) =>
+      client.query({
+        people: {
+          __args: { filter: { id: { in: personIds } }, first: personIds.length },
+          edges: { node },
+        },
+      });
+    let res: any;
+    try {
+      res = await run(rich);
+    } catch {
+      res = await run(base);
+    }
+    for (const p of nodes<any>(res.people)) {
+      out.set(p.id, {
+        firstName: p.name?.firstName,
+        lastName: p.name?.lastName,
+        jobTitle: p.jobTitle,
+        city: p.city,
+        company: p.company?.name,
+        industry: p.company?.industry,
+        website: p.company?.domainName?.primaryLinkUrl,
+        aiSummary: p.aiSummary,
+        recentPages: nodes<{ url: string | null }>(p.websiteVisits)
+          .map((v) => v.url ?? '')
+          .filter(Boolean),
+        notes: nodes<{ note?: { title?: string; bodyV2?: { markdown?: string } } }>(p.noteTargets)
+          .map((t) => [t.note?.title, t.note?.bodyV2?.markdown].filter(Boolean).join(': '))
+          .filter(Boolean),
+      });
+    }
+    return out;
   },
 });

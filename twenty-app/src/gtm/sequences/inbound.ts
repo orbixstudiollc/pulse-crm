@@ -27,6 +27,9 @@ export type SyncedMessage = {
 const AUTOMATED_SENDER = /^(mailer-daemon|postmaster|no-?reply|do-?not-?reply|bounces?)([+@.]|$)/i;
 const AUTO_REPLY_SUBJECT = /^(auto(matic)?[ -]?reply|out of (the )?office|automatic reply|abwesenheit)/i;
 
+export const isRole = (role: string | null | undefined, wanted: 'from' | 'to') =>
+  (role ?? '').toLowerCase() === wanted;
+
 export const isAutomatedSender = (handle: string | null | undefined) =>
   AUTOMATED_SENDER.test((handle ?? '').trim());
 
@@ -36,11 +39,12 @@ export const isAutoReply = (subject: string | null | undefined) =>
 // Out-of-office and bounce notifications must not stop a sequence or mark a
 // lead HOT, so they return null.
 export const toInboundEmail = (message: SyncedMessage): InboundEmail | null => {
-  const from = message.participants.find((p) => p.role === 'from');
+  // Roles are stored lowercase today; the SDK enum is uppercase, so accept both.
+  const from = message.participants.find((p) => isRole(p.role, 'from'));
   if (!from || from.workspaceMemberId) return null;
   if (isAutomatedSender(from.handle) || isAutoReply(message.subject)) return null;
   if (!from.personId && !from.handle) return null;
-  const to = message.participants.find((p) => p.role === 'to');
+  const to = message.participants.find((p) => isRole(p.role, 'to'));
   return {
     personId: from.personId ?? null,
     fromEmail: from.handle?.trim().toLowerCase() ?? null,

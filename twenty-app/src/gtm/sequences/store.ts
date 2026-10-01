@@ -3,9 +3,11 @@
 // Twenty's GraphQL API.
 
 import type { EnrollmentState } from 'src/gtm/sequences/enrollment-state';
+import type { OpenerContext } from 'src/gtm/sequences/openers';
 import type { PersonForTemplate } from 'src/gtm/sequences/render-template';
 import type {
   InboxItemKind,
+  OpenerStatus,
   SequenceStatus,
   StepType,
 } from 'src/gtm/sequences/values';
@@ -16,6 +18,19 @@ export type PersonRecord = PersonForTemplate & {
   leadStatus?: LeadStatus | null;
 };
 
+export type VariantRecord = {
+  id: string;
+  name?: string | null;
+  subject: string | null;
+  body: string | null;
+  weight: number | null;
+  isActive: boolean | null;
+  isWinner?: boolean | null;
+  sent: number | null;
+  opened?: number | null;
+  replied: number | null;
+};
+
 export type StepRecord = {
   id: string;
   order: number | null;
@@ -23,6 +38,9 @@ export type StepRecord = {
   type: StepType | null;
   instructions?: string | null;
   template?: { id: string; subject: string | null; body: string | null } | null;
+  variants?: VariantRecord[];
+  autoPickWinner?: boolean | null;
+  winnerMinSends?: number | null;
 };
 
 export type SequenceRecord = {
@@ -30,6 +48,7 @@ export type SequenceRecord = {
   name: string | null;
   status: SequenceStatus | null;
   businessDaysOnly: boolean | null;
+  requireApprovedOpener?: boolean | null;
   steps: StepRecord[];
 };
 
@@ -40,6 +59,12 @@ export type EnrollmentRecord = EnrollmentState & {
   campaignId?: string | null;
   mailboxEmail?: string | null;
   lastError?: string | null;
+  lastVariantId?: string | null;
+  personalizedOpener?: string | null;
+  customFirstLine?: string | null;
+  customPs?: string | null;
+  openerStatus?: OpenerStatus | null;
+  customVariables?: Record<string, unknown> | null;
 };
 
 export type NewEnrollment = EnrollmentState & {
@@ -60,8 +85,15 @@ export type EnrollmentPatch = Partial<
     | 'stopReason'
     | 'mailboxEmail'
     | 'lastError'
+    | 'lastVariantId'
+    | 'personalizedOpener'
+    | 'customFirstLine'
+    | 'customPs'
+    | 'openerStatus'
   >
 >;
+
+export type VariantStatsDelta = Partial<Record<'sent' | 'opened' | 'replied', number>>;
 
 export type CampaignStatsDelta = Partial<
   Record<'enrolled' | 'sent' | 'replied' | 'meetings', number>
@@ -103,6 +135,15 @@ export interface SequenceStore {
   createInboxItem(data: NewInboxItem): Promise<string>;
 
   createTask(data: NewTask): Promise<string>;
+
+  getEnrollmentsByIds(ids: string[]): Promise<EnrollmentRecord[]>;
+  incrementVariantStats(variantId: string, delta: VariantStatsDelta): Promise<void>;
+  // Flags this variant as the step's winner (and clears the flag on siblings).
+  setVariantWinner(stepId: string, variantId: string): Promise<void>;
+  variantExists(variantId: string): Promise<boolean>;
+
+  // Facts for opener generation, keyed by person id.
+  getOpenerContexts(personIds: string[]): Promise<Map<string, OpenerContext>>;
 }
 
 const PATCH_KEYS = [
@@ -114,6 +155,11 @@ const PATCH_KEYS = [
   'stopReason',
   'mailboxEmail',
   'lastError',
+  'lastVariantId',
+  'personalizedOpener',
+  'customFirstLine',
+  'customPs',
+  'openerStatus',
 ] as const;
 
 // Keeps only writable enrollment fields, so a whole state object can be passed
