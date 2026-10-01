@@ -620,6 +620,29 @@
       "interface": "(C-H2 HIGH) A '\"' in the middle of an unquoted field (e.g. Acme 24\" monitor) switches the parser into quoted mode and swallows following lines, up to the rest of a 1 GB file. Treat '\"' as an opening quote only at the start of a field (field empty or whitespace-only so far); elsewhere keep it literal. Cap a single field at IMPORT_MAX_CELL_CHARS*2 and throw a clear error 'Row N: unterminated quote' (track record number). Tests: mid-field quote stays literal and row count is right; unterminated quote errors instead of growing. (C-H3 HIGH) Cancel is shared across runs and not tied to unmount: make cancellation per run (a run id + per-run AbortController or isCancelled closure) and add an unmount cleanup that cancels the current run; a new run never un-cancels an old one. (C-M) Batch cap must be in BYTES not UTF-16 chars: estimate encoded size (TextEncoder or a cheap estimate incl. JSON escaping) and flush below ~3 MB. Cells longer than IMPORT_MAX_CELL_CHARS are checked on the client: skip that row with a per-row error instead of failing the whole batch. Progress must not show 100% before the last batch is confirmed; the done screen must show a failure state (not a success check) when the import stopped on an error. (S9) Delete the old unused server actions importLeads and parseCSVPreview from lib/actions/import.ts (grep first: no callers) so they are not exposed; keep importLeadRows.",
       "verify": "npx vitest run tests/csv-stream-parser.test.ts tests/import-lead-rows.test.ts && test $(grep -c \"export async function importLeads\\b\\|export async function parseCSVPreview\" lib/actions/import.ts) -eq 0 && node scripts/restyle/boxes.mjs components/features/ImportLeadsModal.tsx && node scripts/restyle/scan.mjs components/features/ImportLeadsModal.tsx && npx tsc --noEmit",
       "depends_on": []
+    },
+    {
+      "id": "R6",
+      "model": "opus",
+      "title": "Verification fix: bind claimed approvals to toolCallId/tool; tighten 044 (no member deletes, per-user messages/approvals/tasks); task update allowlist",
+      "files": [
+        "app/api/ai/chat/route.ts",
+        "lib/ai/tools/registry.ts",
+        "tests/api/chat-route.test.ts",
+        "tests/ai/tools/registry.test.ts",
+        "tests/api/copilot-acceptance.test.ts",
+        "supabase/migrations/044_copilot_messages_server_write.sql",
+        "tests/migrations/044-copilot-messages-lock.test.ts",
+        "lib/actions/copilot.ts",
+        "tests/actions/copilot-memory.test.ts",
+        "lib/actions/copilot-approvals.ts"
+      ],
+      "interface": "(N1) route.ts ~155 keeps a part when its approval id is claimed and input matches, but never compares part.toolCallId to row.tool_call_id or the tool name, so a planted part with a claimed approval id + input but a NEW toolCallId falls into the registry propose path, which returns true during ai's approved re-check and executes. Fix: keep only when row.tool_call_id === part.toolCallId && row.tool_name === getToolName(part) && row.status === 'approved' (replacing the part.approval.approved check); second layer in registry: a toolCallId proposed (new pending row recorded) in THIS request must never execute in this request (track a proposed set; execute returns NOT_EXECUTED_RESULT). Turn the PoC in C:/Users/apari/AppData/Local/Temp/claude/D--Orbix-Sofrwares-projects-pulse-crm/ee98796b-b17d-461e-a736-50f312c8752c/scratchpad/poc2/route-poc.test.ts into an acceptance test. Also close the small S4 gap: add a row to resolvedRowIds only AFTER markApprovalOutcome succeeds so failClaimed still covers it. (N2) 044's DELETE policy on copilot_conversations lets a member delete their own conversation via REST and cascade away approved/applied approval rows, bypassing deleteOwnConversations and the turn lock: remove the member DELETE policy and REVOKE DELETE on copilot_conversations FROM authenticated (app deletes use the service role). Turn C:/Users/apari/AppData/Local/Temp/claude/D--Orbix-Sofrwares-projects-pulse-crm/ee98796b-b17d-461e-a736-50f312c8752c/scratchpad/poc2/m044-poc.test.ts into a 044 test asserting a member delete is refused and approvals survive. (N3) In 044, replace copilot_messages_select_org with a per-user SELECT policy (EXISTS a copilot_conversations row with that id in the member's org AND user_id = auth.uid()); make copilot_approvals SELECT per-user too (user_id = auth.uid() within the org) after grepping every user-client read of copilot_approvals (e.g. listPendingApprovalsAction) to confirm they only need own rows. (N4) In 044, replace the 021 org_access FOR ALL policy on copilot_tasks with per-user SELECT/INSERT/UPDATE/DELETE (org AND user_id = auth.uid(), WITH CHECK the same); updateCopilotTask in lib/actions/copilot.ts must apply only an allowlist of fields (title, prompt, schedule, cron_expression, is_active) and filter by organization_id AND user_id. Keep 044 idempotent and lint-conformant; update its header (still APPLY AFTER DEPLOY) and smoke block. Verify every user-client path to these tables still works (grep).",
+      "verify": "npx vitest run tests/api/chat-route.test.ts tests/ai/tools/registry.test.ts tests/api/copilot-acceptance.test.ts tests/migrations/044-copilot-messages-lock.test.ts tests/actions/copilot-memory.test.ts tests/actions/copilot-approvals.test.ts && test $(grep -cE \"^\\s*(it|test)\\(\" tests/api/copilot-acceptance.test.ts) -ge 13 && npx tsc --noEmit",
+      "depends_on": [
+        "R1",
+        "R2"
+      ]
     }
   ]
 }
