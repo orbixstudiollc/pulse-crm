@@ -303,7 +303,9 @@
       "id": "T19",
       "title": "Settings view replacing the stub",
       "files": [
-        "components/features/Copilot/SettingsView.tsx"
+        "components/features/Copilot/SettingsView.tsx",
+        "app/dashboard/copilot/page.tsx",
+        "app/dashboard/copilot/client.tsx"
       ],
       "interface": "SettingsView({ initial: Awaited<ReturnType<typeof getCopilotSettings>> }): sections Provider (source/provider/model/tools-support, link to /dashboard/settings?tab=ai, no inputs), Always allow (one toggle per allowableTools entry; optimistic update via setAlwaysAllow; the server's returned list replaces local state so dropped names revert visibly), Usage today (org used/limit and shared used/limit as hairline progress rows; guest notice when isGuest), Clear chat history (typed confirm 'CLEAR' before clearChatHistory). Fake model select and toggles removed.",
       "verify": "test $(grep -c \"coming soon\" app/dashboard/copilot/client.tsx components/features/Copilot/SettingsView.tsx | awk -F: '{s+=$2} END {print s}') -eq 0 && node scripts/restyle/boxes.mjs components/features/Copilot/SettingsView.tsx && node scripts/restyle/scan.mjs components/features/Copilot/SettingsView.tsx && npx tsc --noEmit",
