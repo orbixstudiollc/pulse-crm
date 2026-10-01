@@ -13,6 +13,8 @@ interface ModalProps {
   role?: "dialog" | "alertdialog";
   "aria-labelledby"?: string;
   "aria-label"?: string;
+  /** id of the element that describes the dialog, set as aria-describedby. */
+  describedBy?: string;
 }
 
 const FOCUSABLE =
@@ -36,6 +38,7 @@ export function Modal({
   role = "dialog",
   "aria-labelledby": ariaLabelledBy,
   "aria-label": ariaLabel,
+  describedBy,
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -127,6 +130,7 @@ export function Modal({
             aria-modal="true"
             aria-labelledby={ariaLabelledBy}
             aria-label={ariaLabel}
+            aria-describedby={describedBy}
             tabIndex={-1}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}

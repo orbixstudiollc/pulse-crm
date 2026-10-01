@@ -414,6 +414,7 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
         onClose={closeClearConfirm}
         role="alertdialog"
         aria-labelledby="clear-data-title"
+        describedBy="clear-data-description"
       >
         <div className="p-4">
           <div className="w-8 h-8 rounded-full bg-danger-surface flex items-center justify-center mb-3">
