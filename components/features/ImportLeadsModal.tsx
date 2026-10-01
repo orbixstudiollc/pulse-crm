@@ -16,11 +16,12 @@ import {
   FileTextIcon,
   DownloadIcon,
   SparkleIcon,
-  BrainIcon,
   PaperPlaneTiltIcon,
 } from "@/components/ui";
-import { parseCSVPreview, importLeads } from "@/lib/actions/import";
-import { aiMapCSVFields, processImportedLeadsStep } from "@/lib/actions/ai-import";
+import { importLeadRows } from "@/lib/actions/import";
+import { aiMapCSVFields } from "@/lib/actions/ai-import";
+import { createCsvParser, readCsvPreview } from "@/lib/csv/stream-parser";
+import { IMPORT_BATCH_ROWS } from "@/lib/import/lead-rows";
 import { getSequences, enrollLeadsBulk } from "@/lib/actions/sequences";
 import { toast } from "sonner";
 
@@ -30,7 +31,15 @@ interface ImportLeadsModalProps {
   onImportComplete?: () => void;
 }
 
-type ImportStep = "upload" | "mapping" | "preview" | "importing" | "ai_processing" | "done";
+type ImportStep = "upload" | "mapping" | "preview" | "importing" | "done";
+
+const MAX_FILE_BYTES = 1024 ** 3; // 1 GB
+// Also flush early when a batch gets large, to stay under the request body cap.
+const MAX_BATCH_CHARS = 2_000_000;
+const MAX_ERROR_LINES = 200;
+// Keep imported ids (for sequence enrollment) only up to this many leads.
+const MAX_ENROLL_IDS = 10_000;
+const GUEST_LIMIT_MESSAGE = "Guest workspaces can hold up to 1,000 leads. Sign up to import more.";
 
 const LEAD_FIELD_OPTIONS = [
   { label: "— Skip this column —", value: "__skip__" },
@@ -162,13 +171,134 @@ function autoMapField(header: string): string {
   return mappings[h] || "__skip__";
 }
 
-interface AIProcessingState {
-  currentStep: "enrich" | "score" | "qualify" | "match" | "complete";
-  enriched: number;
-  scored: number;
-  qualified: number;
-  matched: number;
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+  return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
+}
+
+interface ImportOutcome {
+  imported: number;
+  /** null once the import passes MAX_ENROLL_IDS leads. */
+  importedIds: string[] | null;
   errors: string[];
+  errorCount: number;
+  guestLimitReached: boolean;
+  cancelled: boolean;
+  failure: string | null;
+}
+
+interface StreamImportHooks {
+  onProgress: (bytesRead: number, imported: number) => void;
+  isCancelled: () => boolean;
+}
+
+type BatchResult = Awaited<ReturnType<typeof importLeadRows>>;
+
+function addBatchResult(outcome: ImportOutcome, res: Exclude<BatchResult, { error: string }>) {
+  outcome.imported += res.imported;
+  outcome.errorCount += res.errors.length;
+  outcome.errors.push(...res.errors.slice(0, MAX_ERROR_LINES - outcome.errors.length));
+  if (outcome.importedIds) {
+    outcome.importedIds = outcome.imported <= MAX_ENROLL_IDS ? [...outcome.importedIds, ...res.importedIds] : null;
+  }
+  if (res.guestLimitReached) outcome.guestLimitReached = true;
+}
+
+/**
+ * Streams the CSV from disk and sends data rows to the server one batch at a time,
+ * so memory stays flat for files up to 1 GB. Only mapped columns are sent.
+ */
+async function streamImport(
+  file: File,
+  mapping: Record<string, string>,
+  hooks: StreamImportHooks,
+): Promise<ImportOutcome> {
+  const outcome: ImportOutcome = {
+    imported: 0, importedIds: [], errors: [], errorCount: 0,
+    guestLimitReached: false, cancelled: false, failure: null,
+  };
+  const parser = createCsvParser();
+  const decoder = new TextDecoder();
+  const reader = file.stream().getReader();
+  let sendHeaders: string[] | null = null;
+  let columns: number[] = [];
+  let batch: string[][] = [];
+  let batchChars = 0;
+  let batchFirstRow = 2;
+  let rowNumber = 1; // the header is row 1
+  let bytesRead = 0;
+
+  const flush = async () => {
+    if (batch.length === 0 || !sendHeaders) return;
+    const firstRowNumber = batchFirstRow;
+    const lastRow = firstRowNumber + batch.length - 1;
+    let res: BatchResult;
+    try {
+      res = await importLeadRows({ headers: sendHeaders, rows: batch, mapping, firstRowNumber });
+    } catch (err) {
+      res = { error: err instanceof Error ? err.message : "Request failed" };
+    }
+    batch = [];
+    batchChars = 0;
+    if ("error" in res) {
+      outcome.failure = `Rows ${firstRowNumber}-${lastRow}: ${res.error}`;
+      outcome.errorCount++;
+      if (outcome.errors.length < MAX_ERROR_LINES) outcome.errors.push(outcome.failure);
+      return;
+    }
+    addBatchResult(outcome, res);
+    hooks.onProgress(bytesRead, outcome.imported);
+  };
+
+  const shouldStop = () => {
+    if (outcome.failure !== null || outcome.guestLimitReached) return true;
+    if (hooks.isCancelled()) outcome.cancelled = true;
+    return outcome.cancelled;
+  };
+
+  const take = async (records: string[][]) => {
+    for (const record of records) {
+      if (!sendHeaders) {
+        const mapped = Array.from(new Set(record.filter((h) => Object.hasOwn(mapping, h))));
+        sendHeaders = mapped;
+        columns = mapped.map((h) => record.indexOf(h));
+        continue;
+      }
+      rowNumber++;
+      if (batch.length === 0) batchFirstRow = rowNumber;
+      const row = columns.map((c) => record[c] ?? "");
+      batch.push(row);
+      batchChars += row.reduce((sum, cell) => sum + cell.length, 0);
+      if (batch.length >= IMPORT_BATCH_ROWS || batchChars >= MAX_BATCH_CHARS) {
+        await flush();
+        if (shouldStop()) return;
+      }
+    }
+  };
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytesRead += value.byteLength;
+      await take(parser.push(decoder.decode(value, { stream: true })));
+      if (shouldStop()) break;
+      hooks.onProgress(bytesRead, outcome.imported);
+    }
+    if (!shouldStop()) {
+      await take([...parser.push(decoder.decode()), ...parser.end()]);
+      if (!shouldStop()) await flush();
+    }
+  } catch (err) {
+    outcome.failure = `Could not read the file: ${err instanceof Error ? err.message : "Unknown error"}`;
+  } finally {
+    await reader.cancel().catch(() => undefined);
+  }
+
+  if (!sendHeaders) outcome.failure = "CSV file is empty or has no headers";
+  return outcome;
 }
 
 export function ImportLeadsModal({
@@ -177,21 +307,20 @@ export function ImportLeadsModal({
   onImportComplete,
 }: ImportLeadsModalProps) {
   const [step, setStep] = useState<ImportStep>("upload");
-  const [csvContent, setCsvContent] = useState<string>("");
+  const [csvFile, setCsvFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string>("");
   const [headers, setHeaders] = useState<string[]>([]);
   const [preview, setPreview] = useState<string[][]>([]);
-  const [totalRows, setTotalRows] = useState(0);
   const [fieldMapping, setFieldMapping] = useState<Record<string, string>>({});
-  const [importResult, setImportResult] = useState<{
-    imported: number;
-    importedIds: string[];
-    errors: string[];
-  } | null>(null);
+  const [importResult, setImportResult] = useState<ImportOutcome | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isAiMapping, setIsAiMapping] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-  const [aiProcessing, setAiProcessing] = useState<AIProcessingState | null>(null);
+  const [progress, setProgress] = useState({ bytesRead: 0, imported: 0 });
+  const [cancelRequested, setCancelRequested] = useState(false);
+  const cancelRef = useRef(false);
+  // Bumped on close so a still-running import stops touching this modal's state.
+  const runIdRef = useRef(0);
   const [showSequenceEnroll, setShowSequenceEnroll] = useState(false);
   const [sequences, setSequences] = useState<Array<{ id: string; name: string; status: string }>>([]);
   const [selectedSequenceId, setSelectedSequenceId] = useState<string | null>(null);
@@ -200,19 +329,19 @@ export function ImportLeadsModal({
 
   const resetState = () => {
     setStep("upload");
-    setCsvContent("");
+    setCsvFile(null);
     setFileName("");
     setHeaders([]);
     setPreview([]);
-    setTotalRows(0);
     setFieldMapping({});
     setImportResult(null);
     setIsAiMapping(false);
-    setAiProcessing(null);
+    setProgress({ bytesRead: 0, imported: 0 });
+    setCancelRequested(false);
   };
 
   const handleSequenceEnroll = async () => {
-    if (!selectedSequenceId || !importResult?.importedIds.length) return;
+    if (!selectedSequenceId || !importResult?.importedIds?.length) return;
     setEnrolling(true);
     const result = await enrollLeadsBulk(selectedSequenceId, importResult.importedIds);
     if (result.enrolled > 0) {
@@ -225,6 +354,8 @@ export function ImportLeadsModal({
   };
 
   const handleClose = () => {
+    cancelRef.current = true;
+    runIdRef.current++;
     resetState();
     setShowSequenceEnroll(false);
     setSelectedSequenceId(null);
@@ -238,34 +369,35 @@ export function ImportLeadsModal({
       return;
     }
 
-    if (file.size > 25 * 1024 * 1024) {
-      toast.error("File too large. Maximum 25MB.");
+    if (file.size > MAX_FILE_BYTES) {
+      toast.error("File too large. Maximum 1 GB.");
       return;
     }
 
-    const text = await file.text();
-    setCsvContent(text);
-    setFileName(file.name);
-
     startTransition(async () => {
-      const result = await parseCSVPreview(text);
-      if (result.error) {
-        toast.error(result.error);
+      let result: { headers: string[]; rows: string[][] };
+      try {
+        result = await readCsvPreview(file);
+      } catch {
+        toast.error("Could not read the file");
         return;
       }
-      if (result.data) {
-        setHeaders(result.data.headers);
-        setPreview(result.data.preview);
-        setTotalRows(result.data.totalRows);
-
-        // Auto-map fields using hardcoded dictionary
-        const autoMapping: Record<string, string> = {};
-        for (const header of result.data.headers) {
-          autoMapping[header] = autoMapField(header);
-        }
-        setFieldMapping(autoMapping);
-        setStep("mapping");
+      if (result.headers.length === 0) {
+        toast.error("CSV file is empty or has no headers");
+        return;
       }
+      setCsvFile(file);
+      setFileName(file.name);
+      setHeaders(result.headers);
+      setPreview(result.rows.slice(0, 5));
+
+      // Auto-map fields using hardcoded dictionary
+      const autoMapping: Record<string, string> = {};
+      for (const header of result.headers) {
+        autoMapping[header] = autoMapField(header);
+      }
+      setFieldMapping(autoMapping);
+      setStep("mapping");
     });
   };
 
@@ -317,13 +449,12 @@ export function ImportLeadsModal({
     return mapped.includes("name") || mapped.includes("email");
   };
 
-  const handleStartImport = () => {
+  const handleStartImport = async () => {
     if (!hasRequiredField()) {
       toast.error("You must map at least Name or Email");
       return;
     }
-
-    setStep("importing");
+    if (!csvFile) return;
 
     // Filter out skipped fields
     const cleanMapping: Record<string, string> = {};
@@ -333,89 +464,39 @@ export function ImportLeadsModal({
       }
     }
 
-    startTransition(async () => {
-      const result = await importLeads(csvContent, cleanMapping);
-      if (result.error && !result.data) {
-        toast.error(result.error);
-        setStep("mapping");
-        return;
-      }
+    const runId = ++runIdRef.current;
+    const isCurrent = () => runIdRef.current === runId;
+    cancelRef.current = false;
+    setCancelRequested(false);
+    setProgress({ bytesRead: 0, imported: 0 });
+    setStep("importing");
 
-      const data = result.data || { imported: 0, importedIds: [], errors: [] };
-      setImportResult({
-        imported: data.imported,
-        importedIds: data.importedIds || [],
-        errors: data.errors,
-      });
-
-      // If we have imported leads, start AI processing
-      if (data.importedIds && data.importedIds.length > 0) {
-        setStep("ai_processing");
-        await runAIProcessing(data.importedIds);
-      } else {
-        setStep("done");
-      }
+    const outcome = await streamImport(csvFile, cleanMapping, {
+      onProgress: (bytesRead, imported) => {
+        if (isCurrent()) setProgress({ bytesRead, imported });
+      },
+      isCancelled: () => cancelRef.current,
     });
+
+    if (!isCurrent()) {
+      // The modal was closed mid-import; still refresh the list for what landed.
+      if (outcome.imported > 0) onImportComplete?.();
+      return;
+    }
+    if (outcome.failure && outcome.imported === 0 && outcome.errorCount <= 1) {
+      toast.error(outcome.failure);
+      setStep("mapping");
+      return;
+    }
+    if (outcome.failure) toast.error("Import stopped early. See the summary for details.");
+    if (outcome.guestLimitReached) toast.error(GUEST_LIMIT_MESSAGE);
+    setImportResult(outcome);
+    setStep("done");
   };
 
-  const runAIProcessing = async (leadIds: string[]) => {
-    const state: AIProcessingState = {
-      currentStep: "enrich",
-      enriched: 0,
-      scored: 0,
-      qualified: 0,
-      matched: 0,
-      errors: [],
-    };
-    setAiProcessing({ ...state });
-
-    // Step 1: Enrich
-    try {
-      state.currentStep = "enrich";
-      setAiProcessing({ ...state });
-      const enrichResult = await processImportedLeadsStep(leadIds, "enrich");
-      state.enriched = enrichResult.processed;
-      state.errors.push(...enrichResult.errors);
-    } catch {
-      state.errors.push("Enrichment step failed");
-    }
-
-    // Step 2: Score
-    try {
-      state.currentStep = "score";
-      setAiProcessing({ ...state });
-      const scoreResult = await processImportedLeadsStep(leadIds, "score");
-      state.scored = scoreResult.processed;
-      state.errors.push(...scoreResult.errors);
-    } catch {
-      state.errors.push("Scoring step failed");
-    }
-
-    // Step 3: Qualify
-    try {
-      state.currentStep = "qualify";
-      setAiProcessing({ ...state });
-      const qualResult = await processImportedLeadsStep(leadIds, "qualify");
-      state.qualified = qualResult.processed;
-      state.errors.push(...qualResult.errors);
-    } catch {
-      state.errors.push("Qualification step failed");
-    }
-
-    // Step 4: ICP Match
-    try {
-      state.currentStep = "match";
-      setAiProcessing({ ...state });
-      const matchResult = await processImportedLeadsStep(leadIds, "match");
-      state.matched = matchResult.processed;
-      state.errors.push(...matchResult.errors);
-    } catch {
-      // ICP match is optional
-    }
-
-    state.currentStep = "complete";
-    setAiProcessing({ ...state });
-    setStep("done");
+  const handleCancelImport = () => {
+    cancelRef.current = true;
+    setCancelRequested(true);
   };
 
   const handleDownloadTemplate = () => {
@@ -457,13 +538,9 @@ export function ImportLeadsModal({
     toast.success("Template downloaded!");
   };
 
-  const aiStepLabels: Record<string, string> = {
-    enrich: "Enriching lead data...",
-    score: "Scoring leads...",
-    qualify: "Qualifying leads (BANT + MEDDIC)...",
-    match: "Matching ICP profiles...",
-    complete: "AI processing complete!",
-  };
+  const importPercent = csvFile && csvFile.size > 0
+    ? Math.min(100, Math.floor((progress.bytesRead / csvFile.size) * 100))
+    : 0;
 
   return (
     <Modal open={open} onClose={handleClose} className="max-w-2xl">
@@ -479,7 +556,6 @@ export function ImportLeadsModal({
               {step === "mapping" && "Map CSV columns to lead fields"}
               {step === "preview" && "Review data before importing"}
               {step === "importing" && "Importing your leads..."}
-              {step === "ai_processing" && "AI is processing your leads..."}
               {step === "done" && "Import complete"}
             </p>
           </div>
@@ -493,7 +569,7 @@ export function ImportLeadsModal({
 
         {/* Step Indicator */}
         <div className="flex items-center gap-2 mb-4">
-          {["Upload", "Map Fields", "Import", "AI Process"].map((label, i) => {
+          {["Upload", "Map Fields", "Import"].map((label, i) => {
             const stepIndex =
               step === "upload"
                 ? 0
@@ -515,8 +591,6 @@ export function ImportLeadsModal({
                 >
                   {i < stepIndex ? (
                     <CheckCircleIcon size={16} weight="fill" />
-                  ) : i === 3 ? (
-                    <BrainIcon size={14} />
                   ) : (
                     i + 1
                   )}
@@ -530,7 +604,7 @@ export function ImportLeadsModal({
                 >
                   {label}
                 </span>
-                {i < 3 && (
+                {i < 2 && (
                   <div className="w-6 h-px bg-active" />
                 )}
               </div>
@@ -542,7 +616,7 @@ export function ImportLeadsModal({
         {step === "upload" && (
           <div className="space-y-4">
             <div
-              className={`relative border border-dashed rounded-lg p-8 text-center transition-colors ${
+              data-clay-box className={`relative border border-dashed rounded-lg p-8 text-center transition-colors ${
                 dragActive
                   ? "border-accent bg-accent-surface"
                   : "border-line hover:border-fg-muted"
@@ -576,7 +650,7 @@ export function ImportLeadsModal({
                       : "Drop your CSV file here, or click to browse"}
                   </p>
                   <p className="text-xs text-fg-muted mt-1">
-                    CSV files up to 25MB
+                    CSV files up to 1 GB
                   </p>
                 </div>
               </div>
@@ -617,7 +691,7 @@ export function ImportLeadsModal({
                 <span className="text-sm font-medium text-fg">
                   {fileName}
                 </span>
-                <Badge variant="info">{totalRows} rows</Badge>
+                <Badge variant="info">{csvFile ? formatBytes(csvFile.size) : ""}</Badge>
               </div>
               <button
                 onClick={handleAIMapFields}
@@ -767,7 +841,7 @@ export function ImportLeadsModal({
                   )
                 }
               >
-                Import {totalRows} Lead{totalRows !== 1 ? "s" : ""}
+                Import Leads
               </Button>
             </div>
           </div>
@@ -780,83 +854,30 @@ export function ImportLeadsModal({
               size={40}
               className="text-accent-strong animate-spin"
             />
-            <div className="text-center">
+            <div className="w-full max-w-sm space-y-2 text-center">
               <p className="text-sm font-medium text-fg">
-                Importing leads...
+                Importing leads... {importPercent}%
               </p>
-              <p className="text-xs text-fg-muted mt-1">
-                This may take a moment for large files.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* AI Processing Step */}
-        {step === "ai_processing" && aiProcessing && (
-          <div className="space-y-6 py-4">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-14 h-14 rounded-full bg-accent-surface flex items-center justify-center">
-                <BrainIcon
-                  size={28}
-                  className="text-accent-strong animate-pulse"
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-accent-strong transition-[width]"
+                  style={{ width: `${importPercent}%` }}
                 />
               </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold text-fg">
-                  AI Processing Imported Leads
-                </p>
-                <p className="text-xs text-fg-muted mt-1">
-                  {importResult?.imported} leads being analyzed...
-                </p>
-              </div>
+              <p className="text-xs text-fg-secondary">
+                {progress.imported.toLocaleString()} lead{progress.imported !== 1 ? "s" : ""} imported
+              </p>
+              <p className="text-xs text-fg-muted">
+                Keep this tab open until the import finishes.
+              </p>
             </div>
-
-            <div className="space-y-3">
-              {(["enrich", "score", "qualify", "match"] as const).map((s) => {
-                const isActive = aiProcessing.currentStep === s;
-                const isDone =
-                  (s === "enrich" && ["score", "qualify", "match", "complete"].includes(aiProcessing.currentStep)) ||
-                  (s === "score" && ["qualify", "match", "complete"].includes(aiProcessing.currentStep)) ||
-                  (s === "qualify" && ["match", "complete"].includes(aiProcessing.currentStep)) ||
-                  (s === "match" && aiProcessing.currentStep === "complete");
-                const count =
-                  s === "enrich" ? aiProcessing.enriched :
-                  s === "score" ? aiProcessing.scored :
-                  s === "qualify" ? aiProcessing.qualified :
-                  aiProcessing.matched;
-
-                return (
-                  <div
-                    key={s}
-                    className={`flex items-center gap-3 p-3 rounded-md border transition-colors ${
-                      isActive
-                        ? "border-accent bg-accent-surface"
-                        : isDone
-                          ? "border-success bg-success-surface"
-                          : "border-row opacity-50"
-                    }`}
-                  >
-                    <div className="w-6 h-6 flex items-center justify-center">
-                      {isActive ? (
-                        <CircleNotchIcon size={18} className="text-accent-strong animate-spin" />
-                      ) : isDone ? (
-                        <CheckCircleIcon size={18} weight="fill" className="text-success" />
-                      ) : (
-                        <div className="w-4 h-4 rounded-full border border-line" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-fg">
-                        {aiStepLabels[s]}
-                      </p>
-                    </div>
-                    {isDone && (
-                      <Badge variant="success">{count} done</Badge>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            <Button
+              variant="outline"
+              onClick={handleCancelImport}
+              disabled={cancelRequested}
+            >
+              {cancelRequested ? "Stopping after this batch..." : "Cancel"}
+            </Button>
           </div>
         )}
 
@@ -876,40 +897,36 @@ export function ImportLeadsModal({
                   {importResult.imported} Lead
                   {importResult.imported !== 1 ? "s" : ""} Imported
                 </p>
-                {importResult.errors.length > 0 && (
+                {importResult.errorCount > 0 && (
                   <p className="text-sm text-warning mt-1">
-                    {importResult.errors.length} row
-                    {importResult.errors.length !== 1 ? "s" : ""} had issues
+                    {importResult.errorCount} row
+                    {importResult.errorCount !== 1 ? "s" : ""} had issues
                   </p>
                 )}
               </div>
             </div>
 
-            {/* AI Processing Summary */}
-            {aiProcessing && aiProcessing.currentStep === "complete" && (
-              <div className="rounded-lg bg-accent-surface p-4 space-y-2">
-                <p className="text-sm font-medium text-accent-on-surface flex items-center gap-1.5">
-                  <BrainIcon size={16} /> AI Processing Summary
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="text-xs text-accent-on-surface">
-                    Enriched: <span className="font-semibold">{aiProcessing.enriched}</span> leads
-                  </div>
-                  <div className="text-xs text-accent-on-surface">
-                    Scored: <span className="font-semibold">{aiProcessing.scored}</span> leads
-                  </div>
-                  <div className="text-xs text-accent-on-surface">
-                    Qualified: <span className="font-semibold">{aiProcessing.qualified}</span> leads
-                  </div>
-                  <div className="text-xs text-accent-on-surface">
-                    ICP Matched: <span className="font-semibold">{aiProcessing.matched}</span> leads
-                  </div>
-                </div>
+            {/* Import notes */}
+            {(importResult.guestLimitReached || importResult.cancelled || importResult.importedIds === null) && (
+              <div className="rounded-md bg-subtle p-3 space-y-1">
+                {importResult.guestLimitReached && (
+                  <p className="text-sm text-warning">{GUEST_LIMIT_MESSAGE}</p>
+                )}
+                {importResult.cancelled && (
+                  <p className="text-sm text-fg-secondary">
+                    Import cancelled. Rows after the last finished batch were not imported.
+                  </p>
+                )}
+                {importResult.importedIds === null && (
+                  <p className="text-sm text-fg-secondary">
+                    Sequence enrollment from here is available for imports of up to 10,000 leads.
+                  </p>
+                )}
               </div>
             )}
 
             {/* Add to Sequence */}
-            {importResult.importedIds.length > 0 && !showSequenceEnroll && (
+            {importResult.importedIds !== null && importResult.importedIds.length > 0 && !showSequenceEnroll && (
               <button
                 onClick={async () => {
                   setShowSequenceEnroll(true);
@@ -923,8 +940,8 @@ export function ImportLeadsModal({
               </button>
             )}
 
-            {showSequenceEnroll && (
-              <div className="rounded-lg border border-line bg-surface p-3 space-y-3">
+            {showSequenceEnroll && importResult.importedIds !== null && (
+              <div className="rounded-lg bg-subtle p-3 space-y-3">
                 <p className="text-sm font-medium text-fg">Enroll in Sequence</p>
                 <select
                   value={selectedSequenceId ?? ""}
@@ -957,7 +974,7 @@ export function ImportLeadsModal({
             {/* Errors list */}
             {importResult.errors.length > 0 && (
               <div className="max-h-[120px] overflow-y-auto rounded-md bg-warning-surface p-3 space-y-1">
-                {importResult.errors.slice(0, 20).map((err, i) => (
+                {importResult.errors.map((err, i) => (
                   <p
                     key={i}
                     className="text-xs text-warning"
@@ -965,9 +982,9 @@ export function ImportLeadsModal({
                     {err}
                   </p>
                 ))}
-                {importResult.errors.length > 20 && (
+                {importResult.errorCount > importResult.errors.length && (
                   <p className="text-xs text-warning mt-1">
-                    ...and {importResult.errors.length - 20} more
+                    ...and {importResult.errorCount - importResult.errors.length} more
                   </p>
                 )}
               </div>
