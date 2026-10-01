@@ -5,8 +5,6 @@ import {
   UserIcon,
   FunnelIcon,
   ChartBarIcon,
-  CheckCircleIcon,
-  WarningIcon,
   EnvelopeIcon,
   PhoneIcon,
   CrosshairIcon,
@@ -198,74 +196,6 @@ export function ChatAnalyticsCard({ period, newLeads, dealsWon, wonValue, pipeli
           <div className="text-fg-secondary">Activities</div>
         </div>
       </div>
-    </div>
-  );
-}
-
-interface ChatActionPreviewProps {
-  action: string;
-  description: string;
-  details: Record<string, string>;
-  onConfirm: () => void;
-  onCancel: () => void;
-  isPending?: boolean;
-  isCompleted?: boolean;
-  error?: string;
-}
-
-export function ChatActionPreview({
-  action,
-  description,
-  details,
-  onConfirm,
-  onCancel,
-  isPending,
-  isCompleted,
-  error,
-}: ChatActionPreviewProps) {
-  return (
-    <div className="my-1 rounded-md border border-line bg-surface p-3 text-xs">
-      <div className="flex items-center gap-2 mb-2">
-        <div className={`w-6 h-6 rounded-md flex items-center justify-center ${isCompleted ? "bg-success-surface" : error ? "bg-danger-surface" : "bg-muted"}`}>
-          {isCompleted ? (
-            <CheckCircleIcon size={14} className="text-success" />
-          ) : error ? (
-            <WarningIcon size={14} className="text-danger" />
-          ) : (
-            <FunnelIcon size={14} className="text-fg-secondary" />
-          )}
-        </div>
-        <span className="font-semibold text-fg">{action}</span>
-      </div>
-      <p className="text-fg-secondary mb-2">{description}</p>
-      <div className="space-y-1 mb-3">
-        {Object.entries(details).map(([key, val]) => (
-          <div key={key} className="flex justify-between">
-            <span className="text-fg-secondary">{key}:</span>
-            <span className="font-medium text-fg">{val}</span>
-          </div>
-        ))}
-      </div>
-      {error && <p className="text-danger text-xs mb-2">{error}</p>}
-      {isCompleted && <p className="text-success text-xs">Action completed successfully.</p>}
-      {!isCompleted && !error && (
-        <div className="flex gap-2">
-          <button
-            onClick={onConfirm}
-            disabled={isPending}
-            className="flex-1 h-7 rounded-md bg-accent-strong text-on-inverse font-medium hover:bg-accent-strong/90 transition-colors disabled:opacity-50"
-          >
-            {isPending ? "Executing..." : "Confirm"}
-          </button>
-          <button
-            onClick={onCancel}
-            disabled={isPending}
-            className="flex-1 h-7 rounded-md border border-line bg-surface text-fg font-medium hover:bg-muted transition-colors disabled:opacity-50"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
     </div>
   );
 }
