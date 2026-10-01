@@ -159,7 +159,7 @@ export function CopilotClient({
                 key={item.id}
                 onClick={() => (item.id === "chat" ? startNewChat() : setView(item.id))}
                 className={cn(
-                  "relative flex h-9 w-full items-center gap-2.5 px-4 text-[14px] text-fg transition-colors hover:bg-subtle [&_svg]:size-4",
+                  "relative flex h-9 w-full items-center gap-2.5 px-4 text-[13px] text-fg transition-colors hover:bg-subtle [&_svg]:size-4",
                   isActive ? "font-medium [&_svg]:text-fg" : "[&_svg]:text-fg-muted"
                 )}
               >
@@ -192,7 +192,7 @@ export function CopilotClient({
                       if (e.key === "Enter") void openConversation(conv.id);
                     }}
                     className={cn(
-                      "group relative flex h-10 w-full cursor-pointer items-center justify-between gap-2 px-4 text-[14px] border-b border-divider transition-colors hover:bg-subtle",
+                      "group relative flex h-10 w-full cursor-pointer items-center justify-between gap-2 px-4 text-[13px] border-b border-divider transition-colors hover:bg-subtle",
                       isOpen ? "font-medium text-fg" : "text-fg-secondary"
                     )}
                   >

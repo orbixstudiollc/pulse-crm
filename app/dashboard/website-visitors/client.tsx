@@ -335,11 +335,11 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
                     <tbody>
                       {visitors.map((v) => (
                         <tr key={v.id} className="hover:bg-subtle transition-colors">
-                          <td className="py-2 text-[14px] text-fg">
+                          <td className="py-2 text-[13px] text-fg">
                             <div className="flex items-start gap-2">
                               <GlobeIcon size={16} className="mt-0.5 shrink-0 text-fg-muted" />
                               <div>
-                                <div className="text-[14px] font-medium text-fg">
+                                <div className="text-[13px] font-medium text-fg">
                                   {v.company_name || v.ip_address || "Unknown"}
                                 </div>
                                 {v.company_domain && (
@@ -348,21 +348,21 @@ export function WebsiteVisitorsClient({ initialVisitors, initialTotal, initialSt
                               </div>
                             </div>
                           </td>
-                          <td className="py-2 text-[14px] text-fg-secondary">
+                          <td className="py-2 text-[13px] text-fg-secondary">
                             {[v.city, v.country_code].filter(Boolean).join(", ") || "—"}
                           </td>
-                          <td className="py-2 text-[14px] text-fg-secondary">{v.page_count}</td>
-                          <td className="py-2 text-[14px] text-fg-secondary">{v.visit_count}</td>
-                          <td className="py-2 text-[14px] text-fg-secondary">
+                          <td className="py-2 text-[13px] text-fg-secondary">{v.page_count}</td>
+                          <td className="py-2 text-[13px] text-fg-secondary">{v.visit_count}</td>
+                          <td className="py-2 text-[13px] text-fg-secondary">
                             {v.total_duration > 0 ? `${Math.round(v.total_duration / 60)}m` : "—"}
                           </td>
-                          <td className="py-2 text-[14px] text-fg-secondary">
+                          <td className="py-2 text-[13px] text-fg-secondary">
                             {new Date(v.last_seen).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                           </td>
-                          <td className="py-2 text-[14px] text-fg">
+                          <td className="py-2 text-[13px] text-fg">
                             <Badge variant={statusVariant(v.status)}>{v.status}</Badge>
                           </td>
-                          <td className="py-2 text-[14px] text-fg">
+                          <td className="py-2 text-[13px] text-fg">
                             <div className="flex items-center justify-end gap-1">
                               <button
                                 onClick={() => handleViewVisitor(v)}

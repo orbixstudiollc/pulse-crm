@@ -13,7 +13,7 @@ interface SegmentedControlProps<T extends string> {
   "aria-label"?: string;
 }
 
-// Clay joined segment group: active segment gets a 1px accent outline, never a fill.
+// Twenty-style joined segment group: the active segment gets a soft grey fill.
 export function SegmentedControl<T extends string>({
   options,
   value,
@@ -36,8 +36,8 @@ export function SegmentedControl<T extends string>({
               "inline-flex items-center -ml-px first:ml-0 first:rounded-l-md last:rounded-r-md border bg-surface transition-colors hover:bg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:z-20",
               size === "sm"
                 ? "h-7 gap-1 px-2.5 text-[13px] [&_svg]:size-3.5"
-                : "h-8 gap-1.5 px-4 text-[14px] [&_svg]:size-4",
-              isActive ? "relative z-10 rounded-md border-accent text-accent-strong" : "border-line text-fg",
+                : "h-8 gap-1.5 px-4 text-[13px] [&_svg]:size-4",
+              isActive ? "border-line bg-muted font-medium text-fg" : "border-line text-fg-secondary",
             )}
           >
             {option.icon}

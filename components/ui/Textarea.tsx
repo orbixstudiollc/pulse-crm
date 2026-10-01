@@ -61,7 +61,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           }
           onChange={handleChange}
           className={cn(
-            "w-full rounded-md border bg-surface px-3 py-1.5 text-[14px] text-fg placeholder:text-fg-muted transition-colors duration-150 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50 resize-none",
+            "w-full rounded-md border bg-surface px-3 py-1.5 text-[13px] text-fg placeholder:text-fg-muted transition-colors duration-150 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50 resize-none",
             error
               ? "border-danger"
               : "border-line",

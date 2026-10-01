@@ -59,7 +59,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
               error ? `${id}-error` : helperText ? `${id}-helper` : undefined
             }
             className={cn(
-              "h-8 w-full appearance-none rounded-md border bg-surface px-3 text-[14px] text-fg transition-colors duration-150 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50",
+              "h-8 w-full appearance-none rounded-md border bg-surface px-3 text-[13px] text-fg transition-colors duration-150 focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-50",
               error
                 ? "border-danger"
                 : "border-line",

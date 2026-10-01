@@ -423,7 +423,7 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
           <h3 id="clear-data-title" className="text-heading-md text-fg mb-1">
             Clear all workspace data?
           </h3>
-          <p id="clear-data-description" className="text-[14px] leading-5 text-fg-secondary">
+          <p id="clear-data-description" className="text-[13px] leading-5 text-fg-secondary">
             This permanently deletes every lead, customer, deal, contact, activity,
             calendar event, competitor, objection, sequence, proposal, template, ICP and
             scoring profile in this workspace, including records you created yourself, not
@@ -1880,7 +1880,7 @@ function AISettingsSection({
                     key={stat.feature}
                     className="transition-colors"
                   >
-                    <td className="py-2 text-[14px] text-fg capitalize">
+                    <td className="py-2 text-[13px] text-fg capitalize">
                       {stat.feature.replace(/_/g, " ")}
                     </td>
                     <td className="py-2 text-right text-[13px] text-fg-secondary">
@@ -1994,7 +1994,7 @@ function AISettingsSection({
                     key={entry.id}
                     className="transition-colors"
                   >
-                    <td className="py-2 text-[14px] text-fg capitalize">
+                    <td className="py-2 text-[13px] text-fg capitalize">
                       {entry.feature.replace(/_/g, " ")}
                     </td>
                     <td className="py-2 text-fg-secondary text-xs">
@@ -3308,7 +3308,7 @@ function LeadFinderSettingsSection() {
       >
         <Link
           href="/dashboard/lead-finder/settings"
-          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md bg-accent-strong px-3 text-[14px] font-medium text-on-inverse transition-colors duration-150 hover:bg-accent-strong/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
+          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md bg-accent-strong px-3 text-[13px] font-medium text-on-inverse transition-colors duration-150 hover:bg-accent-strong/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
         >
           Open Lead Finder settings
           <ArrowRightIcon size={14} />

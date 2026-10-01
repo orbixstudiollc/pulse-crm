@@ -34,6 +34,7 @@ import {
 } from "../ui";
 import { useSidebar } from "./SidebarContext";
 import { SETTINGS_GROUPS, parseSettingsTab } from "./settings-nav";
+import { openSearch } from "./SearchBar";
 
 type NavItem = { name: string; href: string; icon: Icon };
 type NavGroup = { label?: string; items: NavItem[]; collapsible?: boolean };
@@ -94,6 +95,11 @@ const bottomNavigation: NavItem[] = [
 
 const SETTINGS_PATH = "/dashboard/settings";
 
+// Twenty-style nav row: 28px, rounded, a soft grey fill on hover and when active.
+const navItemClass =
+  "relative mx-2 flex h-7 items-center gap-2 rounded-sm px-2 text-[13px] text-fg-secondary transition-colors duration-150 hover:bg-black/[0.04] hover:text-fg dark:hover:bg-white/[0.06]";
+const navItemActiveClass = "bg-black/[0.06] font-medium text-fg dark:bg-white/[0.08]";
+
 // ── Shared sidebar content ──────────────────────────────────────────────────
 
 function NavLink({
@@ -127,19 +133,11 @@ function NavLink({
       href={href}
       onClick={handleClick}
       aria-current={isActive ? "page" : undefined}
-      className={cn(
-        "relative flex h-9 items-center gap-2.5 px-6 text-[14px] text-fg transition-colors duration-150 hover:bg-subtle",
-        isActive && "font-medium",
-        className,
-      )}
+      className={cn(navItemClass, isActive && navItemActiveClass, className)}
     >
-      {isActive && (
-        <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-sm bg-fg" />
-      )}
       <ItemIcon
         size={16}
-        weight={isActive ? "fill" : "regular"}
-        className={cn("shrink-0", isActive ? "text-fg" : "text-fg-muted")}
+        className={cn("shrink-0", isActive ? "text-fg" : "text-fg-secondary")}
       />
       <span className="truncate">{label}</span>
     </Link>
@@ -175,7 +173,7 @@ function NavList({
   );
 }
 
-const groupLabelClass = "px-6 pt-1 pb-1 text-[12px] text-fg-muted";
+const groupLabelClass = "px-4 pt-1 pb-1 text-[11px] font-semibold text-fg-muted";
 
 function NavGroupSection({
   group,
@@ -235,14 +233,14 @@ function SettingsNavList({
       <Link
         href="/dashboard/overview"
         onClick={onNavClick}
-        className="flex h-11 items-center gap-2 border-b border-divider px-6 text-[14px] text-fg-secondary transition-colors duration-150 hover:text-fg"
+        className={cn(navItemClass, "mt-1")}
       >
         <CaretLeftIcon size={14} className="shrink-0" />
         Back to app
       </Link>
       {SETTINGS_GROUPS.map((group) => (
         <div key={group.label}>
-          <p className="px-6 pt-4 pb-1 text-[13px] text-fg-muted">{group.label}</p>
+          <p className={cn(groupLabelClass, "pt-4")}>{group.label}</p>
           <ul>
             {group.items.map((item) => (
               <li key={item.id}>
@@ -253,7 +251,6 @@ function SettingsNavList({
                   isActive={activeTab === item.id}
                   onNavClick={onNavClick}
                   shallow
-                  className="hover:bg-muted"
                 />
               </li>
             ))}
@@ -284,19 +281,28 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   return (
     <>
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto">
-        {navigationGroups.map((group, index) => (
-          <div
-            key={group.label ?? "main"}
-            className={cn("py-2", index > 0 && "border-t border-divider")}
-          >
+      <nav className="flex-1 overflow-y-auto pb-2">
+        <button
+          type="button"
+          onClick={() => {
+            onNavClick?.();
+            openSearch();
+          }}
+          className={cn(navItemClass, "w-[calc(100%-1rem)] text-left")}
+        >
+          <MagnifyingGlassIcon size={16} className="shrink-0 text-fg-secondary" />
+          <span className="truncate">Search</span>
+          <kbd className="ml-auto font-sans text-[11px] text-fg-muted">⌘K</kbd>
+        </button>
+        {navigationGroups.map((group) => (
+          <div key={group.label ?? "main"} className={group.label ? "pt-3" : "pt-1"}>
             <NavGroupSection group={group} pathname={pathname} onNavClick={onNavClick} />
           </div>
         ))}
       </nav>
 
       {/* Bottom group: pinned to the sidebar bottom */}
-      <div className="mt-auto shrink-0 border-t border-divider py-2">
+      <div className="mt-auto shrink-0 py-2">
         <NavList items={bottomNavigation} pathname={pathname} onNavClick={onNavClick} />
       </div>
     </>
@@ -305,15 +311,29 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
 
 // ── Desktop Sidebar (inline) ────────────────────────────────────────────────
 
-export function Sidebar() {
-  const isSettings = usePathname().startsWith(SETTINGS_PATH);
+function WorkspaceRow({ onNavClick }: { onNavClick?: () => void }) {
   return (
-    <aside
-      className={cn(
-        "hidden lg:flex w-[240px] shrink-0 flex-col border-r border-divider",
-        isSettings ? "bg-subtle" : "bg-surface",
-      )}
+    <Link
+      href="/dashboard/overview"
+      onClick={onNavClick}
+      className={cn(navItemClass, "h-8 text-fg")}
     >
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-accent text-[11px] font-semibold text-white">
+        P
+      </span>
+      <span className="truncate font-medium">Pulse</span>
+    </Link>
+  );
+}
+
+export function Sidebar() {
+  return (
+    <aside className="hidden lg:flex w-[220px] shrink-0 flex-col bg-app">
+      <div className="flex h-12 shrink-0 items-center">
+        <div className="w-full">
+          <WorkspaceRow />
+        </div>
+      </div>
       <SidebarContent />
     </aside>
   );
@@ -324,7 +344,6 @@ export function Sidebar() {
 export function MobileSidebar() {
   const { mobileOpen, closeMobile } = useSidebar();
   const pathname = usePathname();
-  const isSettings = pathname.startsWith(SETTINGS_PATH);
 
   // Close when route changes
   useEffect(() => {
@@ -363,21 +382,14 @@ export function MobileSidebar() {
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className={cn(
-              "fixed left-0 top-0 h-full w-[240px] border-r border-divider z-50 flex flex-col lg:hidden",
-              isSettings ? "bg-subtle" : "bg-surface",
-            )}
+            className="fixed left-0 top-0 h-full w-[240px] border-r border-line bg-app z-50 flex flex-col lg:hidden"
           >
-            {/* Wordmark row: the top bar sits behind the overlay */}
-            <div className="flex h-11 shrink-0 items-center justify-between border-b border-divider px-6">
-              <Link
-                href="/dashboard/overview"
-                className="text-[18px] font-semibold text-fg"
-                onClick={closeMobile}
-              >
-                Pulse
-              </Link>
-              <button type="button" onClick={closeMobile} aria-label="Close menu" className="-mr-3 flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary hover:bg-subtle hover:text-fg"><XIcon size={16} /></button>
+            {/* Workspace row: the top bar sits behind the overlay */}
+            <div className="flex h-12 shrink-0 items-center pr-2">
+              <div className="min-w-0 flex-1">
+                <WorkspaceRow onNavClick={closeMobile} />
+              </div>
+              <button type="button" onClick={closeMobile} aria-label="Close menu" className="flex h-7 w-7 items-center justify-center rounded-sm text-fg-secondary hover:bg-black/[0.04] hover:text-fg"><XIcon size={16} /></button>
             </div>
             <SidebarContent onNavClick={closeMobile} />
           </motion.aside>

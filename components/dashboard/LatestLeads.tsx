@@ -37,14 +37,14 @@ export function LatestLeads({
             {leads.map((lead) => (
               <tr key={lead.id} className="transition-colors">
                 {/* Lead */}
-                <td className="text-[14px] text-fg">
+                <td className="text-[13px] text-fg">
                   <div className="flex min-w-0 items-center gap-2.5">
                     <Avatar name={lead.name} size="xs" className="shrink-0" />
                     <Link
                       href={`/dashboard/leads/${lead.id}`}
                       className="flex min-w-0 items-baseline gap-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                     >
-                      <span className="whitespace-nowrap text-[14px] font-medium text-fg hover:underline">
+                      <span className="whitespace-nowrap text-[13px] font-medium text-fg hover:underline">
                         {lead.name}
                       </span>
                       <span className="truncate text-[13px] text-fg-muted">
@@ -55,17 +55,17 @@ export function LatestLeads({
                 </td>
 
                 {/* Status */}
-                <td className="text-[14px] text-fg">
+                <td className="text-[13px] text-fg">
                   <Badge variant={leadStatusConfig[lead.status].variant} dot>
                     {leadStatusConfig[lead.status].label}
                   </Badge>
                 </td>
 
                 {/* Source */}
-                <td className="text-[14px] text-fg">{lead.source}</td>
+                <td className="text-[13px] text-fg">{lead.source}</td>
 
                 {/* Score */}
-                <td className="text-[14px] text-fg">
+                <td className="text-[13px] text-fg">
                   <div
                     className={cn(
                       "flex h-6 w-6 items-center justify-center rounded-full border text-xs font-medium",

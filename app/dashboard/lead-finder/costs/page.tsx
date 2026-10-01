@@ -240,7 +240,7 @@ export default function CostsPage() {
           <div className="border-t border-divider">
             <TableSection title="Campaign Cost Breakdown">
               <div className="overflow-x-auto">
-                <table className="w-full text-[14px]">
+                <table className="w-full text-[13px]">
                   <thead>
                     <tr>
                       {["Campaign", "Leads", "Apify Cost", "LLM Cost", "Total Cost", "Avg/Lead"].map((h, i) => (
@@ -291,7 +291,7 @@ export default function CostsPage() {
             <div className="border-t border-divider">
               <TableSection title="LLM Cost by Operation">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-[14px]">
+                  <table className="w-full text-[13px]">
                     <thead>
                       <tr>
                         {["Operation", "Calls", "Input Tokens", "Output Tokens", "Cost"].map((h, i) => (
@@ -325,7 +325,7 @@ export default function CostsPage() {
           <div className="border-t border-divider">
             <TableSection title="Recent Apify Runs">
               <div className="overflow-x-auto">
-                <table className="w-full text-[14px]">
+                <table className="w-full text-[13px]">
                   <thead>
                     <tr>
                       {["Actor", "Campaign", "Status", "Results", "Cost", "When"].map((h, i) => (

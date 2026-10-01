@@ -368,7 +368,7 @@ export function ContactsPageClient({
                       className="hover:bg-subtle transition-colors"
                     >
                       {/* Name */}
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <div className="flex items-center gap-3">
                           <UserIcon size={16} className="shrink-0 text-fg-muted" />
                           <p className="text-[13px] font-medium text-fg">
@@ -378,21 +378,21 @@ export function ContactsPageClient({
                       </td>
 
                       {/* Title */}
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <span className="text-[13px] text-fg-secondary">
                           {contact.title || "—"}
                         </span>
                       </td>
 
                       {/* Email */}
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <span className="text-[13px] text-fg-secondary">
                           {contact.email || "—"}
                         </span>
                       </td>
 
                       {/* Company (lead/customer badge) */}
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <div className="flex items-center gap-1.5">
                           {contact.lead_id && (
                             <span className="inline-flex items-center rounded-full bg-accent-surface px-2 py-0.5 text-xs font-medium text-accent-on-surface">
@@ -413,14 +413,14 @@ export function ContactsPageClient({
                       </td>
 
                       {/* Buying Role */}
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <Badge variant={roleConfig?.variant ?? "neutral"} dot>
                           {roleConfig?.label ?? contact.buying_role}
                         </Badge>
                       </td>
 
                       {/* Influence Level */}
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <Badge
                           variant={influenceConfig?.variant ?? "neutral"}
                         >
@@ -429,7 +429,7 @@ export function ContactsPageClient({
                       </td>
 
                       {/* Actions */}
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <div className="flex justify-end">
                           <ActionMenu
                             items={[

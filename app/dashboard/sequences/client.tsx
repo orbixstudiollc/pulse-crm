@@ -533,7 +533,7 @@ export function SequencesPageClient({
                           className="hover:bg-subtle transition-colors cursor-pointer"
                         >
                           {/* Name + Description + Category — inline editing */}
-                          <td className="py-2 text-[14px] text-fg">
+                          <td className="py-2 text-[13px] text-fg">
                             <div className="flex items-start gap-2">
                               <EnvelopeIcon size={16} className="mt-0.5 shrink-0 text-fg-muted" />
                               <div className="min-w-0">
@@ -577,7 +577,7 @@ export function SequencesPageClient({
                             </div>
                           </td>
                           {/* Inline Status Toggle */}
-                          <td className="py-2 text-[14px] text-fg">
+                          <td className="py-2 text-[13px] text-fg">
                             <div className="flex justify-center">
                               <StatusToggle
                                 status={seq.status}
@@ -589,7 +589,7 @@ export function SequencesPageClient({
                             </div>
                           </td>
                           {/* Progress bar — enrolled vs replied */}
-                          <td className="py-2 text-[14px] text-fg">
+                          <td className="py-2 text-[13px] text-fg">
                             <div className="min-w-[100px]">
                               <div className="flex items-center justify-between text-xs text-fg-secondary mb-1">
                                 <span>{enrolled} enrolled</span>
@@ -603,13 +603,13 @@ export function SequencesPageClient({
                             </div>
                           </td>
                           {/* Sent */}
-                          <td className="py-2 text-[14px] text-fg">
+                          <td className="py-2 text-[13px] text-fg">
                             <span className="text-sm font-semibold text-fg">
                               {(seq.total_sent || 0).toLocaleString()}
                             </span>
                           </td>
                           {/* Open Rate */}
-                          <td className="py-2 text-[14px] text-fg">
+                          <td className="py-2 text-[13px] text-fg">
                             <span
                               className={cn(
                                 "text-sm font-semibold",
@@ -624,7 +624,7 @@ export function SequencesPageClient({
                             </span>
                           </td>
                           {/* Reply Rate */}
-                          <td className="py-2 text-[14px] text-fg">
+                          <td className="py-2 text-[13px] text-fg">
                             <span
                               className={cn(
                                 "text-sm font-semibold",
@@ -640,7 +640,7 @@ export function SequencesPageClient({
                           </td>
                           {/* Actions */}
                           <td
-                            className="py-2 text-[14px] text-fg"
+                            className="py-2 text-[13px] text-fg"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex justify-end">

@@ -596,7 +596,7 @@ export function CampaignsPageClient({
                 </div>
               </div>
               <Link href="/dashboard/settings?tab=email-accounts"
-                className="inline-flex items-center gap-1.5 h-8 px-3 bg-accent-strong hover:bg-accent-strong/90 text-on-inverse text-[14px] font-medium rounded-md transition-colors">
+                className="inline-flex items-center gap-1.5 h-8 px-3 bg-accent-strong hover:bg-accent-strong/90 text-on-inverse text-[13px] font-medium rounded-md transition-colors">
                 <PlusIcon className="w-4 h-4" /> Add Account
               </Link>
             </div>
@@ -606,7 +606,7 @@ export function CampaignsPageClient({
                 <PlugsConnectedIcon className="w-10 h-10 text-fg-muted mx-auto mb-3" />
                 <p className="text-sm text-fg-secondary mb-4">No email accounts connected yet</p>
                 <Link href="/dashboard/settings?tab=email-accounts"
-                  className="inline-flex items-center h-8 px-3 bg-accent-strong hover:bg-accent-strong/90 text-on-inverse text-[14px] font-medium rounded-md transition-colors">
+                  className="inline-flex items-center h-8 px-3 bg-accent-strong hover:bg-accent-strong/90 text-on-inverse text-[13px] font-medium rounded-md transition-colors">
                   Add Your First Account
                 </Link>
               </div>
@@ -639,7 +639,7 @@ export function CampaignsPageClient({
                               </div>
                             </div>
                           </td>
-                          <td className="py-2 text-[14px] text-fg-secondary capitalize">{acc.provider}</td>
+                          <td className="py-2 text-[13px] text-fg-secondary capitalize">{acc.provider}</td>
                           <td className="py-2">
                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                               acc.status === "active" ? "bg-success-surface text-success" :
@@ -779,10 +779,10 @@ export function CampaignsPageClient({
                               )}
                             </div>
                           </td>
-                          <td className="py-2 text-right text-[14px] text-fg">{campaign.total_enrolled.toLocaleString()}</td>
-                          <td className="py-2 text-right text-[14px] text-fg">{campaign.total_sent.toLocaleString()}</td>
-                          <td className="py-2 text-right text-[14px] text-fg">{campaign.total_opened.toLocaleString()}</td>
-                          <td className="py-2 text-right text-[14px] text-fg">{campaign.total_replied.toLocaleString()}</td>
+                          <td className="py-2 text-right text-[13px] text-fg">{campaign.total_enrolled.toLocaleString()}</td>
+                          <td className="py-2 text-right text-[13px] text-fg">{campaign.total_sent.toLocaleString()}</td>
+                          <td className="py-2 text-right text-[13px] text-fg">{campaign.total_opened.toLocaleString()}</td>
+                          <td className="py-2 text-right text-[13px] text-fg">{campaign.total_replied.toLocaleString()}</td>
                           <td className="py-2 text-right">
                             <span className={`text-sm font-medium ${
                               campaign.reply_rate >= 10 ? "text-success" :
