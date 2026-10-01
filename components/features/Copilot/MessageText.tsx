@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 // A small, safe Markdown subset for assistant replies: paragraphs, headings,
-// bullet and numbered lists (one nesting level), **bold** and `code`.
+// bullet and numbered lists (one nesting level), **bold**, *italic* and `code`.
 // Everything renders as React text nodes; no HTML from the model is ever parsed.
 
 type ListItem = { text: string; children: string[] };
@@ -48,7 +48,7 @@ function parse(text: string): Block[] {
 }
 
 function Inline({ text }: { text: string }) {
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter(Boolean);
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\*[^*\s][^*]*\*)/g).filter(Boolean);
   return (
     <>
       {parts.map((part, i) => {
@@ -58,6 +58,9 @@ function Inline({ text }: { text: string }) {
               {part.slice(2, -2)}
             </strong>
           );
+        }
+        if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
+          return <em key={i}>{part.slice(1, -1)}</em>;
         }
         if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
           return (

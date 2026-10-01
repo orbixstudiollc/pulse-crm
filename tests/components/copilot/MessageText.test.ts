@@ -21,6 +21,14 @@ describe("MessageText", () => {
     expect(out).toContain("<ul class=\"mt-0.5 list-disc");
   });
 
+  it("renders single-asterisk italics without touching bold or list bullets", () => {
+    const out = html("- **Michael Anderson** — score 99 — *Cold Call*\n* Plain bullet");
+    expect(out).toContain("<em>Cold Call</em>");
+    expect(out).toContain('<strong class="font-semibold">Michael Anderson</strong>');
+    expect(out).toContain("<li><span>Plain bullet</span></li>");
+    expect(out).not.toContain("*");
+  });
+
   it("escapes HTML from the model instead of rendering it", () => {
     const out = html('<img src=x onerror="alert(1)"> **hi**');
     expect(out).not.toContain("<img");
