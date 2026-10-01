@@ -11,9 +11,7 @@ import { customModelFor } from "@/lib/ai/custom-provider";
 import { getModelId } from "@/lib/ai/models";
 import { getBudgetUsage } from "@/lib/ai/shared-budget";
 import { COPILOT_WRITE_TOOLS, NEVER_AUTO_ALLOW, sanitizeAlwaysAllow } from "@/lib/ai/tools/policy";
-import type { Database } from "@/types/database";
-
-type ApprovalUpdate = Database["public"]["Tables"]["copilot_approvals"]["Update"];
+import { deleteOwnConversations } from "@/lib/ai/conversation-delete";
 
 export type CopilotSettings = {
   provider: {
@@ -41,9 +39,6 @@ const SETTINGS_COLUMNS =
 
 /** Providers the chat route runs with CRM tools (the others get one plain completion). */
 const TOOL_PROVIDERS = ["anthropic", "openrouter", "custom"];
-
-/** Statuses of approvals the user granted: kept (detached) when their conversation is deleted. */
-const KEPT_APPROVAL_STATUSES = ["approved", "applied", "failed", "stale"];
 
 const CLEAR_CONFIRM_TEXT = "CLEAR";
 
@@ -143,53 +138,10 @@ export async function clearChatHistory(
   const { user } = await getCurrentUserProfile();
   const orgId = await getOrgId();
   // Service role (as lib/ai/history.ts): every query is scoped to this org and user explicitly.
-  const admin = createAdminClient();
-
-  const { data: conversations, error: listError } = await admin
-    .from("copilot_conversations")
-    .select("id, turn_lock_until")
-    .eq("organization_id", orgId)
-    .eq("user_id", user.id);
-  if (listError) {
-    console.error("[copilot-settings] listing conversations failed:", listError.message);
+  try {
+    return await deleteOwnConversations(createAdminClient(), { orgId, userId: user.id });
+  } catch (e) {
+    console.error("[copilot-settings] clearing chat history failed:", e instanceof Error ? e.message : e);
     throw new Error("Could not clear chat history");
   }
-  if (!conversations?.length) return { deleted: 0 };
-
-  const now = Date.now();
-  const nowIso = new Date(now).toISOString();
-  if (conversations.some((c) => c.turn_lock_until && Date.parse(c.turn_lock_until) > now)) {
-    return { error: "turn_in_progress" };
-  }
-  const ids = conversations.map((c) => c.id);
-
-  // copilot_approvals.conversation_id cascades on delete: detach the rows to keep first.
-  // The generated Update type (types/database.ts) omits conversation_id on purpose for the
-  // approval lifecycle; detaching before a delete is the one writer of that column.
-  const detach = { conversation_id: null } as unknown as ApprovalUpdate;
-  const { error: detachError } = await admin
-    .from("copilot_approvals")
-    .update(detach)
-    .eq("organization_id", orgId)
-    .in("conversation_id", ids)
-    .or(`source.eq.task,status.in.(${KEPT_APPROVAL_STATUSES.join(",")})`);
-  if (detachError) {
-    console.error("[copilot-settings] keeping approvals failed:", detachError.message);
-    throw new Error("Could not clear chat history");
-  }
-
-  // A conversation that took a turn lock since the check above is left alone.
-  const { data: deleted, error: deleteError } = await admin
-    .from("copilot_conversations")
-    .delete()
-    .eq("organization_id", orgId)
-    .eq("user_id", user.id)
-    .in("id", ids)
-    .or(`turn_lock_until.is.null,turn_lock_until.lt."${nowIso}"`)
-    .select("id");
-  if (deleteError) {
-    console.error("[copilot-settings] deleting conversations failed:", deleteError.message);
-    throw new Error("Could not clear chat history");
-  }
-  return { deleted: deleted?.length ?? 0 };
 }

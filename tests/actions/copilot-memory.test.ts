@@ -7,7 +7,10 @@ type Call = { method: string; args: unknown[] };
 type Query = { table: string; calls: Call[] };
 
 const queries: Query[] = [];
-let result: { data: unknown; error: { message: string } | null } = { data: [], error: null };
+type Result = { data: unknown; error: { message: string } | null };
+let result: Result = { data: [], error: null };
+/** Per-query results, consumed in await order; `result` answers once the queue is empty. */
+let results: Result[] = [];
 
 // Chainable fake: records every method call, resolves to `result` when awaited.
 function makeBuilder(query: Query) {
@@ -16,11 +19,11 @@ function makeBuilder(query: Query) {
     query.calls.push({ method, args });
     return builder;
   };
-  for (const m of ["select", "update", "delete", "insert", "eq", "in", "order", "limit", "maybeSingle", "single"]) {
+  for (const m of ["select", "update", "delete", "insert", "eq", "in", "or", "order", "limit", "maybeSingle", "single"]) {
     builder[m] = record(m);
   }
   builder.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
-    Promise.resolve(result).then(resolve, reject);
+    Promise.resolve(results.length ? results.shift() : result).then(resolve, reject);
   return builder;
 }
 
@@ -33,21 +36,34 @@ const fakeClient = {
   auth: { getUser: async () => ({ data: { user: { id: USER } } }) },
 };
 
-vi.mock("@/lib/supabase/server", () => ({ createClient: async () => fakeClient }));
+vi.mock("@/lib/supabase/server", () => ({ createClient: async () => fakeClient, createAdminClient: () => fakeClient }));
 vi.mock("@/lib/actions/helpers", () => ({ getOrgId: async () => ORG }));
 vi.mock("@/lib/ai/client", () => ({ getAIClient: vi.fn(), callAIWithFallback: vi.fn() }));
 vi.mock("@/lib/ai/models", () => ({ getModelForFeature: vi.fn() }));
 
 import * as copilot from "@/lib/actions/copilot";
-import { listIcpProfiles, listMemoryByType, saveGuidance, updateMemoryItem } from "@/lib/actions/copilot";
+import {
+  createCopilotTask,
+  createMemoryItem,
+  deleteConversation,
+  listIcpProfiles,
+  listMemoryByType,
+  saveGuidance,
+  updateMemoryItem,
+} from "@/lib/actions/copilot";
 
 const CAP_MESSAGE = "Guidance is limited to 10 active rules";
 const hasOrgEq = (q: Query) =>
   q.calls.some((c) => c.method === "eq" && c.args[0] === "organization_id" && c.args[1] === ORG);
 
+const hasUserEq = (q: Query) =>
+  q.calls.some((c) => c.method === "eq" && c.args[0] === "user_id" && c.args[1] === USER);
+const methodsOf = (q: Query) => q.calls.map((c) => c.method);
+
 beforeEach(() => {
   queries.length = 0;
   result = { data: [], error: null };
+  results = [];
 });
 
 describe("saveGuidance", () => {
@@ -158,5 +174,99 @@ describe("listMemoryByType", () => {
 describe("removed message writers", () => {
   it("no longer exports saveMessage (migration 044 blocks client writes)", () => {
     expect("saveMessage" in copilot).toBe(false);
+  });
+});
+
+describe("owner fields cannot be overridden by client input", () => {
+  const FORGED = { organization_id: "other-org", user_id: "other-user" };
+
+  it("createMemoryItem writes the caller's org and user even when the input carries others", async () => {
+    result = { data: { id: "m1" }, error: null };
+    const item = { type: "custom", title: "T", content: "C", ...FORGED } as unknown as Parameters<typeof createMemoryItem>[0];
+
+    await createMemoryItem(item);
+
+    const insert = queries[0].calls.find((c) => c.method === "insert")!;
+    expect(queries[0].table).toBe("copilot_memory");
+    expect(insert.args[0]).toMatchObject({ organization_id: ORG, user_id: USER, title: "T", content: "C" });
+  });
+
+  it("createCopilotTask writes the caller's org and user even when the input carries others", async () => {
+    result = { data: { id: "t1" }, error: null };
+    const task = { title: "T", prompt: "P", schedule: "daily", ...FORGED } as unknown as Parameters<
+      typeof createCopilotTask
+    >[0];
+
+    await createCopilotTask(task);
+
+    const insert = queries[0].calls.find((c) => c.method === "insert")!;
+    expect(queries[0].table).toBe("copilot_tasks");
+    expect(insert.args[0]).toMatchObject({ organization_id: ORG, user_id: USER, title: "T", prompt: "P" });
+  });
+});
+
+describe("deleteConversation", () => {
+  const future = () => new Date(Date.now() + 60_000).toISOString();
+
+  it("looks the conversation up by id, org AND user", async () => {
+    results = [{ data: [], error: null }];
+
+    expect(await deleteConversation("c1")).toEqual({ error: "Not found" });
+
+    expect(queries).toHaveLength(1);
+    const lookup = queries[0];
+    expect(lookup.table).toBe("copilot_conversations");
+    expect(hasOrgEq(lookup)).toBe(true);
+    expect(hasUserEq(lookup)).toBe(true);
+    expect(lookup.calls).toContainEqual({ method: "in", args: ["id", ["c1"]] });
+    expect(methodsOf(lookup)).not.toContain("delete");
+  });
+
+  it("refuses with turn_in_progress while the turn lock is held, and deletes nothing", async () => {
+    results = [{ data: [{ id: "c1", turn_lock_until: future() }], error: null }];
+
+    expect(await deleteConversation("c1")).toEqual({ error: "turn_in_progress" });
+
+    expect(queries).toHaveLength(1);
+    expect(queries.some((q) => methodsOf(q).includes("delete") || methodsOf(q).includes("update"))).toBe(false);
+  });
+
+  it("detaches kept and task-sourced approvals, then deletes by id, org AND user", async () => {
+    results = [
+      { data: [{ id: "c1", turn_lock_until: null }], error: null },
+      { data: null, error: null },
+      { data: [{ id: "c1" }], error: null },
+    ];
+
+    expect(await deleteConversation("c1")).toEqual({ success: true });
+
+    expect(queries.map((q) => q.table)).toEqual(["copilot_conversations", "copilot_approvals", "copilot_conversations"]);
+    const [, detach, del] = queries;
+
+    expect(detach.calls).toContainEqual({ method: "update", args: [{ conversation_id: null }] });
+    expect(hasOrgEq(detach)).toBe(true);
+    expect(detach.calls).toContainEqual({ method: "in", args: ["conversation_id", ["c1"]] });
+    expect(detach.calls).toContainEqual({
+      method: "or",
+      args: ["source.eq.task,status.in.(approved,applied,failed,stale)"],
+    });
+
+    expect(methodsOf(del)).toContain("delete");
+    expect(hasOrgEq(del)).toBe(true);
+    expect(hasUserEq(del)).toBe(true);
+    expect(del.calls).toContainEqual({ method: "in", args: ["id", ["c1"]] });
+  });
+
+  it("returns an error instead of deleting when keeping the approvals fails", async () => {
+    results = [
+      { data: [{ id: "c1", turn_lock_until: null }], error: null },
+      { data: null, error: { message: "boom" } },
+    ];
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    expect(await deleteConversation("c1")).toEqual({ error: "Could not delete the conversation" });
+
+    expect(queries.some((q) => methodsOf(q).includes("delete"))).toBe(false);
+    spy.mockRestore();
   });
 });

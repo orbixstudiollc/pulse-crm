@@ -54,8 +54,9 @@ export async function listPendingApprovalsAction() {
 
 /**
  * Approves or denies one task-sourced pending row. The claim is a single guarded UPDATE
- * (pending, source 'task', no conversation), so a second resolve, a chat-sourced row or a
- * row of another org all come back 'invalid' and are left untouched.
+ * (pending, source 'task', no conversation, owned by the caller), so a second resolve, a
+ * chat-sourced row, another member's task row or a row of another org all come back
+ * 'invalid' and are left untouched.
  */
 export async function resolveApproval(
   rowId: string,
@@ -72,6 +73,7 @@ export async function resolveApproval(
     .update({ status: approved ? "approved" : "denied", resolved_at: new Date().toISOString() })
     .eq("id", rowId)
     .eq("organization_id", orgId)
+    .eq("user_id", userId)
     .eq("status", "pending")
     .eq("source", "task")
     .is("conversation_id", null)

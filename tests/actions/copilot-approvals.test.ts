@@ -5,6 +5,7 @@ import type { FieldDiff } from "@/lib/ai/tools/diff";
 const ORG_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const ORG_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const USER_A = "11111111-1111-4111-8111-111111111111";
+const USER_A2 = "22222222-2222-4222-8222-222222222222";
 const CONV_A = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 const TASK_A = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 const LEAD_A = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
@@ -164,6 +165,7 @@ const diffFor = (before: string, after: string): FieldDiff => ({
 let seq = 0;
 async function seedApproval(over: {
   orgId?: string;
+  userId?: string;
   source?: "chat" | "task";
   conversationId?: string | null;
   status?: string;
@@ -178,7 +180,7 @@ async function seedApproval(over: {
      VALUES ($1, $2, $3, $4, $5, 'update_lead', $6, $7, $8, $9) RETURNING id`,
     [
       over.orgId ?? ORG_A,
-      USER_A,
+      over.userId ?? USER_A,
       over.conversationId === undefined ? (source === "chat" ? CONV_A : null) : over.conversationId,
       source === "task" ? TASK_A : null,
       `call-${++seq}`,
@@ -325,6 +327,26 @@ describe("copilot approvals actions against PGlite + 042/043", () => {
 
       expect((await approvalRow(id)).status).toBe("pending");
       expect(executeSpy).not.toHaveBeenCalled();
+    });
+
+    it("only the task owner can resolve: another member of the same org gets invalid and the row stays pending", async () => {
+      executeSpy.mockResolvedValue({ ok: true, data: {}, automationsSkipped: [] });
+      const othersRow = await seedApproval({ userId: USER_A2 });
+
+      expect(await resolveApproval(othersRow, true)).toEqual({ status: "invalid" });
+      expect(await resolveApproval(othersRow, false)).toEqual({ status: "invalid" });
+
+      const row = await approvalRow(othersRow);
+      expect(row.status).toBe("pending");
+      expect(row.resolved_at).toBeNull();
+      expect(executeSpy).not.toHaveBeenCalled();
+      const [lead] = await db.query<Row>("SELECT status FROM leads WHERE id = $1", [LEAD_A]);
+      expect(lead.status).toBe("warm");
+
+      // The caller's own task row in the same org still resolves.
+      const mine = await seedApproval();
+      expect((await resolveApproval(mine, true)).status).toBe("applied");
+      expect(executeSpy).toHaveBeenCalledTimes(1);
     });
 
     it("fails a row whose tool is not a task-proposable write, without executing", async () => {

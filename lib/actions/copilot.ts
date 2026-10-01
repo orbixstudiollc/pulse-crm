@@ -1,6 +1,7 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { deleteOwnConversations } from "@/lib/ai/conversation-delete";
 import { getOrgId } from "./helpers";
 import { getAIClient, callAIWithFallback } from "@/lib/ai/client";
 import { getModelForFeature } from "@/lib/ai/models";
@@ -22,18 +23,25 @@ export async function getConversations() {
   return { data: data || [] };
 }
 
+/**
+ * Deletes one of the caller's own conversations (org AND user), refusing while it is
+ * mid-turn. Approvals the user granted and task-sourced ones are kept (detached).
+ */
 export async function deleteConversation(id: string) {
   const supabase = await createClient();
   const orgId = await getOrgId();
-  const { data, error } = await supabase
-    .from("copilot_conversations")
-    .delete()
-    .eq("id", id)
-    .eq("organization_id", orgId)
-    .select("id");
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
 
-  if (error) return { error: error.message };
-  if (!data?.length) return { error: "Not found" };
+  let result: Awaited<ReturnType<typeof deleteOwnConversations>>;
+  try {
+    result = await deleteOwnConversations(createAdminClient(), { orgId, userId: user.id, ids: [id] });
+  } catch (e) {
+    console.error("deleteConversation failed:", e instanceof Error ? e.message : e);
+    return { error: "Could not delete the conversation" };
+  }
+  if ("error" in result) return { error: result.error };
+  if (result.deleted === 0) return { error: "Not found" };
   return { success: true };
 }
 
@@ -154,9 +162,10 @@ export async function createMemoryItem(item: {
   const { data, error } = await supabase
     .from("copilot_memory")
     .insert({
+      ...item,
+      // After the spread: client input can never set the owner or the org.
       organization_id: orgId,
       user_id: user.id,
-      ...item,
     })
     .select()
     .single();
@@ -374,9 +383,10 @@ export async function createCopilotTask(task: {
   const { data, error } = await supabase
     .from("copilot_tasks")
     .insert({
+      ...task,
+      // After the spread: client input can never set the owner or the org.
       organization_id: orgId,
       user_id: user.id,
-      ...task,
     })
     .select()
     .single();

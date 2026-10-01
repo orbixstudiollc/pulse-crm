@@ -10,8 +10,10 @@ const SCOPE = /organization_id|conversation_id/;
 describe("copilot actions org scoping", () => {
   const mutations = statements.filter((s) => /\.(update|delete)\(/.test(s));
 
+  // deleteConversation's delete lives in lib/ai/conversation-delete.ts (org AND user scoped,
+  // asserted in tests/actions/copilot-memory.test.ts), so 5 chains remain here.
   it("finds the update and delete calls", () => {
-    expect(mutations.length).toBeGreaterThanOrEqual(6);
+    expect(mutations.length).toBeGreaterThanOrEqual(5);
   });
 
   it("scopes every update/delete chain by organization_id or conversation_id", () => {
