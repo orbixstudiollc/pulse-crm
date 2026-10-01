@@ -176,6 +176,8 @@ export function ActionMenu({ items, className, label = "More actions" }: ActionM
                     key={index}
                     role="menuitem"
                     onClick={() => {
+                      // Focus the trigger first, so a modal opened from this item restores focus to it.
+                      buttonRef.current?.focus();
                       item.onClick?.();
                       setOpen(false);
                     }}

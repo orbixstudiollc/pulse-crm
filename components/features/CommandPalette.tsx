@@ -244,7 +244,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
           onChange={handleQueryChange}
           placeholder="Search leads, deals, contacts or type a command..."
           className="flex-1 bg-transparent text-sm text-fg placeholder:text-fg-muted focus:outline-none"
-          autoFocus
+          data-autofocus
         />
         <kbd className="shrink-0 rounded-sm bg-code px-1.5 py-0.5 text-xs text-fg-secondary">
           ESC

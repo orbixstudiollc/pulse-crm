@@ -435,7 +435,7 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
               value={clearConfirmText}
               onChange={(e) => setClearConfirmText(e.target.value)}
               autoComplete="off"
-              autoFocus
+              data-autofocus
               disabled={isPending}
             />
           </div>

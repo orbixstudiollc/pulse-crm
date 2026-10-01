@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -59,15 +59,18 @@ export function Modal({
   }, [open, onClose]);
 
   // Move focus in on open, trap Tab while open, restore focus on close.
-  useEffect(() => {
+  // A layout effect, so the opener is captured before children's passive effects run.
+  // React applies a child's autoFocus before this runs, so content marks its
+  // initial focus target with data-autofocus instead.
+  useLayoutEffect(() => {
     const panel = panelRef.current;
     if (!open || !panel) return;
 
     const previous = document.activeElement as HTMLElement | null;
     openPanels.push(panel);
-    // Keep focus a child already took (e.g. an autoFocus input).
+    // Keep focus a child already took.
     if (!panel.contains(document.activeElement)) {
-      (focusableIn(panel)[0] ?? panel).focus();
+      (panel.querySelector<HTMLElement>("[data-autofocus]") ?? focusableIn(panel)[0] ?? panel).focus();
     }
 
     const handleTab = (e: KeyboardEvent) => {
