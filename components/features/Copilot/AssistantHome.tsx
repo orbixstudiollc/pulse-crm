@@ -56,7 +56,7 @@ const TODAY_ITEMS: TodayItem[] = [
     key: "hotLeadsUntouched",
     icon: FireIcon,
     tone: "text-danger",
-    label: (n) => `hot ${plural(n, "lead", "leads")} not contacted this week`,
+    label: (n) => `hot ${plural(n, "lead", "leads")} to follow up`,
     prompt: "Which hot leads haven't been contacted in the last 7 days? Rank them and help me reach out to each one.",
   },
   {

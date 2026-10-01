@@ -11,7 +11,7 @@ export type AssistantBrief = {
   followupsDueToday: number | null;
   /** Open leads whose next_followup is before today. */
   overdueFollowups: number | null;
-  /** Open hot leads not contacted (last_contacted_at) in HOT_UNTOUCHED_DAYS, or never. */
+  /** Open hot leads not contacted (last_contacted_at) in HOT_UNTOUCHED_DAYS or never; every open hot lead if that column is unavailable. */
   hotLeadsUntouched: number | null;
   /** Open deals (not closed won or lost) not updated (updated_at) in STALE_DEAL_DAYS. */
   staleDeals: number | null;
@@ -68,10 +68,14 @@ export async function getAssistantBrief(): Promise<AssistantBrief> {
     countOf("overdue follow-ups", openLeads().lt("next_followup", today)),
     // Two plain counts (never contacted, contacted before the cutoff) instead of an or()
     // filter: the quoted timestamp inside or() was rejected by PostgREST in production.
+    // If last_contacted_at is unavailable (it has no migration in this repo and may be
+    // missing in a drifted database), fall back to every open hot lead.
     Promise.all([
       countOf("untouched hot leads", openLeads().eq("status", "hot").is("last_contacted_at", null)),
       countOf("untouched hot leads", openLeads().eq("status", "hot").lt("last_contacted_at", hotCutoff)),
-    ]).then(([never, stale]) => (never === null || stale === null ? null : never + stale)),
+    ]).then(([never, stale]) =>
+      never === null || stale === null ? countOf("open hot leads", openLeads().eq("status", "hot")) : never + stale,
+    ),
     countOf(
       "stale deals",
       count("deals").not("stage", "in", "(closed_won,closed_lost)").lt("updated_at", staleCutoff),

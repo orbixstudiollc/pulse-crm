@@ -10,6 +10,8 @@ const queries: Query[] = [];
 /** Per-table count the fake resolves to; a table listed in failing resolves with an error. */
 let counts: Record<string, number> = {};
 let failing = new Set<string>();
+/** A column name; any chain filtering on it resolves with an error (simulates a missing column). */
+let failingFilter: string | null = null;
 let user: { id: string } | null = { id: USER };
 
 // Chainable fake: records every call; awaiting a chain resolves its table's count (head-only).
@@ -23,7 +25,7 @@ function makeBuilder(query: Query) {
   }
   builder.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
     Promise.resolve(
-      failing.has(query.table)
+      failing.has(query.table) || (failingFilter !== null && query.calls.some((c) => c.args[0] === failingFilter))
         ? { data: null, count: null, error: { message: "boom" } }
         : { data: null, count: counts[query.table] ?? 0, error: null },
     ).then(resolve, reject);
@@ -51,6 +53,7 @@ beforeEach(() => {
   queries.length = 0;
   counts = { leads: 2, deals: 5, copilot_approvals: 1 };
   failing = new Set();
+  failingFilter = null;
   user = { id: USER };
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-10-01T15:30:00Z"));
@@ -113,5 +116,15 @@ describe("getAssistantBrief", () => {
 
     expect(brief.pendingApprovals).toBeNull();
     expect(queries.some((q) => q.table === "copilot_approvals")).toBe(false);
+  });
+});
+
+describe("getAssistantBrief without last_contacted_at", () => {
+  it("falls back to every open hot lead when the contact-date counts fail", async () => {
+    failingFilter = "last_contacted_at";
+    const brief = await getAssistantBrief();
+    expect(brief.hotLeadsUntouched).toBe(2);
+    const hot = queries.filter((q) => q.table === "leads" && has(q, "eq", "status", "hot"));
+    expect(hot.some((q) => !q.calls.some((c) => String(c.args[0]) === "last_contacted_at"))).toBe(true);
   });
 });
