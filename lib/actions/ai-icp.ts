@@ -5,6 +5,7 @@ import { getAIClient, checkAIAccess, callAIWithFallback } from "@/lib/ai/client"
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
 import { getModelId } from "@/lib/ai/models";
 import { revalidatePath } from "next/cache";
+import { normalizeWeights } from "@/lib/icp/weights";
 import type { ICPCriteria, ICPWeights, BuyerPersona } from "./icp";
 
 // ── JSON Parser ──────────────────────────────────────────────────────────────
@@ -393,6 +394,13 @@ export interface GeneratedICPProfile {
   reasoning: string;
 }
 
+// ── getICPWizardAvailability ─────────────────────────────────────────────────
+
+/** Whether the ICP wizard can generate right now, checked when the wizard opens. */
+export async function getICPWizardAvailability(): Promise<{ allowed: boolean; reason?: string }> {
+  return checkAIAccess("icp_matching");
+}
+
 // ── aiGenerateICPWizard ──────────────────────────────────────────────────────
 
 /**
@@ -568,19 +576,8 @@ Weights should sum to 100. Return ONLY valid JSON.`;
       return { error: `Failed to parse AI response. Raw start: ${text.substring(0, 200)}` };
     }
 
-    // Normalize weights to sum to 100
-    const rawWeights = parsed.weights || { industry: 25, size: 20, revenue: 15, title: 15, geography: 15, tech: 10 };
-    const weightsSum = Object.values(rawWeights).reduce((s, v) => s + v, 0);
-    const normalizedWeights: ICPWeights = weightsSum > 0
-      ? {
-          industry: Math.round((rawWeights.industry / weightsSum) * 100),
-          size: Math.round((rawWeights.size / weightsSum) * 100),
-          revenue: Math.round((rawWeights.revenue / weightsSum) * 100),
-          title: Math.round((rawWeights.title / weightsSum) * 100),
-          geography: Math.round((rawWeights.geography / weightsSum) * 100),
-          tech: Math.round((rawWeights.tech / weightsSum) * 100),
-        }
-      : { industry: 25, size: 20, revenue: 15, title: 15, geography: 15, tech: 10 };
+    // Normalize weights to sum to exactly 100
+    const normalizedWeights = normalizeWeights(parsed.weights);
 
     // Ensure criteria has all required fields
     const criteria: ICPCriteria = {

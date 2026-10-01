@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef, useEffect } from "react";
+import { useState, useTransition, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -32,6 +32,7 @@ import {
 } from "@/lib/actions/icp";
 import {
   aiGenerateICPWizard,
+  getICPWizardAvailability,
   type WizardAnswers,
   type GeneratedICPProfile,
 } from "@/lib/actions/ai-icp";
@@ -720,12 +721,19 @@ function SalesCycleDropdown({
   );
 }
 
+type WizardAvailability = { allowed: boolean; reason?: string };
+
 function ICPWizardModal({
   open,
   onClose,
+  onSaved,
+  availability,
 }: {
   open: boolean;
   onClose: () => void;
+  onSaved: () => void;
+  /** null while the AI availability check is running */
+  availability: WizardAvailability | null;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -763,6 +771,8 @@ function ICPWizardModal({
   const [editIsPrimary, setEditIsPrimary] = useState(true);
 
   const editWeightsTotal = Object.values(editWeights).reduce((s, v) => s + v, 0);
+  const isCheckingAvailability = availability === null;
+  const isAIBlocked = isCheckingAvailability || !availability.allowed;
 
   const canProceed = () => {
     if (step === 1) return productDescription.trim().length > 0;
@@ -855,7 +865,7 @@ function ICPWizardModal({
 
     router.refresh();
     setIsSaving(false);
-    onClose();
+    onSaved();
   };
 
   return (
@@ -871,238 +881,103 @@ function ICPWizardModal({
           </h2>
         </div>
 
-        {/* Step Indicator */}
-        <div className="flex items-center gap-1 mb-6 mt-4">
-          {WIZARD_STEPS.map((label, i) => (
-            <div key={label} className="flex items-center gap-1 flex-1">
-              <div
-                className={cn(
-                  "h-1.5 rounded-full flex-1 transition-colors",
-                  i + 1 <= step
-                    ? "bg-inverse"
-                    : "bg-active",
-                )}
-              />
+        {isCheckingAvailability && (
+          <p className="mt-4 flex items-center gap-2 text-sm text-fg-secondary">
+            <CircleNotchIcon size={14} className="animate-spin" />
+            Checking AI availability...
+          </p>
+        )}
+
+        {availability && !availability.allowed && (
+          <div className="mt-4 space-y-2">
+            <p className="text-sm text-fg">
+              {availability.reason || "AI ICP generation is not available."}
+            </p>
+            <Link
+              href="/dashboard/settings?tab=ai"
+              className="inline-block text-sm font-medium text-accent-strong underline"
+            >
+              Open AI settings
+            </Link>
+          </div>
+        )}
+
+        {!isAIBlocked && (
+          <>
+            {/* Step Indicator */}
+            <div className="flex items-center gap-1 mb-6 mt-4">
+              {WIZARD_STEPS.map((label, i) => (
+                <div key={label} className="flex items-center gap-1 flex-1">
+                  <div
+                    className={cn(
+                      "h-1.5 rounded-full flex-1 transition-colors",
+                      i + 1 <= step
+                        ? "bg-inverse"
+                        : "bg-active",
+                    )}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <p className="text-sm text-fg-secondary mb-5">
-          Step {step} of 5: {WIZARD_STEPS[step - 1]}
-        </p>
+            <p className="text-sm text-fg-secondary mb-5">
+              Step {step} of 5: {WIZARD_STEPS[step - 1]}
+            </p>
 
-        {/* Step Content */}
-        <div className="max-h-[55vh] overflow-y-auto pr-1 space-y-4">
-          {/* Step 1: Business Context */}
-          {step === 1 && (
-            <>
-              <Textarea
-                label="What does your company sell?"
-                required
-                value={productDescription}
-                onChange={(e) => setProductDescription(e.target.value)}
-                placeholder="e.g. Cloud-based project management software for engineering teams..."
-                rows={3}
-              />
-              <Textarea
-                label="Who are your target buyers?"
-                value={targetBuyers}
-                onChange={(e) => setTargetBuyers(e.target.value)}
-                placeholder="e.g. VP of Engineering, CTOs, Engineering Managers at mid-market companies..."
-                rows={2}
-              />
-              <Input
-                label="Average deal size ($)"
-                type="number"
-                value={avgDealSize}
-                onChange={(e) => setAvgDealSize(e.target.value)}
-                placeholder="e.g. 50000"
-              />
-            </>
-          )}
-
-          {/* Step 2: Customer Characteristics */}
-          {step === 2 && (
-            <>
-              <TagInput
-                label="What industries do your best customers come from?"
-                tags={industries}
-                onChange={setIndustries}
-                placeholder="e.g. SaaS, FinTech, Healthcare..."
-              />
-              <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-fg">
-                  What company sizes do you typically sell to?
-                </label>
-                <div className="flex flex-wrap gap-3">
-                  {companySizeOptions.map((size) => (
-                    <Checkbox
-                      key={size}
-                      label={size}
-                      checked={companySizes.includes(size)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setCompanySizes((prev) => [...prev, size]);
-                        } else {
-                          setCompanySizes((prev) => prev.filter((s) => s !== size));
-                        }
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-              <TagInput
-                label="What geographies do you focus on?"
-                tags={geographies}
-                onChange={setGeographies}
-                placeholder="e.g. United States, Europe, APAC..."
-              />
-            </>
-          )}
-
-          {/* Step 3: Pain Points & Value */}
-          {step === 3 && (
-            <>
-              <TagInput
-                label="What problems does your product solve?"
-                tags={painPoints}
-                onChange={setPainPoints}
-                placeholder="e.g. Slow deployment cycles, Poor team visibility..."
-              />
-              <Textarea
-                label="What makes customers choose you over competitors?"
-                value={differentiators}
-                onChange={(e) => setDifferentiators(e.target.value)}
-                placeholder="e.g. Superior integrations, faster onboarding, better support..."
-                rows={2}
-              />
-              <SalesCycleDropdown value={salesCycle} onChange={setSalesCycle} />
-            </>
-          )}
-
-          {/* Step 4: Deal Patterns */}
-          {step === 4 && (
-            <>
-              <div className="border-b border-divider pb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <SparkleIcon size={16} className="text-fg-secondary" />
-                  <p className="text-sm font-medium text-fg">
-                    AI Data Analysis
-                  </p>
-                </div>
-                <p className="text-sm text-fg-secondary">
-                  AI will automatically analyze your won deals and customer data to enrich the ICP profile with real patterns from your sales history.
-                </p>
-              </div>
-              <Textarea
-                label="Any additional context about your best customers? (Optional)"
-                value={additionalContext}
-                onChange={(e) => setAdditionalContext(e.target.value)}
-                placeholder="e.g. Our best customers usually have a dedicated DevOps team and are already using CI/CD tools..."
-                rows={3}
-              />
-            </>
-          )}
-
-          {/* Step 5: Review & Save */}
-          {step === 5 && (
-            <>
-              {isGenerating && (
-                <div className="flex flex-col items-center justify-center py-12 gap-4">
-                  <CircleNotchIcon size={32} className="animate-spin text-fg-secondary" />
-                  <p className="text-sm text-fg-secondary">
-                    Analyzing your answers and deal history...
-                  </p>
-                </div>
-              )}
-
-              {generationError && !isGenerating && (
-                <div className="border-b border-danger pb-4">
-                  <p className="text-sm text-danger">{generationError}</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-3"
-                    onClick={() => { setStep(4); }}
-                  >
-                    Go Back
-                  </Button>
-                </div>
-              )}
-
-              {generatedProfile && !isGenerating && (
-                <div className="space-y-5">
-                  {/* AI Reasoning */}
-                  <div className="border-b border-divider pb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <SparkleIcon size={16} className="text-fg-secondary" />
-                      <p className="text-sm font-medium text-fg">
-                        AI Reasoning
-                      </p>
-                    </div>
-                    <p className="text-sm text-fg-secondary">
-                      {generatedProfile.reasoning}
-                    </p>
-                  </div>
-
-                  {/* Editable Fields */}
-                  <Input
-                    label="Profile Name"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
+            {/* Step Content */}
+            <div className="max-h-[55vh] overflow-y-auto pr-1 space-y-4">
+              {/* Step 1: Business Context */}
+              {step === 1 && (
+                <>
+                  <Textarea
+                    label="What does your company sell?"
+                    required
+                    value={productDescription}
+                    onChange={(e) => setProductDescription(e.target.value)}
+                    placeholder="e.g. Cloud-based project management software for engineering teams..."
+                    rows={3}
                   />
                   <Textarea
-                    label="Description"
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
+                    label="Who are your target buyers?"
+                    value={targetBuyers}
+                    onChange={(e) => setTargetBuyers(e.target.value)}
+                    placeholder="e.g. VP of Engineering, CTOs, Engineering Managers at mid-market companies..."
                     rows={2}
                   />
+                  <Input
+                    label="Average deal size ($)"
+                    type="number"
+                    value={avgDealSize}
+                    onChange={(e) => setAvgDealSize(e.target.value)}
+                    placeholder="e.g. 50000"
+                  />
+                </>
+              )}
 
-                  {/* Color + Primary */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {colorOptions.map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => setEditColor(c)}
-                          className={cn(
-                            "h-6 w-6 rounded-full border transition-all",
-                            editColor === c
-                              ? "border-inverse scale-110"
-                              : "border-transparent hover:scale-105",
-                          )}
-                          style={{ backgroundColor: c }}
-                        />
-                      ))}
-                    </div>
-                    <Checkbox
-                      label="Set as primary"
-                      checked={editIsPrimary}
-                      onChange={(e) => setEditIsPrimary(e.target.checked)}
-                    />
-                  </div>
-
-                  {/* Firmographic */}
+              {/* Step 2: Customer Characteristics */}
+              {step === 2 && (
+                <>
                   <TagInput
-                    label="Industries"
-                    tags={editIndustries}
-                    onChange={setEditIndustries}
+                    label="What industries do your best customers come from?"
+                    tags={industries}
+                    onChange={setIndustries}
+                    placeholder="e.g. SaaS, FinTech, Healthcare..."
                   />
                   <div className="space-y-1.5">
                     <label className="block text-sm font-medium text-fg">
-                      Company Sizes
+                      What company sizes do you typically sell to?
                     </label>
                     <div className="flex flex-wrap gap-3">
                       {companySizeOptions.map((size) => (
                         <Checkbox
                           key={size}
+                          id={`icp-wizard-size-${size}`}
                           label={size}
-                          checked={editCompanySizes.includes(size)}
+                          checked={companySizes.includes(size)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setEditCompanySizes((prev) => [...prev, size]);
+                              setCompanySizes((prev) => [...prev, size]);
                             } else {
-                              setEditCompanySizes((prev) => prev.filter((s) => s !== size));
+                              setCompanySizes((prev) => prev.filter((s) => s !== size));
                             }
                           }}
                         />
@@ -1110,96 +985,267 @@ function ICPWizardModal({
                     </div>
                   </div>
                   <TagInput
-                    label="Geography"
-                    tags={editGeography}
-                    onChange={setEditGeography}
+                    label="What geographies do you focus on?"
+                    tags={geographies}
+                    onChange={setGeographies}
+                    placeholder="e.g. United States, Europe, APAC..."
                   />
+                </>
+              )}
 
-                  {/* Weights */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-fg">
-                        Weights
-                      </h3>
-                      <span
-                        className={cn(
-                          "text-xs font-medium px-2 py-0.5 rounded-full",
-                          editWeightsTotal === 100
-                            ? "bg-success-surface text-success"
-                            : "bg-warning-surface text-warning",
-                        )}
-                      >
-                        Total: {editWeightsTotal}%
-                      </span>
+              {/* Step 3: Pain Points & Value */}
+              {step === 3 && (
+                <>
+                  <TagInput
+                    label="What problems does your product solve?"
+                    tags={painPoints}
+                    onChange={setPainPoints}
+                    placeholder="e.g. Slow deployment cycles, Poor team visibility..."
+                  />
+                  <Textarea
+                    label="What makes customers choose you over competitors?"
+                    value={differentiators}
+                    onChange={(e) => setDifferentiators(e.target.value)}
+                    placeholder="e.g. Superior integrations, faster onboarding, better support..."
+                    rows={2}
+                  />
+                  <SalesCycleDropdown value={salesCycle} onChange={setSalesCycle} />
+                </>
+              )}
+
+              {/* Step 4: Deal Patterns */}
+              {step === 4 && (
+                <>
+                  <div className="border-b border-divider pb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <SparkleIcon size={16} className="text-fg-secondary" />
+                      <p className="text-sm font-medium text-fg">
+                        AI Data Analysis
+                      </p>
                     </div>
-                    {(
-                      [
-                        { key: "industry" as const, label: "Industry" },
-                        { key: "size" as const, label: "Company Size" },
-                        { key: "revenue" as const, label: "Revenue" },
-                        { key: "title" as const, label: "Title / Role" },
-                        { key: "geography" as const, label: "Geography" },
-                        { key: "tech" as const, label: "Technology" },
-                      ] as const
-                    ).map(({ key, label }) => (
-                      <div key={key} className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <label className="text-sm text-fg-secondary">
-                            {label}
-                          </label>
-                          <span className="text-sm font-medium text-fg">
-                            {editWeights[key]}%
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min={0}
-                          max={100}
-                          value={editWeights[key]}
-                          onChange={(e) =>
-                            setEditWeights((prev) => ({ ...prev, [key]: Number(e.target.value) }))
-                          }
-                          className="w-full h-1.5 bg-active rounded-full appearance-none cursor-pointer accent-accent"
-                        />
-                      </div>
-                    ))}
+                    <p className="text-sm text-fg-secondary">
+                      AI will automatically analyze your won deals and customer data to enrich the ICP profile with real patterns from your sales history.
+                    </p>
                   </div>
+                  <Textarea
+                    label="Any additional context about your best customers? (Optional)"
+                    value={additionalContext}
+                    onChange={(e) => setAdditionalContext(e.target.value)}
+                    placeholder="e.g. Our best customers usually have a dedicated DevOps team and are already using CI/CD tools..."
+                    rows={3}
+                  />
+                </>
+              )}
 
-                  {/* Buyer Personas Preview */}
-                  {generatedProfile.buyer_personas.length > 0 && (
-                    <div>
-                      <h3 className="mb-2 text-sm font-semibold text-fg">
-                        Buyer Personas
-                      </h3>
-                      {generatedProfile.buyer_personas.map((persona, i) => (
-                        <div
-                          key={i}
-                          className="border-t border-divider py-3"
-                        >
-                          <p className="text-sm font-medium text-fg mb-1">
-                            {persona.role}
-                          </p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {persona.goals.slice(0, 3).map((g) => (
-                              <Badge key={g} variant="info">{g}</Badge>
-                            ))}
-                            {persona.challenges.slice(0, 2).map((c) => (
-                              <Badge key={c} variant="warning">{c}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
+              {/* Step 5: Review & Save */}
+              {step === 5 && (
+                <>
+                  {isGenerating && (
+                    <div className="flex flex-col items-center justify-center py-12 gap-4">
+                      <CircleNotchIcon size={32} className="animate-spin text-fg-secondary" />
+                      <p className="text-sm text-fg-secondary">
+                        Analyzing your answers and deal history...
+                      </p>
                     </div>
                   )}
-                </div>
+
+                  {generationError && !isGenerating && (
+                    <div className="border-b border-danger pb-4">
+                      <p className="text-sm text-danger">{generationError}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => { setStep(4); }}
+                      >
+                        Go Back
+                      </Button>
+                    </div>
+                  )}
+
+                  {generatedProfile && !isGenerating && (
+                    <div className="space-y-5">
+                      {/* AI Reasoning */}
+                      <div className="border-b border-divider pb-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <SparkleIcon size={16} className="text-fg-secondary" />
+                          <p className="text-sm font-medium text-fg">
+                            AI Reasoning
+                          </p>
+                        </div>
+                        <p className="text-sm text-fg-secondary">
+                          {generatedProfile.reasoning}
+                        </p>
+                      </div>
+
+                      {/* Editable Fields */}
+                      <Input
+                        label="Profile Name"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                      />
+                      <Textarea
+                        label="Description"
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        rows={2}
+                      />
+
+                      {/* Color + Primary */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {colorOptions.map((c) => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => setEditColor(c)}
+                              className={cn(
+                                "h-6 w-6 rounded-full border transition-all",
+                                editColor === c
+                                  ? "border-inverse scale-110"
+                                  : "border-transparent hover:scale-105",
+                              )}
+                              style={{ backgroundColor: c }}
+                            />
+                          ))}
+                        </div>
+                        <Checkbox
+                          label="Set as primary"
+                          checked={editIsPrimary}
+                          onChange={(e) => setEditIsPrimary(e.target.checked)}
+                        />
+                      </div>
+
+                      {/* Firmographic */}
+                      <TagInput
+                        label="Industries"
+                        tags={editIndustries}
+                        onChange={setEditIndustries}
+                      />
+                      <div className="space-y-1.5">
+                        <label className="block text-sm font-medium text-fg">
+                          Company Sizes
+                        </label>
+                        <div className="flex flex-wrap gap-3">
+                          {companySizeOptions.map((size) => (
+                            <Checkbox
+                              key={size}
+                              id={`icp-wizard-edit-size-${size}`}
+                              label={size}
+                              checked={editCompanySizes.includes(size)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setEditCompanySizes((prev) => [...prev, size]);
+                                } else {
+                                  setEditCompanySizes((prev) => prev.filter((s) => s !== size));
+                                }
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <TagInput
+                        label="Geography"
+                        tags={editGeography}
+                        onChange={setEditGeography}
+                      />
+
+                      {/* Weights */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-fg">
+                            Weights
+                          </h3>
+                          <span
+                            className={cn(
+                              "text-xs font-medium px-2 py-0.5 rounded-full",
+                              editWeightsTotal === 100
+                                ? "bg-success-surface text-success"
+                                : "bg-warning-surface text-warning",
+                            )}
+                          >
+                            Total: {editWeightsTotal}%
+                          </span>
+                        </div>
+                        {(
+                          [
+                            { key: "industry" as const, label: "Industry" },
+                            { key: "size" as const, label: "Company Size" },
+                            { key: "revenue" as const, label: "Revenue" },
+                            { key: "title" as const, label: "Title / Role" },
+                            { key: "geography" as const, label: "Geography" },
+                            { key: "tech" as const, label: "Technology" },
+                          ] as const
+                        ).map(({ key, label }) => (
+                          <div key={key} className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <label className="text-sm text-fg-secondary">
+                                {label}
+                              </label>
+                              <span className="text-sm font-medium text-fg">
+                                {editWeights[key]}%
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min={0}
+                              max={100}
+                              value={editWeights[key]}
+                              onChange={(e) =>
+                                setEditWeights((prev) => ({ ...prev, [key]: Number(e.target.value) }))
+                              }
+                              className="w-full h-1.5 bg-active rounded-full appearance-none cursor-pointer accent-accent"
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Buyer Personas Preview */}
+                      {generatedProfile.buyer_personas.length > 0 && (
+                        <div>
+                          <h3 className="mb-2 text-sm font-semibold text-fg">
+                            Buyer Personas
+                          </h3>
+                          {generatedProfile.buyer_personas.map((persona, i) => (
+                            <div
+                              key={i}
+                              className="border-t border-divider py-3"
+                            >
+                              <p className="text-sm font-medium text-fg mb-1">
+                                {persona.role}
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {persona.goals.slice(0, 3).map((g) => (
+                                  <Badge key={g} variant="info">{g}</Badge>
+                                ))}
+                                {persona.challenges.slice(0, 2).map((c) => (
+                                  <Badge key={c} variant="warning">{c}</Badge>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
 
         {/* Actions */}
         <div className="flex gap-3 mt-6 pt-4 border-t border-line">
-          {step === 1 ? (
+          {isAIBlocked ? (
+            <>
+              <Button variant="outline" className="flex-1" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button className="flex-1" disabled>
+                Next
+              </Button>
+            </>
+          ) : step === 1 ? (
             <Button variant="outline" className="flex-1" onClick={onClose}>
               Cancel
             </Button>
@@ -1230,7 +1276,7 @@ function ICPWizardModal({
             <Button
               className="flex-1"
               onClick={handleSave}
-              disabled={isGenerating || isSaving || !generatedProfile}
+              disabled={isGenerating || isSaving || !generatedProfile || editWeightsTotal !== 100}
               leftIcon={
                 isSaving ? (
                   <CircleNotchIcon size={18} className="animate-spin" />
@@ -1255,6 +1301,9 @@ export function ICPClient({ profiles, insights }: ICPClientProps) {
   const [isPending, startTransition] = useTransition();
   const [showModal, setShowModal] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [wizardKey, setWizardKey] = useState(0);
+  const [wizardAvailability, setWizardAvailability] = useState<WizardAvailability | null>(null);
+  const availabilityRequest = useRef(0);
   const [editProfile, setEditProfile] = useState<ICPProfile | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ICPProfile | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -1268,6 +1317,30 @@ export function ICPClient({ profiles, insights }: ICPClientProps) {
     setEditProfile(profile);
     setShowModal(true);
   };
+
+  const openWizard = () => {
+    const requestId = ++availabilityRequest.current;
+    setWizardAvailability(null);
+    setShowWizard(true);
+    getICPWizardAvailability()
+      .then((res) => {
+        if (requestId === availabilityRequest.current) setWizardAvailability(res);
+      })
+      .catch(() => {
+        if (requestId === availabilityRequest.current) {
+          setWizardAvailability({ allowed: false, reason: "Could not check AI availability." });
+        }
+      });
+  };
+
+  // Stable so the always-mounted wizard's Modal doesn't re-run its scroll-lock effect each render.
+  const closeWizard = useCallback(() => setShowWizard(false), []);
+
+  // Answers are kept while the wizard is closed; a fresh key clears them after a save.
+  const handleWizardSaved = useCallback(() => {
+    setShowWizard(false);
+    setWizardKey((k) => k + 1);
+  }, []);
 
   const handleCloseModal = () => {
     setShowModal(false);
@@ -1308,38 +1381,39 @@ export function ICPClient({ profiles, insights }: ICPClientProps) {
     <Page>
       {/* Page Header */}
       <PageHeader title="Ideal Customer Profiles" icon={<CrosshairIcon size={18} />}>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRecalculate}
-            disabled={isPending || profiles.length === 0}
-            leftIcon={
-              isPending ? (
-                <CircleNotchIcon size={16} className="animate-spin" />
-              ) : (
-                <CrosshairIcon size={16} />
-              )
-            }
-          >
-            Recalculate Matches
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<SparkleIcon size={16} />}
-            onClick={() => setShowWizard(true)}
-          >
-            Create with AI
-          </Button>
-          <Button
-            size="sm"
-            leftIcon={<PlusIcon size={16} />}
-            onClick={handleCreate}
-          >
-            Create Manually
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="whitespace-nowrap"
+          onClick={handleRecalculate}
+          disabled={isPending || profiles.length === 0}
+          leftIcon={
+            isPending ? (
+              <CircleNotchIcon size={16} className="animate-spin" />
+            ) : (
+              <CrosshairIcon size={16} />
+            )
+          }
+        >
+          Recalculate Matches
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="whitespace-nowrap"
+          leftIcon={<SparkleIcon size={16} />}
+          onClick={openWizard}
+        >
+          Create with AI
+        </Button>
+        <Button
+          size="sm"
+          className="whitespace-nowrap"
+          leftIcon={<PlusIcon size={16} />}
+          onClick={handleCreate}
+        >
+          Create Manually
+        </Button>
       </PageHeader>
 
       {/* Insights Summary */}
@@ -1425,7 +1499,7 @@ export function ICPClient({ profiles, insights }: ICPClientProps) {
             {
               label: "Create with AI",
               icon: <SparkleIcon size={16} />,
-              onClick: () => setShowWizard(true),
+              onClick: openWizard,
             },
             {
               label: "Create Manually",
@@ -1446,13 +1520,14 @@ export function ICPClient({ profiles, insights }: ICPClientProps) {
         />
       )}
 
-      {/* AI Wizard Modal */}
-      {showWizard && (
-        <ICPWizardModal
-          open={showWizard}
-          onClose={() => setShowWizard(false)}
-        />
-      )}
+      {/* AI Wizard Modal (kept mounted so answers survive closing) */}
+      <ICPWizardModal
+        key={wizardKey}
+        open={showWizard}
+        onClose={closeWizard}
+        onSaved={handleWizardSaved}
+        availability={wizardAvailability}
+      />
 
       {/* Delete Confirmation */}
       <DeleteConfirmModal
