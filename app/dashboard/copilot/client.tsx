@@ -989,7 +989,7 @@ function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.
                           <span className="text-[12px] px-2 py-0.5 rounded-full bg-muted text-fg-secondary font-medium">
                             {memoryTypes.find(t => t.value === item.type)?.label || item.type}
                           </span>
-                          {item.source === "website" && (
+                          {item.source === "scrape" && (
                             <span className="text-[12px] px-2 py-0.5 rounded-full bg-accent-surface text-accent-on-surface">Website</span>
                           )}
                           {!item.is_active && (

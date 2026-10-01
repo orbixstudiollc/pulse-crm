@@ -1,14 +1,9 @@
 // Pure builder for the workspace-memory block injected into the copilot system prompt.
 // No I/O: callers load memories / ICP profiles and pass them in.
 
-/** Defined here until the shared type lands with the guidance migration; superset of the DB enum. */
-export type CopilotMemoryType =
-  | "guidance"
-  | "business_details"
-  | "product_info"
-  | "brand_voice"
-  | "target_audience"
-  | "custom";
+import type { CopilotMemoryType } from "@/types/database";
+
+export type { CopilotMemoryType };
 
 export interface MemoryBlockMemory {
   type: CopilotMemoryType;

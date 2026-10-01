@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrgId } from "./helpers";
 import { getAIClient, callAIWithFallback } from "@/lib/ai/client";
 import { getModelForFeature } from "@/lib/ai/models";
+import type { CopilotMemoryType } from "@/types/database";
 
 // ── Conversations ──────────────────────────────────────────────────────────
 
@@ -138,7 +139,7 @@ export async function getMemoryItems() {
 }
 
 export async function createMemoryItem(item: {
-  type: "business_details" | "product_info" | "target_audience" | "brand_voice" | "custom";
+  type: CopilotMemoryType;
   title: string;
   content: string;
   source?: "manual" | "website" | "file";
@@ -166,7 +167,7 @@ export async function createMemoryItem(item: {
 export async function updateMemoryItem(id: string, updates: {
   title?: string;
   content?: string;
-  type?: "business_details" | "product_info" | "target_audience" | "brand_voice" | "custom";
+  type?: CopilotMemoryType;
   is_active?: boolean;
 }) {
   const supabase = await createClient();

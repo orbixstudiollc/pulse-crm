@@ -10,6 +10,27 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
+export type CopilotApprovalStatus =
+  | "pending"
+  | "approved"
+  | "denied"
+  | "applied"
+  | "failed"
+  | "stale"
+  | "expired";
+
+export type CopilotArtifactKind = "email_draft" | "lead_list" | "report" | "note";
+
+export type NotificationKind = "task_result" | "approval_pending";
+
+export type CopilotMemoryType =
+  | "business_details"
+  | "product_info"
+  | "target_audience"
+  | "brand_voice"
+  | "custom"
+  | "guidance";
+
 export type Database = {
   public: {
     Tables: {
@@ -1411,6 +1432,7 @@ export type Database = {
           last_token_reset_daily: string;
           last_token_reset_monthly: string;
           parallel_enrichment_limit: number;
+          copilot_always_allow: Json;
           created_at: string;
           updated_at: string;
         };
@@ -1435,6 +1457,7 @@ export type Database = {
           openai_api_key?: string | null;
           default_model?: string;
           parallel_enrichment_limit?: number;
+          copilot_always_allow?: Json;
           feature_lead_scoring?: boolean;
           feature_icp_matching?: boolean;
           feature_outreach?: boolean;
@@ -1481,6 +1504,7 @@ export type Database = {
           openai_api_key?: string | null;
           default_model?: string;
           parallel_enrichment_limit?: number;
+          copilot_always_allow?: Json;
           feature_lead_scoring?: boolean;
           feature_icp_matching?: boolean;
           feature_outreach?: boolean;
@@ -2072,6 +2096,9 @@ export type Database = {
           title: string;
           summary: string | null;
           is_pinned: boolean;
+          page_key: string | null;
+          turn_lock_until: string | null;
+          turn_lock_token: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -2082,6 +2109,9 @@ export type Database = {
           title?: string;
           summary?: string | null;
           is_pinned?: boolean;
+          page_key?: string | null;
+          turn_lock_until?: string | null;
+          turn_lock_token?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -2089,6 +2119,9 @@ export type Database = {
           title?: string;
           summary?: string | null;
           is_pinned?: boolean;
+          page_key?: string | null;
+          turn_lock_until?: string | null;
+          turn_lock_token?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -2103,6 +2136,9 @@ export type Database = {
           tool_calls: Json | null;
           tool_results: Json | null;
           tokens_used: number;
+          parts: Json | null;
+          message_id: string | null;
+          seq: number | null;
           created_at: string;
         };
         Insert: {
@@ -2114,6 +2150,9 @@ export type Database = {
           tool_calls?: Json | null;
           tool_results?: Json | null;
           tokens_used?: number;
+          parts?: Json | null;
+          message_id?: string | null;
+          seq?: number | null;
           created_at?: string;
         };
         Update: {
@@ -2121,6 +2160,124 @@ export type Database = {
           tool_calls?: Json | null;
           tool_results?: Json | null;
           tokens_used?: number;
+          parts?: Json | null;
+          message_id?: string | null;
+          seq?: number | null;
+        };
+        Relationships: [];
+      };
+      copilot_approvals: {
+        Row: {
+          id: string;
+          organization_id: string;
+          user_id: string | null;
+          conversation_id: string | null;
+          task_id: string | null;
+          tool_call_id: string;
+          approval_id: string | null;
+          tool_name: string;
+          input: Json;
+          diff: Json;
+          source: "chat" | "task";
+          status: CopilotApprovalStatus;
+          result: Json | null;
+          created_at: string;
+          resolved_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          user_id?: string | null;
+          conversation_id?: string | null;
+          task_id?: string | null;
+          tool_call_id: string;
+          approval_id?: string | null;
+          tool_name: string;
+          input: Json;
+          diff: Json;
+          source: "chat" | "task";
+          status?: CopilotApprovalStatus;
+          result?: Json | null;
+          created_at?: string;
+          resolved_at?: string | null;
+        };
+        Update: {
+          approval_id?: string | null;
+          status?: CopilotApprovalStatus;
+          result?: Json | null;
+          resolved_at?: string | null;
+        };
+        Relationships: [];
+      };
+      copilot_artifacts: {
+        Row: {
+          id: string;
+          organization_id: string;
+          user_id: string | null;
+          conversation_id: string | null;
+          task_id: string | null;
+          kind: CopilotArtifactKind;
+          title: string;
+          content: Json;
+          starred: boolean;
+          linked_record_type: "lead" | "deal" | "customer" | "contact" | "competitor" | null;
+          linked_record_id: string | null;
+          deleted_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          user_id?: string | null;
+          conversation_id?: string | null;
+          task_id?: string | null;
+          kind: CopilotArtifactKind;
+          title: string;
+          content: Json;
+          starred?: boolean;
+          linked_record_type?: "lead" | "deal" | "customer" | "contact" | "competitor" | null;
+          linked_record_id?: string | null;
+          deleted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          title?: string;
+          content?: Json;
+          starred?: boolean;
+          linked_record_type?: "lead" | "deal" | "customer" | "contact" | "competitor" | null;
+          linked_record_id?: string | null;
+          deleted_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          id: string;
+          organization_id: string;
+          user_id: string | null;
+          kind: NotificationKind;
+          title: string;
+          body: string | null;
+          link: string | null;
+          read_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          user_id?: string | null;
+          kind: NotificationKind;
+          title: string;
+          body?: string | null;
+          link?: string | null;
+          read_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          read_at?: string | null;
         };
         Relationships: [];
       };
@@ -2129,10 +2286,10 @@ export type Database = {
           id: string;
           organization_id: string;
           user_id: string;
-          type: "business_details" | "product_info" | "target_audience" | "brand_voice" | "custom";
+          type: CopilotMemoryType;
           title: string;
           content: string;
-          source: "manual" | "website" | "file" | null;
+          source: "user" | "copilot" | "scrape";
           source_url: string | null;
           is_active: boolean;
           created_at: string;
@@ -2142,20 +2299,20 @@ export type Database = {
           id?: string;
           organization_id: string;
           user_id: string;
-          type: "business_details" | "product_info" | "target_audience" | "brand_voice" | "custom";
+          type: CopilotMemoryType;
           title: string;
           content: string;
-          source?: "manual" | "website" | "file" | null;
+          source?: "user" | "copilot" | "scrape" | "manual" | "website" | "file";
           source_url?: string | null;
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
-          type?: "business_details" | "product_info" | "target_audience" | "brand_voice" | "custom";
+          type?: CopilotMemoryType;
           title?: string;
           content?: string;
-          source?: "manual" | "website" | "file" | null;
+          source?: "user" | "copilot" | "scrape" | "manual" | "website" | "file";
           source_url?: string | null;
           is_active?: boolean;
           updated_at?: string;
@@ -2176,6 +2333,9 @@ export type Database = {
           next_run_at: string | null;
           run_count: number;
           last_result: string | null;
+          locked_at: string | null;
+          last_error: string | null;
+          last_artifact_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -2192,6 +2352,9 @@ export type Database = {
           next_run_at?: string | null;
           run_count?: number;
           last_result?: string | null;
+          locked_at?: string | null;
+          last_error?: string | null;
+          last_artifact_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -2205,6 +2368,9 @@ export type Database = {
           next_run_at?: string | null;
           run_count?: number;
           last_result?: string | null;
+          locked_at?: string | null;
+          last_error?: string | null;
+          last_artifact_id?: string | null;
           updated_at?: string;
         };
         Relationships: [];
