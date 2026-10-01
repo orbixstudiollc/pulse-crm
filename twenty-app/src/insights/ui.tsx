@@ -170,13 +170,13 @@ export const KpiRow = ({ tiles }: { tiles: { label: string; value: string; hint?
             overflow: 'hidden',
           }}
         >
-          <span style={{ color: theme.muted, fontSize: 'clamp(10px, 14cqh, 13px)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <span style={{ color: theme.muted, fontSize: 'clamp(10px, 14cqh, 13px)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {t.label}
           </span>
           <span
             style={{
               color: t.tone ? theme.color(t.tone) : theme.text,
-              fontSize: 'clamp(16px, 34cqh, 30px)',
+              fontSize: 'clamp(16px, 30cqh, 28px)',
               fontWeight: 600,
               lineHeight: 1.1,
               whiteSpace: 'nowrap',
@@ -188,7 +188,7 @@ export const KpiRow = ({ tiles }: { tiles: { label: string; value: string; hint?
             {t.value}
           </span>
           {t.hint ? (
-            <span style={{ color: theme.muted, fontSize: 'clamp(9px, 11cqh, 12px)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <span style={{ color: theme.muted, fontSize: 'clamp(9px, 11cqh, 12px)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {t.hint}
             </span>
           ) : null}

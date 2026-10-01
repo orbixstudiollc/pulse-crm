@@ -37,9 +37,9 @@ export default definePageLayout({
       icon: 'IconHome',
       layoutMode: PageLayoutTabLayoutMode.GRID,
       widgets: [
-        { universalIdentifier: OVERVIEW_W_KPIS_ID, title: 'This week', type: 'FRONT_COMPONENT', position: grid(0, 0, 2, 12), configuration: fc(FC_OVERVIEW_KPIS_ID) },
-        { universalIdentifier: OVERVIEW_W_PIPELINE_ID, title: 'Pipeline value by stage', type: 'FRONT_COMPONENT', position: grid(2, 0, 6, 6), configuration: fc(FC_PIPELINE_BY_STAGE_ID) },
-        { universalIdentifier: OVERVIEW_W_STATUS_ID, title: 'Leads by status', type: 'FRONT_COMPONENT', position: grid(2, 6, 6, 6), configuration: fc(FC_LEADS_BY_STATUS_ID) },
+        { universalIdentifier: OVERVIEW_W_KPIS_ID, title: 'This week', type: 'FRONT_COMPONENT', position: grid(0, 0, 3, 12), configuration: fc(FC_OVERVIEW_KPIS_ID) },
+        { universalIdentifier: OVERVIEW_W_PIPELINE_ID, title: 'Pipeline value by stage', type: 'FRONT_COMPONENT', position: grid(3, 0, 6, 6), configuration: fc(FC_PIPELINE_BY_STAGE_ID) },
+        { universalIdentifier: OVERVIEW_W_STATUS_ID, title: 'Leads by status', type: 'FRONT_COMPONENT', position: grid(3, 6, 6, 6), configuration: fc(FC_LEADS_BY_STATUS_ID) },
       ],
     },
   ],
