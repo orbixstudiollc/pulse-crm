@@ -22,7 +22,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               aria-invalid={error ? "true" : "false"}
               aria-describedby={error ? `${id}-error` : undefined}
               className={cn(
-                "peer h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-sm border border-line bg-surface transition-colors duration-150 focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50",
+                "peer relative h-4 w-4 shrink-0 after:absolute after:left-1/2 after:top-1/2 after:h-8 after:w-8 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] cursor-pointer appearance-none rounded-sm border border-line bg-surface transition-colors duration-150 focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50",
                 "checked:bg-accent checked:border-accent",
                 className,
               )}

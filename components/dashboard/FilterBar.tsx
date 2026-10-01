@@ -139,7 +139,7 @@ export function FilterBar({
 
       <button
         onClick={handleClearAll}
-        className="ml-auto text-[13px] text-fg-secondary hover:text-fg transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="ml-auto inline-flex min-h-8 items-center px-2 text-[13px] text-fg-secondary hover:text-fg transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         Clear all
       </button>

@@ -827,7 +827,7 @@ export default function AllLeadsPage() {
           ))}
           <button
             onClick={clearAllFilters}
-            className="text-xs text-fg-secondary hover:text-fg transition-colors underline"
+            className="inline-flex min-h-8 items-center px-2 text-xs text-fg-secondary hover:text-fg transition-colors underline"
           >
             Clear all
           </button>
