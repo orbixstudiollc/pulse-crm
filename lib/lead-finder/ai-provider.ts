@@ -15,6 +15,8 @@ import {
   type ResolvedAIProvider,
 } from "@/lib/ai/provider-resolver";
 import { createCustomFetch, customModelFor } from "@/lib/ai/custom-provider";
+import { checkSharedBudget, recordSharedUsage } from "@/lib/ai/shared-budget";
+import { SHARED_BUDGET_BUSY_REASON, SharedBudgetError } from "@/lib/ai/shared-budget-core";
 import { getModelId, MODEL_MAP } from "@/lib/ai/models";
 import type { AIModel } from "@/lib/ai/types";
 
@@ -311,21 +313,55 @@ async function resolveForOrg(
 // Main completion wrapper
 // =============================================================================
 
+type CompletionOptions = { temperature?: number; maxTokens?: number; model?: string };
+
 export async function generateCompletion(
   messages: AIMessage[],
   providerHint: AIProvider,
   orgId: string,
-  options?: { temperature?: number; maxTokens?: number; model?: string }
+  options?: CompletionOptions
+): Promise<AIResponse> {
+  const route = await resolveForOrg(orgId, providerHint);
+
+  // The owner's shared key pays for env credentials and for Ollama Cloud
+  // (always env-keyed): check the shared budget first, and log the usage to
+  // ai_usage_log (lf_llm_costs cannot mark shared usage) so it is counted.
+  const sharedKey =
+    route.provider === "ollama_cloud" || route.resolved?.source === "env";
+  if (sharedKey) {
+    const budget = await checkSharedBudget(orgId);
+    if (!budget.allowed) {
+      throw new SharedBudgetError(budget.reason ?? SHARED_BUDGET_BUSY_REASON);
+    }
+  }
+
+  const startTime = Date.now();
+  const response = await completeWith(route, messages, orgId, options);
+  if (sharedKey) {
+    await recordSharedUsage({
+      orgId,
+      feature: "lead_finder",
+      model: response.model,
+      inputTokens: response.inputTokens,
+      outputTokens: response.outputTokens,
+      durationMs: Date.now() - startTime,
+      provider: response.provider,
+    });
+  }
+  return response;
+}
+
+async function completeWith(
+  route: Awaited<ReturnType<typeof resolveForOrg>>,
+  messages: AIMessage[],
+  orgId: string,
+  options?: CompletionOptions
 ): Promise<AIResponse> {
   const keys = await getApiKeys(orgId);
   const temperature = options?.temperature ?? 0.7;
   const maxTokens = options?.maxTokens ?? 2048;
 
-  const {
-    provider,
-    model: defaultModel,
-    resolved,
-  } = await resolveForOrg(orgId, providerHint);
+  const { provider, model: defaultModel, resolved } = route;
   // The env custom fallback always uses its own model.
   const model =
     provider === "custom" && resolved?.source === "env"

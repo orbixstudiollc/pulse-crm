@@ -13,6 +13,7 @@ import { assembleContext, fetchEntityForChat } from "@/lib/ai/context";
 import { createAIMessagesClient, logTokenUsage, tokenLimitReason } from "@/lib/ai/client";
 import { getModelId } from "@/lib/ai/models";
 import { customModelSettingsFor, resolveAIProvider } from "@/lib/ai/provider-resolver";
+import { checkSharedBudget } from "@/lib/ai/shared-budget";
 import { aiSdkBaseUrl, createCustomFetch, customModelFor } from "@/lib/ai/custom-provider";
 import { checkRateLimit, acquireRateLimit } from "@/lib/ai/rate-limiter";
 import { toChatMessages } from "@/lib/ai/chat-messages";
@@ -64,7 +65,7 @@ export async function POST(req: Request) {
 
     const notConfigured = () =>
       new Response(
-        "No AI API key configured. Add one in Settings > AI or set ANTHROPIC_API_KEY.",
+        "AI isn't set up for this workspace yet. Add a provider in Settings → AI Assistant.",
         { status: 400 }
       );
     const resolved = resolveAIProvider(settings ?? {}, process.env);
@@ -91,6 +92,14 @@ export async function POST(req: Request) {
     }
 
     const orgId = profile.organization_id;
+    // The owner's shared (env) key is limited per workspace and site-wide per
+    // UTC day. Plain text so the chat UI shows the reason as is.
+    const sharedKey = resolved.source === "env";
+    if (sharedKey) {
+      const budget = await checkSharedBudget(orgId);
+      if (!budget.allowed) return new Response(budget.reason, { status: 429 });
+    }
+
     const rateCheck = checkRateLimit(orgId);
     if (!rateCheck.allowed) {
       const retryAfterSec = Math.ceil((rateCheck.retryAfterMs || 1000) / 1000);
@@ -140,7 +149,7 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
     if (provider !== "anthropic" && provider !== "openrouter" && provider !== "custom") {
       // OpenAI-compatible providers (OpenAI, Groq, Ollama): one completion
       // without CRM tools, delivered as a single text part of the UI stream.
-      const client = createAIMessagesClient(resolved);
+      const client = createAIMessagesClient(resolved, null, orgId);
       const chatMessages = (messages as Array<{ role: string; content?: unknown }>).filter(
         (m): m is { role: "user" | "assistant"; content: string } =>
           (m.role === "user" || m.role === "assistant") &&
@@ -175,6 +184,7 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
               outputTokens: response.usage.output_tokens,
               durationMs: Date.now() - startTime,
               success: true,
+              sharedKey,
               metadata: { provider },
             });
           } finally {
@@ -527,6 +537,7 @@ ${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByTy
           outputTokens: totalUsage?.outputTokens || 0,
           durationMs,
           success: true,
+          sharedKey,
         });
       },
     });

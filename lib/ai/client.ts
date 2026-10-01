@@ -12,6 +12,8 @@ import {
   resolveAIProvider,
   type ResolvedAIProvider,
 } from "./provider-resolver";
+import { checkSharedBudget } from "./shared-budget";
+import { SHARED_BUDGET_BUSY_REASON, SharedBudgetError } from "./shared-budget-core";
 
 /** The part of the Anthropic SDK the CRM uses: non-streaming messages.create. */
 export interface AIMessagesClient {
@@ -25,6 +27,8 @@ interface AIClientResult {
   settings: AISettings;
   orgId: string;
   userId: string;
+  /** "env" when the owner's shared key pays for calls (see lib/ai/shared-budget.ts). */
+  source: ResolvedAIProvider["source"];
 }
 
 type OpenAICompatibleProvider = "openai" | "groq" | "ollama";
@@ -187,11 +191,40 @@ function customClient(
 }
 
 /**
+ * Checks the shared-key budget before every call. Without an org to charge,
+ * the call is refused (fail closed).
+ */
+function withSharedBudget(client: AIMessagesClient, orgId?: string): AIMessagesClient {
+  return {
+    messages: {
+      create: async (params) => {
+        const budget = orgId
+          ? await checkSharedBudget(orgId)
+          : { allowed: false, reason: SHARED_BUDGET_BUSY_REASON };
+        if (!budget.allowed) throw new SharedBudgetError(budget.reason ?? SHARED_BUDGET_BUSY_REASON);
+        return client.messages.create(params);
+      },
+    },
+  };
+}
+
+/**
  * Build the client for a resolved provider. `settings` lets the custom
  * provider map Claude model IDs to the org's configured models; the env custom
- * fallback always uses its own models instead.
+ * fallback always uses its own models instead. A server-wide (env) credential
+ * is the owner's shared key: every call on it is checked against `orgId`'s
+ * shared-key budget first, so no caller can skip the limit.
  */
 export function createAIMessagesClient(
+  resolved: ResolvedAIProvider,
+  settings?: CustomModelSettings | null,
+  orgId?: string
+): AIMessagesClient {
+  const client = providerClient(resolved, settings);
+  return resolved.source === "env" ? withSharedBudget(client, orgId) : client;
+}
+
+function providerClient(
   resolved: ResolvedAIProvider,
   settings?: CustomModelSettings | null
 ): AIMessagesClient {
@@ -305,13 +338,14 @@ export async function getAIClient(): Promise<AIClientResult> {
   // Override the resolved provider so model resolution uses the correct map
   resolvedSettings.ai_provider = resolved.provider;
 
-  const client = createAIMessagesClient(resolved, resolvedSettings);
+  const client = createAIMessagesClient(resolved, resolvedSettings, profile.organization_id);
 
   return {
     client,
     settings: resolvedSettings,
     orgId: profile.organization_id,
     userId: user.id,
+    source: resolved.source,
   };
 }
 
@@ -354,7 +388,8 @@ export async function callAIWithFallback(params: {
 
   for (let i = 0; i < providerOrder.length; i++) {
     const provider = providerOrder[i].provider;
-    const client = createAIMessagesClient(providerOrder[i], settings);
+    const sharedKey = providerOrder[i].source === "env";
+    const client = createAIMessagesClient(providerOrder[i], settings, orgId);
     // The custom provider always gets its configured model (the env fallback's
     // own models, never the org's, for source "env"); the others get the
     // Claude/OpenRouter ID for the same tier.
@@ -387,6 +422,7 @@ export async function callAIWithFallback(params: {
         outputTokens: response.usage?.output_tokens || 0,
         durationMs,
         success: true,
+        sharedKey,
         metadata: {
           provider,
           fallbackUsed: i > 0,
@@ -405,6 +441,13 @@ export async function callAIWithFallback(params: {
       const durationMs = Date.now() - startTime;
       lastError = error instanceof Error ? error : new Error(String(error));
 
+      // The shared-key budget refused this attempt before any call was made:
+      // try the next provider (e.g. one of the org's own keys), if any.
+      if (error instanceof SharedBudgetError) {
+        if (i < providerOrder.length - 1) continue;
+        break;
+      }
+
       // Log the failed attempt
       await logTokenUsage({
         orgId,
@@ -416,6 +459,7 @@ export async function callAIWithFallback(params: {
         durationMs,
         success: false,
         errorMessage: lastError.message.substring(0, 500),
+        sharedKey,
         metadata: { provider, attemptIndex: i },
       });
 
@@ -472,7 +516,7 @@ export async function checkAIAccess(feature: AIFeature): Promise<{
   reason?: string;
 }> {
   try {
-    const { settings } = await getAIClient();
+    const { settings, orgId, source } = await getAIClient();
 
     // Check feature toggle
     const featureKey = `feature_${feature}` as keyof AISettings;
@@ -483,6 +527,12 @@ export async function checkAIAccess(feature: AIFeature): Promise<{
     const limitReason = tokenLimitReason(settings);
     if (limitReason) {
       return { allowed: false, reason: limitReason };
+    }
+
+    // Calls on the owner's shared key also count against the shared budget.
+    if (source === "env") {
+      const budget = await checkSharedBudget(orgId);
+      if (!budget.allowed) return { allowed: false, reason: budget.reason };
     }
 
     return { allowed: true };
@@ -537,10 +587,25 @@ export async function logTokenUsage(params: {
   success: boolean;
   errorMessage?: string;
   metadata?: Record<string, unknown>;
+  /**
+   * Whether a server-wide (env) credential paid for the call; marks the row
+   * metadata.shared_key so the shared budget counts it. When omitted it is
+   * inferred from the org's current provider, the one getAIClient() uses.
+   */
+  sharedKey?: boolean;
 }): Promise<void> {
   try {
     const supabase = await createAdminClient();
     const totalTokens = params.inputTokens + params.outputTokens;
+
+    const { data: currentSettings } = await supabase
+      .from("ai_settings")
+      .select("*")
+      .eq("organization_id", params.orgId)
+      .single();
+    const sharedKey =
+      params.sharedKey ??
+      resolveAIProvider({ ...currentSettings, organization_id: params.orgId }, process.env)?.source === "env";
 
     // Insert usage log
     await supabase.from("ai_usage_log").insert({
@@ -554,16 +619,13 @@ export async function logTokenUsage(params: {
       duration_ms: params.durationMs,
       success: params.success,
       error_message: params.errorMessage || null,
-      metadata: JSON.parse(JSON.stringify(params.metadata || {})),
+      metadata: JSON.parse(
+        JSON.stringify({ ...params.metadata, ...(sharedKey ? { shared_key: true } : {}) })
+      ),
     });
 
     // Update token counters with daily/monthly reset logic
     const now = new Date();
-    const { data: currentSettings } = await supabase
-      .from("ai_settings")
-      .select("tokens_used_today, tokens_used_month, last_token_reset_daily, last_token_reset_monthly")
-      .eq("organization_id", params.orgId)
-      .single();
 
     if (currentSettings) {
       const lastDailyReset = new Date(currentSettings.last_token_reset_daily);

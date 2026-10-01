@@ -12,6 +12,24 @@ describe("describeChatError", () => {
     });
   });
 
+  it("flags the not-set-up message the chat route and AI client now return", () => {
+    const err = new Error("AI isn't set up for this workspace yet. Add a provider in Settings → AI Assistant.");
+    expect(describeChatError(err)).toEqual({ message: "Add an AI API key to use the assistant.", needsKey: true });
+    expect(describeChatError(new Error("ai ISN'T SET UP for this workspace yet"))).toEqual({
+      message: "Add an AI API key to use the assistant.",
+      needsKey: true,
+    });
+  });
+
+  it("does not flag the shared-key limit messages as a missing key", () => {
+    for (const message of [
+      "Today's AI limit for this workspace is used up. It resets at midnight UTC.",
+      "AI is busy right now. Please try again later.",
+    ]) {
+      expect(describeChatError(new Error(message))).toEqual({ message, needsKey: false });
+    }
+  });
+
   it("returns other Error messages trimmed to 200 characters", () => {
     expect(describeChatError(new Error("Rate limit exceeded"))).toEqual({ message: "Rate limit exceeded", needsKey: false });
     const long = describeChatError(new Error("x".repeat(500)));
