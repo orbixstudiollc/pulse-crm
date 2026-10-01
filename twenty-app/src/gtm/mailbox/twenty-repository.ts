@@ -1,3 +1,4 @@
+import type { NewMailboxInput } from 'src/gtm/mailbox/bulk-import';
 import type { MailboxRepository } from 'src/gtm/mailbox/engine';
 import type { MailboxPatch, MailboxRecord, WarmupMessageRecord } from 'src/gtm/mailbox/types';
 
@@ -63,4 +64,21 @@ export const createTwentyMailboxRepository = (client: RestLike): MailboxReposito
 
   listWarmupMessagesSince: (since: Date) =>
     listAll<WarmupMessageRecord>(client, 'warmupMessages', { filter: `sentAt[gte]:${quote(since.toISOString())}` }),
+});
+
+// What bulk imports need: existing addresses (for dedupe) and record creation.
+export type MailboxImportStore = {
+  listMailboxEmails(): Promise<string[]>;
+  createMailbox(input: NewMailboxInput): Promise<{ id: string }>;
+};
+
+export const createMailboxImportStore = (client: RestLike): MailboxImportStore => ({
+  async listMailboxEmails() {
+    const mailboxes = await listAll<Pick<MailboxRecord, 'email'>>(client, 'mailboxes');
+    return mailboxes.map((mailbox) => mailbox.email).filter(Boolean);
+  },
+  async createMailbox(input) {
+    const response = await client.post<{ data: { createMailbox: { id: string } } }>('/rest/mailboxes', input);
+    return { id: response.data.createMailbox.id };
+  },
 });

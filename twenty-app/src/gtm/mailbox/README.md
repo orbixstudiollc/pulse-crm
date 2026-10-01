@@ -12,7 +12,45 @@ Sending mailboxes (`mailbox` object) warm each other up. No Instantly or other w
    curl -X POST "$TWENTY_URL/s/mailbox-credential" -H "Authorization: Bearer $TWENTY_API_KEY" \
      -H 'Content-Type: application/json' -d '{"mailboxId":"<id>","password":"<app password>"}'
    ```
-   The route stores only the ciphertext in `credentialCiphertext`. For OAuth, put an app connection id in `connectionId` instead; the engine then signs in with XOAUTH2. No connection provider is defined yet.
+   The route stores only the ciphertext in `credentialCiphertext`. For OAuth, put an app connection id in `connectionId` and set `authType` to OAUTH_CONNECTION; the engine then signs in with XOAUTH2. No connection provider is defined yet. For many mailboxes, see the next section.
+
+## Adding many mailboxes at once
+
+### Google Workspace: no passwords and no per-user sign-in (domain-wide delegation)
+
+A service account acts as each user. Mailboxes get `authType = GOOGLE_DELEGATED`. The engine mints a 1-hour token per user from a signed JWT (`sub` = mailbox email, scope `https://mail.google.com/`), caches it until it expires, and signs in to SMTP and IMAP with XOAUTH2. No password is stored.
+
+Admin setup (done once by a Workspace super admin):
+
+1. In Google Cloud Console, create or pick a project. Under **APIs & Services > Library**, enable the **Gmail API** and the **Admin SDK API**.
+2. Under **IAM & Admin > Service accounts**, click **Create service account** (no roles needed). Open it, go to **Keys > Add key > Create new key > JSON**, and download the file. If the organisation policy `iam.disableServiceAccountKeyCreation` blocks this, an org admin has to allow it for this project.
+3. Copy the service account's **Unique ID (OAuth 2 client ID)** from its Details tab.
+4. In the Google Admin console, go to **Security > Access and data control > API controls > Domain-wide delegation > Add new**. Paste the client ID and add both scopes, comma-separated:
+   `https://mail.google.com/,https://www.googleapis.com/auth/admin.directory.user.readonly`
+   Changes can take a few minutes, and sometimes up to 24 hours, to apply.
+5. Make sure IMAP is allowed for users: **Apps > Google Workspace > Gmail > End user access > POP and IMAP access**.
+6. In Twenty, set the app variables **GOOGLE_SERVICE_ACCOUNT_JSON** (secret; paste the whole key file) and **GOOGLE_WORKSPACE_ADMIN_EMAIL** (a super admin address, used only to list users).
+7. Import. Run **Import Google Workspace mailboxes** from the command menu on the Mailboxes list, which imports every active user. To filter, ask the AI chat to use the `import-workspace-mailboxes` tool, or call the route:
+   ```bash
+   curl -X POST "$TWENTY_URL/s/mailboxes/import-workspace" -H "Authorization: Bearer $TWENTY_API_KEY" \
+     -H 'Content-Type: application/json' -d '{"domain":"acme-mail.com","orgUnitPath":"/Senders","dryRun":true}'
+   ```
+   Filters: `domain`, `orgUnitPath` (includes child OUs) and `emails` (list). Suspended and archived users are skipped, and so are addresses that are already mailboxes. New mailboxes are set to WARMING with warmup on. Use `dryRun` to preview.
+
+### gmail.com, outlook.com and other non-Workspace accounts: CSV paste
+
+Delegation only works inside a Workspace domain. For other accounts, paste them all in one request; each password is sealed with MAILBOX_ENCRYPTION_KEY:
+```bash
+curl -X POST "$TWENTY_URL/s/mailboxes/import-csv" -H "Authorization: Bearer $TWENTY_API_KEY" \
+  -H 'Content-Type: application/json' --data-binary @- <<'JSON'
+{"csv": "email,password,display name\nann@gmail.com,abcd efgh ijkl mnop,Ann Lee\nbob@outlook.com,xxxx,Bob"}
+JSON
+```
+- The columns are email, app password and display name. A header row is optional. Commas, semicolons and tabs all work. Optional columns are `provider` (google/microsoft/other), `smtpHost`, `smtpPort`, `imapHost` and `imapPort`; custom-domain mailboxes need the hosts.
+- The provider is detected from gmail.com, googlemail.com, outlook.com, hotmail.com, live.com and msn.com, and SMTP/IMAP hosts default per provider.
+- **Each gmail.com account needs 2-Step Verification turned on, then an app password** from https://myaccount.google.com/apppasswords (16 letters; spaces are ignored). The normal password does not work over SMTP/IMAP.
+- Existing addresses and repeats are skipped. Bad rows are reported by line number. `"dryRun": true` previews the import.
+- This is an authenticated route only, not an AI tool, so passwords never pass through a chat.
 
 You need at least 2 mailboxes to start. The plan recommends about 10 or more, across 3 or more domains, mixing Google and Microsoft, with SPF, DKIM and DMARC set on every domain.
 

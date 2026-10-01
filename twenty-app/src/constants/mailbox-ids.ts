@@ -89,3 +89,14 @@ export const MAILBOX_FN_SET_CREDENTIAL_UID = '1adf2d15-1815-4684-b8f3-58b31ddab5
 
 export const MAILBOX_VAR_ENCRYPTION_KEY_UID = '6fd46db3-fa5f-4dc1-ae63-80dbdc30510c';
 export const MAILBOX_VAR_WARMUP_CONFIG_UID = 'f35c1651-2add-4a85-9352-b45431980853';
+
+// Google Workspace delegation and bulk import
+export const MAILBOX_AUTH_TYPE_UID = '65c26ee4-6cf6-49a1-8389-2404249a6630';
+export const MAILBOX_VAR_GOOGLE_SERVICE_ACCOUNT_UID = '18ee9684-d352-45d2-abe5-ab9396cb6db8';
+export const MAILBOX_VAR_GOOGLE_ADMIN_EMAIL_UID = 'b03f91b4-4cb9-4f3d-aa6c-3bfec7d9bdb5';
+export const MAILBOX_FN_IMPORT_WORKSPACE_UID = 'ba3a021a-96fc-4ce3-9eac-87382a8fc998';
+export const MAILBOX_FN_IMPORT_CSV_UID = '002fca7e-86a6-44f3-b396-3620ed9552c6';
+export const MAILBOX_IMPORT_WORKSPACE_FRONT_UID = 'fc6f65c0-046a-4aa9-8987-ef5128d14f91';
+export const MAILBOX_IMPORT_WORKSPACE_CMD_UID = '00ddef17-ec2d-421d-980f-806ac0b33836';
+export const MAILBOX_IMPORT_WORKSPACE_ROUTE_PATH = '/mailboxes/import-workspace';
+export const MAILBOX_IMPORT_CSV_ROUTE_PATH = '/mailboxes/import-csv';

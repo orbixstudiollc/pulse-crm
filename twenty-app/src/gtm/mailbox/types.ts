@@ -1,4 +1,4 @@
-import type { MailboxProvider, MailboxStatus, WarmupStage } from 'src/gtm/mailbox/values';
+import type { MailboxAuthType, MailboxProvider, MailboxStatus, WarmupStage } from 'src/gtm/mailbox/values';
 
 // A mailbox record as the REST API returns it (fields of the `mailbox` object).
 export type MailboxRecord = {
@@ -12,6 +12,8 @@ export type MailboxRecord = {
   imapHost: string | null;
   imapPort: number | null;
   username: string | null;
+  // PASSWORD (sealed app password), OAUTH_CONNECTION or GOOGLE_DELEGATED. Null = inferred.
+  authType?: MailboxAuthType | null;
   // Encrypted with MAILBOX_ENCRYPTION_KEY (see credentials.ts). Never plaintext.
   credentialCiphertext: string | null;
   // Optional OAuth app connection id (Google/Microsoft) used instead of a password.

@@ -4,7 +4,13 @@ import { resolveMailboxAuth } from 'src/gtm/mailbox/auth';
 import { resolveWarmupConfig } from 'src/gtm/mailbox/config';
 import { warmupTagSecret } from 'src/gtm/mailbox/credentials';
 import type { EngineDeps } from 'src/gtm/mailbox/engine';
-import { createRestClient, MAILBOX_WARMUP_CONFIG_VARIABLE, readEncryptionKey } from 'src/gtm/mailbox/env';
+import {
+  createRestClient,
+  MAILBOX_WARMUP_CONFIG_VARIABLE,
+  readDelegatedTokenSource,
+  readEncryptionKey,
+} from 'src/gtm/mailbox/env';
+import { GMAIL_SCOPE } from 'src/gtm/mailbox/google-delegation';
 import { openImapInbox } from 'src/gtm/mailbox/imap-inbox';
 import { serverSettingsFor } from 'src/gtm/mailbox/server-settings';
 import { createSmtpSender } from 'src/gtm/mailbox/smtp-sender';
@@ -27,6 +33,7 @@ const transports: MailTransportFactory = {
 // Real dependencies for the warmup crons: Twenty REST, SMTP, IMAP, OAuth connections.
 export const createEngineDeps = (now = new Date()): EngineDeps => {
   const encryptionKey = readEncryptionKey();
+  const delegated = readDelegatedTokenSource();
   return {
     repo: createTwentyMailboxRepository(createRestClient()),
     transports,
@@ -34,6 +41,7 @@ export const createEngineDeps = (now = new Date()): EngineDeps => {
       resolveMailboxAuth(mailbox, {
         encryptionKey,
         getAccessToken: async (connectionId) => (await getConnection(connectionId)).accessToken,
+        getDelegatedToken: delegated ? (email) => delegated(email, [GMAIL_SCOPE]) : undefined,
       }),
     tagSecret: warmupTagSecret(encryptionKey),
     config: resolveWarmupConfig(process.env[MAILBOX_WARMUP_CONFIG_VARIABLE]),

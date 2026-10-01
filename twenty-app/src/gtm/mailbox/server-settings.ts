@@ -36,5 +36,24 @@ export const serverSettingsFor = (
   };
 };
 
-export const hasCredential = (mailbox: Pick<MailboxRecord, 'credentialCiphertext' | 'connectionId'>): boolean =>
-  Boolean(mailbox.credentialCiphertext?.trim() || mailbox.connectionId?.trim());
+// Google-delegated mailboxes need no stored secret: tokens are minted per run.
+export const hasCredential = (
+  mailbox: Pick<MailboxRecord, 'credentialCiphertext' | 'connectionId'> & { authType?: MailboxRecord['authType'] },
+): boolean =>
+  mailbox.authType === 'GOOGLE_DELEGATED' || Boolean(mailbox.credentialCiphertext?.trim() || mailbox.connectionId?.trim());
+
+// Host defaults for a provider, used when importing mailboxes in bulk.
+export const providerDefaults = (provider: MailboxProvider): ServerSettings | null => PROVIDER_DEFAULTS[provider] ?? null;
+
+const PROVIDER_BY_DOMAIN: Record<string, MailboxProvider> = {
+  'gmail.com': 'GOOGLE',
+  'googlemail.com': 'GOOGLE',
+  'outlook.com': 'MICROSOFT',
+  'hotmail.com': 'MICROSOFT',
+  'live.com': 'MICROSOFT',
+  'msn.com': 'MICROSOFT',
+};
+
+// Best guess of the provider from the address; custom domains return null.
+export const guessProviderFromEmail = (email: string): MailboxProvider | null =>
+  PROVIDER_BY_DOMAIN[email.slice(email.lastIndexOf('@') + 1).toLowerCase()] ?? null;

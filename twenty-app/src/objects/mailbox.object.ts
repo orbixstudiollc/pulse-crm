@@ -1,6 +1,7 @@
 import { defineObject, FieldType, RelationType } from 'twenty-sdk/define';
 
 import {
+  MAILBOX_AUTH_TYPE_UID,
   MAILBOX_BOUNCE_RATE_UID,
   MAILBOX_CONNECTION_ID_UID,
   MAILBOX_CREDENTIAL_CIPHERTEXT_UID,
@@ -32,7 +33,7 @@ import {
   WARMUP_MESSAGE_OBJECT_UID,
   WARMUP_MESSAGE_TO_MAILBOX_UID,
 } from 'src/constants/mailbox-ids';
-import { MAILBOX_PROVIDERS, MAILBOX_STATUSES, WARMUP_STAGES } from 'src/gtm/mailbox/values';
+import { MAILBOX_AUTH_TYPES, MAILBOX_PROVIDERS, MAILBOX_STATUSES, WARMUP_STAGES } from 'src/gtm/mailbox/values';
 
 // A sending mailbox. Sequences send through these; the warmup crons keep
 // their reputation up. The password is never stored here in plain text: set
@@ -65,6 +66,16 @@ export default defineObject({
     { universalIdentifier: MAILBOX_IMAP_HOST_UID, type: FieldType.TEXT, name: 'imapHost', label: 'IMAP host', icon: 'IconServer' },
     { universalIdentifier: MAILBOX_IMAP_PORT_UID, type: FieldType.NUMBER, name: 'imapPort', label: 'IMAP port', icon: 'IconPlug' },
     { universalIdentifier: MAILBOX_USERNAME_UID, type: FieldType.TEXT, name: 'username', label: 'Login username', icon: 'IconUserCircle', description: 'Defaults to the email address' },
+    {
+      universalIdentifier: MAILBOX_AUTH_TYPE_UID,
+      type: FieldType.SELECT,
+      name: 'authType',
+      label: 'Sign-in',
+      icon: 'IconShieldLock',
+      description: 'App password, OAuth connection, or Google Workspace domain-wide delegation (no password stored)',
+      options: MAILBOX_AUTH_TYPES.map((option, position) => ({ ...option, position })),
+      defaultValue: "'PASSWORD'",
+    },
     {
       universalIdentifier: MAILBOX_CREDENTIAL_CIPHERTEXT_UID,
       type: FieldType.TEXT,
