@@ -42,3 +42,7 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# written by `next dev` (see node_modules/next/dist/server/lib/generate-agent-files.js)
+/AGENTS.md
+/CLAUDE.md

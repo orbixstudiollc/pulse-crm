@@ -4,7 +4,7 @@
 -- Fixes:
 --   email_accounts ("org_email_accounts", 016), whatsapp_accounts
 --   ("whatsapp_accounts_org_scope") and linkedin_accounts
---   ("linkedin_accounts_org_scope", 20260313_multichannel) each had one
+--   ("linkedin_accounts_org_scope", 023_multichannel) each had one
 --   FOR ALL policy keyed on org membership only. The requireRole('admin',
 --   'owner') gates in the server actions therefore did not hold for direct
 --   PostgREST calls: any org member could insert or delete accounts.
