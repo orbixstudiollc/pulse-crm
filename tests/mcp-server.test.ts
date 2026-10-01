@@ -14,6 +14,11 @@ const DEAL_A = "66666666-6666-4666-8666-666666666666";
 
 let db: FakeSupabase;
 vi.mock("@/lib/supabase/server", () => ({ createAdminClient: () => db }));
+// after() needs a Next request scope; run deferred work inline in tests.
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  after: (fn: () => unknown) => void Promise.resolve().then(fn),
+}));
 vi.mock("@/lib/automation/runner", () => ({ evaluateLeadAgainstRules: vi.fn(async () => undefined) }));
 
 const writeKey = generateApiKey();
