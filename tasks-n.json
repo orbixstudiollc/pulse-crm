@@ -1,0 +1,134 @@
+[
+  {
+    "id": "N1",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "ICP: only one primary profile per workspace",
+    "files": [
+      "lib/actions/icp.ts"
+    ],
+    "interface": "Repo conventions: read AGENTS.md (this Next.js version differs from training data; check node_modules/next/dist/docs before relying on an API) and docs/design/clay-layout.md for any UI. lib/actions/*.ts are 'use server' files that may export only async functions. Live test: saving a new AI-generated ICP with is_primary true left the old 'Enterprise SaaS' also marked Primary. In lib/actions/icp.ts, createICPProfile (~line 100) and the update function (~line 140-160, the one that sets updateData.is_primary): when the new/updated profile is primary, first set is_primary = false on every other icp_profiles row of the same organization_id (same org-scoped user client and getOrgId the file already uses; exclude the row being updated), then insert/update. Return any error as the functions already do. No other changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -c 'is_primary: false' lib/actions/icp.ts | grep -qv '^0$' && npx tsc --noEmit && npx eslint 'lib/actions/icp.ts' && npm test && git add -A -- 'lib/actions/icp.ts' && git commit -q -m 'fix(icp): saving a primary profile clears the flag on the others' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "N2",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Analytics best channel by reply rate; calendar export filename month",
+    "files": [
+      "lib/actions/analytics.ts",
+      "app/dashboard/calendar/client.tsx"
+    ],
+    "interface": "Repo conventions: read AGENTS.md (this Next.js version differs from training data; check node_modules/next/dist/docs before relying on an API) and docs/design/clay-layout.md for any UI. lib/actions/*.ts are 'use server' files that may export only async functions. (1) lib/actions/analytics.ts ~line 481: bestChannel compares reply COUNTS but the UI labels it 'Highest reply rate'. Compute each channel's rate = replied / sent (email: emailReplied/emailSent, whatsapp: waReplied/waSent, linkedin: liReplied/liMessage, treating 0 sent as rate 0) and pick the highest rate; ties keep the existing order email, whatsapp, linkedin. (2) app/dashboard/calendar/client.tsx ~line 397: currentMonth is already 1-based (see the === 1 / === 12 checks), so the export filename's String(currentMonth + 1) is one month ahead; use String(currentMonth). No other changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! grep -q 'currentMonth + 1).padStart' app/dashboard/calendar/client.tsx && npx tsc --noEmit && npx eslint 'lib/actions/analytics.ts' 'app/dashboard/calendar/client.tsx' && npm test && git add -A -- 'lib/actions/analytics.ts' 'app/dashboard/calendar/client.tsx' && git commit -q -m 'fix(analytics,calendar): best channel by reply rate; export filename month' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "N3",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Modal owns dialog semantics and focus; remaining hand-rolled dialogs move onto it",
+    "files": [
+      "components/ui/Modal.tsx",
+      "components/ui/DeleteConfirmModal.tsx",
+      "app/dashboard/campaigns/client.tsx",
+      "app/dashboard/website-visitors/client.tsx",
+      "app/dashboard/inbox/client.tsx"
+    ],
+    "interface": "Repo conventions: read AGENTS.md (this Next.js version differs from training data; check node_modules/next/dist/docs before relying on an API) and docs/design/clay-layout.md for any UI. lib/actions/*.ts are 'use server' files that may export only async functions. components/ui/Modal.tsx handles Escape, backdrop and scroll lock but has no role/aria-modal and no focus management; commit e765e51 worked around that by nesting <div role=\"dialog\" aria-modal ...> inside Modal in campaigns (Manage Tags), website-visitors (Setup Website Tracking) and inbox (No Email Accounts). (1) Modal: the panel element gets role=\"dialog\" (or a role prop, e.g. 'alertdialog'), aria-modal=\"true\", and aria-labelledby / aria-label props; on open move focus into the panel (first focusable, or the panel itself with tabIndex=-1), trap Tab/Shift+Tab inside while open, and restore focus to the previously focused element on close. Keep its current props and visuals backwards compatible. (2) Remove the nested role/aria-modal wrappers added in e765e51 and pass the title id to Modal instead (keep each title's id). (3) inbox 'New Email' compose (ComposeModal ~line 991) and components/ui/DeleteConfirmModal.tsx: if they are hand-rolled overlays, move them onto Modal (DeleteConfirmModal as role 'alertdialog'); every icon-only close button gets aria-label=\"Close\". Same content and actions as today.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q aria-modal components/ui/Modal.tsx && ! grep -q 'role=\"dialog\"' app/dashboard/campaigns/client.tsx && npx tsc --noEmit && npx eslint 'components/ui/Modal.tsx' 'components/ui/DeleteConfirmModal.tsx' 'app/dashboard/campaigns/client.tsx' 'app/dashboard/website-visitors/client.tsx' 'app/dashboard/inbox/client.tsx' && node scripts/restyle/boxes.mjs 'components/ui/Modal.tsx' 'components/ui/DeleteConfirmModal.tsx' 'app/dashboard/campaigns/client.tsx' 'app/dashboard/website-visitors/client.tsx' 'app/dashboard/inbox/client.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'components/ui/Modal.tsx' 'components/ui/DeleteConfirmModal.tsx' 'app/dashboard/campaigns/client.tsx' 'app/dashboard/website-visitors/client.tsx' 'app/dashboard/inbox/client.tsx' && git commit -q -m 'fix(a11y): Modal owns dialog semantics and focus; compose and delete dialogs use it' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "N4",
+    "model": "sonnet",
+    "depends_on": [
+      "N3"
+    ],
+    "title": "Tap targets of at least 32px for row checkboxes and Clear all",
+    "files": [
+      "components/ui/Checkbox.tsx",
+      "components/dashboard/FilterBar.tsx",
+      "app/dashboard/lead-finder/leads/page.tsx",
+      "app/dashboard/campaigns/client.tsx"
+    ],
+    "interface": "Repo conventions: read AGENTS.md (this Next.js version differs from training data; check node_modules/next/dist/docs before relying on an API) and docs/design/clay-layout.md for any UI. lib/actions/*.ts are 'use server' files that may export only async functions. Audit C at 375px: row checkboxes are 13-16px and 'Clear all' is 50x20, far under a 32px tap size. (1) components/ui/Checkbox.tsx: keep the visible box size but give the control a hit area of at least 32x32 (e.g. a relative wrapper with an absolutely positioned, centred ::before/::after or padding with negative margin) without changing table row height or layout. (2) 'Clear all' in components/dashboard/FilterBar.tsx (~line 144) and app/dashboard/lead-finder/leads/page.tsx (~line 832): min-h-8 and enough horizontal padding for >= 32px height, same text style. (3) app/dashboard/campaigns/client.tsx: replace raw <input type=\"checkbox\"> row/header checkboxes with the Checkbox component (same checked/onChange/aria-label behaviour). No other changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && ! grep -q 'type=\"checkbox\"' app/dashboard/campaigns/client.tsx && npx tsc --noEmit && npx eslint 'components/ui/Checkbox.tsx' 'components/dashboard/FilterBar.tsx' 'app/dashboard/lead-finder/leads/page.tsx' 'app/dashboard/campaigns/client.tsx' && node scripts/restyle/boxes.mjs 'components/ui/Checkbox.tsx' 'components/dashboard/FilterBar.tsx' 'app/dashboard/lead-finder/leads/page.tsx' 'app/dashboard/campaigns/client.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'components/ui/Checkbox.tsx' 'components/dashboard/FilterBar.tsx' 'app/dashboard/lead-finder/leads/page.tsx' 'app/dashboard/campaigns/client.tsx' && git commit -q -m 'fix(a11y): 32px tap targets for row checkboxes and Clear all' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "N5",
+    "model": "sonnet",
+    "depends_on": [],
+    "title": "Breadcrumbs show names on marketing and Lead Finder detail pages",
+    "files": [
+      "app/dashboard/marketing/[id]/client.tsx",
+      "app/dashboard/lead-finder/leads/[id]/page.tsx",
+      "app/dashboard/lead-finder/campaigns/[id]/page.tsx"
+    ],
+    "interface": "Repo conventions: read AGENTS.md (this Next.js version differs from training data; check node_modules/next/dist/docs before relying on an API) and docs/design/clay-layout.md for any UI. lib/actions/*.ts are 'use server' files that may export only async functions. These detail pages never set breadcrumbLabel, so the header shows a muted ellipsis instead of the record name. Add usePageHeader({ backHref, breadcrumbLabel }) exactly like app/dashboard/customers/[id]/client.tsx does: marketing -> backHref '/dashboard/marketing', label = the item's title/name; lead finder lead -> '/dashboard/lead-finder/leads', label = the lead's name (fallback company); lead finder campaign -> '/dashboard/lead-finder/campaigns', label = campaign name. Call it with the label once data is loaded (undefined before). Keep existing in-page back links. No other changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q breadcrumbLabel 'app/dashboard/marketing/[id]/client.tsx' && grep -q breadcrumbLabel 'app/dashboard/lead-finder/leads/[id]/page.tsx' && grep -q breadcrumbLabel 'app/dashboard/lead-finder/campaigns/[id]/page.tsx' && npx tsc --noEmit && npx eslint 'app/dashboard/marketing/[id]/client.tsx' 'app/dashboard/lead-finder/leads/[id]/page.tsx' 'app/dashboard/lead-finder/campaigns/[id]/page.tsx' && node scripts/restyle/boxes.mjs 'app/dashboard/marketing/[id]/client.tsx' 'app/dashboard/lead-finder/leads/[id]/page.tsx' 'app/dashboard/lead-finder/campaigns/[id]/page.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'app/dashboard/marketing/[id]/client.tsx' 'app/dashboard/lead-finder/leads/[id]/page.tsx' 'app/dashboard/lead-finder/campaigns/[id]/page.tsx' && git commit -q -m 'fix(header): breadcrumb names on marketing and Lead Finder detail pages' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "N6",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Guest destructive actions need a typed confirmation",
+    "files": [
+      "app/dashboard/settings/client.tsx"
+    ],
+    "interface": "Repo conventions: read AGENTS.md (this Next.js version differs from training data; check node_modules/next/dist/docs before relying on an API) and docs/design/clay-layout.md for any UI. lib/actions/*.ts are 'use server' files that may export only async functions. Owner decision 2026-10-01: keep 'Clear All Data' and 'Delete My Account' (Settings -> Profile, ~lines 409 and 460) visible but add a typed confirmation step. Use the shared Modal (components/ui/Modal.tsx) as an alert dialog: explain what will be deleted, require typing the exact word DELETE (case-sensitive) into a labelled input before the destructive button enables, then run the existing action unchanged. Apply it for every user (it is a safety step, not guest-only). Also gate 'Seed Demo Data' behind a plain confirm modal if it replaces existing data (read what it does first; if it only adds rows, leave it). No server changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'DELETE' app/dashboard/settings/client.tsx && npx tsc --noEmit && npx eslint 'app/dashboard/settings/client.tsx' && node scripts/restyle/boxes.mjs 'app/dashboard/settings/client.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'app/dashboard/settings/client.tsx' && git commit -q -m 'feat(settings): typed confirmation before clearing data or deleting the account' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "N7",
+    "model": "opus",
+    "depends_on": [
+      "N6"
+    ],
+    "title": "One Lead Finder settings screen, showing the real state",
+    "files": [
+      "app/dashboard/settings/client.tsx",
+      "app/dashboard/lead-finder/settings/page.tsx",
+      "app/api/lead-finder/settings/route.ts"
+    ],
+    "interface": "Repo conventions: read AGENTS.md (this Next.js version differs from training data; check node_modules/next/dist/docs before relying on an API) and docs/design/clay-layout.md for any UI. lib/actions/*.ts are 'use server' files that may export only async functions. Audit B: /dashboard/lead-finder/settings says 'Missing required API keys', 'Apify Token: Missing' and provider 'Custom (from AI Assistant settings)', while Settings -> Lead Finder (LeadFinderSettingsSection in app/dashboard/settings/client.tsx ~line 3246) shows an Apify token set (masked, last 4 characters) and provider 'OpenRouter (Cloud)'; the Agency Type option lists also differ. Read both screens and app/api/lead-finder/settings/route.ts (and whatever it reads: ai_settings columns, env fallbacks like APIFY_API_TOKEN, the resolver in lib/ai/provider-resolver.ts / lib/lead-finder/ai-provider.ts) and determine the TRUE source of each value. Then: (1) /dashboard/lead-finder/settings is the single editor; it must show the real state: the org's own Apify token as 'Set' (masked) or 'Missing', and when only a server-level token exists show 'Provided by the server' WITHOUT any characters of it; the provider shown must be what the shared resolver actually uses (including the server-wide shared AI fallback added in 5ff598b, shown as 'Shared AI (server)'). (2) In the API route, never return any part (not even last 4) of an env/server token; org tokens may stay masked as today. (3) Replace LeadFinderSettingsSection's form in Settings with a short section explaining where Lead Finder settings live and a link button to /dashboard/lead-finder/settings (keep the tab so existing links work). (4) One Agency Type list (the Lead Finder page's). Report what the true sources were.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q '/dashboard/lead-finder/settings' app/dashboard/settings/client.tsx && npx tsc --noEmit && npx eslint 'app/dashboard/settings/client.tsx' 'app/dashboard/lead-finder/settings/page.tsx' 'app/api/lead-finder/settings/route.ts' && node scripts/restyle/boxes.mjs 'app/dashboard/settings/client.tsx' 'app/dashboard/lead-finder/settings/page.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'app/dashboard/settings/client.tsx' 'app/dashboard/lead-finder/settings/page.tsx' 'app/api/lead-finder/settings/route.ts' && git commit -q -m 'fix(lead-finder): one settings screen that shows the real key and provider state' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "N8",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Lead Finder AI routes show the shared-budget reason instead of a generic error",
+    "files": [
+      "app/api/lead-finder/leads/ai-filter/route.ts",
+      "app/api/lead-finder/settings/generate-profile/route.ts"
+    ],
+    "interface": "Repo conventions: read AGENTS.md (this Next.js version differs from training data; check node_modules/next/dist/docs before relying on an API) and docs/design/clay-layout.md for any UI. lib/actions/*.ts are 'use server' files that may export only async functions. Commit e6e673d/02fe2f7/768156f: Lead Finder's generateCompletion refuses shared-key calls over budget by throwing SharedBudgetError (lib/ai/shared-budget-core.ts) with a user-facing message, but these two routes replace every error with a generic message. Find the routes (the paths may differ; search app/api/lead-finder for ai-filter and generate-profile) and, when the caught error is a SharedBudgetError, return its message with HTTP 429; keep all other errors as they are. Add the route files you actually change to your report.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q SharedBudgetError app/api/lead-finder/leads/ai-filter/route.ts && grep -q SharedBudgetError app/api/lead-finder/settings/generate-profile/route.ts && npx tsc --noEmit && npx eslint 'app/api/lead-finder/leads/ai-filter/route.ts' 'app/api/lead-finder/settings/generate-profile/route.ts' && npm test && git add -A -- 'app/api/lead-finder/leads/ai-filter/route.ts' 'app/api/lead-finder/settings/generate-profile/route.ts' && git commit -q -m 'fix(lead-finder): show the shared AI budget reason' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "N9",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Content-Security-Policy in report-only mode with a report endpoint",
+    "files": [
+      "next.config.ts",
+      "app/api/csp-report/route.ts",
+      "tests/csp-report.test.ts",
+      "lib/security/csp.ts",
+      "tests/csp.test.ts"
+    ],
+    "interface": "Repo conventions: read AGENTS.md (this Next.js version differs from training data; check node_modules/next/dist/docs before relying on an API) and docs/design/clay-layout.md for any UI. lib/actions/*.ts are 'use server' files that may export only async functions. Audit D: the only CSP is frame-ancestors 'none'. Ship a real policy in REPORT-ONLY mode first so nothing breaks. (1) lib/security/csp.ts (pure, test-first in tests/csp.test.ts): buildCsp({ supabaseUrl, reportUri }) returning a policy string with default-src 'self'; script-src 'self' 'unsafe-inline' (Next needs inline bootstrap unless nonces are wired; note it in a comment as the next step); style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' <supabaseUrl> <supabase wss origin> https://vitals.vercel-insights.com; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; report-uri <reportUri>. Read the app for any other origins it loads from (grep for https:// in app/, components/, lib/ client code and next.config images) and include what is needed. (2) next.config.ts: keep the existing enforced 'Content-Security-Policy: frame-ancestors 'none'' and add 'Content-Security-Policy-Report-Only' with buildCsp(...) using NEXT_PUBLIC_SUPABASE_URL and '/api/csp-report'. (3) app/api/csp-report/route.ts: POST accepts application/csp-report and application/reports+json, caps body size (e.g. 16 KB), logs a compact console.warn line (directive, blocked URI origin only, document path only; never full URLs with query strings), returns 204; test-first in tests/csp-report.test.ts. Must not require auth (browsers send no cookies with reports) and must not be CSRF-blocked by middleware; check middleware.ts / lib/supabase/middleware.ts and report if a change there is needed (do not edit them).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'Content-Security-Policy-Report-Only' next.config.ts && npx vitest run tests/csp.test.ts tests/csp-report.test.ts && npx tsc --noEmit && npx eslint 'next.config.ts' 'app/api/csp-report/route.ts' 'tests/csp-report.test.ts' 'lib/security/csp.ts' 'tests/csp.test.ts' && npm test && git add -A -- 'next.config.ts' 'app/api/csp-report/route.ts' 'tests/csp-report.test.ts' 'lib/security/csp.ts' 'tests/csp.test.ts' && git commit -q -m 'feat(security): report-only Content-Security-Policy with a report endpoint' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "N10",
+    "model": "opus",
+    "depends_on": [],
+    "title": "Read-only tenant isolation check and drift check entries for migration 038",
+    "files": [
+      "supabase/checks/tenant_isolation_check.sql",
+      "supabase/checks/migration_drift_check.sql"
+    ],
+    "interface": "Repo conventions: read AGENTS.md (this Next.js version differs from training data; check node_modules/next/dist/docs before relying on an API) and docs/design/clay-layout.md for any UI. lib/actions/*.ts are 'use server' files that may export only async functions. Audits asked for a cross-tenant read check. Write supabase/checks/tenant_isolation_check.sql: a single READ-ONLY query set (SELECT only; safe to paste in the Supabase SQL editor; header explains how to read the results) that lists, for every table in schema public: whether RLS is enabled; its policies (cmd, roles, qual, with_check); a flag for tables that have an organization_id column but some SELECT/ALL policy for anon/authenticated/public whose qual does not reference organization_id or auth.uid(); tables with RLS disabled; table/column privileges granted to anon; SECURITY DEFINER functions in public executable by anon or authenticated (with their search_path setting). Results should make problems obvious (a 'problem' column). Also add migration 038_shared_ai_budget.sql to supabase/checks/migration_drift_check.sql following that file's exact conventions (read it fully): the migration list entry and its expected objects (ai_shared_budget table, the three functions with their signatures, the ai_usage_log_tokens_nonnegative constraint, the dropped 'Users can insert usage logs' policy as absent, and the revoked privileges as absent). Do not change other entries. You cannot run SQL against a real database; if a PGlite harness exists in the session scratchpad (C:/Users/apari/AppData/Local/Temp/claude/D--Orbix-Sofrwares-projects-pulse-crm/ab440022-2cdd-48a4-a0e3-534a5efb4d44/scratchpad), use it to at least parse/execute both files against a minimal schema.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && test -f supabase/checks/tenant_isolation_check.sql && grep -q 038_shared_ai_budget supabase/checks/migration_drift_check.sql && npx tsc --noEmit && npm test && git add -A -- 'supabase/checks/tenant_isolation_check.sql' 'supabase/checks/migration_drift_check.sql' && git commit -q -m 'chore(db): tenant isolation check and drift check for migration 038' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  }
+]
