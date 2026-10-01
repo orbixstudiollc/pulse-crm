@@ -42,10 +42,11 @@
 --   the migration that introduced it.
 --
 -- Order note
---   The two 20260313_*.sql files are listed between 027 and 028: 028 alters
---   automation_executions / campaign_leads and 031 alters whatsapp_accounts /
---   linkedin_accounts, so they must have been applied before those.
---
+--   Migrations are listed in filename order, which is also a valid apply
+--   order. 022 and 023 were named 20260313_automation_rules.sql and
+--   20260313_multichannel.sql until 2026-10-01; production applied them before
+--   028 under those names.
+
 -- Known gaps (not expressible as a catalog check)
 --   * 034_normalize_seed_values.sql is data-only (UPDATEs of seeded rows, no
 --     schema change), so it has no checks and never appears in the summary.
@@ -54,9 +55,9 @@
 --   * Column types, defaults (except 035's), NOT NULL, FKs and columns
 --     defined inside CREATE TABLE are not checked individually (the table
 --     check covers them).
---   * 20260313_automation_rules alters lead_searches and scraped_leads, two of
---     the 13 hand-made tables that no repo migration creates; if those tables
---     are missing, those column checks show MISSING.
+--   * 021 copies the 13 tables that were first created by hand in
+--     production; it is checked for tables, indexes, triggers, RLS and
+--     policies like any other migration.
 --   * email_accounts.tracking_domain (mentioned in 031) is created by no
 --     migration, so it is not checked.
 --
@@ -83,19 +84,20 @@ migrations (ord, file) AS (
     (12, '016_email_system.sql'),
     (13, '017_email_rpc_functions.sql'),
     (14, '020_marketing_suite.sql'),
-    (15, '025_lead_finder.sql'),
-    (16, '026_lead_finder_settings.sql'),
-    (17, '027_lead_finder_parity.sql'),
-    (18, '20260313_automation_rules.sql'),
-    (19, '20260313_multichannel.sql'),
-    (20, '028_security_hardening.sql'),
-    (21, '029_open_access_guests.sql'),
-    (22, '030_followup.sql'),
-    (23, '031_account_role_rls.sql'),
-    (24, '032_avatar_storage.sql'),
-    (25, '033_custom_ai_provider.sql'),
-    (26, '034_normalize_seed_values.sql'),
-    (27, '035_deal_stage_changed_at.sql')
+    (15, '021_unmigrated_tables.sql'),
+    (16, '022_automation_rules.sql'),
+    (17, '023_multichannel.sql'),
+    (18, '025_lead_finder.sql'),
+    (19, '026_lead_finder_settings.sql'),
+    (20, '027_lead_finder_parity.sql'),
+    (21, '028_security_hardening.sql'),
+    (22, '029_open_access_guests.sql'),
+    (23, '030_followup.sql'),
+    (24, '031_account_role_rls.sql'),
+    (25, '032_avatar_storage.sql'),
+    (26, '033_custom_ai_provider.sql'),
+    (27, '034_normalize_seed_values.sql'),
+    (28, '035_deal_stage_changed_at.sql')
 ),
 
 -- kind               sch      rel             obj           arg        pat
@@ -497,77 +499,77 @@ expected (seq, file, kind, sch, rel, obj, arg, pat, expect_present) AS (
     (378, '027_lead_finder_parity.sql', 'policy', 'public', 'lf_enrichment_jobs', 'org can write lf_enrichment_jobs', '', '', true),
     (379, '027_lead_finder_parity.sql', 'policy', 'public', 'lf_obsidian_sync_state', 'org can read lf_obsidian_sync_state', '', '', true),
     (380, '027_lead_finder_parity.sql', 'policy', 'public', 'lf_obsidian_sync_state', 'org can write lf_obsidian_sync_state', '', '', true),
-    (381, '20260313_automation_rules.sql', 'table', 'public', '', 'automation_rules', '', '', true),
-    (382, '20260313_automation_rules.sql', 'table', 'public', '', 'automation_executions', '', '', true),
-    (383, '20260313_automation_rules.sql', 'table', 'public', '', 'custom_fields', '', '', true),
-    (384, '20260313_automation_rules.sql', 'table', 'public', '', 'lead_custom_field_values', '', '', true),
-    (385, '20260313_automation_rules.sql', 'table', 'public', '', 'campaign_runs', '', '', true),
-    (386, '20260313_automation_rules.sql', 'table', 'public', '', 'campaign_leads', '', '', true),
-    (387, '20260313_automation_rules.sql', 'column', 'public', 'leads', 'assigned_to', '', '', true),
-    (388, '20260313_automation_rules.sql', 'column', 'public', 'leads', 'status_changed_at', '', '', true),
-    (389, '20260313_automation_rules.sql', 'column', 'public', 'leads', 'last_engagement_at', '', '', true),
-    (390, '20260313_automation_rules.sql', 'column', 'public', 'lead_searches', 'is_recurring', '', '', true),
-    (391, '20260313_automation_rules.sql', 'column', 'public', 'lead_searches', 'schedule_frequency', '', '', true),
-    (392, '20260313_automation_rules.sql', 'column', 'public', 'lead_searches', 'last_run_at', '', '', true),
-    (393, '20260313_automation_rules.sql', 'column', 'public', 'lead_searches', 'next_run_at', '', '', true),
-    (394, '20260313_automation_rules.sql', 'column', 'public', 'lead_searches', 'auto_import', '', '', true),
-    (395, '20260313_automation_rules.sql', 'column', 'public', 'lead_searches', 'auto_enroll_sequence_id', '', '', true),
-    (396, '20260313_automation_rules.sql', 'column', 'public', 'scraped_leads', 'verification_status', '', '', true),
-    (397, '20260313_automation_rules.sql', 'column', 'public', 'scraped_leads', 'verified_at', '', '', true),
-    (398, '20260313_automation_rules.sql', 'column', 'public', 'scraped_leads', 'duplicate_of', '', '', true),
-    (399, '20260313_automation_rules.sql', 'column', 'public', 'scraped_leads', 'confidence_score', '', '', true),
-    (400, '20260313_automation_rules.sql', 'column', 'public', 'organizations', 'booking_url', '', '', true),
-    (401, '20260313_automation_rules.sql', 'column', 'public', 'organizations', 'booking_provider', '', '', true),
-    (402, '20260313_automation_rules.sql', 'column', 'public', 'sequence_enrollments', 'campaign_id', '', '', true),
-    (403, '20260313_automation_rules.sql', 'column', 'public', 'sequence_steps', 'include_booking_cta', '', '', true),
-    (404, '20260313_automation_rules.sql', 'index', 'public', 'automation_rules', 'idx_automation_rules_org', '', '', true),
-    (405, '20260313_automation_rules.sql', 'index', 'public', 'automation_rules', 'idx_automation_rules_trigger', '', '', true),
-    (406, '20260313_automation_rules.sql', 'index', 'public', 'automation_executions', 'idx_automation_executions_rule', '', '', true),
-    (407, '20260313_automation_rules.sql', 'index', 'public', 'automation_executions', 'idx_automation_executions_lead', '', '', true),
-    (408, '20260313_automation_rules.sql', 'index', 'public', 'automation_executions', 'idx_automation_executions_created', '', '', true),
-    (409, '20260313_automation_rules.sql', 'index', 'public', 'campaign_leads', 'idx_campaign_leads_campaign', '', '', true),
-    (410, '20260313_automation_rules.sql', 'index', 'public', 'campaign_leads', 'idx_campaign_leads_lead', '', '', true),
-    (411, '20260313_automation_rules.sql', 'function', 'public', '', 'increment_automation_rule_count', 'uuid', '', true),
-    (412, '20260313_automation_rules.sql', 'trigger', 'public', 'automation_rules', 'update_automation_rules_updated_at', '', '', true),
-    (413, '20260313_automation_rules.sql', 'trigger', 'public', 'campaign_runs', 'update_campaign_runs_updated_at', '', '', true),
-    (414, '20260313_automation_rules.sql', 'rls', 'public', 'automation_rules', 'automation_rules', '', '', true),
-    (415, '20260313_automation_rules.sql', 'rls', 'public', 'custom_fields', 'custom_fields', '', '', true),
-    (416, '20260313_automation_rules.sql', 'rls', 'public', 'lead_custom_field_values', 'lead_custom_field_values', '', '', true),
-    (417, '20260313_automation_rules.sql', 'rls', 'public', 'campaign_runs', 'campaign_runs', '', '', true),
-    (418, '20260313_automation_rules.sql', 'policy', 'public', 'automation_rules', 'automation_rules_org_isolation', '', '', true),
-    (419, '20260313_automation_rules.sql', 'policy', 'public', 'custom_fields', 'custom_fields_org_isolation', '', '', true),
-    (420, '20260313_automation_rules.sql', 'policy', 'public', 'lead_custom_field_values', 'lead_custom_field_values_isolation', '', '', true),
-    (421, '20260313_automation_rules.sql', 'policy', 'public', 'campaign_runs', 'campaign_runs_org_isolation', '', '', true),
-    (422, '20260313_multichannel.sql', 'table', 'public', '', 'whatsapp_accounts', '', '', true),
-    (423, '20260313_multichannel.sql', 'table', 'public', '', 'whatsapp_templates', '', '', true),
-    (424, '20260313_multichannel.sql', 'table', 'public', '', 'whatsapp_messages', '', '', true),
-    (425, '20260313_multichannel.sql', 'table', 'public', '', 'linkedin_accounts', '', '', true),
-    (426, '20260313_multichannel.sql', 'table', 'public', '', 'linkedin_actions', '', '', true),
-    (427, '20260313_multichannel.sql', 'column', 'public', 'sequence_steps', 'channel_config', '', '', true),
-    (428, '20260313_multichannel.sql', 'column', 'public', 'sequence_enrollments', 'whatsapp_account_id', '', '', true),
-    (429, '20260313_multichannel.sql', 'column', 'public', 'sequence_enrollments', 'linkedin_account_id', '', '', true),
-    (430, '20260313_multichannel.sql', 'index', 'public', 'whatsapp_accounts', 'idx_whatsapp_accounts_org', '', '', true),
-    (431, '20260313_multichannel.sql', 'index', 'public', 'whatsapp_templates', 'idx_whatsapp_templates_account', '', '', true),
-    (432, '20260313_multichannel.sql', 'index', 'public', 'whatsapp_messages', 'idx_wa_messages_lead', '', '', true),
-    (433, '20260313_multichannel.sql', 'index', 'public', 'whatsapp_messages', 'idx_wa_messages_enrollment', '', '', true),
-    (434, '20260313_multichannel.sql', 'index', 'public', 'whatsapp_messages', 'idx_wa_messages_status', '', '', true),
-    (435, '20260313_multichannel.sql', 'index', 'public', 'whatsapp_messages', 'idx_wa_messages_wa_id', '', '', true),
-    (436, '20260313_multichannel.sql', 'index', 'public', 'linkedin_accounts', 'idx_linkedin_accounts_org', '', '', true),
-    (437, '20260313_multichannel.sql', 'index', 'public', 'linkedin_actions', 'idx_li_actions_lead', '', '', true),
-    (438, '20260313_multichannel.sql', 'index', 'public', 'linkedin_actions', 'idx_li_actions_enrollment', '', '', true),
-    (439, '20260313_multichannel.sql', 'index', 'public', 'linkedin_actions', 'idx_li_actions_status', '', '', true),
-    (440, '20260313_multichannel.sql', 'index', 'public', 'linkedin_actions', 'idx_li_actions_type', '', '', true),
-    (441, '20260313_multichannel.sql', 'trigger', 'public', 'whatsapp_accounts', 'set_whatsapp_accounts_updated_at', '', '', true),
-    (442, '20260313_multichannel.sql', 'trigger', 'public', 'whatsapp_templates', 'set_whatsapp_templates_updated_at', '', '', true),
-    (443, '20260313_multichannel.sql', 'trigger', 'public', 'linkedin_accounts', 'set_linkedin_accounts_updated_at', '', '', true),
-    (444, '20260313_multichannel.sql', 'rls', 'public', 'whatsapp_accounts', 'whatsapp_accounts', '', '', true),
-    (445, '20260313_multichannel.sql', 'rls', 'public', 'whatsapp_templates', 'whatsapp_templates', '', '', true),
-    (446, '20260313_multichannel.sql', 'rls', 'public', 'whatsapp_messages', 'whatsapp_messages', '', '', true),
-    (447, '20260313_multichannel.sql', 'rls', 'public', 'linkedin_accounts', 'linkedin_accounts', '', '', true),
-    (448, '20260313_multichannel.sql', 'rls', 'public', 'linkedin_actions', 'linkedin_actions', '', '', true),
-    (449, '20260313_multichannel.sql', 'policy', 'public', 'whatsapp_templates', 'whatsapp_templates_org_scope', '', '', true),
-    (450, '20260313_multichannel.sql', 'policy', 'public', 'whatsapp_messages', 'whatsapp_messages_org_scope', '', '', true),
-    (451, '20260313_multichannel.sql', 'policy', 'public', 'linkedin_actions', 'linkedin_actions_org_scope', '', '', true),
+    (381, '022_automation_rules.sql', 'table', 'public', '', 'automation_rules', '', '', true),
+    (382, '022_automation_rules.sql', 'table', 'public', '', 'automation_executions', '', '', true),
+    (383, '022_automation_rules.sql', 'table', 'public', '', 'custom_fields', '', '', true),
+    (384, '022_automation_rules.sql', 'table', 'public', '', 'lead_custom_field_values', '', '', true),
+    (385, '022_automation_rules.sql', 'table', 'public', '', 'campaign_runs', '', '', true),
+    (386, '022_automation_rules.sql', 'table', 'public', '', 'campaign_leads', '', '', true),
+    (387, '022_automation_rules.sql', 'column', 'public', 'leads', 'assigned_to', '', '', true),
+    (388, '022_automation_rules.sql', 'column', 'public', 'leads', 'status_changed_at', '', '', true),
+    (389, '022_automation_rules.sql', 'column', 'public', 'leads', 'last_engagement_at', '', '', true),
+    (390, '022_automation_rules.sql', 'column', 'public', 'lead_searches', 'is_recurring', '', '', true),
+    (391, '022_automation_rules.sql', 'column', 'public', 'lead_searches', 'schedule_frequency', '', '', true),
+    (392, '022_automation_rules.sql', 'column', 'public', 'lead_searches', 'last_run_at', '', '', true),
+    (393, '022_automation_rules.sql', 'column', 'public', 'lead_searches', 'next_run_at', '', '', true),
+    (394, '022_automation_rules.sql', 'column', 'public', 'lead_searches', 'auto_import', '', '', true),
+    (395, '022_automation_rules.sql', 'column', 'public', 'lead_searches', 'auto_enroll_sequence_id', '', '', true),
+    (396, '022_automation_rules.sql', 'column', 'public', 'scraped_leads', 'verification_status', '', '', true),
+    (397, '022_automation_rules.sql', 'column', 'public', 'scraped_leads', 'verified_at', '', '', true),
+    (398, '022_automation_rules.sql', 'column', 'public', 'scraped_leads', 'duplicate_of', '', '', true),
+    (399, '022_automation_rules.sql', 'column', 'public', 'scraped_leads', 'confidence_score', '', '', true),
+    (400, '022_automation_rules.sql', 'column', 'public', 'organizations', 'booking_url', '', '', true),
+    (401, '022_automation_rules.sql', 'column', 'public', 'organizations', 'booking_provider', '', '', true),
+    (402, '022_automation_rules.sql', 'column', 'public', 'sequence_enrollments', 'campaign_id', '', '', true),
+    (403, '022_automation_rules.sql', 'column', 'public', 'sequence_steps', 'include_booking_cta', '', '', true),
+    (404, '022_automation_rules.sql', 'index', 'public', 'automation_rules', 'idx_automation_rules_org', '', '', true),
+    (405, '022_automation_rules.sql', 'index', 'public', 'automation_rules', 'idx_automation_rules_trigger', '', '', true),
+    (406, '022_automation_rules.sql', 'index', 'public', 'automation_executions', 'idx_automation_executions_rule', '', '', true),
+    (407, '022_automation_rules.sql', 'index', 'public', 'automation_executions', 'idx_automation_executions_lead', '', '', true),
+    (408, '022_automation_rules.sql', 'index', 'public', 'automation_executions', 'idx_automation_executions_created', '', '', true),
+    (409, '022_automation_rules.sql', 'index', 'public', 'campaign_leads', 'idx_campaign_leads_campaign', '', '', true),
+    (410, '022_automation_rules.sql', 'index', 'public', 'campaign_leads', 'idx_campaign_leads_lead', '', '', true),
+    (411, '022_automation_rules.sql', 'function', 'public', '', 'increment_automation_rule_count', 'uuid', '', true),
+    (412, '022_automation_rules.sql', 'trigger', 'public', 'automation_rules', 'update_automation_rules_updated_at', '', '', true),
+    (413, '022_automation_rules.sql', 'trigger', 'public', 'campaign_runs', 'update_campaign_runs_updated_at', '', '', true),
+    (414, '022_automation_rules.sql', 'rls', 'public', 'automation_rules', 'automation_rules', '', '', true),
+    (415, '022_automation_rules.sql', 'rls', 'public', 'custom_fields', 'custom_fields', '', '', true),
+    (416, '022_automation_rules.sql', 'rls', 'public', 'lead_custom_field_values', 'lead_custom_field_values', '', '', true),
+    (417, '022_automation_rules.sql', 'rls', 'public', 'campaign_runs', 'campaign_runs', '', '', true),
+    (418, '022_automation_rules.sql', 'policy', 'public', 'automation_rules', 'automation_rules_org_isolation', '', '', true),
+    (419, '022_automation_rules.sql', 'policy', 'public', 'custom_fields', 'custom_fields_org_isolation', '', '', true),
+    (420, '022_automation_rules.sql', 'policy', 'public', 'lead_custom_field_values', 'lead_custom_field_values_isolation', '', '', true),
+    (421, '022_automation_rules.sql', 'policy', 'public', 'campaign_runs', 'campaign_runs_org_isolation', '', '', true),
+    (422, '023_multichannel.sql', 'table', 'public', '', 'whatsapp_accounts', '', '', true),
+    (423, '023_multichannel.sql', 'table', 'public', '', 'whatsapp_templates', '', '', true),
+    (424, '023_multichannel.sql', 'table', 'public', '', 'whatsapp_messages', '', '', true),
+    (425, '023_multichannel.sql', 'table', 'public', '', 'linkedin_accounts', '', '', true),
+    (426, '023_multichannel.sql', 'table', 'public', '', 'linkedin_actions', '', '', true),
+    (427, '023_multichannel.sql', 'column', 'public', 'sequence_steps', 'channel_config', '', '', true),
+    (428, '023_multichannel.sql', 'column', 'public', 'sequence_enrollments', 'whatsapp_account_id', '', '', true),
+    (429, '023_multichannel.sql', 'column', 'public', 'sequence_enrollments', 'linkedin_account_id', '', '', true),
+    (430, '023_multichannel.sql', 'index', 'public', 'whatsapp_accounts', 'idx_whatsapp_accounts_org', '', '', true),
+    (431, '023_multichannel.sql', 'index', 'public', 'whatsapp_templates', 'idx_whatsapp_templates_account', '', '', true),
+    (432, '023_multichannel.sql', 'index', 'public', 'whatsapp_messages', 'idx_wa_messages_lead', '', '', true),
+    (433, '023_multichannel.sql', 'index', 'public', 'whatsapp_messages', 'idx_wa_messages_enrollment', '', '', true),
+    (434, '023_multichannel.sql', 'index', 'public', 'whatsapp_messages', 'idx_wa_messages_status', '', '', true),
+    (435, '023_multichannel.sql', 'index', 'public', 'whatsapp_messages', 'idx_wa_messages_wa_id', '', '', true),
+    (436, '023_multichannel.sql', 'index', 'public', 'linkedin_accounts', 'idx_linkedin_accounts_org', '', '', true),
+    (437, '023_multichannel.sql', 'index', 'public', 'linkedin_actions', 'idx_li_actions_lead', '', '', true),
+    (438, '023_multichannel.sql', 'index', 'public', 'linkedin_actions', 'idx_li_actions_enrollment', '', '', true),
+    (439, '023_multichannel.sql', 'index', 'public', 'linkedin_actions', 'idx_li_actions_status', '', '', true),
+    (440, '023_multichannel.sql', 'index', 'public', 'linkedin_actions', 'idx_li_actions_type', '', '', true),
+    (441, '023_multichannel.sql', 'trigger', 'public', 'whatsapp_accounts', 'set_whatsapp_accounts_updated_at', '', '', true),
+    (442, '023_multichannel.sql', 'trigger', 'public', 'whatsapp_templates', 'set_whatsapp_templates_updated_at', '', '', true),
+    (443, '023_multichannel.sql', 'trigger', 'public', 'linkedin_accounts', 'set_linkedin_accounts_updated_at', '', '', true),
+    (444, '023_multichannel.sql', 'rls', 'public', 'whatsapp_accounts', 'whatsapp_accounts', '', '', true),
+    (445, '023_multichannel.sql', 'rls', 'public', 'whatsapp_templates', 'whatsapp_templates', '', '', true),
+    (446, '023_multichannel.sql', 'rls', 'public', 'whatsapp_messages', 'whatsapp_messages', '', '', true),
+    (447, '023_multichannel.sql', 'rls', 'public', 'linkedin_accounts', 'linkedin_accounts', '', '', true),
+    (448, '023_multichannel.sql', 'rls', 'public', 'linkedin_actions', 'linkedin_actions', '', '', true),
+    (449, '023_multichannel.sql', 'policy', 'public', 'whatsapp_templates', 'whatsapp_templates_org_scope', '', '', true),
+    (450, '023_multichannel.sql', 'policy', 'public', 'whatsapp_messages', 'whatsapp_messages_org_scope', '', '', true),
+    (451, '023_multichannel.sql', 'policy', 'public', 'linkedin_actions', 'linkedin_actions_org_scope', '', '', true),
     (452, '028_security_hardening.sql', 'function', 'public', '', 'protect_profile_tenant_columns', '', '', true),
     (453, '028_security_hardening.sql', 'trigger', 'public', 'profiles', 'protect_profile_tenant_columns', '', '', true),
     (454, '028_security_hardening.sql', 'rls', 'public', 'automation_executions', 'automation_executions', '', '', true),
@@ -666,7 +668,66 @@ expected (seq, file, kind, sch, rel, obj, arg, pat, expect_present) AS (
     (547, '033_custom_ai_provider.sql', 'column_privilege', 'public', 'ai_settings', 'custom_fast_model', 'authenticated', 'INSERT', false),
     (548, '035_deal_stage_changed_at.sql', 'column', 'public', 'deals', 'stage_changed_at', '', '', true),
     (549, '035_deal_stage_changed_at.sql', 'column_default', 'public', 'deals', 'stage_changed_at', '', 'now()', true),
-    (550, '035_deal_stage_changed_at.sql', 'trigger_enabled', 'public', 'deals', 'set_updated_at', '', '', true)
+    (550, '035_deal_stage_changed_at.sql', 'trigger_enabled', 'public', 'deals', 'set_updated_at', '', '', true),
+    (551, '021_unmigrated_tables.sql', 'table', 'public', '', 'apify_scraper_runs', '', '', true),
+    (552, '021_unmigrated_tables.sql', 'table', 'public', '', 'campaign_tags', '', '', true),
+    (553, '021_unmigrated_tables.sql', 'table', 'public', '', 'copilot_conversations', '', '', true),
+    (554, '021_unmigrated_tables.sql', 'table', 'public', '', 'copilot_memory', '', '', true),
+    (555, '021_unmigrated_tables.sql', 'table', 'public', '', 'copilot_messages', '', '', true),
+    (556, '021_unmigrated_tables.sql', 'table', 'public', '', 'copilot_tasks', '', '', true),
+    (557, '021_unmigrated_tables.sql', 'table', 'public', '', 'lead_searches', '', '', true),
+    (558, '021_unmigrated_tables.sql', 'table', 'public', '', 'scraped_leads', '', '', true),
+    (559, '021_unmigrated_tables.sql', 'table', 'public', '', 'sequence_email_accounts', '', '', true),
+    (560, '021_unmigrated_tables.sql', 'table', 'public', '', 'sequence_tags', '', '', true),
+    (561, '021_unmigrated_tables.sql', 'table', 'public', '', 'tracking_scripts', '', '', true),
+    (562, '021_unmigrated_tables.sql', 'table', 'public', '', 'website_visitors', '', '', true),
+    (563, '021_unmigrated_tables.sql', 'table', 'public', '', 'website_visits', '', '', true),
+    (564, '021_unmigrated_tables.sql', 'index', 'public', 'website_visitors', 'idx_website_visitors_last_seen', '', '', true),
+    (565, '021_unmigrated_tables.sql', 'index', 'public', 'website_visitors', 'idx_website_visitors_org', '', '', true),
+    (566, '021_unmigrated_tables.sql', 'index', 'public', 'website_visitors', 'idx_website_visitors_status', '', '', true),
+    (567, '021_unmigrated_tables.sql', 'index', 'public', 'website_visits', 'idx_website_visits_created', '', '', true),
+    (568, '021_unmigrated_tables.sql', 'index', 'public', 'website_visits', 'idx_website_visits_org', '', '', true),
+    (569, '021_unmigrated_tables.sql', 'index', 'public', 'website_visits', 'idx_website_visits_visitor', '', '', true),
+    (570, '021_unmigrated_tables.sql', 'trigger', 'public', 'copilot_conversations', 'update_copilot_conversations_updated_at', '', '', true),
+    (571, '021_unmigrated_tables.sql', 'trigger', 'public', 'copilot_memory', 'update_copilot_memory_updated_at', '', '', true),
+    (572, '021_unmigrated_tables.sql', 'trigger', 'public', 'copilot_tasks', 'update_copilot_tasks_updated_at', '', '', true),
+    (573, '021_unmigrated_tables.sql', 'trigger', 'public', 'lead_searches', 'update_lead_searches_updated_at', '', '', true),
+    (574, '021_unmigrated_tables.sql', 'trigger', 'public', 'tracking_scripts', 'set_tracking_scripts_updated_at', '', '', true),
+    (575, '021_unmigrated_tables.sql', 'trigger', 'public', 'website_visitors', 'set_website_visitors_updated_at', '', '', true),
+    (576, '021_unmigrated_tables.sql', 'rls', 'public', 'apify_scraper_runs', 'apify_scraper_runs', '', '', true),
+    (577, '021_unmigrated_tables.sql', 'rls', 'public', 'campaign_tags', 'campaign_tags', '', '', true),
+    (578, '021_unmigrated_tables.sql', 'rls', 'public', 'copilot_conversations', 'copilot_conversations', '', '', true),
+    (579, '021_unmigrated_tables.sql', 'rls', 'public', 'copilot_memory', 'copilot_memory', '', '', true),
+    (580, '021_unmigrated_tables.sql', 'rls', 'public', 'copilot_messages', 'copilot_messages', '', '', true),
+    (581, '021_unmigrated_tables.sql', 'rls', 'public', 'copilot_tasks', 'copilot_tasks', '', '', true),
+    (582, '021_unmigrated_tables.sql', 'rls', 'public', 'lead_searches', 'lead_searches', '', '', true),
+    (583, '021_unmigrated_tables.sql', 'rls', 'public', 'scraped_leads', 'scraped_leads', '', '', true),
+    (584, '021_unmigrated_tables.sql', 'rls', 'public', 'sequence_email_accounts', 'sequence_email_accounts', '', '', true),
+    (585, '021_unmigrated_tables.sql', 'rls', 'public', 'sequence_tags', 'sequence_tags', '', '', true),
+    (586, '021_unmigrated_tables.sql', 'rls', 'public', 'tracking_scripts', 'tracking_scripts', '', '', true),
+    (587, '021_unmigrated_tables.sql', 'rls', 'public', 'website_visitors', 'website_visitors', '', '', true),
+    (588, '021_unmigrated_tables.sql', 'rls', 'public', 'website_visits', 'website_visits', '', '', true),
+    (589, '021_unmigrated_tables.sql', 'policy', 'public', 'apify_scraper_runs', 'org_access', '', '', true),
+    (590, '021_unmigrated_tables.sql', 'policy', 'public', 'copilot_conversations', 'org_access', '', '', true),
+    (591, '021_unmigrated_tables.sql', 'policy', 'public', 'copilot_memory', 'org_access', '', '', true),
+    (592, '021_unmigrated_tables.sql', 'policy', 'public', 'copilot_messages', 'org_access', '', '', true),
+    (593, '021_unmigrated_tables.sql', 'policy', 'public', 'copilot_tasks', 'org_access', '', '', true),
+    (594, '021_unmigrated_tables.sql', 'policy', 'public', 'campaign_tags', 'Users can view own org campaign_tags', '', '', true),
+    (595, '021_unmigrated_tables.sql', 'policy', 'public', 'campaign_tags', 'Users can insert own org campaign_tags', '', '', true),
+    (596, '021_unmigrated_tables.sql', 'policy', 'public', 'campaign_tags', 'Users can delete own org campaign_tags', '', '', true),
+    (597, '021_unmigrated_tables.sql', 'policy', 'public', 'lead_searches', 'Users can view own org lead_searches', '', '', true),
+    (598, '021_unmigrated_tables.sql', 'policy', 'public', 'lead_searches', 'Users can insert own org lead_searches', '', '', true),
+    (599, '021_unmigrated_tables.sql', 'policy', 'public', 'lead_searches', 'Users can update own org lead_searches', '', '', true),
+    (600, '021_unmigrated_tables.sql', 'policy', 'public', 'lead_searches', 'Users can delete own org lead_searches', '', '', true),
+    (601, '021_unmigrated_tables.sql', 'policy', 'public', 'scraped_leads', 'Users can view own org scraped_leads', '', '', true),
+    (602, '021_unmigrated_tables.sql', 'policy', 'public', 'scraped_leads', 'Users can insert own org scraped_leads', '', '', true),
+    (603, '021_unmigrated_tables.sql', 'policy', 'public', 'scraped_leads', 'Users can update own org scraped_leads', '', '', true),
+    (604, '021_unmigrated_tables.sql', 'policy', 'public', 'scraped_leads', 'Users can delete own org scraped_leads', '', '', true),
+    (605, '021_unmigrated_tables.sql', 'policy', 'public', 'sequence_email_accounts', 'Users can manage sequence_email_accounts', '', '', true),
+    (606, '021_unmigrated_tables.sql', 'policy', 'public', 'sequence_tags', 'Users can manage sequence_tags', '', '', true),
+    (607, '021_unmigrated_tables.sql', 'policy', 'public', 'tracking_scripts', 'Users can manage own org tracking scripts', '', '', true),
+    (608, '021_unmigrated_tables.sql', 'policy', 'public', 'website_visitors', 'Users can manage own org visitors', '', '', true),
+    (609, '021_unmigrated_tables.sql', 'policy', 'public', 'website_visits', 'Users can view own org visits', '', '', true)
 ),
 
 -- policies a repo migration created and a later one dropped: if still present
@@ -674,21 +735,11 @@ expected (seq, file, kind, sch, rel, obj, arg, pat, expect_present) AS (
 retired (sch, rel, obj, created_in, dropped_in) AS (
   VALUES
     ('public', 'email_accounts', 'org_email_accounts', '016_email_system.sql', '031_account_role_rls.sql'),
-    ('public', 'whatsapp_accounts', 'whatsapp_accounts_org_scope', '20260313_multichannel.sql', '031_account_role_rls.sql'),
-    ('public', 'linkedin_accounts', 'linkedin_accounts_org_scope', '20260313_multichannel.sql', '031_account_role_rls.sql'),
+    ('public', 'whatsapp_accounts', 'whatsapp_accounts_org_scope', '023_multichannel.sql', '031_account_role_rls.sql'),
+    ('public', 'linkedin_accounts', 'linkedin_accounts_org_scope', '023_multichannel.sql', '031_account_role_rls.sql'),
     ('storage', 'objects', 'Authenticated users can upload avatars', '001_initial_schema.sql', '032_avatar_storage.sql'),
     ('storage', 'objects', 'Users can update own avatars', '001_initial_schema.sql', '032_avatar_storage.sql'),
     ('storage', 'objects', 'Users can delete own avatars', '001_initial_schema.sql', '032_avatar_storage.sql')
-),
-
--- tables created by hand in production that no repo migration defines
--- (AUDIT-2026-09-30.md); their policies are reported separately in section 2
-handmade (tbl) AS (
-  VALUES ('apify_scraper_runs'), ('campaign_tags'), ('copilot_conversations'),
-         ('copilot_memory'), ('copilot_messages'), ('copilot_tasks'),
-         ('lead_searches'), ('scraped_leads'), ('sequence_email_accounts'),
-         ('sequence_tags'), ('tracking_scripts'), ('website_visitors'),
-         ('website_visits')
 ),
 
 checked AS (
@@ -826,8 +877,7 @@ summary AS (
 ),
 
 unexpected AS (
-  SELECT p.schemaname, p.tablename, p.policyname, p.cmd, p.roles,
-         EXISTS (SELECT 1 FROM handmade h WHERE p.schemaname = 'public' AND h.tbl = p.tablename) AS on_handmade
+  SELECT p.schemaname, p.tablename, p.policyname, p.cmd, p.roles
   FROM pg_policies p
   WHERE p.schemaname IN ('public', 'storage')
     AND NOT EXISTS (
@@ -850,10 +900,8 @@ WHERE s.n_failing > 0
 
 UNION ALL
 SELECT '2_unexpected', NULL, NULL, 'policy (not in any migration)',
-       format('%s.%s: "%s" (FOR %s, TO %s)%s', u.schemaname, u.tablename, u.policyname, u.cmd,
-              array_to_string(u.roles, ','),
-              CASE WHEN u.on_handmade THEN ' -- on a hand-made table no migration creates'
-                   ELSE ' -- likely dashboard-created' END),
+       format('%s.%s: "%s" (FOR %s, TO %s) -- likely dashboard-created', u.schemaname, u.tablename,
+              u.policyname, u.cmd, array_to_string(u.roles, ',')),
        true, 'absent', 'UNEXPECTED', 0
 FROM unexpected u
 
