@@ -31,7 +31,7 @@
 -- What is checked, per migration
 --   enum, table, column (ALTER TABLE ... ADD COLUMN), column default (035),
 --   constraint definition, index, function (by argument signature), function body / config /
---   EXECUTE privilege, column privilege, trigger (by table), trigger enabled
+--   EXECUTE privilege, column privilege, table privilege, trigger (by table), trigger enabled
 --   (035 disables deals.set_updated_at during its backfill), RLS enabled,
 --   policy (name + table), policy definition (WITH CHECK pattern for policies
 --   that a later migration re-created), storage bucket.
@@ -99,7 +99,8 @@ migrations (ord, file) AS (
     (27, '034_normalize_seed_values.sql'),
     (28, '035_deal_stage_changed_at.sql'),
     (29, '036_api_keys.sql'),
-    (30, '037_lead_conversion.sql')
+    (30, '037_lead_conversion.sql'),
+    (31, '038_shared_ai_budget.sql')
 ),
 
 -- kind               sch      rel             obj           arg        pat
@@ -114,6 +115,7 @@ migrations (ord, file) AS (
 -- function_config    schema   -               name          arg types  required proconfig entry
 -- function_privilege schema   role            name          arg types  privilege
 -- column_privilege   schema   table           column        role       privilege
+-- table_privilege    schema   table           table         role       privilege (comma list = any of)
 -- rls                schema   table           table         -          -
 -- policy             schema   table           policy name   -          -
 -- policy_def         schema   table           policy name   -          LIKE pattern on WITH CHECK
@@ -322,7 +324,6 @@ expected (seq, file, kind, sch, rel, obj, arg, pat, expect_present) AS (
     (199, '011_ai_foundation.sql', 'policy', 'public', 'ai_settings', 'Users can insert their org AI settings', '', '', true),
     (200, '011_ai_foundation.sql', 'policy', 'public', 'ai_settings', 'Users can update their org AI settings', '', '', true),
     (201, '011_ai_foundation.sql', 'policy', 'public', 'ai_usage_log', 'Users can view their org usage logs', '', '', true),
-    (202, '011_ai_foundation.sql', 'policy', 'public', 'ai_usage_log', 'Users can insert usage logs', '', '', true),
     (203, '011_ai_foundation.sql', 'policy', 'public', 'ai_settings', 'Service role full access to ai_settings', '', '', true),
     (204, '011_ai_foundation.sql', 'policy', 'public', 'ai_usage_log', 'Service role full access to ai_usage_log', '', '', true),
     (205, '016_email_system.sql', 'enum', 'public', '', 'email_provider', '', '', true),
@@ -736,7 +737,24 @@ expected (seq, file, kind, sch, rel, obj, arg, pat, expect_present) AS (
     (613, '036_api_keys.sql', 'policy', 'public', 'api_keys', 'api_keys_select_admin', '', '', true),
     (620, '037_lead_conversion.sql', 'column', 'public', 'leads', 'converted_at', '', '', true),
     (621, '037_lead_conversion.sql', 'column', 'public', 'leads', 'converted_customer_id', '', '', true),
-    (622, '037_lead_conversion.sql', 'index', 'public', 'leads', 'idx_leads_converted_at', '', '', true)
+    (622, '037_lead_conversion.sql', 'index', 'public', 'leads', 'idx_leads_converted_at', '', '', true),
+    (630, '038_shared_ai_budget.sql', 'table', 'public', '', 'ai_shared_budget', '', '', true),
+    (631, '038_shared_ai_budget.sql', 'rls', 'public', 'ai_shared_budget', 'ai_shared_budget', '', '', true),
+    (632, '038_shared_ai_budget.sql', 'function', 'public', '', 'reserve_shared_ai_tokens', 'uuid, integer, bigint, bigint, boolean, bigint', '', true),
+    (633, '038_shared_ai_budget.sql', 'function', 'public', '', 'settle_shared_ai_tokens', 'uuid, date, integer, boolean', '', true),
+    (634, '038_shared_ai_budget.sql', 'function', 'public', '', 'purge_shared_ai_budget', 'integer', '', true),
+    (635, '038_shared_ai_budget.sql', 'constraint_def', 'public', 'ai_usage_log', 'ai_usage_log_tokens_nonnegative', '', '%input_tokens >= 0%output_tokens >= 0%total_tokens >= 0%', true),
+    (636, '038_shared_ai_budget.sql', 'policy', 'public', 'ai_usage_log', 'Users can insert usage logs', '', '', false),
+    (637, '038_shared_ai_budget.sql', 'table_privilege', 'public', 'ai_usage_log', 'ai_usage_log', 'anon', 'INSERT, UPDATE, DELETE', false),
+    (638, '038_shared_ai_budget.sql', 'table_privilege', 'public', 'ai_usage_log', 'ai_usage_log', 'authenticated', 'INSERT, UPDATE, DELETE', false),
+    (639, '038_shared_ai_budget.sql', 'table_privilege', 'public', 'ai_shared_budget', 'ai_shared_budget', 'anon', 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER', false),
+    (640, '038_shared_ai_budget.sql', 'table_privilege', 'public', 'ai_shared_budget', 'ai_shared_budget', 'authenticated', 'SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER', false),
+    (641, '038_shared_ai_budget.sql', 'function_privilege', 'public', 'anon', 'reserve_shared_ai_tokens', 'uuid, integer, bigint, bigint, boolean, bigint', 'EXECUTE', false),
+    (642, '038_shared_ai_budget.sql', 'function_privilege', 'public', 'authenticated', 'reserve_shared_ai_tokens', 'uuid, integer, bigint, bigint, boolean, bigint', 'EXECUTE', false),
+    (643, '038_shared_ai_budget.sql', 'function_privilege', 'public', 'anon', 'settle_shared_ai_tokens', 'uuid, date, integer, boolean', 'EXECUTE', false),
+    (644, '038_shared_ai_budget.sql', 'function_privilege', 'public', 'authenticated', 'settle_shared_ai_tokens', 'uuid, date, integer, boolean', 'EXECUTE', false),
+    (645, '038_shared_ai_budget.sql', 'function_privilege', 'public', 'anon', 'purge_shared_ai_budget', 'integer', 'EXECUTE', false),
+    (646, '038_shared_ai_budget.sql', 'function_privilege', 'public', 'authenticated', 'purge_shared_ai_budget', 'integer', 'EXECUTE', false)
 ),
 
 -- policies a repo migration created and a later one dropped: if still present
@@ -748,7 +766,8 @@ retired (sch, rel, obj, created_in, dropped_in) AS (
     ('public', 'linkedin_accounts', 'linkedin_accounts_org_scope', '023_multichannel.sql', '031_account_role_rls.sql'),
     ('storage', 'objects', 'Authenticated users can upload avatars', '001_initial_schema.sql', '032_avatar_storage.sql'),
     ('storage', 'objects', 'Users can update own avatars', '001_initial_schema.sql', '032_avatar_storage.sql'),
-    ('storage', 'objects', 'Users can delete own avatars', '001_initial_schema.sql', '032_avatar_storage.sql')
+    ('storage', 'objects', 'Users can delete own avatars', '001_initial_schema.sql', '032_avatar_storage.sql'),
+    ('public', 'ai_usage_log', 'Users can insert usage logs', '011_ai_foundation.sql', '038_shared_ai_budget.sql')
 ),
 
 checked AS (
@@ -771,6 +790,7 @@ checked AS (
       WHEN 'function_config' THEN format('%s.%s(%s) SET %s', e.sch, e.obj, e.arg, e.pat)
       WHEN 'function_privilege' THEN format('%s has %s on %s.%s(%s)', e.rel, e.pat, e.sch, e.obj, e.arg)
       WHEN 'column_privilege' THEN format('%s has %s on %s.%s.%s', e.arg, e.pat, e.sch, e.rel, e.obj)
+      WHEN 'table_privilege' THEN format('%s has any of %s on %s.%s', e.arg, e.pat, e.sch, e.rel)
       WHEN 'trigger'        THEN format('%s.%s: %s', e.sch, e.rel, e.obj)
       WHEN 'rls'            THEN format('%s.%s (row level security enabled)', e.sch, e.rel)
       WHEN 'policy'         THEN format('%s.%s: "%s"', e.sch, e.rel, e.obj)
@@ -839,6 +859,10 @@ checked AS (
                        AND a.attname = e.obj AND a.attnum > 0 AND NOT a.attisdropped),
                     e.pat)
         END  -- NULL when the role, table or column does not exist
+      WHEN 'table_privilege' THEN
+        CASE WHEN EXISTS (SELECT 1 FROM pg_roles r WHERE r.rolname = e.arg)
+             THEN has_table_privilege(e.arg, to_regclass(format('%I.%I', e.sch, e.rel)), e.pat)
+        END  -- NULL when the role or the table does not exist
       WHEN 'trigger' THEN EXISTS (
         SELECT 1 FROM pg_trigger t
         JOIN pg_class c ON c.oid = t.tgrelid
