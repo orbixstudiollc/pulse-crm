@@ -480,7 +480,8 @@
         "T26",
         "T27",
         "T28",
-        "T30"
+        "T30",
+        "T31"
       ],
       "model": "sonnet"
     },
@@ -496,6 +497,21 @@
       "depends_on": [
         "T2",
         "T9"
+      ],
+      "model": "opus"
+    },
+    {
+      "id": "T31",
+      "title": "Fix: approved updates must use the approved diff, not one recomputed when ai re-runs needsApproval",
+      "files": [
+        "lib/ai/tools/registry.ts",
+        "tests/ai/tools/registry.test.ts",
+        "tests/api/copilot-acceptance.test.ts"
+      ],
+      "interface": "Found by T28. ai 6.0.295 calls needsApproval again for every approved tool call before execute (validateApprovedToolApprovals -> isApprovalNeeded). buildCopilotToolSet's needsApproval then recomputes the diff from the LIVE row and stores it (diffs.set), and execute prefers diffs.get over opts.resolveDiff, so the staleness check and the updated_at precondition use the already-changed row and a stale approval overwrites newer data. Fix: in needsApproval, when opts.resolveDiff?.(toolCallId) returns a stored diff, use it (store it in diffs) and return true WITHOUT recomputing, calling onWriteRequested, touching pendingDescriptors, or incrementing the fan-out counter; and execute must prefer the resolveDiff (approved) diff over any in-memory one. Add a registry unit test: second needsApproval call for an already-approved toolCallId does not recompute, does not call onWriteRequested and does not increment fan-out. Remove `{ fails: true }` from scenarios (4) and (9) in tests/api/copilot-acceptance.test.ts (change nothing else in that file).",
+      "verify": "npx vitest run tests/ai/tools/registry.test.ts tests/api/copilot-acceptance.test.ts tests/api/chat-route.test.ts && test $(grep -c 'fails: true' tests/api/copilot-acceptance.test.ts) -eq 0 && npx tsc --noEmit",
+      "depends_on": [
+        "T28"
       ],
       "model": "opus"
     }
