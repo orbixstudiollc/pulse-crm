@@ -2,15 +2,18 @@ import { after } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import {
-  streamText,
-  tool,
-  stepCountIs,
+  consumeStream,
+  convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
+  isToolUIPart,
+  stepCountIs,
+  streamText,
+  type UIMessage,
+  type UIMessageChunk,
 } from "ai";
-import { z } from "zod";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
-import { assembleContext, fetchEntityForChat } from "@/lib/ai/context";
+import { assembleContext, loadMemoryBlock } from "@/lib/ai/context";
 import { createAIMessagesClient, logTokenUsage, tokenLimitReason } from "@/lib/ai/client";
 import { getModelId } from "@/lib/ai/models";
 import { customModelSettingsFor, resolveAIProvider } from "@/lib/ai/provider-resolver";
@@ -18,22 +21,202 @@ import { sharedTurnBudget } from "@/lib/ai/shared-budget";
 import { SharedBudgetError } from "@/lib/ai/shared-budget-core";
 import { aiSdkBaseUrl, createCustomFetch, customModelFor } from "@/lib/ai/custom-provider";
 import { checkRateLimit, acquireRateLimit } from "@/lib/ai/rate-limiter";
-import { toChatMessages } from "@/lib/ai/chat-messages";
-import { PageContext } from "@/lib/ai/types";
-import { escapePostgrestLike } from "@/lib/security";
+import { chatRequestSchema, type ChatRequest } from "@/lib/ai/chat-request";
+import {
+  acquireTurnLock,
+  applyApprovalResponses,
+  getOrCreateConversation,
+  loadUiMessages,
+  persistUiMessages,
+  persistUserMessage,
+  releaseTurnLock,
+} from "@/lib/ai/history";
+import {
+  attachApprovalIds,
+  claimApproval,
+  extractApprovalRequests,
+  markApprovalOutcome,
+  recordPendingApproval,
+  type ApprovalOutcome,
+  type ApprovalResponse,
+  type ApprovalRow,
+} from "@/lib/ai/approvals";
+import { buildCopilotToolSet, pendingDescriptors, type CopilotToolEnv } from "@/lib/ai/tools/registry";
+import { sanitizeAlwaysAllow } from "@/lib/ai/tools/policy";
+import type { FieldDiff } from "@/lib/ai/tools/diff";
+import { RECORD_CHANGED } from "@/lib/mcp/tools-write";
 
-export const maxDuration = 60;
+// 120 s, not 60: a turn may run CHAT_MAX_STEPS (8) tool steps plus the live-record
+// lookups behind each proposed write's diff, which exceeds 60 s. A function killed by
+// the platform before onFinish would leak the shared-budget reservation and orphan
+// approval cards (pending rows with no approval_id, history never persisted, turn lock
+// held until its TTL). So an internal AbortController ends the turn at
+// TURN_DEADLINE_MS (100 s): onAbort/onFinish, persistence and the lock release then
+// always run inside the 120 s budget.
+export const maxDuration = 120;
 
 /** Tool-use steps per chat turn (stopWhen). */
-const CHAT_MAX_STEPS = 3;
+const CHAT_MAX_STEPS = 8;
 /** Output cap per step on the owner's shared (env) key. */
 const SHARED_CHAT_MAX_OUTPUT_TOKENS = 4096;
-/** Total streamText time on the shared key, under maxDuration, so a hung provider is cut off. */
-const SHARED_CHAT_TIMEOUT_MS = 50_000;
+/** The turn is aborted here, well under maxDuration, so its cleanup always runs. */
+const TURN_DEADLINE_MS = 100_000;
+/** Most stored UI messages the model sees per turn (the full history stays stored). */
+const MAX_MODEL_MESSAGES = 40;
+/** Hard cap on the workspace-memory block in the system prompt. */
+const MEMORY_CAP_TOKENS = 1500;
+
+/** Providers reached through the Anthropic protocol support tool calling. */
+const TOOL_PROVIDERS = new Set(["anthropic", "openrouter", "custom"]);
+
+const NO_TOOLS_NOTICE =
+  "This AI provider can't use CRM tools, so Copilot answers from the page context only and can't look up or change records. Use Anthropic, OpenRouter or a custom Anthropic-compatible provider in Settings → AI Assistant for full Copilot.";
+const PROVIDER_FAILED = "The AI provider request failed. Please try again.";
+
+type AdminClient = ReturnType<typeof createAdminClient>;
+type ClaimedApproval = { row: ApprovalRow; response: ApprovalResponse };
+type ToolPart = Extract<UIMessage["parts"][number], { toolCallId: string }>;
+
+function chatErrorText(error: unknown): string {
+  // The shared-key reservation was refused: show the reason.
+  if (error instanceof SharedBudgetError) return error.message;
+  console.error("AI Chat stream error:", error);
+  return PROVIDER_FAILED;
+}
+
+/** Claims each approval atomically (a repeated or unknown id is invalid, never re-run). */
+async function claimApprovals(
+  admin: AdminClient,
+  args: { orgId: string; conversationId: string; approvals: ChatRequest["approvals"] },
+): Promise<{ claimed: ClaimedApproval[]; invalid: string[] }> {
+  const claimed: ClaimedApproval[] = [];
+  const invalid: string[] = [];
+  const seen = new Set<string>();
+  for (const approval of args.approvals) {
+    if (seen.has(approval.approvalId)) {
+      invalid.push(approval.approvalId);
+      continue;
+    }
+    seen.add(approval.approvalId);
+    const result = await claimApproval(admin, {
+      orgId: args.orgId,
+      conversationId: args.conversationId,
+      approvalId: approval.approvalId,
+      approved: approval.approved,
+    });
+    if (result.status === "claimed") claimed.push({ row: result.row, response: approval });
+    else invalid.push(approval.approvalId);
+  }
+  return { claimed, invalid };
+}
+
+/** What a claimed, approved write's tool part says happened. */
+function approvalOutcome(part: ToolPart | undefined): { outcome: ApprovalOutcome; result: unknown } {
+  if (part?.state === "output-available") {
+    const output = part.output as { ok?: unknown; error?: unknown } | null;
+    if (output && typeof output === "object" && output.ok === false) {
+      return { outcome: output.error === RECORD_CHANGED ? "stale" : "failed", result: output };
+    }
+    return { outcome: "applied", result: output ?? null };
+  }
+  if (part?.state === "output-error") return { outcome: "failed", result: { error: part.errorText } };
+  return { outcome: "failed", result: { error: "not_executed" } };
+}
+
+/**
+ * Persists the turn (also when it was aborted), stores the SDK approval ids on the rows
+ * recorded while the turn ran, and records the outcome of every write approved this turn.
+ * Each step is attempted even if an earlier one failed.
+ */
+async function finishTurn(
+  admin: AdminClient,
+  args: { orgId: string; userId: string; conversationId: string; messages: UIMessage[]; approved: ApprovalRow[] },
+): Promise<void> {
+  const { orgId, userId, conversationId, messages } = args;
+  try {
+    await persistUiMessages(admin, { conversationId, orgId, userId, messages });
+  } catch (error) {
+    console.error("AI Chat: persisting the turn failed:", error);
+  }
+  const last = messages.findLast((m) => m.role === "assistant");
+  try {
+    const pairs = last ? extractApprovalRequests(last).map(({ toolCallId, approvalId }) => ({ toolCallId, approvalId })) : [];
+    if (pairs.length > 0) await attachApprovalIds(admin, { orgId, conversationId, pairs });
+  } catch (error) {
+    console.error("AI Chat: attaching approval ids failed:", error);
+  }
+  for (const row of args.approved) {
+    const part = last?.parts.find((p): p is ToolPart => isToolUIPart(p) && p.toolCallId === row.tool_call_id);
+    const { outcome, result } = approvalOutcome(part);
+    try {
+      await markApprovalOutcome(admin, orgId, row.id, outcome, result);
+    } catch (error) {
+      console.error("AI Chat: recording an approval outcome failed:", error);
+    }
+  }
+}
+
+/**
+ * Emits each proposed write's diff as a data-approval-diff part (keyed by toolCallId)
+ * right before its approval request: ai 6 cannot carry a descriptor on the approval part
+ * (see lib/ai/tools/registry.ts). An optional notice goes right after the start chunk.
+ */
+function decorateStream(
+  stream: ReadableStream<UIMessageChunk>,
+  notice: UIMessageChunk | null,
+): ReadableStream<UIMessageChunk> {
+  return stream.pipeThrough(
+    new TransformStream<UIMessageChunk, UIMessageChunk>({
+      transform(chunk, controller) {
+        if (chunk.type === "tool-approval-request") {
+          const diff = pendingDescriptors.get(chunk.toolCallId);
+          if (diff) {
+            pendingDescriptors.delete(chunk.toolCallId);
+            controller.enqueue({ type: "data-approval-diff", id: chunk.toolCallId, data: diff });
+          }
+        }
+        controller.enqueue(chunk);
+        if (chunk.type === "start" && notice) controller.enqueue(notice);
+      },
+    }),
+  );
+}
+
+/**
+ * The newest MAX_MODEL_MESSAGES stored messages, cut at message boundaries only (a tool
+ * call and its result live inside one assistant UI message, so they are never split).
+ * The window opens with a user message, and it always keeps `mustInclude`: the assistant
+ * message whose approvals this turn answers.
+ */
+function modelWindow(messages: UIMessage[], mustInclude = -1): UIMessage[] {
+  let start = Math.max(0, messages.length - MAX_MODEL_MESSAGES);
+  if (mustInclude >= 0 && mustInclude < start) start = mustInclude;
+  while (start < messages.length - 1 && start !== mustInclude && messages[start].role !== "user") start++;
+  return messages.slice(start);
+}
+
+/** Plain user/assistant text of the stored history, for the provider without tools. */
+function textHistory(messages: UIMessage[]): Array<{ role: "user" | "assistant"; content: string }> {
+  return messages.flatMap((m) => {
+    if (m.role !== "user" && m.role !== "assistant") return [];
+    const content = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+    return content ? [{ role: m.role, content }] : [];
+  });
+}
 
 export async function POST(req: Request) {
   let releaseRateLimit: (() => void) | null = null;
   let closeCustomFetch: (() => void) | null = null;
+  let releaseLock: (() => Promise<void>) | null = null;
+  let deadlineTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Ends a request that will not stream: frees the slot, the pinned fetch and the turn lock. */
+  const reject = async (status: number, body: Record<string, unknown>) => {
+    clearTimeout(deadlineTimer);
+    releaseRateLimit?.();
+    closeCustomFetch?.();
+    await releaseLock?.();
+    return Response.json(body, { status });
+  };
   try {
     const supabase = await createClient();
     const {
@@ -55,10 +238,11 @@ export async function POST(req: Request) {
     }
 
     // Get AI settings for API key (secret columns are only readable with the service role)
-    const { data: settings } = await createAdminClient()
+    const admin = createAdminClient();
+    const { data: settings } = await admin
       .from("ai_settings")
       .select(
-        "organization_id, api_key, feature_chat, ai_provider, openrouter_api_key, openrouter_oauth_token, openrouter_expires_at, openai_api_key, groq_api_key, ollama_base_url, custom_base_url, custom_api_key, custom_model, custom_fast_model, daily_token_limit, monthly_token_limit, tokens_used_today, tokens_used_month, last_token_reset_daily, last_token_reset_monthly"
+        "organization_id, api_key, feature_chat, ai_provider, openrouter_api_key, openrouter_oauth_token, openrouter_expires_at, openai_api_key, groq_api_key, ollama_base_url, custom_base_url, custom_api_key, custom_model, custom_fast_model, daily_token_limit, monthly_token_limit, tokens_used_today, tokens_used_month, last_token_reset_daily, last_token_reset_monthly, copilot_always_allow"
       )
       .eq("organization_id", profile.organization_id)
       .single();
@@ -99,8 +283,10 @@ export async function POST(req: Request) {
       default:
         modelId = "claude-sonnet-4-6";
     }
+    const toolsSupported = TOOL_PROVIDERS.has(provider);
 
     const orgId = profile.organization_id;
+    const userId = user.id;
     // The owner's shared (env) key is limited per workspace and site-wide per
     // UTC day, and guests (anonymous users) also share a smaller guest pool:
     // tokens are reserved before each call (below, per step, or in the client
@@ -129,95 +315,28 @@ export async function POST(req: Request) {
     // real usage is settled); the slot is freed when it ends, not on abort.
     if (!sharedKey) req.signal.addEventListener("abort", guardedRelease);
 
-    const { messages: rawMessages, data } = await req.json();
-    const pageContext: PageContext | undefined = data?.pageContext;
-
-    // User/assistant text only: client-supplied file/image parts or system/tool
-    // roles never reach the model (see lib/ai/chat-messages.ts).
-    const messages = toChatMessages(rawMessages);
-    if (messages.length === 0) {
-      guardedRelease();
-      return Response.json({ error: "No message to send." }, { status: 400 });
+    // ── Request body: one human action, never history ─────────────────────
+    let raw: unknown;
+    try {
+      raw = await req.json();
+    } catch {
+      return reject(400, { error: "invalid_request" });
     }
-
-    // Build context from current page
-    let contextStr = "";
-    if (pageContext) {
-      contextStr = await assembleContext(pageContext);
-    }
-
-    const fullName = user.user_metadata?.full_name;
-    const userLabel = (typeof fullName === "string" && fullName) || user.email;
-
-    const systemMessage = `${SYSTEM_PROMPTS.chat}
-
-${contextStr ? `\n---\nCurrent CRM Context:\n${contextStr}` : ""}
-
-Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLabel}` : ""}`;
-
-    const startTime = Date.now();
-
-    if (provider !== "anthropic" && provider !== "openrouter" && provider !== "custom") {
-      // OpenAI-compatible providers (OpenAI, Groq, Ollama): one completion
-      // without CRM tools, delivered as a single text part of the UI stream.
-      const client = createAIMessagesClient(resolved, null, orgId, isGuest);
-      const chatMessages = (messages as Array<{ role: string; content?: unknown }>).filter(
-        (m): m is { role: "user" | "assistant"; content: string } =>
-          (m.role === "user" || m.role === "assistant") &&
-          typeof m.content === "string" &&
-          m.content.length > 0
-      );
-      const stream = createUIMessageStream({
-        execute: async ({ writer }) => {
-          try {
-            const completion = client.messages.create({
-              model: getModelId("sonnet", provider),
-              max_tokens: 4096,
-              system: systemMessage,
-              messages: chatMessages,
-            });
-            // The shared-key settlement runs inside the completion
-            // (lib/ai/client.ts): keep the function alive for it even if the
-            // client disconnects.
-            after(() => completion.then(() => undefined, () => undefined));
-            const response = await completion;
-            const text = response.content
-              .filter((b) => b.type === "text")
-              .map((b) => b.text)
-              .join("");
-            const id = crypto.randomUUID();
-            writer.write({ type: "start" });
-            writer.write({ type: "text-start", id });
-            writer.write({ type: "text-delta", id, delta: text });
-            writer.write({ type: "text-end", id });
-            writer.write({ type: "finish" });
-            await logTokenUsage({
-              orgId,
-              userId: user.id,
-              feature: "chat",
-              model: response.model,
-              inputTokens: response.usage.input_tokens,
-              outputTokens: response.usage.output_tokens,
-              durationMs: Date.now() - startTime,
-              success: true,
-              sharedKey,
-              metadata: { provider },
-            });
-          } finally {
-            guardedRelease();
-          }
-        },
-        onError: (error) => {
-          // The shared-key reservation was refused: show the reason.
-          if (error instanceof SharedBudgetError) return error.message;
-          console.error("AI Chat error:", error);
-          return "The AI provider request failed. Please try again.";
-        },
+    const parsed = chatRequestSchema.safeParse(raw);
+    if (!parsed.success) {
+      return reject(400, {
+        error: "invalid_request",
+        issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
       });
-      return createUIMessageStreamResponse({ stream });
     }
+    const body = parsed.data;
+    // Approvals continue the last assistant message; a new message starts a new one.
+    // The SDK can only run approved tools when the approvals are the newest input.
+    if (body.message && body.approvals.length > 0) return reject(400, { error: "approvals_with_message" });
+    if (!body.message && body.approvals.length === 0) return reject(400, { error: "empty_turn" });
+    if (!toolsSupported && body.approvals.length > 0) return reject(400, { error: "no_tools" });
 
-    let anthropicOptions: Parameters<typeof createAnthropic>[0];
+    let anthropicOptions: Parameters<typeof createAnthropic>[0] = { apiKey: resolved.apiKey };
     if (provider === "custom" && resolved.baseURL) {
       // SECURITY: the resolved URL (the org's, or the env fallback's, always
       // paired with its own key) goes through a fetch pinned to the validated
@@ -255,32 +374,207 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
           "X-Title": "Pulse CRM",
         },
       };
-    } else {
-      anthropicOptions = { apiKey: resolved.apiKey };
     }
+
+    // ── Conversation, turn lock, server-owned history ─────────────────────
+    const conversation = await getOrCreateConversation(admin, {
+      orgId,
+      userId,
+      conversationId: body.conversationId ?? null,
+      pageKey: body.pageKey ?? null,
+      title: body.message?.text.slice(0, 60),
+    });
+    if ("error" in conversation) return reject(404, { error: "conversation_not_found" });
+    const conversationId = conversation.id;
+
+    const lockToken = await acquireTurnLock(admin, { conversationId, orgId });
+    if (!lockToken) return reject(409, { error: "turn_in_progress" });
+    let lockReleased = false;
+    releaseLock = async () => {
+      if (lockReleased) return;
+      lockReleased = true;
+      try {
+        await releaseTurnLock(admin, { conversationId, orgId, token: lockToken });
+      } catch (error) {
+        console.error("AI Chat: releasing the turn lock failed:", error);
+      }
+    };
+
+    let history = await loadUiMessages(admin, conversationId, orgId);
+
+    // Approvals: each one is claimed atomically before anything runs. Unknown, repeated
+    // or already-resolved ids never execute. One bad id does not void the valid ones.
+    const { claimed, invalid } = await claimApprovals(admin, { orgId, conversationId, approvals: body.approvals });
+    const applied = applyApprovalResponses(history, claimed.map((c) => c.response));
+    history = applied.messages;
+    const unmatched = new Set(applied.unmatched);
+    for (const c of claimed.filter((c) => unmatched.has(c.response.approvalId))) {
+      // Claimed, but its card is no longer in the latest turn: it can never run.
+      invalid.push(c.response.approvalId);
+      if (c.response.approved) {
+        await markApprovalOutcome(admin, orgId, c.row.id, "failed", { error: "approval_not_in_latest_turn" });
+      }
+    }
+    const matched = claimed.filter((c) => !unmatched.has(c.response.approvalId));
+    if (body.approvals.length > 0 && matched.length === 0) {
+      return reject(400, { error: "invalid_approval", approvalId: invalid[0] });
+    }
+    const approvedRows = matched.filter((c) => c.response.approved).map((c) => c.row);
+
+    // A new message is stored BEFORE the model runs, so a failed turn still keeps it.
+    if (body.message) {
+      const userMessage: UIMessage = {
+        id: crypto.randomUUID(),
+        role: "user",
+        parts: [{ type: "text", text: body.message.text }],
+      };
+      await persistUserMessage(admin, { conversationId, orgId, userId, message: userMessage, seq: history.length });
+      history = [...history, userMessage];
+    }
+
+    // The model sees a window of the stored history; the stream and persistence keep all of it.
+    const answered = matched.length > 0 ? history.findLastIndex((m) => m.role === "assistant") : -1;
+    const modelHistory = modelWindow(history, answered);
+
+    // ── System prompt: base + page context + workspace memory ─────────────
+    const contextStr = body.context ? await assembleContext(body.context, orgId) : "";
+    const memory = await loadMemoryBlock(supabase, orgId, MEMORY_CAP_TOKENS);
+    const fullName = user.user_metadata?.full_name;
+    const userLabel = (typeof fullName === "string" && fullName) || user.email;
+    const systemMessage = `${SYSTEM_PROMPTS.chat}
+${contextStr ? `\n---\nCurrent CRM Context:\n${contextStr}` : ""}
+${memory.text ? `\n---\n${memory.text}` : ""}
+
+Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLabel}` : ""}`;
+
+    const startTime = Date.now();
+    const deadline = new AbortController();
+    deadlineTimer = setTimeout(() => deadline.abort(new Error("turn_deadline")), TURN_DEADLINE_MS);
+    let resolveTurnDone: () => void = () => undefined;
+    const turnDone = new Promise<void>((resolve) => {
+      resolveTurnDone = resolve;
+    });
+    // Runs once per turn, from the UI stream's onFinish (also on abort or client disconnect).
+    const onTurnFinish = async ({ messages }: { messages: UIMessage[] }) => {
+      try {
+        await finishTurn(admin, { orgId, userId, conversationId, messages, approved: approvedRows });
+      } finally {
+        clearTimeout(deadlineTimer);
+        guardedRelease();
+        closeCustomFetch?.();
+        await releaseLock?.();
+        resolveTurnDone();
+      }
+    };
+    const invalidNotice: UIMessageChunk | null =
+      invalid.length > 0
+        ? {
+            type: "data-notice",
+            data: { code: "invalid_approval", approvalIds: invalid, message: "Some approvals were already resolved or unknown and were skipped." },
+          }
+        : null;
+    const headers = { "x-conversation-id": conversationId };
+    // A server-side copy of the SSE stream is always read to the end, so onFinish
+    // (persistence, outcomes, lock release) runs even when the client disconnects.
+    const consumeSseStream = ({ stream }: { stream: ReadableStream<string> }) => {
+      void consumeStream({ stream, onError: (error) => console.error("AI Chat stream error:", error) });
+    };
+
+    if (!toolsSupported) {
+      // OpenAI-compatible providers (OpenAI, Groq, Ollama): one completion
+      // without CRM tools, delivered as a notice plus a single text part.
+      const client = createAIMessagesClient(resolved, null, orgId, isGuest);
+      const chatMessages = textHistory(modelHistory);
+      const stream = createUIMessageStream({
+        originalMessages: history,
+        generateId: () => crypto.randomUUID(),
+        execute: async ({ writer }) => {
+          writer.write({ type: "start" });
+          writer.write({ type: "data-notice", data: { code: "no_tools", message: NO_TOOLS_NOTICE } });
+          try {
+            const completion = client.messages.create({
+              model: getModelId("sonnet", provider),
+              max_tokens: 4096,
+              system: systemMessage,
+              messages: chatMessages,
+            });
+            // The shared-key settlement runs inside the completion
+            // (lib/ai/client.ts): keep the function alive for it even if the
+            // client disconnects.
+            after(() => completion.then(() => undefined, () => undefined));
+            const response = await completion;
+            const text = response.content
+              .filter((b) => b.type === "text")
+              .map((b) => b.text)
+              .join("");
+            const id = crypto.randomUUID();
+            writer.write({ type: "text-start", id });
+            writer.write({ type: "text-delta", id, delta: text });
+            writer.write({ type: "text-end", id });
+            writer.write({ type: "finish" });
+            await logTokenUsage({
+              orgId,
+              userId,
+              feature: "chat",
+              model: response.model,
+              inputTokens: response.usage.input_tokens,
+              outputTokens: response.usage.output_tokens,
+              durationMs: Date.now() - startTime,
+              success: true,
+              sharedKey,
+              metadata: { provider },
+            });
+          } finally {
+            guardedRelease();
+          }
+        },
+        onError: chatErrorText,
+        onFinish: onTurnFinish,
+      });
+      after(() => turnDone);
+      return createUIMessageStreamResponse({ stream, headers, consumeSseStream });
+    }
+
     const anthropic = createAnthropic(anthropicOptions);
+
+    // Tools run on the user's RLS client with explicit org predicates; the admin client
+    // never reaches the registry. Each proposed write is recorded as a pending approval
+    // the moment needsApproval resolves, before its card streams to the client.
+    const env: CopilotToolEnv = {
+      db: supabase,
+      ctx: { orgId, userId, isGuest, source: "chat", conversationId, taskId: null },
+    };
+    const approvedDiffs = new Map(approvedRows.map((row) => [row.tool_call_id, row.diff as unknown as FieldDiff | null]));
+    const tools = buildCopilotToolSet(env, {
+      alwaysAllow: sanitizeAlwaysAllow(settings?.copilot_always_allow),
+      onWriteRequested: async (info) => {
+        await recordPendingApproval(admin, { ...info, orgId, userId, conversationId, taskId: null, source: "chat" });
+      },
+      resolveDiff: async (toolCallId) => approvedDiffs.get(toolCallId) ?? null,
+    });
+    // Only server-loaded history reaches the model. Unanswered approval cards and
+    // interrupted tool calls are dropped (ignoreIncompleteToolCalls).
+    const modelMessages = await convertToModelMessages(modelHistory, { tools, ignoreIncompleteToolCalls: true });
 
     // Shared key: reserve per step. The first step (input plus one output
     // cap) is reserved here; each further step is reserved by stopWhen before
     // it runs, with the input it will resend, and a refusal ends the turn with
     // what exists. onFinish settles every reservation to real usage (onAbort,
-    // after the timeout, the finished steps'); a failed stream keeps them in full.
+    // after the deadline, the finished steps'); a failed stream keeps them in full.
+    // The base input is the system prompt (memory block included) plus the trimmed
+    // history actually sent, so each step's reservation covers what is resent.
     const turnBudget = sharedKey
       ? sharedTurnBudget({
           orgId,
           isGuest,
-          baseInput: systemMessage + JSON.stringify(messages),
+          baseInput: systemMessage + JSON.stringify(modelMessages),
           maxOutputTokens: SHARED_CHAT_MAX_OUTPUT_TOKENS,
           maxSteps: CHAT_MAX_STEPS,
         })
       : null;
     if (turnBudget) {
       const first = await turnBudget.start();
-      if (!first.ok) {
-        guardedRelease();
-        closeCustomFetch?.();
-        return new Response(first.reason, { status: 429 });
-      }
+      if (!first.ok) return reject(429, { error: first.reason });
     }
     let streamFailed = false;
     let abortSettled: Promise<void> = Promise.resolve();
@@ -288,280 +582,14 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
     const result = streamText({
       model: anthropic(modelId),
       system: systemMessage,
-      messages,
+      messages: modelMessages,
+      tools,
       ...(sharedKey ? { maxOutputTokens: SHARED_CHAT_MAX_OUTPUT_TOKENS } : {}),
-      tools: {
-        lookupLead: tool({
-          description:
-            "Look up a lead by name, email, or company. Returns lead details including score, status, and recent activity.",
-          inputSchema: z.object({
-            query: z
-              .string()
-              .describe("Lead name, email, or company to search for"),
-          }),
-          execute: async ({ query }) => {
-            return await fetchEntityForChat("lead", undefined, query);
-          },
-        }),
-        lookupDeal: tool({
-          description:
-            "Look up a deal by name. Returns deal details including value, stage, and probability.",
-          inputSchema: z.object({
-            query: z.string().describe("Deal name to search for"),
-          }),
-          execute: async ({ query }) => {
-            return await fetchEntityForChat("deal", undefined, query);
-          },
-        }),
-        lookupCustomer: tool({
-          description:
-            "Look up a customer by name, email, or company. Returns customer details.",
-          inputSchema: z.object({
-            query: z
-              .string()
-              .describe("Customer name, email, or company to search for"),
-          }),
-          execute: async ({ query }) => {
-            return await fetchEntityForChat("customer", undefined, query);
-          },
-        }),
-        getPipelineSummary: tool({
-          description:
-            "Get a summary of the current sales pipeline including total deals, value, and breakdown by stage.",
-          inputSchema: z.object({}),
-          execute: async () => {
-            return await fetchEntityForChat("pipeline_summary");
-          },
-        }),
-        lookupCompetitor: tool({
-          description:
-            "Look up a competitor by name. Returns competitor details including strengths, weaknesses, and battle cards.",
-          inputSchema: z.object({
-            query: z.string().describe("Competitor name to search for"),
-          }),
-          execute: async ({ query }) => {
-            return await fetchEntityForChat("competitor", undefined, query);
-          },
-        }),
-        lookupContact: tool({
-          description:
-            "Look up a contact by name, email, or company. Returns contact details.",
-          inputSchema: z.object({
-            query: z
-              .string()
-              .describe("Contact name, email, or company to search for"),
-          }),
-          execute: async ({ query }) => {
-            const supabase = await createClient();
-            const {
-              data: { user },
-            } = await supabase.auth.getUser();
-            if (!user) return "Not authenticated.";
-            const { data: prof } = await supabase
-              .from("profiles")
-              .select("organization_id")
-              .eq("id", user.id)
-              .single();
-            if (!prof?.organization_id) return "No organization.";
-            const { data } = await supabase
-              .from("contacts")
-              .select(
-                "id, name, email, phone, title"
-              )
-              .eq("organization_id", prof.organization_id)
-              .or(
-                (() => {
-                  const q = escapePostgrestLike(query);
-                  return `name.ilike.%${q}%,email.ilike.%${q}%`;
-                })()
-              )
-              .limit(10);
-            return data?.length
-              ? `Found ${data.length} contacts:\n${data.map((c) => `- ${c.name} - ${c.title || "N/A"}, ${c.email || "N/A"}`).join("\n")}`
-              : "No contacts found matching query.";
-          },
-        }),
-        searchDeals: tool({
-          description:
-            "Search deals by name, stage, or value range. Returns matching deals.",
-          inputSchema: z.object({
-            query: z
-              .string()
-              .optional()
-              .describe("Deal name to search for"),
-            stage: z
-              .string()
-              .optional()
-              .describe(
-                "Filter by stage (e.g. qualification, proposal, negotiation)"
-              ),
-            minValue: z
-              .number()
-              .optional()
-              .describe("Minimum deal value"),
-          }),
-          execute: async ({ query, stage, minValue }) => {
-            const supabase = await createClient();
-            const {
-              data: { user },
-            } = await supabase.auth.getUser();
-            if (!user) return "Not authenticated.";
-            const { data: prof } = await supabase
-              .from("profiles")
-              .select("organization_id")
-              .eq("id", user.id)
-              .single();
-            if (!prof?.organization_id) return "No organization.";
-            let q = supabase
-              .from("deals")
-              .select(
-                "id, name, value, stage, probability, close_date, contact_name"
-              )
-              .eq("organization_id", prof.organization_id);
-            if (query) q = q.ilike("name", `%${escapePostgrestLike(query)}%`);
-            if (stage) q = q.eq("stage", stage as "discovery" | "proposal" | "negotiation" | "closed_won" | "closed_lost");
-            if (minValue) q = q.gte("value", minValue);
-            const { data } = await q
-              .order("value", { ascending: false })
-              .limit(15);
-            return data?.length
-              ? `Found ${data.length} deals:\n${data.map((d) => `- ${d.name}: $${(d.value || 0).toLocaleString()} (${d.stage}, ${d.probability || 0}% prob, close: ${d.close_date || "TBD"}) Contact: ${d.contact_name || "N/A"}`).join("\n")}`
-              : "No deals found matching criteria.";
-          },
-        }),
-        getLeadScore: tool({
-          description:
-            "Get the scoring details for a specific lead including score breakdown and history.",
-          inputSchema: z.object({
-            leadNameOrEmail: z
-              .string()
-              .describe("Lead name or email to look up scoring for"),
-          }),
-          execute: async ({ leadNameOrEmail }) => {
-            const supabase = await createClient();
-            const {
-              data: { user },
-            } = await supabase.auth.getUser();
-            if (!user) return "Not authenticated.";
-            const { data: prof } = await supabase
-              .from("profiles")
-              .select("organization_id")
-              .eq("id", user.id)
-              .single();
-            if (!prof?.organization_id) return "No organization.";
-            const { data: leads } = await supabase
-              .from("leads")
-              .select(
-                "id, name, email, score, status, company, qualification_data"
-              )
-              .eq("organization_id", prof.organization_id)
-              .or(
-                (() => {
-                  const q = escapePostgrestLike(leadNameOrEmail);
-                  return `name.ilike.%${q}%,email.ilike.%${q}%`;
-                })()
-              )
-              .limit(3);
-            if (!leads?.length) return "No leads found.";
-            const lead = leads[0];
-            const { data: history } = await supabase
-              .from("lead_score_history")
-              .select("score, breakdown, scored_at")
-              .eq("lead_id", lead.id)
-              .order("scored_at", { ascending: false })
-              .limit(5);
-            const dims = history?.[0]?.breakdown as
-              | Record<string, number>
-              | undefined;
-            return `**Lead Score: ${lead.name}**
-Score: ${lead.score ?? "Unscored"} / 100
-Status: ${lead.status}
-Company: ${lead.company || "N/A"}
-${dims ? `\nScore Breakdown:\n- Fit: ${dims.fit}/100\n- Engagement: ${dims.engagement}/100\n- Intent: ${dims.intent}/100\n- Timing: ${dims.timing}/100\n- Budget: ${dims.budget}/100` : ""}
-${lead.qualification_data ? `\nQualification: ${JSON.stringify(lead.qualification_data)}` : ""}
-${history?.length ? `\nScore History:\n${history.map((h) => `- ${h.score}/100 on ${new Date(h.scored_at).toLocaleDateString()}`).join("\n")}` : ""}`;
-          },
-        }),
-        getAnalyticsSummary: tool({
-          description:
-            "Get a summary of sales analytics including conversion rates, revenue trends, and activity metrics.",
-          inputSchema: z.object({
-            period: z
-              .enum(["week", "month", "quarter"])
-              .optional()
-              .describe("Time period for analytics"),
-          }),
-          execute: async ({ period }) => {
-            const supabase = await createClient();
-            const {
-              data: { user },
-            } = await supabase.auth.getUser();
-            if (!user) return "Not authenticated.";
-            const { data: prof } = await supabase
-              .from("profiles")
-              .select("organization_id")
-              .eq("id", user.id)
-              .single();
-            if (!prof?.organization_id) return "No organization.";
-            const days =
-              period === "quarter" ? 90 : period === "month" ? 30 : 7;
-            const since = new Date(
-              Date.now() - days * 86400000
-            ).toISOString();
-            const [dealsRes, leadsRes, activitiesRes, wonRes] =
-              await Promise.all([
-                supabase
-                  .from("deals")
-                  .select("value, stage, created_at")
-                  .eq("organization_id", prof.organization_id),
-                supabase
-                  .from("leads")
-                  .select("id, status, created_at")
-                  .eq("organization_id", prof.organization_id)
-                  .gte("created_at", since),
-                supabase
-                  .from("activities")
-                  .select("id, type")
-                  .eq("organization_id", prof.organization_id)
-                  .gte("created_at", since),
-                supabase
-                  .from("deals")
-                  .select("value")
-                  .eq("organization_id", prof.organization_id)
-                  .eq("stage", "closed_won")
-                  .gte("created_at", since),
-              ]);
-            const allDeals = dealsRes.data || [];
-            const newLeads = leadsRes.data?.length || 0;
-            const activities = activitiesRes.data || [];
-            const wonDeals = wonRes.data || [];
-            const wonValue = wonDeals.reduce(
-              (s, d) => s + (d.value || 0),
-              0
-            );
-            const totalPipeline = allDeals
-              .filter(
-                (d) => !["closed_won", "closed_lost"].includes(d.stage)
-              )
-              .reduce((s, d) => s + (d.value || 0), 0);
-            const actByType: Record<string, number> = {};
-            activities.forEach((a) => {
-              actByType[a.type] = (actByType[a.type] || 0) + 1;
-            });
-            return `**Analytics Summary (Last ${days} days)**
-New Leads: ${newLeads}
-Deals Won: ${wonDeals.length} ($${wonValue.toLocaleString()})
-Active Pipeline: $${totalPipeline.toLocaleString()} (${allDeals.filter((d) => !["closed_won", "closed_lost"].includes(d.stage)).length} deals)
-Activities: ${activities.length}
-${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByType).map(([t, c]) => `- ${t}: ${c}`).join("\n")}` : ""}`;
-          },
-        }),
-      },
       stopWhen: turnBudget ? turnBudget.stopWhen : stepCountIs(CHAT_MAX_STEPS),
       // The shared key never forwards the client's abort: the provider call
-      // finishes so onFinish can settle the real usage. It is cut off after
-      // SHARED_CHAT_TIMEOUT_MS instead, which aborts the stream (onAbort).
-      ...(sharedKey ? { timeout: { totalMs: SHARED_CHAT_TIMEOUT_MS } } : { abortSignal: req.signal }),
+      // finishes so onFinish can settle the real usage. Every turn is cut off
+      // at the internal deadline, which aborts the stream (onAbort).
+      abortSignal: sharedKey ? deadline.signal : AbortSignal.any([req.signal, deadline.signal]),
       onAbort: ({ steps }) => {
         guardedRelease();
         closeCustomFetch?.();
@@ -581,8 +609,8 @@ ${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByTy
         const durationMs = Date.now() - startTime;
         if (turnBudget && !streamFailed) await turnBudget.settle(steps);
         await logTokenUsage({
-          orgId: profile.organization_id!,
-          userId: user.id,
+          orgId,
+          userId,
           feature: "chat",
           model: modelId,
           inputTokens: totalUsage?.inputTokens || 0,
@@ -594,23 +622,32 @@ ${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByTy
       },
     });
 
-    if (sharedKey) {
-      // Read the stream to the end on the server even if the client goes
-      // away (it then just stops receiving), and keep the function alive
-      // until onFinish (or onAbort, after the timeout) has settled.
-      const consumed = Promise.resolve(
-        result.consumeStream({ onError: (error) => console.error("AI Chat stream error:", error) })
-      ).finally(() => {
-        guardedRelease();
-        closeCustomFetch?.();
-      });
-      after(() => consumed.then(() => abortSettled));
-    }
+    // Always read the model stream to the end on the server, even if the client
+    // goes away, and keep the function alive until onFinish (or onAbort) and the
+    // turn's persistence have run.
+    const consumed = Promise.resolve(
+      result.consumeStream({ onError: (error) => console.error("AI Chat stream error:", error) })
+    ).finally(() => {
+      guardedRelease();
+      closeCustomFetch?.();
+    });
+    after(() => consumed.then(() => abortSettled).then(() => turnDone));
 
-    return result.toUIMessageStreamResponse();
+    const stream = createUIMessageStream({
+      originalMessages: history,
+      generateId: () => crypto.randomUUID(),
+      execute: ({ writer }) => {
+        writer.merge(decorateStream(result.toUIMessageStream({ onError: chatErrorText }), invalidNotice));
+      },
+      onError: chatErrorText,
+      onFinish: onTurnFinish,
+    });
+    return createUIMessageStreamResponse({ stream, headers, consumeSseStream });
   } catch (error) {
+    clearTimeout(deadlineTimer);
     releaseRateLimit?.();
     closeCustomFetch?.();
+    await releaseLock?.();
     console.error("AI Chat error:", error);
     return new Response(
       error instanceof Error ? error.message : "Internal server error",

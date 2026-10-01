@@ -1,34 +1,29 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { PageContext } from "./types";
-import { escapePostgrestLike } from "@/lib/security";
 import { stageDays } from "@/lib/deals/metrics";
+import { buildMemoryBlock, type MemoryBlockResult } from "./memory-block";
+import type { ChatRequestContext } from "./chat-request";
+import type { CopilotMemoryType, Database } from "@/types/database";
 
-export async function assembleContext(pageContext: PageContext): Promise<string> {
+/**
+ * Page context for the Copilot system prompt. The caller has already resolved
+ * the user's org; every query here runs on the user's RLS client AND carries
+ * an explicit organization_id predicate.
+ */
+export async function assembleContext(context: ChatRequestContext, orgId: string): Promise<string> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return "User not authenticated.";
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("organization_id")
-    .eq("id", user.id)
-    .single();
-  if (!profile?.organization_id) return "No organization context.";
-
-  const orgId = profile.organization_id;
-  const parts: string[] = [`Current page: ${pageContext.page}`];
+  const parts: string[] = [];
+  if (context.page) parts.push(`Current page: ${context.page}`);
 
   // Fetch entity-specific data
-  if (pageContext.entityType && pageContext.entityId) {
-    const entityData = await fetchEntityData(
-      supabase,
-      pageContext.entityType,
-      pageContext.entityId,
-      orgId
-    );
+  if (context.entityType && context.entityId) {
+    const entityData = await fetchEntityData(supabase, context.entityType, context.entityId, orgId);
     if (entityData) parts.push(entityData);
+  }
+
+  if (context.selectedIds?.length) {
+    const kind = context.entityType ?? "record";
+    parts.push(`Selected ${kind} ids (${context.selectedIds.length}): ${context.selectedIds.join(", ")}`);
   }
 
   // Always add org summary for context
@@ -36,6 +31,38 @@ export async function assembleContext(pageContext: PageContext): Promise<string>
   if (orgSummary) parts.push(orgSummary);
 
   return parts.join("\n\n---\n\n");
+}
+
+/**
+ * The workspace-memory block for the system prompt: active memories and ICP
+ * profiles of this org, capped at `capTokens` (lib/ai/memory-block.ts).
+ * A failed read yields an empty block rather than failing the turn.
+ */
+export async function loadMemoryBlock(
+  db: SupabaseClient<Database>,
+  orgId: string,
+  capTokens: number
+): Promise<MemoryBlockResult> {
+  const [memRes, icpRes] = await Promise.all([
+    db
+      .from("copilot_memory")
+      .select("type, content, is_active, created_at")
+      .eq("organization_id", orgId)
+      .eq("is_active", true),
+    db
+      .from("icp_profiles")
+      .select("name, description, criteria, buyer_personas, is_primary")
+      .eq("organization_id", orgId),
+  ]);
+  if (memRes.error) console.error("[copilot] loading workspace memory failed:", memRes.error.message);
+  if (icpRes.error) console.error("[copilot] loading ICP profiles failed:", icpRes.error.message);
+  const memories = (memRes.data ?? []).map((m) => ({
+    type: m.type as CopilotMemoryType,
+    content: m.content,
+    is_active: m.is_active !== false,
+    created_at: m.created_at,
+  }));
+  return buildMemoryBlock({ memories, icpProfiles: icpRes.data ?? [], capTokens });
 }
 
 async function fetchEntityData(
@@ -222,153 +249,4 @@ async function fetchOrgSummary(
 Total Leads: ${totalLeads}
 Active Deals: ${activeDeals} (Pipeline: $${totalPipelineValue.toLocaleString()})
 Total Customers: ${totalCustomers}`;
-}
-
-export async function fetchEntityForChat(
-  entityType: string,
-  entityId?: string,
-  query?: string
-): Promise<string> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return "Not authenticated.";
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("organization_id")
-    .eq("id", user.id)
-    .single();
-  if (!profile?.organization_id) return "No organization.";
-
-  const orgId = profile.organization_id;
-
-  switch (entityType) {
-    case "lead": {
-      if (entityId) {
-        return (await fetchEntityData(supabase, "lead", entityId, orgId)) || "Lead not found.";
-      }
-      // Search leads
-      if (query) {
-        const { data } = await supabase
-          .from("leads")
-          .select("id, name, company, email, status, score, estimated_value")
-          .eq("organization_id", orgId)
-          .or(
-            (() => {
-              const q = escapePostgrestLike(query);
-              return `name.ilike.%${q}%,company.ilike.%${q}%,email.ilike.%${q}%`;
-            })()
-          )
-          .limit(10);
-        return data?.length
-          ? `Found ${data.length} leads:\n${data.map((l) => `- ${l.name} (${l.company || "N/A"}) - ${l.status}, Score: ${l.score ?? "N/A"}`).join("\n")}`
-          : "No leads found matching query.";
-      }
-      return "Please provide a lead ID or search query.";
-    }
-
-    case "deal": {
-      if (entityId) {
-        return (await fetchEntityData(supabase, "deal", entityId, orgId)) || "Deal not found.";
-      }
-      if (query) {
-        const { data } = await supabase
-          .from("deals")
-          .select("id, name, value, stage, probability")
-          .eq("organization_id", orgId)
-          .ilike("name", `%${escapePostgrestLike(query)}%`)
-          .limit(10);
-        return data?.length
-          ? `Found ${data.length} deals:\n${data.map((d) => `- ${d.name} ($${d.value || 0}) - ${d.stage}`).join("\n")}`
-          : "No deals found matching query.";
-      }
-      return "Please provide a deal ID or search query.";
-    }
-
-    case "customer": {
-      if (entityId) {
-        return (await fetchEntityData(supabase, "customer", entityId, orgId)) || "Customer not found.";
-      }
-      if (query) {
-        const { data } = await supabase
-          .from("customers")
-          .select("id, first_name, last_name, email, company, status")
-          .eq("organization_id", orgId)
-          .or(
-            (() => {
-              const q = escapePostgrestLike(query);
-              return `first_name.ilike.%${q}%,last_name.ilike.%${q}%,company.ilike.%${q}%,email.ilike.%${q}%`;
-            })()
-          )
-          .limit(10);
-        return data?.length
-          ? `Found ${data.length} customers:\n${data.map((c) => `- ${c.first_name} ${c.last_name} (${c.company || "N/A"}) - ${c.status}`).join("\n")}`
-          : "No customers found matching query.";
-      }
-      return "Please provide a customer ID or search query.";
-    }
-
-    case "competitor": {
-      if (entityId) {
-        return (await fetchEntityData(supabase, "competitor", entityId, orgId)) || "Competitor not found.";
-      }
-      if (query) {
-        const { data } = await supabase
-          .from("competitors")
-          .select("id, name, website, category")
-          .eq("organization_id", orgId)
-          .ilike("name", `%${escapePostgrestLike(query)}%`)
-          .limit(10);
-        return data?.length
-          ? `Found ${data.length} competitors:\n${data.map((c) => `- ${c.name} (${c.website || "N/A"}) - ${c.category || "N/A"}`).join("\n")}`
-          : "No competitors found matching query.";
-      }
-      return "Please provide a competitor ID or search query.";
-    }
-
-    case "pipeline_summary": {
-      const { data: deals } = await supabase
-        .from("deals")
-        .select("name, value, stage, probability, close_date")
-        .eq("organization_id", orgId)
-        .not("stage", "in", '("closed_won","closed_lost")')
-        .order("value", { ascending: false });
-
-      if (!deals?.length) return "No active deals in pipeline.";
-
-      const byStage: Record<string, { count: number; value: number }> = {};
-      for (const deal of deals) {
-        if (!byStage[deal.stage]) byStage[deal.stage] = { count: 0, value: 0 };
-        byStage[deal.stage].count++;
-        byStage[deal.stage].value += deal.value || 0;
-      }
-
-      const totalValue = deals.reduce((sum, d) => sum + (d.value || 0), 0);
-      const weightedValue = deals.reduce(
-        (sum, d) => sum + (d.value || 0) * ((d.probability || 0) / 100),
-        0
-      );
-
-      return `**Pipeline Summary**
-Total Active Deals: ${deals.length}
-Total Pipeline Value: $${totalValue.toLocaleString()}
-Weighted Value: $${weightedValue.toLocaleString()}
-
-By Stage:
-${Object.entries(byStage)
-  .map(([stage, data]) => `- ${stage}: ${data.count} deals ($${data.value.toLocaleString()})`)
-  .join("\n")}
-
-Top 5 Deals:
-${deals
-  .slice(0, 5)
-  .map((d) => `- ${d.name}: $${(d.value || 0).toLocaleString()} (${d.stage}, ${d.probability || 0}% prob, close: ${d.close_date || "TBD"})`)
-  .join("\n")}`;
-    }
-
-    default:
-      return `Unknown entity type: ${entityType}`;
-  }
 }
