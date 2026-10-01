@@ -67,7 +67,7 @@ Write (read & write keys only; read-only keys never see these): `create_lead`, `
 
 - `app/api/mcp/route.ts` authenticates the key (`lib/mcp/api-keys.ts`), then builds an `McpServer` bound to the key's workspace (`lib/mcp/server.ts`).
 - Tools use the service-role client and filter every query by the key's `organization_id`; references to other records (`customer_id`, `lead_id`, `related_id`) are checked against the same workspace. The server actions in `lib/actions/` could not be reused directly: they read the workspace from the login cookie and several look records up by id alone, relying on RLS, which the service role bypasses.
-- Writes are attributed to the profile that created the key (`created_by`, note author). Creating or updating a lead runs the workspace's automation rules, like the Leads page does. Lead scoring is not re-run (it is tied to a logged-in session).
+- Writes are attributed to the profile that created the key (`created_by`, note author). Creating or updating a lead scores it (`lib/leads/score.ts`, shared with the Leads page) and runs the workspace's automation rules, like the Leads page does. ICP matching is not re-run.
 - Results are compact JSON: empty fields are dropped and list tools return summary columns, to keep the model's context small.
 - Keys are stored as SHA-256 hashes. Revoking a key in Settings cuts it off on the next request.
 
