@@ -223,10 +223,15 @@ function decorateStream(
   stream: ReadableStream<UIMessageChunk>,
   notice: UIMessageChunk | null,
   descriptors: Map<string, FieldDiff>,
+  endNotice: () => UIMessageChunk | null = () => null,
 ): ReadableStream<UIMessageChunk> {
   return stream.pipeThrough(
     new TransformStream<UIMessageChunk, UIMessageChunk>({
       transform(chunk, controller) {
+        if (chunk.type === "finish") {
+          const last = endNotice();
+          if (last) controller.enqueue(last);
+        }
         if (chunk.type === "tool-approval-request") {
           const diff = descriptors.get(chunk.toolCallId);
           if (diff) {
@@ -726,6 +731,8 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
     });
 
     let streamFailed = false;
+    /** The shared budget refused a further step, so the answer stopped early. */
+    let budgetStopped = false;
     let abortSettled: Promise<void> = Promise.resolve();
 
     const result = streamText({
@@ -740,7 +747,13 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
       tools,
       activeTools,
       ...(sharedKey ? { maxOutputTokens: SHARED_CHAT_MAX_OUTPUT_TOKENS } : {}),
-      stopWhen: turnBudget ? turnBudget.stopWhen : stepCountIs(CHAT_MAX_STEPS),
+      stopWhen: turnBudget
+        ? async (options) => {
+            const stop = await turnBudget.stopWhen(options);
+            if (stop && options.steps.length < CHAT_MAX_STEPS) budgetStopped = true;
+            return stop;
+          }
+        : stepCountIs(CHAT_MAX_STEPS),
       // The shared key never forwards the client's abort: the provider call
       // finishes so onFinish can settle the real usage. Every turn is cut off
       // at the internal deadline, which aborts the stream (onAbort).
@@ -792,7 +805,11 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
       originalMessages: history,
       generateId: () => crypto.randomUUID(),
       execute: ({ writer }) => {
-        writer.merge(decorateStream(result.toUIMessageStream({ onError: chatErrorText }), invalidNotice, descriptors));
+        writer.merge(
+          decorateStream(result.toUIMessageStream({ onError: chatErrorText }), invalidNotice, descriptors, () =>
+            budgetStopped ? { type: "data-notice", data: { code: "budget_exhausted" } } : null,
+          ),
+        );
       },
       onError: chatErrorText,
       onFinish: onTurnFinish,

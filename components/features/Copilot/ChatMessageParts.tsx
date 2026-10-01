@@ -31,6 +31,7 @@ const AUTOMATIONS_NOTE = "Automations not triggered";
 const NOTICE_TEXT: Record<string, string> = {
   no_tools: "This model cannot take actions, so Copilot answered without using tools.",
   invalid_approval: "That approval is no longer valid. The conversation was refreshed.",
+  budget_exhausted: "Today's AI limit was reached before Copilot could finish this answer. It resets at midnight UTC.",
 };
 
 function asRecord(value: unknown): Record<string, unknown> | null {

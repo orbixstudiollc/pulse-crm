@@ -22,6 +22,8 @@ const h = vi.hoisted(() => ({
   budgetParams: [] as Array<{ baseInput: string; maxSteps: number }>,
   /** When set, the shared-key reservation is refused with this reason. */
   budgetRefusal: null as string | null,
+  /** When true, the shared budget refuses every step after the first. */
+  stepRefusal: false,
   /** Called inside auth.getUser(), the first thing the route awaits. */
   onGetUser: null as null | (() => void),
 }));
@@ -73,7 +75,7 @@ vi.mock("@/lib/ai/shared-budget", () => ({
     h.budgetParams.push(params);
     return {
       start: async () => (h.budgetRefusal ? { ok: false, reason: h.budgetRefusal } : { ok: true, day: "2026-10-01", reserved: 1 }),
-      stopWhen: ({ steps }: { steps: unknown[] }) => steps.length >= params.maxSteps,
+      stopWhen: ({ steps }: { steps: unknown[] }) => h.stepRefusal || steps.length >= params.maxSteps,
       settle: async () => undefined,
     };
   },
@@ -337,6 +339,7 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
     h.afterTasks = [];
     h.budgetParams = [];
     h.budgetRefusal = null;
+    h.stepRefusal = false;
     h.onGetUser = null;
     convertSpy.mockClear();
     automationSpy.mockClear();
@@ -657,6 +660,30 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
       expect(baseInput).toContain("newest");
       expect(baseInput).not.toContain("stored 19");
       expect(maxSteps).toBe(8);
+    });
+
+    it("a step refused by the shared budget ends the turn with a budget_exhausted notice", async () => {
+      h.resolved = { provider: "anthropic", source: "env", apiKey: "env-key" };
+      h.stepRefusal = true;
+      h.model = scriptedModel([
+        () =>
+          streamOf([
+            { type: "stream-start", warnings: [] },
+            { type: "tool-call", toolCallId: "read-1", toolName: "search_leads", input: JSON.stringify({}) },
+            finish("tool-calls"),
+          ]),
+        () => streamOf(textParts("never sent")),
+      ]);
+      const chunks = chunksOf(await settle(await post({ conversationId: CONV_A, message: { text: "Which leads are hot?" } })));
+      expect(model().doStreamCalls).toHaveLength(1);
+      const notice = chunks.find((c) => c.type === "data-notice") as { data?: { code?: string } } | undefined;
+      expect(notice?.data?.code).toBe("budget_exhausted");
+    });
+
+    it("a turn that ends normally carries no budget notice", async () => {
+      h.resolved = { provider: "anthropic", source: "env", apiKey: "env-key" };
+      const chunks = chunksOf(await settle(await post({ conversationId: CONV_A, message: { text: "Hi" } })));
+      expect(chunks.some((c) => c.type === "data-notice")).toBe(false);
     });
 
     it("offers record-changing tools only when the message asks for a change", async () => {
