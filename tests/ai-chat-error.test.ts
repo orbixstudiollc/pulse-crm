@@ -44,3 +44,24 @@ describe("describeChatError", () => {
     expect(describeChatError({ message: "No AI API key" })).toEqual(generic);
   });
 });
+
+describe("describeProviderError", () => {
+  it("summarises status, host and cause on one short line without the request body", async () => {
+    const { describeProviderError } = await import("@/lib/ai/chat-error");
+    const cause = Object.assign(new Error("other side closed"), { code: "UND_ERR_SOCKET" });
+    const err = Object.assign(new Error("Failed to process successful response"), {
+      name: "AI_APICallError",
+      statusCode: 200,
+      url: "https://relay.example.com/v1/messages",
+      cause,
+      requestBodyValues: { messages: ["secret prompt"] },
+    });
+    const line = describeProviderError(err);
+    expect(line).toContain("AI_APICallError: Failed to process successful response");
+    expect(line).toContain("status=200");
+    expect(line).toContain("host=relay.example.com");
+    expect(line).toContain("cause=Error: other side closed (UND_ERR_SOCKET)");
+    expect(line).not.toContain("secret prompt");
+    expect(line.length).toBeLessThan(1200);
+  });
+});

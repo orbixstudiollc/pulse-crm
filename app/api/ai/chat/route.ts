@@ -8,8 +8,10 @@ import {
   createUIMessageStreamResponse,
   getToolName,
   isToolUIPart,
+  simulateStreamingMiddleware,
   stepCountIs,
   streamText,
+  wrapLanguageModel,
   type UIMessage,
   type UIMessageChunk,
 } from "ai";
@@ -20,6 +22,7 @@ import { getModelId } from "@/lib/ai/models";
 import { customModelSettingsFor, resolveAIProvider } from "@/lib/ai/provider-resolver";
 import { sharedTurnBudget } from "@/lib/ai/shared-budget";
 import { SharedBudgetError } from "@/lib/ai/shared-budget-core";
+import { describeProviderError } from "@/lib/ai/chat-error";
 import { aiSdkBaseUrl, createCustomFetch, customModelFor } from "@/lib/ai/custom-provider";
 import { checkRateLimit, acquireRateLimit } from "@/lib/ai/rate-limiter";
 import { chatRequestSchema, type ChatRequest } from "@/lib/ai/chat-request";
@@ -82,7 +85,7 @@ type ToolPart = Extract<UIMessage["parts"][number], { toolCallId: string }>;
 function chatErrorText(error: unknown): string {
   // The shared-key reservation was refused: show the reason.
   if (error instanceof SharedBudgetError) return error.message;
-  console.error("AI Chat stream error:", error);
+  console.error("AI Chat stream error:", describeProviderError(error));
   return PROVIDER_FAILED;
 }
 
@@ -703,7 +706,12 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
     let abortSettled: Promise<void> = Promise.resolve();
 
     const result = streamText({
-      model: anthropic(modelId),
+      // The custom relay drops streamed responses that carry tool calls, so it is
+      // called with plain request/response and the result is replayed as a stream.
+      model:
+        provider === "custom"
+          ? wrapLanguageModel({ model: anthropic(modelId), middleware: simulateStreamingMiddleware() })
+          : anthropic(modelId),
       system: systemMessage,
       messages: modelMessages,
       tools,
@@ -724,7 +732,7 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
         streamFailed = true;
         guardedRelease();
         closeCustomFetch?.();
-        console.error("AI Chat stream error:", error);
+        console.error("AI Chat stream error:", describeProviderError(error));
       },
       onFinish: async ({ totalUsage, steps }) => {
         guardedRelease();
@@ -749,7 +757,7 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
     // goes away, and keep the function alive until onFinish (or onAbort) and the
     // turn's persistence have run.
     const consumed = Promise.resolve(
-      result.consumeStream({ onError: (error) => console.error("AI Chat stream error:", error) })
+      result.consumeStream({ onError: (error) => console.error("AI Chat stream error:", describeProviderError(error)) })
     ).finally(() => {
       guardedRelease();
       closeCustomFetch?.();
