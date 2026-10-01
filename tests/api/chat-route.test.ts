@@ -505,14 +505,28 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
               options.abortSignal?.addEventListener("abort", () =>
                 controller.error(new DOMException("aborted", "AbortError")),
               );
-              // The client goes away mid-answer.
-              setTimeout(() => client.abort(), 20);
             },
           }),
       ]);
       const res = await post({ conversationId: CONV_A, message: { text: "Tell me a long story" } }, { signal: client.signal });
       expect(res.status).toBe(200);
-      const chunks = chunksOf(await settle(res));
+      // The client goes away mid-answer: read until the partial text has reached the client, then abort.
+      // The model stream stays open after the partial text, so no timer is involved.
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let received = "";
+      while (!received.includes("Partial answer")) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        received += decoder.decode(value, { stream: true });
+      }
+      client.abort();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        received += decoder.decode(value, { stream: true });
+      }
+      const chunks = chunksOf(await settle(new Response(received)));
       expect(chunks.some((c) => c.type === "abort")).toBe(true);
 
       const rows = await messageRows(CONV_A);

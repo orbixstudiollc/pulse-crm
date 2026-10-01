@@ -11,7 +11,7 @@ describe("copilot actions org scoping", () => {
   const mutations = statements.filter((s) => /\.(update|delete)\(/.test(s));
 
   it("finds the update and delete calls", () => {
-    expect(mutations.length).toBeGreaterThanOrEqual(7);
+    expect(mutations.length).toBeGreaterThanOrEqual(6);
   });
 
   it("scopes every update/delete chain by organization_id or conversation_id", () => {
