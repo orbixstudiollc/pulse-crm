@@ -4,13 +4,13 @@ import { useState, useEffect, useRef, useTransition, useSyncExternalStore } from
 import { useTheme } from "next-themes";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { chartAccent, chartGrid, chartTooltipStyle, axisTick } from "@/lib/design-system/chart-colors";
 import {
   Button,
   Input,
   Select,
-  Textarea,
   Toast,
   Badge,
   UserIcon,
@@ -20,7 +20,6 @@ import {
   CircleNotchIcon,
   UploadSimpleIcon,
   XIcon,
-  LockIcon,
   MonitorIcon,
   EyeIcon,
   EyeSlashIcon,
@@ -40,10 +39,11 @@ import {
   WarningIcon,
   WhatsappLogoIcon,
   LinkedinLogoIcon,
-  SlidersHorizontalIcon,
   SignOutIcon,
   MagnifyingGlassIcon,
-  FloppyDiskIcon,
+  Modal,
+  ArrowRightIcon,
+  CrosshairIcon,
 } from "@/components/ui";
 import { DeleteConfirmModal } from "@/components/ui";
 import { PageTabs, Section, TableSection } from "@/components/dashboard";
@@ -166,6 +166,9 @@ function SettingsIntro({ children }: { children: React.ReactNode }) {
 }
 
 // ── Profile Section ─────────────────────────────────────────────────────────
+// Destructive actions require typing this word exactly (case-sensitive).
+const CLEAR_DATA_CONFIRM_WORD = "DELETE";
+
 function ProfileSection({ profile }: { profile: ProfileData | null }) {
   const router = useRouter();
   const [avatar, setAvatar] = useState<string>(profile?.avatar_url ?? "");
@@ -179,6 +182,13 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearConfirmText, setClearConfirmText] = useState("");
+
+  const closeClearConfirm = () => {
+    setShowClearConfirm(false);
+    setClearConfirmText("");
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -392,24 +402,72 @@ function ProfileSection({ profile }: { profile: ProfileData | null }) {
           <Button
             variant="outline"
             disabled={isPending}
-            onClick={async () => {
-              startTransition(async () => {
-                const result = await clearAllSeedData();
-                if (result.success) {
-                  setToastMessage("All data cleared successfully");
-                  setShowToast(true);
-                  router.refresh();
-                } else {
-                  setToastMessage(result.error || "Failed to clear data");
-                  setShowToast(true);
-                }
-              });
-            }}
+            onClick={() => setShowClearConfirm(true)}
           >
             Clear All Data
           </Button>
         </div>
       </SettingsSection>
+
+      <Modal
+        open={showClearConfirm}
+        onClose={closeClearConfirm}
+        role="alertdialog"
+        aria-labelledby="clear-data-title"
+      >
+        <div className="p-4">
+          <div className="w-8 h-8 rounded-full bg-danger-surface flex items-center justify-center mb-3">
+            <WarningIcon size={16} className="text-danger" />
+          </div>
+          <h3 id="clear-data-title" className="text-heading-md text-fg mb-1">
+            Clear all workspace data?
+          </h3>
+          <p id="clear-data-description" className="text-[14px] leading-5 text-fg-secondary">
+            This permanently deletes every lead, customer, deal, contact, activity,
+            calendar event, competitor, objection, sequence, proposal, template, ICP and
+            scoring profile in this workspace, including records you created yourself, not
+            just demo data. It cannot be undone.
+          </p>
+          <div className="mt-4">
+            <Input
+              id="clear-data-confirm"
+              label={`Type ${CLEAR_DATA_CONFIRM_WORD} to confirm`}
+              value={clearConfirmText}
+              onChange={(e) => setClearConfirmText(e.target.value)}
+              autoComplete="off"
+              autoFocus
+              disabled={isPending}
+            />
+          </div>
+          <div className="-mx-4 -mb-4 mt-4 flex justify-end gap-2 px-4 py-3 border-t border-divider">
+            <Button variant="outline" className="shrink-0" onClick={closeClearConfirm} disabled={isPending}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              className="shrink-0"
+              disabled={isPending || clearConfirmText !== CLEAR_DATA_CONFIRM_WORD}
+              leftIcon={isPending ? <CircleNotchIcon size={18} className="animate-spin" /> : <TrashIcon size={18} />}
+              onClick={async () => {
+                startTransition(async () => {
+                  const result = await clearAllSeedData();
+                  if (result.success) {
+                    setToastMessage("All data cleared successfully");
+                    setShowToast(true);
+                    router.refresh();
+                  } else {
+                    setToastMessage(result.error || "Failed to clear data");
+                    setShowToast(true);
+                  }
+                  closeClearConfirm();
+                });
+              }}
+            >
+              {isPending ? "Clearing..." : "Clear All Data"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Export Data */}
       <SettingsSection
@@ -3233,298 +3291,28 @@ function EmailAccountsSection() {
 }
 
 // ── Lead Finder Settings Section ────────────────────────────────────────────
-
-interface LFSettingField {
-  key: string;
-  label: string;
-  type: "text" | "password" | "textarea" | "select";
-  placeholder?: string;
-  helpText?: string;
-  options?: { value: string; label: string }[];
-}
+// Lead Finder has one settings editor, on its own page. This tab only points there.
 
 function LeadFinderSettingsSection() {
-  const [settings, setSettings] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/lead-finder/settings")
-      .then((r) => r.json())
-      .then((res) => {
-        const data = res.data || res;
-        const map: Record<string, string> = {};
-        if (Array.isArray(data)) {
-          data.forEach((s: { key: string; value: string }) => {
-            map[s.key] = s.value;
-          });
-        } else if (typeof data === "object") {
-          Object.assign(map, data);
-        }
-        setSettings(map);
-        setLoaded(true);
-      })
-      .catch(() => setLoaded(true));
-  }, []);
-
-  const saveGroup = async (groupKey: string, fields: LFSettingField[]) => {
-    setSaving(groupKey);
-    try {
-      const payload: Record<string, string> = {};
-      for (const f of fields) {
-        if (settings[f.key] !== undefined) payload[f.key] = settings[f.key] || "";
-      }
-      await fetch("/api/lead-finder/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ section: groupKey, ...payload }),
-      });
-      // Use sonner toast for notifications
-      const { toast } = await import("sonner");
-      toast.success(`${groupKey} settings saved`);
-    } catch {
-      const { toast } = await import("sonner");
-      toast.error("Failed to save");
-    } finally {
-      setSaving(null);
-    }
-  };
-
-  const currentProvider = settings["ai_provider"] || "openrouter";
-
-  const providerSpecificFields: LFSettingField[] =
-    currentProvider === "ollama"
-      ? [
-          {
-            key: "ollama_base_url",
-            label: "Ollama URL",
-            type: "text",
-            placeholder: "http://localhost:11434",
-            helpText: "Base URL of your Ollama server",
-          },
-          {
-            key: "ollama_model",
-            label: "Ollama Model",
-            type: "select",
-            options: [
-              { value: "qwen2.5-coder", label: "Qwen 2.5 Coder (7B)" },
-              { value: "qwen2.5-coder:32b", label: "Qwen 2.5 Coder (32B)" },
-              { value: "llama3.1", label: "Llama 3.1 (8B)" },
-              { value: "deepseek-r1", label: "DeepSeek R1 (7B)" },
-              { value: "mistral", label: "Mistral (7B)" },
-              { value: "gemma3", label: "Gemma 3 (12B)" },
-            ],
-          },
-        ]
-      : currentProvider === "anthropic"
-        ? [
-            {
-              key: "anthropic_api_key",
-              label: "Anthropic API Key",
-              type: "password",
-              helpText: "Get your key at console.anthropic.com",
-            },
-            {
-              key: "anthropic_model",
-              label: "Claude Model",
-              type: "select",
-              options: [
-                { value: "claude-sonnet-4-20250514", label: "Claude Sonnet 4" },
-                { value: "claude-haiku-4-20250414", label: "Claude Haiku 4" },
-                { value: "claude-opus-4-20250514", label: "Claude Opus 4" },
-              ],
-            },
-          ]
-        : [
-            {
-              key: "openrouter_api_key",
-              label: "OpenRouter API Key",
-              type: "password",
-              helpText: "Get key at openrouter.ai/keys",
-            },
-            {
-              key: "ai_model",
-              label: "AI Model",
-              type: "select",
-              options: [
-                { value: "anthropic/claude-sonnet-4", label: "Claude Sonnet 4" },
-                { value: "openai/gpt-4o", label: "GPT-4o" },
-                { value: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash" },
-                { value: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro" },
-                { value: "meta-llama/llama-4-maverick", label: "Llama 4 Maverick" },
-                { value: "deepseek/deepseek-r1", label: "DeepSeek R1" },
-              ],
-            },
-          ];
-
-  const groups: {
-    key: string;
-    title: string;
-    description: string;
-    icon: React.ReactNode;
-    fields: LFSettingField[];
-  }[] = [
-    {
-      key: "keys",
-      title: "API Keys & Provider",
-      description:
-        currentProvider === "ollama"
-          ? "Using Ollama — models run locally, no API costs"
-          : currentProvider === "anthropic"
-            ? "Using Anthropic — direct Claude API access"
-            : "Using OpenRouter — cloud models via single API key",
-      icon: <LockIcon size={16} className="text-fg-muted" />,
-      fields: [
-        { key: "apify_token", label: "Apify Token", type: "password", helpText: "Required for lead discovery and enrichment" },
-        {
-          key: "ai_provider",
-          label: "AI Provider",
-          type: "select",
-          options: [
-            { value: "openrouter", label: "OpenRouter (Cloud)" },
-            { value: "anthropic", label: "Anthropic (Claude Direct)" },
-            { value: "ollama", label: "Ollama (Local)" },
-          ],
-        },
-        ...providerSpecificFields,
-      ],
-    },
-    {
-      key: "enrichment",
-      title: "Enrichment",
-      description: "Configure how leads are enriched",
-      icon: <SlidersHorizontalIcon size={16} className="text-fg-muted" />,
-      fields: [
-        {
-          key: "enrichment_concurrency",
-          label: "Parallel Enrichment Limit",
-          type: "text",
-          placeholder: "1",
-          helpText: "How many leads to enrich simultaneously. Default: 1",
-        },
-      ],
-    },
-    {
-      key: "agency",
-      title: "Agency Profile",
-      description: "Your agency info for AI-powered lead scoring",
-      icon: <HardDrivesIcon size={16} className="text-fg-muted" />,
-      fields: [
-        { key: "agency_name", label: "Agency Name", type: "text" },
-        {
-          key: "agency_type",
-          label: "Agency Type",
-          type: "select",
-          options: [
-            { value: "general", label: "General" },
-            { value: "voice_ai", label: "Voice AI" },
-            { value: "ai_automation", label: "AI Automation" },
-            { value: "marketing", label: "Marketing" },
-            { value: "web_dev", label: "Web Development" },
-          ],
-        },
-        {
-          key: "agency_description",
-          label: "Description",
-          type: "textarea",
-          placeholder: "What your agency does...",
-        },
-        {
-          key: "agency_services",
-          label: "Services",
-          type: "textarea",
-          placeholder: "Key services you offer...",
-        },
-        {
-          key: "agency_results",
-          label: "Results & Case Studies",
-          type: "textarea",
-          placeholder: "Case studies, social proof...",
-        },
-        {
-          key: "agency_target_industries",
-          label: "Target Industries",
-          type: "text",
-          placeholder: "e.g. dental, healthcare, real estate",
-        },
-        { key: "agency_website", label: "Website", type: "text", placeholder: "https://youragency.com" },
-      ],
-    },
-  ];
-
-  const renderField = (field: LFSettingField) => (
-    <div key={field.key}>
-      {field.type === "textarea" ? (
-        <Textarea
-          label={field.label}
-          value={settings[field.key] || ""}
-          onChange={(e) => setSettings((s) => ({ ...s, [field.key]: e.target.value }))}
-          placeholder={field.placeholder}
-          rows={3}
-        />
-      ) : field.type === "select" ? (
-        <Select
-          label={field.label}
-          value={settings[field.key] || ""}
-          onChange={(e) => setSettings((s) => ({ ...s, [field.key]: e.target.value }))}
-        >
-          {(field.options || []).map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
-      ) : (
-        <Input
-          label={field.label}
-          type={field.type}
-          value={settings[field.key] || ""}
-          onChange={(e) => setSettings((s) => ({ ...s, [field.key]: e.target.value }))}
-          placeholder={field.placeholder}
-        />
-      )}
-      {field.helpText && (
-        <p className="text-xs text-fg-secondary mt-1">{field.helpText}</p>
-      )}
-    </div>
-  );
-
-  if (!loaded) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <CircleNotchIcon size={24} className="animate-spin text-fg-muted" />
-      </div>
-    );
-  }
-
   return (
     <>
       <SettingsIntro>
-        Configure API keys, AI provider, and agency profile for lead discovery & enrichment
+        Lead Finder keys, AI provider, agency profile, actors and enrichment are set on the Lead Finder settings page.
       </SettingsIntro>
 
-      {groups.map((g) => (
-        <SettingsSection
-          key={g.key}
-          icon={g.icon}
-          title={g.title}
-          description={g.description}
+      <SettingsSection
+        icon={<CrosshairIcon size={16} className="text-fg-muted" />}
+        title="Lead Finder settings"
+        description="The settings page shows which Apify token and AI provider Lead Finder actually uses."
+      >
+        <Link
+          href="/dashboard/lead-finder/settings"
+          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md bg-accent-strong px-3 text-[14px] font-medium text-on-inverse transition-colors duration-150 hover:bg-accent-strong/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page"
         >
-          <div className="space-y-4">
-            {g.fields.map(renderField)}
-            <div className="flex justify-end">
-            <Button
-              variant="primary"
-              onClick={() => saveGroup(g.key, g.fields)}
-              disabled={saving === g.key}
-              leftIcon={saving === g.key ? <CircleNotchIcon size={14} className="animate-spin" /> : <FloppyDiskIcon size={14} />}
-            >
-              {saving === g.key ? "Saving..." : `Save ${g.title}`}
-            </Button>
-            </div>
-          </div>
-        </SettingsSection>
-      ))}
+          Open Lead Finder settings
+          <ArrowRightIcon size={14} />
+        </Link>
+      </SettingsSection>
     </>
   );
 }
