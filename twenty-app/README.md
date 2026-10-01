@@ -39,3 +39,22 @@ Lost deals are skipped (Twenty's default pipeline has no lost stage). Order: com
 2. Prospeo lead finder and ICP scoring as logic functions.
 3. Sequences and the Copilot as a Twenty agent.
 4. Everything else, then hosting and cut-over.
+
+## Copilot, Overview, Analytics, Website Visitors
+
+- **Pulse Copilot** agent (`src/agents/insights`) with skills `lead-triage`, `account-summary`, `outreach-drafting`, `next-best-actions`. It calls the `findLeads`, `enrichLead`, `scoreLeads` and `enrollInSequence` tools when they are installed.
+- **Overview** and **Analytics** pages: front-component widgets for pipeline value by stage, leads by status / ICP grade / source, new leads per week and win rate. Win rate counts overdue open deals as lost, since Twenty has no lost stage. Widgets read up to 5,000 records per object through REST.
+- **Website Visitors**: one `websiteVisit` record per visitor. Latest page and visit time are updated on each hit, UTMs and referrer keep the first touch, and a known email links the visit to a Person.
+
+Tracking: paste this before `</body>`, replacing the URL with your Twenty server. The public route is `POST /s/track`. It is rate-limited to 30 hits per visitor per minute.
+
+```html
+<script>
+(function(w,d,k,e){try{var s=w.localStorage,id=s.getItem(k);if(!id){id=w.crypto&&crypto.randomUUID?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2));s.setItem(k,id)}
+w.pulseTrack=function(m){var b=JSON.stringify({visitorId:id,url:location.href,referrer:d.referrer||null,email:m||null});
+navigator.sendBeacon?navigator.sendBeacon(e,b):fetch(e,{method:'POST',body:b,keepalive:true,mode:'no-cors'})};w.pulseTrack()}catch(_){}})
+(window,document,'pulse_vid','https://YOUR-TWENTY-HOST/s/track');
+</script>
+```
+
+After a form submit, call `pulseTrack(email)` to link the visitor to a Person. `trackingSnippet(url)` in `src/insights/tracking-snippet.ts` builds the same tag.
