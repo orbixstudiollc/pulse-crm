@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createCsvParser, readCsvPreview } from "@/lib/csv/stream-parser";
+import { CSV_MAX_FIELD_CHARS, createCsvParser, jsonStringBytes, readCsvPreview } from "@/lib/csv/stream-parser";
 
 function parseChunks(chunks: string[]): string[][] {
   const parser = createCsvParser();
@@ -112,6 +112,83 @@ describe("createCsvParser", () => {
       }
     }
     expect(parseChunks(sample.split("")), "one char per chunk").toEqual(expected);
+  });
+
+  it("keeps a quote in the middle of an unquoted field literal", () => {
+    const sample = 'name,product,qty\nAnn,Acme 24" monitor,1\nBob,desk,2\nCy,5\'10" stand "XL",3\n';
+    const expected = [
+      ["name", "product", "qty"],
+      ["Ann", 'Acme 24" monitor', "1"],
+      ["Bob", "desk", "2"],
+      ["Cy", '5\'10" stand "XL"', "3"],
+    ];
+    expect(parseAll(sample)).toEqual(expected);
+    for (let i = 0; i <= sample.length; i++) {
+      expect(parseChunks([sample.slice(0, i), sample.slice(i)]), `split at ${i}`).toEqual(expected);
+    }
+  });
+
+  it("treats a quote after a closed quoted section as literal", () => {
+    expect(parseAll('"a" "b",c\nnext,row\n')).toEqual([
+      ['a "b"', "c"],
+      ["next", "row"],
+    ]);
+  });
+
+  it("still opens a quote after leading whitespace", () => {
+    expect(parseAll('x,  "a,b"\n')).toEqual([["x", "a,b"]]);
+  });
+
+  it("accepts a quoted field exactly at the field limit", () => {
+    const cell = "y".repeat(CSV_MAX_FIELD_CHARS);
+    expect(parseAll(`h\n"${cell}"\n`)).toEqual([["h"], [cell]]);
+  });
+
+  it("throws 'Row N: unterminated quote' instead of growing a quoted field without bound", () => {
+    const parser = createCsvParser();
+    expect(parser.push("name,note\nAnn,ok\n")).toHaveLength(2);
+    expect(parser.push('Bob,"never closed')).toEqual([]);
+    const chunk = "z".repeat(1000) + "\n";
+    let pushed = 0;
+    const feed = () => {
+      for (let k = 0; k < 1000; k++) {
+        parser.push(chunk);
+        pushed++;
+      }
+    };
+    expect(feed).toThrow(/^Row 3: unterminated quote$/);
+    // Stopped right after the cap, long before the 1000 chunks (about 1 MB) were consumed.
+    expect(pushed).toBe(Math.floor(CSV_MAX_FIELD_CHARS / chunk.length));
+  });
+
+  it("throws when an unquoted field passes the field limit", () => {
+    const parser = createCsvParser();
+    parser.push("h\n");
+    expect(() => parser.push("x".repeat(CSV_MAX_FIELD_CHARS + 1))).toThrow(/^Row 2: a cell is longer than/);
+  });
+});
+
+describe("jsonStringBytes", () => {
+  it("matches the UTF-8 size of JSON.stringify", () => {
+    const samples = [
+      "",
+      "plain ascii",
+      'quote " and backslash \\',
+      "tab\tnewline\nreturn\rbell\u0007nul\u0000",
+      "José Zoë ñ",
+      "日本語のテキスト",
+      "emoji 😀 pair",
+      "lone \ud800 high and \udc00 low",
+    ];
+    for (const s of samples) {
+      expect(jsonStringBytes(s), JSON.stringify(s)).toBe(new TextEncoder().encode(JSON.stringify(s)).length);
+    }
+  });
+
+  it("counts more than one byte per char for non-ASCII text", () => {
+    const s = "€".repeat(1000);
+    expect(s.length).toBe(1000);
+    expect(jsonStringBytes(s)).toBe(3002);
   });
 });
 

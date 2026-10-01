@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef, useTransition, useEffect } from "react";
 import {
   Modal,
   Button,
@@ -20,8 +20,8 @@ import {
 } from "@/components/ui";
 import { importLeadRows } from "@/lib/actions/import";
 import { aiMapCSVFields } from "@/lib/actions/ai-import";
-import { createCsvParser, readCsvPreview } from "@/lib/csv/stream-parser";
-import { IMPORT_BATCH_ROWS } from "@/lib/import/lead-rows";
+import { createCsvParser, jsonStringBytes, readCsvPreview } from "@/lib/csv/stream-parser";
+import { IMPORT_BATCH_ROWS, IMPORT_MAX_CELL_CHARS } from "@/lib/import/lead-rows";
 import { getSequences, enrollLeadsBulk } from "@/lib/actions/sequences";
 import { toast } from "sonner";
 
@@ -34,8 +34,9 @@ interface ImportLeadsModalProps {
 type ImportStep = "upload" | "mapping" | "preview" | "importing" | "done";
 
 const MAX_FILE_BYTES = 1024 ** 3; // 1 GB
-// Also flush early when a batch gets large, to stay under the request body cap.
-const MAX_BATCH_CHARS = 2_000_000;
+// Also flush early when a batch nears this many encoded bytes, to stay well under the request body cap.
+const MAX_BATCH_BYTES = 3_000_000;
+const OVERSIZED_CELL_ERROR = `a cell is longer than ${IMPORT_MAX_CELL_CHARS.toLocaleString("en-US")} characters, skipped`;
 const MAX_ERROR_LINES = 200;
 // Keep imported ids (for sequence enrollment) only up to this many leads.
 const MAX_ENROLL_IDS = 10_000;
@@ -196,10 +197,14 @@ interface StreamImportHooks {
 
 type BatchResult = Awaited<ReturnType<typeof importLeadRows>>;
 
+function addRowErrors(outcome: ImportOutcome, errors: string[]) {
+  outcome.errorCount += errors.length;
+  outcome.errors.push(...errors.slice(0, MAX_ERROR_LINES - outcome.errors.length));
+}
+
 function addBatchResult(outcome: ImportOutcome, res: Exclude<BatchResult, { error: string }>) {
   outcome.imported += res.imported;
-  outcome.errorCount += res.errors.length;
-  outcome.errors.push(...res.errors.slice(0, MAX_ERROR_LINES - outcome.errors.length));
+  addRowErrors(outcome, res.errors);
   if (outcome.importedIds) {
     outcome.importedIds = outcome.imported <= MAX_ENROLL_IDS ? [...outcome.importedIds, ...res.importedIds] : null;
   }
@@ -225,7 +230,7 @@ async function streamImport(
   let sendHeaders: string[] | null = null;
   let columns: number[] = [];
   let batch: string[][] = [];
-  let batchChars = 0;
+  let batchBytes = 0;
   let batchFirstRow = 2;
   let rowNumber = 1; // the header is row 1
   let bytesRead = 0;
@@ -241,11 +246,9 @@ async function streamImport(
       res = { error: err instanceof Error ? err.message : "Request failed" };
     }
     batch = [];
-    batchChars = 0;
+    batchBytes = 0;
     if ("error" in res) {
       outcome.failure = `Rows ${firstRowNumber}-${lastRow}: ${res.error}`;
-      outcome.errorCount++;
-      if (outcome.errors.length < MAX_ERROR_LINES) outcome.errors.push(outcome.failure);
       return;
     }
     addBatchResult(outcome, res);
@@ -267,11 +270,24 @@ async function streamImport(
         continue;
       }
       rowNumber++;
-      if (batch.length === 0) batchFirstRow = rowNumber;
       const row = columns.map((c) => record[c] ?? "");
+      if (row.some((cell) => cell.length > IMPORT_MAX_CELL_CHARS)) {
+        // The server numbers a batch's rows consecutively, so send what we have before skipping.
+        await flush();
+        if (shouldStop()) return;
+        addRowErrors(outcome, [`Row ${rowNumber}: ${OVERSIZED_CELL_ERROR}`]);
+        continue;
+      }
+      // Row as JSON: cells, their commas and the brackets.
+      const rowBytes = row.reduce((sum, cell) => sum + jsonStringBytes(cell) + 1, 1);
+      if (batch.length > 0 && batchBytes + rowBytes > MAX_BATCH_BYTES) {
+        await flush();
+        if (shouldStop()) return;
+      }
+      if (batch.length === 0) batchFirstRow = rowNumber;
       batch.push(row);
-      batchChars += row.reduce((sum, cell) => sum + cell.length, 0);
-      if (batch.length >= IMPORT_BATCH_ROWS || batchChars >= MAX_BATCH_CHARS) {
+      batchBytes += rowBytes;
+      if (batch.length >= IMPORT_BATCH_ROWS) {
         await flush();
         if (shouldStop()) return;
       }
@@ -318,14 +334,22 @@ export function ImportLeadsModal({
   const [dragActive, setDragActive] = useState(false);
   const [progress, setProgress] = useState({ bytesRead: 0, imported: 0 });
   const [cancelRequested, setCancelRequested] = useState(false);
-  const cancelRef = useRef(false);
-  // Bumped on close so a still-running import stops touching this modal's state.
-  const runIdRef = useRef(0);
+  // One controller per import run. Aborting it cancels only that run; close and unmount
+  // abort and clear it, so a still-running import stops touching this modal's state.
+  const activeRunRef = useRef<AbortController | null>(null);
   const [showSequenceEnroll, setShowSequenceEnroll] = useState(false);
   const [sequences, setSequences] = useState<Array<{ id: string; name: string; status: string }>>([]);
   const [selectedSequenceId, setSelectedSequenceId] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(
+    () => () => {
+      activeRunRef.current?.abort();
+      activeRunRef.current = null;
+    },
+    [],
+  );
 
   const resetState = () => {
     setStep("upload");
@@ -354,8 +378,8 @@ export function ImportLeadsModal({
   };
 
   const handleClose = () => {
-    cancelRef.current = true;
-    runIdRef.current++;
+    activeRunRef.current?.abort();
+    activeRunRef.current = null;
     resetState();
     setShowSequenceEnroll(false);
     setSelectedSequenceId(null);
@@ -378,8 +402,8 @@ export function ImportLeadsModal({
       let result: { headers: string[]; rows: string[][] };
       try {
         result = await readCsvPreview(file);
-      } catch {
-        toast.error("Could not read the file");
+      } catch (err) {
+        toast.error(`Could not read the file${err instanceof Error ? `: ${err.message}` : ""}`);
         return;
       }
       if (result.headers.length === 0) {
@@ -464,9 +488,11 @@ export function ImportLeadsModal({
       }
     }
 
-    const runId = ++runIdRef.current;
-    const isCurrent = () => runIdRef.current === runId;
-    cancelRef.current = false;
+    // A new run gets its own controller; an earlier run stays cancelled.
+    activeRunRef.current?.abort();
+    const run = new AbortController();
+    activeRunRef.current = run;
+    const isCurrent = () => activeRunRef.current === run;
     setCancelRequested(false);
     setProgress({ bytesRead: 0, imported: 0 });
     setStep("importing");
@@ -475,15 +501,16 @@ export function ImportLeadsModal({
       onProgress: (bytesRead, imported) => {
         if (isCurrent()) setProgress({ bytesRead, imported });
       },
-      isCancelled: () => cancelRef.current,
+      isCancelled: () => run.signal.aborted,
     });
 
     if (!isCurrent()) {
-      // The modal was closed mid-import; still refresh the list for what landed.
+      // The modal was closed or unmounted mid-import; still refresh the list for what landed.
       if (outcome.imported > 0) onImportComplete?.();
       return;
     }
-    if (outcome.failure && outcome.imported === 0 && outcome.errorCount <= 1) {
+    activeRunRef.current = null;
+    if (outcome.failure && outcome.imported === 0 && outcome.errorCount === 0) {
       toast.error(outcome.failure);
       setStep("mapping");
       return;
@@ -495,7 +522,7 @@ export function ImportLeadsModal({
   };
 
   const handleCancelImport = () => {
-    cancelRef.current = true;
+    activeRunRef.current?.abort();
     setCancelRequested(true);
   };
 
@@ -538,9 +565,12 @@ export function ImportLeadsModal({
     toast.success("Template downloaded!");
   };
 
+  // Capped at 99: reading the whole file is not the same as the last batch being saved.
+  // The done step is what reports completion.
   const importPercent = csvFile && csvFile.size > 0
-    ? Math.min(100, Math.floor((progress.bytesRead / csvFile.size) * 100))
+    ? Math.min(99, Math.floor((progress.bytesRead / csvFile.size) * 100))
     : 0;
+  const importStopped = importResult?.failure != null;
 
   return (
     <Modal open={open} onClose={handleClose} className="max-w-2xl">
@@ -556,7 +586,7 @@ export function ImportLeadsModal({
               {step === "mapping" && "Map CSV columns to lead fields"}
               {step === "preview" && "Review data before importing"}
               {step === "importing" && "Importing your leads..."}
-              {step === "done" && "Import complete"}
+              {step === "done" && (importStopped ? "Import stopped on an error" : "Import complete")}
             </p>
           </div>
           <button
@@ -575,7 +605,7 @@ export function ImportLeadsModal({
                 ? 0
                 : step === "mapping" || step === "preview"
                   ? 1
-                  : step === "importing"
+                  : step === "importing" || importStopped
                     ? 2
                     : 3;
             return (
@@ -885,18 +915,33 @@ export function ImportLeadsModal({
         {step === "done" && importResult && (
           <div className="space-y-4">
             <div className="flex flex-col items-center justify-center py-6 gap-3">
-              <div className="w-14 h-14 rounded-full bg-success-surface flex items-center justify-center">
-                <CheckCircleIcon
-                  size={32}
-                  weight="fill"
-                  className="text-success"
-                />
-              </div>
+              {importStopped ? (
+                <div className="w-14 h-14 rounded-full bg-danger-surface flex items-center justify-center">
+                  <WarningIcon size={32} weight="fill" className="text-danger" />
+                </div>
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-success-surface flex items-center justify-center">
+                  <CheckCircleIcon
+                    size={32}
+                    weight="fill"
+                    className="text-success"
+                  />
+                </div>
+              )}
               <div className="text-center">
                 <p className="text-heading-md text-fg">
+                  {importStopped && "Import stopped: "}
                   {importResult.imported} Lead
                   {importResult.imported !== 1 ? "s" : ""} Imported
                 </p>
+                {importStopped && (
+                  <p className="text-sm text-danger mt-1">{importResult.failure}</p>
+                )}
+                {importStopped && (
+                  <p className="text-xs text-fg-secondary mt-1">
+                    Rows after the last saved batch were not imported.
+                  </p>
+                )}
                 {importResult.errorCount > 0 && (
                   <p className="text-sm text-warning mt-1">
                     {importResult.errorCount} row

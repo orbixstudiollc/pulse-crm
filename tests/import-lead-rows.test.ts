@@ -116,6 +116,13 @@ describe("mapRowToLead", () => {
   });
 });
 
+describe("import server actions module", () => {
+  it("exposes only importLeadRows (the old whole-file actions are gone)", async () => {
+    const mod = await import("@/lib/actions/import");
+    expect(Object.keys(mod)).toEqual(["importLeadRows"]);
+  });
+});
+
 describe("importLeadRows", () => {
   const headers = ["name", "email"];
   const mapping = { name: "name", email: "email" };
