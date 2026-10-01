@@ -107,15 +107,6 @@ export async function createICPProfile(profileData: {
   const supabase = await createClient();
   const orgId = await getOrgId();
 
-  if (profileData.is_primary) {
-    const { error: demoteError } = await supabase
-      .from("icp_profiles")
-      .update({ is_primary: false } as ICPUpdate)
-      .eq("organization_id", orgId)
-      .eq("is_primary", true);
-    if (demoteError) return { error: demoteError.message };
-  }
-
   const { data, error } = await supabase
     .from("icp_profiles")
     .insert({
@@ -132,6 +123,17 @@ export async function createICPProfile(profileData: {
     .single();
 
   if (error) return { error: error.message };
+
+  // Demote only after the write succeeded, so a failed write never leaves the org without a primary.
+  if (data.is_primary) {
+    const { error: demoteError } = await supabase
+      .from("icp_profiles")
+      .update({ is_primary: false } as ICPUpdate)
+      .eq("organization_id", orgId)
+      .eq("is_primary", true)
+      .neq("id", data.id);
+    if (demoteError) return { error: demoteError.message };
+  }
 
   revalidatePath("/dashboard/icp");
   return { data };
@@ -161,24 +163,26 @@ export async function updateICPProfile(
   if (updates.color !== undefined) updateData.color = updates.color;
   if (updates.is_primary !== undefined) updateData.is_primary = updates.is_primary;
 
+  const { data, error } = await supabase
+    .from("icp_profiles")
+    .update(updateData as ICPUpdate)
+    .eq("id", id)
+    .eq("organization_id", orgId)
+    .select()
+    .single();
+
+  if (error) return { error: error.message };
+
+  // Demote only after the write succeeded, so a failed write never leaves the org without a primary.
   if (updates.is_primary === true) {
     const { error: demoteError } = await supabase
       .from("icp_profiles")
       .update({ is_primary: false } as ICPUpdate)
       .eq("organization_id", orgId)
       .eq("is_primary", true)
-      .neq("id", id);
+      .neq("id", data.id);
     if (demoteError) return { error: demoteError.message };
   }
-
-  const { data, error } = await supabase
-    .from("icp_profiles")
-    .update(updateData as ICPUpdate)
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) return { error: error.message };
 
   revalidatePath("/dashboard/icp");
   revalidatePath(`/dashboard/icp/${id}`);

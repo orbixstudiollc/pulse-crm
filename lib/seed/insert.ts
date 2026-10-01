@@ -66,6 +66,21 @@ async function insertRows<R extends { id?: string }>(
   }
 }
 
+/** True unless a read confirms the org has no primary ICP, so a failed read never seeds a second primary. */
+async function hasPrimaryIcp(client: Db, orgId: string): Promise<boolean> {
+  try {
+    const { data, error } = await client
+      .from("icp_profiles")
+      .select("id")
+      .eq("organization_id", orgId)
+      .eq("is_primary", true)
+      .limit(1);
+    return Boolean(error) || (data?.length ?? 0) > 0;
+  } catch {
+    return true;
+  }
+}
+
 /** Replaces each row's parentIndex with the parent id; drops rows whose parent was not inserted. */
 function resolve<C extends { parentIndex: number }, R>(
   rows: C[],
@@ -115,6 +130,14 @@ export async function insertSeed(
     return [sequenceIds, stepIds];
   };
 
+  // The seeded primary ICP only stays primary when the org has none yet.
+  const icpTree = async (): Promise<string[]> => {
+    const rows = (await hasPrimaryIcp(client, orgId))
+      ? b.icpProfiles.map((p) => ({ ...p, is_primary: false }))
+      : b.icpProfiles;
+    return insertRows("ICP Profiles", rows, (r) => client.from("icp_profiles").upsert(r, UPSERT), errors, o);
+  };
+
   const groups = await Promise.all([
     customerTree(),
     competitorTree(),
@@ -122,7 +145,7 @@ export async function insertSeed(
     Promise.all([
       insertRows("Leads", b.leads, (r) => client.from("leads").upsert(r, UPSERT), errors, o),
       insertRows("Objections", b.objections, (r) => client.from("objection_playbook").upsert(r, UPSERT), errors, o),
-      insertRows("ICP Profiles", b.icpProfiles, (r) => client.from("icp_profiles").upsert(r, UPSERT), errors, o),
+      icpTree(),
       // 23505: the org already has a default scoring profile.
       insertRows("Scoring Profile", [b.scoringProfile], (r) => client.from("scoring_profiles").upsert(r, UPSERT), errors, o, "23505"),
       insertRows("Email Templates", b.emailTemplates, (r) => client.from("email_templates").upsert(r, UPSERT), errors, o),

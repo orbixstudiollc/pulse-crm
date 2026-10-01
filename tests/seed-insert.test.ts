@@ -16,11 +16,19 @@ interface Call {
 
 // Fake Supabase client: `upsert` resolves per a scripted list of outcomes for
 // each table (one outcome per attempt; "ok" once the script runs out).
-function fakeClient(script: Record<string, Outcome[]> = {}) {
+// `select(...).eq(...).limit(...)` resolves to the table's `existing` rows.
+function fakeClient(script: Record<string, Outcome[]> = {}, existing: Record<string, Row[]> = {}) {
   const calls: Call[] = [];
   const client = {
     from(table: string) {
       return {
+        select() {
+          const chain = {
+            eq: () => chain,
+            limit: () => Promise.resolve({ data: existing[table] ?? [], error: null }),
+          };
+          return chain;
+        },
         upsert(rows: Row[], options: unknown) {
           calls.push({ table, rows, options });
           const outcome = script[table]?.shift() ?? "ok";
@@ -92,6 +100,23 @@ describe("insertSeed", () => {
     const deals = calls.find((c) => c.table === "deals")!.rows;
     expect(deals.length).toBeGreaterThan(0);
     expect(deals.every((d) => customerIds.has(d.customer_id as string))).toBe(true);
+  });
+
+  it("seeds a primary ICP when the org has none", async () => {
+    const { client, calls } = fakeClient();
+    await insertSeed(client, ORG, generateSeed(ORG), { sleep: noSleep });
+
+    const icps = calls.find((c) => c.table === "icp_profiles")!.rows;
+    expect(icps.filter((p) => p.is_primary)).toHaveLength(1);
+  });
+
+  it("does not seed a second primary ICP when the org already has one", async () => {
+    const { client, calls } = fakeClient({}, { icp_profiles: [{ id: "existing-primary" }] });
+    await insertSeed(client, ORG, generateSeed(ORG), { sleep: noSleep });
+
+    const icps = calls.find((c) => c.table === "icp_profiles")!.rows;
+    expect(icps.length).toBeGreaterThan(0);
+    expect(icps.some((p) => p.is_primary)).toBe(false);
   });
 
   it("treats the default scoring profile conflict as success", async () => {
