@@ -24,6 +24,8 @@ const h = vi.hoisted(() => ({
   budgetRefusal: null as string | null,
   /** When true, the shared budget refuses every step after the first. */
   stepRefusal: false,
+  /** The workspace's own token limit verdict (tokenLimitReason). */
+  limitReason: null as string | null,
   /** Called inside auth.getUser(), the first thing the route awaits. */
   onGetUser: null as null | (() => void),
 }));
@@ -51,7 +53,7 @@ vi.mock("@/lib/ai/provider-resolver", async (importOriginal) => ({
   resolveAIProvider: () => h.resolved,
 }));
 vi.mock("@/lib/ai/client", () => ({
-  tokenLimitReason: () => null,
+  tokenLimitReason: () => h.limitReason,
   logTokenUsage: async () => undefined,
   createAIMessagesClient: () => ({
     messages: {
@@ -340,6 +342,7 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
     h.budgetParams = [];
     h.budgetRefusal = null;
     h.stepRefusal = false;
+    h.limitReason = null;
     h.onGetUser = null;
     convertSpy.mockClear();
     automationSpy.mockClear();
@@ -660,6 +663,22 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
       expect(baseInput).toContain("newest");
       expect(baseInput).not.toContain("stored 19");
       expect(maxSteps).toBe(8);
+    });
+
+    it("the workspace's own token limit is not applied on the shared key", async () => {
+      h.resolved = { provider: "anthropic", source: "env", apiKey: "env-key" };
+      h.limitReason = "Daily token limit reached";
+      const res = await post({ conversationId: CONV_A, message: { text: "Hi" } });
+      expect(res.status).toBe(200);
+      await settle(res);
+    });
+
+    it("the workspace's own token limit still applies to its own key", async () => {
+      h.limitReason = "Daily token limit reached";
+      const res = await post({ conversationId: CONV_A, message: { text: "Hi" } });
+      expect(res.status).toBe(429);
+      expect(await res.json()).toEqual({ error: "Daily token limit reached" });
+      expect(model().doStreamCalls).toHaveLength(0);
     });
 
     it("a step refused by the shared budget ends the turn with a budget_exhausted notice", async () => {

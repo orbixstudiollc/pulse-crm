@@ -547,7 +547,7 @@ export async function checkAIAccess(feature: AIFeature): Promise<{
   reason?: string;
 }> {
   try {
-    const { settings } = await getAIClient();
+    const { settings, source } = await getAIClient();
 
     // Check feature toggle
     const featureKey = `feature_${feature}` as keyof AISettings;
@@ -555,13 +555,12 @@ export async function checkAIAccess(feature: AIFeature): Promise<{
       return { allowed: false, reason: `AI ${feature} is disabled in settings` };
     }
 
-    const limitReason = tokenLimitReason(settings);
+    // The workspace's own token limits apply to its own key. Calls on the owner's
+    // shared key reserve their tokens per call (see withSharedBudget) instead.
+    const limitReason = source === "env" ? null : tokenLimitReason(settings);
     if (limitReason) {
       return { allowed: false, reason: limitReason };
     }
-
-    // Calls on the owner's shared key reserve their tokens per call (see
-    // withSharedBudget), so there is nothing to check here.
 
     return { allowed: true };
   } catch (error) {

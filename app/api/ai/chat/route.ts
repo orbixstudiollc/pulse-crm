@@ -325,11 +325,6 @@ export async function POST(req: Request) {
       return end(new Response("AI Chat is disabled in settings", { status: 403 }));
     }
 
-    const limitReason = settings ? tokenLimitReason(settings) : null;
-    if (limitReason) {
-      return end(Response.json({ error: limitReason }, { status: 429 }));
-    }
-
     const notConfigured = () =>
       end(
         new Response("AI isn't set up for this workspace yet. Add a provider in Settings → AI Assistant.", {
@@ -339,6 +334,13 @@ export async function POST(req: Request) {
     const resolved = resolveAIProvider(settings ?? {}, process.env);
     if (!resolved) return notConfigured();
     const provider = resolved.provider;
+
+    // The workspace's own daily/monthly token limits apply to its own key. On the
+    // owner's shared (env) key the shared budget below is the limit instead.
+    const limitReason = settings && resolved.source !== "env" ? tokenLimitReason(settings) : null;
+    if (limitReason) {
+      return end(Response.json({ error: limitReason }, { status: 429 }));
+    }
 
     // Model for the streaming (Anthropic protocol) branch below.
     let modelId: string;
