@@ -33,9 +33,9 @@ A Next.js 16 (App Router) CRM backed by Supabase, with AI features (Anthropic, O
 
    Everything else is optional and only turns on the feature it names: an AI provider key (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, …) for AI features, `APIFY_API_TOKEN` for Lead Finder, Google/Microsoft OAuth for sending email, and so on. AI keys can also be set per workspace on the Lead Finder settings page.
 
-3. Set up the database. Migrations live in `supabase/migrations/` and are applied by hand in the Supabase SQL editor (the repo is not linked to the Supabase CLI). Run them in filename order.
+3. Set up the database. Migrations live in `supabase/migrations/` and are applied by hand in the Supabase SQL editor (the repo is not linked to the Supabase CLI). On a new project, run every file in filename order, `001` through the highest number. A fresh database builds cleanly that way.
 
-   > **Known gap:** a brand-new database cannot yet be built entirely from the repo. About 13 tables used by the app (Lead Finder searches, copilot, website tracking, campaign and sequence tags, and others) were created by hand in production and have no migration, and `20260313_automation_rules.sql` alters two of them. See `AUDIT-2026-09-30.md` for the list. Until those are added, point local development at a copy of an existing Pulse CRM database rather than an empty project.
+   When you pull a new migration, apply it in the SQL editor before or with the deploy that needs it.
 
 4. Start the dev server:
 

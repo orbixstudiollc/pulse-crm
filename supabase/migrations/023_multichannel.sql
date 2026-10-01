@@ -1,6 +1,6 @@
 -- ============================================================
 -- Multi-Channel Automation: WhatsApp + LinkedIn
--- Migration: 20260313_multichannel.sql
+-- Migration: 023_multichannel.sql (was 20260313_multichannel.sql)
 -- ============================================================
 
 -- ============================================================
