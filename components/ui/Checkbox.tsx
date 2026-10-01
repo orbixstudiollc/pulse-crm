@@ -14,7 +14,16 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     return (
       <div className="space-y-1">
         <div className="flex items-start gap-3">
-          <div className="relative flex items-center">
+          {/* The label's ::after gives a 32px hit area (an ::after on the <input> is unreliable
+              outside Chromium). A click on that area stops here: the label then clicks the input,
+              and that click alone reaches a clickable parent, so a parent that also toggles
+              (a <button> row) sees one click, not two. */}
+          <label
+            className="relative flex items-center cursor-pointer has-disabled:cursor-not-allowed after:absolute after:-inset-2 after:content-['']"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) e.stopPropagation();
+            }}
+          >
             <input
               ref={ref}
               type="checkbox"
@@ -22,7 +31,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               aria-invalid={error ? "true" : "false"}
               aria-describedby={error ? `${id}-error` : undefined}
               className={cn(
-                "peer relative h-4 w-4 shrink-0 after:absolute after:left-1/2 after:top-1/2 after:h-8 after:w-8 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] cursor-pointer appearance-none rounded-sm border border-line bg-surface transition-colors duration-150 focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50",
+                "peer relative h-4 w-4 shrink-0 cursor-pointer appearance-none rounded-sm border border-line bg-surface transition-colors duration-150 focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50",
                 "checked:bg-accent checked:border-accent",
                 className,
               )}
@@ -40,7 +49,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
-          </div>
+          </label>
           {(label || description) && (
             <div className="flex-1 space-y-0.5">
               {label && (
