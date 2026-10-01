@@ -41,10 +41,11 @@ import {
   type ApprovalResponse,
   type ApprovalRow,
 } from "@/lib/ai/approvals";
-import { buildCopilotToolSet, pendingDescriptors, type CopilotToolEnv } from "@/lib/ai/tools/registry";
+import { buildCopilotToolSet, type CopilotToolEnv } from "@/lib/ai/tools/registry";
 import { sanitizeAlwaysAllow } from "@/lib/ai/tools/policy";
 import type { FieldDiff } from "@/lib/ai/tools/diff";
 import { RECORD_CHANGED } from "@/lib/mcp/tools-write";
+import type { Json } from "@/types/database";
 
 // 120 s, not 60: a turn may run CHAT_MAX_STEPS (8) tool steps plus the live-record
 // lookups behind each proposed write's diff, which exceeds 60 s. A function killed by
@@ -84,12 +85,15 @@ function chatErrorText(error: unknown): string {
   return PROVIDER_FAILED;
 }
 
-/** Claims each approval atomically (a repeated or unknown id is invalid, never re-run). */
+/**
+ * Claims each approval atomically (a repeated or unknown id is invalid, never re-run). Each
+ * claim is pushed to `claimed` as it happens, so a failure part-way still knows what it claimed.
+ */
 async function claimApprovals(
   admin: AdminClient,
   args: { orgId: string; conversationId: string; approvals: ChatRequest["approvals"] },
-): Promise<{ claimed: ClaimedApproval[]; invalid: string[] }> {
-  const claimed: ClaimedApproval[] = [];
+  claimed: ClaimedApproval[],
+): Promise<{ invalid: string[] }> {
   const invalid: string[] = [];
   const seen = new Set<string>();
   for (const approval of args.approvals) {
@@ -107,20 +111,56 @@ async function claimApprovals(
     if (result.status === "claimed") claimed.push({ row: result.row, response: approval });
     else invalid.push(approval.approvalId);
   }
-  return { claimed, invalid };
+  return { invalid };
+}
+
+/** The approval outcome a write tool's result stands for. */
+function resultOutcome(output: unknown): ApprovalOutcome {
+  const o = output as { ok?: unknown; error?: unknown } | null;
+  if (o && typeof o === "object" && o.ok === false) return o.error === RECORD_CHANGED ? "stale" : "failed";
+  return "applied";
 }
 
 /** What a claimed, approved write's tool part says happened. */
 function approvalOutcome(part: ToolPart | undefined): { outcome: ApprovalOutcome; result: unknown } {
-  if (part?.state === "output-available") {
-    const output = part.output as { ok?: unknown; error?: unknown } | null;
-    if (output && typeof output === "object" && output.ok === false) {
-      return { outcome: output.error === RECORD_CHANGED ? "stale" : "failed", result: output };
-    }
-    return { outcome: "applied", result: output ?? null };
-  }
+  if (part?.state === "output-available") return { outcome: resultOutcome(part.output), result: part.output ?? null };
   if (part?.state === "output-error") return { outcome: "failed", result: { error: part.errorText } };
   return { outcome: "failed", result: { error: "not_executed" } };
+}
+
+/** JSON with sorted keys (jsonb does not keep key order), for comparing stored tool inputs. */
+function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value).filter(([, v]) => v !== undefined).sort(([a], [b]) => (a < b ? -1 : 1));
+    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonicalJson(v)}`).join(",")}}`;
+  }
+  return JSON.stringify(value ?? null);
+}
+
+/**
+ * ai 6 executes every approved, output-less tool part of the last assistant message. Only
+ * approvals claimed by this request may run, so every other approval-responded part (a card
+ * approved in an earlier request that failed, or one planted in the stored history) is
+ * closed: approved ones become output-error 'not_executed', denied ones output-denied. A
+ * claimed approval whose stored input differs from its approval row's becomes output-error
+ * 'input_mismatch' (finishTurn then marks the row failed). Pure.
+ */
+function closeUnclaimedApprovals(messages: UIMessage[], claimed: Map<string, ApprovalRow>): UIMessage[] {
+  return messages.map((message) => {
+    let changed = false;
+    const parts = message.parts.map((part) => {
+      if (!isToolUIPart(part) || part.state !== "approval-responded") return part;
+      const row = claimed.get(part.approval.id);
+      if (row && (!part.approval.approved || canonicalJson(part.input) === canonicalJson(row.input))) return part;
+      changed = true;
+      const closed = part.approval.approved
+        ? { ...part, state: "output-error", errorText: row ? "input_mismatch" : "not_executed" }
+        : { ...part, state: "output-denied" };
+      return closed as unknown as UIMessage["parts"][number];
+    });
+    return changed ? { ...message, parts } : message;
+  });
 }
 
 /**
@@ -164,14 +204,15 @@ async function finishTurn(
 function decorateStream(
   stream: ReadableStream<UIMessageChunk>,
   notice: UIMessageChunk | null,
+  descriptors: Map<string, FieldDiff>,
 ): ReadableStream<UIMessageChunk> {
   return stream.pipeThrough(
     new TransformStream<UIMessageChunk, UIMessageChunk>({
       transform(chunk, controller) {
         if (chunk.type === "tool-approval-request") {
-          const diff = pendingDescriptors.get(chunk.toolCallId);
+          const diff = descriptors.get(chunk.toolCallId);
           if (diff) {
-            pendingDescriptors.delete(chunk.toolCallId);
+            descriptors.delete(chunk.toolCallId);
             controller.enqueue({ type: "data-approval-diff", id: chunk.toolCallId, data: diff });
           }
         }
@@ -208,10 +249,20 @@ export async function POST(req: Request) {
   let releaseRateLimit: (() => void) | null = null;
   let closeCustomFetch: (() => void) | null = null;
   let releaseLock: (() => Promise<void>) | null = null;
-  let deadlineTimer: ReturnType<typeof setTimeout> | undefined;
-  /** Ends a request that will not stream: frees the slot, the pinned fetch and the turn lock. */
+  /** Set once approvals are claimed, cleared once a stream owns them: marks the unexecuted ones failed. */
+  let failClaimed: ((reason: string) => Promise<void>) | null = null;
+  // The turn deadline runs from the moment the request arrives, so setup time counts.
+  const deadline = new AbortController();
+  const deadlineTimer = setTimeout(() => deadline.abort(new Error("turn_deadline")), TURN_DEADLINE_MS);
+  /** Ends a request before anything was acquired. */
+  const end = (response: Response) => {
+    clearTimeout(deadlineTimer);
+    return response;
+  };
+  /** Ends a request that will not stream: fails claimed approvals, frees the slot, the pinned fetch and the turn lock. */
   const reject = async (status: number, body: Record<string, unknown>) => {
     clearTimeout(deadlineTimer);
+    await failClaimed?.(String(body.error ?? "rejected"));
     releaseRateLimit?.();
     closeCustomFetch?.();
     await releaseLock?.();
@@ -224,7 +275,7 @@ export async function POST(req: Request) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return new Response("Unauthorized", { status: 401 });
+      return end(new Response("Unauthorized", { status: 401 }));
     }
 
     const { data: profile } = await supabase
@@ -234,7 +285,7 @@ export async function POST(req: Request) {
       .single();
 
     if (!profile?.organization_id) {
-      return new Response("No organization found", { status: 400 });
+      return end(new Response("No organization found", { status: 400 }));
     }
 
     // Get AI settings for API key (secret columns are only readable with the service role)
@@ -248,18 +299,19 @@ export async function POST(req: Request) {
       .single();
 
     if (settings && !settings.feature_chat) {
-      return new Response("AI Chat is disabled in settings", { status: 403 });
+      return end(new Response("AI Chat is disabled in settings", { status: 403 }));
     }
 
     const limitReason = settings ? tokenLimitReason(settings) : null;
     if (limitReason) {
-      return Response.json({ error: limitReason }, { status: 429 });
+      return end(Response.json({ error: limitReason }, { status: 429 }));
     }
 
     const notConfigured = () =>
-      new Response(
-        "AI isn't set up for this workspace yet. Add a provider in Settings → AI Assistant.",
-        { status: 400 }
+      end(
+        new Response("AI isn't set up for this workspace yet. Add a provider in Settings → AI Assistant.", {
+          status: 400,
+        })
       );
     const resolved = resolveAIProvider(settings ?? {}, process.env);
     if (!resolved) return notConfigured();
@@ -298,9 +350,11 @@ export async function POST(req: Request) {
     const rateCheck = checkRateLimit(orgId);
     if (!rateCheck.allowed) {
       const retryAfterSec = Math.ceil((rateCheck.retryAfterMs || 1000) / 1000);
-      return Response.json(
-        { error: `Rate limit exceeded. Please try again in ${retryAfterSec} seconds.` },
-        { status: 429, headers: { "Retry-After": String(retryAfterSec) } }
+      return end(
+        Response.json(
+          { error: `Rate limit exceeded. Please try again in ${retryAfterSec} seconds.` },
+          { status: 429, headers: { "Retry-After": String(retryAfterSec) } }
+        )
       );
     }
     const release = acquireRateLimit(orgId);
@@ -347,10 +401,7 @@ export async function POST(req: Request) {
         pinned = await createCustomFetch(resolved.baseURL);
       } catch (err) {
         guardedRelease();
-        return new Response(
-          err instanceof Error ? err.message : "Custom AI base URL is not allowed",
-          { status: 400 }
-        );
+        return end(new Response(err instanceof Error ? err.message : "Custom AI base URL is not allowed", { status: 400 }));
       }
       let fetchClosed = false;
       const guardedClose = () => {
@@ -402,25 +453,6 @@ export async function POST(req: Request) {
 
     let history = await loadUiMessages(admin, conversationId, orgId);
 
-    // Approvals: each one is claimed atomically before anything runs. Unknown, repeated
-    // or already-resolved ids never execute. One bad id does not void the valid ones.
-    const { claimed, invalid } = await claimApprovals(admin, { orgId, conversationId, approvals: body.approvals });
-    const applied = applyApprovalResponses(history, claimed.map((c) => c.response));
-    history = applied.messages;
-    const unmatched = new Set(applied.unmatched);
-    for (const c of claimed.filter((c) => unmatched.has(c.response.approvalId))) {
-      // Claimed, but its card is no longer in the latest turn: it can never run.
-      invalid.push(c.response.approvalId);
-      if (c.response.approved) {
-        await markApprovalOutcome(admin, orgId, c.row.id, "failed", { error: "approval_not_in_latest_turn" });
-      }
-    }
-    const matched = claimed.filter((c) => !unmatched.has(c.response.approvalId));
-    if (body.approvals.length > 0 && matched.length === 0) {
-      return reject(400, { error: "invalid_approval", approvalId: invalid[0] });
-    }
-    const approvedRows = matched.filter((c) => c.response.approved).map((c) => c.row);
-
     // A new message is stored BEFORE the model runs, so a failed turn still keeps it.
     if (body.message) {
       const userMessage: UIMessage = {
@@ -432,11 +464,8 @@ export async function POST(req: Request) {
       history = [...history, userMessage];
     }
 
-    // The model sees a window of the stored history; the stream and persistence keep all of it.
-    const answered = matched.length > 0 ? history.findLastIndex((m) => m.role === "assistant") : -1;
-    const modelHistory = modelWindow(history, answered);
-
     // ── System prompt: base + page context + workspace memory ─────────────
+    // Built before any approval is claimed: a failure here leaves every card pending.
     const contextStr = body.context ? await assembleContext(body.context, orgId) : "";
     const memory = await loadMemoryBlock(supabase, orgId, MEMORY_CAP_TOKENS);
     const fullName = user.user_metadata?.full_name;
@@ -447,9 +476,72 @@ ${memory.text ? `\n---\n${memory.text}` : ""}
 
 Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLabel}` : ""}`;
 
+    // The answered assistant message (approval turns) always stays in the model window.
+    const answered = body.approvals.length > 0 ? history.findLastIndex((m) => m.role === "assistant") : -1;
+
+    // Shared key: reserve per step. The first step (input plus one output cap) is reserved
+    // here, before any approval is claimed, so a refusal leaves every card pending. Each
+    // further step is reserved by stopWhen before it runs, with the input it will resend,
+    // and a refusal ends the turn with what exists. onFinish settles every reservation to
+    // real usage (onAbort, after the deadline, the finished steps'); a failed stream keeps
+    // them in full. The base input is the system prompt (memory block included) plus the
+    // trimmed history with this request's answers applied, as the model will be sent it.
+    let turnBudget: ReturnType<typeof sharedTurnBudget> | null = null;
+    if (sharedKey && toolsSupported) {
+      const answeredHistory = applyApprovalResponses(history, body.approvals).messages;
+      const estimateMessages = await convertToModelMessages(modelWindow(answeredHistory, answered), {
+        ignoreIncompleteToolCalls: true,
+      });
+      turnBudget = sharedTurnBudget({
+        orgId,
+        isGuest,
+        baseInput: systemMessage + JSON.stringify(estimateMessages),
+        maxOutputTokens: SHARED_CHAT_MAX_OUTPUT_TOKENS,
+        maxSteps: CHAT_MAX_STEPS,
+      });
+      const first = await turnBudget.start();
+      if (!first.ok) return reject(429, { error: first.reason });
+    }
+
+    // Approvals: each one is claimed atomically before anything runs. Unknown, repeated
+    // or already-resolved ids never execute. One bad id does not void the valid ones.
+    // Until a stream owns them, a failure marks the claimed, approved rows failed.
+    const claimed: ClaimedApproval[] = [];
+    const resolvedRowIds = new Set<string>();
+    failClaimed = async (reason) => {
+      for (const c of claimed) {
+        if (!c.response.approved || resolvedRowIds.has(c.row.id)) continue;
+        resolvedRowIds.add(c.row.id);
+        try {
+          await markApprovalOutcome(admin, orgId, c.row.id, "failed", { error: reason });
+        } catch (error) {
+          console.error("AI Chat: failing a claimed approval failed:", error);
+        }
+      }
+    };
+    const { invalid } = await claimApprovals(admin, { orgId, conversationId, approvals: body.approvals }, claimed);
+    const applied = applyApprovalResponses(history, claimed.map((c) => c.response));
+    const unmatched = new Set(applied.unmatched);
+    for (const c of claimed.filter((c) => unmatched.has(c.response.approvalId))) {
+      // Claimed, but its card is no longer in the latest turn: it can never run.
+      invalid.push(c.response.approvalId);
+      if (c.response.approved) {
+        resolvedRowIds.add(c.row.id);
+        await markApprovalOutcome(admin, orgId, c.row.id, "failed", { error: "approval_not_in_latest_turn" });
+      }
+    }
+    const matched = claimed.filter((c) => !unmatched.has(c.response.approvalId));
+    if (body.approvals.length > 0 && matched.length === 0) {
+      return reject(400, { error: "invalid_approval", approvalId: invalid[0] });
+    }
+    const approvedRows = matched.filter((c) => c.response.approved).map((c) => c.row);
+    // Only this request's claimed approvals may execute (see closeUnclaimedApprovals).
+    history = closeUnclaimedApprovals(applied.messages, new Map(matched.map((c) => [c.response.approvalId, c.row])));
+
+    // The model sees a window of the stored history; the stream and persistence keep all of it.
+    const modelHistory = modelWindow(history, matched.length > 0 ? answered : -1);
+
     const startTime = Date.now();
-    const deadline = new AbortController();
-    deadlineTimer = setTimeout(() => deadline.abort(new Error("turn_deadline")), TURN_DEADLINE_MS);
     let resolveTurnDone: () => void = () => undefined;
     const turnDone = new Promise<void>((resolve) => {
       resolveTurnDone = resolve;
@@ -545,37 +637,53 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
       ctx: { orgId, userId, isGuest, source: "chat", conversationId, taskId: null },
     };
     const approvedDiffs = new Map(approvedRows.map((row) => [row.tool_call_id, row.diff as unknown as FieldDiff | null]));
+    /** This request's proposed diffs, emitted as data-approval-diff parts by decorateStream. */
+    const descriptors = new Map<string, FieldDiff>();
     const tools = buildCopilotToolSet(env, {
       alwaysAllow: sanitizeAlwaysAllow(settings?.copilot_always_allow),
+      descriptors,
       onWriteRequested: async (info) => {
         await recordPendingApproval(admin, { ...info, orgId, userId, conversationId, taskId: null, source: "chat" });
       },
       resolveDiff: async (toolCallId) => approvedDiffs.get(toolCallId) ?? null,
+      hasApprovalRow: async (toolCallId) => {
+        const { data, error } = await admin
+          .from("copilot_approvals")
+          .select("id")
+          .eq("organization_id", orgId)
+          .eq("tool_call_id", toolCallId)
+          .maybeSingle();
+        // Fail closed: an unknown answer counts as an existing row, so the call never runs.
+        if (error) console.error("AI Chat: approval row lookup failed:", error.message);
+        return Boolean(data) || Boolean(error);
+      },
+      // An always-allowed write leaves an audit row with its outcome.
+      onAutoAllowed: async ({ toolCallId, toolName, input, diff, result }) => {
+        try {
+          const { error } = await admin.from("copilot_approvals").insert({
+            organization_id: orgId,
+            user_id: userId,
+            conversation_id: conversationId,
+            task_id: null,
+            source: "chat",
+            tool_call_id: toolCallId,
+            tool_name: toolName,
+            input: (input ?? null) as Json,
+            diff: diff as unknown as Json,
+            status: resultOutcome(result),
+            result: (result ?? null) as Json,
+            resolved_at: new Date().toISOString(),
+          });
+          if (error) console.error("AI Chat: recording an always-allowed write failed:", error.message);
+        } catch (error) {
+          console.error("AI Chat: recording an always-allowed write failed:", error);
+        }
+      },
     });
     // Only server-loaded history reaches the model. Unanswered approval cards and
     // interrupted tool calls are dropped (ignoreIncompleteToolCalls).
     const modelMessages = await convertToModelMessages(modelHistory, { tools, ignoreIncompleteToolCalls: true });
 
-    // Shared key: reserve per step. The first step (input plus one output
-    // cap) is reserved here; each further step is reserved by stopWhen before
-    // it runs, with the input it will resend, and a refusal ends the turn with
-    // what exists. onFinish settles every reservation to real usage (onAbort,
-    // after the deadline, the finished steps'); a failed stream keeps them in full.
-    // The base input is the system prompt (memory block included) plus the trimmed
-    // history actually sent, so each step's reservation covers what is resent.
-    const turnBudget = sharedKey
-      ? sharedTurnBudget({
-          orgId,
-          isGuest,
-          baseInput: systemMessage + JSON.stringify(modelMessages),
-          maxOutputTokens: SHARED_CHAT_MAX_OUTPUT_TOKENS,
-          maxSteps: CHAT_MAX_STEPS,
-        })
-      : null;
-    if (turnBudget) {
-      const first = await turnBudget.start();
-      if (!first.ok) return reject(429, { error: first.reason });
-    }
     let streamFailed = false;
     let abortSettled: Promise<void> = Promise.resolve();
 
@@ -637,14 +745,17 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
       originalMessages: history,
       generateId: () => crypto.randomUUID(),
       execute: ({ writer }) => {
-        writer.merge(decorateStream(result.toUIMessageStream({ onError: chatErrorText }), invalidNotice));
+        writer.merge(decorateStream(result.toUIMessageStream({ onError: chatErrorText }), invalidNotice, descriptors));
       },
       onError: chatErrorText,
       onFinish: onTurnFinish,
     });
+    // From here the turn's onFinish (finishTurn) records every claimed approval's outcome.
+    failClaimed = null;
     return createUIMessageStreamResponse({ stream, headers, consumeSseStream });
   } catch (error) {
     clearTimeout(deadlineTimer);
+    await failClaimed?.("request_failed");
     releaseRateLimit?.();
     closeCustomFetch?.();
     await releaseLock?.();

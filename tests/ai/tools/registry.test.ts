@@ -26,7 +26,6 @@ import {
   buildCopilotToolSet,
   executeRegistryTool,
   listRegistryTools,
-  pendingDescriptors,
   type CopilotToolEnv,
 } from "@/lib/ai/tools/registry";
 import { COPILOT_READ_TOOLS, COPILOT_WRITE_TOOLS, FANOUT_LIMIT_RESULT, NEVER_AUTO_ALLOW } from "@/lib/ai/tools/policy";
@@ -39,6 +38,8 @@ const LEAD = "44444444-4444-4444-8444-444444444444";
 const BASELINE = "2026-09-01T10:00:00.000Z";
 
 let db: FakeSupabase;
+/** The request's descriptor map (per request, never module-global). */
+let descriptors: Map<string, FieldDiff>;
 
 function seed() {
   return new FakeSupabase({
@@ -63,8 +64,8 @@ function execute(t: Tool) { return t.execute as unknown as Fn; }
 const lead = () => db.tables.leads.find((l) => l.id === LEAD)!;
 const leadUpdates = () => db.log.filter((e) => e.table === "leads" && e.op === "update").length;
 
-beforeEach(() => { db = seed(); });
-afterEach(() => { vi.clearAllMocks(); pendingDescriptors.clear(); });
+beforeEach(() => { db = seed(); descriptors = new Map(); });
+afterEach(() => { vi.clearAllMocks(); });
 
 describe("listRegistryTools", () => {
   it("chat mode carries the allowlisted MCP tools and never delete_record or any NEVER_AUTO_ALLOW name", () => {
@@ -92,7 +93,7 @@ describe("listRegistryTools", () => {
 
 describe("buildCopilotToolSet (chat)", () => {
   const build = (alwaysAllow: string[] = [], onWriteRequested = vi.fn(async () => undefined)) =>
-    ({ tools: buildCopilotToolSet(envFor("chat"), { alwaysAllow, onWriteRequested }), onWriteRequested });
+    ({ tools: buildCopilotToolSet(envFor("chat"), { alwaysAllow, onWriteRequested, descriptors }), onWriteRequested });
 
   it("every write tool has needsApproval and every read or low-risk tool lacks it", () => {
     const { tools } = build();
@@ -116,7 +117,7 @@ describe("buildCopilotToolSet (chat)", () => {
       fields: [{ name: "status", before: "hot", after: "cold" }],
     };
     expect(onWriteRequested).toHaveBeenCalledWith({ toolCallId: "call-1", toolName: "update_lead", input, diff });
-    expect(pendingDescriptors.get("call-1")).toEqual(diff);
+    expect(descriptors.get("call-1")).toEqual(diff);
   });
 
   it("an always-allowed write skips approval; delete_record is never in the set", async () => {
@@ -133,7 +134,7 @@ describe("buildCopilotToolSet (chat)", () => {
     }
     // 21st: a copilot-only write whose handler is a spy.
     await expect(needsApproval(tools.create_task)({ title: "One too many" }, callOpts("call-20"))).resolves.toBe(false);
-    expect(pendingDescriptors.has("call-20")).toBe(false);
+    expect(descriptors.has("call-20")).toBe(false);
     const result = await execute(tools.create_task)({ title: "One too many" }, callOpts("call-20"));
     expect(result).toEqual(FANOUT_LIMIT_RESULT);
     expect(result).toMatchObject({ ok: false, error: "fanout_limit" });
@@ -144,10 +145,10 @@ describe("buildCopilotToolSet (chat)", () => {
   it("a shared fanout counter spans toolset instances of one turn and an over-limit record write writes nothing", async () => {
     const fanout = { count: 19 };
     const onWriteRequested = vi.fn(async () => undefined);
-    const tools = buildCopilotToolSet(envFor("chat"), { alwaysAllow: [], onWriteRequested, fanout });
+    const tools = buildCopilotToolSet(envFor("chat"), { alwaysAllow: [], onWriteRequested, fanout, descriptors });
     await needsApproval(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("a"));
     await expect(needsApproval(tools.update_lead)({ id: LEAD, status: "warm" }, callOpts("b"))).resolves.toBe(false);
-    expect(pendingDescriptors.has("b")).toBe(false);
+    expect(descriptors.has("b")).toBe(false);
     expect(await execute(tools.update_lead)({ id: LEAD, status: "warm" }, callOpts("b"))).toEqual(FANOUT_LIMIT_RESULT);
     expect(lead().status).toBe("hot");
     expect(leadUpdates()).toBe(0);
@@ -190,6 +191,7 @@ describe("buildCopilotToolSet (chat)", () => {
       alwaysAllow: [],
       onWriteRequested,
       fanout,
+      descriptors,
       resolveDiff: async (id) => (id === "approved-1" ? approved : null),
     });
     // The row moved after the proposal; a recompute would take the new baseline.
@@ -199,13 +201,92 @@ describe("buildCopilotToolSet (chat)", () => {
     await expect(needsApproval(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("approved-1"))).resolves.toBe(true);
     expect(onWriteRequested).not.toHaveBeenCalled();
     expect(fanout.count).toBe(0);
-    expect(pendingDescriptors.has("approved-1")).toBe(false);
+    expect(descriptors.has("approved-1")).toBe(false);
     expect(db.log.filter((e) => e.table === "leads").length).toBe(reads);
 
     const result = await execute(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("approved-1"));
     expect(result).toEqual({ ok: false, error: "record_changed" });
     expect(lead().status).toBe("warm");
     expect(leadUpdates()).toBe(0);
+  });
+
+  it("a call whose approval row exists but was not claimed by this request never runs: no new row, no fan-out, no write", async () => {
+    const onWriteRequested = vi.fn(async () => undefined);
+    const fanout = { count: 0 };
+    const tools = buildCopilotToolSet(envFor("chat"), {
+      alwaysAllow: [],
+      onWriteRequested,
+      fanout,
+      descriptors,
+      resolveDiff: async () => null,
+      hasApprovalRow: async (id) => id === "failed-earlier",
+    });
+
+    // ai 6 re-validates an approved part through needsApproval: false makes it a denial.
+    await expect(needsApproval(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("failed-earlier"))).resolves.toBe(false);
+    expect(onWriteRequested).not.toHaveBeenCalled();
+    expect(fanout.count).toBe(0);
+    expect(descriptors.size).toBe(0);
+    // Even if execute is reached (a fresh call reusing the id), nothing is written.
+    expect(await execute(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("failed-earlier"))).toEqual({ ok: false, error: "not_executed" });
+    expect(lead().status).toBe("hot");
+    expect(leadUpdates()).toBe(0);
+    expect(fakes.evaluate).not.toHaveBeenCalled();
+
+    // A call without a row is still proposed normally.
+    await expect(needsApproval(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("fresh"))).resolves.toBe(true);
+    expect(onWriteRequested).toHaveBeenCalledTimes(1);
+    expect(fanout.count).toBe(1);
+  });
+
+  it("an always-allowed write counts toward the fan-out, writes, and is audited with its diff and result", async () => {
+    const onWriteRequested = vi.fn(async () => undefined);
+    const onAutoAllowed = vi.fn(async () => undefined);
+    const fanout = { count: 0 };
+    const tools = buildCopilotToolSet(envFor("chat"), { alwaysAllow: ["update_lead"], onWriteRequested, onAutoAllowed, fanout, descriptors });
+    const input = { id: LEAD, status: "cold" };
+
+    await expect(needsApproval(tools.update_lead)(input, callOpts("auto-1"))).resolves.toBe(false);
+    expect(fanout.count).toBe(1);
+    expect(descriptors.size).toBe(0);
+    expect(onAutoAllowed).not.toHaveBeenCalled();
+
+    const result = await execute(tools.update_lead)(input, callOpts("auto-1"));
+    expect(result).toMatchObject({ ok: true });
+    expect(lead().status).toBe("cold");
+    expect(onWriteRequested).not.toHaveBeenCalled();
+    expect(onAutoAllowed).toHaveBeenCalledTimes(1);
+    expect(onAutoAllowed).toHaveBeenCalledWith({
+      toolCallId: "auto-1",
+      toolName: "update_lead",
+      input,
+      diff: { kind: "update", recordType: "lead", recordId: LEAD, baselineUpdatedAt: BASELINE, fields: [{ name: "status", before: "hot", after: "cold" }] },
+      result,
+    });
+  });
+
+  it("an always-allowed write past the fan-out cap returns fanout_limit, writes nothing and is not audited", async () => {
+    const onAutoAllowed = vi.fn(async () => undefined);
+    const fanout = { count: 20 };
+    const tools = buildCopilotToolSet(envFor("chat"), { alwaysAllow: ["update_lead"], onWriteRequested: async () => undefined, onAutoAllowed, fanout, descriptors });
+    await expect(needsApproval(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("auto-21"))).resolves.toBe(false);
+    expect(fanout.count).toBe(21);
+    expect(await execute(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("auto-21"))).toEqual(FANOUT_LIMIT_RESULT);
+    expect(lead().status).toBe("hot");
+    expect(leadUpdates()).toBe(0);
+    expect(onAutoAllowed).not.toHaveBeenCalled();
+  });
+
+  it("descriptors are per request: each toolset fills only the map it was given", async () => {
+    const mine = new Map<string, FieldDiff>();
+    const theirs = new Map<string, FieldDiff>();
+    const a = buildCopilotToolSet(envFor("chat"), { alwaysAllow: [], onWriteRequested: async () => undefined, descriptors: mine });
+    const b = buildCopilotToolSet(envFor("chat"), { alwaysAllow: [], onWriteRequested: async () => undefined, descriptors: theirs });
+    await needsApproval(a.update_lead)({ id: LEAD, status: "cold" }, callOpts("req-a"));
+    await needsApproval(b.update_lead)({ id: LEAD, status: "warm" }, callOpts("req-b"));
+    expect([...mine.keys()]).toEqual(["req-a"]);
+    expect([...theirs.keys()]).toEqual(["req-b"]);
+    expect(theirs.get("req-b")).toMatchObject({ fields: [{ name: "status", before: "hot", after: "warm" }] });
   });
 
   it("low-risk writes execute directly", async () => {

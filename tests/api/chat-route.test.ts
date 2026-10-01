@@ -20,6 +20,10 @@ const h = vi.hoisted(() => ({
   textClientCalls: [] as unknown[],
   afterTasks: [] as Promise<unknown>[],
   budgetParams: [] as Array<{ baseInput: string; maxSteps: number }>,
+  /** When set, the shared-key reservation is refused with this reason. */
+  budgetRefusal: null as string | null,
+  /** Called inside auth.getUser(), the first thing the route awaits. */
+  onGetUser: null as null | (() => void),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -30,7 +34,12 @@ vi.mock("next/server", () => ({
 }));
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
-    auth: { getUser: async () => ({ data: { user: h.user }, error: null }) },
+    auth: {
+      getUser: async () => {
+        h.onGetUser?.();
+        return { data: { user: h.user }, error: null };
+      },
+    },
     from: (table: string) => new PgQuery(h.db as TestDb, table),
   }),
   createAdminClient: () => ({ from: (table: string) => new PgQuery(h.db as TestDb, table) }),
@@ -63,7 +72,7 @@ vi.mock("@/lib/ai/shared-budget", () => ({
   sharedTurnBudget: (params: { baseInput: string; maxSteps: number }) => {
     h.budgetParams.push(params);
     return {
-      start: async () => ({ ok: true, day: "2026-10-01", reserved: 1 }),
+      start: async () => (h.budgetRefusal ? { ok: false, reason: h.budgetRefusal } : { ok: true, day: "2026-10-01", reserved: 1 }),
       stopWhen: ({ steps }: { steps: unknown[] }) => steps.length >= params.maxSteps,
       settle: async () => undefined,
     };
@@ -312,6 +321,7 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
     await db.exec(`
       DELETE FROM copilot_approvals; DELETE FROM copilot_messages; DELETE FROM copilot_conversations;
       DELETE FROM leads;
+      UPDATE ai_settings SET copilot_always_allow = '[]'::jsonb;
       INSERT INTO leads (id, organization_id, name, email, status) VALUES
         ('${LEAD}', '${ORG_A}', 'Acme Lead', 'lead@acme.test', 'cold');
       UPDATE leads SET updated_at = '${LEAD_BASELINE}' WHERE id = '${LEAD}';
@@ -326,6 +336,8 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
     h.textClientCalls = [];
     h.afterTasks = [];
     h.budgetParams = [];
+    h.budgetRefusal = null;
+    h.onGetUser = null;
     convertSpy.mockClear();
     automationSpy.mockClear();
   });
@@ -745,6 +757,96 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
       expect((await db.query<{ status: string }>("SELECT status FROM copilot_approvals"))[0].status).toBe("denied");
     });
 
+    const approvalRow = async () =>
+      (await db.query<{ status: string; result: unknown }>("SELECT status, result FROM copilot_approvals"))[0];
+
+    it("a failure after the claim marks the claimed approval failed with the reason, never leaving it 'approved'", async () => {
+      const { approvalId } = await proposeUpdate();
+      // The first step after claiming (building the model messages) throws.
+      convertSpy.mockRejectedValueOnce(new Error("conversion exploded"));
+      const res = await post({ conversationId: CONV_A, approvals: [{ approvalId, approved: true }] });
+      expect(res.status).toBe(500);
+      await settle(res);
+      expect(await approvalRow()).toEqual({ status: "failed", result: { error: "request_failed" } });
+      expect(await leadStatus()).toBe("cold");
+      expect(automationSpy).not.toHaveBeenCalled();
+      expect(await lockToken(CONV_A)).toBeNull();
+    });
+
+    it("the shared-key reservation is refused before any claim: the card stays pending and can be answered later", async () => {
+      const { approvalId } = await proposeUpdate();
+      h.resolved = { provider: "anthropic", source: "env", apiKey: "env-key" };
+      h.budgetRefusal = "Today's shared AI budget is used up.";
+      const callsBefore = model().doStreamCalls.length;
+
+      const refused = await post({ conversationId: CONV_A, approvals: [{ approvalId, approved: true }] });
+      expect(refused.status).toBe(429);
+      expect(await refused.json()).toEqual({ error: "Today's shared AI budget is used up." });
+      expect(await approvalRow()).toEqual({ status: "pending", result: null });
+      expect(model().doStreamCalls).toHaveLength(callsBefore);
+      expect(await leadStatus()).toBe("cold");
+      expect(await lockToken(CONV_A)).toBeNull();
+
+      // The same card is still answerable once the budget allows it.
+      h.budgetRefusal = null;
+      h.model = scriptedModel([() => streamOf(textParts("Acme is now hot."))]);
+      const res = await post({ conversationId: CONV_A, approvals: [{ approvalId, approved: true }] });
+      expect(res.status).toBe(200);
+      await settle(res);
+      expect(await leadStatus()).toBe("hot");
+      expect((await approvalRow()).status).toBe("applied");
+    });
+
+    it("a claimed card whose stored input was edited after the proposal does not run and its row fails", async () => {
+      const { approvalId } = await proposeUpdate();
+      const [msg] = await db.query<{ message_id: string; parts: Array<Record<string, unknown>> }>(
+        "SELECT message_id, parts FROM copilot_messages WHERE conversation_id = $1 AND role = 'assistant'",
+        [CONV_A],
+      );
+      const edited = msg.parts.map((p) => (p.toolCallId === "call-1" ? { ...p, input: { id: LEAD, status: "warm" } } : p));
+      await db.query("UPDATE copilot_messages SET parts = $1 WHERE message_id = $2", [JSON.stringify(edited), msg.message_id]);
+      h.model = scriptedModel([() => streamOf(textParts("Done."))]);
+
+      const res = await post({ conversationId: CONV_A, approvals: [{ approvalId, approved: true }] });
+      expect(res.status).toBe(200);
+      await settle(res);
+      expect(await leadStatus()).toBe("cold");
+      expect(automationSpy).not.toHaveBeenCalled();
+      expect(await approvalRow()).toEqual({ status: "failed", result: { error: "input_mismatch" } });
+    });
+
+    it("an always-allowed write runs without a card and leaves an 'applied' audit row", async () => {
+      await db.query(`UPDATE ai_settings SET copilot_always_allow = '["update_lead"]'::jsonb WHERE organization_id = $1`, [ORG_A]);
+      h.model = scriptedModel([() => streamOf(proposeLeadUpdate("call-auto")), () => streamOf(textParts("Acme is now hot."))]);
+      const res = await post({ conversationId: CONV_A, message: { text: "Mark Acme as hot" } });
+      expect(res.status).toBe(200);
+      const chunks = chunksOf(await settle(res));
+
+      expect(chunks.some((c) => c.type === "tool-approval-request")).toBe(false);
+      expect(chunks.some((c) => c.type === "data-approval-diff")).toBe(false);
+      expect(chunks).toEqual(expect.arrayContaining([expect.objectContaining({ type: "tool-output-available", toolCallId: "call-auto" })]));
+      expect(await leadStatus()).toBe("hot");
+      const rows = await db.query<Record<string, unknown>>(
+        "SELECT organization_id, user_id, conversation_id, task_id, source, tool_call_id, tool_name, approval_id, status, diff, input, resolved_at FROM copilot_approvals",
+      );
+      expect(rows).toEqual([
+        {
+          organization_id: ORG_A,
+          user_id: USER_A,
+          conversation_id: CONV_A,
+          task_id: null,
+          source: "chat",
+          tool_call_id: "call-auto",
+          tool_name: "update_lead",
+          approval_id: null,
+          status: "applied",
+          diff: expect.objectContaining({ kind: "update", recordId: LEAD, fields: [{ name: "status", before: "cold", after: "hot" }] }),
+          input: { id: LEAD, status: "hot" },
+          resolved_at: expect.anything(),
+        },
+      ]);
+    });
+
     it("an approval claimed in another conversation is not_found here", async () => {
       const { approvalId } = await proposeUpdate();
       h.user = userOf(USER_A2);
@@ -752,6 +854,34 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
       expect(res.status).toBe(400);
       expect(await leadStatus()).toBe("cold");
       expect((await db.query<{ status: string }>("SELECT status FROM copilot_approvals"))[0].status).toBe("pending");
+    });
+  });
+
+  // ── Turn deadline ────────────────────────────────────────────────────────
+
+  describe("turn deadline", () => {
+    it("the 100 s deadline timer starts when the request arrives and is cleared on an early return", async () => {
+      const setSpy = vi.spyOn(globalThis, "setTimeout");
+      const clearSpy = vi.spyOn(globalThis, "clearTimeout");
+      try {
+        const deadlineTimers = () => setSpy.mock.calls.filter(([, ms]) => ms === 100_000).length;
+        let timersAtAuth = -1;
+        h.onGetUser = () => {
+          timersAtAuth = deadlineTimers();
+        };
+        await settle(await post({ conversationId: CONV_A, message: { text: "hi" } }));
+        // Already running at the request's first await (auth), before any setup.
+        expect(timersAtAuth).toBe(1);
+
+        h.user = null;
+        const unauthorized = await post({ conversationId: CONV_A, message: { text: "hi" } });
+        expect(unauthorized.status).toBe(401);
+        const index = setSpy.mock.calls.findLastIndex(([, ms]) => ms === 100_000);
+        expect(clearSpy).toHaveBeenCalledWith(setSpy.mock.results[index].value);
+      } finally {
+        setSpy.mockRestore();
+        clearSpy.mockRestore();
+      }
     });
   });
 

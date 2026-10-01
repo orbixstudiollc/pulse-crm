@@ -4,9 +4,9 @@
 // Approval descriptor decision (ai 6.0.x, read from node_modules/ai/dist/index.d.ts and
 // index.mjs): needsApproval returns only a boolean, and streamText never fills the
 // `approvalDescriptor` of a tool-approval-request chunk from the tool. So the diff cannot ride
-// on the approval part. Instead `pendingDescriptors` (toolCallId -> FieldDiff) is filled when
-// needsApproval resolves; the chat route emits it as a `data-approval-diff` part keyed by
-// toolCallId and deletes the entry.
+// on the approval part. Instead the request's `descriptors` map (toolCallId -> FieldDiff) is
+// filled when needsApproval resolves; the chat route emits it as a `data-approval-diff` part
+// keyed by toolCallId and deletes the entry.
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -80,24 +80,18 @@ export type CopilotToolSetOptions = {
   onWriteRequested: (info: WriteRequest) => Promise<void | { id: string }>;
   /** Shared across toolsets when one turn builds several; defaults to a fresh counter. */
   fanout?: { count: number };
-  /** Diff stored with an approval from an earlier request (the approval row), for the staleness check. */
+  /** Diff stored with an approval claimed by this request (the approval row), for the staleness check. */
   resolveDiff?: (toolCallId: string) => Promise<FieldDiff | null>;
+  /** Whether an approval row (any status) already exists for this tool call. */
+  hasApprovalRow?: (toolCallId: string) => Promise<boolean>;
+  /** Audits a write that ran without approval (always-allowed) once it has run. */
+  onAutoAllowed?: (info: WriteRequest & { result: unknown }) => Promise<void>;
+  /** This request's proposed diffs (toolCallId -> diff) for the data-approval-diff parts (see header). */
+  descriptors?: Map<string, FieldDiff>;
 };
 
-// ── Approval descriptors (data-part fallback, see header) ────────────────────
-
-const MAX_PENDING_DESCRIPTORS = 500;
-export const pendingDescriptors = new Map<string, FieldDiff>();
-
-function rememberDescriptor(toolCallId: string, diff: FieldDiff) {
-  pendingDescriptors.set(toolCallId, diff);
-  // Bound the map if a route never consumes its entries (oldest first; Map keeps insertion order).
-  while (pendingDescriptors.size > MAX_PENDING_DESCRIPTORS) {
-    const oldest = pendingDescriptors.keys().next().value;
-    if (oldest === undefined) break;
-    pendingDescriptors.delete(oldest);
-  }
-}
+/** Execute result for a call whose approval this request did not claim: nothing is written. */
+const NOT_EXECUTED_RESULT = { ok: false, error: "not_executed" } as const;
 
 // ── MCP definitions ──────────────────────────────────────────────────────────
 
@@ -283,14 +277,32 @@ async function proposeDiff(tool: RegistryTool, input: Record<string, unknown>, e
   return computeFieldDiff({ toolName: tool.name, input: target.patch, current, recordType, idField: "id" });
 }
 
+/** Runs a record write unless its update target moved since `diff` was taken. */
+async function runWrite(
+  tool: RegistryTool,
+  input: Record<string, unknown>,
+  env: CopilotToolEnv,
+  diff: FieldDiff | null,
+): Promise<RegistryResult> {
+  if (diff?.kind === "update") {
+    const target = tool.toPatch?.(input);
+    const live = target ? await fetchCurrentRecord(env, target) : null;
+    if (isDiffStale(diff, live)) return { ok: false, error: RECORD_CHANGED };
+  }
+  return executeRegistryTool(tool.name, input, env, { diff });
+}
+
 type SdkTool = Tool<Record<string, unknown>, unknown>;
 
 /**
  * AI SDK tools for one turn. Reads and low-risk writes execute directly. Record writes:
  * - chat: needsApproval computes the diff, records the pending approval via onWriteRequested
- *   and pauses (unless the workspace always-allows the tool); for an already-approved call
- *   (opts.resolveDiff returns its stored diff) it keeps that diff; execute re-checks the live row
- *   and returns record_changed when it moved since the diff was shown. Past
+ *   and pauses; for an already-approved call (opts.resolveDiff returns its stored diff) it
+ *   keeps that diff. A call that already has an approval row but was not claimed by this
+ *   request never runs: needsApproval returns false (ai 6 turns a re-validated approval into a
+ *   denial) and execute returns NOT_EXECUTED_RESULT. Always-allowed writes count toward the
+ *   fan-out, run without a card and are audited via onAutoAllowed. execute re-checks the live
+ *   row and returns record_changed when it moved since the diff was taken. Past
  *   WRITE_FANOUT_PER_TURN proposals, needsApproval returns false and execute returns
  *   FANOUT_LIMIT_RESULT without writing (never thrown: ai 6 would abort the stream).
  * - task: never execute; each call is recorded as a pending approval and returns
@@ -298,9 +310,14 @@ type SdkTool = Tool<Record<string, unknown>, unknown>;
  */
 export function buildCopilotToolSet(env: CopilotToolEnv, opts: CopilotToolSetOptions): ToolSet {
   const fanout = opts.fanout ?? { count: 0 };
+  const descriptors = opts.descriptors ?? new Map<string, FieldDiff>();
   const diffs = new Map<string, FieldDiff>();
   /** Chat calls proposed past WRITE_FANOUT_PER_TURN; their execute returns FANOUT_LIMIT_RESULT. */
   const overLimit = new Set<string>();
+  /** Calls with an approval row this request did not claim; their execute writes nothing. */
+  const unclaimed = new Set<string>();
+  /** Always-allowed calls, audited after they run. */
+  const autoAllowed = new Set<string>();
   const tools: ToolSet = {};
 
   for (const t of listRegistryTools(env.ctx.source)) {
@@ -336,31 +353,39 @@ export function buildCopilotToolSet(env: CopilotToolEnv, opts: CopilotToolSetOpt
           diffs.set(toolCallId, approved);
           return true;
         }
-        if (isAlwaysAllowed(t.name, opts.alwaysAllow)) return false;
+        // An approval row this request did not claim (failed, denied, pending elsewhere, or a
+        // planted approval-responded part reusing its id): never run it, never re-propose it.
+        if (await opts.hasApprovalRow?.(toolCallId)) {
+          unclaimed.add(toolCallId);
+          return false;
+        }
         // Over the cap: never throw (ai 6 aborts the whole stream on a needsApproval throw).
         // Skip approval and let execute answer with the fanout_limit result, writing nothing.
+        // Always-allowed writes count too.
         if (++fanout.count > WRITE_FANOUT_PER_TURN) {
           overLimit.add(toolCallId);
           return false;
         }
         const diff = await proposeDiff(t, input, env);
         diffs.set(toolCallId, diff);
-        rememberDescriptor(toolCallId, diff);
+        if (isAlwaysAllowed(t.name, opts.alwaysAllow)) {
+          autoAllowed.add(toolCallId);
+          return false;
+        }
+        descriptors.set(toolCallId, diff);
         await opts.onWriteRequested({ toolCallId, toolName: t.name, input, diff });
         return true;
       },
       execute: async (input, { toolCallId }) => {
         if (overLimit.delete(toolCallId)) return FANOUT_LIMIT_RESULT;
-        const diff =
-          (await opts.resolveDiff?.(toolCallId)) ?? diffs.get(toolCallId) ?? pendingDescriptors.get(toolCallId) ?? null;
+        if (unclaimed.delete(toolCallId)) return NOT_EXECUTED_RESULT;
+        const diff = (await opts.resolveDiff?.(toolCallId)) ?? diffs.get(toolCallId) ?? null;
         diffs.delete(toolCallId);
-        pendingDescriptors.delete(toolCallId);
-        if (diff?.kind === "update") {
-          const target = t.toPatch?.(input);
-          const live = target ? await fetchCurrentRecord(env, target) : null;
-          if (isDiffStale(diff, live)) return { ok: false, error: RECORD_CHANGED };
+        const result = await runWrite(t, input, env, diff);
+        if (autoAllowed.delete(toolCallId) && diff) {
+          await opts.onAutoAllowed?.({ toolCallId, toolName: t.name, input, diff, result });
         }
-        return executeRegistryTool(t.name, input, env, { diff });
+        return result;
       },
     } as SdkTool;
   }
