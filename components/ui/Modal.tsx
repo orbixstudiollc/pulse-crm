@@ -74,7 +74,9 @@ export function Modal({
     }
 
     const handleTab = (e: KeyboardEvent) => {
-      if (e.key !== "Tab" || openPanels[openPanels.length - 1] !== panel) return;
+      if (e.key !== "Tab" || e.defaultPrevented || openPanels[openPanels.length - 1] !== panel) return;
+      // A portalled menu (e.g. ActionMenu) sits outside the panel and handles Tab itself.
+      if (document.activeElement?.closest('[role="menu"]')) return;
       const items = focusableIn(panel);
       if (items.length === 0) {
         e.preventDefault();
