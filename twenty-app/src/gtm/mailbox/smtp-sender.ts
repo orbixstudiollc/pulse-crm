@@ -28,6 +28,7 @@ export const createSmtpSender = (settings: ServerSettings['smtp'], auth: Mailbox
           to: mail.to.name ? { name: mail.to.name, address: mail.to.email } : mail.to.email,
           subject: mail.subject,
           text: mail.text,
+          html: mail.html,
           headers: mail.headers,
           inReplyTo: mail.inReplyTo,
           references: mail.references,

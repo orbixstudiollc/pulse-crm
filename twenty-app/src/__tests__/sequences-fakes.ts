@@ -111,7 +111,9 @@ export class FakeMailer implements OutreachMailer {
       return this.nextResult;
     },
   };
-  mailboxes = { pickMailbox: async () => this.mailbox };
+  mailboxes = {
+    pickMailbox: async (ctx: { preferred?: string | null }) => ctx.preferred ?? this.mailbox,
+  };
   constructor() {
     this.usage = { recordSend: async (email: string) => void this.recorded.push(email) };
   }

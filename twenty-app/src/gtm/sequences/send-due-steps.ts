@@ -157,22 +157,21 @@ export const sendDueSteps = async ({
         continue;
       }
 
-      const from =
-        enrollment.mailboxEmail ||
-        (await mailer.mailboxes.pickMailbox({
-          now,
-          enrollmentId: enrollment.id,
-          sequenceId: sequence.id,
-        }));
+      const from = await mailer.mailboxes.pickMailbox({
+        now,
+        enrollmentId: enrollment.id,
+        sequenceId: sequence.id,
+        preferred: enrollment.mailboxEmail ?? null,
+      });
       if (!from) {
-        // Every mailbox is at its limit: try again on the next run.
+        // No mailbox has room today: try again on the next run.
         summary.deferred += 1;
         continue;
       }
 
       const vars = buildTemplateVariables(
         person,
-        { name: mailer.sender?.name, email: from },
+        { name: mailer.senderNameFor?.(from) ?? mailer.sender?.name, email: from },
         now,
         enrollment,
       );

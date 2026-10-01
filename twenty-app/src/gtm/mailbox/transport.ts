@@ -13,6 +13,8 @@ export type OutgoingMail = {
   to: { email: string; name?: string | null };
   subject: string;
   text: string;
+  // Optional HTML alternative (sequence emails; warmup sends text only).
+  html?: string;
   headers?: Record<string, string>;
   inReplyTo?: string;
   references?: string[];

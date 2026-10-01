@@ -41,11 +41,14 @@ export type MailboxPickContext = {
   now: Date;
   enrollmentId: string;
   sequenceId: string;
+  // Mailbox that sent this enrollment's earlier emails, if any.
+  preferred?: string | null;
 };
 
 export interface MailboxPicker {
-  // Address of a mailbox that may send right now, or null when every mailbox
-  // is at its daily/warmup limit (the send is then deferred, not failed).
+  // Address of a mailbox that may send right now, or null when the send must
+  // wait (every mailbox, or the enrollment's own mailbox, is at its daily
+  // limit). Deferred sends are retried on the next run, not failed.
   pickMailbox(context: MailboxPickContext): Promise<string | null>;
 }
 
@@ -60,6 +63,10 @@ export type OutreachMailer = {
   mailboxes: MailboxPicker;
   usage?: MailboxUsageRecorder;
   sender?: { name?: string | null };
+  // Display name of a sending mailbox, for {{senderName}}.
+  senderNameFor?: (mailboxEmail: string) => string | null | undefined;
+  // Release connections at the end of a run.
+  close?: () => Promise<void>;
   // Public URL of the track-sequence-open route; when set, sent HTML gets a
   // 1x1 pixel so opens are counted per variant.
   openTrackingUrl?: string | null;

@@ -13,8 +13,12 @@ const handler = async () => {
   if (!mailer) {
     return { ok: false, mailer: 'not configured', sent: 0 };
   }
-  const summary = await sendDueSteps({ store: createTwentyStore(), mailer, limit: 50 });
-  return { ok: summary.failed === 0, ...summary };
+  try {
+    const summary = await sendDueSteps({ store: createTwentyStore(), mailer, limit: 50 });
+    return { ok: summary.failed === 0, ...summary };
+  } finally {
+    await mailer.close?.();
+  }
 };
 
 export default defineLogicFunction({
