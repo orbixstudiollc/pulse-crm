@@ -131,5 +131,18 @@
     ],
     "interface": "Repo conventions: read AGENTS.md (this Next.js version differs from training data; check node_modules/next/dist/docs before relying on an API) and docs/design/clay-layout.md for any UI. lib/actions/*.ts are 'use server' files that may export only async functions. Audits asked for a cross-tenant read check. Write supabase/checks/tenant_isolation_check.sql: a single READ-ONLY query set (SELECT only; safe to paste in the Supabase SQL editor; header explains how to read the results) that lists, for every table in schema public: whether RLS is enabled; its policies (cmd, roles, qual, with_check); a flag for tables that have an organization_id column but some SELECT/ALL policy for anon/authenticated/public whose qual does not reference organization_id or auth.uid(); tables with RLS disabled; table/column privileges granted to anon; SECURITY DEFINER functions in public executable by anon or authenticated (with their search_path setting). Results should make problems obvious (a 'problem' column). Also add migration 038_shared_ai_budget.sql to supabase/checks/migration_drift_check.sql following that file's exact conventions (read it fully): the migration list entry and its expected objects (ai_shared_budget table, the three functions with their signatures, the ai_usage_log_tokens_nonnegative constraint, the dropped 'Users can insert usage logs' policy as absent, and the revoked privileges as absent). Do not change other entries. You cannot run SQL against a real database; if a PGlite harness exists in the session scratchpad (C:/Users/apari/AppData/Local/Temp/claude/D--Orbix-Sofrwares-projects-pulse-crm/ab440022-2cdd-48a4-a0e3-534a5efb4d44/scratchpad), use it to at least parse/execute both files against a minimal schema.",
     "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && test -f supabase/checks/tenant_isolation_check.sql && grep -q 038_shared_ai_budget supabase/checks/migration_drift_check.sql && npx tsc --noEmit && npm test && git add -A -- 'supabase/checks/tenant_isolation_check.sql' 'supabase/checks/migration_drift_check.sql' && git commit -q -m 'chore(db): tenant isolation check and drift check for migration 038' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "N11",
+    "model": "sonnet",
+    "depends_on": [
+      "N3"
+    ],
+    "title": "Inbox compose asks before discarding a draft",
+    "files": [
+      "app/dashboard/inbox/client.tsx"
+    ],
+    "interface": "N3 moved the inbox 'New Email' compose (ComposeModal) onto components/ui/Modal, so Escape and backdrop clicks now close it and silently discard the draft. In ComposeModal, route every close request (Modal onClose, Cancel, the X button) through one handler: if the draft is empty (no recipient, subject or body text) close immediately; otherwise show an inline confirmation inside the compose panel ('Discard this draft?' with 'Keep editing' and 'Discard' buttons, Discard styled as danger) instead of closing. Sending keeps today's behaviour. No other changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'Discard this draft' app/dashboard/inbox/client.tsx && npx tsc --noEmit && npx eslint 'app/dashboard/inbox/client.tsx' && node scripts/restyle/boxes.mjs 'app/dashboard/inbox/client.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'app/dashboard/inbox/client.tsx' && git commit -q -m 'fix(inbox): ask before discarding a compose draft' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
   }
 ]
