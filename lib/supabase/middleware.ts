@@ -34,6 +34,7 @@ const CSRF_EXEMPT_PREFIXES = [
   "/api/public/",
   "/api/linkedin/oauth",
   "/api/email/oauth/",
+  "/api/csp-report",
 ];
 
 function isCsrfExempt(pathname: string): boolean {

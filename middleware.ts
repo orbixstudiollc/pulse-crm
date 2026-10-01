@@ -14,7 +14,8 @@ export const config = {
      * - favicon.ico (favicon)
      * - public assets (images, svgs, etc.)
      * - /api/mcp (API-key auth; skipping the session refresh keeps MCP connects fast)
+     * - /api/csp-report (cookie-less browser reports; no session refresh needed)
      */
-    "/((?!_next/static|_next/image|favicon.ico|images|api/mcp|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|images|api/mcp|api/csp-report|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
