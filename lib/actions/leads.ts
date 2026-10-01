@@ -7,11 +7,26 @@ import type { Database } from "@/types/database";
 import { calculateLeadScore } from "./scoring";
 import { calculateICPMatch } from "./icp";
 import { escapePostgrestLike, pickSortColumn } from "@/lib/security";
+import { normalizeLeadSource } from "@/lib/leads/source";
 
 type LeadInsert = Database["public"]["Tables"]["leads"]["Insert"];
 type LeadUpdate = Database["public"]["Tables"]["leads"]["Update"];
 
 const SORTABLE = ["created_at", "updated_at", "name", "email", "company", "status", "source", "score", "estimated_value", "last_contacted_at", "next_followup"] as const;
+
+// Rewrites `source` to its enum value. On create an empty source is dropped
+// so the column default applies.
+function withLeadSource(
+  data: Record<string, unknown>,
+  mode: "create" | "update",
+): { data: Record<string, unknown> } | { error: string } {
+  if (!("source" in data)) return { data };
+  const source = normalizeLeadSource(data.source);
+  if (source === undefined) return { error: `Unknown lead source "${String(data.source)}"` };
+  const next: Record<string, unknown> = { ...data, source };
+  if (source === null && mode === "create") delete next.source;
+  return { data: next };
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -53,7 +68,8 @@ export async function getLeads(filters: LeadFilters = {}) {
   let query = supabase
     .from("leads")
     .select("*", { count: "exact" })
-    .eq("organization_id", orgId);
+    .eq("organization_id", orgId)
+    .is("converted_at", null);
 
   if (search) {
     const q = escapePostgrestLike(search);
@@ -124,6 +140,9 @@ export async function getLeadActivities(leadId: string) {
 // ── Write ────────────────────────────────────────────────────────────────────
 
 export async function createLead(leadData: Record<string, unknown>) {
+  const normalized = withLeadSource(leadData, "create");
+  if ("error" in normalized) return { error: normalized.error };
+
   const supabase = await createClient();
   const orgId = await getOrgId();
   const { user } = await getCurrentUserProfile();
@@ -131,7 +150,7 @@ export async function createLead(leadData: Record<string, unknown>) {
   const { data, error } = await supabase
     .from("leads")
     .insert({
-      ...leadData,
+      ...normalized.data,
       organization_id: orgId,
       created_by: user.id,
     } as LeadInsert)
@@ -158,12 +177,15 @@ export async function updateLead(
   id: string,
   updates: Record<string, unknown>,
 ) {
+  const normalized = withLeadSource(updates, "update");
+  if ("error" in normalized) return { error: normalized.error };
+
   const supabase = await createClient();
   await getOrgId();
 
   const { data, error } = await supabase
     .from("leads")
-    .update(updates as LeadUpdate)
+    .update(normalized.data as LeadUpdate)
     .eq("id", id)
     .select()
     .single();
@@ -233,6 +255,7 @@ export async function convertLeadToCustomer(leadId: string) {
     .single();
 
   if (leadError || !lead) return { error: leadError?.message || "Lead not found" };
+  if (lead.converted_at) return { error: "This lead has already been converted" };
 
   // Split name into first/last
   const nameParts = (lead.name || "").split(" ");
@@ -260,8 +283,15 @@ export async function convertLeadToCustomer(leadId: string) {
 
   if (customerError) return { error: customerError.message };
 
-  // Delete the lead
-  await supabase.from("leads").delete().eq("id", leadId);
+  // Keep the lead (and its notes, activities and history) and mark it converted.
+  const { error: markError } = await supabase
+    .from("leads")
+    .update({ converted_at: new Date().toISOString(), converted_customer_id: customer.id })
+    .eq("id", leadId);
+  if (markError) {
+    await supabase.from("customers").delete().eq("id", customer.id);
+    return { error: markError.message };
+  }
 
   revalidatePath("/dashboard/leads");
   revalidatePath("/dashboard/customers");
@@ -277,7 +307,21 @@ export async function getLeadCount() {
   const { count } = await supabase
     .from("leads")
     .select("id", { count: "exact", head: true })
-    .eq("organization_id", orgId);
+    .eq("organization_id", orgId)
+    .is("converted_at", null);
+
+  return { count: count ?? 0 };
+}
+
+export async function getConvertedLeadCount() {
+  const supabase = await createClient();
+  const orgId = await getOrgId();
+
+  const { count } = await supabase
+    .from("leads")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", orgId)
+    .not("converted_at", "is", null);
 
   return { count: count ?? 0 };
 }

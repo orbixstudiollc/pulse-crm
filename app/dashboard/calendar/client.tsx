@@ -346,6 +346,8 @@ export function CalendarPageClient({
         router.refresh();
         // Re-fetch events for current month
         await reloadEvents();
+      } else {
+        toast.error(result.error);
       }
     });
   };
@@ -368,6 +370,8 @@ export function CalendarPageClient({
         setShowScheduleModal(false);
         router.refresh();
         await reloadEvents();
+      } else {
+        toast.error(result.error);
       }
     });
   };

@@ -370,25 +370,22 @@ export function DealDetailClient({
     setShowLostModal(false);
   };
 
-  const handleEditSubmit = (data: DealFormData) => {
-    startTransition(async () => {
-      const res = await updateDeal(deal.id, {
-        name: data.name,
-        contact_name: data.customer,
-        value: parseFloat(data.value) || 0,
-        stage: data.stage,
-        probability: parseInt(data.probability) || 0,
-        expected_close_date: data.expectedClose || null,
-        notes: data.notes || null,
-      });
-      if (res.error) {
-        toast.error(res.error);
-      } else {
-        toast.success("Deal updated");
-        setShowEditModal(false);
-        router.refresh();
-      }
+  const handleEditSubmit = async (data: DealFormData) => {
+    const res = await updateDeal(deal.id, {
+      name: data.name,
+      contact_name: data.customer,
+      value: parseFloat(data.value) || 0,
+      stage: data.stage,
+      probability: parseInt(data.probability) || 0,
+      close_date: data.expectedClose || null,
+      notes: data.notes || null,
     });
+    if (res.error) {
+      toast.error(res.error);
+      return false;
+    }
+    toast.success("Deal updated");
+    router.refresh();
   };
 
   const headerActions = useMemo(
@@ -662,7 +659,7 @@ export function DealDetailClient({
           value: (deal.value || 0).toString(),
           stage: deal.stage as "discovery" | "proposal" | "negotiation" | "closed_won" | "closed_lost",
           probability: (deal.probability || 0).toString(),
-          expectedClose: deal.expected_close_date || "",
+          expectedClose: deal.close_date || "",
           notes: deal.notes || "",
         }}
         onSubmit={handleEditSubmit}
