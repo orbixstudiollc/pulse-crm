@@ -1,0 +1,343 @@
+[
+  {
+    "id": "T1",
+    "title": "Migration 039: generic shared-units budget (service-keyed copy of 038) + static migration lint test",
+    "files": [
+      "supabase/migrations/039_shared_usage_budget.sql",
+      "tests/migrations-idempotent.test.ts",
+      "tests/helpers/pglite.ts",
+      "package.json",
+      "package-lock.json"
+    ],
+    "interface": "Migration tests use PGlite (@electric-sql/pglite, real Postgres compiled to WASM, in-process; no Docker or test database exists here): tests/helpers/pglite.ts (from T1) builds a minimal stub of the production schema (roles anon, authenticated, service_role; auth.uid/auth.role stubs; the tables the migration touches with the columns it needs), applies each migration file TWICE (idempotency), and lets tests call the RPCs as service_role and assert tenants are denied. Concurrency (row locks, SKIP LOCKED) cannot run in a single PGlite connection: document the lock-order reasoning in the migration header instead. Add @electric-sql/pglite as a devDependency. Table public.shared_usage_budget(service text, scope text, day date, used bigint CHECK (used >= 0), updated_at) PK(service, scope, day); RLS on, no policies, REVOKE ALL FROM anon, authenticated. RPCs (SECURITY DEFINER, SET search_path = public, pg_temp, EXECUTE granted to service_role only): reserve_shared_units(p_service text, p_org uuid, p_units integer, p_org_limit bigint, p_site_limit bigint, p_is_guest boolean, p_guest_limit bigint) RETURNS TABLE(result text, day date) with result in ok|org_limit|guest_limit|site_limit, lock order site, guest, org exactly as 038; settle_shared_units(p_service text, p_org uuid, p_day date, p_delta integer, p_is_guest boolean) RETURNS void (never below 0, NULLs rejected); purge_shared_usage_budget(p_keep_days integer) RETURNS integer. One BEGIN/COMMIT, header comment, CREATE TABLE IF NOT EXISTS, CREATE OR REPLACE FUNCTION, REVOKE/GRANT. 038 untouched. tests/migrations-idempotent.test.ts reads every supabase/migrations/0(39|4[0-9])_*.sql and asserts: starts with a '--' header, exactly one BEGIN and one COMMIT, every CREATE TABLE has IF NOT EXISTS, every ADD COLUMN has IF NOT EXISTS, every CREATE POLICY is preceded by DROP POLICY IF EXISTS of the same name, every CREATE INDEX has IF NOT EXISTS, every CREATE FUNCTION is CREATE OR REPLACE, every SECURITY DEFINER function sets search_path and has a REVOKE ALL ... FROM PUBLIC + GRANT EXECUTE ... TO service_role, no DROP TABLE, no raw ip_address write.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx vitest run tests/migrations-idempotent.test.ts && git add -A -- 'supabase/migrations/039_shared_usage_budget.sql' 'tests/migrations-idempotent.test.ts' 'tests/helpers/pglite.ts' 'package.json' 'package-lock.json' && git commit -q -m 'feat(verify-track): T1 Migration 039' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [],
+    "model": "opus"
+  },
+  {
+    "id": "T2",
+    "title": "Shared-units budget code: pure limits/parsing + server reserve/settle wrappers with dispatched-aware refunds",
+    "files": [
+      "lib/budget/shared-units-core.ts",
+      "lib/budget/shared-units.ts",
+      "tests/shared-units-budget.test.ts"
+    ],
+    "interface": "lib/budget/shared-units-core.ts (plain): export type BudgetService = 'email_verify' | 'ip_lookup'; export function serviceLimits(service, env): { orgLimit; siteLimit; guestLimit } reading EMAIL_VERIFY_ORG_DAILY_LIMIT (default 200), EMAIL_VERIFY_DAILY_LIMIT (default 2000), EMAIL_VERIFY_GUEST_DAILY_LIMIT (default floor(siteLimit/4)), IP_LOOKUP_ORG_DAILY_LIMIT (default 300), IP_LOOKUP_DAILY_LIMIT (default 3000), IP_LOOKUP_GUEST_DAILY_LIMIT (default floor(siteLimit/4)) via parseLimit from lib/ai/shared-budget-core.ts (malformed => 0 => service off); export const BUDGET_REASONS: Record<'org_limit'|'guest_limit'|'site_limit'|'busy'|'off', string>; export type UnitsReservation = { ok: true; day: string; reserved: number } | { ok: false; code: 'org_limit'|'guest_limit'|'site_limit'|'busy'|'off'; reason: string }; export function unitsReservationFromRpc(data: unknown, units: number): UnitsReservation (same shape rules as reservationFromRpc). lib/budget/shared-units.ts ('server-only'): export async function reserveSharedUnits(service, orgId, units, pool: { isGuest }): Promise<UnitsReservation> (code 'off' without an RPC call when the service's site limit or org limit is 0; fails closed with 'busy' on any error); export async function refundSharedUnits(service, orgId, day, units, pool): Promise<void> calling settle_shared_units with p_delta = -units, never throws. There is deliberately no 'settle to actual' for units: a unit is either kept (dispatched, whatever the response) or refunded (provably not dispatched). Tests: limits parsing, off short-circuit, rpc arg names pinned, refund delta negative, busy on throw.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx vitest run tests/shared-units-budget.test.ts && npx tsc --noEmit && git add -A -- 'lib/budget/shared-units-core.ts' 'lib/budget/shared-units.ts' 'tests/shared-units-budget.test.ts' && git commit -q -m 'feat(verify-track): T2 Shared-units budget code' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T1"
+    ],
+    "model": "opus"
+  },
+  {
+    "id": "T3",
+    "title": "In-house email verification core (pure) with the maintained disposable list and typo suggestions",
+    "files": [
+      "package.json",
+      "package-lock.json",
+      "lib/verification/core.ts",
+      "lib/verification/domains.ts",
+      "lib/verification/disposable.ts",
+      "lib/verification/dns.ts",
+      "tests/email-verification-core.test.ts"
+    ],
+    "interface": "npm i disposable-email-domains (JSON list, zero deps; refresh path = npm update, noted in README). lib/verification/core.ts (plain): export type EmailStatus = 'valid'|'invalid'|'risky'|'unknown'; export type EmailFlags = { disposable: boolean; role: boolean; free_provider: boolean; catch_all: boolean; mx_found: boolean; smtp_checked: boolean }; export type EmailVerdict = { email: string; status: EmailStatus; score: number; flags: EmailFlags; reason: string; suggestion: string|null; provider: 'in_house'|'millionverifier'; checked_at: string }; export function normalizeEmail(raw: string): string|null (trim, NFC, lowercase whole address, null when not RFC-reasonable: exactly one @, local 1..64, total <= 254, domain labels [a-z0-9-] not starting/ending with '-', at least one dot, no consecutive dots, no non-ASCII domain); export function splitEmail(email): { local; domain }; export function isRoleAddress(local): boolean; export function suggestDomain(domain): string|null (Levenshtein <= 2 against POPULAR_DOMAINS, never the same domain, never when domain itself is popular); export type InHouseChecks = { syntax_ok: boolean; mx_found: boolean; dns_transient: boolean; disposable: boolean; role: boolean; free_provider: boolean; suggestion: string|null }; export type PaidOutcome = { kind: 'result'; status: EmailStatus; catch_all: boolean; reason: string } | { kind: 'skipped'; reason: string }; export function combineVerdict(email, checks, paid, now): EmailVerdict with rules: syntax fail => invalid (score 0); dns says no MX and no A (not transient) => invalid (score 5); dns_transient => unknown ('Domain lookup timed out'), paid step not attempted; disposable => invalid (score 10) without paid; paid result => its status (catch_all => risky), smtp_checked true, score 95 valid / 50 risky / 5 invalid / 30 unknown, minus 10 for role, minus 5 for free provider, floor 0; paid skipped => never 'valid': 'unknown' with reason = skip reason (role/free lower score). lib/verification/domains.ts: FREE_PROVIDERS, ROLE_PREFIXES, POPULAR_DOMAINS sets. lib/verification/disposable.ts: export function isDisposableDomain(domain): boolean (npm list Set + EXTRA_DISPOSABLE). lib/verification/dns.ts: export type Resolver = { resolveMx(d): Promise<{exchange:string}[]>; resolve4(d): Promise<string[]>; resolve6(d): Promise<string[]> }; export async function domainAcceptsMail(domain, resolver?, timeoutMs = 4000): Promise<{ mx_found: boolean; via: 'mx'|'a'|'none'; transient: boolean }> (MX first; ENOTFOUND/ENODATA on MX => A/AAAA fallback per RFC 5321; null MX '.' => none; timeout/SERVFAIL/other => transient true). Tests cover each rule including that a transient DNS error never yields invalid. Rules fixed in synthesis: a disposable domain makes the verdict 'risky' (never 'invalid'); a transient DNS failure (timeout/SERVFAIL) yields 'unknown' (never 'invalid'); normalize lowercases the address for the cache key but the original casing is what is stored on the record.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx vitest run tests/email-verification-core.test.ts && node -e \"const l=require('disposable-email-domains');if(l.length<1000)process.exit(1)\" && git add -A -- 'package.json' 'package-lock.json' 'lib/verification/core.ts' 'lib/verification/domains.ts' 'lib/verification/disposable.ts' 'lib/verification/dns.ts' 'tests/email-verification-core.test.ts' && git commit -q -m 'feat(verify-track): T3 In-house email verification core (pure) with the maintained ' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T1"
+    ],
+    "model": "sonnet"
+  },
+  {
+    "id": "T4",
+    "title": "MillionVerifier adapter behind a PaidVerifier interface (dispatched-aware errors, SSRF-safe fetch)",
+    "files": [
+      "lib/verification/providers/types.ts",
+      "lib/verification/providers/millionverifier.ts",
+      "lib/verification/providers/index.ts",
+      "tests/millionverifier-provider.test.ts"
+    ],
+    "interface": "types.ts: export interface PaidVerifier { readonly name: 'millionverifier'; verify(email: string, signal?: AbortSignal): Promise<PaidVerifyResult> }; export type PaidVerifyResult = { status: EmailStatus; catch_all: boolean; reason: string; raw_result: string }; export class PaidVerifierError extends Error { constructor(message: string, public readonly dispatched: boolean, public readonly retryable: boolean) } where dispatched=false only for: missing key, request never sent (TypeError from fetch before any response, ECONNREFUSED/ENOTFOUND), HTTP 401/402/403 (provider refused before checking); dispatched=true for timeouts/aborts, 5xx, malformed JSON, 429. millionverifier.ts: export function createMillionVerifier(opts: { apiKey: string; fetchImpl?: typeof fetch; timeoutMs?: number }): PaidVerifier calling GET https://api.millionverifier.com/api/v3/?api=KEY&email=EMAIL&timeout=10 with redirect 'error', response body capped at 16 KB, AbortSignal.timeout(timeoutMs default 12000); mapping result: ok => valid; invalid | disposable => invalid; catch_all => risky with catch_all true; unknown => unknown; any other result string => unknown with reason 'Unrecognised provider result'; error field or non-200 => PaidVerifierError. Logs never include the key or the URL (redact function tested). index.ts: export function paidVerifierFromEnv(env = process.env): PaidVerifier|null (null when MILLIONVERIFIER_API_KEY unset; EMAIL_VERIFY_PROVIDER defaults to 'millionverifier'; unknown value => null with one console.warn).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx vitest run tests/millionverifier-provider.test.ts && git add -A -- 'lib/verification/providers/types.ts' 'lib/verification/providers/millionverifier.ts' 'lib/verification/providers/index.ts' 'tests/millionverifier-provider.test.ts' && git commit -q -m 'feat(verify-track): T4 MillionVerifier adapter behind a PaidVerifier interface (dis' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T3"
+    ],
+    "model": "sonnet"
+  },
+  {
+    "id": "T5",
+    "title": "Verification orchestrator: cache, rate limit, budget, paid step, fail closed, dispatched-aware refund; remove the unused legacy verifier",
+    "files": [
+      "lib/verification/verify.ts",
+      "lib/verification/cache.ts",
+      "lib/verification/email-verifier.ts",
+      "tests/email-verification-verify.test.ts"
+    ],
+    "interface": "lib/verification/verify.ts ('server-only'): export async function verifyEmailForOrg(params: { orgId: string; email: string; isGuest: boolean; admin: SupabaseClient<Database>; paid?: PaidVerifier|null; resolver?: Resolver; now?: Date; force?: boolean }): Promise<EmailVerdict>. Order: normalize (syntax-invalid returns immediately, no DB, not cached); cache hit in email_verifications (organization_id, email) with checked_at younger than EMAIL_VERIFY_CACHE_DAYS (default 30; 'unknown' results expire after 1 day) and not force => return it; in-house rate limit takeToken(verifyBuckets, orgId, now, { capacity: 120, refillPerSecond: 2 }) => over limit returns unknown 'Too many checks, try again in a minute' without caching; in-house checks with domain DNS memo (lib/verification/cache.ts, in-memory Map, 1 h TTL, max 5000 entries); when in-house already says invalid or dns_transient, skip the paid step; else reserveSharedUnits('email_verify', orgId, 1, {isGuest}): refused => PaidOutcome skipped with BUDGET_REASONS[code]; paid throws PaidVerifierError with dispatched=false => refundSharedUnits and skipped 'Verification service unavailable'; dispatched=true => NO refund, skipped 'Verification service did not answer'; combineVerdict; upsert email_verifications ON CONFLICT (organization_id, email); return. export async function applyVerdictToRecord(admin, params: { orgId; table: 'leads'|'contacts'; id; verdict }): Promise<boolean> writing email_status, email_score, email_verified_at, email_verification (jsonb: flags, reason, suggestion, provider) with UPDATE ... WHERE id = $id AND organization_id = $org AND lower(trim(email)) = verdict.email; returns false (no write) when the record's email changed meanwhile. Delete lib/verification/email-verifier.ts (no importers). Tests mock @/lib/supabase/server and inject fake paid/resolver: budget refusal never yields 'valid'; dispatched=false refunds, dispatched=true does not; cache hit skips paid; invalid syntax never calls DNS or paid; transient DNS never calls paid; applyVerdictToRecord returns false when email mismatch.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx vitest run tests/email-verification-verify.test.ts && npx tsc --noEmit && grep -rn \"verification/email-verifier\" app lib components tests; test $? -eq 1 && git add -A -- 'lib/verification/verify.ts' 'lib/verification/cache.ts' 'lib/verification/email-verifier.ts' 'tests/email-verification-verify.test.ts' && git commit -q -m 'feat(verify-track): T5 Verification orchestrator' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T2",
+      "T3",
+      "T4",
+      "T6"
+    ],
+    "model": "opus"
+  },
+  {
+    "id": "T6",
+    "title": "Migration 040: email verification cache, result columns, bulk job tables, attempt-fenced claim RPC",
+    "files": [
+      "supabase/migrations/040_email_verification.sql",
+      "tests/migration-040.test.ts"
+    ],
+    "interface": "Migration tests use PGlite (@electric-sql/pglite, real Postgres compiled to WASM, in-process; no Docker or test database exists here): tests/helpers/pglite.ts (from T1) builds a minimal stub of the production schema (roles anon, authenticated, service_role; auth.uid/auth.role stubs; the tables the migration touches with the columns it needs), applies each migration file TWICE (idempotency), and lets tests call the RPCs as service_role and assert tenants are denied. Concurrency (row locks, SKIP LOCKED) cannot run in a single PGlite connection: document the lock-order reasoning in the migration header instead. Write tests/migration-040.test.ts with the T1 helper: apply the migration twice, then exercise its RPCs/constraints. Tables: email_verifications(id uuid pk, organization_id uuid fk cascade, email text, status text check valid|invalid|risky|unknown, score int check 0..100, flags jsonb not null default '{}', reason text, suggestion text, provider text, checked_at timestamptz not null, created_at) UNIQUE(organization_id, email), RLS SELECT for org members (writes via service role; REVOKE INSERT/UPDATE/DELETE FROM anon, authenticated). ALTER leads AND contacts ADD COLUMN IF NOT EXISTS email_status text, email_score integer, email_verified_at timestamptz, email_verification jsonb; DROP CONSTRAINT IF EXISTS + ADD CHECK (email_status IS NULL OR email_status IN (...)). email_verification_jobs(id, organization_id fk cascade, created_by uuid, source text check paste|csv|leads|contacts, status text check running|done|cancelled, total int, done_count int default 0, valid_count, invalid_count, risky_count, unknown_count, created_at, finished_at) RLS SELECT org members; email_verification_job_items(id uuid pk default gen_random_uuid(), job_id fk cascade, organization_id fk cascade, position int, email text, record_table text null check leads|contacts, record_id uuid null, status text check pending|running|done|error, attempt int not null default 0, claimed_at timestamptz, result_status text, result_score int, result_reason text, result_suggestion text, result_flags jsonb, updated_at) RLS SELECT org members; index (job_id, status), index (job_id, position). RPC claim_email_verification_items(p_job uuid, p_org uuid, p_max integer) RETURNS SETOF email_verification_job_items: UPDATE items SET status='running', claimed_at=now(), attempt=attempt+1 WHERE id IN (SELECT id FROM items WHERE job_id=p_job AND organization_id=p_org AND (status='pending' OR (status='running' AND claimed_at < now()-interval '10 minutes')) ORDER BY position LIMIT p_max FOR UPDATE SKIP LOCKED) RETURNING *; RPC finish_email_verification_job_counts(p_job uuid) RETURNS text recomputes counts and sets status='done', finished_at=now() when no pending/running remain and status='running'; returns the status. Both service_role only, SECURITY DEFINER, search_path set. Index email_verifications(organization_id, checked_at). purge_email_verifications(p_keep_days) RETURNS integer deletes email_verifications older than p_keep_days and jobs (cascade items) finished/cancelled older than p_keep_days.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx vitest run tests/migrations-idempotent.test.ts tests/migration-040.test.ts && git add -A -- 'supabase/migrations/040_email_verification.sql' 'tests/migration-040.test.ts' && git commit -q -m 'feat(verify-track): T6 Migration 040' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T1"
+    ],
+    "model": "opus"
+  },
+  {
+    "id": "T7",
+    "title": "Migration 041: tracking v2 data model (partial-unique visitor key, sessions, event ids, clamped engagement, global IP cache, api_keys 'tracking' scope, retention, rollups)",
+    "files": [
+      "supabase/migrations/041_tracking_v2.sql",
+      "tests/migration-041.test.ts"
+    ],
+    "interface": "Migration tests use PGlite (@electric-sql/pglite, real Postgres compiled to WASM, in-process; no Docker or test database exists here): tests/helpers/pglite.ts (from T1) builds a minimal stub of the production schema (roles anon, authenticated, service_role; auth.uid/auth.role stubs; the tables the migration touches with the columns it needs), applies each migration file TWICE (idempotency), and lets tests call the RPCs as service_role and assert tenants are denied. Concurrency (row locks, SKIP LOCKED) cannot run in a single PGlite connection: document the lock-order reasoning in the migration header instead. Write tests/migration-041.test.ts with the T1 helper: apply the migration twice, then exercise its RPCs/constraints. website_visitors ADD COLUMN IF NOT EXISTS visitor_key text, ip_hash text, session_count integer default 0, identified_email text, contact_id uuid fk contacts set null, company_type text, company_source text, enriched_at timestamptz; UPDATE website_visitors SET ip_address = NULL, company_name = NULL, company_domain = NULL WHERE visitor_key IS NULL AND company_source IS NULL (legacy raw IPs and ISP-as-company dropped; legacy rows keep visitor_key NULL and are 'legacy' on the page; NO merge/backfill); CREATE UNIQUE INDEX IF NOT EXISTS idx_website_visitors_org_key ON website_visitors(organization_id, visitor_key) WHERE visitor_key IS NOT NULL. New website_sessions(id, organization_id fk cascade, visitor_id fk cascade, session_key text, started_at, last_event_at, pageviews int default 0, engaged_ms int default 0, entry_url, exit_url, referrer, utm jsonb, UNIQUE(organization_id, session_key)) RLS org SELECT (DROP POLICY IF EXISTS then CREATE). website_visits ADD COLUMN IF NOT EXISTS session_id uuid fk sessions set null, event_id text, event_type text default 'pageview' check pageview|identify|custom, event_name text, props jsonb, engaged_ms integer, scroll_depth integer, page_path text; CREATE UNIQUE INDEX IF NOT EXISTS idx_website_visits_org_event ON website_visits(organization_id, event_id) WHERE event_id IS NOT NULL; index (organization_id, created_at). ip_company_cache(ip_hash text pk, company_name, company_domain, company_type, city, region, country, country_code, provider, fetched_at) GLOBAL (no organization_id), RLS on, no policies, REVOKE ALL FROM anon, authenticated. website_daily_stats(organization_id fk cascade, day date, visitors int, sessions int, pageviews int, identified int, PK(organization_id, day)) RLS org SELECT. api_keys: DROP CONSTRAINT IF EXISTS api_keys_scope_check; ADD CHECK (scope IN ('read','write','tracking')). RPC track_event(p_org uuid, p_script uuid, p_event_id text, p_visitor_key text, p_session_key text, p_event_type text, p_event_name text, p_page_url text, p_page_path text, p_page_title text, p_referrer text, p_utm jsonb, p_props jsonb, p_engaged_ms integer, p_scroll_depth integer, p_ua_summary text, p_ip_hash text, p_identified_email text) RETURNS TABLE(visitor_id uuid, session_id uuid, visitor_created boolean, session_created boolean, needs_enrichment boolean, duplicate boolean) SECURITY DEFINER service_role only: when p_event_id already exists for p_org => duplicate true, no writes; INSERT visitor ON CONFLICT (organization_id, visitor_key) WHERE visitor_key IS NOT NULL DO UPDATE last_seen=now(), status = CASE WHEN status IN ('converted','ignored') THEN status WHEN session_count >= 3 THEN 'hot' WHEN session_count >= 1 THEN 'returning' ELSE status END; INSERT session ON CONFLICT (organization_id, session_key) DO UPDATE last_event_at, pageviews += (pageview?1:0), exit_url; session_created => visitor.session_count += 1; pageview => visitor.page_count += 1; 'leave' => no visit row; engaged_ms clamped to LEAST(coalesce(p_engaged_ms,0), 1800000, extract(epoch from now()-latest_visit.created_at)*1000 + 60000) added to session.engaged_ms, visitor.total_duration and the session's latest visit (scroll_depth = GREATEST); 'identify' => sets identified_email, links lead_id (lower(leads.email)=p_identified_email within org, only when exactly one match) and contact_id likewise; INSERT website_visits (event_id) for pageview/identify/custom; needs_enrichment = p_ip_hash IS NOT NULL AND visitor.enriched_at IS NULL. purge_website_tracking(p_raw_days integer) RETURNS jsonb deletes visits and sessions older than p_raw_days, ip_company_cache older than 30 days, visitors with last_seen older than 2*p_raw_days and lead_id IS NULL and contact_id IS NULL; batched (LIMIT 5000 per statement in a loop, max 20 loops). rollup_website_daily(p_day date) upserts website_daily_stats for every org from sessions/visits/visitors of that UTC day (visitors = count distinct visitor_id over sessions started that day).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx vitest run tests/migrations-idempotent.test.ts tests/migration-041.test.ts && git add -A -- 'supabase/migrations/041_tracking_v2.sql' 'tests/migration-041.test.ts' && git commit -q -m 'feat(verify-track): T7 Migration 041' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T1"
+    ],
+    "model": "opus"
+  },
+  {
+    "id": "T8",
+    "title": "Update types/database.ts for migrations 039-041",
+    "files": [
+      "types/database.ts"
+    ],
+    "interface": "Row/Insert/Update entries for shared_usage_budget, email_verifications, email_verification_jobs, email_verification_job_items, website_sessions, ip_company_cache, website_daily_stats; new columns on leads, contacts, website_visitors, website_visits; api_keys.scope union gains 'tracking'; Functions entries for reserve_shared_units, settle_shared_units, purge_shared_usage_budget, claim_email_verification_items, finish_email_verification_job_counts, purge_email_verifications, track_event, purge_website_tracking, rollup_website_daily, with Args keys copied verbatim from the SQL parameter names and Returns matching the RETURNS TABLE columns.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx tsc --noEmit && git add -A -- 'types/database.ts' && git commit -q -m 'feat(verify-track): T8 Update types/database.ts for migrations 039-041' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T1",
+      "T6",
+      "T7"
+    ],
+    "model": "sonnet"
+  },
+  {
+    "id": "T9",
+    "title": "Server actions for single, record and bulk verification (client-driven chunks, resumable, attempt-fenced, CSV with formula neutralization)",
+    "files": [
+      "lib/actions/email-verification.ts",
+      "lib/verification/jobs.ts",
+      "tests/email-verification-jobs.test.ts"
+    ],
+    "interface": "lib/verification/jobs.ts (plain): export const BULK_MAX_EMAILS = 5000, BULK_GUEST_MAX_EMAILS = 500, CHUNK_SIZE = 20, CHUNK_CONCURRENCY = 5; export function parseEmailList(text): { emails: string[]; rejected: string[] } (split on newline/comma/semicolon/whitespace, dedupe by normalizeEmail, keep first-seen order); export function parseCsvEmails(csv): { emails; rejected } (RFC 4180 parse with quotes; column whose header matches /e-?mail/i else first column containing '@'); export function csvCell(value: string): string (RFC 4180 quoting; when the value starts with = + - @ \\t \\r it is prefixed with a single quote); export function verdictCsv(rows): string with header email,status,score,reason,suggestion,disposable,role,free_provider,catch_all,mx_found,smtp_checked. lib/actions/email-verification.ts ('use server', async exports only): verifySingleEmail(email): Promise<EmailVerdict>; verifyRecordEmail(table, id): Promise<EmailVerdict> (reads the record via the RLS client, verifies, applyVerdictToRecord, revalidatePath); createVerificationJob(input: { source: 'paste'|'csv'; emails: string[] } | { source: 'leads'|'contacts'; ids: string[] }): Promise<{ jobId; total } | { error }> (cap by sharedCallerIsGuest; items inserted via service role in batches of 500 with position; for leads/contacts the ids are re-read through the RLS client so only the caller's org rows with a non-empty email become items); runVerificationChunk(jobId, max = CHUNK_SIZE): Promise<{ processed; remaining; status }> (job ownership via RLS select; claim RPC; verifyEmailForOrg per item with concurrency CHUNK_CONCURRENCY; item result UPDATE ... WHERE id = item.id AND attempt = item.attempt (stale worker's write dropped); applyVerdictToRecord when record_id set; finish RPC); getVerificationJob(jobId); listVerificationJobs(limit = 20); getVerificationJobItems(jobId, page, perPage = 500) ordered by position; cancelVerificationJob(jobId). Tests: parsers, csvCell neutralization, verdictCsv, and runVerificationChunk with a mocked admin asserting the attempt fence in the update filter and that a claimed item whose verify throws is marked 'error' not left 'running'.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx vitest run tests/email-verification-jobs.test.ts && npx tsc --noEmit && git add -A -- 'lib/actions/email-verification.ts' 'lib/verification/jobs.ts' 'tests/email-verification-jobs.test.ts' && git commit -q -m 'feat(verify-track): T9 Server actions for single, record and bulk verification (cli' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T5",
+      "T8"
+    ],
+    "model": "opus"
+  },
+  {
+    "id": "T10",
+    "title": "Email Verifier page (single, bulk with progress and CSV export, history) + navigation",
+    "files": [
+      "app/dashboard/email-verifier/page.tsx",
+      "app/dashboard/email-verifier/client.tsx",
+      "app/dashboard/email-verifier/loading.tsx",
+      "components/verification/EmailStatusBadge.tsx",
+      "components/verification/useVerificationJobRunner.ts",
+      "components/layout/Sidebar.tsx",
+      "components/layout/Header.tsx"
+    ],
+    "interface": "components/verification/EmailStatusBadge.tsx: export function EmailStatusBadge({ status, score, reason, verifiedAt, size }) (null => 'Unverified' muted; valid/invalid/risky/unknown tones from the design system; title shows reason and age). components/verification/useVerificationJobRunner.ts: export function useVerificationJobRunner(jobId: string|null): { progress: { done; total }; status: 'idle'|'running'|'done'|'error'; error; start(); stop() } looping runVerificationChunk until status done/cancelled, stopping on unmount, backing off 5 s after an error (max 3 consecutive), resuming an existing running job. Page: Clay anatomy (Page, PageHeader, MetricStrip, PageTabs 'Single check | Bulk | History', Sections, .clay-table; no boxed cards). Single: input + Verify => result row with badge, flags as hairline key/value grid, suggestion with 'Use suggestion'. Bulk: textarea paste or CSV file input (client parse via parseCsvEmails, file <= 2 MB), count + cap notice (guest 500 / 5000) + note that paid checks stop at the daily allowance and the rest get in-house results, Start => createVerificationJob then runner; progress 'done/total'; when done a results table and 'Download CSV' (pages of getVerificationJobItems joined through verdictCsv into a Blob). History: listVerificationJobs with Resume for running jobs. Sidebar: add { name: 'Email Verifier', href: '/dashboard/email-verifier', icon: EnvelopeSimpleIcon or nearest Phosphor icon available in Icons.tsx } after Contacts; Header title map 'email-verifier': 'Email verifier'.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx tsc --noEmit && node scripts/restyle/boxes.mjs app/dashboard/email-verifier/client.tsx components/verification/EmailStatusBadge.tsx && node scripts/restyle/scan.mjs app/dashboard/email-verifier components/verification && git add -A -- 'app/dashboard/email-verifier/page.tsx' 'app/dashboard/email-verifier/client.tsx' 'app/dashboard/email-verifier/loading.tsx' 'components/verification/EmailStatusBadge.tsx' 'components/verification/useVerificationJobRunner.ts' 'components/layout/Sidebar.tsx' 'components/layout/Header.tsx' && git commit -q -m 'feat(verify-track): T10 Email Verifier page (single, bulk with progress and CSV expo' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T9"
+    ],
+    "model": "sonnet"
+  },
+  {
+    "id": "T11",
+    "title": "Email status badges and Verify actions on leads/contacts; clear the snapshot when an email is edited",
+    "files": [
+      "app/dashboard/leads/client.tsx",
+      "app/dashboard/leads/[id]/client.tsx",
+      "app/dashboard/contacts/client.tsx",
+      "lib/actions/leads.ts",
+      "lib/actions/contacts.ts",
+      "tests/email-snapshot-reset.test.ts"
+    ],
+    "interface": "Lead and contact row types gain email_status, email_score, email_verified_at, email_verification; each list shows EmailStatusBadge next to the email cell; the bulk-selection bar gains 'Verify emails' calling createVerificationJob({ source, ids }) and driving useVerificationJobRunner with a toast on completion then router.refresh(); lead detail shows the badge plus 'Verify' calling verifyRecordEmail('leads', id); suggestion rendered as 'Did you mean x?'. lib/actions/leads.ts updateLead and lib/actions/contacts.ts updateContact: when 'email' is among the updates, merge { email_status: null, email_score: null, email_verified_at: null, email_verification: null } into the update payload (pure helper export function withEmailSnapshotReset(updates): Record<string, unknown> in a plain module lib/verification/snapshot.ts, unit tested: resets only when the email key is present).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx vitest run tests/email-snapshot-reset.test.ts && npx tsc --noEmit && node scripts/restyle/boxes.mjs app/dashboard/leads/client.tsx \"app/dashboard/leads/[id]/client.tsx\" app/dashboard/contacts/client.tsx && node scripts/restyle/scan.mjs app/dashboard/leads app/dashboard/contacts && git add -A -- 'app/dashboard/leads/client.tsx' 'app/dashboard/leads/[id]/client.tsx' 'app/dashboard/contacts/client.tsx' 'lib/actions/leads.ts' 'lib/actions/contacts.ts' 'tests/email-snapshot-reset.test.ts' && git commit -q -m 'feat(verify-track): T11 Email status badges and Verify actions on leads/contacts; cl' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T10"
+    ],
+    "model": "opus"
+  },
+  {
+    "id": "T12",
+    "title": "Sequences: opt-in email_verification_policy (off | skip_invalid | skip_invalid_and_risky)",
+    "files": [
+      "lib/security/sequence-settings.ts",
+      "lib/email/send-policy.ts",
+      "app/api/cron/sequence-executor/route.ts",
+      "app/dashboard/sequences/[id]/client.tsx",
+      "tests/sequence-settings.test.ts",
+      "tests/send-policy.test.ts"
+    ],
+    "interface": "SequenceSettingsSchema adds email_verification_policy: z.enum(['off','skip_invalid','skip_invalid_and_risky']).optional() (strict schema otherwise unchanged). lib/email/send-policy.ts (plain): export function shouldSkipRecipient(policy: string|undefined, emailStatus: string|null|undefined): { skip: boolean; reason: string|null } (undefined/'off' never skips; 'skip_invalid' skips 'invalid'; 'skip_invalid_and_risky' skips 'invalid' and 'risky'; null/unknown status never skips). Executor: the enrollment's lead select adds email_status; immediately before sendEmail call shouldSkipRecipient(settings.email_verification_policy, lead.email_status); when skip: skipped++, insert a sequence_events row with event_type 'skipped' and metadata { reason } using the same insert shape the executor already uses for other events, set the enrollment status to 'paused' (so it is not retried daily), and do not send. Settings tab in app/dashboard/sequences/[id]/client.tsx adds a three-option select under the stop_on_* toggles and sends the key through updateSequenceSettings.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx vitest run tests/sequence-settings.test.ts tests/send-policy.test.ts && npx tsc --noEmit && git add -A -- 'lib/security/sequence-settings.ts' 'lib/email/send-policy.ts' 'app/api/cron/sequence-executor/route.ts' 'app/dashboard/sequences/[id]/client.tsx' 'tests/sequence-settings.test.ts' 'tests/send-policy.test.ts' && git commit -q -m 'feat(verify-track): T12 Sequences' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T8"
+    ],
+    "model": "sonnet"
+  },
+  {
+    "id": "T13",
+    "title": "Tracking pure modules: v2 event schema with event ids, domain match, bot filter, IP hashing, UA summary",
+    "files": [
+      "lib/tracking/schema.ts",
+      "lib/tracking/domain-match.ts",
+      "lib/tracking/bots.ts",
+      "lib/tracking/ip-hash.ts",
+      "lib/tracking/ua-summary.ts",
+      "tests/tracking.test.ts",
+      "tests/tracking-v2.test.ts"
+    ],
+    "interface": "schema.ts keeps trackingEventSchema (legacy) and adds trackingEventV2Schema = z.object({ v: z.literal(2), k: z.string().min(1).max(64), eid: z.string().min(8).max(64), vid: z.string().min(8).max(64), sid: z.string().min(8).max(64), t: z.enum(['pageview','leave','identify','custom']), u: z.string().url().max(2048), ti: z.string().max(512).optional(), r: z.string().max(2048).optional(), n: z.string().max(64).optional(), p: record of <=20 keys with string(<=256)|number|boolean values .optional(), em: z.string().email().max(254).optional(), ms: z.number().int().min(0).max(1800000).optional(), sd: z.number().int().min(0).max(100).optional() }); export function normalizeIncomingEvent(body: unknown): { ok: true; event: NormalizedEvent } | { ok: false } accepting v2 or legacy (legacy: session_id => vid and sid, duration => ms with t='leave', eid = null); export type NormalizedEvent = { scriptKey; eventId: string|null; visitorKey; sessionKey; type; pageUrl (query and fragment stripped); pagePath; pageTitle?; referrer? (origin + path only); eventName?; props?; email?; engagedMs?; scrollDepth?; utm: Record<string,string> } (utm_* parsed before stripping). domain-match.ts: export function pageUrlMatchesDomain(pageUrl, registeredDomain): boolean (exact host or subdomain, case-insensitive, ignores port, 'localhost'/IP literals only when registered as such). bots.ts: export function isBotUserAgent(ua): boolean (bot, crawl, spider, slurp, headless, lighthouse, phantom, selenium, puppeteer, playwright, python-requests, curl, wget, go-http-client, java/, empty). ip-hash.ts: export function hashIp(ip, secret): string (HMAC-SHA256 hex truncated to 32) and export function ipHashSecret(env): string|null (TRACKING_IP_HASH_SECRET, >= 16 chars else null). ua-summary.ts: export function summarizeUserAgent(ua): string ('Chrome / Windows / desktop', <= 64 chars, major version only).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx vitest run tests/tracking.test.ts tests/tracking-v2.test.ts && git add -A -- 'lib/tracking/schema.ts' 'lib/tracking/domain-match.ts' 'lib/tracking/bots.ts' 'lib/tracking/ip-hash.ts' 'lib/tracking/ua-summary.ts' 'tests/tracking.test.ts' 'tests/tracking-v2.test.ts' && git commit -q -m 'feat(verify-track): T13 Tracking pure modules' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [],
+    "model": "sonnet"
+  },
+  {
+    "id": "T14",
+    "title": "Hosted tracker script /api/tracking/t.js (cookie visitor id, cross-tab 30-min sessions, event ids, pageview/leave/identify/custom, consent, bots, SPA, bfcache) + middleware exclusion",
+    "files": [
+      "lib/tracking/script-source.ts",
+      "app/api/tracking/t.js/route.ts",
+      "middleware.ts",
+      "tests/tracker-script.test.ts"
+    ],
+    "interface": "script-source.ts: export const TRACKER_VERSION = '2'; export function buildTrackerScript(endpoint: string): string returning dependency-free ES5 JS (< 5 KB) that: reads data-key, data-consent ('wait'|absent), data-respect-dnt, data-auto-identify from document.currentScript; guards against double installation (window.__pulseTracker); skips entirely when navigator.webdriver, or DNT=1 with respect-dnt; visitor id from cookie _pv_id (1 year, SameSite=Lax, Secure on https, path=/, host-only) with localStorage fallback when cookies are blocked; session id _pv_sid and last-activity _pv_last both in localStorage (shared across tabs), rotated when idle > 30 minutes; every event carries a random eid (crypto.getRandomValues when available); sends JSON strings via navigator.sendBeacon (text/plain) with fetch keepalive fallback; pageview on load, on pushState/replaceState/popstate (only when the path changes) and on pageshow with event.persisted (bfcache restore); leave on pagehide and on visibilitychange hidden with engaged ms (visible time only, capped 30 min) and max scroll depth, at most once per pageview (reset on the next pageview); window.pulse = function(cmd, a, b) supporting ('consent'), ('identify', {email}), ('track', name, props); queues events (max 50) until consent when data-consent=wait and creates no ids before consent; auto-identify captures input[type=email] values on form submit only when data-auto-identify is present; pushes {event:'pulse_crm_loaded'} to dataLayer when it exists. Route GET returns the script with Content-Type application/javascript; charset=utf-8, Cache-Control public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800, Access-Control-Allow-Origin *, endpoint = new URL(request.url).origin + '/api/tracking' (NEXT_PUBLIC_APP_URL when set). middleware.ts matcher gains 'api/tracking' in the exclusion list (covers t.js, events and the beacon). Test (// @vitest-environment jsdom) stubs navigator.sendBeacon, evaluates the script via new Function, asserts: first pageview has v:2 and an eid, same vid across two loads, two 'tabs' (two evaluations sharing localStorage) share one sid, sid changes after 31 fake minutes, leave sent once on pagehide with ms > 0, nothing sent and no cookie before window.pulse('consent') when data-consent=wait, identify sends em, pageshow persisted sends a pageview with a new eid.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx vitest run tests/tracker-script.test.ts && node -e \"const s=require('fs').readFileSync('lib/tracking/script-source.ts','utf8');if(s.length>14000)process.exit(1)\" && grep -n \"api/tracking\" middleware.ts && git add -A -- 'lib/tracking/script-source.ts' 'app/api/tracking/t.js/route.ts' 'middleware.ts' 'tests/tracker-script.test.ts' && git commit -q -m 'feat(verify-track): T14 Hosted tracker script /api/tracking/t.js (cookie visitor id,' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T13"
+    ],
+    "model": "opus"
+  },
+  {
+    "id": "T15",
+    "title": "IP-to-company provider (IPinfo) and async enrichment with global HMAC cache, budget and business-only filter",
+    "files": [
+      "lib/tracking/company/types.ts",
+      "lib/tracking/company/ipinfo.ts",
+      "lib/tracking/company/index.ts",
+      "lib/tracking/company/enrich.ts",
+      "tests/ipinfo-provider.test.ts",
+      "tests/company-enrich.test.ts"
+    ],
+    "interface": "types.ts: export type CompanyType = 'business'|'isp'|'hosting'|'education'|'government'|'unknown'; export type IpCompanyResult = { company_name: string|null; company_domain: string|null; company_type: CompanyType; city; region; country; country_code; provider: string }; export interface IpCompanyProvider { readonly name: string; lookup(ip: string, signal?: AbortSignal): Promise<IpCompanyResult> }; export class IpLookupError extends Error { constructor(message, public readonly dispatched: boolean) }. ipinfo.ts: export function createIpinfoProvider(opts: { token; fetchImpl?; timeoutMs? }): IpCompanyProvider calling https://ipinfo.io/{ip}/json?token=... (token only in the query, never logged; redirect 'error'; body cap 16 KB), mapping company.type when present, else asn.type, else privacy.hosting => hosting, else 'unknown'; company_name/domain only from company.name/company.domain (never org/ASN text); 401/403 => IpLookupError dispatched=false; timeout/5xx => dispatched=true. index.ts: export function ipCompanyProviderFromEnv(env = process.env): IpCompanyProvider|null (IPINFO_TOKEN). enrich.ts ('server-only'): export function isShowableCompany(r): boolean (business|education|government with a non-empty name); export async function enrichVisitorCompany(params: { admin; orgId; visitorId; ip; ipHash; isGuest; provider?: IpCompanyProvider|null }): Promise<void>: cache hit in ip_company_cache (global, keyed by ipHash) younger than 30 days => apply; else reserveSharedUnits('ip_lookup', orgId, 1, {isGuest}): refused => UPDATE visitor enriched_at=now(), company_source='budget' and return; call provider; on IpLookupError dispatched=false refund, dispatched=true no refund, in both cases leave enriched_at NULL so a later event retries (cache prevents re-paying once the lookup eventually lands); on success write cache, update visitor geo always, company_name/company_domain only when isShowableCompany (else NULL), company_type, company_source='ipinfo', enriched_at=now(); when company_domain set and lead_id null, link lead_id to the single lead of the org whose website host equals the domain (no link when 0 or >1). Never throws; logs with the ip hash only.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx vitest run tests/ipinfo-provider.test.ts tests/company-enrich.test.ts && npx tsc --noEmit && git add -A -- 'lib/tracking/company/types.ts' 'lib/tracking/company/ipinfo.ts' 'lib/tracking/company/index.ts' 'lib/tracking/company/enrich.ts' 'tests/ipinfo-provider.test.ts' 'tests/company-enrich.test.ts' && git commit -q -m 'feat(verify-track): T15 IP-to-company provider (IPinfo) and async enrichment with gl' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T2",
+      "T8",
+      "T13"
+    ],
+    "model": "opus"
+  },
+  {
+    "id": "T16",
+    "title": "Ingest core + rewritten /api/tracking endpoint (atomic RPC with dedupe, domain check, bots, fast 204, after() enrichment)",
+    "files": [
+      "lib/tracking/ingest.ts",
+      "app/api/tracking/route.ts",
+      "tests/tracking-ingest.test.ts"
+    ],
+    "interface": "lib/tracking/ingest.ts ('server-only'): export type IngestContext = { admin; orgId; scriptId; registeredDomain; ip: string|null; userAgent: string; now: Date }; export type IngestOutcome = { ok: true; visitorId: string|null; duplicate: boolean; enrich: boolean } | { ok: false; status: 403|422; error: string }; export async function ingestEvent(ctx, event: NormalizedEvent): Promise<IngestOutcome>: isBotUserAgent => ok:true with no write; pageUrlMatchesDomain false => 403 'Domain mismatch'; eventId null (legacy) => generate a server-side id from sha256(visitorKey, sessionKey, pageUrl, floor(now/2s)) so legacy double-posts also dedupe; rpc track_event with ua summary, ip hash (hashIp with ipHashSecret; null when unset), identified email lowercased; returns enrich = needs_enrichment && !duplicate && ip && ipHash. export async function resolveScript(admin, scriptKey): Promise<{ id; organization_id; domain; is_active } | null> with a 60 s in-memory cache (max 1000 keys). Route: OPTIONS unchanged; POST: size caps as now, parse JSON regardless of content-type (sendBeacon sends text/plain), normalizeIncomingEvent (422 on failure), resolveScript (403 when missing/inactive), takeToken per script id (429), ingestEvent, respond 204 with CORS headers, and when enrich: after(async () => enrichVisitorCompany({ ..., isGuest: await sharedCallerIsGuest(orgId) })) \u2014 the raw ip is captured in the closure only. export const runtime = 'nodejs'. Tests mock @/lib/supabase/server rpc and assert: domain mismatch => 403 and no rpc; bot UA => no rpc; duplicate => no enrichment; leave event passes ms; legacy body still ingests with a derived event id; rpc argument keys match the SQL parameter names exactly.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx vitest run tests/tracking-ingest.test.ts && npx tsc --noEmit && git add -A -- 'lib/tracking/ingest.ts' 'app/api/tracking/route.ts' 'tests/tracking-ingest.test.ts' && git commit -q -m 'feat(verify-track): T16 Ingest core + rewritten /api/tracking endpoint (atomic RPC w' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T7",
+      "T8",
+      "T13",
+      "T15"
+    ],
+    "model": "opus"
+  },
+  {
+    "id": "T17",
+    "title": "Server-side events API: POST /api/tracking/events with a 'tracking'-scoped workspace API key",
+    "files": [
+      "app/api/tracking/events/route.ts",
+      "lib/tracking/server-events.ts",
+      "lib/mcp/api-keys.ts",
+      "lib/mcp/server.ts",
+      "app/api/mcp/route.ts",
+      "lib/actions/api-keys.ts",
+      "app/dashboard/settings/api-keys-section.tsx",
+      "tests/tracking-server-events.test.ts"
+    ],
+    "interface": "lib/mcp/api-keys.ts: ApiKeyScope becomes 'read'|'write'|'tracking'; authenticateApiKey maps the stored scope verbatim. app/api/mcp/route.ts: a 'tracking' key gets 403 (MCP tools are never available to it); lib/mcp/server.ts unchanged except the type. lib/actions/api-keys.ts createApiKey accepts scope 'tracking'; the Settings section offers it with the help text 'Only sends website events to /api/tracking/events'. lib/tracking/server-events.ts (plain): export const serverEventsSchema = z.object({ events: z.array(z.object({ event_id: z.string().min(8).max(64), visitor_key: z.string().min(8).max(64), session_key: z.string().min(8).max(64).optional(), type: z.enum(['pageview','leave','identify','custom']).default('pageview'), page_url: z.string().url().max(2048), page_title, referrer, event_name, props, email, engaged_ms (max 1800000), scroll_depth, ip: z.string().optional(), user_agent: z.string().max(512).optional() })).min(1).max(100) }).strict(); export function toNormalizedEvent(e): NormalizedEvent (session_key defaults to visitor_key + UTC hour bucket). Route POST: authenticateApiKey(extractApiKey(headers)) must return scope 'tracking' else 401/403; body <= 256 KB; parse; load the org's active tracking_scripts once; per event pick the script whose domain matches page_url (else per-event 422 entry); ip only from the body and only when public (isIP + not private/loopback), never from request headers (an omitted ip means no enrichment); ingestEvent sequentially; enrichment scheduled with after() per event that needs it; response { accepted: number; duplicates: number; rejected: Array<{ index; error }> }; rate limit by key id with takeToken capacity 600. No CORS.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx vitest run tests/tracking-server-events.test.ts && npx tsc --noEmit && git add -A -- 'app/api/tracking/events/route.ts' 'lib/tracking/server-events.ts' 'lib/mcp/api-keys.ts' 'lib/mcp/server.ts' 'app/api/mcp/route.ts' 'lib/actions/api-keys.ts' 'app/dashboard/settings/api-keys-section.tsx' 'tests/tracking-server-events.test.ts' && git commit -q -m 'feat(verify-track): T17 Server-side events API' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T16"
+    ],
+    "model": "opus"
+  },
+  {
+    "id": "T18",
+    "title": "Website Visitors actions + page adapted to the new model (legacy rows labelled, live polling); new install snippet; data-model doc",
+    "files": [
+      "lib/actions/website-visitors.ts",
+      "lib/tracking/visitor-sort.ts",
+      "app/dashboard/website-visitors/client.tsx",
+      "app/dashboard/website-visitors/page.tsx",
+      "docs/tracking-data-model.md"
+    ],
+    "interface": "Actions: getWebsiteVisitors filters drop ip_address from search and add identified_email; sort columns add session_count; rows carry is_legacy = visitor_key IS NULL; getVisitorDetails returns { visitor, sessions: last 20 website_sessions (pageviews, engaged_ms, duration = last_event_at - started_at), visits: last 50 }; getVisitorStats returns { visitorsToday, visitorsThisWeek, visitorsThisMonth (count distinct visitor_id over website_sessions started in the window; legacy rows excluded), sessionsThisMonth, pageviewsThisMonth, companiesIdentified (company_name not null AND company_type in business|education|government), identifiedVisitors, hotVisitors, convertedToLeads }; new linkVisitorToLead(visitorId, leadId) and linkVisitorToContact(visitorId, contactId) (RLS client, same org enforced by RLS); convertVisitorToLead uses identified_email when present, otherwise keeps the current behaviour. Page: MetricStrip shows visitors, sessions, pageviews, companies, identified; table columns Company (showable name; 'Identifying...' when enriched_at is null and not legacy; otherwise 'Unknown' muted with city/country), Identified (email), Sessions, Pageviews, Last seen, Status; legacy rows show a muted 'legacy' tag and no company; details drawer lists sessions with pageviews and engaged time; while document.visibilityState === 'visible' the client re-fetches stats and the current page every 10 s (cleared on hide/unmount); Setup modal snippet becomes <script async src=\"${appUrl}/api/tracking/t.js\" data-key=\"${script_key}\"></script> with optional attributes documented (data-consent=\"wait\", data-respect-dnt, data-auto-identify), a 'Server-side events' section with a curl example for POST /api/tracking/events using a pcrm_ key with scope 'tracking' (link to Settings API keys), and a note that the old inline snippet keeps working. docs/tracking-data-model.md documents visitors vs sessions vs pageviews/events, id lifetimes (cookie host-only, so subdomains are separate visitors), event-id dedupe, engagement clamping, ip hashing, retention (raw 90 days, daily stats kept), company filter rule, legacy rows and env vars (IPINFO_TOKEN, TRACKING_IP_HASH_SECRET, IP_LOOKUP_* limits).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx tsc --noEmit && node scripts/restyle/boxes.mjs app/dashboard/website-visitors/client.tsx && node scripts/restyle/scan.mjs app/dashboard/website-visitors && git add -A -- 'lib/actions/website-visitors.ts' 'lib/tracking/visitor-sort.ts' 'app/dashboard/website-visitors/client.tsx' 'app/dashboard/website-visitors/page.tsx' 'docs/tracking-data-model.md' && git commit -q -m 'feat(verify-track): T18 Website Visitors actions + page adapted to the new model (le' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T16"
+    ],
+    "model": "opus"
+  },
+  {
+    "id": "T19",
+    "title": "Daily cron: tracking retention, daily rollup, budget and verification cache purges",
+    "files": [
+      "app/api/cron/daily-reset/route.ts",
+      "lib/cron/daily-maintenance.ts",
+      "tests/daily-reset-steps.test.ts"
+    ],
+    "interface": "lib/cron/daily-maintenance.ts ('server-only'): export async function runDailyMaintenance(admin): Promise<Record<string, string>> running, each in its own try/catch reporting 'ok' (with counts) or the error message: rpc purge_website_tracking({ p_raw_days: parseLimit(TRACKING_RAW_RETENTION_DAYS, 90) }), rpc rollup_website_daily({ p_day: yesterday UTC }), rpc purge_shared_usage_budget({ p_keep_days: 8 }), rpc purge_email_verifications({ p_keep_days: 90 }). daily-reset route calls it after step 6 and merges its results into results (207 on any error, as now). Test mocks the admin rpc and asserts the four rpc names and argument keys and that one failing step does not stop the others.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npx vitest run tests/daily-reset-steps.test.ts && npx tsc --noEmit && git add -A -- 'app/api/cron/daily-reset/route.ts' 'lib/cron/daily-maintenance.ts' 'tests/daily-reset-steps.test.ts' && git commit -q -m 'feat(verify-track): T19 Daily cron' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'",
+    "depends_on": [
+      "T8"
+    ],
+    "model": "sonnet"
+  },
+  {
+    "id": "T20",
+    "title": "Full gate: tests, types, lint, restyle checks, production build, env docs, owner apply order",
+    "files": [
+      ".env.example",
+      "README.md"
+    ],
+    "interface": "NONE. .env.example and README env table list MILLIONVERIFIER_API_KEY, EMAIL_VERIFY_PROVIDER, EMAIL_VERIFY_ORG_DAILY_LIMIT, EMAIL_VERIFY_GUEST_DAILY_LIMIT, EMAIL_VERIFY_DAILY_LIMIT, EMAIL_VERIFY_CACHE_DAYS, IPINFO_TOKEN (Business plan required for company.type; without it no company is ever shown), IP_LOOKUP_ORG_DAILY_LIMIT, IP_LOOKUP_GUEST_DAILY_LIMIT, IP_LOOKUP_DAILY_LIMIT, TRACKING_IP_HASH_SECRET (>= 16 chars; unset = no IP hashing and no company lookups), TRACKING_RAW_RETENTION_DAYS; the owner's apply order 039, 040, 041 and the live acceptance checklist (guest workspace: single verify, 20-row CSV bulk + download, badge on a lead, sequence policy skip visible in activity; test page with the hosted script: visitor/session/pageview counts after reload and a second tab, company shown only for a business network, server event via a tracking key, 401 for a read key).",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && npm test && npx tsc --noEmit && npx eslint && node scripts/restyle/scan.mjs app components lib && node scripts/restyle/boxes.mjs app/dashboard/email-verifier/client.tsx app/dashboard/website-visitors/client.tsx components/verification/EmailStatusBadge.tsx && npm run build",
+    "depends_on": [
+      "T10",
+      "T11",
+      "T12",
+      "T14",
+      "T17",
+      "T18",
+      "T19"
+    ],
+    "model": "sonnet"
+  }
+]
