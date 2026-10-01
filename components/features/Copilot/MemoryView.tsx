@@ -1,149 +1,692 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   SparkleIcon,
   PencilSimpleIcon,
   CheckIcon,
-  GlobeIcon,
   BrainIcon,
   TrashIcon,
+  PlusIcon,
+  ArrowUpRightIcon,
 } from "@/components/ui";
-import { Page, PageHeader, Section } from "@/components/dashboard";
-import type { Tables } from "@/types/database";
+import { Page, PageHeader, PageTabs, Section } from "@/components/dashboard";
+import type { CopilotMemoryType, Tables } from "@/types/database";
 import {
   createMemoryItem,
   updateMemoryItem,
   deleteMemoryItem,
   scrapeWebsiteForMemory,
+  listMemoryByType,
+  saveGuidance,
+  listIcpProfiles,
 } from "@/lib/actions/copilot";
 import { BTN_PRIMARY, BTN_OUTLINE, BTN_GHOST, FIELD, LABEL } from "./styles";
 
 type MemoryItem = Tables<"copilot_memory">;
+type SetItems = React.Dispatch<React.SetStateAction<MemoryItem[]>>;
+type IcpProfileRow = { id: string; name: string; description: string | null; is_primary: boolean };
+type Tab = "business" | "profiles" | "guidance" | "saved";
+type Editor = { type: CopilotMemoryType; id: string | null };
 
-export function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: React.Dispatch<React.SetStateAction<MemoryItem[]>> }) {
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    type: "business_details" as MemoryItem["type"],
-    title: "",
-    content: "",
-  });
+const GUIDANCE_LIMIT = 10;
+const GUIDANCE_MAX_LENGTH = 500;
+const ICON_BTN = "rounded p-1.5 text-fg-muted transition-colors hover:bg-subtle hover:text-fg";
+const PILL = "rounded-full bg-muted px-2 py-0.5 text-[12px] font-medium text-fg-secondary";
+const LINK_ACTION = "inline-flex items-center gap-1 text-[13px] font-medium text-accent-strong hover:underline";
 
-  // Scrape state
-  const [scrapeMode, setScrapeMode] = useState(false);
-  const [scrapeUrl, setScrapeUrl] = useState("");
-  const [scraping, setScraping] = useState(false);
-  const [scrapeResults, setScrapeResults] = useState<Array<{ type: MemoryItem["type"]; title: string; content: string; selected: boolean }> | null>(null);
-  const [scrapeSiteName, setScrapeSiteName] = useState("");
-  const [savingScrape, setSavingScrape] = useState(false);
+const BUSINESS_TYPES: Array<{ value: CopilotMemoryType; label: string; desc: string }> = [
+  { value: "business_details", label: "Business details", desc: "Company info, industry, size" },
+  { value: "product_info", label: "Product / service", desc: "What you sell, pricing, features" },
+  { value: "brand_voice", label: "Brand voice", desc: "Tone, messaging guidelines" },
+  { value: "target_audience", label: "Target audience", desc: "Who you sell to, personas, verticals" },
+];
 
-  const memoryTypes = [
-    { value: "business_details", label: "Business Details", desc: "Company info, industry, size" },
-    { value: "product_info", label: "Product / Service", desc: "What you sell, pricing, features" },
-    { value: "target_audience", label: "Target Audience", desc: "ICP, personas, verticals" },
-    { value: "brand_voice", label: "Brand Voice", desc: "Tone, messaging guidelines" },
-    { value: "custom", label: "Custom", desc: "Any other business context" },
-  ];
+const SOURCE_LABEL: Record<MemoryItem["source"], string> = {
+  copilot: "Copilot",
+  user: "User",
+  scrape: "Scrape",
+};
 
-  const handleSave = async () => {
-    if (!formData.title.trim() || !formData.content.trim()) {
+const typeLabel = (type: string) =>
+  BUSINESS_TYPES.find(t => t.value === type)?.label ?? (type === "custom" ? "Saved" : type);
+
+function Spinner() {
+  return (
+    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+  );
+}
+
+function ItemEditor({
+  item,
+  placeholder,
+  onSave,
+  onCancel,
+}: {
+  item: MemoryItem | null;
+  placeholder: string;
+  onSave: (data: { title: string; content: string }) => Promise<boolean>;
+  onCancel: () => void;
+}) {
+  const [title, setTitle] = useState(item?.title ?? "");
+  const [content, setContent] = useState(item?.content ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    if (!title.trim() || !content.trim()) {
       toast.error("Title and content are required");
       return;
     }
-
-    if (editingId) {
-      const result = await updateMemoryItem(editingId, formData);
-      if (result.success) {
-        setItems(prev => prev.map(m => m.id === editingId ? { ...m, ...formData } : m));
-        toast.success("Memory updated");
-      }
-    } else {
-      const result = await createMemoryItem({ ...formData, source: "manual" });
-      if (result.data) {
-        setItems(prev => [result.data!, ...prev]);
-        toast.success("Memory added");
-      }
-    }
-    setShowForm(false);
-    setEditingId(null);
-    setFormData({ type: "business_details", title: "", content: "" });
+    setSaving(true);
+    await onSave({ title: title.trim(), content: content.trim() });
+    setSaving(false);
   };
 
-  const handleDelete = async (id: string) => {
-    await deleteMemoryItem(id);
-    setItems(prev => prev.filter(m => m.id !== id));
-    toast.success("Memory deleted");
-  };
+  return (
+    <div className="max-w-[560px] space-y-4 py-4">
+      <div>
+        <label className={LABEL}>Title</label>
+        <input
+          type="text"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder="e.g. Company overview"
+          className={cn(FIELD, "h-8")}
+        />
+      </div>
+      <div>
+        <label className={LABEL}>Content</label>
+        <textarea
+          value={content}
+          onChange={e => setContent(e.target.value)}
+          placeholder={placeholder}
+          rows={5}
+          className={cn(FIELD, "resize-none py-2")}
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <button onClick={submit} disabled={saving} className={BTN_PRIMARY}>
+          {item ? "Update" : "Save"}
+        </button>
+        <button onClick={onCancel} className={BTN_OUTLINE}>Cancel</button>
+      </div>
+    </div>
+  );
+}
 
-  const handleEdit = (item: MemoryItem) => {
-    setFormData({ type: item.type, title: item.title, content: item.content });
-    setEditingId(item.id);
-    setShowForm(true);
-  };
+function MemoryRow({
+  item,
+  showSource,
+  actions,
+}: {
+  item: MemoryItem;
+  showSource?: boolean;
+  actions: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3 border-b border-divider py-3">
+      <div className={cn("min-w-0 flex-1", !item.is_active && "opacity-60")}>
+        <div className="mb-1 flex items-center gap-2">
+          <h4 className="truncate text-[14px] font-medium text-fg">{item.title}</h4>
+          {showSource && <span className={PILL}>{SOURCE_LABEL[item.source]}</span>}
+          {!item.is_active && <span className={PILL}>Inactive</span>}
+        </div>
+        <p className="line-clamp-2 text-[13px] text-fg-muted">{item.content}</p>
+      </div>
+      <div className="flex shrink-0 items-center gap-1">{actions}</div>
+    </div>
+  );
+}
 
-  const handleScrape = async () => {
-    if (!scrapeUrl.trim()) {
+function ScanWebsite({ onSaved, onExit }: { onSaved: (item: MemoryItem) => void; onExit: () => void }) {
+  const [url, setUrl] = useState("");
+  const [scanning, setScanning] = useState(false);
+  const [results, setResults] = useState<Array<{ type: CopilotMemoryType; title: string; content: string; selected: boolean }> | null>(null);
+  const [siteName, setSiteName] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const scan = async () => {
+    if (!url.trim()) {
       toast.error("Please enter a website URL");
       return;
     }
-    setScraping(true);
-    const result = await scrapeWebsiteForMemory(scrapeUrl.trim());
-    setScraping(false);
-
+    setScanning(true);
+    const result = await scrapeWebsiteForMemory(url.trim());
+    setScanning(false);
     if (result.error) {
       toast.error(result.error);
       return;
     }
-
     if (result.data) {
-      setScrapeResults(result.data.map(item => ({ ...item, selected: true })));
-      setScrapeSiteName(result.siteName || "website");
+      setResults(result.data.map(item => ({ ...item, selected: true })));
+      setSiteName(result.siteName || "website");
     }
   };
 
-  const handleSaveScrapeResults = async () => {
-    const selected = scrapeResults?.filter(r => r.selected) || [];
+  const saveSelected = async () => {
+    const selected = results?.filter(r => r.selected) ?? [];
     if (selected.length === 0) {
       toast.error("Select at least one item to save");
       return;
     }
-
-    setSavingScrape(true);
+    setSaving(true);
     let saved = 0;
     for (const item of selected) {
       const result = await createMemoryItem({
         type: item.type,
         title: item.title,
         content: item.content,
-        source: "website",
-        source_url: scrapeUrl.trim(),
+        source: "scrape",
+        source_url: url.trim(),
       });
       if (result.data) {
-        setItems(prev => [result.data!, ...prev]);
+        onSaved(result.data);
         saved++;
       }
     }
-    setSavingScrape(false);
-
+    setSaving(false);
     if (saved > 0) {
-      toast.success(`Saved ${saved} item${saved > 1 ? "s" : ""} from ${scrapeSiteName}`);
-      setScrapeMode(false);
-      setScrapeUrl("");
-      setScrapeResults(null);
-      setScrapeSiteName("");
+      toast.success(`Saved ${saved} item${saved > 1 ? "s" : ""} from ${siteName}`);
+      onExit();
     }
   };
 
-  const exitScrapeMode = () => {
-    setScrapeMode(false);
-    setScrapeUrl("");
-    setScrapeResults(null);
-    setScrapeSiteName("");
-    setScraping(false);
+  const patch = (idx: number, change: Partial<{ title: string; content: string; selected: boolean }>) =>
+    setResults(prev => prev!.map((r, i) => (i === idx ? { ...r, ...change } : r)));
+
+  if (results === null) {
+    return (
+      <Section
+        title="Scan a website"
+        icon={<SparkleIcon size={18} />}
+        description="Enter your website URL and AI will extract business details, products, audience, and brand voice."
+      >
+        <div className="flex max-w-[560px] gap-2">
+          <input
+            type="url"
+            value={url}
+            onChange={e => setUrl(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && !scanning && scan()}
+            placeholder="https://yourcompany.com"
+            disabled={scanning}
+            className={cn(FIELD, "h-8 flex-1 disabled:opacity-50")}
+          />
+          <button onClick={scan} disabled={scanning || !url.trim()} className={BTN_PRIMARY}>
+            {scanning ? <><Spinner />Analyzing...</> : "Scan"}
+          </button>
+          <button onClick={onExit} disabled={scanning} className={BTN_GHOST}>Cancel</button>
+        </div>
+      </Section>
+    );
+  }
+
+  const selectedCount = results.filter(r => r.selected).length;
+  return (
+    <Section
+      title={<>Found {results.length} item{results.length > 1 ? "s" : ""} from {siteName}</>}
+      icon={<SparkleIcon size={16} />}
+      actions={<span className="text-[13px] text-fg-muted">{selectedCount} selected</span>}
+    >
+      <div className="max-h-[400px] overflow-y-auto border-t border-divider">
+        {results.map((result, idx) => (
+          <div
+            key={idx}
+            className={cn("border-b border-divider py-4 transition-opacity", !result.selected && "opacity-60")}
+          >
+            <div className="flex items-start gap-3">
+              <button
+                onClick={() => patch(idx, { selected: !result.selected })}
+                aria-label={result.selected ? "Deselect item" : "Select item"}
+                className={cn(
+                  "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
+                  result.selected ? "border-accent bg-accent-surface text-accent-on-surface" : "border-line",
+                )}
+              >
+                {result.selected && <CheckIcon size={12} />}
+              </button>
+              <div className="min-w-0 flex-1 space-y-2">
+                <span className={PILL}>{typeLabel(result.type)}</span>
+                <input
+                  type="text"
+                  value={result.title}
+                  onChange={e => patch(idx, { title: e.target.value })}
+                  className="w-full border-0 bg-transparent p-0 text-[14px] font-medium text-fg focus:outline-none focus:ring-0"
+                />
+                <textarea
+                  value={result.content}
+                  onChange={e => patch(idx, { content: e.target.value })}
+                  rows={2}
+                  className="w-full resize-none border-0 bg-transparent p-0 text-[13px] text-fg-secondary focus:outline-none focus:ring-0"
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-2 pt-4">
+        <button onClick={saveSelected} disabled={saving || selectedCount === 0} className={BTN_PRIMARY}>
+          {saving ? <><Spinner />Saving...</> : `Save ${selectedCount} selected`}
+        </button>
+        <button onClick={() => { setResults(null); setUrl(""); }} className={BTN_OUTLINE}>Back</button>
+        <button onClick={onExit} className={BTN_GHOST}>Cancel</button>
+      </div>
+    </Section>
+  );
+}
+
+function BusinessTab({
+  items,
+  editor,
+  setEditor,
+  onSaveItem,
+  onDelete,
+  onScanned,
+}: {
+  items: MemoryItem[];
+  editor: Editor | null;
+  setEditor: (editor: Editor | null) => void;
+  onSaveItem: (type: CopilotMemoryType, id: string | null, data: { title: string; content: string }) => Promise<boolean>;
+  onDelete: (id: string) => void;
+  onScanned: (item: MemoryItem) => void;
+}) {
+  const [scanning, setScanning] = useState(false);
+
+  if (scanning) return <ScanWebsite onSaved={onScanned} onExit={() => setScanning(false)} />;
+
+  return (
+    <>
+      <Section
+        title="Scan a website"
+        description="Extract business details, products, audience, and brand voice from your site."
+        actions={<button onClick={() => setScanning(true)} className={BTN_OUTLINE}><SparkleIcon size={14} />Scan</button>}
+      />
+      {BUSINESS_TYPES.map(({ value, label, desc }) => {
+        const rows = items.filter(m => m.type === value);
+        const editing = editor?.type === value ? editor : null;
+        return (
+          <Section
+            key={value}
+            title={label}
+            description={desc}
+            actions={
+              !editing && (
+                <button onClick={() => setEditor({ type: value, id: null })} className={BTN_OUTLINE}>
+                  <PlusIcon size={14} />Add
+                </button>
+              )
+            }
+          >
+            {editing && !editing.id && (
+              <ItemEditor
+                item={null}
+                placeholder={desc}
+                onSave={data => onSaveItem(value, null, data)}
+                onCancel={() => setEditor(null)}
+              />
+            )}
+            {rows.length === 0 && !editing ? (
+              <p className="text-[13px] text-fg-muted">Nothing saved yet.</p>
+            ) : (
+              <div className="border-t border-divider">
+                {rows.map(item =>
+                  editing?.id === item.id ? (
+                    <ItemEditor
+                      key={item.id}
+                      item={item}
+                      placeholder={desc}
+                      onSave={data => onSaveItem(value, item.id, data)}
+                      onCancel={() => setEditor(null)}
+                    />
+                  ) : (
+                    <MemoryRow
+                      key={item.id}
+                      item={item}
+                      showSource
+                      actions={
+                        <>
+                          <button onClick={() => setEditor({ type: value, id: item.id })} aria-label="Edit" className={ICON_BTN}>
+                            <PencilSimpleIcon size={14} />
+                          </button>
+                          <button onClick={() => onDelete(item.id)} aria-label="Delete" className={cn(ICON_BTN, "hover:text-danger")}>
+                            <TrashIcon size={14} />
+                          </button>
+                        </>
+                      }
+                    />
+                  ),
+                )}
+              </div>
+            )}
+          </Section>
+        );
+      })}
+      <Section
+        title="Competitors"
+        description="Competitor profiles are managed on the Competitors page."
+        actions={
+          <Link href="/dashboard/competitors" className={LINK_ACTION}>
+            Open competitors<ArrowUpRightIcon size={14} />
+          </Link>
+        }
+      />
+    </>
+  );
+}
+
+function ProfilesTab() {
+  const [profiles, setProfiles] = useState<IcpProfileRow[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    listIcpProfiles().then(res => {
+      if (cancelled) return;
+      if (res.error) setError(res.error);
+      else setProfiles(res.data);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  return (
+    <Section
+      title="Customer profiles"
+      description="Ideal customer profiles Copilot can use when it finds and scores leads."
+      actions={
+        <Link href="/dashboard/icp" className={LINK_ACTION}>
+          Manage profiles<ArrowUpRightIcon size={14} />
+        </Link>
+      }
+    >
+      {error ? (
+        <p className="text-[13px] text-danger">{error}</p>
+      ) : profiles === null ? (
+        <p className="text-[13px] text-fg-muted">Loading...</p>
+      ) : profiles.length === 0 ? (
+        <p className="text-[13px] text-fg-muted">No customer profiles yet. Create one on the ICP page.</p>
+      ) : (
+        <div className="border-t border-divider">
+          {profiles.map(p => (
+            <Link
+              key={p.id}
+              href={`/dashboard/icp/${p.id}`}
+              className="flex items-start justify-between gap-3 border-b border-divider py-3 hover:bg-subtle"
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h4 className="truncate text-[14px] font-medium text-fg">{p.name}</h4>
+                  {p.is_primary && <span className={PILL}>Primary</span>}
+                </div>
+                {p.description && <p className="mt-1 line-clamp-2 text-[13px] text-fg-muted">{p.description}</p>}
+              </div>
+              <ArrowUpRightIcon size={14} className="mt-1 shrink-0 text-fg-muted" />
+            </Link>
+          ))}
+        </div>
+      )}
+    </Section>
+  );
+}
+
+function GuidanceTab({
+  items,
+  onSaved,
+  onToggleActive,
+}: {
+  items: MemoryItem[];
+  onSaved: (item: MemoryItem) => void;
+  onToggleActive: (item: MemoryItem) => void;
+}) {
+  const [draft, setDraft] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const rules = [...items].sort((a, b) => Number(b.is_active) - Number(a.is_active));
+  const activeCount = rules.filter(r => r.is_active).length;
+  const atCap = activeCount >= GUIDANCE_LIMIT;
+
+  const submit = async (content: string, id?: string) => {
+    setBusy(true);
+    const result = await saveGuidance(content, id);
+    setBusy(false);
+    if (result.error || !result.data) {
+      toast.error(result.error ?? "Could not save guidance");
+      return false;
+    }
+    onSaved(result.data);
+    return true;
   };
+
+  return (
+    <Section
+      title="Guidance"
+      description="Standing rules Copilot follows in every conversation, such as tone, formatting, or things to avoid."
+      actions={<span className="text-[13px] font-medium text-fg-secondary">{activeCount} of {GUIDANCE_LIMIT}</span>}
+    >
+      <div className="max-w-[560px] space-y-3 pb-4">
+        <textarea
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          maxLength={GUIDANCE_MAX_LENGTH}
+          rows={2}
+          disabled={atCap}
+          aria-label="New guidance rule"
+          placeholder="e.g. Always write in British English"
+          className={cn(FIELD, "resize-none py-2 disabled:opacity-50")}
+        />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={async () => { if (await submit(draft)) setDraft(""); }}
+            disabled={busy || atCap || !draft.trim()}
+            className={BTN_PRIMARY}
+          >
+            Add rule
+          </button>
+          {atCap && <span className="text-[13px] text-fg-muted">Deactivate a rule to add another.</span>}
+        </div>
+      </div>
+      {rules.length === 0 ? (
+        <p className="text-[13px] text-fg-muted">No guidance yet.</p>
+      ) : (
+        <div className="border-t border-divider">
+          {rules.map(rule =>
+            editingId === rule.id ? (
+              <div key={rule.id} className="max-w-[560px] space-y-3 border-b border-divider py-3">
+                <textarea
+                  value={editDraft}
+                  onChange={e => setEditDraft(e.target.value)}
+                  maxLength={GUIDANCE_MAX_LENGTH}
+                  rows={3}
+                  aria-label="Edit guidance rule"
+                  className={cn(FIELD, "resize-none py-2")}
+                />
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={async () => { if (await submit(editDraft, rule.id)) setEditingId(null); }}
+                    disabled={busy || !editDraft.trim()}
+                    className={BTN_PRIMARY}
+                  >
+                    Update
+                  </button>
+                  <button onClick={() => setEditingId(null)} className={BTN_OUTLINE}>Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <div key={rule.id} className="flex items-start justify-between gap-3 border-b border-divider py-3">
+                <p className={cn("min-w-0 flex-1 whitespace-pre-wrap text-[14px] text-fg", !rule.is_active && "opacity-60")}>
+                  {rule.content}
+                </p>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    onClick={() => { setEditingId(rule.id); setEditDraft(rule.content); }}
+                    aria-label="Edit"
+                    className={ICON_BTN}
+                  >
+                    <PencilSimpleIcon size={14} />
+                  </button>
+                  <button
+                    onClick={() => onToggleActive(rule)}
+                    disabled={!rule.is_active && atCap}
+                    className={cn(BTN_GHOST, "disabled:opacity-50")}
+                  >
+                    {rule.is_active ? "Deactivate" : "Reactivate"}
+                  </button>
+                </div>
+              </div>
+            ),
+          )}
+        </div>
+      )}
+    </Section>
+  );
+}
+
+function SavedTab({
+  items,
+  editor,
+  setEditor,
+  onSaveItem,
+  onToggleActive,
+}: {
+  items: MemoryItem[];
+  editor: Editor | null;
+  setEditor: (editor: Editor | null) => void;
+  onSaveItem: (type: CopilotMemoryType, id: string | null, data: { title: string; content: string }) => Promise<boolean>;
+  onToggleActive: (item: MemoryItem) => void;
+}) {
+  const editing = editor?.type === "custom" ? editor : null;
+  const placeholder = "Anything Copilot should remember about your business";
+
+  return (
+    <Section
+      title="Saved"
+      description="Things Copilot has saved, plus notes you add yourself. Inactive items are not used."
+      actions={
+        !editing && (
+          <button onClick={() => setEditor({ type: "custom", id: null })} className={BTN_OUTLINE}>
+            <PlusIcon size={14} />Add
+          </button>
+        )
+      }
+    >
+      {editing && !editing.id && (
+        <ItemEditor
+          item={null}
+          placeholder={placeholder}
+          onSave={data => onSaveItem("custom", null, data)}
+          onCancel={() => setEditor(null)}
+        />
+      )}
+      {items.length === 0 && !editing ? (
+        <p className="text-[13px] text-fg-muted">Nothing saved yet.</p>
+      ) : (
+        <div className="border-t border-divider">
+          {items.map(item =>
+            editing?.id === item.id ? (
+              <ItemEditor
+                key={item.id}
+                item={item}
+                placeholder={placeholder}
+                onSave={data => onSaveItem("custom", item.id, data)}
+                onCancel={() => setEditor(null)}
+              />
+            ) : (
+              <MemoryRow
+                key={item.id}
+                item={item}
+                showSource
+                actions={
+                  <>
+                    <button onClick={() => setEditor({ type: "custom", id: item.id })} aria-label="Edit" className={ICON_BTN}>
+                      <PencilSimpleIcon size={14} />
+                    </button>
+                    <button onClick={() => onToggleActive(item)} className={BTN_GHOST}>
+                      {item.is_active ? "Deactivate" : "Activate"}
+                    </button>
+                  </>
+                }
+              />
+            ),
+          )}
+        </div>
+      )}
+    </Section>
+  );
+}
+
+export function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems: SetItems }) {
+  const [tab, setTab] = useState<Tab>("business");
+  const [editor, setEditor] = useState<Editor | null>(null);
+
+  // Guidance and saved items can change outside this view (Copilot writes them), so reload on entry.
+  useEffect(() => {
+    if (tab !== "guidance" && tab !== "saved") return;
+    const types: CopilotMemoryType[] = tab === "guidance" ? ["guidance"] : ["custom"];
+    let cancelled = false;
+    listMemoryByType(types).then(res => {
+      if (cancelled || res.error) return;
+      setItems(prev => [...res.data, ...prev.filter(m => !types.includes(m.type))]);
+    });
+    return () => { cancelled = true; };
+  }, [tab, setItems]);
+
+  const upsert = (item: MemoryItem) =>
+    setItems(prev => (prev.some(m => m.id === item.id) ? prev.map(m => (m.id === item.id ? item : m)) : [item, ...prev]));
+
+  const handleSaveItem = async (type: CopilotMemoryType, id: string | null, data: { title: string; content: string }) => {
+    if (id) {
+      const result = await updateMemoryItem(id, data);
+      if (result.error) {
+        toast.error(result.error);
+        return false;
+      }
+      setItems(prev => prev.map(m => (m.id === id ? { ...m, ...data } : m)));
+      toast.success("Memory updated");
+    } else {
+      const result = await createMemoryItem({ type, ...data, source: "user" });
+      if (!result.data) {
+        toast.error(result.error ?? "Could not save");
+        return false;
+      }
+      upsert(result.data);
+      toast.success("Memory added");
+    }
+    setEditor(null);
+    return true;
+  };
+
+  const handleDelete = async (id: string) => {
+    const result = await deleteMemoryItem(id);
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+    setItems(prev => prev.filter(m => m.id !== id));
+    toast.success("Memory deleted");
+  };
+
+  const handleToggleActive = async (item: MemoryItem) => {
+    const result = await updateMemoryItem(item.id, { is_active: !item.is_active });
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+    setItems(prev => prev.map(m => (m.id === item.id ? { ...m, is_active: !item.is_active } : m)));
+  };
+
+  const switchTab = (next: Tab) => {
+    setEditor(null);
+    setTab(next);
+  };
+
+  const guidance = items.filter(m => m.type === "guidance");
+  const saved = items.filter(m => m.type === "custom");
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -151,270 +694,38 @@ export function MemoryView({ items, setItems }: { items: MemoryItem[]; setItems:
         <PageHeader
           icon={<BrainIcon size={18} />}
           title="Memory"
-          description="Pulse Copilot uses your business details to provide context-aware responses."
+          description="Pulse Copilot uses this context to give answers that fit your business."
         />
-
-        {showForm ? (
-          /* Memory Form */
-          <Section title={editingId ? "Edit Memory" : "Add Memory"}>
-            <div className="max-w-[560px] space-y-4">
-              <div>
-                <label className={LABEL}>Type</label>
-                <select
-                  value={formData.type}
-                  onChange={e => setFormData(prev => ({ ...prev, type: e.target.value as MemoryItem["type"] }))}
-                  className={cn(FIELD, "h-8")}
-                >
-                  {memoryTypes.map(t => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className={LABEL}>Title</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="e.g. Company Overview"
-                  className={cn(FIELD, "h-8")}
-                />
-              </div>
-
-              <div>
-                <label className={LABEL}>Content</label>
-                <textarea
-                  value={formData.content}
-                  onChange={e => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                  placeholder="Describe your business, products, target audience, etc..."
-                  rows={6}
-                  className={cn(FIELD, "py-2 resize-none")}
-                />
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <button onClick={handleSave} className={BTN_PRIMARY}>
-                  {editingId ? "Update" : "Save"}
-                </button>
-                <button
-                  onClick={() => { setShowForm(false); setEditingId(null); setFormData({ type: "business_details", title: "", content: "" }); }}
-                  className={BTN_OUTLINE}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </Section>
-        ) : scrapeMode ? (
-          /* Scrape Flow */
-          scrapeResults === null ? (
-            /* Phase A: URL Input */
-            <Section
-              title="Scan a website"
-              icon={<SparkleIcon size={18} />}
-              description="Enter your website URL and AI will automatically extract business details, products, audience, and brand voice."
-            >
-              <div className="flex max-w-[560px] gap-2">
-                <input
-                  type="url"
-                  value={scrapeUrl}
-                  onChange={e => setScrapeUrl(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && !scraping && handleScrape()}
-                  placeholder="https://yourcompany.com"
-                  disabled={scraping}
-                  className={cn(FIELD, "h-8 flex-1 disabled:opacity-50")}
-                />
-                <button
-                  onClick={handleScrape}
-                  disabled={scraping || !scrapeUrl.trim()}
-                  className={BTN_PRIMARY}
-                >
-                  {scraping ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      Analyzing...
-                    </>
-                  ) : (
-                    "Scan"
-                  )}
-                </button>
-                <button
-                  onClick={exitScrapeMode}
-                  disabled={scraping}
-                  className={BTN_GHOST}
-                >
-                  Cancel
-                </button>
-              </div>
-            </Section>
-          ) : (
-            /* Phase B: Results Review */
-            <Section
-              title={<>Found {scrapeResults.length} item{scrapeResults.length > 1 ? "s" : ""} from {scrapeSiteName}</>}
-              icon={<SparkleIcon size={16} />}
-              actions={<span className="text-[13px] text-fg-muted">{scrapeResults.filter(r => r.selected).length} selected</span>}
-            >
-              <div className="max-h-[400px] overflow-y-auto border-t border-divider">
-                {scrapeResults.map((result, idx) => (
-                  <div
-                    key={idx}
-                    className={cn(
-                      "py-4 border-b border-divider transition-opacity",
-                      !result.selected && "opacity-60"
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <button
-                        onClick={() => setScrapeResults(prev => prev!.map((r, i) => i === idx ? { ...r, selected: !r.selected } : r))}
-                        className={cn(
-                          "mt-0.5 w-5 h-5 rounded border flex items-center justify-center flex-shrink-0 transition-colors",
-                          result.selected
-                            ? "bg-accent-surface border-accent text-accent-on-surface"
-                            : "border-line"
-                        )}
-                      >
-                        {result.selected && <CheckIcon size={12} />}
-                      </button>
-                      <div className="flex-1 min-w-0 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[12px] px-2 py-0.5 rounded-full bg-muted text-fg-secondary font-medium">
-                            {memoryTypes.find(t => t.value === result.type)?.label || result.type}
-                          </span>
-                        </div>
-                        <input
-                          type="text"
-                          value={result.title}
-                          onChange={e => setScrapeResults(prev => prev!.map((r, i) => i === idx ? { ...r, title: e.target.value } : r))}
-                          className="w-full text-[14px] font-medium text-fg bg-transparent border-0 p-0 focus:outline-none focus:ring-0"
-                        />
-                        <textarea
-                          value={result.content}
-                          onChange={e => setScrapeResults(prev => prev!.map((r, i) => i === idx ? { ...r, content: e.target.value } : r))}
-                          rows={2}
-                          className="w-full text-[13px] text-fg-secondary bg-transparent border-0 p-0 focus:outline-none focus:ring-0 resize-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2 pt-4">
-                <button
-                  onClick={handleSaveScrapeResults}
-                  disabled={savingScrape || scrapeResults.filter(r => r.selected).length === 0}
-                  className={BTN_PRIMARY}
-                >
-                  {savingScrape ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      Saving...
-                    </>
-                  ) : (
-                    `Save ${scrapeResults.filter(r => r.selected).length} selected`
-                  )}
-                </button>
-                <button
-                  onClick={() => { setScrapeResults(null); setScrapeUrl(""); }}
-                  className={BTN_OUTLINE}
-                >
-                  Back
-                </button>
-                <button
-                  onClick={exitScrapeMode}
-                  className={BTN_GHOST}
-                >
-                  Cancel
-                </button>
-              </div>
-            </Section>
-          )
-        ) : (
-          <>
-            {/* Quick Add Tiles */}
-            <Section>
-              <div className="flex flex-wrap gap-4">
-                <button
-                  onClick={() => {
-                    setFormData({ type: "business_details", title: "Business Overview", content: "" });
-                    setShowForm(true);
-                  }}
-                  data-clay-box className="flex w-[230px] items-start gap-3 rounded-lg bg-subtle p-4 text-left shadow-card transition-colors hover:bg-muted max-sm:w-full"
-                >
-                  <GlobeIcon size={18} className="mt-0.5 shrink-0 text-accent" />
-                  <div>
-                    <p className="text-[14px] font-semibold text-fg">Add business details</p>
-                    <p className="text-[13px] text-fg-muted mt-0.5">Company info, products</p>
-                  </div>
-                </button>
-                <button
-                  onClick={() => setScrapeMode(true)}
-                  data-clay-box className="flex w-[230px] items-start gap-3 rounded-lg bg-subtle p-4 text-left shadow-card transition-colors hover:bg-muted max-sm:w-full"
-                >
-                  <SparkleIcon size={18} className="mt-0.5 shrink-0 text-accent" />
-                  <div>
-                    <p className="text-[14px] font-semibold text-fg">Scan a website</p>
-                    <p className="text-[13px] text-fg-muted mt-0.5">Auto-extract with AI</p>
-                  </div>
-                </button>
-                <button
-                  onClick={() => {
-                    setFormData({ type: "custom", title: "", content: "" });
-                    setShowForm(true);
-                  }}
-                  data-clay-box className="flex w-[230px] items-start gap-3 rounded-lg bg-subtle p-4 text-left shadow-card transition-colors hover:bg-muted max-sm:w-full"
-                >
-                  <PencilSimpleIcon size={18} className="mt-0.5 shrink-0 text-accent" />
-                  <div>
-                    <p className="text-[14px] font-semibold text-fg">Edit manually</p>
-                    <p className="text-[13px] text-fg-muted mt-0.5">Custom business context</p>
-                  </div>
-                </button>
-              </div>
-            </Section>
-
-            {/* Existing Memory Items */}
-            {items.length > 0 && (
-              <Section title="Saved Context">
-                <div className="border-t border-divider">
-                  {items.map(item => (
-                    <div key={item.id} className="group flex items-start justify-between py-3 border-b border-divider">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[12px] px-2 py-0.5 rounded-full bg-muted text-fg-secondary font-medium">
-                            {memoryTypes.find(t => t.value === item.type)?.label || item.type}
-                          </span>
-                          {item.source === "scrape" && (
-                            <span className="text-[12px] px-2 py-0.5 rounded-full bg-accent-surface text-accent-on-surface">Website</span>
-                          )}
-                          {!item.is_active && (
-                            <span className="text-[12px] px-2 py-0.5 rounded-full bg-warning-surface text-warning">Disabled</span>
-                          )}
-                        </div>
-                        <h4 className="text-[14px] font-medium text-fg">{item.title}</h4>
-                        <p className="text-[13px] text-fg-muted mt-1 line-clamp-2">{item.content}</p>
-                      </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-3">
-                        <button onClick={() => handleEdit(item)} className="p-1.5 rounded hover:bg-subtle transition-colors">
-                          <PencilSimpleIcon size={14} className="text-fg-muted" />
-                        </button>
-                        <button onClick={() => handleDelete(item.id)} className="p-1.5 rounded hover:bg-danger-surface transition-colors">
-                          <TrashIcon size={14} className="text-danger" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Section>
-            )}
-          </>
+        <PageTabs
+          tabs={[
+            { id: "business", label: "Business" },
+            { id: "profiles", label: "Customer profiles" },
+            { id: "guidance", label: "Guidance", count: `${guidance.filter(g => g.is_active).length}/${GUIDANCE_LIMIT}` },
+            { id: "saved", label: "Saved", count: saved.length },
+          ]}
+          value={tab}
+          onChange={switchTab}
+        />
+        {tab === "business" && (
+          <BusinessTab
+            items={items}
+            editor={editor}
+            setEditor={setEditor}
+            onSaveItem={handleSaveItem}
+            onDelete={handleDelete}
+            onScanned={upsert}
+          />
+        )}
+        {tab === "profiles" && <ProfilesTab />}
+        {tab === "guidance" && <GuidanceTab items={guidance} onSaved={upsert} onToggleActive={handleToggleActive} />}
+        {tab === "saved" && (
+          <SavedTab
+            items={saved}
+            editor={editor}
+            setEditor={setEditor}
+            onSaveItem={handleSaveItem}
+            onToggleActive={handleToggleActive}
+          />
         )}
       </Page>
     </div>

@@ -22,37 +22,6 @@ export async function getConversations() {
   return { data: data || [] };
 }
 
-export async function createConversation(title?: string) {
-  const supabase = await createClient();
-  const orgId = await getOrgId();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated", data: null };
-
-  const { data, error } = await supabase
-    .from("copilot_conversations")
-    .insert({ organization_id: orgId, user_id: user.id, title: title || "New Chat" })
-    .select()
-    .single();
-
-  if (error) return { error: error.message, data: null };
-  return { data };
-}
-
-export async function updateConversation(id: string, updates: { title?: string; is_pinned?: boolean; summary?: string }) {
-  const supabase = await createClient();
-  const orgId = await getOrgId();
-  const { data, error } = await supabase
-    .from("copilot_conversations")
-    .update(updates)
-    .eq("id", id)
-    .eq("organization_id", orgId)
-    .select("id");
-
-  if (error) return { error: error.message };
-  if (!data?.length) return { error: "Not found" };
-  return { success: true };
-}
-
 export async function deleteConversation(id: string) {
   const supabase = await createClient();
   const orgId = await getOrgId();
@@ -68,61 +37,15 @@ export async function deleteConversation(id: string) {
   return { success: true };
 }
 
-// ── Messages ──────────────────────────────────────────────────────────────
-
-export async function getMessages(conversationId: string) {
-  const supabase = await createClient();
-  const orgId = await getOrgId();
-
-  const { data, error } = await supabase
-    .from("copilot_messages")
-    .select("*")
-    .eq("conversation_id", conversationId)
-    .eq("organization_id", orgId)
-    .order("created_at", { ascending: true });
-
-  if (error) return { error: error.message, data: [] };
-  return { data: data || [] };
-}
-
-export async function saveMessage(conversationId: string, role: "user" | "assistant", content: string, extras?: { tool_calls?: unknown; tool_results?: unknown; tokens_used?: number }) {
-  const supabase = await createClient();
-  const orgId = await getOrgId();
-
-  const { data: conversation } = await supabase
-    .from("copilot_conversations")
-    .select("id")
-    .eq("id", conversationId)
-    .eq("organization_id", orgId)
-    .maybeSingle();
-  if (!conversation) return { error: "Not found", data: null };
-
-  const { data, error } = await supabase
-    .from("copilot_messages")
-    .insert({
-      conversation_id: conversationId,
-      organization_id: orgId,
-      role,
-      content,
-      tool_calls: extras?.tool_calls as never,
-      tool_results: extras?.tool_results as never,
-      tokens_used: extras?.tokens_used || 0,
-    })
-    .select()
-    .single();
-
-  // Also update conversation's updated_at
-  await supabase
-    .from("copilot_conversations")
-    .update({ updated_at: new Date().toISOString() })
-    .eq("id", conversationId)
-    .eq("organization_id", orgId);
-
-  if (error) return { error: error.message, data: null };
-  return { data };
-}
-
 // ── Memory ──────────────────────────────────────────────────────────────
+
+const GUIDANCE_CAP_MESSAGE = "Guidance is limited to 10 active rules";
+const GUIDANCE_MAX_LENGTH = 500;
+
+// The DB trigger raises guidance_cap_exceeded when an org would have more than 10 active rules.
+function memoryErrorMessage(message: string): string {
+  return message.includes("guidance_cap_exceeded") ? GUIDANCE_CAP_MESSAGE : message;
+}
 
 export async function getMemoryItems() {
   const supabase = await createClient();
@@ -138,11 +61,89 @@ export async function getMemoryItems() {
   return { data: data || [] };
 }
 
+export async function listMemoryByType(types: CopilotMemoryType[]) {
+  const supabase = await createClient();
+  const orgId = await getOrgId();
+
+  const { data, error } = await supabase
+    .from("copilot_memory")
+    .select("*")
+    .eq("organization_id", orgId)
+    .in("type", types)
+    .order("created_at", { ascending: false });
+
+  if (error) return { error: error.message, data: [] };
+  return { data: data || [] };
+}
+
+/** Creates a guidance rule, or edits the rule `id` when given. Max 10 active rules per org (DB trigger). */
+export async function saveGuidance(content: string, id?: string) {
+  const text = content.trim();
+  if (!text) return { error: "Guidance cannot be empty", data: null };
+  if (text.length > GUIDANCE_MAX_LENGTH) {
+    return { error: `Guidance must be ${GUIDANCE_MAX_LENGTH} characters or fewer`, data: null };
+  }
+  const title = text.length > 60 ? `${text.slice(0, 57)}...` : text;
+
+  const supabase = await createClient();
+  const orgId = await getOrgId();
+
+  if (id) {
+    const { data, error } = await supabase
+      .from("copilot_memory")
+      .update({ title, content: text })
+      .eq("id", id)
+      .eq("organization_id", orgId)
+      .eq("type", "guidance")
+      .select()
+      .maybeSingle();
+
+    if (error) return { error: memoryErrorMessage(error.message), data: null };
+    if (!data) return { error: "Not found", data: null };
+    return { data };
+  }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated", data: null };
+
+  const { data, error } = await supabase
+    .from("copilot_memory")
+    .insert({
+      organization_id: orgId,
+      user_id: user.id,
+      type: "guidance",
+      title,
+      content: text,
+      source: "user",
+    })
+    .select()
+    .single();
+
+  if (error) return { error: memoryErrorMessage(error.message), data: null };
+  return { data };
+}
+
+/** Read-only list of the org's ideal customer profiles, shown in the Memory view. */
+export async function listIcpProfiles() {
+  const supabase = await createClient();
+  const orgId = await getOrgId();
+
+  const { data, error } = await supabase
+    .from("icp_profiles")
+    .select("id, name, description, is_primary")
+    .eq("organization_id", orgId)
+    .order("is_primary", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (error) return { error: error.message, data: [] };
+  return { data: data || [] };
+}
+
 export async function createMemoryItem(item: {
   type: CopilotMemoryType;
   title: string;
   content: string;
-  source?: "manual" | "website" | "file";
+  source?: "user" | "copilot" | "scrape";
   source_url?: string;
 }) {
   const supabase = await createClient();
@@ -179,7 +180,7 @@ export async function updateMemoryItem(id: string, updates: {
     .eq("organization_id", orgId)
     .select("id");
 
-  if (error) return { error: error.message };
+  if (error) return { error: memoryErrorMessage(error.message) };
   if (!data?.length) return { error: "Not found" };
   return { success: true };
 }
