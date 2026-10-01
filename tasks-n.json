@@ -144,5 +144,19 @@
     ],
     "interface": "N3 moved the inbox 'New Email' compose (ComposeModal) onto components/ui/Modal, so Escape and backdrop clicks now close it and silently discard the draft. In ComposeModal, route every close request (Modal onClose, Cancel, the X button) through one handler: if the draft is empty (no recipient, subject or body text) close immediately; otherwise show an inline confirmation inside the compose panel ('Discard this draft?' with 'Keep editing' and 'Discard' buttons, Discard styled as danger) instead of closing. Sending keeps today's behaviour. No other changes.",
     "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q 'Discard this draft' app/dashboard/inbox/client.tsx && npx tsc --noEmit && npx eslint 'app/dashboard/inbox/client.tsx' && node scripts/restyle/boxes.mjs 'app/dashboard/inbox/client.tsx' && node scripts/restyle/scan.mjs app components && npm test && git add -A -- 'app/dashboard/inbox/client.tsx' && git commit -q -m 'fix(inbox): ask before discarding a compose draft' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
+  },
+  {
+    "id": "N12",
+    "model": "sonnet",
+    "depends_on": [
+      "N9"
+    ],
+    "title": "CSP reports are not blocked by the CSRF check",
+    "files": [
+      "lib/supabase/middleware.ts",
+      "middleware.ts"
+    ],
+    "interface": "N9 added POST /api/csp-report (no cookies, no state change). updateSession in lib/supabase/middleware.ts returns 403 for non-GET /api/* requests whose Origin is not the app origin unless the path is in CSRF_EXEMPT_PREFIXES, and browsers may send report-uri reports without a matching Origin. (1) Add \"/api/csp-report\" to CSRF_EXEMPT_PREFIXES. (2) In middleware.ts exclude api/csp-report from the matcher the same way api/mcp is excluded, so reports skip the Supabase getUser() call. No other changes.",
+    "verify": "cd \"D:/Orbix Sofrwares/projects/pulse-crm/Pulse CRM Dashboard/Code/pulse-crm\" && grep -q '/api/csp-report' lib/supabase/middleware.ts && grep -q 'csp-report' middleware.ts && npx tsc --noEmit && npx eslint 'lib/supabase/middleware.ts' 'middleware.ts' && npm test && git add -A -- 'lib/supabase/middleware.ts' 'middleware.ts' && git commit -q -m 'fix(security): CSP reports bypass the CSRF origin check and session refresh' -m 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'"
   }
 ]
