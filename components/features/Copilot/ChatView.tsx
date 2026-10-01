@@ -6,8 +6,6 @@ import type { UIMessage } from "ai";
 import { cn } from "@/lib/utils";
 import { describeChatError } from "@/lib/ai/chat-error";
 import {
-  SparkleIcon,
-  ArrowUpIcon,
   CrosshairIcon,
   ChartBarIcon,
   EnvelopeIcon,
@@ -17,6 +15,7 @@ import {
   ChatCircleIcon,
 } from "@/components/ui";
 import { ChatMessageParts } from "./ChatMessageParts";
+import { Composer } from "./Composer";
 import type { UndoInfo } from "./UndoButton";
 import { useCopilotChat, type ChatContext } from "./useCopilotChat";
 import { SUGGESTION_CHIP } from "./styles";
@@ -43,55 +42,6 @@ function chatErrorMessage(error: Error): { message: string; needsKey: boolean } 
     return { message: "That approval is no longer valid. The conversation was refreshed.", needsKey: false };
   }
   return describeChatError(error);
-}
-
-function Composer({
-  value,
-  onChange,
-  onSend,
-  isLoading,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  onSend: () => void;
-  isLoading: boolean;
-}) {
-  return (
-    <div data-clay-box className="mx-auto w-full max-w-3xl rounded-lg border border-line bg-surface shadow-card transition-colors focus-within:border-accent">
-      <div className="flex items-start gap-2.5 px-4 pt-3.5">
-        <SparkleIcon size={16} weight="fill" className="mt-0.5 shrink-0 text-accent" />
-        <textarea
-          value={value}
-          onChange={(e) => {
-            onChange(e.target.value);
-            e.target.style.height = "auto";
-            e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px";
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              onSend();
-            }
-          }}
-          placeholder="Ask Pulse AI or type / to see prompts..."
-          aria-label="Message Pulse Copilot"
-          className="flex-1 min-w-0 pb-1 text-[14px] leading-5 text-fg placeholder:text-fg-muted bg-transparent outline-none resize-none min-h-[40px]"
-          rows={1}
-          disabled={isLoading}
-        />
-      </div>
-      <div className="flex items-center justify-end px-3 pb-3">
-        <button
-          onClick={onSend}
-          disabled={!value.trim() || isLoading}
-          aria-label="Send message"
-          className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-on-inverse transition-colors hover:bg-accent-strong disabled:opacity-40 disabled:hover:bg-accent"
-        >
-          <ArrowUpIcon size={16} weight="bold" />
-        </button>
-      </div>
-    </div>
-  );
 }
 
 export type ChatViewProps = {
