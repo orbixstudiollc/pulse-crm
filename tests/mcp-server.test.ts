@@ -41,6 +41,9 @@ function seed() {
     deals: [
       { id: DEAL_A, organization_id: ORG_A, name: "Acme retainer", value: 10000, probability: 50, stage: "proposal", stage_changed_at: "2026-09-01T00:00:00Z", created_at: "2026-08-01T00:00:00Z", close_date: null },
     ],
+    scoring_profiles: [
+      { id: "sp1", organization_id: ORG_A, name: "Default", is_default: true, weight_company_size: 20, weight_industry_fit: 20, weight_engagement: 20, weight_source_quality: 20, weight_budget: 20, target_industries: [], target_company_sizes: [], source_rankings: { Website: 80 } },
+    ],
     contacts: [],
     customers: [],
     activities: [],
@@ -136,6 +139,23 @@ describe("MCP route", () => {
 
     const note = parse(await client.callTool({ name: "add_note", arguments: { record_type: "deal", record_id: DEAL_A, content: "Called" } }));
     expect(note.created.author_name).toBe("John Harris");
+  });
+
+  it("scores leads it creates and updates, like the Leads page", async () => {
+    const client = await connect(writeKey.key);
+    const res = parse(await client.callTool({
+      name: "create_lead",
+      arguments: { name: "Sarah Lee", email: "sarah@acme.com", source: "Website", estimated_value: 60000 },
+    }));
+    // (50 size + 50 industry + 0 engagement + 80 source + 80 budget) / 5
+    expect(res.created.score).toBe(52);
+    const lead = db.tables.leads.find((l) => l.id === res.created.id)!;
+    expect(lead.score).toBe(52);
+    expect(db.tables.lead_score_history).toHaveLength(1);
+
+    const updated = parse(await client.callTool({ name: "update_lead", arguments: { id: lead.id as string, estimated_value: 1000 } }));
+    expect(updated.updated.score).toBe(40);
+    expect(db.tables.lead_score_history).toHaveLength(2);
   });
 
   it("converts a lead by stamping it, then hides it from search", async () => {

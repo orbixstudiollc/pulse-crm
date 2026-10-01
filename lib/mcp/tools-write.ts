@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { Database } from "@/types/database";
+import { scoreLead } from "@/lib/leads/score";
 import {
   ACTIVITY_STATUSES,
   ACTIVITY_TYPES,
@@ -151,13 +152,19 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
       .catch(() => undefined);
   }
 
+  /** Re-runs lead scoring like the Leads page does; returns the new score, or nothing if it failed. */
+  async function rescore(leadId: string): Promise<{ score?: number }> {
+    const result = await scoreLead(db, orgId, leadId).catch(() => null);
+    return result && "data" in result && result.data ? { score: result.data.total } : {};
+  }
+
   // ── Leads ────────────────────────────────────────────────────────────────
 
   server.registerTool(
     "create_lead",
     {
       title: "Create lead",
-      description: "Add a lead. Runs the workspace's lead_created automation rules.",
+      description: "Add a lead. Scores it and runs the workspace's lead_created automation rules.",
       inputSchema: { ...leadFields, name: z.string().min(1), email: z.string().email() },
       annotations: WRITE,
     },
@@ -169,7 +176,7 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
         .single();
       if (error) return fail(error.message);
       await fireLeadRules(data.id, "lead_created");
-      return ok({ created: data });
+      return ok({ created: { ...data, ...(await rescore(data.id)) } });
     }),
   );
 
@@ -177,7 +184,7 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
     "update_lead",
     {
       title: "Update lead",
-      description: "Change fields on a lead. Only the fields you pass are changed. Runs lead_updated automation rules.",
+      description: "Change fields on a lead. Only the fields you pass are changed. Re-scores it and runs lead_updated automation rules.",
       inputSchema: { id, ...leadFields },
       annotations: UPDATE,
     },
@@ -194,7 +201,7 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
       if (error) return fail(error.message);
       if (!data) return fail("Lead not found");
       await fireLeadRules(leadId, "lead_updated", Object.keys(patch));
-      return ok({ updated: data });
+      return ok({ updated: { ...data, ...(await rescore(leadId)) } });
     }),
   );
 
