@@ -4,6 +4,11 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { assertSafeFetchUrl } from "@/lib/security";
 import { assertSafeFetchTarget } from "@/lib/security/fetch-target";
 import { hasRequiredRole } from "@/lib/auth/roles";
+import { getApifyTokenFromEnv } from "@/lib/lead-finder/apify/token";
+import {
+  resolveAIProvider,
+  type AIProviderSettings,
+} from "@/lib/ai/provider-resolver";
 
 const AIProviderEnum = z.enum([
   "anthropic",
@@ -79,6 +84,33 @@ const SettingsSchema = z.discriminatedUnion("section", [
   ObsidianSection,
 ]);
 
+/**
+ * The provider Lead Finder really uses, chosen the same way as resolveForOrg
+ * in lib/lead-finder/ai-provider.ts (saved choice when it has a credential,
+ * else the shared fallback order, including the server-wide CUSTOM_AI_*
+ * fallback). Only the provider name and where its credential lives are
+ * returned; never any part of a key.
+ */
+function effectiveProvider(
+  settings: AIProviderSettings | null,
+  orgId: string
+): { provider: string; source: "org" | "server" } | null {
+  const choice = settings?.ai_provider ?? null;
+  // Ollama Cloud is Lead Finder only and keyed by env.
+  if (choice === "ollama_cloud" && process.env.OLLAMA_CLOUD_API_KEY) {
+    return { provider: "ollama_cloud", source: "server" };
+  }
+  const resolved = resolveAIProvider(
+    { ...settings, organization_id: orgId, ai_provider: choice },
+    process.env
+  );
+  if (!resolved) return null;
+  return {
+    provider: resolved.provider,
+    source: resolved.source === "env" ? "server" : "org",
+  };
+}
+
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -102,7 +134,7 @@ export async function GET() {
     const { data: aiRows } = await admin
       .from("ai_settings")
       .select(
-        "api_key, apify_api_key, openrouter_api_key, openrouter_oauth_token, openrouter_expires_at, openai_api_key, groq_api_key, ollama_base_url, obsidian_sync_enabled, default_model, ai_provider, parallel_enrichment_limit"
+        "api_key, apify_api_key, openrouter_api_key, openrouter_oauth_token, openrouter_expires_at, openai_api_key, groq_api_key, ollama_base_url, custom_base_url, custom_api_key, obsidian_sync_enabled, default_model, ai_provider, parallel_enrichment_limit"
       )
       .eq("organization_id", profile.organization_id)
       .limit(1);
@@ -116,6 +148,8 @@ export async function GET() {
       .eq("id", profile.organization_id)
       .single();
 
+    // Org-stored keys only. Server (env) tokens are never masked or returned,
+    // only reported as present via apify_source.
     const mask = (key: string | null | undefined) =>
       key ? `${"•".repeat(Math.max(0, key.length - 4))}${key.slice(-4)}` : "";
 
@@ -129,6 +163,14 @@ export async function GET() {
       {
         data: {
           apify_token: mask(ai?.apify_api_key),
+          // Same precedence as resolveApifyCredential: the org's own token,
+          // else the server's APIFY_API_TOKEN / APIFY_TOKEN / APIFY_API_KEY.
+          apify_source: ai?.apify_api_key
+            ? "org"
+            : getApifyTokenFromEnv()
+              ? "server"
+              : "none",
+          effective_provider: effectiveProvider(ai, profile.organization_id),
           ai_provider: ai?.ai_provider ?? "openrouter",
           anthropic_api_key: mask(ai?.api_key),
           openrouter_api_key: mask(ai?.openrouter_api_key),

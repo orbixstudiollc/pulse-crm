@@ -52,6 +52,10 @@ interface SettingsData {
   has_openai: boolean;
   has_groq: boolean;
   has_ollama: boolean;
+  /** "org": this workspace's token; "server": only the server's env token. */
+  apify_source: "org" | "server" | "none";
+  /** What Lead Finder actually uses (shared resolver); null when nothing is configured. */
+  effective_provider: { provider: string; source: "org" | "server" } | null;
   ai_provider: string;
   ai_model: string;
   enrichment_concurrency: string;
@@ -63,6 +67,38 @@ interface SettingsData {
   agency_target_industries: string;
   agency_website: string;
   obsidian_sync_enabled: boolean;
+}
+
+type KeyStatus = "set" | "server" | "missing";
+
+const AGENCY_TYPES = [
+  { value: "general", label: "General" },
+  { value: "marketing", label: "Marketing" },
+  { value: "sales", label: "Sales" },
+  { value: "design", label: "Design" },
+  { value: "development", label: "Development" },
+  { value: "consulting", label: "Consulting" },
+  { value: "seo", label: "SEO" },
+  { value: "social_media", label: "Social Media" },
+  { value: "ai_automation", label: "AI & Automation" },
+];
+
+const PROVIDER_LABELS: Record<string, string> = {
+  anthropic: "Anthropic",
+  openai: "OpenAI",
+  openrouter: "OpenRouter",
+  groq: "Groq",
+  ollama: "Ollama",
+  ollama_cloud: "Ollama Cloud",
+  custom: "Custom (from AI Assistant settings)",
+};
+
+/** Label for the provider Lead Finder actually uses. */
+function providerInUseLabel(p: SettingsData["effective_provider"]): string {
+  if (!p) return "None configured";
+  if (p.provider === "custom" && p.source === "server") return "Shared AI (server)";
+  const name = PROVIDER_LABELS[p.provider] ?? p.provider;
+  return p.source === "server" ? `${name} (server key)` : name;
 }
 
 type TabId =
@@ -78,14 +114,17 @@ function ApiKeyField({
   label,
   value,
   onChange,
-  hasValue,
+  status,
+  masked,
   placeholder,
   description,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
-  hasValue: boolean;
+  status: KeyStatus;
+  /** The workspace's saved key, masked by the server (only when status is "set"). */
+  masked?: string;
   placeholder: string;
   description?: string;
 }) {
@@ -96,12 +135,19 @@ function ApiKeyField({
         <label className="text-sm font-medium text-fg">
           {label}
         </label>
-        {hasValue ? (
+        {status === "set" && (
           <span className="inline-flex items-center gap-1 text-xs text-success bg-success-surface px-1.5 py-0.5 rounded-full">
             <CheckCircleIcon size={11} weight="fill" />
-            Configured
+            Set{masked ? ` (•••• ${masked.slice(-4)})` : ""}
           </span>
-        ) : (
+        )}
+        {status === "server" && (
+          <span className="inline-flex items-center gap-1 text-xs text-success bg-success-surface px-1.5 py-0.5 rounded-full">
+            <CheckCircleIcon size={11} weight="fill" />
+            Provided by the server
+          </span>
+        )}
+        {status === "missing" && (
           <span className="inline-flex items-center gap-1 text-xs text-fg-secondary bg-muted px-1.5 py-0.5 rounded-full">
             Missing
           </span>
@@ -117,7 +163,13 @@ function ApiKeyField({
           type={show ? "text" : "password"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={hasValue ? "Leave blank to keep current key" : placeholder}
+          placeholder={
+            status === "set"
+              ? "Leave blank to keep current key"
+              : status === "server"
+                ? "Leave blank to use the server's token"
+                : placeholder
+          }
           className="w-full bg-surface border border-line rounded px-3 py-2.5 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:border-line focus:shadow-focus pr-10"
         />
         <button
@@ -198,7 +250,6 @@ function LeadFinderSettingsPageInner() {
   const [data, setData] = useState<SettingsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabId>("providers");
-  const [envStatus, setEnvStatus] = useState<Record<string, { configured: boolean }> | null>(null);
 
   // Provider keys state (blank means "keep existing")
   const [apifyKey, setApifyKey] = useState("");
@@ -294,23 +345,10 @@ function LeadFinderSettingsPageInner() {
     }
   }, []);
 
-  const loadEnvStatus = useCallback(async () => {
-    try {
-      const res = await fetch("/api/lead-finder/settings/env-status", {
-        cache: "no-store",
-      });
-      const json = await res.json();
-      if (res.ok && json?.data) setEnvStatus(json.data);
-    } catch {
-      // ignore — env status is advisory
-    }
-  }, []);
-
   useEffect(() => {
     void loadSettings();
     void loadActors();
-    void loadEnvStatus();
-  }, [loadSettings, loadActors, loadEnvStatus]);
+  }, [loadSettings, loadActors]);
 
   async function putSettings(
     payload: Record<string, unknown>,
@@ -513,8 +551,17 @@ function LeadFinderSettingsPageInner() {
     }
   }
 
-  const allRequired =
-    data?.has_apify && (data?.has_anthropic || data?.has_openrouter);
+  // Ready when Lead Finder can run: an Apify token (the workspace's or the
+  // server's) and an AI provider the shared resolver can use.
+  const apifyStatus: KeyStatus =
+    data?.apify_source === "org"
+      ? "set"
+      : data?.apify_source === "server"
+        ? "server"
+        : "missing";
+  const hasApify = apifyStatus !== "missing";
+  const hasAi = !!data?.effective_provider;
+  const allRequired = hasApify && hasAi;
 
   const providerTabs = useMemo(
     () => [
@@ -566,50 +613,23 @@ function LeadFinderSettingsPageInner() {
                 }`}
               >
                 {allRequired
-                  ? "All required keys configured"
-                  : "Missing required API keys"}
+                  ? "Lead Finder is ready"
+                  : !hasApify && !hasAi
+                    ? "Apify token and AI provider missing"
+                    : !hasApify
+                      ? "Apify token missing"
+                      : "No AI provider configured"}
               </p>
               <p className="text-xs text-fg-secondary mt-0.5">
                 {allRequired
-                  ? "Lead Finder is ready to discover and enrich leads."
-                  : "Add your Apify token and at least one AI provider key below."}
+                  ? "Lead Finder can discover and enrich leads."
+                  : !hasApify
+                    ? "Add an Apify token below."
+                    : "Add a key for an AI provider below."}
               </p>
             </div>
           </div>
           </Section>
-
-          {envStatus && (
-            <Section title="Environment variables">
-              <div className="flex flex-wrap items-center gap-2">
-                {[
-                  { key: "apify", label: "APIFY_TOKEN" },
-                  { key: "openrouter", label: "OPENROUTER_API_KEY" },
-                  { key: "ollama_cloud", label: "OLLAMA_CLOUD_API_KEY" },
-                  { key: "anthropic", label: "ANTHROPIC_API_KEY" },
-                  { key: "groq", label: "GROQ_API_KEY" },
-                ].map(({ key, label }) => {
-                  const configured = !!envStatus[key]?.configured;
-                  return (
-                    <span
-                      key={key}
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${
-                        configured
-                          ? "border-success bg-success-surface text-success"
-                          : "border-line bg-subtle text-fg-secondary"
-                      }`}
-                    >
-                      {configured ? (
-                        <CheckCircleIcon size={12} weight="fill" />
-                      ) : (
-                        <XCircleIcon size={12} weight="fill" />
-                      )}
-                      {label}
-                    </span>
-                  );
-                })}
-              </div>
-            </Section>
-          )}
 
           <PageTabs
             tabs={providerTabs}
@@ -642,6 +662,15 @@ function LeadFinderSettingsPageInner() {
                       <option value="ollama_cloud">Ollama Cloud</option>
                       <option value="custom">Custom (from AI Assistant settings)</option>
                     </select>
+                    <p className="text-xs text-fg-secondary mt-1">
+                      In use:{" "}
+                      <span className="font-medium text-fg">
+                        {providerInUseLabel(data.effective_provider)}
+                      </span>
+                      {data.effective_provider &&
+                        data.effective_provider.provider !== data.ai_provider &&
+                        " (the saved provider has no key, so Lead Finder falls back)"}
+                    </p>
                   </Field>
                   <Field label="Default model">
                     <input
@@ -658,7 +687,8 @@ function LeadFinderSettingsPageInner() {
                   label="Apify Token"
                   value={apifyKey}
                   onChange={setApifyKey}
-                  hasValue={data.has_apify}
+                  status={apifyStatus}
+                  masked={apifyStatus === "set" ? data.apify_token : undefined}
                   placeholder="apify_api_..."
                   description="Required for running discovery campaigns"
                 />
@@ -666,7 +696,7 @@ function LeadFinderSettingsPageInner() {
                   label="Anthropic API Key"
                   value={anthropicKey}
                   onChange={setAnthropicKey}
-                  hasValue={data.has_anthropic}
+                  status={data.has_anthropic ? "set" : "missing"}
                   placeholder="sk-ant-..."
                   description="console.anthropic.com/settings/keys"
                 />
@@ -675,7 +705,7 @@ function LeadFinderSettingsPageInner() {
                     label="OpenRouter API Key"
                     value={openrouterKey}
                     onChange={setOpenrouterKey}
-                    hasValue={data.has_openrouter}
+                    status={data.has_openrouter ? "set" : "missing"}
                     placeholder="sk-or-..."
                     description="openrouter.ai/keys — or sign in with OAuth below"
                   />
@@ -695,7 +725,7 @@ function LeadFinderSettingsPageInner() {
                   label="OpenAI API Key"
                   value={openaiKey}
                   onChange={setOpenaiKey}
-                  hasValue={data.has_openai}
+                  status={data.has_openai ? "set" : "missing"}
                   placeholder="sk-..."
                   description="platform.openai.com/api-keys"
                 />
@@ -703,7 +733,7 @@ function LeadFinderSettingsPageInner() {
                   label="Groq API Key"
                   value={groqKey}
                   onChange={setGroqKey}
-                  hasValue={data.has_groq}
+                  status={data.has_groq ? "set" : "missing"}
                   placeholder="gsk_..."
                   description="console.groq.com/keys"
                 />
@@ -791,15 +821,15 @@ function LeadFinderSettingsPageInner() {
                     onChange={(e) => setAgencyType(e.target.value)}
                     className={inputCls}
                   >
-                    <option value="general">General</option>
-                    <option value="marketing">Marketing</option>
-                    <option value="sales">Sales</option>
-                    <option value="design">Design</option>
-                    <option value="development">Development</option>
-                    <option value="consulting">Consulting</option>
-                    <option value="seo">SEO</option>
-                    <option value="social_media">Social Media</option>
-                    <option value="ai_automation">AI & Automation</option>
+                    {AGENCY_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                    {/* A value saved by the old Settings form (e.g. voice_ai) stays visible. */}
+                    {agencyType && !AGENCY_TYPES.some((t) => t.value === agencyType) && (
+                      <option value={agencyType}>{agencyType}</option>
+                    )}
                   </select>
                 </Field>
                 <Field label="Agency Description">
