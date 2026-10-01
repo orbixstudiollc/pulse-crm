@@ -1,21 +1,30 @@
 // @vitest-environment node
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ---------------------------------------------------------------------------
-// Fake Supabase admin client: records every query and answers ai_usage_log
-// page reads from `pages`, keyed by "org" (organization filter) or "site".
+// Fake Supabase admin client: records rpc calls (answered from `rpcResults`)
+// and the profiles lookup / ai_usage_log insert used by recordSharedUsage.
+// A fake Anthropic SDK records provider calls, so the order reserve -> call ->
+// settle can be checked without a network.
 // ---------------------------------------------------------------------------
 
 type Call = { table: string; ops: Array<[string, ...unknown[]]> };
-type PageResult = { data: Array<{ total_tokens: number | null }> | null; error: { message: string } | null };
+type RpcResult = { data: unknown; error: { message: string } | null } | "reject";
 
 const db = vi.hoisted(() => ({
   calls: [] as Call[],
-  pages: { org: [] as PageResult[], site: [] as PageResult[] },
+  rpcCalls: [] as Array<{ fn: string; args: Record<string, unknown> }>,
+  rpcResults: {} as Record<string, RpcResult[]>,
   inserts: [] as Array<Record<string, unknown>>,
   profiles: [] as Array<{ id: string }>,
   sessionUserId: null as string | null,
   adminThrows: false,
+  events: [] as string[],
+}));
+
+const sdk = vi.hoisted(() => ({
+  create: null as null | ((params: Record<string, unknown>) => Promise<unknown>),
+  params: [] as Array<Record<string, unknown>>,
 }));
 
 function fakeQuery(table: string) {
@@ -28,11 +37,6 @@ function fakeQuery(table: string) {
       return builder;
     };
   }
-  builder.range = (from: number, to: number) => {
-    call.ops.push(["range", from, to]);
-    const key = call.ops.some(([op, col]) => op === "eq" && col === "organization_id") ? "org" : "site";
-    return Promise.resolve(db.pages[key].shift() ?? { data: [], error: null });
-  };
   builder.maybeSingle = () => {
     call.ops.push(["maybeSingle"]);
     return Promise.resolve({ data: db.profiles[0] ?? null, error: null });
@@ -44,11 +48,19 @@ function fakeQuery(table: string) {
   return builder;
 }
 
+function fakeRpc(fn: string, args: Record<string, unknown>) {
+  db.rpcCalls.push({ fn, args });
+  db.events.push(fn);
+  const next = db.rpcResults[fn]?.shift() ?? { data: fn === "reserve_shared_ai_tokens" ? "ok" : null, error: null };
+  if (next === "reject") return Promise.reject(new Error("network down"));
+  return Promise.resolve(next);
+}
+
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({
   createAdminClient: () => {
     if (db.adminThrows) throw new Error("no service role");
-    return { from: fakeQuery };
+    return { from: fakeQuery, rpc: fakeRpc };
   },
   createClient: async () => ({
     auth: {
@@ -56,38 +68,61 @@ vi.mock("@/lib/supabase/server", () => ({
     },
   }),
 }));
+vi.mock("@anthropic-ai/sdk", () => ({
+  default: class FakeAnthropic {
+    messages = {
+      create: async (params: Record<string, unknown>) => {
+        sdk.params.push(params);
+        db.events.push("create");
+        if (!sdk.create) throw new Error("no fake response");
+        return sdk.create(params);
+      },
+    };
+  },
+}));
 
 const core = await import("@/lib/ai/shared-budget-core");
-const { checkSharedBudget, recordSharedUsage } = await import("@/lib/ai/shared-budget");
+const { reserveSharedTokens, settleSharedTokens, recordSharedUsage } = await import("@/lib/ai/shared-budget");
 
 const {
   DEFAULT_SHARED_DAILY_TOKEN_LIMIT,
   DEFAULT_SHARED_ORG_DAILY_TOKEN_LIMIT,
   SHARED_BUDGET_BUSY_REASON,
   SHARED_BUDGET_WORKSPACE_REASON,
+  SHARED_MAX_OUTPUT_TOKENS,
   SharedBudgetError,
+  estimateTokens,
   parseLimit,
-  sharedBudgetDecision,
+  reservationReason,
+  settlementDelta,
   sharedBudgetLimits,
-  utcDayStart,
+  utcDay,
 } = core;
 
 const ORG = "11111111-1111-4111-8111-111111111111";
 const NOW = new Date("2026-10-01T15:30:00Z");
 
-function rows(...tokens: Array<number | null>): PageResult {
-  return { data: tokens.map((t) => ({ total_tokens: t })), error: null };
-}
-
 beforeEach(() => {
   db.calls = [];
-  db.pages = { org: [], site: [] };
+  db.rpcCalls = [];
+  db.rpcResults = {};
   db.inserts = [];
   db.profiles = [];
   db.sessionUserId = null;
   db.adminThrows = false;
+  db.events = [];
+  sdk.create = null;
+  sdk.params = [];
   delete process.env.AI_SHARED_ORG_DAILY_TOKEN_LIMIT;
   delete process.env.AI_SHARED_DAILY_TOKEN_LIMIT;
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(NOW);
+  vi.spyOn(console, "error").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 describe("user-facing reasons", () => {
@@ -144,140 +179,123 @@ describe("sharedBudgetLimits", () => {
   });
 });
 
-describe("sharedBudgetDecision", () => {
-  const limits = { orgLimit: 100, siteLimit: 1000 };
-
-  it("allows a call while both totals are under their limits", () => {
-    expect(sharedBudgetDecision({ ...limits, orgTokensToday: 99, siteTokensToday: 999 })).toEqual({
-      allowed: true,
-    });
-    expect(sharedBudgetDecision({ ...limits, orgTokensToday: 0, siteTokensToday: 0 })).toEqual({ allowed: true });
-  });
-
-  it("blocks the workspace once it reaches its own limit", () => {
-    expect(sharedBudgetDecision({ ...limits, orgTokensToday: 100, siteTokensToday: 100 })).toEqual({
-      allowed: false,
-      reason: SHARED_BUDGET_WORKSPACE_REASON,
-    });
-  });
-
-  it("blocks everyone with the busy reason once the site-wide limit is reached", () => {
-    expect(sharedBudgetDecision({ ...limits, orgTokensToday: 0, siteTokensToday: 1000 })).toEqual({
-      allowed: false,
-      reason: SHARED_BUDGET_BUSY_REASON,
-    });
-  });
-
-  it("names the workspace limit when both are used up", () => {
-    expect(sharedBudgetDecision({ ...limits, orgTokensToday: 500, siteTokensToday: 5000 }).reason).toBe(
-      SHARED_BUDGET_WORKSPACE_REASON
-    );
-  });
-
-  it("treats a limit of 0 as no shared AI at all", () => {
-    expect(sharedBudgetDecision({ orgLimit: 0, siteLimit: 1000, orgTokensToday: 0, siteTokensToday: 0 })).toEqual({
-      allowed: false,
-      reason: SHARED_BUDGET_WORKSPACE_REASON,
-    });
-    expect(sharedBudgetDecision({ orgLimit: 100, siteLimit: 0, orgTokensToday: 0, siteTokensToday: 0 })).toEqual({
-      allowed: false,
-      reason: SHARED_BUDGET_BUSY_REASON,
-    });
+describe("estimateTokens", () => {
+  it("is a third of the input characters, rounded up, plus the output cap", () => {
+    expect(estimateTokens({ inputChars: 0, maxOutputTokens: 1024 })).toBe(1024);
+    expect(estimateTokens({ inputChars: 3, maxOutputTokens: 1024 })).toBe(1025);
+    expect(estimateTokens({ inputChars: 4, maxOutputTokens: 1024 })).toBe(1026);
+    expect(estimateTokens({ inputChars: 30_000, maxOutputTokens: 4096 })).toBe(14_096);
   });
 });
 
-describe("utcDayStart", () => {
-  it("returns midnight UTC of the current UTC day", () => {
-    expect(utcDayStart(new Date("2026-10-01T23:30:00+05:00")).toISOString()).toBe("2026-10-01T00:00:00.000Z");
-    // 02:00 in UTC+6 is still 30 September in UTC.
-    expect(utcDayStart(new Date("2026-10-01T02:00:00+06:00")).toISOString()).toBe("2026-09-30T00:00:00.000Z");
-    expect(utcDayStart(new Date("2026-10-01T00:00:00Z")).toISOString()).toBe("2026-10-01T00:00:00.000Z");
+describe("reservationReason", () => {
+  it("is null when the reservation went through", () => {
+    expect(reservationReason("ok")).toBeNull();
   });
-});
 
-describe("checkSharedBudget", () => {
-  it("sums today's shared-key tokens for the workspace and site-wide", async () => {
-    db.pages.org = [rows(10, 20, null)];
-    db.pages.site = [rows(10, 20, 300)];
+  it("maps the workspace limit to the workspace reason", () => {
+    expect(reservationReason("org_limit")).toBe(SHARED_BUDGET_WORKSPACE_REASON);
+  });
 
-    await expect(checkSharedBudget(ORG, NOW)).resolves.toEqual({ allowed: true });
-
-    const usage = db.calls.filter((c) => c.table === "ai_usage_log");
-    expect(usage).toHaveLength(2);
-    for (const call of usage) {
-      expect(call.ops).toContainEqual(["select", "total_tokens"]);
-      expect(call.ops).toContainEqual(["eq", "metadata->>shared_key", "true"]);
-      expect(call.ops).toContainEqual(["gte", "created_at", "2026-10-01T00:00:00.000Z"]);
+  it("maps the site-wide limit, and anything unexpected, to the busy reason", () => {
+    for (const result of ["site_limit", "", "OK", null, undefined, 42]) {
+      expect(reservationReason(result)).toBe(SHARED_BUDGET_BUSY_REASON);
     }
-    const orgFiltered = usage.filter((c) => c.ops.some(([op, col]) => op === "eq" && col === "organization_id"));
-    expect(orgFiltered).toHaveLength(1);
-    expect(orgFiltered[0].ops).toContainEqual(["eq", "organization_id", ORG]);
+  });
+});
+
+describe("settlementDelta", () => {
+  it("charges the difference between actual usage and the reservation", () => {
+    expect(settlementDelta(1000, 1500)).toBe(500);
+    expect(settlementDelta(1000, 400)).toBe(-600);
+    expect(settlementDelta(1000, 1000)).toBe(0);
   });
 
-  it("blocks the workspace when its shared tokens reach AI_SHARED_ORG_DAILY_TOKEN_LIMIT", async () => {
-    process.env.AI_SHARED_ORG_DAILY_TOKEN_LIMIT = "100";
-    db.pages.org = [rows(60, 40)];
-    db.pages.site = [rows(60, 40)];
-    await expect(checkSharedBudget(ORG, NOW)).resolves.toEqual({
-      allowed: false,
-      reason: SHARED_BUDGET_WORKSPACE_REASON,
-    });
+  it("never refunds more than this call reserved", () => {
+    expect(settlementDelta(1000, 1)).toBe(-999);
+    expect(settlementDelta(1000, 1)).toBeGreaterThanOrEqual(-1000);
   });
 
-  it("blocks with the busy reason when the site-wide total reaches AI_SHARED_DAILY_TOKEN_LIMIT", async () => {
-    process.env.AI_SHARED_DAILY_TOKEN_LIMIT = "500";
-    db.pages.org = [rows(5)];
-    db.pages.site = [rows(5, 495)];
-    await expect(checkSharedBudget(ORG, NOW)).resolves.toEqual({
-      allowed: false,
-      reason: SHARED_BUDGET_BUSY_REASON,
-    });
+  it("is null when actual usage is unknown, so the reservation stands", () => {
+    for (const actual of [undefined, null, Number.NaN, Infinity, -5, 0]) {
+      expect(settlementDelta(1000, actual)).toBeNull();
+    }
   });
+});
 
-  it("reads further pages when a page is full, so large days are not undercounted", async () => {
-    process.env.AI_SHARED_DAILY_TOKEN_LIMIT = "1500";
-    const fullPage = rows(...Array.from({ length: 1000 }, () => 1));
-    db.pages.org = [rows(1)];
-    db.pages.site = [fullPage, rows(500)];
-    await expect(checkSharedBudget(ORG, NOW)).resolves.toEqual({
-      allowed: false,
-      reason: SHARED_BUDGET_BUSY_REASON,
-    });
-    const siteCalls = db.calls.filter(
-      (c) => c.table === "ai_usage_log" && !c.ops.some(([op, col]) => op === "eq" && col === "organization_id")
-    );
-    expect(siteCalls.map((c) => c.ops.find(([op]) => op === "range"))).toEqual([
-      ["range", 0, 999],
-      ["range", 1000, 1999],
+describe("utcDay", () => {
+  it("is the UTC calendar day as YYYY-MM-DD", () => {
+    expect(utcDay(new Date("2026-10-01T23:30:00+05:00"))).toBe("2026-10-01");
+    // 02:00 in UTC+6 is still 30 September in UTC.
+    expect(utcDay(new Date("2026-10-01T02:00:00+06:00"))).toBe("2026-09-30");
+    expect(utcDay(new Date("2026-10-01T00:00:00Z"))).toBe("2026-10-01");
+  });
+});
+
+describe("reserveSharedTokens", () => {
+  it("reserves the estimate against today's limits and returns the day to settle against", async () => {
+    await expect(reserveSharedTokens(ORG, 1234)).resolves.toEqual({ ok: true, day: "2026-10-01", reserved: 1234 });
+    expect(db.rpcCalls).toEqual([
+      {
+        fn: "reserve_shared_ai_tokens",
+        args: { p_org: ORG, p_tokens: 1234, p_org_limit: 50_000, p_site_limit: 1_000_000 },
+      },
     ]);
   });
 
-  it("stops reading once the limit is already reached", async () => {
-    process.env.AI_SHARED_DAILY_TOKEN_LIMIT = "10";
-    db.pages.org = [rows(1)];
-    db.pages.site = [rows(...Array.from({ length: 1000 }, () => 1)), rows(1)];
-    await expect(checkSharedBudget(ORG, NOW)).resolves.toEqual({
-      allowed: false,
-      reason: SHARED_BUDGET_BUSY_REASON,
-    });
-    expect(db.pages.site).toHaveLength(1); // second page never requested
+  it("passes the limits from env (the owner sets them in Vercel)", async () => {
+    process.env.AI_SHARED_ORG_DAILY_TOKEN_LIMIT = "20000";
+    process.env.AI_SHARED_DAILY_TOKEN_LIMIT = "300000";
+    await reserveSharedTokens(ORG, 10);
+    expect(db.rpcCalls[0].args).toMatchObject({ p_org_limit: 20_000, p_site_limit: 300_000 });
   });
 
-  it("fails closed with the busy reason when a query errors", async () => {
-    db.pages.org = [{ data: null, error: { message: "boom" } }];
-    db.pages.site = [rows(0)];
-    await expect(checkSharedBudget(ORG, NOW)).resolves.toEqual({
-      allowed: false,
-      reason: SHARED_BUDGET_BUSY_REASON,
+  it("refuses with the workspace reason when the workspace limit would be passed", async () => {
+    db.rpcResults.reserve_shared_ai_tokens = [{ data: "org_limit", error: null }];
+    await expect(reserveSharedTokens(ORG, 10)).resolves.toEqual({
+      ok: false,
+      reason: SHARED_BUDGET_WORKSPACE_REASON,
     });
   });
 
-  it("fails closed with the busy reason when the database is unreachable", async () => {
+  it("refuses with the busy reason when the site-wide limit would be passed", async () => {
+    db.rpcResults.reserve_shared_ai_tokens = [{ data: "site_limit", error: null }];
+    await expect(reserveSharedTokens(ORG, 10)).resolves.toEqual({ ok: false, reason: SHARED_BUDGET_BUSY_REASON });
+  });
+
+  it("fails closed with the busy reason on an RPC error, a rejection or no database", async () => {
+    db.rpcResults.reserve_shared_ai_tokens = [{ data: null, error: { message: "boom" } }, "reject"];
+    const busy = { ok: false, reason: SHARED_BUDGET_BUSY_REASON };
+    await expect(reserveSharedTokens(ORG, 10)).resolves.toEqual(busy);
+    await expect(reserveSharedTokens(ORG, 10)).resolves.toEqual(busy);
     db.adminThrows = true;
-    await expect(checkSharedBudget(ORG, NOW)).resolves.toEqual({
-      allowed: false,
-      reason: SHARED_BUDGET_BUSY_REASON,
-    });
+    await expect(reserveSharedTokens(ORG, 10)).resolves.toEqual(busy);
+  });
+});
+
+describe("settleSharedTokens", () => {
+  it("corrects the reservation to actual usage on the reservation's day", async () => {
+    await settleSharedTokens(ORG, "2026-09-30", 1000, 1500);
+    await settleSharedTokens(ORG, "2026-09-30", 1000, 300);
+    expect(db.rpcCalls).toEqual([
+      { fn: "settle_shared_ai_tokens", args: { p_org: ORG, p_day: "2026-09-30", p_delta: 500 } },
+      { fn: "settle_shared_ai_tokens", args: { p_org: ORG, p_day: "2026-09-30", p_delta: -700 } },
+    ]);
+  });
+
+  it("skips settling when usage is unknown or matches the reservation", async () => {
+    await settleSharedTokens(ORG, "2026-10-01", 1000, undefined);
+    await settleSharedTokens(ORG, "2026-10-01", 1000, 0);
+    await settleSharedTokens(ORG, "2026-10-01", 1000, 1000);
+    expect(db.rpcCalls).toHaveLength(0);
+  });
+
+  it("never throws", async () => {
+    db.rpcResults.settle_shared_ai_tokens = [{ data: null, error: { message: "boom" } }, "reject"];
+    await expect(settleSharedTokens(ORG, "2026-10-01", 1000, 10)).resolves.toBeUndefined();
+    await expect(settleSharedTokens(ORG, "2026-10-01", 1000, 10)).resolves.toBeUndefined();
+    db.adminThrows = true;
+    await expect(settleSharedTokens(ORG, "2026-10-01", 1000, 10)).resolves.toBeUndefined();
   });
 });
 
@@ -328,48 +346,86 @@ describe("recordSharedUsage", () => {
   });
 });
 
-describe("createAIMessagesClient shared-key gate", () => {
-  // A custom endpoint on a non-public URL: any call that gets past the budget
-  // gate fails at URL validation, before any network request.
-  const blocked = { provider: "custom" as const, apiKey: "test-only-key", baseURL: "http://localhost" };
-  const params = { model: "claude-sonnet-4.6", max_tokens: 16, messages: [{ role: "user" as const, content: "hi" }] };
-  const budgetQueries = () => db.calls.filter((c) => c.table === "ai_usage_log");
+describe("createAIMessagesClient shared-key reservation", () => {
+  const envAnthropic = { provider: "anthropic" as const, source: "env" as const, apiKey: "test-only-key" };
+  const params = {
+    model: "claude-sonnet-4-6",
+    max_tokens: 1024,
+    system: "You are helpful.",
+    messages: [{ role: "user" as const, content: "Score this lead please." }],
+  };
+  const expectedEstimate = (p: { system?: unknown; messages: unknown; max_tokens: number }) =>
+    Math.ceil(JSON.stringify({ system: p.system, messages: p.messages }).length / 3) + p.max_tokens;
+  const reply = (input: number, output: number) => async () => ({
+    content: [{ type: "text", text: "ok" }],
+    usage: { input_tokens: input, output_tokens: output },
+  });
+  const rpcNamed = (fn: string) => db.rpcCalls.filter((c) => c.fn === fn);
 
   it("refuses an env-credential call when no org is given to charge (fail closed)", async () => {
     const { createAIMessagesClient } = await import("@/lib/ai/client");
-    const client = createAIMessagesClient({ ...blocked, source: "env" });
+    const client = createAIMessagesClient(envAnthropic);
     const err = await client.messages.create(params).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(SharedBudgetError);
     expect((err as Error).message).toBe(SHARED_BUDGET_BUSY_REASON);
-    expect(budgetQueries()).toHaveLength(0);
+    expect(db.events).toEqual([]);
   });
 
-  it("refuses an env-credential call once the workspace budget is used up", async () => {
-    process.env.AI_SHARED_ORG_DAILY_TOKEN_LIMIT = "100";
-    db.pages.org = [rows(100)];
-    db.pages.site = [rows(100)];
+  it("refuses with the workspace reason, without calling the provider, when the reservation is refused", async () => {
+    db.rpcResults.reserve_shared_ai_tokens = [{ data: "org_limit", error: null }];
     const { createAIMessagesClient } = await import("@/lib/ai/client");
-    const client = createAIMessagesClient({ ...blocked, source: "env" }, null, ORG);
+    const client = createAIMessagesClient(envAnthropic, null, ORG);
     const err = await client.messages.create(params).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(SharedBudgetError);
     expect((err as Error).message).toBe(SHARED_BUDGET_WORKSPACE_REASON);
+    expect(db.events).toEqual(["reserve_shared_ai_tokens"]);
   });
 
-  it("lets an env-credential call through while budget remains", async () => {
-    db.pages.org = [rows(1)];
-    db.pages.site = [rows(1)];
+  it("reserves the estimate first, calls the provider, then settles to actual usage", async () => {
+    sdk.create = reply(300, 200);
     const { createAIMessagesClient } = await import("@/lib/ai/client");
-    const client = createAIMessagesClient({ ...blocked, source: "env" }, null, ORG);
-    const err = await client.messages.create(params).catch((e: unknown) => e);
-    expect(err).not.toBeInstanceOf(SharedBudgetError);
-    expect(budgetQueries()).toHaveLength(2);
+    const client = createAIMessagesClient(envAnthropic, null, ORG);
+    const res = await client.messages.create(params);
+    expect(res.usage.input_tokens).toBe(300);
+
+    expect(db.events).toEqual(["reserve_shared_ai_tokens", "create", "settle_shared_ai_tokens"]);
+    const estimate = expectedEstimate(params);
+    expect(rpcNamed("reserve_shared_ai_tokens")[0].args).toMatchObject({ p_org: ORG, p_tokens: estimate });
+    expect(rpcNamed("settle_shared_ai_tokens")[0].args).toEqual({
+      p_org: ORG,
+      p_day: "2026-10-01",
+      p_delta: 500 - estimate,
+    });
   });
 
-  it("never checks the shared budget for the org's own credential", async () => {
+  it("caps max_tokens at 8192 for env calls instead of failing", async () => {
+    expect(SHARED_MAX_OUTPUT_TOKENS).toBe(8192);
+    sdk.create = reply(10, 10);
     const { createAIMessagesClient } = await import("@/lib/ai/client");
-    const client = createAIMessagesClient({ ...blocked, source: "org" }, null, ORG);
-    const err = await client.messages.create(params).catch((e: unknown) => e);
-    expect(err).not.toBeInstanceOf(SharedBudgetError);
-    expect(budgetQueries()).toHaveLength(0);
+    const client = createAIMessagesClient(envAnthropic, null, ORG);
+    await client.messages.create({ ...params, max_tokens: 20_000 });
+    expect(sdk.params[0].max_tokens).toBe(8192);
+    expect(rpcNamed("reserve_shared_ai_tokens")[0].args.p_tokens).toBe(
+      expectedEstimate({ ...params, max_tokens: 8192 })
+    );
+  });
+
+  it("keeps the whole reservation when the provider call fails", async () => {
+    sdk.create = async () => {
+      throw new Error("529 overloaded");
+    };
+    const { createAIMessagesClient } = await import("@/lib/ai/client");
+    const client = createAIMessagesClient(envAnthropic, null, ORG);
+    await expect(client.messages.create(params)).rejects.toThrow("529 overloaded");
+    expect(db.events).toEqual(["reserve_shared_ai_tokens", "create"]);
+  });
+
+  it("never reserves, settles or caps for the org's own credential", async () => {
+    sdk.create = reply(10, 10);
+    const { createAIMessagesClient } = await import("@/lib/ai/client");
+    const client = createAIMessagesClient({ ...envAnthropic, source: "org" }, null, ORG);
+    await client.messages.create({ ...params, max_tokens: 20_000 });
+    expect(db.rpcCalls).toHaveLength(0);
+    expect(sdk.params[0].max_tokens).toBe(20_000);
   });
 });

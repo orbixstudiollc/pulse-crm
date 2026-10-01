@@ -12,11 +12,6 @@ export const SHARED_BUDGET_BUSY_REASON = "AI is busy right now. Please try again
 export const DEFAULT_SHARED_ORG_DAILY_TOKEN_LIMIT = 50_000;
 export const DEFAULT_SHARED_DAILY_TOKEN_LIMIT = 1_000_000;
 
-export interface SharedBudgetDecision {
-  allowed: boolean;
-  reason?: string;
-}
-
 /** Thrown instead of making an AI call that the shared-key budget does not allow. */
 export class SharedBudgetError extends Error {
   constructor(reason: string) {
@@ -44,27 +39,40 @@ export function sharedBudgetLimits(env: Record<string, string | undefined>): {
   };
 }
 
+/** The most output tokens one shared-key call may ask for; larger requests are clamped. */
+export const SHARED_MAX_OUTPUT_TOKENS = 8192;
+
 /**
- * Whether one more shared-key call may start, given today's shared-key token
- * totals. The workspace limit is reported first since it is the one the user
- * can wait out.
+ * Tokens to reserve before a shared-key call: about one token per 3 input
+ * characters (rounded up) plus the most the model may write.
  */
-export function sharedBudgetDecision(input: {
-  orgTokensToday: number;
-  siteTokensToday: number;
-  orgLimit: number;
-  siteLimit: number;
-}): SharedBudgetDecision {
-  if (input.orgTokensToday >= input.orgLimit) {
-    return { allowed: false, reason: SHARED_BUDGET_WORKSPACE_REASON };
-  }
-  if (input.siteTokensToday >= input.siteLimit) {
-    return { allowed: false, reason: SHARED_BUDGET_BUSY_REASON };
-  }
-  return { allowed: true };
+export function estimateTokens(input: { inputChars: number; maxOutputTokens: number }): number {
+  return Math.ceil(input.inputChars / 3) + input.maxOutputTokens;
 }
 
-/** Midnight UTC at the start of `now`'s UTC day. */
-export function utcDayStart(now: Date): Date {
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+/**
+ * The user-facing refusal for a reserve_shared_ai_tokens result, or null when
+ * the tokens were reserved. Anything unexpected refuses (fail closed).
+ */
+export function reservationReason(result: unknown): string | null {
+  if (result === "ok") return null;
+  if (result === "org_limit") return SHARED_BUDGET_WORKSPACE_REASON;
+  return SHARED_BUDGET_BUSY_REASON;
+}
+
+/**
+ * The correction to apply once a call's actual usage is known: actual minus
+ * reserved, never a refund larger than the reservation (settle also changes
+ * the shared site counter). null when usage is unknown (not a positive
+ * finite number; every real call uses at least one token), so the
+ * reservation stands.
+ */
+export function settlementDelta(reserved: number, actualTotal: number | null | undefined): number | null {
+  if (typeof actualTotal !== "number" || !Number.isFinite(actualTotal) || actualTotal <= 0) return null;
+  return Math.max(actualTotal - reserved, -reserved);
+}
+
+/** The UTC day of `now` as YYYY-MM-DD, the day the budget rows are kept under. */
+export function utcDay(now: Date): string {
+  return now.toISOString().slice(0, 10);
 }

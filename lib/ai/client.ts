@@ -12,8 +12,13 @@ import {
   resolveAIProvider,
   type ResolvedAIProvider,
 } from "./provider-resolver";
-import { checkSharedBudget } from "./shared-budget";
-import { SHARED_BUDGET_BUSY_REASON, SharedBudgetError } from "./shared-budget-core";
+import { reserveSharedTokens, settleSharedTokens } from "./shared-budget";
+import {
+  SHARED_BUDGET_BUSY_REASON,
+  SHARED_MAX_OUTPUT_TOKENS,
+  SharedBudgetError,
+  estimateTokens,
+} from "./shared-budget-core";
 
 /** The part of the Anthropic SDK the CRM uses: non-streaming messages.create. */
 export interface AIMessagesClient {
@@ -191,18 +196,32 @@ function customClient(
 }
 
 /**
- * Checks the shared-key budget before every call. Without an org to charge,
- * the call is refused (fail closed).
+ * Reserves shared-key tokens before every call and settles them to the
+ * response's usage after, independently of the caller's own logging.
+ * max_tokens is clamped to SHARED_MAX_OUTPUT_TOKENS. A failed call keeps its
+ * reservation. Without an org to charge, the call is refused (fail closed).
  */
 function withSharedBudget(client: AIMessagesClient, orgId?: string): AIMessagesClient {
   return {
     messages: {
       create: async (params) => {
-        const budget = orgId
-          ? await checkSharedBudget(orgId)
-          : { allowed: false, reason: SHARED_BUDGET_BUSY_REASON };
-        if (!budget.allowed) throw new SharedBudgetError(budget.reason ?? SHARED_BUDGET_BUSY_REASON);
-        return client.messages.create(params);
+        if (!orgId) throw new SharedBudgetError(SHARED_BUDGET_BUSY_REASON);
+        const capped = { ...params, max_tokens: Math.min(params.max_tokens, SHARED_MAX_OUTPUT_TOKENS) };
+        const estimate = estimateTokens({
+          inputChars: JSON.stringify({ system: capped.system, messages: capped.messages }).length,
+          maxOutputTokens: capped.max_tokens,
+        });
+        const reservation = await reserveSharedTokens(orgId, estimate);
+        if (!reservation.ok) throw new SharedBudgetError(reservation.reason);
+        const response = await client.messages.create(capped);
+        const usage = response.usage;
+        await settleSharedTokens(
+          orgId,
+          reservation.day,
+          reservation.reserved,
+          usage ? (usage.input_tokens ?? 0) + (usage.output_tokens ?? 0) : undefined
+        );
+        return response;
       },
     },
   };
@@ -212,7 +231,7 @@ function withSharedBudget(client: AIMessagesClient, orgId?: string): AIMessagesC
  * Build the client for a resolved provider. `settings` lets the custom
  * provider map Claude model IDs to the org's configured models; the env custom
  * fallback always uses its own models instead. A server-wide (env) credential
- * is the owner's shared key: every call on it is checked against `orgId`'s
+ * is the owner's shared key: every call on it reserves tokens from `orgId`'s
  * shared-key budget first, so no caller can skip the limit.
  */
 export function createAIMessagesClient(
@@ -516,7 +535,7 @@ export async function checkAIAccess(feature: AIFeature): Promise<{
   reason?: string;
 }> {
   try {
-    const { settings, orgId, source } = await getAIClient();
+    const { settings } = await getAIClient();
 
     // Check feature toggle
     const featureKey = `feature_${feature}` as keyof AISettings;
@@ -529,11 +548,8 @@ export async function checkAIAccess(feature: AIFeature): Promise<{
       return { allowed: false, reason: limitReason };
     }
 
-    // Calls on the owner's shared key also count against the shared budget.
-    if (source === "env") {
-      const budget = await checkSharedBudget(orgId);
-      if (!budget.allowed) return { allowed: false, reason: budget.reason };
-    }
+    // Calls on the owner's shared key reserve their tokens per call (see
+    // withSharedBudget), so there is nothing to check here.
 
     return { allowed: true };
   } catch (error) {
@@ -589,8 +605,9 @@ export async function logTokenUsage(params: {
   metadata?: Record<string, unknown>;
   /**
    * Whether a server-wide (env) credential paid for the call; marks the row
-   * metadata.shared_key so the shared budget counts it. When omitted it is
-   * inferred from the org's current provider, the one getAIClient() uses.
+   * metadata.shared_key for the audit log (budgets are reserved per call in
+   * withSharedBudget). When omitted it is inferred from the org's current
+   * provider, the one getAIClient() uses.
    */
   sharedKey?: boolean;
 }): Promise<void> {

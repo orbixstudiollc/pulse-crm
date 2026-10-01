@@ -4,10 +4,7 @@ import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import type { AIProvider, AIMessage, AIResponse } from "./types";
-import {
-  getApifyToken as resolveApifyToken,
-  getApifyTokenFromEnv,
-} from "./apify/token";
+import { getApifyToken as resolveApifyToken } from "./apify/token";
 import { assertSafeFetchTarget } from "@/lib/security/fetch-target";
 import { createPinnedFetch } from "@/lib/security/safe-fetch";
 import {
@@ -15,8 +12,12 @@ import {
   type ResolvedAIProvider,
 } from "@/lib/ai/provider-resolver";
 import { createCustomFetch, customModelFor } from "@/lib/ai/custom-provider";
-import { checkSharedBudget, recordSharedUsage } from "@/lib/ai/shared-budget";
-import { SHARED_BUDGET_BUSY_REASON, SharedBudgetError } from "@/lib/ai/shared-budget-core";
+import {
+  recordSharedUsage,
+  reserveSharedTokens,
+  settleSharedTokens,
+} from "@/lib/ai/shared-budget";
+import { SharedBudgetError, estimateTokens } from "@/lib/ai/shared-budget-core";
 import { getModelId, MODEL_MAP } from "@/lib/ai/models";
 import type { AIModel } from "@/lib/ai/types";
 
@@ -168,49 +169,6 @@ async function loadOrgSettings(orgId: string): Promise<OrgAiSettings | null> {
   return (data as OrgAiSettings | null) ?? null;
 }
 
-async function getApiKeys(orgId: string): Promise<{
-  anthropicKey?: string;
-  openaiKey?: string;
-  openrouterKey?: string;
-  groqKey?: string;
-  ollamaBaseUrl?: string;
-  ollamaCloudKey?: string;
-  apifyToken?: string;
-}> {
-  const data = await loadOrgSettings(orgId);
-
-  // Prefer a live OAuth token over a PAT when still valid
-  const now = Date.now();
-  const orExpires = data?.openrouter_expires_at
-    ? Date.parse(data.openrouter_expires_at)
-    : 0;
-  const orOauth =
-    data?.openrouter_oauth_token && orExpires > now
-      ? data.openrouter_oauth_token
-      : null;
-
-  return {
-    anthropicKey:
-      data?.api_key || process.env.ANTHROPIC_API_KEY || undefined,
-    openaiKey: data?.openai_api_key || process.env.OPENAI_API_KEY || undefined,
-    openrouterKey:
-      orOauth ||
-      data?.openrouter_api_key ||
-      process.env.OPENROUTER_API_KEY ||
-      undefined,
-    groqKey: data?.groq_api_key || process.env.GROQ_API_KEY || undefined,
-    ollamaBaseUrl:
-      data?.ollama_base_url ||
-      process.env.OLLAMA_BASE_URL ||
-      "http://localhost:11434/v1",
-    ollamaCloudKey: process.env.OLLAMA_CLOUD_API_KEY || undefined,
-    apifyToken:
-      data?.apify_api_key || getApifyTokenFromEnv() || undefined,
-    // The custom provider's URL and key come only from the shared resolver
-    // (see resolveForOrg), so an org URL is never paired with the env key.
-  };
-}
-
 /**
  * Retrieve the Apify token for a given org, or throw.
  *
@@ -231,7 +189,22 @@ export async function resolveProviderAndModel(
   return { provider, model };
 }
 
-/** Provider and model for an org, plus the shared resolver's credential. */
+/** The provider's default model, used whenever the model is not the org's to choose. */
+const DEFAULT_MODELS: Record<AIProvider, string> = {
+  openrouter: "anthropic/claude-sonnet-4-5",
+  anthropic: "claude-sonnet-4-6",
+  openai: "gpt-4o",
+  groq: "llama-4-maverick-17b-128e-instruct",
+  ollama: "llama3.1",
+  ollama_cloud: "gemma4:31b",
+  custom: "",
+};
+
+/**
+ * Provider, model and credential for an org, resolved once per completion.
+ * Every key and URL a call uses comes from this result (settings are not
+ * re-read between resolving and calling). Ollama Cloud is keyed by env only.
+ */
 async function resolveForOrg(
   orgId: string,
   hint?: AIProvider
@@ -239,6 +212,7 @@ async function resolveForOrg(
   provider: AIProvider;
   model: string;
   resolved: ResolvedAIProvider | null;
+  ollamaCloudKey?: string;
 }> {
   const settings = await loadOrgSettings(orgId);
 
@@ -246,8 +220,8 @@ async function resolveForOrg(
   // credential; otherwise the shared resolver falls back across configured keys.
   // Ollama Cloud is Lead Finder only and keyed by env, so it is checked here.
   const choice = settings?.ai_provider || hint || null;
-  const useOllamaCloud =
-    choice === "ollama_cloud" && !!process.env.OLLAMA_CLOUD_API_KEY;
+  const ollamaCloudKey = process.env.OLLAMA_CLOUD_API_KEY || undefined;
+  const useOllamaCloud = choice === "ollama_cloud" && !!ollamaCloudKey;
   const resolved = useOllamaCloud
     ? null
     : resolveAIProvider(
@@ -258,10 +232,12 @@ async function resolveForOrg(
     ? "ollama_cloud"
     : (resolved?.provider ?? "openrouter");
 
-  // SECURITY: the env custom fallback uses only its own model, never the
-  // org's saved default_model or custom_* models.
-  if (provider === "custom" && resolved?.source === "env") {
-    return { provider, model: resolved.model ?? "", resolved };
+  // SECURITY: on the owner's shared (env) credential the model is fixed: the
+  // env custom fallback's own model, else the provider's default. The org's
+  // saved default_model and custom_* models are never used with it.
+  if (resolved?.source === "env") {
+    const model = provider === "custom" ? (resolved.model ?? "") : DEFAULT_MODELS[provider];
+    return { provider, model, resolved };
   }
 
   // Rows written by the old settings route hold "ollama:<url>:<model>" here;
@@ -283,30 +259,9 @@ async function resolveForOrg(
   if (provider === "custom" && !model) {
     model = customModelFor("sonnet", settings ?? {}) ?? "";
   }
-  if (!model) {
-    switch (provider) {
-      case "openrouter":
-        model = "anthropic/claude-sonnet-4-5";
-        break;
-      case "anthropic":
-        model = "claude-sonnet-4-6";
-        break;
-      case "openai":
-        model = "gpt-4o";
-        break;
-      case "groq":
-        model = "llama-4-maverick-17b-128e-instruct";
-        break;
-      case "ollama":
-        model = "llama3.1";
-        break;
-      case "ollama_cloud":
-        model = "gemma4:31b";
-        break;
-    }
-  }
+  if (!model) model = DEFAULT_MODELS[provider];
 
-  return { provider, model, resolved };
+  return { provider, model, resolved, ...(useOllamaCloud ? { ollamaCloudKey } : {}) };
 }
 
 // =============================================================================
@@ -314,6 +269,8 @@ async function resolveForOrg(
 // =============================================================================
 
 type CompletionOptions = { temperature?: number; maxTokens?: number; model?: string };
+
+const DEFAULT_MAX_TOKENS = 2048;
 
 export async function generateCompletion(
   messages: AIMessage[],
@@ -324,20 +281,34 @@ export async function generateCompletion(
   const route = await resolveForOrg(orgId, providerHint);
 
   // The owner's shared key pays for env credentials and for Ollama Cloud
-  // (always env-keyed): check the shared budget first, and log the usage to
-  // ai_usage_log (lf_llm_costs cannot mark shared usage) so it is counted.
+  // (always env-keyed): reserve tokens before the call and settle them to
+  // actual usage after (a failed call keeps its reservation). The usage is
+  // also logged to ai_usage_log for the audit log (lf_llm_costs cannot mark
+  // shared usage).
   const sharedKey =
     route.provider === "ollama_cloud" || route.resolved?.source === "env";
+  let reservation: { day: string; reserved: number } | null = null;
   if (sharedKey) {
-    const budget = await checkSharedBudget(orgId);
-    if (!budget.allowed) {
-      throw new SharedBudgetError(budget.reason ?? SHARED_BUDGET_BUSY_REASON);
-    }
+    const reserved = await reserveSharedTokens(
+      orgId,
+      estimateTokens({
+        inputChars: JSON.stringify(messages).length,
+        maxOutputTokens: options?.maxTokens ?? DEFAULT_MAX_TOKENS,
+      })
+    );
+    if (!reserved.ok) throw new SharedBudgetError(reserved.reason);
+    reservation = reserved;
   }
 
   const startTime = Date.now();
-  const response = await completeWith(route, messages, orgId, options);
-  if (sharedKey) {
+  const response = await completeWith(route, messages, options);
+  if (reservation) {
+    await settleSharedTokens(
+      orgId,
+      reservation.day,
+      reservation.reserved,
+      response.inputTokens + response.outputTokens
+    );
     await recordSharedUsage({
       orgId,
       feature: "lead_finder",
@@ -354,24 +325,22 @@ export async function generateCompletion(
 async function completeWith(
   route: Awaited<ReturnType<typeof resolveForOrg>>,
   messages: AIMessage[],
-  orgId: string,
   options?: CompletionOptions
 ): Promise<AIResponse> {
-  const keys = await getApiKeys(orgId);
   const temperature = options?.temperature ?? 0.7;
-  const maxTokens = options?.maxTokens ?? 2048;
+  const maxTokens = options?.maxTokens ?? DEFAULT_MAX_TOKENS;
 
   const { provider, model: defaultModel, resolved } = route;
-  // The env custom fallback always uses its own model.
+  // On a shared (env) credential the model is fixed (see resolveForOrg).
   const model =
-    provider === "custom" && resolved?.source === "env"
-      ? defaultModel
-      : options?.model || defaultModel;
+    resolved?.source === "env" ? defaultModel : options?.model || defaultModel;
+  // The resolved credential only; never another provider's or an env key.
+  const apiKey = resolved?.apiKey;
 
   // --- Ollama Cloud (api.ollama.com) ---
   if (provider === "ollama_cloud") {
-    const apiKey = keys.ollamaCloudKey;
-    if (!apiKey) {
+    const cloudKey = route.ollamaCloudKey;
+    if (!cloudKey) {
       throw new Error(
         "Ollama Cloud API key not configured. Set OLLAMA_CLOUD_API_KEY."
       );
@@ -379,7 +348,7 @@ async function completeWith(
     const res = await fetch("https://api.ollama.com/api/chat", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${cloudKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -412,7 +381,7 @@ async function completeWith(
 
   // --- Ollama (local) ---
   if (provider === "ollama") {
-    const baseURL = keys.ollamaBaseUrl!;
+    const baseURL = resolved?.baseURL ?? "";
     // SECURITY (SSRF): the Ollama base URL is tenant-configurable via
     // ai_settings.ollama_base_url. Although the settings route validates it,
     // re-assert at use time so the server never issues a request to private
@@ -450,7 +419,6 @@ async function completeWith(
 
   // --- Groq ---
   if (provider === "groq") {
-    const apiKey = keys.groqKey;
     if (!apiKey) {
       throw new Error(
         "Groq API key not configured. Set it in Lead Finder Settings or as GROQ_API_KEY."
@@ -480,7 +448,6 @@ async function completeWith(
 
   // --- OpenAI direct ---
   if (provider === "openai") {
-    const apiKey = keys.openaiKey;
     if (!apiKey) {
       throw new Error(
         "OpenAI API key not configured. Set it in Lead Finder Settings or as OPENAI_API_KEY."
@@ -507,7 +474,6 @@ async function completeWith(
 
   // --- OpenRouter (preferred cloud) ---
   if (provider === "openrouter") {
-    const apiKey = keys.openrouterKey;
     if (!apiKey) {
       throw new Error(
         "OpenRouter API key not configured. Connect OpenRouter in Lead Finder Settings or set OPENROUTER_API_KEY."
@@ -606,7 +572,6 @@ async function completeWith(
   }
 
   // --- Anthropic direct SDK ---
-  const apiKey = keys.anthropicKey;
   if (!apiKey) {
     throw new Error(
       "No AI API key configured. Add an Anthropic or OpenRouter key in Lead Finder Settings."

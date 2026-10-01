@@ -13,7 +13,8 @@ import { assembleContext, fetchEntityForChat } from "@/lib/ai/context";
 import { createAIMessagesClient, logTokenUsage, tokenLimitReason } from "@/lib/ai/client";
 import { getModelId } from "@/lib/ai/models";
 import { customModelSettingsFor, resolveAIProvider } from "@/lib/ai/provider-resolver";
-import { checkSharedBudget } from "@/lib/ai/shared-budget";
+import { reserveSharedTokens, settleSharedTokens } from "@/lib/ai/shared-budget";
+import { SharedBudgetError, estimateTokens } from "@/lib/ai/shared-budget-core";
 import { aiSdkBaseUrl, createCustomFetch, customModelFor } from "@/lib/ai/custom-provider";
 import { checkRateLimit, acquireRateLimit } from "@/lib/ai/rate-limiter";
 import { toChatMessages } from "@/lib/ai/chat-messages";
@@ -21,6 +22,11 @@ import { PageContext } from "@/lib/ai/types";
 import { escapePostgrestLike } from "@/lib/security";
 
 export const maxDuration = 60;
+
+/** Tool-use steps per chat turn (stopWhen). */
+const CHAT_MAX_STEPS = 3;
+/** Output cap per step on the owner's shared (env) key. */
+const SHARED_CHAT_MAX_OUTPUT_TOKENS = 4096;
 
 export async function POST(req: Request) {
   let releaseRateLimit: (() => void) | null = null;
@@ -93,12 +99,10 @@ export async function POST(req: Request) {
 
     const orgId = profile.organization_id;
     // The owner's shared (env) key is limited per workspace and site-wide per
-    // UTC day. Plain text so the chat UI shows the reason as is.
+    // UTC day: tokens are reserved before each call (below, or in the client
+    // for the OpenAI-compatible branch). Refusals are plain text so the chat
+    // UI shows the reason as is.
     const sharedKey = resolved.source === "env";
-    if (sharedKey) {
-      const budget = await checkSharedBudget(orgId);
-      if (!budget.allowed) return new Response(budget.reason, { status: 429 });
-    }
 
     const rateCheck = checkRateLimit(orgId);
     if (!rateCheck.allowed) {
@@ -192,6 +196,8 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
           }
         },
         onError: (error) => {
+          // The shared-key reservation was refused: show the reason.
+          if (error instanceof SharedBudgetError) return error.message;
           console.error("AI Chat error:", error);
           return "The AI provider request failed. Please try again.";
         },
@@ -242,10 +248,32 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
     }
     const anthropic = createAnthropic(anthropicOptions);
 
+    // Shared key: reserve the most this turn can use (input once, plus the
+    // output cap for every step) before streaming. Settled in onFinish; an
+    // aborted or failed stream keeps the whole reservation.
+    let reservation: { day: string; reserved: number } | null = null;
+    if (sharedKey) {
+      const reserved = await reserveSharedTokens(
+        orgId,
+        estimateTokens({
+          inputChars: JSON.stringify(messages).length + systemMessage.length,
+          maxOutputTokens: SHARED_CHAT_MAX_OUTPUT_TOKENS * CHAT_MAX_STEPS,
+        })
+      );
+      if (!reserved.ok) {
+        guardedRelease();
+        closeCustomFetch?.();
+        return new Response(reserved.reason, { status: 429 });
+      }
+      reservation = reserved;
+    }
+    let streamFailed = false;
+
     const result = streamText({
       model: anthropic(modelId),
       system: systemMessage,
       messages,
+      ...(sharedKey ? { maxOutputTokens: SHARED_CHAT_MAX_OUTPUT_TOKENS } : {}),
       tools: {
         lookupLead: tool({
           description:
@@ -513,13 +541,14 @@ ${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByTy
           },
         }),
       },
-      stopWhen: stepCountIs(3),
+      stopWhen: stepCountIs(CHAT_MAX_STEPS),
       abortSignal: req.signal,
       onAbort: () => {
         guardedRelease();
         closeCustomFetch?.();
       },
       onError: ({ error }) => {
+        streamFailed = true;
         guardedRelease();
         closeCustomFetch?.();
         console.error("AI Chat stream error:", error);
@@ -528,6 +557,15 @@ ${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByTy
         guardedRelease();
         closeCustomFetch?.();
         const durationMs = Date.now() - startTime;
+        if (reservation && !streamFailed) {
+          const known = totalUsage?.inputTokens !== undefined || totalUsage?.outputTokens !== undefined;
+          await settleSharedTokens(
+            orgId,
+            reservation.day,
+            reservation.reserved,
+            known ? (totalUsage.inputTokens ?? 0) + (totalUsage.outputTokens ?? 0) : undefined
+          );
+        }
         await logTokenUsage({
           orgId: profile.organization_id!,
           userId: user.id,

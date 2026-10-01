@@ -3,66 +3,72 @@ import "server-only";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import {
   SHARED_BUDGET_BUSY_REASON,
-  sharedBudgetDecision,
+  reservationReason,
+  settlementDelta,
   sharedBudgetLimits,
-  utcDayStart,
-  type SharedBudgetDecision,
+  utcDay,
 } from "./shared-budget-core";
-
-/** PostgREST returns at most 1000 rows per request, so totals are read in pages. */
-const PAGE_SIZE = 1000;
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
+export type SharedReservation =
+  | { ok: true; day: string; reserved: number }
+  | { ok: false; reason: string };
+
+function errorMessage(error: unknown): unknown {
+  return error instanceof Error ? error.message : error;
+}
+
 /**
- * Shared-key tokens logged since `since` (for one org, or site-wide), read
- * until the total reaches `cap` or the rows run out. Throws on a query error.
+ * Reserves `estimate` tokens of today's shared-key budget for `orgId` before
+ * an AI call on the owner's shared (env) key. The counters (migration 035)
+ * are checked and charged atomically, so concurrent calls cannot all pass.
+ * Returns the UTC day the tokens were charged to, for settleSharedTokens.
+ * Fails closed: any error refuses with the busy reason.
  */
-async function sharedTokensSince(
-  admin: AdminClient,
-  since: string,
-  cap: number,
-  orgId?: string
-): Promise<number> {
-  let total = 0;
-  for (let from = 0; ; from += PAGE_SIZE) {
-    let query = admin
-      .from("ai_usage_log")
-      .select("total_tokens")
-      .eq("metadata->>shared_key", "true")
-      .gte("created_at", since);
-    if (orgId) query = query.eq("organization_id", orgId);
-    const { data, error } = await query
-      .order("created_at", { ascending: true })
-      .range(from, from + PAGE_SIZE - 1);
+export async function reserveSharedTokens(orgId: string, estimate: number): Promise<SharedReservation> {
+  try {
+    const admin = createAdminClient();
+    const { orgLimit, siteLimit } = sharedBudgetLimits(process.env);
+    // The RPC charges its own UTC day and does not return it; computed right
+    // before the call so settle targets the same row.
+    const day = utcDay(new Date());
+    const { data, error } = await admin.rpc("reserve_shared_ai_tokens", {
+      p_org: orgId,
+      p_tokens: estimate,
+      p_org_limit: orgLimit,
+      p_site_limit: siteLimit,
+    });
     if (error) throw new Error(error.message);
-    const page = data ?? [];
-    for (const row of page) total += row.total_tokens ?? 0;
-    if (total >= cap || page.length < PAGE_SIZE) return total;
+    const reason = reservationReason(data);
+    return reason ? { ok: false, reason } : { ok: true, day, reserved: estimate };
+  } catch (error) {
+    console.error("[shared-budget] reserving shared AI tokens failed:", errorMessage(error));
+    return { ok: false, reason: SHARED_BUDGET_BUSY_REASON };
   }
 }
 
 /**
- * Whether `orgId` may make another AI call on the shared (env) key today.
- * Counts ai_usage_log rows marked metadata.shared_key since midnight UTC, for
- * the org and site-wide. Fails closed: any error blocks with the busy reason.
+ * Corrects a reservation to the call's actual usage (input + output tokens).
+ * Skipped when usage is unknown, so the reservation stands. Never throws.
  */
-export async function checkSharedBudget(
+export async function settleSharedTokens(
   orgId: string,
-  now: Date = new Date()
-): Promise<SharedBudgetDecision> {
+  day: string,
+  reserved: number,
+  actualTotal: number | null | undefined
+): Promise<void> {
+  const delta = settlementDelta(reserved, actualTotal);
+  if (delta === null || delta === 0) return;
   try {
-    const admin = createAdminClient();
-    const since = utcDayStart(now).toISOString();
-    const { orgLimit, siteLimit } = sharedBudgetLimits(process.env);
-    const [orgTokensToday, siteTokensToday] = await Promise.all([
-      sharedTokensSince(admin, since, orgLimit, orgId),
-      sharedTokensSince(admin, since, siteLimit),
-    ]);
-    return sharedBudgetDecision({ orgTokensToday, siteTokensToday, orgLimit, siteLimit });
+    const { error } = await createAdminClient().rpc("settle_shared_ai_tokens", {
+      p_org: orgId,
+      p_day: day,
+      p_delta: delta,
+    });
+    if (error) console.error("[shared-budget] settling shared AI tokens failed:", error.message);
   } catch (error) {
-    console.error("[shared-budget] usage check failed:", error instanceof Error ? error.message : error);
-    return { allowed: false, reason: SHARED_BUDGET_BUSY_REASON };
+    console.error("[shared-budget] settling shared AI tokens failed:", errorMessage(error));
   }
 }
 
@@ -88,8 +94,8 @@ async function usageUserId(admin: AdminClient, orgId: string): Promise<string | 
 
 /**
  * Logs a successful shared-key call made outside lib/ai/client.ts (Lead
- * Finder) to ai_usage_log, marked metadata.shared_key, so checkSharedBudget
- * counts it. Never throws.
+ * Finder) to ai_usage_log, marked metadata.shared_key, for the audit log
+ * (budgets are kept by reserveSharedTokens). Never throws.
  */
 export async function recordSharedUsage(params: {
   orgId: string;
@@ -121,6 +127,6 @@ export async function recordSharedUsage(params: {
     });
     if (error) console.error("[shared-budget] logging shared AI usage failed:", error.message);
   } catch (error) {
-    console.error("[shared-budget] logging shared AI usage failed:", error instanceof Error ? error.message : error);
+    console.error("[shared-budget] logging shared AI usage failed:", errorMessage(error));
   }
 }
