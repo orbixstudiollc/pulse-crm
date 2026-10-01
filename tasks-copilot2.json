@@ -466,9 +466,11 @@
       "id": "T29",
       "title": "Full gate: types, lint, tests, restyle, build",
       "files": [
-        "package.json"
+        "package.json",
+        "tests/api/chat-route.test.ts",
+        "tests/copilot-scope.test.ts"
       ],
-      "interface": "NONE. No source changes expected; if a check fails, fix the owning file with the smallest change and record it in the final report. package.json only in case the test glob must include tests/migrations.",
+      "interface": "Run the full gate. Known fixes to make first (smallest change): (1) tests/api/chat-route.test.ts 'an aborted turn still persists the assistant parts and releases the lock' is timing-flaky (aborts via setTimeout(..., 20) inside the model stream). Make it deterministic: remove that setTimeout and call client.abort() from the test right after the post() response arrives (the model stream stays open after emitting the partial text). Keep every assertion. (2) tests/copilot-scope.test.ts asserts lib/actions/copilot.ts has >= 7 update/delete calls; T18 legitimately deleted unused functions (updateConversation etc.), leaving 6. Change the threshold to the actual count (6) and keep the scoping assertions unchanged. Then if any other check fails, fix the owning file with the smallest change and report it. NONE. No source changes expected; if a check fails, fix the owning file with the smallest change and record it in the final report. package.json only in case the test glob must include tests/migrations.",
       "verify": "npx tsc --noEmit && npx eslint . && npm test && node scripts/restyle/boxes.mjs app/dashboard/copilot/client.tsx components/features/Copilot/*.tsx components/features/AIChat/AIChatPanel.tsx components/features/NotificationsDropdown.tsx && node scripts/restyle/scan.mjs app/dashboard/copilot/client.tsx components/features/Copilot/*.tsx components/features/AIChat/AIChatPanel.tsx components/features/NotificationsDropdown.tsx && ENCRYPTION_KEY=$(node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\") npm run build",
       "depends_on": [
         "T17",
