@@ -8,6 +8,7 @@ import { convertModelForProvider, getModelName } from "./models";
 import { createCustomFetch, type CustomModelSettings } from "./custom-provider";
 import {
   AI_PROVIDER_ORDER,
+  customModelSettingsFor,
   resolveAIProvider,
   type ResolvedAIProvider,
 } from "./provider-resolver";
@@ -150,8 +151,9 @@ function toCustomModel(modelId: string, settings?: CustomModelSettings | null): 
 }
 
 /**
- * Anthropic SDK client for the org's Anthropic-compatible endpoint. Only the
- * custom provider's own key is ever sent to the custom URL.
+ * Anthropic SDK client for an Anthropic-compatible endpoint: the org's own, or
+ * the server-wide env fallback. Only the resolved key is ever sent, and only
+ * to the resolved URL; `settings` must already be the models for that source.
  */
 function customClient(
   resolved: ResolvedAIProvider,
@@ -186,7 +188,8 @@ function customClient(
 
 /**
  * Build the client for a resolved provider. `settings` lets the custom
- * provider map Claude model IDs to the org's configured models.
+ * provider map Claude model IDs to the org's configured models; the env custom
+ * fallback always uses its own models instead.
  */
 export function createAIMessagesClient(
   resolved: ResolvedAIProvider,
@@ -205,7 +208,7 @@ export function createAIMessagesClient(
     case "anthropic":
       return new Anthropic({ apiKey: resolved.apiKey });
     case "custom":
-      return customClient(resolved, settings);
+      return customClient(resolved, customModelSettingsFor(resolved, settings));
     default:
       return openAICompatibleClient(resolved.provider, resolved);
   }
@@ -296,9 +299,7 @@ export async function getAIClient(): Promise<AIClientResult> {
 
   const resolved = resolveAIProvider(resolvedSettings, process.env);
   if (!resolved) {
-    throw new Error(
-      "No AI API key configured. Add one in Settings > AI or set ANTHROPIC_API_KEY in environment."
-    );
+    throw new Error("AI isn't set up for this workspace yet. Add a provider in Settings → AI Assistant.");
   }
 
   // Override the resolved provider so model resolution uses the correct map
@@ -354,15 +355,16 @@ export async function callAIWithFallback(params: {
   for (let i = 0; i < providerOrder.length; i++) {
     const provider = providerOrder[i].provider;
     const client = createAIMessagesClient(providerOrder[i], settings);
-    // The custom provider always gets the org's configured model; the others
-    // get the Claude/OpenRouter ID for the same tier.
+    // The custom provider always gets its configured model (the env fallback's
+    // own models, never the org's, for source "env"); the others get the
+    // Claude/OpenRouter ID for the same tier.
     const modelId =
       modelOverride && i === 0 && provider !== "custom"
         ? modelOverride
         : convertModelForProvider(
             modelOverride || createParams("placeholder").model,
             provider,
-            settings
+            customModelSettingsFor(providerOrder[i], settings)
           );
 
     // Build params with the correct model for this provider

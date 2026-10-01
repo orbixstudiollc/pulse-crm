@@ -10,12 +10,11 @@ import {
 } from "./apify/token";
 import { assertSafeFetchTarget } from "@/lib/security/fetch-target";
 import { createPinnedFetch } from "@/lib/security/safe-fetch";
-import { resolveAIProvider } from "@/lib/ai/provider-resolver";
 import {
-  createCustomFetch,
-  customModelFor,
-  openCustomApiKey,
-} from "@/lib/ai/custom-provider";
+  resolveAIProvider,
+  type ResolvedAIProvider,
+} from "@/lib/ai/provider-resolver";
+import { createCustomFetch, customModelFor } from "@/lib/ai/custom-provider";
 import { getModelId, MODEL_MAP } from "@/lib/ai/models";
 import type { AIModel } from "@/lib/ai/types";
 
@@ -175,8 +174,6 @@ async function getApiKeys(orgId: string): Promise<{
   ollamaBaseUrl?: string;
   ollamaCloudKey?: string;
   apifyToken?: string;
-  customBaseUrl?: string;
-  customKey?: string;
 }> {
   const data = await loadOrgSettings(orgId);
 
@@ -207,12 +204,8 @@ async function getApiKeys(orgId: string): Promise<{
     ollamaCloudKey: process.env.OLLAMA_CLOUD_API_KEY || undefined,
     apifyToken:
       data?.apify_api_key || getApifyTokenFromEnv() || undefined,
-    // SECURITY: no env fallback; a server key never goes to a tenant URL.
-    customBaseUrl: data?.custom_base_url || undefined,
-    // The key opens only for this org and the saved URL it was sealed for.
-    customKey:
-      openCustomApiKey(data?.custom_api_key, orgId, data?.custom_base_url) ??
-      undefined,
+    // The custom provider's URL and key come only from the shared resolver
+    // (see resolveForOrg), so an org URL is never paired with the env key.
   };
 }
 
@@ -232,19 +225,42 @@ export async function resolveProviderAndModel(
   orgId: string,
   hint?: AIProvider
 ): Promise<{ provider: AIProvider; model: string }> {
+  const { provider, model } = await resolveForOrg(orgId, hint);
+  return { provider, model };
+}
+
+/** Provider and model for an org, plus the shared resolver's credential. */
+async function resolveForOrg(
+  orgId: string,
+  hint?: AIProvider
+): Promise<{
+  provider: AIProvider;
+  model: string;
+  resolved: ResolvedAIProvider | null;
+}> {
   const settings = await loadOrgSettings(orgId);
 
   // The saved provider (or the caller's hint) is used only when it has a
   // credential; otherwise the shared resolver falls back across configured keys.
   // Ollama Cloud is Lead Finder only and keyed by env, so it is checked here.
   const choice = settings?.ai_provider || hint || null;
-  const provider: AIProvider =
-    choice === "ollama_cloud" && process.env.OLLAMA_CLOUD_API_KEY
-      ? "ollama_cloud"
-      : (resolveAIProvider(
-          { ...settings, organization_id: orgId, ai_provider: choice },
-          process.env
-        )?.provider ?? "openrouter");
+  const useOllamaCloud =
+    choice === "ollama_cloud" && !!process.env.OLLAMA_CLOUD_API_KEY;
+  const resolved = useOllamaCloud
+    ? null
+    : resolveAIProvider(
+        { ...settings, organization_id: orgId, ai_provider: choice },
+        process.env
+      );
+  const provider: AIProvider = useOllamaCloud
+    ? "ollama_cloud"
+    : (resolved?.provider ?? "openrouter");
+
+  // SECURITY: the env custom fallback uses only its own model, never the
+  // org's saved default_model or custom_* models.
+  if (provider === "custom" && resolved?.source === "env") {
+    return { provider, model: resolved.model ?? "", resolved };
+  }
 
   // Rows written by the old settings route hold "ollama:<url>:<model>" here;
   // ignore them so the provider default is used until settings are re-saved.
@@ -288,7 +304,7 @@ export async function resolveProviderAndModel(
     }
   }
 
-  return { provider, model };
+  return { provider, model, resolved };
 }
 
 // =============================================================================
@@ -305,11 +321,16 @@ export async function generateCompletion(
   const temperature = options?.temperature ?? 0.7;
   const maxTokens = options?.maxTokens ?? 2048;
 
-  const { provider, model: defaultModel } = await resolveProviderAndModel(
-    orgId,
-    providerHint
-  );
-  const model = options?.model || defaultModel;
+  const {
+    provider,
+    model: defaultModel,
+    resolved,
+  } = await resolveForOrg(orgId, providerHint);
+  // The env custom fallback always uses its own model.
+  const model =
+    provider === "custom" && resolved?.source === "env"
+      ? defaultModel
+      : options?.model || defaultModel;
 
   // --- Ollama Cloud (api.ollama.com) ---
   if (provider === "ollama_cloud") {
@@ -483,9 +504,12 @@ export async function generateCompletion(
     };
   }
 
-  // --- Custom Anthropic-compatible endpoint (org-configured) ---
+  // --- Custom Anthropic-compatible endpoint (org's, or the env fallback) ---
   if (provider === "custom") {
-    const { customBaseUrl, customKey } = keys;
+    // SECURITY: URL and key come together from the resolver: the org URL with
+    // the org's sealed key, or the env URL with the env key. Never mixed.
+    const customBaseUrl = resolved?.baseURL;
+    const customKey = resolved?.apiKey;
     if (!customBaseUrl || !customKey) {
       throw new Error(
         "Custom AI provider not configured. Set it in Settings > AI Assistant."

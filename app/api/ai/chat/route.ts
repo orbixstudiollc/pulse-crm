@@ -12,7 +12,7 @@ import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
 import { assembleContext, fetchEntityForChat } from "@/lib/ai/context";
 import { createAIMessagesClient, logTokenUsage, tokenLimitReason } from "@/lib/ai/client";
 import { getModelId } from "@/lib/ai/models";
-import { resolveAIProvider } from "@/lib/ai/provider-resolver";
+import { customModelSettingsFor, resolveAIProvider } from "@/lib/ai/provider-resolver";
 import { aiSdkBaseUrl, createCustomFetch, customModelFor } from "@/lib/ai/custom-provider";
 import { checkRateLimit, acquireRateLimit } from "@/lib/ai/rate-limiter";
 import { toChatMessages } from "@/lib/ai/chat-messages";
@@ -75,7 +75,8 @@ export async function POST(req: Request) {
     let modelId: string;
     switch (provider) {
       case "custom": {
-        const customModel = customModelFor("sonnet", settings ?? {});
+        // The env fallback uses its own models, never the org's custom_* fields.
+        const customModel = customModelFor("sonnet", customModelSettingsFor(resolved, settings) ?? {});
         if (!customModel || !resolved.baseURL) return notConfigured();
         // Without a key the SDK would fall back to ANTHROPIC_API_KEY from env.
         if (!resolved.apiKey) return notConfigured();
@@ -190,8 +191,9 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
 
     let anthropicOptions: Parameters<typeof createAnthropic>[0];
     if (provider === "custom" && resolved.baseURL) {
-      // SECURITY: tenant-supplied URL, so every request goes through a fetch
-      // pinned to the validated public addresses. Closed exactly once when the
+      // SECURITY: the resolved URL (the org's, or the env fallback's, always
+      // paired with its own key) goes through a fetch pinned to the validated
+      // public addresses. Closed exactly once when the
       // stream finishes, errors, or the client disconnects.
       let pinned: Awaited<ReturnType<typeof createCustomFetch>>;
       try {

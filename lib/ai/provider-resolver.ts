@@ -4,7 +4,11 @@
  * Plain module (no server-only imports) so it can be unit tested directly.
  */
 
-import { openCustomApiKey } from "./custom-provider";
+import {
+  normalizeCustomBaseUrl,
+  openCustomApiKey,
+  type CustomModelSettings,
+} from "./custom-provider";
 
 export type ResolvedAIProviderName =
   | "anthropic"
@@ -33,9 +37,17 @@ export interface AIProviderSettings {
 
 export interface ResolvedAIProvider {
   provider: ResolvedAIProviderName;
+  /** "org": the workspace's own credential; "env": a server-wide one. */
+  source: "org" | "env";
   apiKey?: string;
   baseURL?: string;
+  /** Env custom fallback only: the operator's models (CUSTOM_AI_MODEL / CUSTOM_AI_FAST_MODEL). */
+  model?: string;
+  fastModel?: string;
 }
+
+export const DEFAULT_ENV_CUSTOM_MODEL = "claude-sonnet-4.6";
+export const DEFAULT_ENV_CUSTOM_FAST_MODEL = "claude-haiku-4.5";
 
 /** Fallback order when no usable provider was chosen explicitly. */
 export const AI_PROVIDER_ORDER: readonly ResolvedAIProviderName[] = [
@@ -47,7 +59,7 @@ export const AI_PROVIDER_ORDER: readonly ResolvedAIProviderName[] = [
   "custom",
 ];
 
-type Credential = Omit<ResolvedAIProvider, "provider">;
+type Credential = Omit<ResolvedAIProvider, "provider" | "source">;
 
 function orgCredential(
   provider: ResolvedAIProviderName,
@@ -89,12 +101,34 @@ function orgCredential(
   }
 }
 
+/**
+ * The operator's server-wide Anthropic-compatible endpoint. SECURITY: the URL,
+ * key and models all come from env, never from a tenant's settings, so the env
+ * key is only ever sent to the env URL.
+ */
+function envCustomCredential(env: Record<string, string | undefined>): Credential | null {
+  const apiKey = env.CUSTOM_AI_API_KEY?.trim();
+  const rawBase = env.CUSTOM_AI_BASE_URL?.trim();
+  if (!apiKey || !rawBase) return null;
+  let baseURL: string;
+  try {
+    baseURL = normalizeCustomBaseUrl(rawBase);
+  } catch {
+    return null;
+  }
+  return {
+    apiKey,
+    baseURL,
+    model: env.CUSTOM_AI_MODEL?.trim() || DEFAULT_ENV_CUSTOM_MODEL,
+    fastModel: env.CUSTOM_AI_FAST_MODEL?.trim() || DEFAULT_ENV_CUSTOM_FAST_MODEL,
+  };
+}
+
 function envCredential(
   provider: ResolvedAIProviderName,
   env: Record<string, string | undefined>
 ): Credential | null {
-  // SECURITY: never send a server env key to a tenant-configured URL.
-  if (provider === "custom") return null;
+  if (provider === "custom") return envCustomCredential(env);
   const value = {
     anthropic: env.ANTHROPIC_API_KEY,
     openrouter: env.OPENROUTER_API_KEY,
@@ -118,7 +152,10 @@ function isProviderName(value: unknown): value is ResolvedAIProviderName {
  * - Otherwise the first provider with an org credential in the order
  *   anthropic, openrouter, openai, groq, ollama, custom; then the first with
  *   an env credential in the same order. Org credentials beat env credentials.
- * - "custom" needs an org base URL and key and never uses an env credential.
+ * - An org "custom" credential needs the org base URL and a key sealed for it.
+ * - The env "custom" credential (CUSTOM_AI_*) is tried last of all, even when
+ *   "custom" was chosen explicitly. It carries its own URL and models; nothing
+ *   from the org's custom_* settings is ever combined with the env key.
  * - null when nothing is configured.
  */
 export function resolveAIProvider(
@@ -128,17 +165,35 @@ export function resolveAIProvider(
 ): ResolvedAIProvider | null {
   const explicit = settings.ai_provider;
   if (isProviderName(explicit)) {
-    const cred = orgCredential(explicit, settings, now) ?? envCredential(explicit, env);
-    if (cred) return { provider: explicit, ...cred };
+    const org = orgCredential(explicit, settings, now);
+    if (org) return { provider: explicit, source: "org", ...org };
+    // The env custom fallback stays last, after every other credential.
+    const fromEnv = explicit === "custom" ? null : envCredential(explicit, env);
+    if (fromEnv) return { provider: explicit, source: "env", ...fromEnv };
   }
 
   for (const provider of AI_PROVIDER_ORDER) {
     const cred = orgCredential(provider, settings, now);
-    if (cred) return { provider, ...cred };
+    if (cred) return { provider, source: "org", ...cred };
   }
+  // "custom" is last in AI_PROVIDER_ORDER, so the env custom fallback is tried last.
   for (const provider of AI_PROVIDER_ORDER) {
     const cred = envCredential(provider, env);
-    if (cred) return { provider, ...cred };
+    if (cred) return { provider, source: "env", ...cred };
   }
   return null;
+}
+
+/**
+ * The custom model settings to use with a resolved provider: the env custom
+ * fallback's own models, otherwise the org's settings unchanged.
+ */
+export function customModelSettingsFor(
+  resolved: ResolvedAIProvider,
+  settings?: CustomModelSettings | null
+): CustomModelSettings | null | undefined {
+  if (resolved.provider === "custom" && resolved.source === "env") {
+    return { custom_model: resolved.model ?? null, custom_fast_model: resolved.fastModel ?? null };
+  }
+  return settings;
 }
