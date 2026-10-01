@@ -288,7 +288,8 @@ type SdkTool = Tool<Record<string, unknown>, unknown>;
 /**
  * AI SDK tools for one turn. Reads and low-risk writes execute directly. Record writes:
  * - chat: needsApproval computes the diff, records the pending approval via onWriteRequested
- *   and pauses (unless the workspace always-allows the tool); execute re-checks the live row
+ *   and pauses (unless the workspace always-allows the tool); for an already-approved call
+ *   (opts.resolveDiff returns its stored diff) it keeps that diff; execute re-checks the live row
  *   and returns record_changed when it moved since the diff was shown. Past
  *   WRITE_FANOUT_PER_TURN proposals, needsApproval returns false and execute returns
  *   FANOUT_LIMIT_RESULT without writing (never thrown: ai 6 would abort the stream).
@@ -327,6 +328,14 @@ export function buildCopilotToolSet(env: CopilotToolEnv, opts: CopilotToolSetOpt
     tools[t.name] = {
       ...base,
       needsApproval: async (input, { toolCallId }) => {
+        // ai 6 re-runs needsApproval on every approved call before execute. An approved call
+        // keeps the diff the user saw: no recompute against the live row, no new pending row,
+        // no fan-out count.
+        const approved = await opts.resolveDiff?.(toolCallId);
+        if (approved) {
+          diffs.set(toolCallId, approved);
+          return true;
+        }
         if (isAlwaysAllowed(t.name, opts.alwaysAllow)) return false;
         // Over the cap: never throw (ai 6 aborts the whole stream on a needsApproval throw).
         // Skip approval and let execute answer with the fanout_limit result, writing nothing.
@@ -343,7 +352,7 @@ export function buildCopilotToolSet(env: CopilotToolEnv, opts: CopilotToolSetOpt
       execute: async (input, { toolCallId }) => {
         if (overLimit.delete(toolCallId)) return FANOUT_LIMIT_RESULT;
         const diff =
-          diffs.get(toolCallId) ?? pendingDescriptors.get(toolCallId) ?? (await opts.resolveDiff?.(toolCallId)) ?? null;
+          (await opts.resolveDiff?.(toolCallId)) ?? diffs.get(toolCallId) ?? pendingDescriptors.get(toolCallId) ?? null;
         diffs.delete(toolCallId);
         pendingDescriptors.delete(toolCallId);
         if (diff?.kind === "update") {

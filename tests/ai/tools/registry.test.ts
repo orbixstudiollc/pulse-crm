@@ -182,6 +182,32 @@ describe("buildCopilotToolSet (chat)", () => {
     expect(lead().status).toBe("hot");
   });
 
+  it("re-running needsApproval for an approved call keeps the approved diff: no recompute, no new pending row, no fan-out", async () => {
+    const approved: FieldDiff = { kind: "update", recordType: "lead", recordId: LEAD, baselineUpdatedAt: BASELINE, fields: [{ name: "status", before: "hot", after: "cold" }] };
+    const onWriteRequested = vi.fn(async () => undefined);
+    const fanout = { count: 0 };
+    const tools = buildCopilotToolSet(envFor("chat"), {
+      alwaysAllow: [],
+      onWriteRequested,
+      fanout,
+      resolveDiff: async (id) => (id === "approved-1" ? approved : null),
+    });
+    // The row moved after the proposal; a recompute would take the new baseline.
+    Object.assign(lead(), { status: "warm", updated_at: "2026-09-02T00:00:00.000Z" });
+    const reads = db.log.filter((e) => e.table === "leads").length;
+
+    await expect(needsApproval(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("approved-1"))).resolves.toBe(true);
+    expect(onWriteRequested).not.toHaveBeenCalled();
+    expect(fanout.count).toBe(0);
+    expect(pendingDescriptors.has("approved-1")).toBe(false);
+    expect(db.log.filter((e) => e.table === "leads").length).toBe(reads);
+
+    const result = await execute(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("approved-1"));
+    expect(result).toEqual({ ok: false, error: "record_changed" });
+    expect(lead().status).toBe("warm");
+    expect(leadUpdates()).toBe(0);
+  });
+
   it("low-risk writes execute directly", async () => {
     const { tools } = build();
     const result = await execute(tools.save_artifact)({ title: "Weekly report" }, callOpts("s"));

@@ -668,19 +668,15 @@ describe("Copilot done flow: acceptance over PGlite + 042/043 with one scripted 
     expect(await statusByCall()).toEqual({ "call-fu-1": "applied", "call-fu-2": "applied", "call-fu-3": "applied" });
   });
 
-  // ── (4) and (9): KNOWN PRODUCT BUG (it.fails) ───────────────────────────
+  // ── (4) and (9): approved diff vs re-validation ─────────────────────────
   // ai 6.0.295 re-runs needsApproval on every approved call before executing it
   // (validateApprovedToolApprovals -> isApprovalNeeded, node_modules/ai/dist/index.mjs ~3386).
-  // lib/ai/tools/registry.ts needsApproval then recomputes the diff against the LIVE row and
-  // stores it in the per-request `diffs` map, which execute() reads before opts.resolveDiff
-  // (the diff the user approved). The staleness check and the updated_at precondition are
-  // therefore taken from the already-changed row and the stale write goes through.
-  // Fix belongs to T6 (registry.ts): prefer the stored approved diff (resolveDiff) over a diff
-  // computed during re-validation. Marked { fails: true } (same as it.fails); drop the option once fixed.
+  // lib/ai/tools/registry.ts keeps the stored approved diff (resolveDiff) for those calls, so
+  // the staleness check and the updated_at precondition use the diff the user approved.
 
   // ── (4) ──────────────────────────────────────────────────────────────────
 
-  it("(4) lead 3's next_followup changed between proposal and approval: approving returns record_changed and the row is stale", { fails: true }, async () => {
+  it("(4) lead 3's next_followup changed between proposal and approval: approving returns record_changed and the row is stale", async () => {
     const { ids } = await proposeFollowups();
     await db.query("UPDATE leads SET next_followup = '2026-12-25' WHERE id = $1", [LEADS[2]]);
 
@@ -856,7 +852,7 @@ describe("Copilot done flow: acceptance over PGlite + 042/043 with one scripted 
 
   // ── (9) ──────────────────────────────────────────────────────────────────
 
-  it("(9) an approved update whose record's updated_at changed after the proposal returns record_changed and writes nothing", { fails: true }, async () => {
+  it("(9) an approved update whose record's updated_at changed after the proposal returns record_changed and writes nothing", async () => {
     const { ids } = await proposeFollowups();
     // An unrelated column changes: the diffed fields still match, only updated_at moved.
     await db.query("UPDATE leads SET company = 'Renamed Three Co', updated_at = now() + interval '1 second' WHERE id = $1", [LEADS[2]]);
