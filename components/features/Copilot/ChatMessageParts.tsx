@@ -7,6 +7,7 @@ import { TOOL_LABELS } from "@/lib/ai/tools/labels";
 import { ApprovalCard } from "./ApprovalCard";
 import { StepTrace, type TraceStep } from "./StepTrace";
 import { UndoButton, type UndoInfo } from "./UndoButton";
+import { MessageText } from "./MessageText";
 
 export type ChatMessagePartsProps = {
   message: UIMessage;
@@ -113,11 +114,7 @@ export function ChatMessageParts({ message, isLatest, onApprove, onDeny, onUndo 
     if (part.type === "text") {
       flushSteps();
       if (part.text) {
-        blocks.push(
-          <p key={key} className="whitespace-pre-wrap py-1.5 text-[14px] leading-6 text-fg">
-            {part.text}
-          </p>,
-        );
+        blocks.push(<MessageText key={key} text={part.text} />);
       }
       return;
     }
