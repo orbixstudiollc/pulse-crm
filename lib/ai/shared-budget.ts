@@ -242,3 +242,38 @@ export async function recordSharedUsage(params: {
     console.error("[shared-budget] logging shared AI usage failed:", errorMessage(error));
   }
 }
+
+export type BudgetUsage = {
+  orgUsedTokens: number;
+  orgLimitTokens: number;
+  sharedUsedTokens: number;
+  sharedLimitTokens: number;
+};
+
+/**
+ * Today's (UTC) shared-key usage for `orgId` and its limits, read from the
+ * migration 038 counters. Read-only. The shared figures are the site pool,
+ * or the guest pool when `isGuest`. A day with no counter row counts as 0.
+ * Throws when the counters cannot be read.
+ */
+export async function getBudgetUsage(orgId: string, { isGuest }: SharedPool = { isGuest: false }): Promise<BudgetUsage> {
+  const { orgLimit, siteLimit, guestLimit } = sharedBudgetLimits(process.env);
+  const sharedScope = isGuest ? "guest" : "site";
+  const day = new Date().toISOString().slice(0, 10);
+  const { data, error } = await createAdminClient()
+    .from("ai_shared_budget")
+    .select("scope, used")
+    .eq("day", day)
+    .in("scope", [orgId, sharedScope]);
+  if (error) {
+    console.error("[shared-budget] reading shared AI usage failed:", error.message);
+    throw new Error("Shared AI usage is unavailable right now");
+  }
+  const used = (scope: string) => Number(data?.find((row) => row.scope === scope)?.used ?? 0);
+  return {
+    orgUsedTokens: used(orgId),
+    orgLimitTokens: orgLimit,
+    sharedUsedTokens: used(sharedScope),
+    sharedLimitTokens: isGuest ? guestLimit : siteLimit,
+  };
+}
