@@ -1544,6 +1544,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      ai_shared_budget: {
+        Row: {
+          scope: string;
+          day: string;
+          used: number;
+          updated_at: string;
+        };
+        Insert: {
+          scope: string;
+          day: string;
+          used?: number;
+          updated_at?: string;
+        };
+        Update: {
+          scope?: string;
+          day?: string;
+          used?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       // ── Email System Tables ──────────────────────────────────────────────
       email_accounts: {
         Row: {
@@ -3661,7 +3682,23 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      reserve_shared_ai_tokens: {
+        Args: {
+          p_org: string;
+          p_tokens: number;
+          p_org_limit: number;
+          p_site_limit: number;
+        };
+        Returns: string;
+      };
+      settle_shared_ai_tokens: {
+        Args: {
+          p_org: string;
+          p_day: string;
+          p_delta: number;
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
       customer_status: "active" | "pending" | "inactive";
