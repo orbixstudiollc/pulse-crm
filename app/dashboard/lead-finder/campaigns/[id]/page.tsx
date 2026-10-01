@@ -46,6 +46,7 @@ import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 import { EnrichmentProgressBanner, registerActiveBatch } from "@/components/lead-finder/EnrichmentProgressBanner";
 import { SortableList } from "@/components/lead-finder/SortableList";
 import { useLeadEvents } from "@/hooks/use-lead-events";
+import { usePageHeader } from "@/hooks";
 import { useLeadFinderActors } from "@/hooks/use-lead-finder-actors";
 import { formatEnumLabel } from "@/lib/utils/format-enum-label";
 
@@ -282,6 +283,11 @@ export default function CampaignDetailPage() {
   }, [fetchNow]);
 
   useEffect(() => { fetchNow(); }, [fetchNow]);
+
+  usePageHeader({
+    backHref: "/dashboard/lead-finder/campaigns",
+    breadcrumbLabel: campaign?.name,
+  });
 
   // ── Real-time events ───────────────────────────────────────────────────────
 

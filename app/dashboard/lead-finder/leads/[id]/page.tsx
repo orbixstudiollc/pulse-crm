@@ -48,6 +48,7 @@ import {
 import { LeadFinderSubNav } from "@/components/lead-finder/SubNav";
 import { ScoreBadge } from "@/components/lead-finder/ScoreBadge";
 import { useLeadEvents } from "@/hooks/use-lead-events";
+import { usePageHeader } from "@/hooks";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -419,6 +420,14 @@ export default function LeadDetailPage() {
   useEffect(() => {
     loadNow();
   }, [loadNow]);
+
+  const mappedCompany = (lead?.mappedData ?? lead?.mapped_data)?.company;
+  usePageHeader({
+    backHref: "/dashboard/lead-finder/leads",
+    breadcrumbLabel: lead
+      ? (lead.displayName ?? lead.display_name ?? (typeof mappedCompany === "string" ? mappedCompany : undefined)) || undefined
+      : undefined,
+  });
 
   const isEnrichingFromServer = lead?.status === "enriching";
   const isEnrichingState = enriching || !!isEnrichingFromServer;

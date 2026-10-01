@@ -19,6 +19,7 @@ import {
 } from "@/components/ui";
 import { Page, PageHeader, PageTabs, Section, DetailLayout } from "@/components/dashboard";
 import { cn } from "@/lib/utils";
+import { usePageHeader } from "@/hooks";
 import { chartAccent, chartGrid, axisTick } from "@/lib/design-system/chart-colors";
 import { updateMarketingActionItem } from "@/lib/actions/marketing";
 import {
@@ -186,6 +187,11 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [isPending, startTransition] = useTransition();
   const [generating, setGenerating] = useState<string | null>(null);
+
+  usePageHeader({
+    backHref: "/dashboard/marketing",
+    breadcrumbLabel: audit.business_name || audit.website_url,
+  });
 
   const result = audit.result as Record<string, unknown> | null;
 
