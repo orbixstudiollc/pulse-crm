@@ -2957,7 +2957,7 @@ __metadata:
 
 "twenty-sdk@patch:twenty-sdk@npm%3A2.44.0#~/.yarn/patches/twenty-sdk-npm-2.44.0-4fb6d001f5.patch":
   version: 2.44.0
-  resolution: "twenty-sdk@patch:twenty-sdk@npm%3A2.44.0#~/.yarn/patches/twenty-sdk-npm-2.44.0-4fb6d001f5.patch::version=2.44.0&hash=a539fc"
+  resolution: "twenty-sdk@patch:twenty-sdk@npm%3A2.44.0#~/.yarn/patches/twenty-sdk-npm-2.44.0-4fb6d001f5.patch::version=2.44.0&hash=6524f8"
   dependencies:
     "@sniptt/guards": "npm:^0.2.0"
     axios: "npm:^1.16.0"
@@ -2981,7 +2981,7 @@ __metadata:
     uuid: "npm:^13.0.2"
   bin:
     twenty: dist/cli.cjs
-  checksum: 10c0/4c89159bb0ca0118f850bf0809469965b2a05a2b64e64b958349026c6e65a3fb6bd029ea9a3a773381550fc079febb416168af26751f3b08e1fae3c4a35976fe
+  checksum: 10c0/4277344ba28cb0f10299a52e2c8c574ccf118d4aa556258ada300bd2e221a44bc9e335ccca5a118a7bd5e166308613f6674b668168e89b98fbf892a3e9ea25fc
   languageName: node
   linkType: hard
 
