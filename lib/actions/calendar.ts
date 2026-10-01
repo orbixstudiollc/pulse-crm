@@ -82,9 +82,11 @@ export async function getCalendarEventById(id: string) {
   return { data };
 }
 
-// Every open event on or after fromDate ('YYYY-MM-DD'). The default is yesterday
-// in UTC, which is on or before "today" in every time zone; the client trims to
-// "from now onward" in local time.
+// Every open event (null status counts as open) on or after fromDate
+// ('YYYY-MM-DD'). The default is yesterday in UTC, which is on or before
+// "today" in every time zone; the client trims to events that have not ended
+// in local time. The cap leaves room for the day or two of past rows the
+// window starts with.
 export async function getUpcomingEvents(fromDate?: string) {
   if (fromDate !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(fromDate)) {
     return { error: "Invalid date", data: [] };
@@ -100,11 +102,11 @@ export async function getUpcomingEvents(fromDate?: string) {
     .from("calendar_events")
     .select("*")
     .eq("organization_id", orgId)
-    .not("status", "in", '("completed","cancelled")')
+    .or("status.is.null,status.not.in.(completed,cancelled)")
     .gte("date", from)
     .order("date", { ascending: true })
-    .order("start_time", { ascending: true })
-    .limit(50);
+    .order("start_time", { ascending: true, nullsFirst: true })
+    .limit(200);
 
   if (error) return { error: error.message, data: [] };
   return { data: data ?? [] };

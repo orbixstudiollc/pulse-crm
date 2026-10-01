@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   guestSignupsPerHour,
+  clientFetchRecoveryInit,
   isAuthPage,
   isClientFetch,
   isGuestCapReached,
@@ -101,13 +102,10 @@ export async function updateSession(request: NextRequest) {
     const secFetchDest = request.headers.get("sec-fetch-dest");
     if (isClientFetch({ method, secFetchMode, secFetchDest })) {
       // A client-side navigation or prefetch after the session vanished. A
-      // non-RSC response makes the Next router do a full page load of this URL,
-      // which arrives as a real navigation and can be provisioned; prefetches
-      // discard it. Stale auth cookies cleared above are still sent.
-      const res = new NextResponse(null, {
-        status: 200,
-        headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" },
-      });
+      // non-2xx, non-RSC response makes the Next router do a full page load of
+      // this URL, which arrives as a real navigation and can be provisioned;
+      // prefetches discard it. Stale auth cookies cleared above are still sent.
+      const res = new NextResponse(null, clientFetchRecoveryInit());
       for (const cookie of supabaseResponse.cookies.getAll()) res.cookies.set(cookie);
       return res;
     }

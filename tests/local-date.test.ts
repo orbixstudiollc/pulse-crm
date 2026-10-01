@@ -90,4 +90,10 @@ describe("absoluteDayLabel", () => {
     expect(absoluteDayLabel("2025-10-01T02:00:00Z")).toBe("Oct 1");
     expect(absoluteDayLabel("2025-10-01T23:30:00Z")).toBe("Oct 1");
   });
+
+  it("accepts other date options, still in UTC for timestamps", () => {
+    const withYear: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", year: "numeric" };
+    expect(absoluteDayLabel("2025-10-01T02:00:00Z", withYear)).toBe("Oct 1, 2025");
+    expect(absoluteDayLabel("2025-12-31", withYear)).toBe("Dec 31, 2025");
+  });
 });

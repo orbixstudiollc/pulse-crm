@@ -128,6 +128,7 @@ export async function createDeal(dealData: Record<string, unknown>) {
     .from("deals")
     .insert({
       ...dealData,
+      stage_changed_at: new Date().toISOString(),
       organization_id: orgId,
       created_by: user.id,
       owner_id: user.id,
@@ -148,9 +149,23 @@ export async function updateDeal(
   const supabase = await createClient();
   await getOrgId();
 
+  // A stage write only restarts the days-in-stage clock when the stage
+  // actually changes (edit forms resend the current stage).
+  let patch = updates;
+  if (typeof updates.stage === "string" && !("stage_changed_at" in updates)) {
+    const { data: current } = await supabase
+      .from("deals")
+      .select("stage")
+      .eq("id", id)
+      .single();
+    if (current && current.stage !== updates.stage) {
+      patch = { ...updates, stage_changed_at: new Date().toISOString() };
+    }
+  }
+
   const { data, error } = await supabase
     .from("deals")
-    .update(updates as DealUpdate)
+    .update(patch as DealUpdate)
     .eq("id", id)
     .select()
     .single();
@@ -163,7 +178,7 @@ export async function updateDeal(
 }
 
 export async function updateDealStage(id: string, stage: string) {
-  return updateDeal(id, { stage, days_in_stage: 0 });
+  return updateDeal(id, { stage, stage_changed_at: new Date().toISOString() });
 }
 
 export async function deleteDeal(id: string) {

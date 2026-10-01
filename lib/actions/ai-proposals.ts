@@ -5,6 +5,7 @@ import { getAIClient, logTokenUsage } from "@/lib/ai/client";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
 import { getModelId } from "@/lib/ai/models";
 import { revalidatePath } from "next/cache";
+import { stageDays } from "@/lib/deals/metrics";
 
 /**
  * Parse a JSON response from the AI, handling markdown code block wrappers.
@@ -75,7 +76,7 @@ export async function aiGenerateProposal(
     const { data: deal, error: dealError } = await supabase
       .from("deals")
       .select(
-        "id, name, value, stage, probability, close_date, customer_id, contact_name, contact_email, notes, organization_id, days_in_stage, created_at, updated_at"
+        "id, name, value, stage, probability, close_date, customer_id, contact_name, contact_email, notes, organization_id, stage_changed_at, created_at, updated_at"
       )
       .eq("id", dealId)
       .single();
@@ -116,7 +117,7 @@ export async function aiGenerateProposal(
 - Close Date: ${deal.close_date || "N/A"}
 - Contact Name: ${deal.contact_name || "N/A"}
 - Contact Email: ${deal.contact_email || "N/A"}
-- Days in Stage: ${deal.days_in_stage ?? "N/A"}
+- Days in Stage: ${stageDays(deal.stage_changed_at, deal.created_at)}
 - Notes: ${deal.notes || "None"}`);
 
     if (customer) {
@@ -252,7 +253,7 @@ export async function aiGeneratePricingTiers(
     const { data: deal, error: dealError } = await supabase
       .from("deals")
       .select(
-        "id, name, value, stage, probability, close_date, customer_id, contact_name, contact_email, notes, organization_id, days_in_stage"
+        "id, name, value, stage, probability, close_date, customer_id, contact_name, contact_email, notes, organization_id"
       )
       .eq("id", dealId)
       .single();

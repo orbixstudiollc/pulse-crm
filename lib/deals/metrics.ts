@@ -22,19 +22,19 @@ function calendarDaysBetween(from: Date, to: Date): number {
 }
 
 /**
- * Whole days in the current stage: the days_in_stage column (days since
- * createdAt when it is missing), never more than the days since createdAt and
- * never below 0.
+ * Whole local calendar days in the current stage: days since stageChangedAt
+ * (createdAt when it is missing, and never earlier than createdAt), never
+ * below 0. 0 when neither timestamp is usable.
  */
 export function stageDays(
-  daysInStageColumn: number | null | undefined,
+  stageChangedAt: string | null | undefined,
   createdAt: string | null | undefined,
   now: Date = new Date(),
 ): number {
+  const changed = parseValid(stageChangedAt);
   const created = parseValid(createdAt);
-  const sinceCreated = created ? Math.max(0, calendarDaysBetween(created, now)) : null;
-  const inStage = Math.max(0, daysInStageColumn ?? sinceCreated ?? 0);
-  return sinceCreated === null ? inStage : Math.min(inStage, sinceCreated);
+  const since = changed && created ? (changed > created ? changed : created) : (changed ?? created);
+  return since ? Math.max(0, calendarDaysBetween(since, now)) : 0;
 }
 
 /** Whole days until the expected close date; negative when overdue, null when unknown. */

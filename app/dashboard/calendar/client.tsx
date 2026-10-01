@@ -25,6 +25,12 @@ import {
   updateCalendarEvent,
 } from "@/lib/actions/calendar";
 import { exportCalendarEventsToCSV } from "@/lib/actions/export";
+import {
+  DEFAULT_DURATION_MIN,
+  eventWindow,
+  toMinutes,
+  upcomingEvents as selectUpcoming,
+} from "@/lib/calendar/upcoming";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -52,7 +58,11 @@ interface MappedEvent {
   title: string;
   type: CalendarEventType;
   date: string;
+  /** HH:MM; 09:00 for an all-day event so the grid and forms have a time */
   startTime: string;
+  /** No start_time: counts as upcoming for the whole day */
+  allDay: boolean;
+  durationMin: number;
   duration: string;
   status: string;
   notes: string;
@@ -94,13 +104,6 @@ const MONTHS = [
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const DEFAULT_DURATION_MIN = 30;
-
-function toMinutes(time: string | null | undefined): number | null {
-  const m = /^(\d{1,2}):(\d{2})/.exec(time ?? "");
-  return m ? parseInt(m[1]) * 60 + parseInt(m[2]) : null;
-}
-
 function formatDurationLabel(durationMin: number): string {
   return durationMin >= 60
     ? `${durationMin / 60} hour${durationMin > 60 ? "s" : ""}`
@@ -141,6 +144,8 @@ function mapEvent(e: CalendarEventRecord): MappedEvent {
     type: (e.type || "task") as CalendarEventType,
     date: e.date || "",
     startTime: (e.start_time || "09:00").slice(0, 5),
+    allDay: startMin === null,
+    durationMin,
     duration: formatDurationLabel(durationMin),
     status: e.status || "scheduled",
     notes: e.description || "",
@@ -158,15 +163,6 @@ function mapEvent(e: CalendarEventRecord): MappedEvent {
 function toDateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
-
-// Local start of the event, parsed from the same date/startTime the grid uses.
-function eventStart(event: MappedEvent): Date {
-  const [y, m, d] = event.date.split("-").map(Number);
-  const minutes = toMinutes(event.startTime) ?? 0;
-  return new Date(y, m - 1, d, Math.floor(minutes / 60), minutes % 60);
-}
-
-const DONE_STATUSES = new Set(["completed", "cancelled"]);
 
 function formatDateLabel(dateStr: string): string {
   const date = new Date(dateStr + "T00:00:00");
@@ -188,19 +184,20 @@ function formatDateLabel(dateStr: string): string {
 }
 
 function formatTime(event: MappedEvent): string {
-  return eventStart(event).toLocaleTimeString("en-US", {
+  if (event.allDay) return "All day";
+  return eventWindow(event).start.toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
   });
 }
 
 function formatDateTime(event: MappedEvent): string {
-  const date = eventStart(event).toLocaleDateString("en-US", {
+  const date = eventWindow(event).start.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
-  return `${date} at ${formatTime(event)}`;
+  return event.allDay ? `${date}, all day` : `${date} at ${formatTime(event)}`;
 }
 
 const subscribeNoop = () => () => {};
@@ -294,15 +291,10 @@ export function CalendarPageClient({
     return mappedEvents.filter((e) => e.date === dateStr);
   };
 
-  // Every open event from now on, soonest first (the panel shows a placeholder
-  // until the local time is known)
+  // Every open event that has not ended yet, soonest first (the panel shows a
+  // placeholder until the local time is known)
   const upcomingEvents = today
-    ? initialUpcoming
-        .map(mapEvent)
-        .filter(
-          (e) => !DONE_STATUSES.has(e.status) && eventStart(e) >= today,
-        )
-        .sort((a, b) => eventStart(a).getTime() - eventStart(b).getTime())
+    ? selectUpcoming(initialUpcoming.map(mapEvent), today)
     : [];
 
   // Group upcoming events by date (insertion order keeps the sort)
@@ -657,7 +649,7 @@ export function CalendarPageClient({
                 },
                 meta: formatDateTime(selectedEvent),
                 date: selectedEvent.date,
-                time: selectedEvent.startTime,
+                time: selectedEvent.allDay ? null : selectedEvent.startTime,
               }
             : null
         }

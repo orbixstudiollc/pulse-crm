@@ -31,6 +31,7 @@ interface ActivityFeedProps {
 
 const subscribeNoop = () => () => {};
 
+// Labelled by created_at to match the feed's order (most recently logged first).
 // The relative label depends on today's date in the browser's time zone, which
 // the UTC server render cannot know, so it replaces the absolute date after mount.
 function formatActivityDate(value: string, today: Date | null): string {
@@ -97,7 +98,7 @@ export function ActivityFeed({
                   {status.label}
                 </Badge>
                 <span className="w-20 text-right text-[13px] text-fg-muted">
-                  {formatActivityDate(activity.date || activity.created_at, today)}
+                  {formatActivityDate(activity.created_at, today)}
                 </span>
               </div>
             </div>

@@ -5,33 +5,42 @@ import { daysToClose, parseDealDate, stageDays } from "@/lib/deals/metrics";
 const NOW = new Date(2026, 9, 1, 9, 0); // 1 Oct 2026 09:00 (local)
 
 describe("stageDays", () => {
-  it("uses the days_in_stage column when it is within the deal's age", () => {
-    expect(stageDays(4, "2026-09-01T10:00:00", NOW)).toBe(4);
+  it("counts whole days since the stage changed", () => {
+    expect(stageDays("2026-09-27T10:00:00", "2026-09-01T10:00:00", NOW)).toBe(4);
   });
 
-  it("returns 0 right after a stage change resets the column", () => {
-    expect(stageDays(0, "2026-09-01T10:00:00", NOW)).toBe(0);
+  it("returns 0 on the day of a stage change", () => {
+    expect(stageDays("2026-10-01T08:00:00", "2026-09-01T10:00:00", NOW)).toBe(0);
   });
 
-  it("falls back to days since createdAt when the column is missing", () => {
+  it("counts calendar days, not 24-hour periods", () => {
+    expect(stageDays("2026-09-30T23:30:00", "2026-09-01T10:00:00", NOW)).toBe(1);
+  });
+
+  it("keeps growing while the stage is unchanged", () => {
+    const later = new Date(2026, 9, 11, 9, 0);
+    expect(stageDays("2026-09-27T10:00:00", "2026-09-01T10:00:00", later)).toBe(14);
+  });
+
+  it("falls back to days since createdAt when stageChangedAt is missing or invalid", () => {
     expect(stageDays(null, "2026-09-30T15:00:00", NOW)).toBe(1);
     expect(stageDays(undefined, "2026-09-26T15:00:00", NOW)).toBe(5);
+    expect(stageDays("not-a-date", "2026-09-26T15:00:00", NOW)).toBe(5);
   });
 
-  it("never exceeds the days since createdAt", () => {
-    expect(stageDays(40, "2026-09-30T15:00:00", NOW)).toBe(1);
+  it("never counts from before createdAt", () => {
+    expect(stageDays("2026-08-01T10:00:00", "2026-09-30T15:00:00", NOW)).toBe(1);
+  });
+
+  it("uses stageChangedAt alone when createdAt is missing or invalid", () => {
+    expect(stageDays("2026-09-24T10:00:00", null, NOW)).toBe(7);
+    expect(stageDays("2026-09-24T10:00:00", "not-a-date", NOW)).toBe(7);
   });
 
   it("never returns below 0", () => {
-    expect(stageDays(-3, "2026-09-01T10:00:00", NOW)).toBe(0);
+    expect(stageDays("2026-10-05T08:00:00", "2026-09-01T10:00:00", NOW)).toBe(0);
     expect(stageDays(null, "2026-10-05T08:00:00", NOW)).toBe(0);
-  });
-
-  it("uses the column alone when createdAt is missing or invalid", () => {
-    expect(stageDays(7, null, NOW)).toBe(7);
-    expect(stageDays(7, "not-a-date", NOW)).toBe(7);
     expect(stageDays(null, null, NOW)).toBe(0);
-    expect(stageDays(-2, undefined, NOW)).toBe(0);
   });
 });
 

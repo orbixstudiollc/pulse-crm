@@ -41,6 +41,7 @@ import {
 import { cn } from "@/lib/utils";
 import { chartSeries, chartGrid, chartTooltipStyle, axisTick } from "@/lib/design-system/chart-colors";
 import { formatCurrency } from "@/lib/utils";
+import { parseLocalDate } from "@/lib/utils/local-date";
 import { aiGenerateInsightsSummary, aiAnalyzePipeline, aiIdentifyRisks, aiPredictForecast } from "@/lib/actions/ai-analytics";
 import type { EmailOverviewStats, AccountHealth, DailyEmailVolume } from "@/lib/actions/email-analytics";
 
@@ -596,10 +597,10 @@ function ForecastTab({ data }: { data: ForecastData }) {
                   </td>
                   <td className="py-2 text-right text-fg-secondary">
                     {deal.expectedClose
-                      ? new Date(deal.expectedClose).toLocaleDateString(
+                      ? (parseLocalDate(deal.expectedClose)?.toLocaleDateString(
                           "en-US",
                           { month: "short", day: "numeric", year: "numeric" },
-                        )
+                        ) ?? "--")
                       : "--"}
                   </td>
                 </tr>
@@ -963,8 +964,9 @@ function EmailTab({ data }: { data?: EmailAnalyticsData }) {
                       dataKey="date"
                       tick={{ fontSize: 11 }}
                       tickFormatter={(v: string) => {
-                        const d = new Date(v);
-                        return `${d.getMonth() + 1}/${d.getDate()}`;
+                        // 'YYYY-MM-DD' keys: new Date() would read UTC midnight
+                        const d = parseLocalDate(v);
+                        return d ? `${d.getMonth() + 1}/${d.getDate()}` : v;
                       }}
                       className="text-fg-secondary"
                     />
