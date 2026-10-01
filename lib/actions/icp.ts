@@ -107,6 +107,15 @@ export async function createICPProfile(profileData: {
   const supabase = await createClient();
   const orgId = await getOrgId();
 
+  if (profileData.is_primary) {
+    const { error: demoteError } = await supabase
+      .from("icp_profiles")
+      .update({ is_primary: false } as ICPUpdate)
+      .eq("organization_id", orgId)
+      .eq("is_primary", true);
+    if (demoteError) return { error: demoteError.message };
+  }
+
   const { data, error } = await supabase
     .from("icp_profiles")
     .insert({
@@ -141,7 +150,7 @@ export async function updateICPProfile(
   }>,
 ) {
   const supabase = await createClient();
-  await getOrgId();
+  const orgId = await getOrgId();
 
   const updateData: Record<string, unknown> = {};
   if (updates.name !== undefined) updateData.name = updates.name;
@@ -151,6 +160,16 @@ export async function updateICPProfile(
   if (updates.buyer_personas !== undefined) updateData.buyer_personas = updates.buyer_personas;
   if (updates.color !== undefined) updateData.color = updates.color;
   if (updates.is_primary !== undefined) updateData.is_primary = updates.is_primary;
+
+  if (updates.is_primary === true) {
+    const { error: demoteError } = await supabase
+      .from("icp_profiles")
+      .update({ is_primary: false } as ICPUpdate)
+      .eq("organization_id", orgId)
+      .eq("is_primary", true)
+      .neq("id", id);
+    if (demoteError) return { error: demoteError.message };
+  }
 
   const { data, error } = await supabase
     .from("icp_profiles")
