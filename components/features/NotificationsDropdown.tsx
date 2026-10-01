@@ -20,6 +20,14 @@ const KIND_ICON: Record<NotificationKind, typeof BellIcon> = {
   approval_pending: ClockIcon,
 };
 
+/**
+ * A notification link is followed only when it is a same-site path: it starts with "/"
+ * but not "//" or "/\\" (both of which browsers read as another host).
+ */
+export function isSafeNotificationLink(link: string | null | undefined): link is string {
+  return typeof link === "string" && link.startsWith("/") && !link.startsWith("//") && !link.startsWith("/\\");
+}
+
 // Header is a client component, so data is loaded here: the unread count once on
 // mount (for the badge) and the list each time the dropdown opens. No polling.
 export function NotificationsDropdown() {
@@ -29,8 +37,20 @@ export function NotificationsDropdown() {
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useClickOutside(dropdownRef, () => setOpen(false), open);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      triggerRef.current?.focus();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   useEffect(() => {
     unreadCount()
@@ -64,7 +84,7 @@ export function NotificationsDropdown() {
       }
     }
     setOpen(false);
-    if (n.link) router.push(n.link);
+    if (isSafeNotificationLink(n.link)) router.push(n.link);
   }
 
   async function handleMarkAll() {
@@ -79,14 +99,17 @@ export function NotificationsDropdown() {
   return (
     <div className="relative" ref={dropdownRef}>
       <IconButton
+        ref={triggerRef}
         icon={<BellIcon size={16} className="text-fg-secondary" />}
         aria-label="Notifications"
+        aria-haspopup="true"
+        aria-expanded={open}
         badge={unread}
         onClick={toggle}
       />
 
       {open && (
-        <div data-clay-box className="absolute right-0 top-full mt-1 w-96 rounded-lg border border-line bg-surface shadow-dropdown overflow-hidden z-50">
+        <div data-clay-box className="absolute right-0 top-full mt-1 w-96 max-w-[calc(100vw-1rem)] rounded-lg border border-line bg-surface shadow-dropdown overflow-hidden z-50">
           {/* Header */}
           <div className="flex h-12 items-center justify-between px-4 border-b border-divider">
             <h3 className="text-sm font-semibold text-fg">

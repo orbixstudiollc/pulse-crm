@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { Button } from "@/components/ui/Button";
 import type { FieldDiff } from "@/lib/ai/tools/diff";
 import { TOOL_LABELS } from "@/lib/ai/tools/labels";
@@ -12,7 +13,19 @@ export type ApprovalCardProps = {
   onDeny(reason?: string): void;
   /** Set once the user has answered: both buttons lock and the answer is shown. */
   responded?: { approved: boolean };
+  /** The card belongs to an older message: its answer could never be sent, so it is read-only. */
+  expired?: boolean;
 };
+
+const UNAVAILABLE_TEXT = "Details unavailable; ask again";
+// aria-disabled (not disabled) keeps focus on the button the user just pressed.
+const LOCKED = "aria-disabled:cursor-not-allowed aria-disabled:opacity-50";
+
+function statusText(responded: ApprovalCardProps["responded"], expired: boolean): string {
+  if (expired) return "Expired, ask again";
+  if (responded) return responded.approved ? "Approved" : "Denied";
+  return "Approval needed";
+}
 
 function fieldLabel(name: string): string {
   return name.replace(/_/g, " ");
@@ -64,31 +77,53 @@ function CreateList({ fields }: { fields: FieldDiff["fields"] }) {
 }
 
 /** Asks the user to approve one proposed write, with the before/after of what it would change. */
-export function ApprovalCard({ toolName, diff, onApprove, onDeny, responded }: ApprovalCardProps) {
+export function ApprovalCard({ toolName, diff, onApprove, onDeny, responded, expired = false }: ApprovalCardProps) {
+  const titleId = useId();
   const locked = responded !== undefined;
+  const hasDetails = diff !== null && diff.fields.length > 0;
   const title = TOOL_LABELS[toolName] ?? toolName;
+  const answer = (respond: () => void) => () => {
+    if (!locked && !expired) respond();
+  };
   return (
-    <section className="border-t border-divider py-3" aria-label="Approval needed">
+    <section className="border-t border-divider py-3" aria-labelledby={titleId}>
       <div className="flex items-baseline justify-between gap-3">
-        <h3 className="text-[14px] font-semibold text-fg">{title}</h3>
-        <span className="text-[12px] text-fg-muted">
-          {responded ? (responded.approved ? "Approved" : "Denied") : "Approval needed"}
+        <h3 id={titleId} className="text-[14px] font-semibold text-fg">
+          {title}
+        </h3>
+        <span role="status" className="text-[12px] text-fg-muted">
+          {statusText(responded, expired)}
         </span>
       </div>
-      {diff && diff.fields.length > 0 ? (
+      {hasDetails ? (
         diff.kind === "update" ? (
           <UpdateTable fields={diff.fields} />
         ) : (
           <CreateList fields={diff.fields} />
         )
       ) : (
-        <p className="mt-2 text-[13px] text-fg-muted">No field details are available for this change.</p>
+        <p className="mt-2 text-[13px] text-fg-muted">{UNAVAILABLE_TEXT}</p>
       )}
       <div className="mt-3 flex items-center gap-2">
-        <Button size="sm" disabled={locked} onClick={onApprove}>
+        <Button
+          size="sm"
+          disabled={expired || !hasDetails}
+          aria-disabled={locked || undefined}
+          aria-describedby={titleId}
+          className={LOCKED}
+          onClick={answer(onApprove)}
+        >
           Approve
         </Button>
-        <Button size="sm" variant="secondary" disabled={locked} onClick={() => onDeny()}>
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={expired}
+          aria-disabled={locked || undefined}
+          aria-describedby={titleId}
+          className={LOCKED}
+          onClick={answer(() => onDeny())}
+        >
           Deny
         </Button>
       </div>

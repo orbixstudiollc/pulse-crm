@@ -19,13 +19,17 @@ import { useDockedPanel } from "@/components/features/Copilot/useDockedPanel";
 // button and Ctrl/Cmd+J toggle the docked column instead, and this panel renders
 // no chat of its own, so a route never holds two chats.
 
+const COPILOT_PAGE = "/dashboard/copilot";
+
 // Checks the route itself: AnimatePresence keeps an exiting panel mounted, and its
-// chat must still unmount at once when the route becomes a docked one.
+// chat must still unmount at once when the route becomes a docked one or Copilot's
+// own page (which has a chat of its own).
 function FloatingChat() {
   const { isDockedRoute } = useDockedPanel();
+  const pathname = usePathname() ?? "";
   const { pageKey, context, selectionCount } = usePageChatContext();
   const starters = useMemo(() => startersFor(pageKey, { count: selectionCount }), [pageKey, selectionCount]);
-  if (isDockedRoute) return null;
+  if (isDockedRoute || pathname.startsWith(COPILOT_PAGE)) return null;
   return <PageCopilotChat pageKey={pageKey} context={context} starters={starters} />;
 }
 
@@ -41,7 +45,7 @@ export function AIChatPanel() {
   const { isDockedRoute, open: isDockOpen, toggle: toggleDock } = useDockedPanel();
   const pathname = usePathname() ?? "";
   const { label } = resolvePage(pathname);
-  const isCopilotPage = pathname.startsWith("/dashboard/copilot");
+  const isCopilotPage = pathname.startsWith(COPILOT_PAGE);
   const showFloating = isOpen && !isDockedRoute && !isCopilotPage;
   const showButton = !isCopilotPage && (isDockedRoute ? !isDockOpen : !isOpen);
 
@@ -96,7 +100,7 @@ export function AIChatPanel() {
               isExpanded
                 ? "bottom-4 right-4 w-[600px] h-[80vh]"
                 : "bottom-6 right-6 w-[380px] h-[520px]"
-            }`}
+            } max-sm:inset-x-2 max-sm:w-auto`}
           >
             {/* Header */}
             <div className="flex h-12 shrink-0 items-center justify-between px-3 border-b border-divider">

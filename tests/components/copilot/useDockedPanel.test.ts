@@ -59,10 +59,12 @@ vi.mock("@/lib/actions/copilot-conversations", () => ({
 // The chat hook is replaced by a stub that tracks every mounted instance, so the
 // tests count live chats directly instead of inferring them from markup.
 type ChatArgs = { pageKey?: string; context?: { selectedIds?: string[] } };
-const chats = vi.hoisted(() => ({ live: new Map<string, unknown>() }));
-vi.mock("@/components/features/Copilot/useCopilotChat", async () => {
+const chats = vi.hoisted(() => ({ live: new Map<string, unknown>(), overrides: {} as Record<string, unknown> }));
+vi.mock("@/components/features/Copilot/useCopilotChat", async (importOriginal) => {
   const React = await import("react");
+  const actual = await importOriginal<typeof import("@/components/features/Copilot/useCopilotChat")>();
   return {
+    ...actual,
     useCopilotChat: (args: ChatArgs) => {
       const id = React.useId();
       chats.live.set(id, args);
@@ -78,6 +80,7 @@ vi.mock("@/components/features/Copilot/useCopilotChat", async () => {
         notice: null,
         stop: () => undefined,
         reloadFromServer: async () => undefined,
+        ...chats.overrides,
       };
     },
   };
@@ -100,10 +103,16 @@ let container: HTMLDivElement;
 
 const LEAD_ID = "33333333-3333-4333-8333-333333333333";
 
+function setViewportWidth(width: number) {
+  Object.defineProperty(window, "innerWidth", { configurable: true, writable: true, value: width });
+}
+
 beforeEach(async () => {
   vi.resetModules();
   window.localStorage.clear();
   chats.live.clear();
+  chats.overrides = {};
+  setViewportWidth(1440);
   nav.listeners.clear();
   React = await import("react");
   ({ createRoot } = await import("react-dom/client"));
@@ -192,6 +201,41 @@ describe("useDockedPanel: docked routes", () => {
 });
 
 describe("useDockedPanel: width", () => {
+  it("caps the dock at min(640, viewport - 480 - 240 sidebar from lg)", () => {
+    expect(dock.maxDockWidth(1440)).toBe(640);
+    expect(dock.maxDockWidth(1280)).toBe(560);
+    expect(dock.maxDockWidth(1024)).toBe(304);
+    expect(dock.maxDockWidth(1023)).toBe(543); // below lg there is no sidebar column
+    expect(dock.maxDockWidth(800)).toBe(320);
+    expect(dock.maxDockWidth(600)).toBe(dock.DOCK_MIN_WIDTH); // never below the minimum
+    expect(dock.maxDockWidth(undefined)).toBe(640);
+    expect(dock.clampDockWidth(600, 1024)).toBe(304);
+    expect(dock.clampDockWidth(300, 1024)).toBe(300);
+    expect(dock.clampDockWidth(100, 1024)).toBe(280);
+  });
+
+  it("clamps the stored width to the current viewport and follows window resizes", async () => {
+    setViewportWidth(1280);
+    const hook = await renderHook("/dashboard/leads");
+    await React.act(async () => hook.current.setWidth(9999));
+    expect(hook.current.width).toBe(560);
+    expect(hook.current.maxWidth).toBe(560);
+
+    await React.act(async () => {
+      setViewportWidth(1100);
+      window.dispatchEvent(new Event("resize"));
+    });
+    expect(hook.current.width).toBe(380);
+    expect(hook.current.maxWidth).toBe(380);
+  });
+
+  it("does not store the width when persist is false", async () => {
+    const hook = await renderHook("/dashboard/leads");
+    await React.act(async () => hook.current.setWidth(500, { persist: false }));
+    expect(hook.current.width).toBe(500);
+    expect(window.localStorage.getItem("copilot.dock.width")).toBeNull();
+  });
+
   it("clamps widths to 280..640", () => {
     expect(dock.clampDockWidth(100)).toBe(280);
     expect(dock.clampDockWidth(279)).toBe(280);
@@ -228,6 +272,111 @@ describe("useDockedPanel: width", () => {
     expect(hook.current.open).toBe(true);
     await React.act(async () => hook.current.toggle());
     expect(hook.current.open).toBe(false);
+  });
+});
+
+describe("dock resize handle", () => {
+  const handle = () => container.querySelector<HTMLElement>('[role="separator"]')!;
+  const pointer = (type: string, clientX: number) =>
+    new PointerEvent(type, { bubbles: true, cancelable: true, clientX, pointerId: 1 });
+
+  async function openDock() {
+    await renderLayout("/dashboard/leads");
+    await pressCtrlJ();
+  }
+
+  it("describes its range and the column it controls", async () => {
+    await openDock();
+
+    expect(handle().getAttribute("aria-valuemin")).toBe("280");
+    expect(handle().getAttribute("aria-valuemax")).toBe("640");
+    expect(handle().getAttribute("aria-valuenow")).toBe(String(dock.DOCK_DEFAULT_WIDTH));
+    expect(handle().getAttribute("aria-controls")).toBe(dockColumn()!.id);
+    expect(dockColumn()!.id).not.toBe("");
+    expect(handle().className).toContain("touch-none");
+    expect(handle().className).toContain("focus-visible:ring-2");
+  });
+
+  it("jumps to the minimum and maximum width with Home and End", async () => {
+    await openDock();
+
+    await React.act(async () => {
+      handle().dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true }));
+    });
+    expect(handle().getAttribute("aria-valuenow")).toBe("640");
+    await React.act(async () => {
+      handle().dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true }));
+    });
+    expect(handle().getAttribute("aria-valuenow")).toBe("280");
+    expect(window.localStorage.getItem("copilot.dock.width")).toBe("280");
+  });
+
+  it("stores the width only when the drag ends", async () => {
+    await openDock();
+
+    await React.act(async () => {
+      handle().dispatchEvent(pointer("pointerdown", 1000));
+      handle().dispatchEvent(pointer("pointermove", 900));
+    });
+    expect(handle().getAttribute("aria-valuenow")).toBe("480");
+    expect(window.localStorage.getItem("copilot.dock.width")).toBeNull();
+
+    await React.act(async () => {
+      handle().dispatchEvent(pointer("pointermove", 880));
+      handle().dispatchEvent(pointer("pointerup", 880));
+    });
+    expect(handle().getAttribute("aria-valuenow")).toBe("500");
+    expect(window.localStorage.getItem("copilot.dock.width")).toBe("500");
+
+    // After the drag, stray moves do nothing.
+    await React.act(async () => {
+      handle().dispatchEvent(pointer("pointermove", 500));
+    });
+    expect(handle().getAttribute("aria-valuenow")).toBe("500");
+  });
+
+  it("restores the starting width, unsaved, when the drag is cancelled", async () => {
+    await openDock();
+
+    await React.act(async () => {
+      handle().dispatchEvent(pointer("pointerdown", 1000));
+      handle().dispatchEvent(pointer("pointermove", 900));
+      handle().dispatchEvent(pointer("pointercancel", 900));
+    });
+    expect(handle().getAttribute("aria-valuenow")).toBe(String(dock.DOCK_DEFAULT_WIDTH));
+    expect(window.localStorage.getItem("copilot.dock.width")).toBeNull();
+  });
+
+  it("pads the content only from lg up, so below lg the dock overlays it", async () => {
+    await openDock();
+    const padded = container.querySelector<HTMLElement>("[style*='--copilot-dock-width']")!;
+    expect(padded.className).toContain("lg:pr-(--copilot-dock-width)");
+    expect(padded.className).not.toContain("md:pr-");
+  });
+});
+
+describe("docked chat composer", () => {
+  it("blocks new text while approval cards wait, with a hint", async () => {
+    chats.overrides = { awaitingApproval: true };
+    await renderLayout("/dashboard/leads");
+    await pressCtrlJ();
+
+    expect(container.textContent).toContain("Answer the pending changes first");
+    const send = container.querySelector<HTMLButtonElement>('button[aria-label="Send"]')!;
+    expect(send.disabled).toBe(true);
+    const textarea = container.querySelector("textarea")!;
+    expect(textarea.getAttribute("maxlength")).toBe("8000");
+    const hint = document.getElementById(textarea.getAttribute("aria-describedby")!);
+    expect(hint?.textContent).toBe("Answer the pending changes first");
+  });
+
+  it("shows a server rejection as plain text, not raw JSON", async () => {
+    chats.overrides = { status: "error", error: new Error(JSON.stringify({ error: "empty_turn" })) };
+    await renderLayout("/dashboard/leads");
+    await pressCtrlJ();
+
+    const alert = container.querySelector('[role="alert"]');
+    expect(alert?.textContent).toBe("Copilot could not take that message. Please try again.");
   });
 });
 
@@ -277,6 +426,25 @@ describe("dashboard layout mounts exactly one chat", () => {
     expect(dockColumn()).toBeNull();
     expect(chatViews()).toHaveLength(1); // the floating panel is back, alone
     expect(chats.live.size).toBe(1);
+  });
+
+  it("unmounts the floating chat at once when moving to Copilot's own page", async () => {
+    await renderLayout("/dashboard/overview");
+    await pressCtrlJ();
+    expect(chats.live.size).toBe(1);
+
+    await rerenderLayout("/dashboard/copilot");
+    expect(chatViews()).toHaveLength(0);
+    expect(chats.live.size).toBe(0);
+  });
+
+  it("fits the floating panel to a phone's width", async () => {
+    await renderLayout("/dashboard/overview");
+    await pressCtrlJ();
+
+    const panel = chatViews()[0].closest<HTMLElement>(".fixed")!;
+    expect(panel.className).toContain("max-sm:inset-x-2");
+    expect(panel.className).toContain("max-sm:w-auto");
   });
 
   it("passes the page's selected ids to the docked chat and shows the selection starters", async () => {

@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { UIMessage } from "ai";
 import { cn } from "@/lib/utils";
-import { describeChatError } from "@/lib/ai/chat-error";
 import {
   CrosshairIcon,
   ChartBarIcon,
@@ -17,10 +16,11 @@ import {
 import { ChatMessageParts } from "./ChatMessageParts";
 import { Composer } from "./Composer";
 import type { UndoInfo } from "./UndoButton";
-import { useCopilotChat, type ChatContext } from "./useCopilotChat";
+import { chatErrorMessage, useCopilotChat, type ChatContext } from "./useCopilotChat";
 import { SUGGESTION_CHIP } from "./styles";
 
 const COPILOT_CONTEXT: ChatContext = { page: "Copilot" };
+const PENDING_HINT = "Answer the pending changes first";
 
 const SUGGESTION_CHIPS = [
   { label: "Find Ideal Prospects", icon: CrosshairIcon, color: "text-warning", prompt: "Help me find ideal prospects that match my ICP. Analyze my current leads and suggest the best profiles to target." },
@@ -32,17 +32,6 @@ const SUGGESTION_CHIPS = [
   { label: "Get Advice", icon: ChatCircleIcon, color: "text-danger", prompt: "I need advice on my sales strategy. Review my pipeline and suggest improvements." },
   { label: "Audit My Workspace", icon: ShieldIcon, color: "text-success", prompt: "Audit my CRM workspace. Check for stale leads, stuck deals, missing follow-ups, and data quality issues." },
 ];
-
-/** Short inline text for a failed turn; the server's own rejections get plain wording. */
-function chatErrorMessage(error: Error): { message: string; needsKey: boolean } {
-  if (/turn_in_progress/.test(error.message)) {
-    return { message: "Another reply is still being written. Wait a moment, then send your message again.", needsKey: false };
-  }
-  if (/invalid_approval/.test(error.message)) {
-    return { message: "That approval is no longer valid. The conversation was refreshed.", needsKey: false };
-  }
-  return describeChatError(error);
-}
 
 export type ChatViewProps = {
   /** The stored conversation to continue, or null for a new chat. */
@@ -66,12 +55,12 @@ export function ChatView({
   onUndo,
 }: ChatViewProps) {
   const chat = useCopilotChat({ conversationId, pageKey: undefined, initialMessages, context: COPILOT_CONTEXT });
-  const { messages, status, error, sendText, approve, deny } = chat;
+  const { messages, status, error, sendText, approve, deny, awaitingApproval } = chat;
   const isLoading = status === "submitted" || status === "streaming";
 
   const [draft, setDraft] = useState("");
-  // The text of the turn in flight: a 409 means the server never took it, so it goes back
-  // into the composer for the user to resend.
+  // The text of the turn in flight: a 4xx before streaming means the server never took it,
+  // so it goes back into the composer for the user to resend.
   const [lastSent, setLastSent] = useState<string | null>(null);
   const [seenError, setSeenError] = useState<unknown>(null);
   const [seenStatus, setSeenStatus] = useState(status);
@@ -81,14 +70,16 @@ export function ChatView({
   }
   if (error !== seenError) {
     setSeenError(error);
-    if (error && lastSent && /turn_in_progress/.test(error.message)) {
-      setDraft((current) => current || lastSent);
+    if (error && lastSent) {
+      if (/turn_in_progress/.test(error.message) || chat.rejectedStatus !== null) {
+        setDraft((current) => current || lastSent);
+      }
       setLastSent(null);
     }
   }
 
   const handleSend = (text: string) => {
-    if (!text.trim() || isLoading) return;
+    if (!text.trim() || isLoading || awaitingApproval) return;
     setLastSent(text);
     sendText(text);
     setDraft("");
@@ -141,7 +132,7 @@ export function ChatView({
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6 max-sm:px-4">
         <div className="mx-auto max-w-3xl space-y-5">
-          {messages.map((message) => (
+          {messages.map((message, index) => (
             <div key={message.id} className={cn("flex", message.role === "user" ? "justify-end" : "justify-start")}>
               <div
                 className={cn(
@@ -149,7 +140,13 @@ export function ChatView({
                   message.role === "user" ? "max-w-[75%] rounded-lg bg-accent-surface px-4 py-1" : "w-full",
                 )}
               >
-                <ChatMessageParts message={message} onApprove={approve} onDeny={deny} onUndo={onUndo} />
+                <ChatMessageParts
+                  message={message}
+                  isLatest={index === messages.length - 1 && message.role === "assistant"}
+                  onApprove={approve}
+                  onDeny={deny}
+                  onUndo={onUndo}
+                />
               </div>
             </div>
           ))}
@@ -165,7 +162,13 @@ export function ChatView({
         </div>
       </div>
       <div className="shrink-0 px-8 pb-6 pt-2 max-sm:px-4">
-        <Composer value={draft} onChange={setDraft} onSend={() => handleSend(draft)} isLoading={isLoading} />
+        <Composer
+          value={draft}
+          onChange={setDraft}
+          onSend={() => handleSend(draft)}
+          isLoading={isLoading}
+          blockedReason={awaitingApproval ? PENDING_HINT : undefined}
+        />
       </div>
     </div>
   );

@@ -13,18 +13,16 @@ import { ChatMessageParts } from "@/components/features/Copilot/ChatMessageParts
 
 let root: Root | null = null;
 
-function render(message: UIMessage, handlers: Partial<{ onApprove: (id: string) => void; onDeny: (id: string, reason?: string) => void; onUndo: (info: unknown) => void }> = {}) {
+type Props = { message: UIMessage; isLatest: boolean; onApprove: Mock; onDeny: Mock; onUndo: Mock };
+
+function render(message: UIMessage, overrides: Partial<{ isLatest: boolean }> = {}) {
   const container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
-  const props = { message, onApprove: vi.fn(), onDeny: vi.fn(), onUndo: vi.fn(), ...handlers } as {
-    message: UIMessage;
-    onApprove: Mock;
-    onDeny: Mock;
-    onUndo: Mock;
-  };
+  const props: Props = { message, isLatest: true, onApprove: vi.fn(), onDeny: vi.fn(), onUndo: vi.fn(), ...overrides };
   act(() => root!.render(createElement(ChatMessageParts, props)));
-  return { container, props };
+  const rerender = (next: Partial<Props>) => act(() => root!.render(createElement(ChatMessageParts, { ...props, ...next })));
+  return { container, props, rerender };
 }
 
 afterEach(() => {
@@ -100,7 +98,7 @@ describe("ChatMessageParts approval cards", () => {
     const { container } = render(message);
 
     expect(container.querySelector("tbody")).toBeNull();
-    expect(container.textContent).toContain("No field details");
+    expect(container.textContent).toContain("Details unavailable; ask again");
   });
 
   it("lists the fields of a create as a field list, not a before/after table", () => {
@@ -124,22 +122,89 @@ describe("ChatMessageParts approval cards", () => {
     expect(props.onDeny.mock.calls[0][0]).toBe("appr-1");
   });
 
-  it("enables both buttons while requested and disables them once approval-responded", () => {
+  it("enables both buttons while requested and locks them with aria-disabled once approval-responded", () => {
     const requested = render(approvalMessage({ state: "approval-requested", descriptor: updateDiff }));
     expect(buttonByText(requested.container, "Approve").disabled).toBe(false);
     expect(buttonByText(requested.container, "Deny").disabled).toBe(false);
+    expect(buttonByText(requested.container, "Approve").getAttribute("aria-disabled")).toBeNull();
     act(() => root!.unmount());
     document.body.innerHTML = "";
 
     const responded = render(approvalMessage({ state: "approval-responded", descriptor: updateDiff }));
     const approve = buttonByText(responded.container, "Approve");
     const deny = buttonByText(responded.container, "Deny");
-    expect(approve.disabled).toBe(true);
-    expect(deny.disabled).toBe(true);
+    expect(approve.getAttribute("aria-disabled")).toBe("true");
+    expect(deny.getAttribute("aria-disabled")).toBe("true");
     act(() => approve.click());
     act(() => deny.click());
     expect(responded.props.onApprove).not.toHaveBeenCalled();
     expect(responded.props.onDeny).not.toHaveBeenCalled();
+    expect(responded.container.querySelector("[role=status]")?.textContent).toBe("Approved");
+  });
+
+  it("keeps focus on the pressed button after the answer is recorded", () => {
+    const { container, rerender } = render(approvalMessage({ state: "approval-requested", descriptor: updateDiff }));
+    const approve = buttonByText(container, "Approve");
+    approve.focus();
+    act(() => approve.click());
+
+    rerender({ message: approvalMessage({ state: "approval-responded", descriptor: updateDiff }) });
+
+    expect(buttonByText(container, "Approve")).toBe(approve);
+    expect(approve.disabled).toBe(false);
+    expect(document.activeElement).toBe(approve);
+  });
+
+  it("points both buttons at the card title and announces the status in a live region", () => {
+    const { container } = render(approvalMessage({ state: "approval-requested", descriptor: updateDiff }));
+
+    const title = container.querySelector("h3")!;
+    expect(title.id).not.toBe("");
+    expect(title.textContent).toBe("Updated lead");
+    expect(buttonByText(container, "Approve").getAttribute("aria-describedby")).toBe(title.id);
+    expect(buttonByText(container, "Deny").getAttribute("aria-describedby")).toBe(title.id);
+    expect(container.querySelector("[role=status]")?.textContent).toBe("Approval needed");
+  });
+
+  it("expires the cards of a message that is not the latest: disabled buttons and 'Expired, ask again'", () => {
+    for (const state of ["approval-requested", "approval-responded"] as const) {
+      const { container, props } = render(approvalMessage({ state, descriptor: updateDiff }), { isLatest: false });
+
+      expect(container.querySelector("[role=status]")?.textContent).toBe("Expired, ask again");
+      expect(container.textContent).not.toContain("Approved");
+      const approve = buttonByText(container, "Approve");
+      const deny = buttonByText(container, "Deny");
+      expect(approve.disabled).toBe(true);
+      expect(deny.disabled).toBe(true);
+      act(() => approve.click());
+      act(() => deny.click());
+      expect(props.onApprove).not.toHaveBeenCalled();
+      expect(props.onDeny).not.toHaveBeenCalled();
+
+      act(() => root!.unmount());
+      document.body.innerHTML = "";
+    }
+  });
+
+  it("disables Approve but keeps Deny when no diff is available", () => {
+    const { container, props } = render(approvalMessage({ state: "approval-requested" }));
+
+    expect(container.textContent).toContain("Details unavailable; ask again");
+    const approve = buttonByText(container, "Approve");
+    const deny = buttonByText(container, "Deny");
+    expect(approve.disabled).toBe(true);
+    expect(deny.disabled).toBe(false);
+    act(() => approve.click());
+    expect(props.onApprove).not.toHaveBeenCalled();
+    act(() => deny.click());
+    expect(props.onDeny).toHaveBeenCalledWith("appr-1", undefined);
+  });
+
+  it("treats a diff with no fields as unavailable", () => {
+    const { container } = render(approvalMessage({ state: "approval-requested", descriptor: { ...updateDiff, fields: [] } }));
+
+    expect(container.textContent).toContain("Details unavailable; ask again");
+    expect(buttonByText(container, "Approve").disabled).toBe(true);
   });
 });
 
@@ -155,7 +220,7 @@ describe("ChatMessageParts tool results", () => {
     } as unknown as UIMessage);
 
     const rows = Array.from(container.querySelectorAll("li")).map((li) => li.textContent);
-    expect(rows).toEqual(["Searched leads", "brand_new_tool"]);
+    expect(rows).toEqual(["Done: Searched leads", "Done: brand_new_tool"]);
   });
 
   it("appends 'Automations not triggered' only when automations were skipped", () => {
@@ -208,6 +273,50 @@ describe("ChatMessageParts tool results", () => {
     expect(container.textContent).toContain("Could not undo");
     expect(container.textContent).not.toContain("Undone");
     expect(props.onUndo).not.toHaveBeenCalled();
+  });
+
+  it("gives each step status a text alternative and hides the icon from screen readers", () => {
+    const { container } = render({
+      id: "m5",
+      role: "assistant",
+      parts: [
+        { type: "tool-update_lead", toolCallId: "a", state: "input-available", input: {} },
+        { type: "tool-update_lead", toolCallId: "b", state: "output-error", input: {}, errorText: "boom" },
+        { type: "tool-update_lead", toolCallId: "c", state: "output-available", input: {}, output: { ok: false, error: "record_changed" } },
+      ],
+    } as unknown as UIMessage);
+
+    const statuses = Array.from(container.querySelectorAll("li .sr-only")).map((n) => n.textContent);
+    expect(statuses).toEqual(["Running: ", "Failed: ", "Out of date: "]);
+    const icons = Array.from(container.querySelectorAll("li svg"));
+    expect(icons).toHaveLength(3);
+    expect(icons.every((svg) => svg.getAttribute("aria-hidden") === "true")).toBe(true);
+  });
+
+  it("keeps a step group's Undone state when text streams in after it", async () => {
+    undoCopilotWrite.mockResolvedValue({ ok: true });
+    const stepPart = {
+      type: "tool-save_artifact",
+      toolCallId: "call-9",
+      state: "output-available",
+      input: {},
+      output: { ok: true, data: { undo: { tool: "save_artifact", id: "art-9" } } },
+    };
+    const { container, rerender } = render({ id: "m6", role: "assistant", parts: [stepPart] } as unknown as UIMessage);
+    await act(async () => buttonByText(container, "Undo").click());
+    expect(container.textContent).toContain("Undone");
+
+    rerender({
+      message: {
+        id: "m6",
+        role: "assistant",
+        parts: [{ type: "step-start" }, stepPart, { type: "text", text: "Saved it." }],
+      } as unknown as UIMessage,
+    });
+
+    expect(container.textContent).toContain("Saved it.");
+    expect(container.textContent).toContain("Undone");
+    expect(Array.from(container.querySelectorAll("button")).some((b) => b.textContent?.trim() === "Undo")).toBe(false);
   });
 
   it("renders text parts and a persisted notice, but not the raw diff data part", () => {

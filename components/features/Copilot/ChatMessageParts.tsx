@@ -10,6 +10,11 @@ import { UndoButton, type UndoInfo } from "./UndoButton";
 
 export type ChatMessagePartsProps = {
   message: UIMessage;
+  /**
+   * True when this message is the conversation's last message and the assistant's. Only
+   * its approval cards can still be answered; older cards render as expired.
+   */
+  isLatest: boolean;
   onApprove(approvalId: string): void;
   onDeny(approvalId: string, reason?: string): void;
   /** Called after a low-risk write was undone. */
@@ -94,18 +99,19 @@ function toolStep(part: ToolPart, onUndo: (info: UndoInfo) => void): TraceStep {
 }
 
 /** Renders one chat message: text, a step trace for tool calls, and approval cards for proposed writes. */
-export function ChatMessageParts({ message, onApprove, onDeny, onUndo }: ChatMessagePartsProps) {
+export function ChatMessageParts({ message, isLatest, onApprove, onDeny, onUndo }: ChatMessagePartsProps) {
   const blocks: ReactNode[] = [];
   let steps: TraceStep[] = [];
-  const flushSteps = (key: string) => {
-    if (steps.length > 0) blocks.push(<StepTrace key={key} steps={steps} />);
+  // Keyed by the group's first tool call, so a group keeps its state (e.g. Undone) as parts stream in.
+  const flushSteps = () => {
+    if (steps.length > 0) blocks.push(<StepTrace key={`steps-${steps[0].id}`} steps={steps} />);
     steps = [];
   };
 
   message.parts.forEach((part, index) => {
     const key = `${message.id}-${index}`;
     if (part.type === "text") {
-      flushSteps(`${key}-steps`);
+      flushSteps();
       if (part.text) {
         blocks.push(
           <p key={key} className="whitespace-pre-wrap py-1.5 text-[14px] leading-6 text-fg">
@@ -116,7 +122,7 @@ export function ChatMessageParts({ message, onApprove, onDeny, onUndo }: ChatMes
       return;
     }
     if (part.type === "data-notice") {
-      flushSteps(`${key}-steps`);
+      flushSteps();
       const code = (part as { data?: { code?: unknown } }).data?.code;
       const text = typeof code === "string" ? NOTICE_TEXT[code] : undefined;
       if (text) {
@@ -132,15 +138,16 @@ export function ChatMessageParts({ message, onApprove, onDeny, onUndo }: ChatMes
 
     const tool = part as ToolPart;
     if (tool.state === "approval-requested" || tool.state === "approval-responded") {
-      flushSteps(`${key}-steps`);
+      flushSteps();
       const toolCallId = (tool as { toolCallId: string }).toolCallId;
       const approvalId = tool.approval.id;
       blocks.push(
         <ApprovalCard
-          key={key}
+          key={`approval-${toolCallId}`}
           toolName={getToolName(tool as Parameters<typeof getToolName>[0])}
           diff={findDiff(message.parts, toolCallId, tool.approval.descriptor)}
           responded={tool.state === "approval-responded" ? { approved: tool.approval.approved } : undefined}
+          expired={!isLatest}
           onApprove={() => onApprove(approvalId)}
           onDeny={(reason) => onDeny(approvalId, reason)}
         />,
@@ -149,7 +156,7 @@ export function ChatMessageParts({ message, onApprove, onDeny, onUndo }: ChatMes
     }
     steps.push(toolStep(tool, onUndo));
   });
-  flushSteps(`${message.id}-end`);
+  flushSteps();
 
   return <div>{blocks}</div>;
 }

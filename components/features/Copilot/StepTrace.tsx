@@ -18,12 +18,12 @@ export type TraceStep = {
   action?: ReactNode;
 };
 
-const STATUS_ICON: Record<StepStatus, { icon: typeof CheckIcon; className: string }> = {
-  running: { icon: CircleNotchIcon, className: "animate-spin text-fg-muted" },
-  done: { icon: CheckIcon, className: "text-success" },
-  failed: { icon: XIcon, className: "text-danger" },
-  denied: { icon: XIcon, className: "text-fg-muted" },
-  stale: { icon: WarningIcon, className: "text-warning" },
+const STATUS_ICON: Record<StepStatus, { icon: typeof CheckIcon; className: string; text: string }> = {
+  running: { icon: CircleNotchIcon, className: "animate-spin text-fg-muted", text: "Running" },
+  done: { icon: CheckIcon, className: "text-success", text: "Done" },
+  failed: { icon: XIcon, className: "text-danger", text: "Failed" },
+  denied: { icon: XIcon, className: "text-fg-muted", text: "Denied" },
+  stale: { icon: WarningIcon, className: "text-warning", text: "Out of date" },
 };
 
 /** One hairline-separated row per tool call the assistant made. */
@@ -32,11 +32,12 @@ export function StepTrace({ steps }: { steps: TraceStep[] }) {
   return (
     <ul className="border-t border-divider" aria-label="Steps">
       {steps.map((step) => {
-        const { icon: Icon, className } = STATUS_ICON[step.status];
+        const { icon: Icon, className, text } = STATUS_ICON[step.status];
         return (
           <li key={step.id} className="flex items-start gap-2 border-b border-divider py-2 text-[13px]">
-            <Icon size={14} className={cn("mt-0.5 shrink-0", className)} />
+            <Icon size={14} aria-hidden="true" className={cn("mt-0.5 shrink-0", className)} />
             <div className="min-w-0 flex-1">
+              <span className="sr-only">{text}: </span>
               <span className="text-fg">{step.label}</span>
               {step.note && <span className="ml-2 text-fg-muted">{step.note}</span>}
               {step.detail && <p className="mt-0.5 text-fg-secondary">{step.detail}</p>}

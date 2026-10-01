@@ -23,7 +23,12 @@ vi.mock("ai", async (importOriginal) => {
   return { ...actual, DefaultChatTransport: CapturingTransport };
 });
 
-import { approvalResponsesFromLastAssistant, useCopilotChat } from "@/components/features/Copilot/useCopilotChat";
+import {
+  approvalResponsesFromLastAssistant,
+  chatErrorMessage,
+  hasUnansweredApprovals,
+  useCopilotChat,
+} from "@/components/features/Copilot/useCopilotChat";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -140,6 +145,70 @@ describe("approvalResponsesFromLastAssistant", () => {
 
   it("returns nothing when there is no assistant message", () => {
     expect(approvalResponsesFromLastAssistant([{ id: "u", role: "user", parts: [] }])).toEqual([]);
+  });
+});
+
+describe("hasUnansweredApprovals", () => {
+  it("is true only while the newest message is an assistant message with a card still requested", () => {
+    expect(hasUnansweredApprovals(pendingTurn())).toBe(true);
+
+    const partlyAnswered = pendingTurn();
+    partlyAnswered[1].parts = [
+      toolPart("call-1", { id: "ap-1", approved: true }, "approval-responded"),
+      toolPart("call-2", { id: "ap-2" }, "approval-requested"),
+    ] as UIMessage["parts"];
+    expect(hasUnansweredApprovals(partlyAnswered)).toBe(true);
+
+    const allAnswered = pendingTurn();
+    allAnswered[1].parts = [
+      toolPart("call-1", { id: "ap-1", approved: true }, "approval-responded"),
+      toolPart("call-2", { id: "ap-2", approved: false }, "approval-responded"),
+    ] as UIMessage["parts"];
+    expect(hasUnansweredApprovals(allAnswered)).toBe(false);
+
+    const olderCards = [...pendingTurn(), { id: "u2", role: "user", parts: [{ type: "text", text: "next" }] } as UIMessage];
+    expect(hasUnansweredApprovals(olderCards)).toBe(false);
+    expect(hasUnansweredApprovals([])).toBe(false);
+  });
+
+  it("is exposed by the hook as awaitingApproval", () => {
+    render({ conversationId: CONV_ID, initialMessages: pendingTurn() });
+    expect(hook.awaitingApproval).toBe(true);
+    act(() => root!.unmount());
+    root = null;
+
+    render({ conversationId: CONV_ID, initialMessages: [] });
+    expect(hook.awaitingApproval).toBe(false);
+  });
+});
+
+describe("chatErrorMessage", () => {
+  it("words the server's known rejections plainly", () => {
+    expect(chatErrorMessage(new Error(JSON.stringify({ error: "turn_in_progress" }))).message).toMatch(/still being written/);
+    expect(chatErrorMessage(new Error(JSON.stringify({ error: "invalid_approval", approvalId: "x" }))).message).toMatch(
+      /no longer valid/,
+    );
+    expect(chatErrorMessage(new Error(JSON.stringify({ error: "invalid_request", issues: [] }))).message).toMatch(
+      /could not read that message/,
+    );
+  });
+
+  it("never shows raw JSON: unknown codes get a generic line, sentences are shown as text", () => {
+    const unknown = chatErrorMessage(new Error(JSON.stringify({ error: "empty_turn" })));
+    expect(unknown).toEqual({ message: "Copilot could not take that message. Please try again.", needsKey: false });
+
+    const sentence = chatErrorMessage(new Error(JSON.stringify({ error: "Rate limit exceeded. Please try again in 5 seconds." })));
+    expect(sentence).toEqual({ message: "Rate limit exceeded. Please try again in 5 seconds.", needsKey: false });
+
+    for (const result of [unknown, sentence]) expect(result.message).not.toMatch(/[{}"]/);
+  });
+
+  it("keeps plain-text errors and the AI-not-set-up hint", () => {
+    expect(chatErrorMessage(new Error("AI Chat is disabled in settings"))).toEqual({
+      message: "AI Chat is disabled in settings",
+      needsKey: false,
+    });
+    expect(chatErrorMessage(new Error("AI isn't set up for this workspace yet.")).needsKey).toBe(true);
   });
 });
 
@@ -262,6 +331,48 @@ describe("useCopilotChat over fetch", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(listConversationMessages).toHaveBeenCalledTimes(1);
     expect(listConversationMessages).toHaveBeenCalledWith(CONV_ID);
+  });
+
+  it("drops the optimistic message and reports the status when the server rejects it with a 4xx", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ error: "invalid_request" }, { status: 400 }));
+    vi.stubGlobal("fetch", fetchMock);
+    render({ conversationId: CONV_ID, initialMessages: [] });
+
+    await act(async () => hook.sendText("Hello"));
+    await vi.waitFor(() => expect(hook.status).toBe("error"));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(hook.messages).toEqual([]);
+    expect(hook.rejectedStatus).toBe(400);
+  });
+
+  it("keeps the message and reports no rejection when the request fails with a 5xx", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("boom", { status: 500 }));
+    vi.stubGlobal("fetch", fetchMock);
+    render({ conversationId: CONV_ID, initialMessages: [] });
+
+    await act(async () => hook.sendText("Hello"));
+    await vi.waitFor(() => expect(hook.status).toBe("error"));
+
+    expect(hook.messages.map((m) => m.role)).toEqual(["user"]);
+    expect(hook.rejectedStatus).toBeNull();
+  });
+
+  it("clears the rejection when the next message is sent", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ error: "invalid_request" }, { status: 400 }))
+      .mockResolvedValueOnce(sseResponse(textReply("a1", "Hi")));
+    vi.stubGlobal("fetch", fetchMock);
+    render({ conversationId: CONV_ID, initialMessages: [] });
+
+    await act(async () => hook.sendText("Hello"));
+    await vi.waitFor(() => expect(hook.rejectedStatus).toBe(400));
+    await act(async () => hook.sendText("Hello again"));
+    await vi.waitFor(() => expect(hook.status).toBe("ready"));
+
+    expect(hook.rejectedStatus).toBeNull();
+    expect(hook.messages.map((m) => m.role)).toEqual(["user", "assistant"]);
   });
 
   it("reloads after 409 turn_in_progress but not after other errors", async () => {

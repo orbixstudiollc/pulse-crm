@@ -18,6 +18,7 @@ import {
 import type { ChatRequestContext } from "@/lib/ai/chat-request";
 import type { ApprovalResponse } from "@/lib/ai/approvals";
 import { listConversationMessages } from "@/lib/actions/copilot-conversations";
+import { describeChatError } from "@/lib/ai/chat-error";
 
 export type ChatContext = ChatRequestContext;
 
@@ -41,6 +42,45 @@ export function approvalResponsesFromLastAssistant(messages: UIMessage[]): Appro
     const { id, approved, reason } = part.approval;
     return [reason ? { approvalId: id, approved, reason } : { approvalId: id, approved }];
   });
+}
+
+/**
+ * True while the newest message is the assistant's and some of its approval cards are
+ * unanswered. A new message sent then would carry no approvals, so the composers wait.
+ */
+export function hasUnansweredApprovals(messages: UIMessage[]): boolean {
+  const last = messages.at(-1);
+  if (last?.role !== "assistant") return false;
+  return last.parts.some((part) => isToolUIPart(part) && part.state === "approval-requested");
+}
+
+const ERROR_TEXT: Record<string, string> = {
+  turn_in_progress: "Another reply is still being written. Wait a moment, then send your message again.",
+  invalid_approval: "That approval is no longer valid. The conversation was refreshed.",
+  conversation_not_found: "This conversation no longer exists. Start a new chat.",
+  invalid_request: "Copilot could not read that message. Shorten it and try again.",
+};
+const GENERIC_REJECTION = "Copilot could not take that message. Please try again.";
+const ERROR_CODE = /^[a-z_]+$/;
+
+/** The `error` field of a JSON rejection body, if the error text is one. */
+function rejectionError(text: string): string | null {
+  try {
+    const body = JSON.parse(text) as { error?: unknown } | null;
+    return typeof body?.error === "string" ? body.error : null;
+  } catch {
+    return null; // Plain text, not a JSON body.
+  }
+}
+
+/** Short inline text for a failed turn: plain wording for the server's rejections, never raw JSON. */
+export function chatErrorMessage(error: Error): { message: string; needsKey: boolean } {
+  const known = Object.keys(ERROR_TEXT).find((code) => error.message.includes(code));
+  if (known) return { message: ERROR_TEXT[known], needsKey: false };
+  const rejection = rejectionError(error.message);
+  if (rejection === null) return describeChatError(error);
+  if (ERROR_CODE.test(rejection)) return { message: GENERIC_REJECTION, needsKey: false };
+  return describeChatError(new Error(rejection));
 }
 
 /** Text of the last message when it is a user message the server has not stored yet. */
@@ -110,6 +150,11 @@ export function useCopilotChat(args: {
   const conversationIdRef = useRef(conversationId);
   const scopeRef = useRef({ pageKey: args.pageKey, context: args.context });
   const reloadRef = useRef<() => Promise<void>>(async () => undefined);
+  const dropOptimisticRef = useRef<() => void>(() => undefined);
+  // Whether the request in flight carries a new user message (not approval answers).
+  const sendsMessageRef = useRef(false);
+  // HTTP status of a 4xx rejection since the last sendText: the server stored nothing.
+  const [rejectedStatus, setRejectedStatus] = useState<number | null>(null);
   useEffect(() => {
     conversationIdRef.current = conversationId;
   }, [conversationId]);
@@ -122,15 +167,22 @@ export function useCopilotChat(args: {
     () =>
       new DefaultChatTransport<UIMessage>({
         api: CHAT_API,
-        prepareSendMessagesRequest: ({ messages }) => ({
-          body: copilotRequestBody(messages, { conversationId: conversationIdRef.current, ...scopeRef.current }),
-        }),
+        prepareSendMessagesRequest: ({ messages }) => {
+          const body = copilotRequestBody(messages, { conversationId: conversationIdRef.current, ...scopeRef.current });
+          sendsMessageRef.current = body.message !== undefined;
+          return { body };
+        },
         fetch: async (input, init) => {
           const response = await globalThis.fetch(input, init);
           const id = response.headers.get("x-conversation-id");
           if (id && id !== conversationIdRef.current) {
             conversationIdRef.current = id;
             setConversationId(id);
+          }
+          if (response.status >= 400 && response.status < 500) {
+            setRejectedStatus(response.status);
+            // The server never stored the message, so its optimistic copy goes too.
+            if (sendsMessageRef.current) dropOptimisticRef.current();
           }
           if (await needsReload(response)) {
             reloadRef.current().catch((error) => console.error("Copilot: reloading the conversation failed:", error));
@@ -159,11 +211,14 @@ export function useCopilotChat(args: {
   }, [setMessages]);
   useEffect(() => {
     reloadRef.current = reloadFromServer;
-  }, [reloadFromServer]);
+    dropOptimisticRef.current = () =>
+      setMessages((messages) => (messages.at(-1)?.role === "user" ? messages.slice(0, -1) : messages));
+  }, [reloadFromServer, setMessages]);
 
   const sendText = useCallback(
     (text: string) => {
       setNotice(null);
+      setRejectedStatus(null);
       void sendMessage({ text });
     },
     [sendMessage],
@@ -182,6 +237,8 @@ export function useCopilotChat(args: {
     messages: chat.messages,
     status: chat.status,
     error: chat.error,
+    rejectedStatus,
+    awaitingApproval: hasUnansweredApprovals(chat.messages),
     sendText,
     approve,
     deny,

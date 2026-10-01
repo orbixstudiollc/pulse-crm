@@ -16,6 +16,8 @@ const SCHEDULES: Array<{ value: TaskSchedule; label: string }> = [
 ];
 
 const TITLE_PREFILL_LENGTH = 60;
+/** The server's limit for one chat message (chatRequestSchema). */
+export const MESSAGE_MAX_LENGTH = 8000;
 const GUEST_TASK_NOTICE =
   "Guest workspaces can schedule one task; it runs on the next daily cycle while this workspace exists";
 
@@ -116,14 +118,19 @@ export function Composer({
   onChange,
   onSend,
   isLoading,
+  blockedReason,
 }: {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
   isLoading: boolean;
+  /** Why sending is paused (e.g. approval cards wait for an answer); shown as a hint. */
+  blockedReason?: string;
 }) {
   const [scheduling, setScheduling] = useState(false);
   const clockRef = useRef<HTMLDivElement>(null);
+  const hintId = useId();
+  const canSend = value.trim() !== "" && !isLoading && !blockedReason;
 
   useEffect(() => {
     if (!scheduling) return;
@@ -155,17 +162,29 @@ export function Composer({
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
-              onSend();
+              if (canSend) onSend();
             }
           }}
           placeholder="Ask Pulse AI or type / to see prompts..."
           aria-label="Message Pulse Copilot"
+          aria-describedby={blockedReason ? hintId : undefined}
+          maxLength={MESSAGE_MAX_LENGTH}
           className="flex-1 min-w-0 pb-1 text-[14px] leading-5 text-fg placeholder:text-fg-muted bg-transparent outline-none resize-none min-h-[40px]"
           rows={1}
           disabled={isLoading}
         />
       </div>
       <div className="flex items-center justify-end gap-2 px-3 pb-3">
+        {blockedReason && (
+          <p id={hintId} className="mr-auto pl-1 text-[13px] text-fg-muted">
+            {blockedReason}
+          </p>
+        )}
+        {value.length > 0 && (
+          <span className="text-[12px] tabular-nums text-fg-muted">
+            {value.length}/{MESSAGE_MAX_LENGTH}
+          </span>
+        )}
         <div ref={clockRef} className="relative">
           <button
             type="button"
@@ -181,7 +200,7 @@ export function Composer({
         </div>
         <button
           onClick={onSend}
-          disabled={!value.trim() || isLoading}
+          disabled={!canSend}
           aria-label="Send message"
           className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-on-inverse transition-colors hover:bg-accent-strong disabled:opacity-40 disabled:hover:bg-accent"
         >
