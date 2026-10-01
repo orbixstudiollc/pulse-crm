@@ -102,6 +102,7 @@ export {
   // Email
   TrayIcon,
   PlugsConnectedIcon,
+  KeyIcon,
   GoogleLogoIcon,
   MicrosoftOutlookLogoIcon,
   HardDrivesIcon,

@@ -3665,6 +3665,38 @@ export type Database = {
         };
         Relationships: [];
       };
+      api_keys: {
+        Row: {
+          id: string;
+          organization_id: string;
+          created_by: string | null;
+          name: string;
+          key_prefix: string;
+          key_hash: string;
+          scope: "read" | "write";
+          last_used_at: string | null;
+          revoked_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          created_by?: string | null;
+          name: string;
+          key_prefix: string;
+          key_hash: string;
+          scope?: "read" | "write";
+          last_used_at?: string | null;
+          revoked_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          name?: string;
+          last_used_at?: string | null;
+          revoked_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
