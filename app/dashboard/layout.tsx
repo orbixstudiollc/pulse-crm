@@ -3,6 +3,8 @@ import { HeaderProvider } from "@/components/layout/HeaderContext";
 import { SidebarProvider } from "@/components/layout/SidebarContext";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { AIChatProvider, AIChatPanel } from "@/components/features/AIChat";
+import { DockedContent, DockedCopilot } from "@/components/features/Copilot/DockedCopilot";
+import { SelectionProvider } from "@/components/features/Copilot/SelectionContext";
 import { EnrichmentProgressBanner } from "@/components/lead-finder/EnrichmentProgressBanner";
 import { ThemedToaster } from "@/components/features/ThemeProvider";
 import { createClient } from "@/lib/supabase/server";
@@ -35,22 +37,25 @@ export default async function DashboardLayout({
       <SidebarProvider>
         <HeaderProvider>
           <AIChatProvider>
-            <div className="flex h-screen flex-col overflow-hidden bg-page">
-              <Header />
-              <div className="flex flex-1 overflow-hidden">
-                <Sidebar />
-                <MobileSidebar />
-                <div className="flex flex-1 flex-col overflow-hidden">
-                  <div className="px-4 pt-4 empty:hidden lead-finder-banner-slot">
-                    <EnrichmentProgressBanner />
-                  </div>
-                  <main className="flex-1 overflow-auto bg-page">
-                    <div className="h-full w-full">{children}</div>
-                  </main>
+            <SelectionProvider>
+              <div className="flex h-screen flex-col overflow-hidden bg-page">
+                <Header />
+                <div className="relative flex flex-1 overflow-hidden">
+                  <Sidebar />
+                  <MobileSidebar />
+                  <DockedContent>
+                    <div className="px-4 pt-4 empty:hidden lead-finder-banner-slot">
+                      <EnrichmentProgressBanner />
+                    </div>
+                    <main className="flex-1 overflow-auto bg-page">
+                      <div className="h-full w-full">{children}</div>
+                    </main>
+                  </DockedContent>
+                  <DockedCopilot />
                 </div>
               </div>
-            </div>
-            <AIChatPanel />
+              <AIChatPanel />
+            </SelectionProvider>
             <ThemedToaster />
           </AIChatProvider>
         </HeaderProvider>

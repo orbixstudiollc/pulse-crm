@@ -38,6 +38,7 @@ import { composeAndSendEmail, sendReply } from "@/lib/actions/email-send";
 import { getUnifiedInbox, deleteUnifiedItem } from "@/lib/actions/unified-inbox";
 import { sanitizeEmailHtml } from "@/lib/security/sanitize-html";
 import { formatEnumLabel } from "@/lib/utils/format-enum-label";
+import { useProvideSelection } from "@/components/features/Copilot/SelectionContext";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -118,6 +119,7 @@ interface EmailAccount {
 export function InboxClient() {
   const [threads, setThreads] = useState<EmailThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<EmailThread | null>(null);
+  useProvideSelection(selectedThread ? [selectedThread.id] : []);
   const [messages, setMessages] = useState<EmailMessage[]>([]);
   const [accounts, setAccounts] = useState<EmailAccount[]>([]);
   const [stats, setStats] = useState({ unread: 0, total: 0 });

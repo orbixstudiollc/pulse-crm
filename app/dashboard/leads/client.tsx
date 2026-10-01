@@ -51,6 +51,7 @@ import { useClickOutside } from "@/hooks";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { countInMonth, monthOverMonth } from "@/lib/stats/period-delta";
+import { useProvideSelection } from "@/components/features/Copilot/SelectionContext";
 
 interface LeadRecord {
   id: string;
@@ -162,6 +163,7 @@ export function LeadsPageClient() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState("5");
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
+  useProvideSelection(selectedRows);
   const [confirmDelete, setConfirmDelete] = useState<{ type: "single" | "bulk"; id?: string } | null>(null);
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");

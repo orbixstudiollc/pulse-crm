@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { parseDealDate, stageDays } from "@/lib/deals/metrics";
 import { createDeal, updateDealStage } from "@/lib/actions/deals";
+import { useProvideSelection } from "@/components/features/Copilot/SelectionContext";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -255,6 +256,7 @@ export function SalesPageClient({
   const [showAddDeal, setShowAddDeal] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<MappedDeal | null>(null);
   const [showDrawer, setShowDrawer] = useState(false);
+  useProvideSelection(selectedDeal && showDrawer ? [selectedDeal.id] : []);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<DealFilters>(defaultFilters);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
