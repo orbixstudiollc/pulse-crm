@@ -66,10 +66,12 @@ export async function getAssistantBrief(): Promise<AssistantBrief> {
   const [followupsDueToday, overdueFollowups, hotLeadsUntouched, staleDeals, approvals] = await Promise.all([
     countOf("follow-ups due today", openLeads().eq("next_followup", today)),
     countOf("overdue follow-ups", openLeads().lt("next_followup", today)),
-    countOf(
-      "untouched hot leads",
-      openLeads().eq("status", "hot").or(`last_contacted_at.is.null,last_contacted_at.lt."${hotCutoff}"`),
-    ),
+    // Two plain counts (never contacted, contacted before the cutoff) instead of an or()
+    // filter: the quoted timestamp inside or() was rejected by PostgREST in production.
+    Promise.all([
+      countOf("untouched hot leads", openLeads().eq("status", "hot").is("last_contacted_at", null)),
+      countOf("untouched hot leads", openLeads().eq("status", "hot").lt("last_contacted_at", hotCutoff)),
+    ]).then(([never, stale]) => (never === null || stale === null ? null : never + stale)),
     countOf(
       "stale deals",
       count("deals").not("stage", "in", "(closed_won,closed_lost)").lt("updated_at", staleCutoff),

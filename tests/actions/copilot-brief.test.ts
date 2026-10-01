@@ -65,7 +65,7 @@ describe("getAssistantBrief", () => {
   it("filters every query chain by organization_id and counts head-only", async () => {
     await getAssistantBrief();
 
-    expect(queries).toHaveLength(5);
+    expect(queries).toHaveLength(6);
     for (const q of queries) {
       expect(has(q, "eq", "organization_id", ORG), `${q.table} is org-scoped`).toBe(true);
       const select = q.calls.find((c) => c.method === "select");
@@ -76,15 +76,17 @@ describe("getAssistantBrief", () => {
   it("returns each count, using next_followup, last_contacted_at, deal stage/updated_at and the caller's pending task approvals", async () => {
     const brief = await getAssistantBrief();
 
-    expect(brief).toEqual({ followupsDueToday: 2, overdueFollowups: 2, hotLeadsUntouched: 2, staleDeals: 5, pendingApprovals: 1 });
+    expect(brief).toEqual({ followupsDueToday: 2, overdueFollowups: 2, hotLeadsUntouched: 4, staleDeals: 5, pendingApprovals: 1 });
     const leads = queries.filter((q) => q.table === "leads");
     expect(leads.every((q) => has(q, "is", "converted_at", null))).toBe(true);
     expect(leads.some((q) => has(q, "eq", "next_followup", "2026-10-01"))).toBe(true);
     expect(leads.some((q) => has(q, "lt", "next_followup", "2026-10-01"))).toBe(true);
-    const hot = leads.find((q) => has(q, "eq", "status", "hot"))!;
-    expect(hot.calls.find((c) => c.method === "or")?.args[0]).toBe(
-      'last_contacted_at.is.null,last_contacted_at.lt."2026-09-24T15:30:00.000Z"',
-    );
+    // Untouched hot leads = never contacted + contacted before the cutoff, as two plain counts.
+    const hot = leads.filter((q) => has(q, "eq", "status", "hot"));
+    expect(hot).toHaveLength(2);
+    expect(hot.some((q) => has(q, "is", "last_contacted_at", null))).toBe(true);
+    expect(hot.some((q) => has(q, "lt", "last_contacted_at", "2026-09-24T15:30:00.000Z"))).toBe(true);
+    expect(hot.every((q) => !q.calls.some((c) => c.method === "or"))).toBe(true);
     const deals = queries.find((q) => q.table === "deals")!;
     expect(has(deals, "not", "stage", "in", "(closed_won,closed_lost)")).toBe(true);
     expect(has(deals, "lt", "updated_at", "2026-09-17T15:30:00.000Z")).toBe(true);
