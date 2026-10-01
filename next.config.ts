@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { buildCsp } from "./lib/security/csp";
 
 const nextConfig: NextConfig = {
   devIndicators: false,
@@ -25,6 +26,13 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          {
+            key: "Content-Security-Policy-Report-Only",
+            value: buildCsp({
+              supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+              reportUri: "/api/csp-report",
+            }),
+          },
           {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
