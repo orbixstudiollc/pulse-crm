@@ -815,6 +815,67 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
       expect(await approvalRow()).toEqual({ status: "failed", result: { error: "input_mismatch" } });
     });
 
+    it("a stored card whose toolCallId was swapped (claimed approval id, same input) does not run; no write, the claimed row fails", async () => {
+      const { approvalId } = await proposeUpdate();
+      const [msg] = await db.query<{ message_id: string; parts: Array<Record<string, unknown>> }>(
+        "SELECT message_id, parts FROM copilot_messages WHERE conversation_id = $1 AND role = 'assistant'",
+        [CONV_A],
+      );
+      // Same approval id, same input as the row; only the toolCallId differs.
+      const edited = msg.parts.map((p) => (p.toolCallId === "call-1" ? { ...p, toolCallId: "call-planted" } : p));
+      await db.query("UPDATE copilot_messages SET parts = $1 WHERE message_id = $2", [JSON.stringify(edited), msg.message_id]);
+      h.model = scriptedModel([() => streamOf(textParts("Done."))]);
+
+      const res = await post({ conversationId: CONV_A, approvals: [{ approvalId, approved: true }] });
+      expect(res.status).toBe(200);
+      const chunks = chunksOf(await settle(res));
+
+      expect(await leadStatus()).toBe("cold");
+      expect(automationSpy).not.toHaveBeenCalled();
+      expect(chunks.some((c) => c.type === "tool-output-available" && c.toolCallId === "call-planted")).toBe(false);
+      const rows = await db.query<{ tool_call_id: string; status: string; result: unknown }>(
+        "SELECT tool_call_id, status, result FROM copilot_approvals ORDER BY created_at",
+      );
+      // The claimed row is closed as failed; the planted call never became a row of its own.
+      expect(rows).toEqual([{ tool_call_id: "call-1", status: "failed", result: { error: "not_executed" } }]);
+      const stored = (await messageRows(CONV_A)).find((m) => m.role === "assistant")!;
+      expect(stored.parts!.find((p) => (p as { toolCallId?: string }).toolCallId === "call-planted")).toMatchObject({
+        state: "output-error",
+        errorText: "not_executed",
+      });
+      expect(await lockToken(CONV_A)).toBeNull();
+    });
+
+    it("a claimed approval whose 'not in the latest turn' outcome fails to record is still marked failed by the catch path", async () => {
+      const { approvalId } = await proposeUpdate();
+      // A newer turn: the card is no longer in the latest assistant message.
+      h.model = scriptedModel([() => streamOf(textParts("Something else."))]);
+      await settle(await post({ conversationId: CONV_A, message: { text: "Never mind" } }));
+      // Recording that outcome fails once (the DB rejects that exact write).
+      await db.exec(`
+        CREATE FUNCTION pg_temp.reject_not_in_turn() RETURNS trigger LANGUAGE plpgsql AS $$
+        BEGIN
+          IF NEW.result->>'error' = 'approval_not_in_latest_turn' THEN RAISE EXCEPTION 'outcome write failed'; END IF;
+          RETURN NEW;
+        END $$;
+        CREATE TRIGGER reject_not_in_turn BEFORE UPDATE ON copilot_approvals
+          FOR EACH ROW EXECUTE FUNCTION pg_temp.reject_not_in_turn();
+      `);
+      const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      try {
+        const res = await post({ conversationId: CONV_A, approvals: [{ approvalId, approved: true }] });
+        expect(res.status).toBe(500);
+        await settle(res);
+      } finally {
+        spy.mockRestore();
+        await db.exec("DROP TRIGGER reject_not_in_turn ON copilot_approvals");
+      }
+      // Never left 'approved': failClaimed still covered the row whose outcome write failed.
+      expect(await approvalRow()).toEqual({ status: "failed", result: { error: "request_failed" } });
+      expect(await leadStatus()).toBe("cold");
+      expect(await lockToken(CONV_A)).toBeNull();
+    });
+
     it("an always-allowed write runs without a card and leaves an 'applied' audit row", async () => {
       await db.query(`UPDATE ai_settings SET copilot_always_allow = '["update_lead"]'::jsonb WHERE organization_id = $1`, [ORG_A]);
       h.model = scriptedModel([() => streamOf(proposeLeadUpdate("call-auto")), () => streamOf(textParts("Acme is now hot."))]);

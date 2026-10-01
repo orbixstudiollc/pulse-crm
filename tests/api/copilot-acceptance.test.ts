@@ -987,4 +987,39 @@ describe("Copilot done flow: acceptance over PGlite + 042/043 with one scripted 
     expect(toolPart(stored.at(-1)!.parts, "call-forged")).toMatchObject({ state: "output-error", errorText: "not_executed" });
     expect(await lockToken()).toBeNull();
   });
+
+  // ── PoC-C: a claimed approval id is bound to its row's toolCallId and tool ──
+  // A stored card keeps its claimed approval id and its input but carries a NEW toolCallId.
+  // Without the binding, ai's approved re-check sends the new id through needsApproval, which
+  // proposes it afresh (returns true) and the write runs in the same request.
+
+  it("PoC-C: a stored card whose toolCallId was swapped keeps its claimed approval id and input but never executes", async () => {
+    const { ids } = await proposeFollowups();
+    await editStoredAssistant((parts) =>
+      parts.map((p) => (p.toolCallId === "call-fu-1" && p.type === "tool-set_followup" ? { ...p, toolCallId: "call-swapped" } : p)),
+    );
+
+    const res = await answer([
+      { approvalId: ids["call-fu-1"], approved: true },
+      { approvalId: ids["call-fu-2"], approved: true },
+    ]);
+    expect(res.status).toBe(200);
+    const chunks = chunksOf(await settle(res));
+
+    // Card 2 ran; the swapped card wrote nothing and produced no output.
+    const f = await followups();
+    expect(f[LEADS[0]]).toEqual({ due: null, note: null });
+    expect(f[LEADS[1]]).toEqual({ due: DUES[1], note: "Follow up 2" });
+    expect(f[LEADS[2]]).toEqual({ due: null, note: null });
+    expect(chunks.filter((c) => c.type === "tool-output-available").map((c) => c.toolCallId)).toEqual(["call-fu-2"]);
+    expect(automationSpy).not.toHaveBeenCalled();
+    // The claimed row is closed as failed and the swapped id never became a row.
+    expect(await statusByCall()).toEqual({ "call-fu-1": "failed", "call-fu-2": "applied", "call-fu-3": "pending" });
+    const row1 = (await approvalRows()).find((r) => r.tool_call_id === "call-fu-1")!;
+    expect(row1.result).toEqual({ error: "not_executed" });
+    // Stored closed, so no later request can run it either.
+    const stored = await storedMessages();
+    expect(toolPart(stored.at(-1)!.parts, "call-swapped")).toMatchObject({ state: "output-error", errorText: "not_executed" });
+    expect(await lockToken()).toBeNull();
+  });
 });

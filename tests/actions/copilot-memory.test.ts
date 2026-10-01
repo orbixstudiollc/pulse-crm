@@ -49,6 +49,7 @@ import {
   listIcpProfiles,
   listMemoryByType,
   saveGuidance,
+  updateCopilotTask,
   updateMemoryItem,
 } from "@/lib/actions/copilot";
 
@@ -202,6 +203,58 @@ describe("owner fields cannot be overridden by client input", () => {
     const insert = queries[0].calls.find((c) => c.method === "insert")!;
     expect(queries[0].table).toBe("copilot_tasks");
     expect(insert.args[0]).toMatchObject({ organization_id: ORG, user_id: USER, title: "T", prompt: "P" });
+  });
+});
+
+describe("updateCopilotTask", () => {
+  it("applies only title, prompt, schedule, cron_expression and is_active, scoped to org AND user", async () => {
+    result = { data: [{ id: "t1" }], error: null };
+    const updates = {
+      title: "New title",
+      prompt: "New prompt",
+      schedule: "weekly",
+      cron_expression: "0 9 * * 1",
+      is_active: false,
+      // Server-owned fields a client must never set:
+      next_run_at: "2000-01-01T00:00:00.000Z",
+      last_run_at: "2000-01-01T00:00:00.000Z",
+      run_count: 0,
+      last_result: "forged",
+      locked_at: null,
+      user_id: "other-user",
+      organization_id: "other-org",
+    } as unknown as Parameters<typeof updateCopilotTask>[1];
+
+    expect(await updateCopilotTask("t1", updates)).toEqual({ success: true });
+
+    expect(queries).toHaveLength(1);
+    const [q] = queries;
+    expect(q.table).toBe("copilot_tasks");
+    const update = q.calls.find((c) => c.method === "update")!;
+    expect(update.args[0]).toEqual({
+      title: "New title",
+      prompt: "New prompt",
+      schedule: "weekly",
+      cron_expression: "0 9 * * 1",
+      is_active: false,
+    });
+    expect(q.calls).toContainEqual({ method: "eq", args: ["id", "t1"] });
+    expect(hasOrgEq(q)).toBe(true);
+    expect(hasUserEq(q)).toBe(true);
+  });
+
+  it("omits the fields that were not given (a toggle sends is_active only)", async () => {
+    result = { data: [{ id: "t1" }], error: null };
+
+    await updateCopilotTask("t1", { is_active: true });
+
+    expect(queries[0].calls.find((c) => c.method === "update")!.args[0]).toEqual({ is_active: true });
+  });
+
+  it("reports Not found when no own task matched", async () => {
+    result = { data: [], error: null };
+
+    expect(await updateCopilotTask("someone-elses", { title: "x" })).toEqual({ error: "Not found" });
   });
 });
 

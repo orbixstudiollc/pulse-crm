@@ -156,17 +156,27 @@ describe("buildCopilotToolSet (chat)", () => {
     expect(onWriteRequested).toHaveBeenCalledTimes(1);
   });
 
+  /** Request 1 proposes the call; request 2 (a new toolset) holds its claimed approval's diff. */
+  const proposeThenApprove = async (toolCallId: string, input: Record<string, unknown>) => {
+    const { tools, onWriteRequested } = build();
+    await expect(needsApproval(tools.update_lead)(input, callOpts(toolCallId))).resolves.toBe(true);
+    const { diff } = (onWriteRequested.mock.calls[0] as unknown as [{ diff: FieldDiff }])[0];
+    return buildCopilotToolSet(envFor("chat"), {
+      alwaysAllow: [],
+      onWriteRequested: async () => undefined,
+      resolveDiff: async (id) => (id === toolCallId ? diff : null),
+    });
+  };
+
   it("an approved write executes once the live record still matches", async () => {
-    const { tools } = build();
-    await needsApproval(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("ok-1"));
+    const tools = await proposeThenApprove("ok-1", { id: LEAD, status: "cold" });
     const result = await execute(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("ok-1"));
     expect(result).toMatchObject({ ok: true, automationsSkipped: ["enroll_sequence"] });
     expect(lead().status).toBe("cold");
   });
 
   it("stale live record returns record_changed without calling the handler", async () => {
-    const { tools } = build();
-    await needsApproval(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("stale-1"));
+    const tools = await proposeThenApprove("stale-1", { id: LEAD, status: "cold" });
     Object.assign(lead(), { status: "warm", updated_at: "2026-09-02T00:00:00.000Z" });
     const result = await execute(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("stale-1"));
     expect(result).toEqual({ ok: false, error: "record_changed" });
@@ -237,6 +247,32 @@ describe("buildCopilotToolSet (chat)", () => {
     await expect(needsApproval(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("fresh"))).resolves.toBe(true);
     expect(onWriteRequested).toHaveBeenCalledTimes(1);
     expect(fanout.count).toBe(1);
+  });
+
+  it("a call proposed in this request never executes in this request, even when ai re-checks it as approved", async () => {
+    // A planted approved part with a new toolCallId reaches ai's approved re-check: it has no
+    // claimed diff and no row, so needsApproval records a fresh pending row and returns true.
+    const onWriteRequested = vi.fn(async () => undefined);
+    const tools = buildCopilotToolSet(envFor("chat"), {
+      alwaysAllow: [],
+      onWriteRequested,
+      descriptors,
+      resolveDiff: async () => null,
+      hasApprovalRow: async () => false,
+    });
+    await expect(needsApproval(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("call-planted"))).resolves.toBe(true);
+    expect(onWriteRequested).toHaveBeenCalledTimes(1);
+
+    // ai then executes it: nothing is written, and asking again does not unlock it.
+    expect(await execute(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("call-planted"))).toEqual({ ok: false, error: "not_executed" });
+    expect(await execute(tools.update_lead)({ id: LEAD, status: "cold" }, callOpts("call-planted"))).toEqual({ ok: false, error: "not_executed" });
+    expect(lead().status).toBe("hot");
+    expect(leadUpdates()).toBe(0);
+    expect(fakes.evaluate).not.toHaveBeenCalled();
+    // The same holds for a copilot-only write.
+    await expect(needsApproval(tools.create_task)({ title: "Planted" }, callOpts("task-planted"))).resolves.toBe(true);
+    expect(await execute(tools.create_task)({ title: "Planted" }, callOpts("task-planted"))).toEqual({ ok: false, error: "not_executed" });
+    expect(fakes.createTask).not.toHaveBeenCalled();
   });
 
   it("an always-allowed write counts toward the fan-out, writes, and is audited with its diff and result", async () => {

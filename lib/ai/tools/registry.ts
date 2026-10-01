@@ -90,7 +90,7 @@ export type CopilotToolSetOptions = {
   descriptors?: Map<string, FieldDiff>;
 };
 
-/** Execute result for a call whose approval this request did not claim: nothing is written. */
+/** Execute result for a call this request may not run (approval not claimed here, or proposed here): nothing is written. */
 const NOT_EXECUTED_RESULT = { ok: false, error: "not_executed" } as const;
 
 // ── MCP definitions ──────────────────────────────────────────────────────────
@@ -300,7 +300,9 @@ type SdkTool = Tool<Record<string, unknown>, unknown>;
  *   and pauses; for an already-approved call (opts.resolveDiff returns its stored diff) it
  *   keeps that diff. A call that already has an approval row but was not claimed by this
  *   request never runs: needsApproval returns false (ai 6 turns a re-validated approval into a
- *   denial) and execute returns NOT_EXECUTED_RESULT. Always-allowed writes count toward the
+ *   denial) and execute returns NOT_EXECUTED_RESULT. A call proposed in this request never
+ *   executes in this request either (execute returns NOT_EXECUTED_RESULT): its approval can
+ *   only come from a later request. Always-allowed writes count toward the
  *   fan-out, run without a card and are audited via onAutoAllowed. execute re-checks the live
  *   row and returns record_changed when it moved since the diff was taken. Past
  *   WRITE_FANOUT_PER_TURN proposals, needsApproval returns false and execute returns
@@ -318,6 +320,12 @@ export function buildCopilotToolSet(env: CopilotToolEnv, opts: CopilotToolSetOpt
   const unclaimed = new Set<string>();
   /** Always-allowed calls, audited after they run. */
   const autoAllowed = new Set<string>();
+  /**
+   * Calls proposed (pending row recorded) in this request. A proposal is only ever approved by
+   * a later request, so none of these may execute now: if ai's approved re-check reaches one
+   * (a planted approved part with a fresh toolCallId), execute returns NOT_EXECUTED_RESULT.
+   */
+  const proposed = new Set<string>();
   const tools: ToolSet = {};
 
   for (const t of listRegistryTools(env.ctx.source)) {
@@ -373,12 +381,14 @@ export function buildCopilotToolSet(env: CopilotToolEnv, opts: CopilotToolSetOpt
           return false;
         }
         descriptors.set(toolCallId, diff);
+        proposed.add(toolCallId);
         await opts.onWriteRequested({ toolCallId, toolName: t.name, input, diff });
         return true;
       },
       execute: async (input, { toolCallId }) => {
         if (overLimit.delete(toolCallId)) return FANOUT_LIMIT_RESULT;
         if (unclaimed.delete(toolCallId)) return NOT_EXECUTED_RESULT;
+        if (proposed.has(toolCallId)) return NOT_EXECUTED_RESULT;
         const diff = (await opts.resolveDiff?.(toolCallId)) ?? diffs.get(toolCallId) ?? null;
         diffs.delete(toolCallId);
         const result = await runWrite(t, input, env, diff);

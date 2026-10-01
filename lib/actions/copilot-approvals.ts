@@ -31,12 +31,14 @@ async function session() {
   return { supabase, orgId, userId: user.id };
 }
 
+/** The caller's own pending rows (org AND user): only the owner can resolve them (044 RLS agrees). */
 export async function listPendingApprovalsAction() {
-  const { supabase, orgId } = await session();
+  const { supabase, orgId, userId } = await session();
   const { data, error } = await supabase
     .from("copilot_approvals")
     .select("id, approval_id, tool_name, diff, source, task_id, created_at")
     .eq("organization_id", orgId)
+    .eq("user_id", userId)
     .eq("status", "pending")
     .order("created_at", { ascending: false })
     .limit(PENDING_LIMIT);

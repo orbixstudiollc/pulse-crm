@@ -6,6 +6,7 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
+  getToolName,
   isToolUIPart,
   stepCountIs,
   streamText,
@@ -140,22 +141,35 @@ function canonicalJson(value: unknown): string {
 
 /**
  * ai 6 executes every approved, output-less tool part of the last assistant message. Only
- * approvals claimed by this request may run, so every other approval-responded part (a card
- * approved in an earlier request that failed, or one planted in the stored history) is
- * closed: approved ones become output-error 'not_executed', denied ones output-denied. A
- * claimed approval whose stored input differs from its approval row's becomes output-error
+ * approvals claimed by this request may run, and only as the exact call their row records:
+ * a part stays open when its approval id was claimed AND its toolCallId and tool name are the
+ * row's AND its response matches the row's status (one part per row). Every other
+ * approval-responded part (a card approved in an earlier request that failed, one planted in
+ * the stored history, or a claimed approval id moved onto another toolCallId) is closed:
+ * approved ones become output-error 'not_executed', denied ones output-denied. A bound,
+ * approved part whose stored input differs from its row's becomes output-error
  * 'input_mismatch' (finishTurn then marks the row failed). Pure.
  */
 function closeUnclaimedApprovals(messages: UIMessage[], claimed: Map<string, ApprovalRow>): UIMessage[] {
+  const kept = new Set<string>();
   return messages.map((message) => {
     let changed = false;
     const parts = message.parts.map((part) => {
       if (!isToolUIPart(part) || part.state !== "approval-responded") return part;
       const row = claimed.get(part.approval.id);
-      if (row && (!part.approval.approved || canonicalJson(part.input) === canonicalJson(row.input))) return part;
+      const bound =
+        row !== undefined &&
+        !kept.has(row.id) &&
+        row.tool_call_id === part.toolCallId &&
+        row.tool_name === getToolName(part) &&
+        part.approval.approved === (row.status === "approved");
+      if (bound && (row.status !== "approved" || canonicalJson(part.input) === canonicalJson(row.input))) {
+        kept.add(row.id);
+        return part;
+      }
       changed = true;
       const closed = part.approval.approved
-        ? { ...part, state: "output-error", errorText: row ? "input_mismatch" : "not_executed" }
+        ? { ...part, state: "output-error", errorText: bound ? "input_mismatch" : "not_executed" }
         : { ...part, state: "output-denied" };
       return closed as unknown as UIMessage["parts"][number];
     });
@@ -511,9 +525,9 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
     failClaimed = async (reason) => {
       for (const c of claimed) {
         if (!c.response.approved || resolvedRowIds.has(c.row.id)) continue;
-        resolvedRowIds.add(c.row.id);
         try {
           await markApprovalOutcome(admin, orgId, c.row.id, "failed", { error: reason });
+          resolvedRowIds.add(c.row.id);
         } catch (error) {
           console.error("AI Chat: failing a claimed approval failed:", error);
         }
@@ -526,8 +540,9 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
       // Claimed, but its card is no longer in the latest turn: it can never run.
       invalid.push(c.response.approvalId);
       if (c.response.approved) {
-        resolvedRowIds.add(c.row.id);
         await markApprovalOutcome(admin, orgId, c.row.id, "failed", { error: "approval_not_in_latest_turn" });
+        // Only once recorded: if that write throws, failClaimed (catch path) still covers the row.
+        resolvedRowIds.add(c.row.id);
       }
     }
     const matched = claimed.filter((c) => !unmatched.has(c.response.approvalId));

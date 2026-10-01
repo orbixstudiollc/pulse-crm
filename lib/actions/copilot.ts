@@ -355,6 +355,9 @@ ${truncatedText}`;
 
 // ── Tasks ──────────────────────────────────────────────────────────────
 
+/** The only copilot_tasks columns a member may edit (updateCopilotTask). */
+const TASK_EDITABLE_FIELDS = ["title", "prompt", "schedule", "cron_expression", "is_active"] as const;
+
 export async function getCopilotTasks() {
   const supabase = await createClient();
   const orgId = await getOrgId();
@@ -395,24 +398,33 @@ export async function createCopilotTask(task: {
   return { data };
 }
 
+/**
+ * Edits one of the caller's own tasks (org AND user). Only the member-editable fields are
+ * applied; run state (next_run_at, last_run_at, run_count, last_result, locks) is the
+ * scheduler's and any other key in the input is ignored.
+ */
 export async function updateCopilotTask(id: string, updates: {
   title?: string;
   prompt?: string;
   schedule?: "daily" | "weekly" | "monthly" | "custom";
   cron_expression?: string;
   is_active?: boolean;
-  last_run_at?: string;
-  next_run_at?: string;
-  run_count?: number;
-  last_result?: string;
 }) {
   const supabase = await createClient();
   const orgId = await getOrgId();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const allowed = Object.fromEntries(
+    TASK_EDITABLE_FIELDS.filter((key) => updates?.[key] !== undefined).map((key) => [key, updates[key]]),
+  ) as Pick<typeof updates, (typeof TASK_EDITABLE_FIELDS)[number]>;
+
   const { data, error } = await supabase
     .from("copilot_tasks")
-    .update(updates)
+    .update(allowed)
     .eq("id", id)
     .eq("organization_id", orgId)
+    .eq("user_id", user.id)
     .select("id");
 
   if (error) return { error: error.message };

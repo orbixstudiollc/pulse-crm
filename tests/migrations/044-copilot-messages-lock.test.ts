@@ -22,6 +22,10 @@ const CONV_A_DOOMED = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
 const CONV_A2 = "abababab-abab-4bab-8bab-abababababab";
 const MSG_A = "f0000000-0000-4000-8000-00000000000a";
 const MSG_B = "f0000000-0000-4000-8000-00000000000b";
+const MSG_A2 = "f0000000-0000-4000-8000-0000000000a2";
+const TASK_A = "a0000000-0000-4000-8000-00000000000a";
+const TASK_A2 = "a0000000-0000-4000-8000-0000000000a2";
+const TASK_B = "a0000000-0000-4000-8000-00000000000b";
 
 let db: TestDb;
 
@@ -77,11 +81,24 @@ beforeAll(async () => {
       ('${CONV_B}', '${ORG_B}', '${MEMBER_B}');
     INSERT INTO copilot_messages (id, conversation_id, organization_id, role, content) VALUES
       ('${MSG_A}', '${CONV_A}', '${ORG_A}', 'user', 'hello from A'),
-      ('${MSG_B}', '${CONV_B}', '${ORG_B}', 'user', 'hello from B');
+      ('${MSG_B}', '${CONV_B}', '${ORG_B}', 'user', 'hello from B'),
+      ('${MSG_A2}', '${CONV_A2}', '${ORG_A}', 'user', 'hello from A2');
     INSERT INTO copilot_messages (conversation_id, organization_id, role, content) VALUES
       ('${CONV_A_DOOMED}', '${ORG_A}', 'user', 'doomed');
   `);
   await db.applyMigration("042_copilot_v2_history_approvals.sql");
+  await db.exec(`
+    INSERT INTO copilot_approvals (organization_id, user_id, conversation_id, source, tool_call_id, tool_name, input, diff, status) VALUES
+      ('${ORG_A}', '${MEMBER_A}', '${CONV_A}', 'chat', 'call-a-applied', 'update_lead', '{}', '{}', 'applied'),
+      ('${ORG_A}', '${MEMBER_A}', '${CONV_A}', 'chat', 'call-a-auto', 'update_lead', '{}', '{}', 'applied'),
+      ('${ORG_A}', '${MEMBER_A2}', '${CONV_A2}', 'chat', 'call-a2-pending', 'update_lead', '{}', '{}', 'pending'),
+      ('${ORG_A}', '${MEMBER_A2}', NULL, 'task', 'call-a2-task', 'update_lead', '{}', '{}', 'pending'),
+      ('${ORG_B}', '${MEMBER_B}', '${CONV_B}', 'chat', 'call-b', 'update_lead', '{}', '{}', 'pending');
+    INSERT INTO copilot_tasks (id, organization_id, user_id, title, prompt, schedule) VALUES
+      ('${TASK_A}', '${ORG_A}', '${MEMBER_A}', 'A task', 'p', 'daily'),
+      ('${TASK_A2}', '${ORG_A}', '${MEMBER_A2}', 'A2 task', 'p', 'daily'),
+      ('${TASK_B}', '${ORG_B}', '${MEMBER_B}', 'B task', 'p', 'daily');
+  `);
   await db.applyMigration(MIGRATION);
 });
 
@@ -140,12 +157,12 @@ describe("migration 044: apply", () => {
     }
   });
 
-  it("applies a second time without error and leaves exactly one SELECT policy", async () => {
+  it("applies a second time without error and leaves exactly the per-user policies", async () => {
     await expect(db.applyMigration(MIGRATION)).resolves.toBeUndefined();
     const policies = await db.query<{ policyname: string; cmd: string; roles: string[] }>(
       "SELECT policyname, cmd, roles FROM pg_policies WHERE tablename = 'copilot_messages'",
     );
-    expect(policies).toEqual([{ policyname: "copilot_messages_select_org", cmd: "SELECT", roles: ["authenticated"] }]);
+    expect(policies).toEqual([{ policyname: "copilot_messages_select_own", cmd: "SELECT", roles: ["authenticated"] }]);
     const rls = await db.query<{ relrowsecurity: boolean }>(
       "SELECT relrowsecurity FROM pg_class WHERE oid = 'public.copilot_messages'::regclass",
     );
@@ -154,8 +171,8 @@ describe("migration 044: apply", () => {
     const conversationPolicies = await db.query<{ policyname: string; cmd: string; roles: string[] }>(
       "SELECT policyname, cmd, roles FROM pg_policies WHERE tablename = 'copilot_conversations' ORDER BY policyname",
     );
+    // No DELETE policy: conversations are deleted by the service role only.
     expect(conversationPolicies).toEqual([
-      { policyname: "copilot_conversations_delete_own", cmd: "DELETE", roles: ["authenticated"] },
       { policyname: "copilot_conversations_insert_own", cmd: "INSERT", roles: ["authenticated"] },
       { policyname: "copilot_conversations_select_own", cmd: "SELECT", roles: ["authenticated"] },
       { policyname: "copilot_conversations_update_own", cmd: "UPDATE", roles: ["authenticated"] },
@@ -167,6 +184,27 @@ describe("migration 044: apply", () => {
         ORDER BY column_name`,
     );
     expect(updatable.map((r) => r.column_name)).toEqual(["is_pinned", "summary", "title", "updated_at"]);
+    const canDelete = await db.query<{ member: boolean; guest: boolean; service: boolean }>(
+      `SELECT has_table_privilege('authenticated', 'public.copilot_conversations', 'DELETE') AS member,
+              has_table_privilege('anon', 'public.copilot_conversations', 'DELETE') AS guest,
+              has_table_privilege('service_role', 'public.copilot_conversations', 'DELETE') AS service`,
+    );
+    expect(canDelete).toEqual([{ member: false, guest: false, service: true }]);
+
+    const approvalPolicies = await db.query<{ policyname: string; cmd: string; roles: string[] }>(
+      "SELECT policyname, cmd, roles FROM pg_policies WHERE tablename = 'copilot_approvals'",
+    );
+    expect(approvalPolicies).toEqual([{ policyname: "copilot_approvals_select_own", cmd: "SELECT", roles: ["authenticated"] }]);
+
+    const taskPolicies = await db.query<{ policyname: string; cmd: string; roles: string[] }>(
+      "SELECT policyname, cmd, roles FROM pg_policies WHERE tablename = 'copilot_tasks' ORDER BY policyname",
+    );
+    expect(taskPolicies).toEqual([
+      { policyname: "copilot_tasks_delete_own", cmd: "DELETE", roles: ["authenticated"] },
+      { policyname: "copilot_tasks_insert_own", cmd: "INSERT", roles: ["authenticated"] },
+      { policyname: "copilot_tasks_select_own", cmd: "SELECT", roles: ["authenticated"] },
+      { policyname: "copilot_tasks_update_own", cmd: "UPDATE", roles: ["authenticated"] },
+    ]);
   });
 
   it("is one transaction with a header comment and no DROP TABLE", async () => {
@@ -180,7 +218,7 @@ describe("migration 044: apply", () => {
 });
 
 describe("migration 044: an authenticated org member", () => {
-  it("can SELECT own-org messages, and only those", async () => {
+  it("can SELECT the messages of their own conversations, and only those", async () => {
     const rows = await asMember(MEMBER_A, () =>
       db.query<{ id: string; organization_id: string }>(
         "SELECT id, organization_id FROM copilot_messages WHERE conversation_id = $1",
@@ -193,6 +231,17 @@ describe("migration 044: an authenticated org member", () => {
       db.query<{ organization_id: string }>("SELECT DISTINCT organization_id FROM copilot_messages"),
     );
     expect(all).toEqual([{ organization_id: ORG_A }]);
+
+    // Another member's conversation in the same org is invisible, by id and in a full scan.
+    const sameOrg = await asMember(MEMBER_A, () => db.query("SELECT id FROM copilot_messages WHERE id = $1", [MSG_A2]));
+    expect(sameOrg).toEqual([]);
+    const conversations = await asMember(MEMBER_A, () =>
+      db.query<{ conversation_id: string }>("SELECT DISTINCT conversation_id FROM copilot_messages"),
+    );
+    expect(conversations.map((r) => r.conversation_id).sort()).toEqual([CONV_A, CONV_A_DOOMED].sort());
+    // The owner does see it (not vacuous).
+    const own = await asMember(MEMBER_A2, () => db.query("SELECT id FROM copilot_messages WHERE id = $1", [MSG_A2]));
+    expect(own).toEqual([{ id: MSG_A2 }]);
   });
 
   it("cannot INSERT a message into their own org (RLS rejects it)", async () => {
@@ -234,8 +283,8 @@ describe("migration 044: an authenticated org member", () => {
     expect(await contentOf(MSG_B)).toBe("hello from B");
   });
 
-  it("still removes a conversation's messages by deleting the conversation (FK cascade)", async () => {
-    const deleted = await asMember(MEMBER_A, () =>
+  it("the service role still removes a conversation's messages by deleting the conversation (FK cascade)", async () => {
+    const deleted = await asServiceRole(() =>
       db.query("DELETE FROM copilot_conversations WHERE id = $1 RETURNING id", [CONV_A_DOOMED]),
     );
     expect(deleted).toEqual([{ id: CONV_A_DOOMED }]);
@@ -336,11 +385,28 @@ describe("migration 044: copilot_conversations are per-user", () => {
   });
 
   it("a member cannot delete another member's conversation", async () => {
-    const deleted = await asMember(MEMBER_A, () =>
-      db.query("DELETE FROM copilot_conversations WHERE id = $1 RETURNING id", [CONV_A2]),
-    );
-    expect(deleted).toEqual([]);
+    await expect(
+      asMember(MEMBER_A, () => db.query("DELETE FROM copilot_conversations WHERE id = $1 RETURNING id", [CONV_A2])),
+    ).rejects.toThrow(/permission denied/i);
     expect(await conversationOf(CONV_A2)).toMatchObject({ user_id: MEMBER_A2 });
+  });
+
+  it("a member cannot delete their own conversation via the API either: its applied approvals survive", async () => {
+    // Before 044's REVOKE, this DELETE cascaded away the applied and audit approval rows,
+    // bypassing deleteOwnConversations (which detaches them) and the turn lock.
+    await expect(
+      asMember(MEMBER_A, () => db.query("DELETE FROM copilot_conversations WHERE id = $1 RETURNING id", [CONV_A])),
+    ).rejects.toThrow(/permission denied/i);
+    expect(await conversationOf(CONV_A)).toMatchObject({ user_id: MEMBER_A });
+    const approvals = await db.query<{ tool_call_id: string; status: string }>(
+      "SELECT tool_call_id, status FROM copilot_approvals WHERE conversation_id = $1 ORDER BY tool_call_id",
+      [CONV_A],
+    );
+    expect(approvals).toEqual([
+      { tool_call_id: "call-a-applied", status: "applied" },
+      { tool_call_id: "call-a-auto", status: "applied" },
+    ]);
+    expect(await contentOf(MSG_A)).toBe("hello from A");
   });
 
   it("the service role still sets and clears the turn lock", async () => {
@@ -391,5 +457,89 @@ describe("migration 044: the service role", () => {
       db.query("DELETE FROM copilot_messages WHERE id = $1 RETURNING id", [id]),
     );
     expect(deleted).toEqual([{ id }]);
+  });
+});
+
+describe("migration 044: copilot_approvals are per-user", () => {
+  it("a member reads only their own approval rows, not another member's or another org's", async () => {
+    const mine = await asMember(MEMBER_A, () =>
+      db.query<{ tool_call_id: string }>("SELECT tool_call_id FROM copilot_approvals ORDER BY tool_call_id"),
+    );
+    expect(mine.map((r) => r.tool_call_id)).toEqual(["call-a-applied", "call-a-auto"]);
+
+    const theirs = await asMember(MEMBER_A2, () =>
+      db.query<{ tool_call_id: string }>("SELECT tool_call_id FROM copilot_approvals ORDER BY tool_call_id"),
+    );
+    expect(theirs.map((r) => r.tool_call_id)).toEqual(["call-a2-pending", "call-a2-task"]);
+  });
+
+  it("a member still cannot write approval rows", async () => {
+    const updated = await asMember(MEMBER_A, () =>
+      db.query("UPDATE copilot_approvals SET status = 'approved' WHERE tool_call_id = 'call-a-applied' RETURNING id"),
+    );
+    expect(updated).toEqual([]);
+  });
+});
+
+describe("migration 044: copilot_tasks are per-user", () => {
+  const taskOf = async (id: string) =>
+    (await db.query<{ user_id: string; title: string; organization_id: string }>(
+      "SELECT user_id, title, organization_id FROM copilot_tasks WHERE id = $1",
+      [id],
+    ))[0];
+
+  it("a member reads only their own tasks", async () => {
+    const rows = await asMember(MEMBER_A, () => db.query<{ id: string }>("SELECT id FROM copilot_tasks"));
+    expect(rows).toEqual([{ id: TASK_A }]);
+  });
+
+  it("a member cannot update or delete another member's task, and cannot hand their own task to someone else", async () => {
+    const updated = await asMember(MEMBER_A, () =>
+      db.query("UPDATE copilot_tasks SET title = 'hijacked' WHERE id = $1 RETURNING id", [TASK_A2]),
+    );
+    expect(updated).toEqual([]);
+    const deleted = await asMember(MEMBER_A, () => db.query("DELETE FROM copilot_tasks WHERE id = $1 RETURNING id", [TASK_A2]));
+    expect(deleted).toEqual([]);
+    expect(await taskOf(TASK_A2)).toMatchObject({ user_id: MEMBER_A2, title: "A2 task" });
+
+    await expect(
+      asMember(MEMBER_A, () => db.query("UPDATE copilot_tasks SET user_id = $1 WHERE id = $2", [MEMBER_A2, TASK_A])),
+    ).rejects.toThrow(/row-level security/i);
+    expect(await taskOf(TASK_A)).toMatchObject({ user_id: MEMBER_A });
+  });
+
+  it("a member can create, edit and delete their own task, but not create one for another member or org", async () => {
+    const created = await asMember(MEMBER_A, () =>
+      db.query<{ id: string }>(
+        "INSERT INTO copilot_tasks (organization_id, user_id, title, prompt, schedule) VALUES ($1, $2, 'Mine', 'p', 'weekly') RETURNING id",
+        [ORG_A, MEMBER_A],
+      ),
+    );
+    expect(created).toHaveLength(1);
+    const edited = await asMember(MEMBER_A, () =>
+      db.query("UPDATE copilot_tasks SET title = 'Renamed' WHERE id = $1 RETURNING id", [created[0].id]),
+    );
+    expect(edited).toEqual([{ id: created[0].id }]);
+    const removed = await asMember(MEMBER_A, () =>
+      db.query("DELETE FROM copilot_tasks WHERE id = $1 RETURNING id", [created[0].id]),
+    );
+    expect(removed).toEqual([{ id: created[0].id }]);
+
+    await expect(
+      asMember(MEMBER_A, () =>
+        db.query("INSERT INTO copilot_tasks (organization_id, user_id, title, prompt, schedule) VALUES ($1, $2, 'x', 'p', 'daily')", [
+          ORG_A,
+          MEMBER_A2,
+        ]),
+      ),
+    ).rejects.toThrow(/row-level security/i);
+    await expect(
+      asMember(MEMBER_A, () =>
+        db.query("INSERT INTO copilot_tasks (organization_id, user_id, title, prompt, schedule) VALUES ($1, $2, 'x', 'p', 'daily')", [
+          ORG_B,
+          MEMBER_A,
+        ]),
+      ),
+    ).rejects.toThrow(/row-level security/i);
   });
 });
