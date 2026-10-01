@@ -1,5 +1,5 @@
 -- ============================================================
--- 036 leads.converted_at / converted_customer_id: keep converted leads
+-- 037 leads.converted_at / converted_customer_id: keep converted leads
 --
 -- "Convert to Customer" used to create the customer and then delete the lead,
 -- which cascaded away the lead's notes, activities, score history, sequence
