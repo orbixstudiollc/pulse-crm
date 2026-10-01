@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, type MouseEvent } from "react";
+import { Suspense, useEffect, useState, type MouseEvent } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import {
   AddressBookIcon,
   CalendarBlankIcon,
+  CaretDownIcon,
   CaretLeftIcon,
   ChartBarIcon,
   CrosshairIcon,
@@ -35,39 +36,56 @@ import { useSidebar } from "./SidebarContext";
 import { SETTINGS_GROUPS, parseSettingsTab } from "./settings-nav";
 
 type NavItem = { name: string; href: string; icon: Icon };
+type NavGroup = { label?: string; items: NavItem[]; collapsible?: boolean };
 
-// Groups keep the original item order; Clay separates them with hairlines.
-const navigationGroups: NavItem[][] = [
-  [
-    { name: "Copilot", href: "/dashboard/copilot", icon: RobotIcon },
-    { name: "Overview", href: "/dashboard/overview", icon: GaugeIcon },
-  ],
-  [
-    { name: "Customers", href: "/dashboard/customers", icon: UsersIcon },
-    { name: "Leads", href: "/dashboard/leads", icon: FunnelIcon },
-    { name: "Lead Finder", href: "/dashboard/lead-finder", icon: MagnifyingGlassIcon },
-    { name: "Website Visitors", href: "/dashboard/website-visitors", icon: CursorClickIcon },
-    { name: "ICP", href: "/dashboard/icp", icon: CrosshairIcon },
-  ],
-  [
-    { name: "Campaigns", href: "/dashboard/campaigns", icon: PaperPlaneTiltIcon },
-    { name: "Sequences", href: "/dashboard/sequences", icon: EnvelopeIcon },
-    { name: "Templates", href: "/dashboard/templates", icon: NoteIcon },
-    { name: "Inbox", href: "/dashboard/inbox", icon: TrayIcon },
-  ],
-  [
-    { name: "Contacts", href: "/dashboard/contacts", icon: AddressBookIcon },
-    { name: "Sales", href: "/dashboard/sales", icon: CurrencyDollarIcon },
-    { name: "Activity", href: "/dashboard/activity", icon: PulseIcon },
-    { name: "Calendar", href: "/dashboard/calendar", icon: CalendarBlankIcon },
-    { name: "Analytics", href: "/dashboard/analytics", icon: ChartBarIcon },
-  ],
-  [
-    { name: "Proposals", href: "/dashboard/proposals", icon: ScrollIcon },
-    { name: "Playbook", href: "/dashboard/playbook", icon: FileTextIcon },
-    { name: "Competitors", href: "/dashboard/competitors", icon: ShieldIcon },
-    { name: "Marketing", href: "/dashboard/marketing", icon: MegaphoneSimpleIcon },
-  ],
+// Grouped by workflow: find people, reach them, manage the relationship.
+// Rarely used tools sit in a collapsed "More" group so the main list fits on one screen.
+const navigationGroups: NavGroup[] = [
+  {
+    items: [
+      { name: "Copilot", href: "/dashboard/copilot", icon: RobotIcon },
+      { name: "Overview", href: "/dashboard/overview", icon: GaugeIcon },
+      { name: "Analytics", href: "/dashboard/analytics", icon: ChartBarIcon },
+    ],
+  },
+  {
+    label: "Prospect",
+    items: [
+      { name: "Leads", href: "/dashboard/leads", icon: FunnelIcon },
+      { name: "Lead Finder", href: "/dashboard/lead-finder", icon: MagnifyingGlassIcon },
+      { name: "Website Visitors", href: "/dashboard/website-visitors", icon: CursorClickIcon },
+      { name: "ICP", href: "/dashboard/icp", icon: CrosshairIcon },
+    ],
+  },
+  {
+    label: "Outreach",
+    items: [
+      { name: "Inbox", href: "/dashboard/inbox", icon: TrayIcon },
+      { name: "Campaigns", href: "/dashboard/campaigns", icon: PaperPlaneTiltIcon },
+      { name: "Sequences", href: "/dashboard/sequences", icon: EnvelopeIcon },
+      { name: "Templates", href: "/dashboard/templates", icon: NoteIcon },
+    ],
+  },
+  {
+    label: "CRM",
+    items: [
+      { name: "Customers", href: "/dashboard/customers", icon: UsersIcon },
+      { name: "Contacts", href: "/dashboard/contacts", icon: AddressBookIcon },
+      { name: "Sales", href: "/dashboard/sales", icon: CurrencyDollarIcon },
+      { name: "Activity", href: "/dashboard/activity", icon: PulseIcon },
+      { name: "Calendar", href: "/dashboard/calendar", icon: CalendarBlankIcon },
+    ],
+  },
+  {
+    label: "More",
+    collapsible: true,
+    items: [
+      { name: "Proposals", href: "/dashboard/proposals", icon: ScrollIcon },
+      { name: "Playbook", href: "/dashboard/playbook", icon: FileTextIcon },
+      { name: "Competitors", href: "/dashboard/competitors", icon: ShieldIcon },
+      { name: "Marketing", href: "/dashboard/marketing", icon: MegaphoneSimpleIcon },
+    ],
+  },
 ];
 
 const bottomNavigation: NavItem[] = [
@@ -157,6 +175,52 @@ function NavList({
   );
 }
 
+const groupLabelClass = "px-6 pt-1 pb-1 text-[12px] text-fg-muted";
+
+function NavGroupSection({
+  group,
+  pathname,
+  onNavClick,
+}: {
+  group: NavGroup;
+  pathname: string;
+  onNavClick?: () => void;
+}) {
+  const hasActive = group.items.some((item) => pathname.startsWith(item.href));
+  const [toggled, setToggled] = useState(false);
+  // The group with the current page always stays open.
+  const isOpen = !group.collapsible || hasActive || toggled;
+  const listId = `nav-group-${group.label?.toLowerCase()}`;
+
+  return (
+    <>
+      {group.collapsible ? (
+        <button
+          type="button"
+          onClick={() => setToggled((open) => !open)}
+          aria-expanded={isOpen}
+          aria-controls={listId}
+          disabled={hasActive}
+          className={cn(groupLabelClass, "flex w-full items-center gap-1 text-left hover:text-fg disabled:hover:text-fg-muted")}
+        >
+          {group.label}
+          <CaretDownIcon
+            size={10}
+            className={cn("transition-transform duration-150", !isOpen && "-rotate-90")}
+          />
+        </button>
+      ) : (
+        group.label && <p className={groupLabelClass}>{group.label}</p>
+      )}
+      {isOpen && (
+        <div id={listId}>
+          <NavList items={group.items} pathname={pathname} onNavClick={onNavClick} />
+        </div>
+      )}
+    </>
+  );
+}
+
 // ── Settings nav: replaces the app nav on /dashboard/settings ────────────────
 
 function SettingsNavList({
@@ -223,10 +287,10 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       <nav className="flex-1 overflow-y-auto">
         {navigationGroups.map((group, index) => (
           <div
-            key={group[0].href}
+            key={group.label ?? "main"}
             className={cn("py-2", index > 0 && "border-t border-divider")}
           >
-            <NavList items={group} pathname={pathname} onNavClick={onNavClick} />
+            <NavGroupSection group={group} pathname={pathname} onNavClick={onNavClick} />
           </div>
         ))}
       </nav>
