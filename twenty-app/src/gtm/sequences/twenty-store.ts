@@ -146,6 +146,8 @@ export const createTwentyStore = (
   },
 
   async getSequence(id: string): Promise<SequenceRecord | null> {
+    // Twenty rejects a one-to-many nested in another one-to-many
+    // (sequence -> steps -> variants), so steps are fetched on their own.
     const res = await client.query({
       sequences: {
         __args: { filter: { id: { eq: id } }, first: 1 },
@@ -156,29 +158,31 @@ export const createTwentyStore = (
             status: true,
             businessDaysOnly: true,
             requireApprovedOpener: true,
-            steps: {
-              __args: { first: 100 },
-              edges: {
-                node: {
-                  id: true,
-                  stepOrder: true,
-                  delayDays: true,
-                  stepType: true,
-                  instructions: true,
-                  template: { id: true, subject: true, body: true },
-                  autoPickWinner: true,
-                  winnerMinSends: true,
-                  variants: { __args: { first: 20 }, edges: { node: VARIANT_SELECTION } },
-                },
-              },
-            },
           },
         },
       },
     });
     const raw = nodes<any>(res.sequences)[0];
     if (!raw) return null;
-    const steps = nodes<any>(raw.steps).map(
+    const stepsRes = await client.query({
+      sequenceSteps: {
+        __args: { filter: { sequenceId: { eq: id } }, first: 100 },
+        edges: {
+          node: {
+            id: true,
+            stepOrder: true,
+            delayDays: true,
+            stepType: true,
+            instructions: true,
+            template: { id: true, subject: true, body: true },
+            autoPickWinner: true,
+            winnerMinSends: true,
+            variants: { __args: { first: 20 }, edges: { node: VARIANT_SELECTION } },
+          },
+        },
+      },
+    });
+    const steps = nodes<any>(stepsRes.sequenceSteps).map(
       (s): StepRecord => ({
         id: s.id,
         order: s.stepOrder ?? null,
