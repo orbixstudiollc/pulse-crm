@@ -28,6 +28,8 @@ export const maxDuration = 60;
 const CHAT_MAX_STEPS = 3;
 /** Output cap per step on the owner's shared (env) key. */
 const SHARED_CHAT_MAX_OUTPUT_TOKENS = 4096;
+/** Total streamText time on the shared key, under maxDuration, so a hung provider is cut off. */
+const SHARED_CHAT_TIMEOUT_MS = 50_000;
 
 export async function POST(req: Request) {
   let releaseRateLimit: (() => void) | null = null;
@@ -168,12 +170,17 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
       const stream = createUIMessageStream({
         execute: async ({ writer }) => {
           try {
-            const response = await client.messages.create({
+            const completion = client.messages.create({
               model: getModelId("sonnet", provider),
               max_tokens: 4096,
               system: systemMessage,
               messages: chatMessages,
             });
+            // The shared-key settlement runs inside the completion
+            // (lib/ai/client.ts): keep the function alive for it even if the
+            // client disconnects.
+            after(() => completion.then(() => undefined, () => undefined));
+            const response = await completion;
             const text = response.content
               .filter((b) => b.type === "text")
               .map((b) => b.text)
@@ -256,8 +263,8 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
     // Shared key: reserve per step. The first step (input plus one output
     // cap) is reserved here; each further step is reserved by stopWhen before
     // it runs, with the input it will resend, and a refusal ends the turn with
-    // what exists. onFinish settles every reservation to real usage; a failed
-    // stream keeps them in full.
+    // what exists. onFinish settles every reservation to real usage (onAbort,
+    // after the timeout, the finished steps'); a failed stream keeps them in full.
     const turnBudget = sharedKey
       ? sharedTurnBudget({
           orgId,
@@ -276,6 +283,7 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
       }
     }
     let streamFailed = false;
+    let abortSettled: Promise<void> = Promise.resolve();
 
     const result = streamText({
       model: anthropic(modelId),
@@ -551,11 +559,15 @@ ${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByTy
       },
       stopWhen: turnBudget ? turnBudget.stopWhen : stepCountIs(CHAT_MAX_STEPS),
       // The shared key never forwards the client's abort: the provider call
-      // finishes so onFinish can settle the real usage.
-      ...(sharedKey ? {} : { abortSignal: req.signal }),
-      onAbort: () => {
+      // finishes so onFinish can settle the real usage. It is cut off after
+      // SHARED_CHAT_TIMEOUT_MS instead, which aborts the stream (onAbort).
+      ...(sharedKey ? { timeout: { totalMs: SHARED_CHAT_TIMEOUT_MS } } : { abortSignal: req.signal }),
+      onAbort: ({ steps }) => {
         guardedRelease();
         closeCustomFetch?.();
+        // Settle the steps that finished; the unfinished step's reservation
+        // stands in full. Awaited by the after() below.
+        if (turnBudget) abortSettled = turnBudget.settle(steps);
       },
       onError: ({ error }) => {
         streamFailed = true;
@@ -585,14 +597,14 @@ ${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByTy
     if (sharedKey) {
       // Read the stream to the end on the server even if the client goes
       // away (it then just stops receiving), and keep the function alive
-      // until onFinish has settled.
+      // until onFinish (or onAbort, after the timeout) has settled.
       const consumed = Promise.resolve(
         result.consumeStream({ onError: (error) => console.error("AI Chat stream error:", error) })
       ).finally(() => {
         guardedRelease();
         closeCustomFetch?.();
       });
-      after(() => consumed);
+      after(() => consumed.then(() => abortSettled));
     }
 
     return result.toUIMessageStreamResponse();

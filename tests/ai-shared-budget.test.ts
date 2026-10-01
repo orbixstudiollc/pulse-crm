@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // ---------------------------------------------------------------------------
 // Fake Supabase admin client: records rpc calls (answered from `rpcResults`),
 // the profiles lookups (recordSharedUsage's first member, sharedCallerIsGuest's
-// member emails) and the ai_usage_log insert. A fake Anthropic SDK records
+// member ids), the auth admin lookups (sharedCallerIsGuest's is_anonymous) and
+// the ai_usage_log insert. A fake Anthropic SDK records
 // provider calls, so the order reserve -> call -> settle can be checked
 // without a network.
 // ---------------------------------------------------------------------------
@@ -18,8 +19,11 @@ const db = vi.hoisted(() => ({
   rpcResults: {} as Record<string, RpcResult[]>,
   inserts: [] as Array<Record<string, unknown>>,
   profiles: [] as Array<{ id: string }>,
-  members: [] as Array<{ email: string | null }>,
+  members: [] as Array<{ id: string; email?: string | null }>,
   membersError: null as { message: string } | null,
+  /** auth.admin.getUserById answers by user id; a missing id is "not found". */
+  authUsers: {} as Record<string, { is_anonymous?: boolean } | "error" | "reject">,
+  authLookups: [] as string[],
   session: null as { id: string; is_anonymous?: boolean } | null,
   sessionThrows: false,
   adminThrows: false,
@@ -45,7 +49,7 @@ function fakeQuery(table: string) {
     call.ops.push(["maybeSingle"]);
     return Promise.resolve({ data: db.profiles[0] ?? null, error: null });
   };
-  // Awaiting the builder itself lists rows: the workspace's member emails.
+  // Awaiting the builder itself lists rows: the workspace's members.
   builder.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
     Promise.resolve(
       db.membersError ? { data: null, error: db.membersError } : { data: db.members, error: null }
@@ -55,6 +59,15 @@ function fakeQuery(table: string) {
     return Promise.resolve({ error: null });
   };
   return builder;
+}
+
+function fakeGetUserById(id: string) {
+  db.authLookups.push(id);
+  const user = db.authUsers[id];
+  if (user === "reject") return Promise.reject(new Error("auth down"));
+  if (user === "error") return Promise.resolve({ data: { user: null }, error: { message: "auth error" } });
+  if (!user) return Promise.resolve({ data: { user: null }, error: { message: "User not found" } });
+  return Promise.resolve({ data: { user: { id, ...user } }, error: null });
 }
 
 function fakeRpc(fn: string, args: Record<string, unknown>) {
@@ -71,7 +84,7 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({
   createAdminClient: () => {
     if (db.adminThrows) throw new Error("no service role");
-    return { from: fakeQuery, rpc: fakeRpc };
+    return { from: fakeQuery, rpc: fakeRpc, auth: { admin: { getUserById: fakeGetUserById } } };
   },
   createClient: async () => {
     if (db.sessionThrows) throw new Error("cookies() called outside a request scope");
@@ -125,6 +138,8 @@ beforeEach(() => {
   db.profiles = [];
   db.members = [];
   db.membersError = null;
+  db.authUsers = {};
+  db.authLookups = [];
   db.session = null;
   db.sessionThrows = false;
   db.adminThrows = false;
@@ -482,32 +497,58 @@ describe("sharedCallerIsGuest", () => {
     db.session = { id: "u3" };
     await expect(sharedCallerIsGuest(ORG)).resolves.toBe(false);
     expect(memberQueries()).toHaveLength(0);
+    expect(db.authLookups).toHaveLength(0);
   });
 
-  it("without a session, a workspace whose members all have real emails is not a guest", async () => {
-    db.members = [{ email: "owner@acme.com" }, { email: "rep@acme.com" }];
+  it("without a session, a workspace whose members are all non-anonymous auth users is not a guest", async () => {
+    db.members = [{ id: "owner" }, { id: "rep" }];
+    db.authUsers = { owner: { is_anonymous: false }, rep: {} };
     await expect(sharedCallerIsGuest(ORG)).resolves.toBe(false);
     expect(memberQueries()[0].ops).toContainEqual(["eq", "organization_id", ORG]);
+    expect([...db.authLookups].sort()).toEqual(["owner", "rep"]);
   });
 
-  it("without a session, a workspace with a @guest.local member is a guest", async () => {
-    db.members = [{ email: "owner@acme.com" }, { email: "abc123@guest.local" }];
+  it("without a session, a workspace with any anonymous member is a guest", async () => {
+    db.members = [{ id: "owner" }, { id: "anon" }];
+    db.authUsers = { owner: { is_anonymous: false }, anon: { is_anonymous: true } };
     await expect(sharedCallerIsGuest(ORG)).resolves.toBe(true);
+  });
+
+  it("decides from auth, not the profile email a guest can edit", async () => {
+    // A guest who PATCHed profiles.email to a real-looking address stays a guest.
+    db.members = [{ id: "anon", email: "owner@acme.com" }];
+    db.authUsers = { anon: { is_anonymous: true } };
+    await expect(sharedCallerIsGuest(ORG)).resolves.toBe(true);
+    // And a non-anonymous user is not a guest whatever the email says.
+    db.members = [{ id: "real", email: "abc123@guest.local" }];
+    db.authUsers = { real: { is_anonymous: false } };
+    await expect(sharedCallerIsGuest(ORG)).resolves.toBe(false);
+    expect(memberQueries()[0].ops).toContainEqual(["select", "id"]);
   });
 
   it("falls back to the members when there is no request scope", async () => {
     db.sessionThrows = true;
-    db.members = [{ email: "owner@acme.com" }];
+    db.members = [{ id: "owner" }];
+    db.authUsers = { owner: { is_anonymous: false } };
     await expect(sharedCallerIsGuest(ORG)).resolves.toBe(false);
   });
 
   it("treats the caller as a guest when it cannot be determined (smaller pool)", async () => {
+    db.authUsers = { owner: { is_anonymous: false } };
     db.members = [];
     await expect(sharedCallerIsGuest(ORG)).resolves.toBe(true);
-    db.members = [{ email: "owner@acme.com" }, { email: null }];
+    db.members = [{ id: "owner" }, { id: "missing" }];
     await expect(sharedCallerIsGuest(ORG)).resolves.toBe(true);
+    db.authUsers = { owner: { is_anonymous: false }, broken: "error" };
+    db.members = [{ id: "owner" }, { id: "broken" }];
+    await expect(sharedCallerIsGuest(ORG)).resolves.toBe(true);
+    db.authUsers = { owner: { is_anonymous: false }, down: "reject" };
+    db.members = [{ id: "owner" }, { id: "down" }];
+    await expect(sharedCallerIsGuest(ORG)).resolves.toBe(true);
+    db.members = [{ id: "owner" }];
     db.membersError = { message: "boom" };
     await expect(sharedCallerIsGuest(ORG)).resolves.toBe(true);
+    db.membersError = null;
     db.adminThrows = true;
     await expect(sharedCallerIsGuest(ORG)).resolves.toBe(true);
   });
@@ -594,6 +635,21 @@ describe("sharedTurnBudget (chat: one reservation per step)", () => {
       { p_org: ORG, p_day: "2026-09-30", p_delta: 15 - first, p_is_guest: false },
       { p_org: ORG, p_day: "2026-10-01", p_delta: 25 - second, p_is_guest: false },
     ]);
+  });
+
+  it("on abort, settles the steps that finished and keeps the unfinished step's reservation in full", async () => {
+    const turn = sharedTurnBudget(base);
+    await turn.start();
+    await turn.stopWhen({ steps: [step([])] });
+    const first = reserves()[0].args.p_tokens as number;
+    // onAbort receives only the finished steps: the second step was cut off.
+    await turn.settle([step([], { inputTokens: 900, outputTokens: 100 })]);
+    expect(settles().map((c) => c.args)).toEqual([
+      { p_org: ORG, p_day: "2026-10-01", p_delta: 1000 - first, p_is_guest: true },
+    ]);
+    // The onFinish that follows an abort does not settle a second time.
+    await turn.settle([step([], { inputTokens: 900, outputTokens: 100 })]);
+    expect(settles()).toHaveLength(1);
   });
 
   it("keeps a reservation in full when its step's usage is unknown", async () => {

@@ -1,7 +1,6 @@
 import "server-only";
 
 import { createAdminClient, createClient } from "@/lib/supabase/server";
-import { isGuestEmail } from "@/lib/auth/open-access";
 import {
   SHARED_BUDGET_BUSY_REASON,
   SHARED_BUDGET_TOO_LARGE_REASON,
@@ -92,9 +91,10 @@ export async function settleSharedTokens(
  * Whether a shared-key call for `orgId` is a guest's. The signed-in user
  * decides when there is one (anonymous = guest). Without a session (Lead
  * Finder jobs, cron) the workspace's members decide: it is a guest's when any
- * member's profile email is a guest address (@guest.local, see
- * lib/auth/guest-cleanup.ts) or missing. Anything that cannot be determined
- * counts as a guest, the smaller pool. Never throws.
+ * member is an anonymous auth user (auth.admin.getUserById, as
+ * lib/auth/guest-cleanup.ts does). The profile email is not used: a guest can
+ * edit it. Anything that cannot be determined counts as a guest, the smaller
+ * pool. Never throws.
  */
 export async function sharedCallerIsGuest(orgId: string): Promise<boolean> {
   try {
@@ -106,12 +106,17 @@ export async function sharedCallerIsGuest(orgId: string): Promise<boolean> {
     // No request scope (cron/worker): decide from the workspace's members.
   }
   try {
-    const { data, error } = await createAdminClient()
-      .from("profiles")
-      .select("email")
-      .eq("organization_id", orgId);
+    const admin = createAdminClient();
+    const { data, error } = await admin.from("profiles").select("id").eq("organization_id", orgId);
     if (error || !data || data.length === 0) return true;
-    return data.some((member) => !member.email || isGuestEmail(member.email));
+    const anonymous = await Promise.all(
+      data.map(async (member) => {
+        const { data: found, error: userError } = await admin.auth.admin.getUserById(member.id);
+        // Unknown (error or no such user) counts as anonymous.
+        return userError || !found.user ? true : found.user.is_anonymous === true;
+      })
+    );
+    return anonymous.some(Boolean);
   } catch (error) {
     console.error("[shared-budget] deciding the shared AI pool failed:", errorMessage(error));
     return true;
