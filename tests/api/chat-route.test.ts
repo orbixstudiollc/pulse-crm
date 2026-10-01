@@ -658,6 +658,23 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
       expect(baseInput).not.toContain("stored 19");
       expect(maxSteps).toBe(8);
     });
+
+    it("offers record-changing tools only when the message asks for a change", async () => {
+      await settle(await post({ conversationId: CONV_A, message: { text: "Show my 3 newest leads." } }));
+      const readOnly = (model().doStreamCalls[0].tools ?? []).map((t) => t.name);
+      expect(readOnly).toContain("search_leads");
+      expect(readOnly).toContain("draft_email");
+      expect(readOnly).not.toContain("update_lead");
+      expect(readOnly).not.toContain("set_followup");
+      const system = model().doStreamCalls[0].prompt.find((m) => m.role === "system")!.content as string;
+      expect(system).toContain("Record-changing tools are not loaded for this message");
+
+      h.model = scriptedModel([() => streamOf(textParts("On it"))]);
+      await settle(await post({ conversationId: CONV_A, message: { text: "Set a follow-up for next Tuesday on Acme" } }));
+      const withWrites = (model().doStreamCalls[0].tools ?? []).map((t) => t.name);
+      expect(withWrites).toContain("update_lead");
+      expect(withWrites).toContain("set_followup");
+    });
   });
 
   // ── Approvals ────────────────────────────────────────────────────────────

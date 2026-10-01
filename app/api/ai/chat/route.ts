@@ -46,7 +46,8 @@ import {
   type ApprovalRow,
 } from "@/lib/ai/approvals";
 import { buildCopilotToolSet, type CopilotToolEnv } from "@/lib/ai/tools/registry";
-import { sanitizeAlwaysAllow } from "@/lib/ai/tools/policy";
+import { selectActiveTools, wantsWriteTools } from "@/lib/ai/tools/select";
+import { COPILOT_WRITE_TOOLS, sanitizeAlwaysAllow } from "@/lib/ai/tools/policy";
 import type { FieldDiff } from "@/lib/ai/tools/diff";
 import { RECORD_CHANGED } from "@/lib/mcp/tools-write";
 import type { Json } from "@/types/database";
@@ -481,6 +482,18 @@ export async function POST(req: Request) {
       history = [...history, userMessage];
     }
 
+    // Record-changing tools are only offered when this turn can need them (see select.ts).
+    const lastAssistant = history.findLast((m) => m.role === "assistant");
+    const lastAssistantText = lastAssistant
+      ? lastAssistant.parts.flatMap((p) => (p.type === "text" ? [p.text] : [])).join("\n")
+      : null;
+    const selection = {
+      messageText: body.message?.text ?? null,
+      answeringApprovals: body.approvals.length > 0,
+      lastAssistantText,
+    };
+    const writesOffered = wantsWriteTools(selection);
+
     // ── System prompt: base + page context + workspace memory ─────────────
     // Built before any approval is claimed: a failure here leaves every card pending.
     const contextStr = body.context ? await assembleContext(body.context, orgId) : "";
@@ -491,7 +504,11 @@ export async function POST(req: Request) {
 ${contextStr ? `\n---\nCurrent CRM Context:\n${contextStr}` : ""}
 ${memory.text ? `\n---\n${memory.text}` : ""}
 
-Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLabel}` : ""}`;
+Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLabel}` : ""}${
+      writesOffered
+        ? ""
+        : "\n\nRecord-changing tools are not loaded for this message. If the user wants records created or changed, say exactly what you would change and ask them to confirm (for example \"yes, do it\")."
+    }`;
 
     // The answered assistant message (approval turns) always stays in the model window.
     const answered = body.approvals.length > 0 ? history.findLastIndex((m) => m.role === "assistant") : -1;
@@ -701,6 +718,12 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
     // Only server-loaded history reaches the model. Unanswered approval cards and
     // interrupted tool calls are dropped (ignoreIncompleteToolCalls).
     const modelMessages = await convertToModelMessages(modelHistory, { tools, ignoreIncompleteToolCalls: true });
+    const activeTools = selectActiveTools({
+      ...selection,
+      allTools: Object.keys(tools),
+      writeTools: COPILOT_WRITE_TOOLS,
+      historyToolNames: modelHistory.flatMap((m) => m.parts.filter(isToolUIPart).map((p) => getToolName(p))),
+    });
 
     let streamFailed = false;
     let abortSettled: Promise<void> = Promise.resolve();
@@ -715,6 +738,7 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
       system: systemMessage,
       messages: modelMessages,
       tools,
+      activeTools,
       ...(sharedKey ? { maxOutputTokens: SHARED_CHAT_MAX_OUTPUT_TOKENS } : {}),
       stopWhen: turnBudget ? turnBudget.stopWhen : stepCountIs(CHAT_MAX_STEPS),
       // The shared key never forwards the client's abort: the provider call
