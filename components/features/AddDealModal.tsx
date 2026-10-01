@@ -11,13 +11,17 @@ import {
   CheckIcon,
 } from "@/components/ui";
 import { X } from "@phosphor-icons/react";
+import { toast } from "sonner";
 import { type PipelineStage, pipelineStages } from "@/lib/data/sales";
 import { searchRecords, type RecordResult } from "@/lib/actions/lookup";
+
+/** Resolve to false to keep the modal open, e.g. when the save failed. */
+type DealSubmit = (data: DealFormData) => boolean | void | Promise<boolean | void>;
 
 interface AddDealModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit?: (data: DealFormData) => void;
+  onSubmit?: DealSubmit;
   initialData?: DealFormData;
   mode?: "add" | "edit";
 }
@@ -71,10 +75,11 @@ function DealForm({
 }: {
   initialData: DealFormData;
   onClose: () => void;
-  onSubmit?: (data: DealFormData) => void;
+  onSubmit?: DealSubmit;
   isEdit: boolean;
 }) {
   const [formData, setFormData] = useState<DealFormData>(initialData);
+  const [submitting, setSubmitting] = useState(false);
   const [customerQuery, setCustomerQuery] = useState(initialData.customer);
   const [showResults, setShowResults] = useState(false);
   const [results, setResults] = useState<RecordResult[]>([]);
@@ -135,11 +140,17 @@ function DealForm({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name || !formData.customer) {
+      toast.error("Deal name and customer are required");
       return;
     }
-    onSubmit?.(formData);
+    setSubmitting(true);
+    try {
+      if ((await onSubmit?.(formData)) === false) return;
+    } finally {
+      setSubmitting(false);
+    }
     onClose();
   };
 
@@ -283,6 +294,7 @@ function DealForm({
         </Button>
         <Button
           onClick={handleSubmit}
+          loading={submitting}
           leftIcon={isEdit ? <CheckIcon size={18} /> : <PlusIcon size={18} />}
         >
           {isEdit ? "Save Changes" : "Add Deal"}

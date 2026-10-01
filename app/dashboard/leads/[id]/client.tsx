@@ -70,6 +70,8 @@ import { toast } from "sonner";
 
 interface LeadRow {
   id: string;
+  converted_at?: string | null;
+  converted_customer_id?: string | null;
   name: string;
   email: string;
   phone: string | null;
@@ -217,7 +219,7 @@ export function LeadDetailClient({
     website: lead.website || "",
     linkedin: lead.linkedin || "",
     twitter: lead.twitter || "",
-    source: (lead.source || "").toLowerCase().replace(" ", "-"),
+    source: lead.source || "",
     value: (lead.estimated_value || 0).toString(),
     notes: "",
     painPoints: lead.pain_points || "",
@@ -318,50 +320,47 @@ export function LeadDetailClient({
       } else {
         toast.success(`${lead.name} has been converted to a customer`);
         setShowConvertModal(false);
-        router.push("/dashboard/customers");
+        router.push(res.data ? `/dashboard/customers/${res.data.id}` : "/dashboard/customers");
       }
     });
   };
 
-  const handleEditSubmit = (data: LeadFormData) => {
-    startTransition(async () => {
-      const res = await updateLead(lead.id, {
-        name: `${data.firstName} ${data.lastName}`.trim(),
-        email: data.email,
-        company: data.company || null,
-        phone: data.phone || null,
-        title: data.title || null,
-        website: data.website || null,
-        linkedin: data.linkedin || null,
-        twitter: data.twitter || null,
-        source: data.source || null,
-        estimated_value: parseFloat(data.value) || 0,
-        pain_points: data.painPoints || null,
-        trigger_event: data.triggerEvent || null,
-        personal_note: data.personalNote || null,
-        referred_by: data.referredBy || null,
-        revenue_range: data.revenueRange || null,
-        tech_stack: data.techStack || null,
-        funding_stage: data.fundingStage || null,
-        current_solution: data.currentSolution || null,
-        decision_role: data.decisionRole || null,
-        timezone: data.timezone || null,
-        preferred_language: data.preferredLanguage || null,
-        meeting_preference: data.meetingPreference || null,
-        tags: data.tags ? data.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
-        birthday: data.birthday || null,
-        content_interests: data.contentInterests ? data.contentInterests.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
-        assistant_name: data.assistantName || null,
-        assistant_email: data.assistantEmail || null,
-      });
-      if (res.error) {
-        toast.error(res.error);
-      } else {
-        toast.success("Lead updated");
-        setShowEditModal(false);
-        router.refresh();
-      }
+  const handleEditSubmit = async (data: LeadFormData) => {
+    const res = await updateLead(lead.id, {
+      name: `${data.firstName} ${data.lastName}`.trim(),
+      email: data.email,
+      company: data.company || null,
+      phone: data.phone || null,
+      title: data.title || null,
+      website: data.website || null,
+      linkedin: data.linkedin || null,
+      twitter: data.twitter || null,
+      source: data.source || null,
+      estimated_value: parseFloat(data.value) || 0,
+      pain_points: data.painPoints || null,
+      trigger_event: data.triggerEvent || null,
+      personal_note: data.personalNote || null,
+      referred_by: data.referredBy || null,
+      revenue_range: data.revenueRange || null,
+      tech_stack: data.techStack || null,
+      funding_stage: data.fundingStage || null,
+      current_solution: data.currentSolution || null,
+      decision_role: data.decisionRole || null,
+      timezone: data.timezone || null,
+      preferred_language: data.preferredLanguage || null,
+      meeting_preference: data.meetingPreference || null,
+      tags: data.tags ? data.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
+      birthday: data.birthday || null,
+      content_interests: data.contentInterests ? data.contentInterests.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
+      assistant_name: data.assistantName || null,
+      assistant_email: data.assistantEmail || null,
     });
+    if (res.error) {
+      toast.error(res.error);
+      return false;
+    }
+    toast.success("Lead updated");
+    router.refresh();
   };
 
   const handleAIScore = async () => {
@@ -504,12 +503,24 @@ export function LeadDetailClient({
           >
             {isPending ? "Scoring..." : "Recalculate Score"}
           </Button>
-          <Button
-            leftIcon={<UsersThreeIcon size={18} />}
-            onClick={() => setShowConvertModal(true)}
-          >
-            Convert to Customer
-          </Button>
+          {lead.converted_at ? (
+            lead.converted_customer_id ? (
+              <Link href={`/dashboard/customers/${lead.converted_customer_id}`}>
+                <Button leftIcon={<CheckCircleIcon size={18} />}>View Customer</Button>
+              </Link>
+            ) : (
+              <Button leftIcon={<CheckCircleIcon size={18} />} disabled>
+                Converted
+              </Button>
+            )
+          ) : (
+            <Button
+              leftIcon={<UsersThreeIcon size={18} />}
+              onClick={() => setShowConvertModal(true)}
+            >
+              Convert to Customer
+            </Button>
+          )}
         </div>
       </PageHeader>
 

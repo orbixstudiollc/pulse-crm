@@ -404,22 +404,23 @@ export function SalesPageClient({
   );
 
   const handleAddDeal = async (data: Record<string, unknown>) => {
-    startTransition(async () => {
-      const result = await createDeal({
-        name: data.dealName || data.name,
-        company: data.company,
-        contact_name: data.contactName || data.customer,
-        ...(data.customerId ? { customer_id: data.customerId } : {}),
-        value: parseFloat(data.value as string) || 0,
-        stage: data.stage || "discovery",
-        probability: parseInt(data.probability as string) || 30,
-        close_date: data.closeDate || data.expectedClose,
-      });
-      if (!result.error) {
-        setShowAddDeal(false);
-        router.refresh();
-      }
+    const result = await createDeal({
+      name: data.dealName || data.name,
+      company: data.company,
+      contact_name: data.contactName || data.customer,
+      ...(data.customerId ? { customer_id: data.customerId } : {}),
+      value: parseFloat(data.value as string) || 0,
+      stage: data.stage || "discovery",
+      probability: parseInt(data.probability as string) || 30,
+      close_date: data.closeDate || data.expectedClose || null,
+      notes: data.notes || null,
     });
+    if (result.error) {
+      toast.error(result.error);
+      return false;
+    }
+    toast.success("Deal created");
+    router.refresh();
   };
 
   return (
@@ -522,9 +523,7 @@ export function SalesPageClient({
         open={showAddDeal}
         onClose={() => setShowAddDeal(false)}
         mode="add"
-        onSubmit={(data) => {
-          handleAddDeal(data as unknown as Record<string, unknown>);
-        }}
+        onSubmit={(data) => handleAddDeal(data as unknown as Record<string, unknown>)}
       />
 
       {/* Deal Quick View Drawer */}

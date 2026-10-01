@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import {
   Modal,
   Button,
@@ -12,11 +13,13 @@ import {
 } from "@/components/ui";
 
 import { X, CaretDown, CaretUp } from "@phosphor-icons/react";
+import { LEAD_SOURCES } from "@/lib/leads/source";
 
 interface AddLeadModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit?: (data: LeadFormData) => void;
+  /** Resolve to false to keep the modal open, e.g. when the save failed. */
+  onSubmit?: (data: LeadFormData) => boolean | void | Promise<boolean | void>;
   initialData?: LeadFormData;
   mode?: "add" | "edit";
 }
@@ -57,15 +60,7 @@ export interface LeadFormData {
   assistantEmail: string;
 }
 
-const sourceOptions = [
-  { label: "Website", value: "website" },
-  { label: "Referral", value: "referral" },
-  { label: "LinkedIn", value: "linkedin" },
-  { label: "Cold Outreach", value: "cold-outreach" },
-  { label: "Event", value: "event" },
-  { label: "Google Ads", value: "google-ads" },
-  { label: "Cold Call", value: "cold-call" },
-];
+const sourceOptions = LEAD_SOURCES.map((s) => ({ label: s, value: s }));
 
 const fundingStageOptions = [
   { label: "Pre-Seed", value: "pre-seed" },
@@ -171,6 +166,7 @@ export function AddLeadModal({
     initialData || emptyFormData,
   );
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [submitting, setSubmitting] = useState(false);
 
   const isEdit = mode === "edit";
 
@@ -187,12 +183,18 @@ export function AddLeadModal({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.firstName || !formData.lastName || !formData.email) {
+      toast.error("First name, last name and email are required");
       return;
     }
 
-    onSubmit?.(formData);
+    setSubmitting(true);
+    try {
+      if ((await onSubmit?.(formData)) === false) return;
+    } finally {
+      setSubmitting(false);
+    }
     if (!isEdit) {
       setFormData(emptyFormData);
     }
@@ -535,6 +537,7 @@ export function AddLeadModal({
         </Button>
         <Button
           onClick={handleSubmit}
+          loading={submitting}
           leftIcon={
             isEdit ? (
               <CheckIcon size={18} weight="bold" />

@@ -255,27 +255,24 @@ export function CustomerDetailClient({
     });
   };
 
-  const handleCreateDeal = (data: DealFormData) => {
-    startTransition(async () => {
-      const res = await createDeal({
-        name: data.name,
-        company: customer.company || "",
-        contact_name: customerName,
-        value: parseFloat(data.value) || 0,
-        stage: data.stage || "discovery",
-        probability: parseInt(data.probability) || 25,
-        expected_close_date: data.expectedClose || null,
-        customer_id: customer.id,
-        notes: data.notes || "",
-      });
-      if (res.error) {
-        toast.error(res.error);
-      } else {
-        toast.success("Deal created");
-        setShowDealModal(false);
-        router.refresh();
-      }
+  const handleCreateDeal = async (data: DealFormData) => {
+    const res = await createDeal({
+      name: data.name,
+      company: customer.company || "",
+      contact_name: customerName,
+      value: parseFloat(data.value) || 0,
+      stage: data.stage || "discovery",
+      probability: parseInt(data.probability) || 25,
+      close_date: data.expectedClose || null,
+      customer_id: customer.id,
+      notes: data.notes || "",
     });
+    if (res.error) {
+      toast.error(res.error);
+      return false;
+    }
+    toast.success("Deal created");
+    router.refresh();
   };
 
   const headerActions = useMemo(

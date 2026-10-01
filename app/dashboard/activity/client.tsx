@@ -33,6 +33,7 @@ import {
   deleteActivity,
 } from "@/lib/actions/activities";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -236,6 +237,8 @@ export function ActivityPageClient({
       if (!result.error) {
         setShowLogActivity(false);
         router.refresh();
+      } else {
+        toast.error(result.error);
       }
     });
   };
@@ -256,6 +259,8 @@ export function ActivityPageClient({
       if (!result.error) {
         setEditActivity(null);
         router.refresh();
+      } else {
+        toast.error(result.error);
       }
     });
   };
