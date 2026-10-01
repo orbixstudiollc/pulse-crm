@@ -65,7 +65,7 @@ export async function GET(request: Request) {
     `[daily-reset] guest cleanup: scanned=${purge.scanned} deletedUsers=${purge.deletedUsers} deletedOrgs=${purge.deletedOrgs} skipped=${purge.skipped} errors=${purge.errors.length}`
   );
 
-  // 7. Drop shared-AI budget counters older than 8 UTC days (migration 035);
+  // 7. Drop shared-AI budget counters older than 8 UTC days (migration 038);
   // a failure is reported but does not stop the rest of the cron.
   let sharedAiBudgetPurged: number | null = null;
   try {

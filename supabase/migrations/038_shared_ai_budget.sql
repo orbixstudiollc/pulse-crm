@@ -1,5 +1,5 @@
 -- ============================================================
--- 035 Shared AI budget: lock ai_usage_log writes, atomic token counter
+-- 038 Shared AI budget: lock ai_usage_log writes, atomic token counter
 --
 -- Fixes (security review of 5320f2a..e6e673d):
 --   (C1) Any org member could INSERT ai_usage_log rows through the user

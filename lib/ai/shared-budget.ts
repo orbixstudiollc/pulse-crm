@@ -16,7 +16,7 @@ type AdminClient = ReturnType<typeof createAdminClient>;
 
 export type { SharedReservation };
 
-/** Guest workspaces also draw from the smaller shared guest pool (migration 035). */
+/** Guest workspaces also draw from the smaller shared guest pool (migration 038). */
 export type SharedPool = { isGuest: boolean };
 
 function errorMessage(error: unknown): unknown {
@@ -25,7 +25,7 @@ function errorMessage(error: unknown): unknown {
 
 /**
  * Reserves `estimate` tokens of today's shared-key budget for `orgId` before
- * an AI call on the owner's shared (env) key. The counters (migration 035)
+ * an AI call on the owner's shared (env) key. The counters (migration 038)
  * are checked and charged atomically, so concurrent calls cannot all pass;
  * guests are also charged to the guest pool. Returns the UTC day the database
  * charged, for settleSharedTokens. A request larger than the workspace limit
