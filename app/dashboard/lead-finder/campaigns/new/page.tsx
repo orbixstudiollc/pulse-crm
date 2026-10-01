@@ -32,6 +32,18 @@ import {
 import { Page, PageHeader, Section, KeyValueList, KeyValue } from "@/components/dashboard";
 import { useLeadFinderActors } from "@/hooks/use-lead-finder-actors";
 import type { ActorDefinition } from "@/lib/lead-finder/apify/registry";
+import type { AIProvider } from "@/lib/lead-finder/types";
+
+const AI_PROVIDER_LABELS: Record<AIProvider, string> = {
+  openai: "OpenAI",
+  anthropic: "Anthropic",
+  openrouter: "OpenRouter",
+  groq: "Groq",
+  ollama: "Ollama",
+  ollama_cloud: "Ollama Cloud",
+  custom: "Custom (OpenAI-compatible)",
+};
+const AI_PROVIDERS = Object.keys(AI_PROVIDER_LABELS) as AIProvider[];
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -208,7 +220,8 @@ export default function NewCampaignPage() {
   // Step 1 state
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [aiProvider, setAiProvider] = useState<"openrouter" | "anthropic" | "ollama">("anthropic");
+  // null until settings load; the server then resolves the workspace provider itself.
+  const [aiProvider, setAiProvider] = useState<AIProvider | null>(null);
   const [planning, setPlanning] = useState(false);
   const [plan, setPlan] = useState<AIPlan | null>(null);
 
@@ -235,8 +248,11 @@ export default function NewCampaignPage() {
     fetch("/api/lead-finder/settings")
       .then((r) => r.json())
       .then((j) => {
-        if (j.data?.hasOpenRouter) setAiProvider("openrouter");
-        else if (j.data?.hasAnthropic) setAiProvider("anthropic");
+        // The provider Lead Finder really uses (same resolver as the AI routes).
+        const provider = j.data?.effective_provider?.provider;
+        if (typeof provider === "string" && AI_PROVIDERS.includes(provider as AIProvider)) {
+          setAiProvider(provider as AIProvider);
+        }
       })
       .catch(() => {});
   }, []);
@@ -280,7 +296,7 @@ export default function NewCampaignPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           description,
-          aiProvider,
+          aiProvider: aiProvider ?? undefined,
           actors: buildActorSummaries(),
         }),
       });
@@ -414,7 +430,7 @@ export default function NewCampaignPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           targetNiche: editableNiche || description,
-          aiProvider,
+          aiProvider: aiProvider ?? undefined,
         }),
       });
       if (res.ok) {
@@ -445,7 +461,7 @@ export default function NewCampaignPage() {
       const res = await fetch("/api/lead-finder/campaigns/suggest-fields", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetNiche: editableNiche, aiProvider }),
+        body: JSON.stringify({ targetNiche: editableNiche, aiProvider: aiProvider ?? undefined }),
       });
       if (!res.ok) throw new Error("Failed to suggest fields");
       const json = await res.json();
@@ -532,7 +548,7 @@ export default function NewCampaignPage() {
         kpi_definitions: kpiDefinitions.filter((k) => k.label.trim()),
         lead_field_definitions: fieldDefinitions.filter((f) => f.label.trim()),
         schedule_frequency: editableSchedule,
-        ai_provider: aiProvider,
+        ai_provider: aiProvider ?? undefined,
         auto_enrich: editableAutoEnrich,
         status: "draft",
       };
@@ -1074,7 +1090,7 @@ export default function NewCampaignPage() {
                   <span className="font-medium">{editableNiche || "Not set"}</span>
                 </KeyValue>
                 <KeyValue label="AI Provider">
-                  <span className="font-medium capitalize">{aiProvider}</span>
+                  <span className="font-medium">{aiProvider ? AI_PROVIDER_LABELS[aiProvider] : "Workspace default"}</span>
                 </KeyValue>
                 <KeyValue label="Schedule">
                   <span className="font-medium capitalize">{editableSchedule}</span>
