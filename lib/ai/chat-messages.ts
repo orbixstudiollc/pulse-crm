@@ -1,3 +1,8 @@
+// Legacy text path only. This is NO LONGER the source of the model's history:
+// the server owns conversation history in copilot_messages and loads it with
+// loadUiMessages (lib/ai/history.ts). toChatMessages stays for the legacy
+// text-only path, which still reads history from the client's request body.
+//
 // Builds the chat history sent to the model from the client's request body.
 // Only user/assistant text survives: file and image parts would make the AI
 // SDK fetch client-chosen URLs server-side, and system/tool roles would let a
