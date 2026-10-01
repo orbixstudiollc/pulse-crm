@@ -394,7 +394,7 @@ export function CalendarPageClient({
             const blob = new Blob([result.csv], { type: "text/csv" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
-            a.href = url; a.download = `calendar-export-${currentYear}-${String(currentMonth + 1).padStart(2, "0")}.csv`;
+            a.href = url; a.download = `calendar-export-${currentYear}-${String(currentMonth).padStart(2, "0")}.csv`;
             a.click(); URL.revokeObjectURL(url);
             toast.success("Calendar events exported successfully");
           }}

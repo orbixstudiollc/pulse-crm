@@ -431,6 +431,17 @@ export async function getChannelAnalytics(days: number = 30) {
       linkedin: liDaily[day] || 0,
     }));
 
+  // Best channel = highest reply rate (replied / sent); ties keep email, whatsapp, linkedin order.
+  const emailRate = emailSent > 0 ? emailReplied / emailSent : 0;
+  const waRate = waSent > 0 ? waReplied / waSent : 0;
+  const liRate = liMessage > 0 ? liReplied / liMessage : 0;
+  const bestChannel =
+    emailRate >= waRate && emailRate >= liRate
+      ? "email"
+      : waRate >= liRate
+        ? "whatsapp"
+        : "linkedin";
+
   return {
     data: {
       email: {
@@ -478,12 +489,7 @@ export async function getChannelAnalytics(days: number = 30) {
                   100
               )
             : 0,
-        bestChannel:
-          emailReplied >= waReplied && emailReplied >= liReplied
-            ? "email"
-            : waReplied >= liReplied
-              ? "whatsapp"
-              : "linkedin",
+        bestChannel,
       },
     },
   };
