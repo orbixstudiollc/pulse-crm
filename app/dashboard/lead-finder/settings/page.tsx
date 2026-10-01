@@ -56,7 +56,7 @@ interface SettingsData {
   apify_source: "org" | "server" | "none";
   /** What Lead Finder actually uses (shared resolver); null when nothing is configured. */
   effective_provider: { provider: string; source: "org" | "server" } | null;
-  ai_provider: string;
+  ai_provider: string | null;
   ai_model: string;
   enrichment_concurrency: string;
   agency_name: string;
@@ -668,6 +668,7 @@ function LeadFinderSettingsPageInner() {
                         {providerInUseLabel(data.effective_provider)}
                       </span>
                       {data.effective_provider &&
+                        data.ai_provider &&
                         data.effective_provider.provider !== data.ai_provider &&
                         " (the saved provider has no key, so Lead Finder falls back)"}
                     </p>

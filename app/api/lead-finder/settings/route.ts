@@ -153,10 +153,13 @@ export async function GET() {
     const mask = (key: string | null | undefined) =>
       key ? `${"•".repeat(Math.max(0, key.length - 4))}${key.slice(-4)}` : "";
 
+    // Same rule as resolveAIProvider (used by lib/lead-finder/ai-provider.ts):
+    // the OAuth token counts only with an expiry in the future, so a null or
+    // unparseable openrouter_expires_at means it is not used.
     const openrouterOauthActive = !!(
       ai?.openrouter_oauth_token &&
-      (!ai?.openrouter_expires_at ||
-        new Date(ai.openrouter_expires_at).getTime() > Date.now())
+      ai.openrouter_expires_at &&
+      Date.parse(ai.openrouter_expires_at) > Date.now()
     );
 
     return NextResponse.json(
@@ -171,7 +174,7 @@ export async function GET() {
               ? "server"
               : "none",
           effective_provider: effectiveProvider(ai, profile.organization_id),
-          ai_provider: ai?.ai_provider ?? "openrouter",
+          ai_provider: ai?.ai_provider ?? null,
           anthropic_api_key: mask(ai?.api_key),
           openrouter_api_key: mask(ai?.openrouter_api_key),
           openai_api_key: mask(ai?.openai_api_key),
