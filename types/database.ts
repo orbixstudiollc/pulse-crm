@@ -3688,16 +3688,25 @@ export type Database = {
           p_tokens: number;
           p_org_limit: number;
           p_site_limit: number;
+          p_is_guest: boolean;
+          p_guest_limit: number;
         };
-        Returns: string;
+        Returns: { result: string; day: string }[];
       };
       settle_shared_ai_tokens: {
         Args: {
           p_org: string;
           p_day: string;
           p_delta: number;
+          p_is_guest: boolean;
         };
         Returns: undefined;
+      };
+      purge_shared_ai_budget: {
+        Args: {
+          p_keep_days: number;
+        };
+        Returns: number;
       };
     };
     Enums: {

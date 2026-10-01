@@ -65,10 +65,22 @@ export async function GET(request: Request) {
     `[daily-reset] guest cleanup: scanned=${purge.scanned} deletedUsers=${purge.deletedUsers} deletedOrgs=${purge.deletedOrgs} skipped=${purge.skipped} errors=${purge.errors.length}`
   );
 
+  // 7. Drop shared-AI budget counters older than 8 UTC days (migration 035);
+  // a failure is reported but does not stop the rest of the cron.
+  let sharedAiBudgetPurged: number | null = null;
+  try {
+    const { data, error } = await supabase.rpc("purge_shared_ai_budget", { p_keep_days: 8 });
+    if (error) throw new Error(error.message);
+    sharedAiBudgetPurged = data;
+    results.shared_ai_budget_purge = "ok";
+  } catch (err) {
+    results.shared_ai_budget_purge = err instanceof Error ? err.message : "error";
+  }
+
   const hasErrors = Object.values(results).some(v => v !== "ok");
 
   return NextResponse.json(
-    { success: !hasErrors, results, timestamp: new Date().toISOString() },
+    { success: !hasErrors, results, sharedAiBudgetPurged, timestamp: new Date().toISOString() },
     { status: hasErrors ? 207 : 200 }
   );
 }

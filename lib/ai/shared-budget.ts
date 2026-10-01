@@ -1,19 +1,24 @@
 import "server-only";
 
 import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { isGuestEmail } from "@/lib/auth/open-access";
 import {
   SHARED_BUDGET_BUSY_REASON,
-  reservationReason,
+  SHARED_BUDGET_TOO_LARGE_REASON,
+  estimateTokens,
+  reservationFromRpc,
   settlementDelta,
+  settlementsByDay,
   sharedBudgetLimits,
-  utcDay,
+  type SharedReservation,
 } from "./shared-budget-core";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
-export type SharedReservation =
-  | { ok: true; day: string; reserved: number }
-  | { ok: false; reason: string };
+export type { SharedReservation };
+
+/** Guest workspaces also draw from the smaller shared guest pool (migration 035). */
+export type SharedPool = { isGuest: boolean };
 
 function errorMessage(error: unknown): unknown {
   return error instanceof Error ? error.message : error;
@@ -22,26 +27,34 @@ function errorMessage(error: unknown): unknown {
 /**
  * Reserves `estimate` tokens of today's shared-key budget for `orgId` before
  * an AI call on the owner's shared (env) key. The counters (migration 035)
- * are checked and charged atomically, so concurrent calls cannot all pass.
- * Returns the UTC day the tokens were charged to, for settleSharedTokens.
- * Fails closed: any error refuses with the busy reason.
+ * are checked and charged atomically, so concurrent calls cannot all pass;
+ * guests are also charged to the guest pool. Returns the UTC day the database
+ * charged, for settleSharedTokens. A request larger than the workspace limit
+ * itself is refused without reserving. Fails closed: any error refuses with
+ * the busy reason.
  */
-export async function reserveSharedTokens(orgId: string, estimate: number): Promise<SharedReservation> {
+export async function reserveSharedTokens(
+  orgId: string,
+  estimate: number,
+  { isGuest }: SharedPool
+): Promise<SharedReservation> {
   try {
-    const admin = createAdminClient();
-    const { orgLimit, siteLimit } = sharedBudgetLimits(process.env);
-    // The RPC charges its own UTC day and does not return it; computed right
-    // before the call so settle targets the same row.
-    const day = utcDay(new Date());
-    const { data, error } = await admin.rpc("reserve_shared_ai_tokens", {
+    const { orgLimit, siteLimit, guestLimit } = sharedBudgetLimits(process.env);
+    if (orgLimit > 0 && estimate > orgLimit) return { ok: false, reason: SHARED_BUDGET_TOO_LARGE_REASON };
+    const { data, error } = await createAdminClient().rpc("reserve_shared_ai_tokens", {
       p_org: orgId,
       p_tokens: estimate,
       p_org_limit: orgLimit,
       p_site_limit: siteLimit,
+      p_is_guest: isGuest,
+      p_guest_limit: guestLimit,
     });
     if (error) throw new Error(error.message);
-    const reason = reservationReason(data);
-    return reason ? { ok: false, reason } : { ok: true, day, reserved: estimate };
+    const reservation = reservationFromRpc(data, estimate);
+    if (!reservation.ok && data?.[0]?.result === "ok") {
+      console.error("[shared-budget] reservation came back without a usable day; it stands unsettled");
+    }
+    return reservation;
   } catch (error) {
     console.error("[shared-budget] reserving shared AI tokens failed:", errorMessage(error));
     return { ok: false, reason: SHARED_BUDGET_BUSY_REASON };
@@ -49,14 +62,16 @@ export async function reserveSharedTokens(orgId: string, estimate: number): Prom
 }
 
 /**
- * Corrects a reservation to the call's actual usage (input + output tokens).
- * Skipped when usage is unknown, so the reservation stands. Never throws.
+ * Corrects a reservation to the call's actual usage (input + output tokens),
+ * on the day it was charged and in the same pool. Skipped when usage is
+ * unknown, so the reservation stands. Never throws.
  */
 export async function settleSharedTokens(
   orgId: string,
   day: string,
   reserved: number,
-  actualTotal: number | null | undefined
+  actualTotal: number | null | undefined,
+  { isGuest }: SharedPool
 ): Promise<void> {
   const delta = settlementDelta(reserved, actualTotal);
   if (delta === null || delta === 0) return;
@@ -65,11 +80,103 @@ export async function settleSharedTokens(
       p_org: orgId,
       p_day: day,
       p_delta: delta,
+      p_is_guest: isGuest,
     });
     if (error) console.error("[shared-budget] settling shared AI tokens failed:", error.message);
   } catch (error) {
     console.error("[shared-budget] settling shared AI tokens failed:", errorMessage(error));
   }
+}
+
+/**
+ * Whether a shared-key call for `orgId` is a guest's. The signed-in user
+ * decides when there is one (anonymous = guest). Without a session (Lead
+ * Finder jobs, cron) the workspace's members decide: it is a guest's when any
+ * member's profile email is a guest address (@guest.local, see
+ * lib/auth/guest-cleanup.ts) or missing. Anything that cannot be determined
+ * counts as a guest, the smaller pool. Never throws.
+ */
+export async function sharedCallerIsGuest(orgId: string): Promise<boolean> {
+  try {
+    const {
+      data: { user },
+    } = await (await createClient()).auth.getUser();
+    if (user) return user.is_anonymous === true;
+  } catch {
+    // No request scope (cron/worker): decide from the workspace's members.
+  }
+  try {
+    const { data, error } = await createAdminClient()
+      .from("profiles")
+      .select("email")
+      .eq("organization_id", orgId);
+    if (error || !data || data.length === 0) return true;
+    return data.some((member) => !member.email || isGuestEmail(member.email));
+  } catch (error) {
+    console.error("[shared-budget] deciding the shared AI pool failed:", errorMessage(error));
+    return true;
+  }
+}
+
+/** A finished streamText step (only the fields used here). */
+type TurnStep = {
+  response: { messages: unknown[] };
+  usage?: { inputTokens?: number; outputTokens?: number };
+};
+
+/**
+ * Shared-key reservations for one multi-step (tool-calling) chat turn, one
+ * per step instead of every step's maximum up front:
+ * - `start` reserves the first step (`baseInput` plus one output cap);
+ * - `stopWhen`, the streamText stop condition, ends the turn at `maxSteps`,
+ *   and otherwise reserves the next step (`baseInput` plus everything the
+ *   turn has added, plus one output cap) before it runs, ending the turn
+ *   cleanly when that is refused;
+ * - `settle` (onFinish) corrects every reservation to its step's real usage,
+ *   once per turn.
+ */
+export function sharedTurnBudget(params: {
+  orgId: string;
+  isGuest: boolean;
+  /** The system prompt and the turn's messages: sent again with every step. */
+  baseInput: string;
+  maxOutputTokens: number;
+  maxSteps: number;
+}) {
+  const { orgId, isGuest, baseInput, maxOutputTokens, maxSteps } = params;
+  const reservations: Array<{ day: string; reserved: number }> = [];
+  let settled = false;
+
+  const reserve = async (input: string): Promise<SharedReservation> => {
+    const reservation = await reserveSharedTokens(orgId, estimateTokens({ input, maxOutputTokens }), { isGuest });
+    if (reservation.ok) reservations.push({ day: reservation.day, reserved: reservation.reserved });
+    return reservation;
+  };
+
+  return {
+    start: (): Promise<SharedReservation> => reserve(baseInput),
+
+    stopWhen: async ({ steps }: { steps: ReadonlyArray<TurnStep> }): Promise<boolean> => {
+      if (steps.length >= maxSteps) return true;
+      // A step's response.messages holds everything the turn has added so far.
+      const added = steps[steps.length - 1]?.response.messages ?? [];
+      const next = await reserve(baseInput + JSON.stringify(added));
+      return !next.ok;
+    },
+
+    settle: async (steps: ReadonlyArray<TurnStep>): Promise<void> => {
+      if (settled) return;
+      settled = true;
+      const usages = steps.map(({ usage }) =>
+        usage?.inputTokens !== undefined || usage?.outputTokens !== undefined
+          ? (usage.inputTokens ?? 0) + (usage.outputTokens ?? 0)
+          : undefined
+      );
+      for (const { day, reserved, actual } of settlementsByDay(reservations, usages)) {
+        await settleSharedTokens(orgId, day, reserved, actual, { isGuest });
+      }
+    },
+  };
 }
 
 /** The signed-in user, else the workspace's first member (background jobs have no session). */

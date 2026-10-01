@@ -16,6 +16,7 @@ import {
   recordSharedUsage,
   reserveSharedTokens,
   settleSharedTokens,
+  sharedCallerIsGuest,
 } from "@/lib/ai/shared-budget";
 import { SharedBudgetError, estimateTokens } from "@/lib/ai/shared-budget-core";
 import { getModelId, MODEL_MAP } from "@/lib/ai/models";
@@ -284,20 +285,23 @@ export async function generateCompletion(
   // (always env-keyed): reserve tokens before the call and settle them to
   // actual usage after (a failed call keeps its reservation). The usage is
   // also logged to ai_usage_log for the audit log (lf_llm_costs cannot mark
-  // shared usage).
+  // shared usage). Guest workspaces also draw from the guest pool; jobs run
+  // without a session, so the workspace's members decide (fails to guest).
   const sharedKey =
     route.provider === "ollama_cloud" || route.resolved?.source === "env";
-  let reservation: { day: string; reserved: number } | null = null;
+  let reservation: { day: string; reserved: number; isGuest: boolean } | null = null;
   if (sharedKey) {
+    const isGuest = await sharedCallerIsGuest(orgId);
     const reserved = await reserveSharedTokens(
       orgId,
       estimateTokens({
-        inputChars: JSON.stringify(messages).length,
+        input: JSON.stringify(messages),
         maxOutputTokens: options?.maxTokens ?? DEFAULT_MAX_TOKENS,
-      })
+      }),
+      { isGuest }
     );
     if (!reserved.ok) throw new SharedBudgetError(reserved.reason);
-    reservation = reserved;
+    reservation = { day: reserved.day, reserved: reserved.reserved, isGuest };
   }
 
   const startTime = Date.now();
@@ -307,7 +311,8 @@ export async function generateCompletion(
       orgId,
       reservation.day,
       reservation.reserved,
-      response.inputTokens + response.outputTokens
+      response.inputTokens + response.outputTokens,
+      { isGuest: reservation.isGuest }
     );
     await recordSharedUsage({
       orgId,

@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import {
@@ -13,8 +14,8 @@ import { assembleContext, fetchEntityForChat } from "@/lib/ai/context";
 import { createAIMessagesClient, logTokenUsage, tokenLimitReason } from "@/lib/ai/client";
 import { getModelId } from "@/lib/ai/models";
 import { customModelSettingsFor, resolveAIProvider } from "@/lib/ai/provider-resolver";
-import { reserveSharedTokens, settleSharedTokens } from "@/lib/ai/shared-budget";
-import { SharedBudgetError, estimateTokens } from "@/lib/ai/shared-budget-core";
+import { sharedTurnBudget } from "@/lib/ai/shared-budget";
+import { SharedBudgetError } from "@/lib/ai/shared-budget-core";
 import { aiSdkBaseUrl, createCustomFetch, customModelFor } from "@/lib/ai/custom-provider";
 import { checkRateLimit, acquireRateLimit } from "@/lib/ai/rate-limiter";
 import { toChatMessages } from "@/lib/ai/chat-messages";
@@ -99,10 +100,12 @@ export async function POST(req: Request) {
 
     const orgId = profile.organization_id;
     // The owner's shared (env) key is limited per workspace and site-wide per
-    // UTC day: tokens are reserved before each call (below, or in the client
+    // UTC day, and guests (anonymous users) also share a smaller guest pool:
+    // tokens are reserved before each call (below, per step, or in the client
     // for the OpenAI-compatible branch). Refusals are plain text so the chat
     // UI shows the reason as is.
     const sharedKey = resolved.source === "env";
+    const isGuest = user.is_anonymous === true;
 
     const rateCheck = checkRateLimit(orgId);
     if (!rateCheck.allowed) {
@@ -120,7 +123,9 @@ export async function POST(req: Request) {
       release();
     };
     releaseRateLimit = guardedRelease;
-    req.signal.addEventListener("abort", guardedRelease);
+    // On the shared key the call runs to completion after a disconnect (so its
+    // real usage is settled); the slot is freed when it ends, not on abort.
+    if (!sharedKey) req.signal.addEventListener("abort", guardedRelease);
 
     const { messages: rawMessages, data } = await req.json();
     const pageContext: PageContext | undefined = data?.pageContext;
@@ -153,7 +158,7 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
     if (provider !== "anthropic" && provider !== "openrouter" && provider !== "custom") {
       // OpenAI-compatible providers (OpenAI, Groq, Ollama): one completion
       // without CRM tools, delivered as a single text part of the UI stream.
-      const client = createAIMessagesClient(resolved, null, orgId);
+      const client = createAIMessagesClient(resolved, null, orgId, isGuest);
       const chatMessages = (messages as Array<{ role: string; content?: unknown }>).filter(
         (m): m is { role: "user" | "assistant"; content: string } =>
           (m.role === "user" || m.role === "assistant") &&
@@ -228,7 +233,7 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
         pinned.close().catch((err) => console.error("AI Chat: closing custom fetch failed:", err));
       };
       closeCustomFetch = guardedClose;
-      req.signal.addEventListener("abort", guardedClose);
+      if (!sharedKey) req.signal.addEventListener("abort", guardedClose);
       anthropicOptions = {
         apiKey: resolved.apiKey,
         baseURL: aiSdkBaseUrl(pinned.base),
@@ -248,24 +253,27 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
     }
     const anthropic = createAnthropic(anthropicOptions);
 
-    // Shared key: reserve the most this turn can use (input once, plus the
-    // output cap for every step) before streaming. Settled in onFinish; an
-    // aborted or failed stream keeps the whole reservation.
-    let reservation: { day: string; reserved: number } | null = null;
-    if (sharedKey) {
-      const reserved = await reserveSharedTokens(
-        orgId,
-        estimateTokens({
-          inputChars: JSON.stringify(messages).length + systemMessage.length,
-          maxOutputTokens: SHARED_CHAT_MAX_OUTPUT_TOKENS * CHAT_MAX_STEPS,
+    // Shared key: reserve per step. The first step (input plus one output
+    // cap) is reserved here; each further step is reserved by stopWhen before
+    // it runs, with the input it will resend, and a refusal ends the turn with
+    // what exists. onFinish settles every reservation to real usage; a failed
+    // stream keeps them in full.
+    const turnBudget = sharedKey
+      ? sharedTurnBudget({
+          orgId,
+          isGuest,
+          baseInput: systemMessage + JSON.stringify(messages),
+          maxOutputTokens: SHARED_CHAT_MAX_OUTPUT_TOKENS,
+          maxSteps: CHAT_MAX_STEPS,
         })
-      );
-      if (!reserved.ok) {
+      : null;
+    if (turnBudget) {
+      const first = await turnBudget.start();
+      if (!first.ok) {
         guardedRelease();
         closeCustomFetch?.();
-        return new Response(reserved.reason, { status: 429 });
+        return new Response(first.reason, { status: 429 });
       }
-      reservation = reserved;
     }
     let streamFailed = false;
 
@@ -541,8 +549,10 @@ ${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByTy
           },
         }),
       },
-      stopWhen: stepCountIs(CHAT_MAX_STEPS),
-      abortSignal: req.signal,
+      stopWhen: turnBudget ? turnBudget.stopWhen : stepCountIs(CHAT_MAX_STEPS),
+      // The shared key never forwards the client's abort: the provider call
+      // finishes so onFinish can settle the real usage.
+      ...(sharedKey ? {} : { abortSignal: req.signal }),
       onAbort: () => {
         guardedRelease();
         closeCustomFetch?.();
@@ -553,19 +563,11 @@ ${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByTy
         closeCustomFetch?.();
         console.error("AI Chat stream error:", error);
       },
-      onFinish: async ({ totalUsage }) => {
+      onFinish: async ({ totalUsage, steps }) => {
         guardedRelease();
         closeCustomFetch?.();
         const durationMs = Date.now() - startTime;
-        if (reservation && !streamFailed) {
-          const known = totalUsage?.inputTokens !== undefined || totalUsage?.outputTokens !== undefined;
-          await settleSharedTokens(
-            orgId,
-            reservation.day,
-            reservation.reserved,
-            known ? (totalUsage.inputTokens ?? 0) + (totalUsage.outputTokens ?? 0) : undefined
-          );
-        }
+        if (turnBudget && !streamFailed) await turnBudget.settle(steps);
         await logTokenUsage({
           orgId: profile.organization_id!,
           userId: user.id,
@@ -579,6 +581,19 @@ ${Object.keys(actByType).length ? `Activity Breakdown:\n${Object.entries(actByTy
         });
       },
     });
+
+    if (sharedKey) {
+      // Read the stream to the end on the server even if the client goes
+      // away (it then just stops receiving), and keep the function alive
+      // until onFinish has settled.
+      const consumed = Promise.resolve(
+        result.consumeStream({ onError: (error) => console.error("AI Chat stream error:", error) })
+      ).finally(() => {
+        guardedRelease();
+        closeCustomFetch?.();
+      });
+      after(() => consumed);
+    }
 
     return result.toUIMessageStreamResponse();
   } catch (error) {

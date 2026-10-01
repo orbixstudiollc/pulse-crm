@@ -12,7 +12,7 @@ import {
   resolveAIProvider,
   type ResolvedAIProvider,
 } from "./provider-resolver";
-import { reserveSharedTokens, settleSharedTokens } from "./shared-budget";
+import { reserveSharedTokens, settleSharedTokens, sharedCallerIsGuest } from "./shared-budget";
 import {
   SHARED_BUDGET_BUSY_REASON,
   SHARED_MAX_OUTPUT_TOKENS,
@@ -200,18 +200,21 @@ function customClient(
  * response's usage after, independently of the caller's own logging.
  * max_tokens is clamped to SHARED_MAX_OUTPUT_TOKENS. A failed call keeps its
  * reservation. Without an org to charge, the call is refused (fail closed).
+ * Guests (`isGuest`, else decided per call by sharedCallerIsGuest) also draw
+ * from the shared guest pool.
  */
-function withSharedBudget(client: AIMessagesClient, orgId?: string): AIMessagesClient {
+function withSharedBudget(client: AIMessagesClient, orgId?: string, isGuest?: boolean): AIMessagesClient {
   return {
     messages: {
       create: async (params) => {
         if (!orgId) throw new SharedBudgetError(SHARED_BUDGET_BUSY_REASON);
+        const pool = { isGuest: isGuest ?? (await sharedCallerIsGuest(orgId)) };
         const capped = { ...params, max_tokens: Math.min(params.max_tokens, SHARED_MAX_OUTPUT_TOKENS) };
         const estimate = estimateTokens({
-          inputChars: JSON.stringify({ system: capped.system, messages: capped.messages }).length,
+          input: JSON.stringify({ system: capped.system, messages: capped.messages }),
           maxOutputTokens: capped.max_tokens,
         });
-        const reservation = await reserveSharedTokens(orgId, estimate);
+        const reservation = await reserveSharedTokens(orgId, estimate, pool);
         if (!reservation.ok) throw new SharedBudgetError(reservation.reason);
         const response = await client.messages.create(capped);
         const usage = response.usage;
@@ -219,7 +222,8 @@ function withSharedBudget(client: AIMessagesClient, orgId?: string): AIMessagesC
           orgId,
           reservation.day,
           reservation.reserved,
-          usage ? (usage.input_tokens ?? 0) + (usage.output_tokens ?? 0) : undefined
+          usage ? (usage.input_tokens ?? 0) + (usage.output_tokens ?? 0) : undefined,
+          pool
         );
         return response;
       },
@@ -232,15 +236,18 @@ function withSharedBudget(client: AIMessagesClient, orgId?: string): AIMessagesC
  * provider map Claude model IDs to the org's configured models; the env custom
  * fallback always uses its own models instead. A server-wide (env) credential
  * is the owner's shared key: every call on it reserves tokens from `orgId`'s
- * shared-key budget first, so no caller can skip the limit.
+ * shared-key budget first, so no caller can skip the limit. `isGuest` is the
+ * session user's is_anonymous where the caller has it; when omitted it is
+ * decided per call (see sharedCallerIsGuest).
  */
 export function createAIMessagesClient(
   resolved: ResolvedAIProvider,
   settings?: CustomModelSettings | null,
-  orgId?: string
+  orgId?: string,
+  isGuest?: boolean
 ): AIMessagesClient {
   const client = providerClient(resolved, settings);
-  return resolved.source === "env" ? withSharedBudget(client, orgId) : client;
+  return resolved.source === "env" ? withSharedBudget(client, orgId, isGuest) : client;
 }
 
 function providerClient(
@@ -357,7 +364,12 @@ export async function getAIClient(): Promise<AIClientResult> {
   // Override the resolved provider so model resolution uses the correct map
   resolvedSettings.ai_provider = resolved.provider;
 
-  const client = createAIMessagesClient(resolved, resolvedSettings, profile.organization_id);
+  const client = createAIMessagesClient(
+    resolved,
+    resolvedSettings,
+    profile.organization_id,
+    user.is_anonymous === true
+  );
 
   return {
     client,

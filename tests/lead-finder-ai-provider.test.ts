@@ -17,8 +17,10 @@ const h = vi.hoisted(() => ({
   reservation: { ok: true, day: "2026-10-01", reserved: 1000 } as
     | { ok: true; day: string; reserved: number }
     | { ok: false; reason: string },
-  reserveArgs: [] as Array<[string, number]>,
-  settleArgs: [] as Array<[string, string, number, number | undefined]>,
+  isGuest: false,
+  guestLookups: [] as string[],
+  reserveArgs: [] as Array<[string, number, { isGuest: boolean }]>,
+  settleArgs: [] as Array<[string, string, number, number | undefined, { isGuest: boolean }]>,
   openaiCtor: [] as Array<Record<string, unknown>>,
   openaiParams: [] as Array<Record<string, unknown>>,
   anthropicCtor: [] as Array<Record<string, unknown>>,
@@ -52,14 +54,24 @@ vi.mock("@/lib/ai/provider-resolver", () => ({
   },
 }));
 vi.mock("@/lib/ai/shared-budget", () => ({
-  reserveSharedTokens: async (orgId: string, estimate: number) => {
+  sharedCallerIsGuest: async (orgId: string) => {
+    h.guestLookups.push(orgId);
+    return h.isGuest;
+  },
+  reserveSharedTokens: async (orgId: string, estimate: number, opts: { isGuest: boolean }) => {
     h.events.push("reserve");
-    h.reserveArgs.push([orgId, estimate]);
+    h.reserveArgs.push([orgId, estimate, opts]);
     return h.reservation;
   },
-  settleSharedTokens: async (orgId: string, day: string, reserved: number, actual: number | undefined) => {
+  settleSharedTokens: async (
+    orgId: string,
+    day: string,
+    reserved: number,
+    actual: number | undefined,
+    opts: { isGuest: boolean }
+  ) => {
     h.events.push("settle");
-    h.settleArgs.push([orgId, day, reserved, actual]);
+    h.settleArgs.push([orgId, day, reserved, actual, opts]);
   },
   recordSharedUsage: async () => {
     h.events.push("record");
@@ -129,6 +141,8 @@ beforeEach(() => {
   h.resolveCalls = [];
   h.events = [];
   h.reservation = { ok: true, day: "2026-10-01", reserved: 1000 };
+  h.isGuest = false;
+  h.guestLookups = [];
   h.reserveArgs = [];
   h.settleArgs = [];
   h.openaiCtor = [];
@@ -227,9 +241,27 @@ describe("shared-key reservation", () => {
     await generateCompletion(MESSAGES, "anthropic", ORG, { maxTokens: 512 });
     expect(h.events).toEqual(["reserve", "call", "settle", "record"]);
     expect(h.reserveArgs).toEqual([
-      [ORG, estimateTokens({ inputChars: JSON.stringify(MESSAGES).length, maxOutputTokens: 512 })],
+      [ORG, estimateTokens({ input: JSON.stringify(MESSAGES), maxOutputTokens: 512 }), { isGuest: false }],
     ]);
-    expect(h.settleArgs).toEqual([[ORG, "2026-10-01", 1000, 42]]);
+    expect(h.settleArgs).toEqual([[ORG, "2026-10-01", 1000, 42, { isGuest: false }]]);
+  });
+
+  it("decides guest from the workspace (no session in background jobs) and settles in the same pool", async () => {
+    resolveTo(envAnthropic);
+    h.isGuest = true;
+    await generateCompletion(MESSAGES, "anthropic", ORG);
+    expect(h.guestLookups).toEqual([ORG]);
+    expect(h.reserveArgs[0][2]).toEqual({ isGuest: true });
+    expect(h.settleArgs[0][4]).toEqual({ isGuest: true });
+  });
+
+  it("counts non-ASCII input as a token per character in the estimate", async () => {
+    resolveTo(envAnthropic);
+    const cjk = [{ role: "user" as const, content: "東京のSaaS創業者を探して".repeat(50) }];
+    await generateCompletion(cjk, "anthropic", ORG, { maxTokens: 100 });
+    const asciiOnly = Math.ceil(JSON.stringify(cjk).length / 3) + 100;
+    expect(h.reserveArgs[0][1]).toBe(estimateTokens({ input: JSON.stringify(cjk), maxOutputTokens: 100 }));
+    expect(h.reserveArgs[0][1]).toBeGreaterThan(asciiOnly);
   });
 
   it("refuses with the user-facing reason and never calls the provider", async () => {
@@ -272,5 +304,6 @@ describe("shared-key reservation", () => {
     resolveTo({ provider: "anthropic", source: "org", apiKey: "org-anthropic" });
     await generateCompletion(MESSAGES, "anthropic", ORG);
     expect(h.events).toEqual(["call"]);
+    expect(h.guestLookups).toEqual([]);
   });
 });
