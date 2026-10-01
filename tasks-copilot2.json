@@ -267,7 +267,11 @@
         "app/dashboard/copilot/client.tsx",
         "components/features/Copilot/ChatView.tsx",
         "components/features/Copilot/ArtifactsView.tsx",
-        "components/features/Copilot/PendingApprovals.tsx"
+        "components/features/Copilot/PendingApprovals.tsx",
+        "components/features/Copilot/MemoryView.tsx",
+        "components/features/Copilot/TasksView.tsx",
+        "components/features/Copilot/SettingsView.tsx",
+        "components/features/Copilot/styles.ts"
       ],
       "interface": "page.tsx loads the current conversation id + messages, pending approvals and artifacts and passes them as props; honours ?c=<conversationId>. client.tsx drops saveMessage and the tool_calls/tool_results client paths; views: chat | artifacts | memory | tasks | settings. ChatView uses useCopilotChat + ChatMessageParts. PendingApprovals lists task-sourced approvals with ApprovalCard wired to resolveApproval and refreshes on resolve. ArtifactsView: search (client filter on title + server q), kind filter, star toggle, reopen in a hairline detail pane (email_draft as to/subject/body with a Copy button and no send control; lead_list as a table; report/note as text), soft delete with undo toast. client.tsx under 800 lines by moving views into components/features/Copilot/*.",
       "verify": "test $(grep -c \"saveMessage\" app/dashboard/copilot/client.tsx) -eq 0 && test $(wc -l < app/dashboard/copilot/client.tsx) -lt 800 && node scripts/restyle/boxes.mjs app/dashboard/copilot/client.tsx components/features/Copilot/*.tsx && node scripts/restyle/scan.mjs app/dashboard/copilot/client.tsx components/features/Copilot/*.tsx && npx tsc --noEmit",
