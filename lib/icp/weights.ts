@@ -13,12 +13,14 @@ export const DEFAULT_ICP_WEIGHTS: ICPWeights = {
 };
 
 function toWeight(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : 0;
+  // Numeric strings ("25") count; Number("") is 0 and Number(null) is 0, both treated as unset.
+  const n = typeof value === "number" || typeof value === "string" ? Number(value) : 0;
+  return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
 /**
  * Scales ICP weights to integers that total exactly 100 (largest-remainder rounding).
- * Missing, negative and non-finite values count as 0; an all-zero input returns the default.
+ * Numeric strings are accepted; missing, negative and non-finite values count as 0; an all-zero input returns the default.
  */
 export function normalizeWeights(raw: Partial<ICPWeights> | null | undefined): ICPWeights {
   const values = WEIGHT_KEYS.map((key) => toWeight(raw?.[key]));

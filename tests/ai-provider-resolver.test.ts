@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 process.env.ENCRYPTION_KEY = "test-encryption-key-for-provider-resolver";
 
@@ -276,16 +276,58 @@ describe("resolveAIProvider", () => {
         source: "env",
         apiKey: "sk-env",
       });
-      expect(resolveAIProvider({}, { ...ENV, OLLAMA_BASE_URL: "https://ollama.example.com/v1" }, NOW)).toEqual({
-        provider: "ollama",
-        source: "env",
-        baseURL: "https://ollama.example.com/v1",
-      });
       // Even an explicit custom choice without an org key does not move it ahead.
       expect(resolveAIProvider({ ai_provider: "custom" }, { ...ENV, GROQ_API_KEY: "gsk-env" }, NOW)).toEqual({
         provider: "groq",
         source: "env",
         apiKey: "gsk-env",
+      });
+    });
+
+    it("beats env Ollama in the env pass, so a set OLLAMA_BASE_URL cannot shadow it", () => {
+      const env = { ...ENV, OLLAMA_BASE_URL: "http://localhost:11434" };
+      expect(resolveAIProvider({}, env, NOW)).toEqual(ENV_RESOLVED);
+      // Env Ollama still resolves when no env custom credential exists.
+      expect(resolveAIProvider({}, { OLLAMA_BASE_URL: "https://ollama.example.com/v1" }, NOW)).toEqual({
+        provider: "ollama",
+        source: "env",
+        baseURL: "https://ollama.example.com/v1",
+      });
+      // An org Ollama URL still beats env custom: the org order is unchanged.
+      expect(resolveAIProvider({ ollama_base_url: "https://org-ollama.example.com/v1" }, env, NOW)).toEqual({
+        provider: "ollama",
+        source: "org",
+        baseURL: "https://org-ollama.example.com/v1",
+      });
+    });
+
+    describe("invalid CUSTOM_AI_BASE_URL warning", () => {
+      const BAD = { CUSTOM_AI_BASE_URL: "http://api.llmsrelay.com", CUSTOM_AI_API_KEY: ENV_KEY };
+      let warn: ReturnType<typeof vi.spyOn>;
+
+      beforeEach(() => {
+        vi.resetModules();
+        warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      });
+      afterEach(() => warn.mockRestore());
+
+      it("warns once per process without leaking the URL or key", async () => {
+        const fresh = await import("@/lib/ai/provider-resolver");
+        fresh.resolveAIProvider({}, BAD, NOW);
+        fresh.resolveAIProvider({}, BAD, NOW);
+        expect(warn).toHaveBeenCalledTimes(1);
+        const message = String(warn.mock.calls[0][0]);
+        expect(message).toBe("CUSTOM_AI_BASE_URL is invalid; shared AI fallback disabled");
+        expect(message).not.toContain("llmsrelay");
+        expect(message).not.toContain(ENV_KEY);
+      });
+
+      it("does not warn when the URL is valid or unset", async () => {
+        const fresh = await import("@/lib/ai/provider-resolver");
+        fresh.resolveAIProvider({}, ENV, NOW);
+        fresh.resolveAIProvider({}, {}, NOW);
+        fresh.resolveAIProvider({}, { CUSTOM_AI_API_KEY: ENV_KEY }, NOW);
+        expect(warn).not.toHaveBeenCalled();
       });
     });
 

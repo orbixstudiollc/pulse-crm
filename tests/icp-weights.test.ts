@@ -64,6 +64,14 @@ describe("normalizeWeights", () => {
     ).toEqual({ industry: 40, size: 0, revenue: 0, title: 0, geography: 40, tech: 20 });
   });
 
+  it("accepts numeric strings and treats other strings as 0", () => {
+    const strings = { industry: "25", size: " 20 ", revenue: "15", title: "15", geography: "15", tech: "10" };
+    expect(normalizeWeights(strings as never)).toEqual(DEFAULT_ICP_WEIGHTS);
+    expect(
+      normalizeWeights({ industry: "50", size: "abc", revenue: "-5", title: "", tech: "Infinity" } as never),
+    ).toEqual({ industry: 100, size: 0, revenue: 0, title: 0, geography: 0, tech: 0 });
+  });
+
   it("always returns non-negative integers totalling 100", () => {
     let seed = 7;
     const rand = () => {

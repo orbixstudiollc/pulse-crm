@@ -59,6 +59,15 @@ export const AI_PROVIDER_ORDER: readonly ResolvedAIProviderName[] = [
   "custom",
 ];
 
+const ENV_PROVIDER_ORDER: readonly ResolvedAIProviderName[] = [
+  "anthropic",
+  "openrouter",
+  "openai",
+  "groq",
+  "custom",
+  "ollama",
+];
+
 type Credential = Omit<ResolvedAIProvider, "provider" | "source">;
 
 function orgCredential(
@@ -101,6 +110,15 @@ function orgCredential(
   }
 }
 
+let warnedInvalidEnvCustomUrl = false;
+
+/** Once per process; the message never carries the URL or key. */
+function warnInvalidEnvCustomUrl(): void {
+  if (warnedInvalidEnvCustomUrl) return;
+  warnedInvalidEnvCustomUrl = true;
+  console.warn("CUSTOM_AI_BASE_URL is invalid; shared AI fallback disabled");
+}
+
 /**
  * The operator's server-wide Anthropic-compatible endpoint. SECURITY: the URL,
  * key and models all come from env, never from a tenant's settings, so the env
@@ -114,6 +132,7 @@ function envCustomCredential(env: Record<string, string | undefined>): Credentia
   try {
     baseURL = normalizeCustomBaseUrl(rawBase);
   } catch {
+    warnInvalidEnvCustomUrl();
     return null;
   }
   return {
@@ -151,10 +170,11 @@ function isProviderName(value: unknown): value is ResolvedAIProviderName {
  *   (org key, unexpired OpenRouter OAuth token, or env key).
  * - Otherwise the first provider with an org credential in the order
  *   anthropic, openrouter, openai, groq, ollama, custom; then the first with
- *   an env credential in the same order. Org credentials beat env credentials.
+ *   an env credential in the order anthropic, openrouter, openai, groq, custom,
+ *   ollama (env custom ahead of env Ollama). Org credentials beat env credentials.
  * - An org "custom" credential needs the org base URL and a key sealed for it.
- * - The env "custom" credential (CUSTOM_AI_*) is tried last of all, even when
- *   "custom" was chosen explicitly. It carries its own URL and models; nothing
+ * - The env "custom" credential (CUSTOM_AI_*) is tried after every other env
+ *   key except Ollama, even when "custom" was chosen explicitly. It carries its own URL and models; nothing
  *   from the org's custom_* settings is ever combined with the env key.
  * - null when nothing is configured.
  */
@@ -176,8 +196,9 @@ export function resolveAIProvider(
     const cred = orgCredential(provider, settings, now);
     if (cred) return { provider, source: "org", ...cred };
   }
-  // "custom" is last in AI_PROVIDER_ORDER, so the env custom fallback is tried last.
-  for (const provider of AI_PROVIDER_ORDER) {
+  // Env pass only: the env custom credential goes ahead of env Ollama, so a default
+  // OLLAMA_BASE_URL cannot shadow it (the org order above is unchanged).
+  for (const provider of ENV_PROVIDER_ORDER) {
     const cred = envCredential(provider, env);
     if (cred) return { provider, source: "env", ...cred };
   }
