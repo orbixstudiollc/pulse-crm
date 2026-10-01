@@ -21,7 +21,8 @@ import {
 
 const READ = { readOnlyHint: true, openWorldHint: false } as const;
 
-const LEAD_LIST = "id, name, email, company, title, status, source, score, estimated_value, next_followup, created_at";
+const LEAD_LIST =
+  "id, name, email, company, title, status, source, score, estimated_value, next_followup, converted_customer_id, created_at";
 const DEAL_LIST =
   "id, name, company, value, probability, stage, close_date, contact_name, contact_email, customer_id, stage_changed_at, created_at";
 const CUSTOMER_LIST =
@@ -59,7 +60,7 @@ export function registerReadTools(server: McpServer, env: ToolEnv) {
       const nowIso = new Date().toISOString();
       const [org, leads, customers, contacts, deals, openActivities, overdue] = await Promise.all([
         db.from("organizations").select("name").eq("id", orgId).maybeSingle(),
-        db.from("leads").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
+        db.from("leads").select("id", { count: "exact", head: true }).eq("organization_id", orgId).is("converted_at", null),
         db.from("customers").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
         db.from("contacts").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
         db.from("deals").select("stage, value, probability").eq("organization_id", orgId),
@@ -72,6 +73,7 @@ export function registerReadTools(server: McpServer, env: ToolEnv) {
           .from("leads")
           .select("id", { count: "exact", head: true })
           .eq("organization_id", orgId)
+          .is("converted_at", null)
           .lt("next_followup", nowIso),
       ]);
       if (deals.error) return fail(deals.error.message);
@@ -109,19 +111,22 @@ export function registerReadTools(server: McpServer, env: ToolEnv) {
     "search_leads",
     {
       title: "Search leads",
-      description: "List leads, optionally filtered by text (name, email, company), status or source. Newest first unless sorted.",
+      description:
+        "List leads, optionally filtered by text (name, email, company), status or source. Newest first unless sorted. Leads already converted to customers are left out unless include_converted is true.",
       inputSchema: {
         search: z.string().optional().describe("Matches name, email or company"),
         status: z.enum(LEAD_STATUSES).optional(),
         source: z.enum(LEAD_SOURCES).optional(),
+        include_converted: z.boolean().default(false),
         sort_by: z.enum(["created_at", "score", "estimated_value", "name", "next_followup"]).default("created_at"),
         sort_order: z.enum(["asc", "desc"]).default("desc"),
         ...page,
       },
       annotations: READ,
     },
-    safe(async ({ search, status, source, sort_by, sort_order, limit, offset }) => {
+    safe(async ({ search, status, source, include_converted, sort_by, sort_order, limit, offset }) => {
       let q = db.from("leads").select(LEAD_LIST, { count: "exact" }).eq("organization_id", orgId);
+      if (!include_converted) q = q.is("converted_at", null);
       if (search) q = q.or(`name.ilike.${like(search)},email.ilike.${like(search)},company.ilike.${like(search)}`);
       if (status) q = q.eq("status", status);
       if (source) q = q.eq("source", source);
@@ -176,6 +181,7 @@ export function registerReadTools(server: McpServer, env: ToolEnv) {
         .from("leads")
         .select("id, name, company, email, status, score, next_followup, followup_note")
         .eq("organization_id", orgId)
+        .is("converted_at", null)
         .not("next_followup", "is", null);
       if (when === "overdue") {
         q = q.lt("next_followup", now.toISOString());

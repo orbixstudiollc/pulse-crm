@@ -133,6 +133,22 @@ describe("MCP route", () => {
     expect(note.created.author_name).toBe("John Harris");
   });
 
+  it("converts a lead by stamping it, then hides it from search", async () => {
+    const client = await connect(writeKey.key);
+    const res = parse(await client.callTool({ name: "convert_lead_to_customer", arguments: { lead_id: LEAD_A } }));
+    expect(res.customer).toMatchObject({ organization_id: ORG_A, first_name: "Jane", last_name: "Doe" });
+    const lead = db.tables.leads.find((l) => l.id === LEAD_A)!;
+    expect(lead.converted_customer_id).toBe(res.customer.id);
+    expect(lead.converted_at).toBeTruthy();
+
+    const again = await client.callTool({ name: "convert_lead_to_customer", arguments: { lead_id: LEAD_A } });
+    expect(again.isError).toBe(true);
+    expect(db.tables.customers).toHaveLength(1);
+
+    expect(parse(await client.callTool({ name: "search_leads", arguments: {} })).total).toBe(0);
+    expect(parse(await client.callTool({ name: "search_leads", arguments: { include_converted: true } })).total).toBe(1);
+  });
+
   it("refuses to link a record to another workspace", async () => {
     const client = await connect(writeKey.key);
     const res = await client.callTool({

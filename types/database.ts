@@ -348,6 +348,8 @@ export type Database = {
           meeting_preference: string | null;
           assistant_name: string | null;
           assistant_email: string | null;
+          converted_at: string | null;
+          converted_customer_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -403,6 +405,8 @@ export type Database = {
           meeting_preference?: string | null;
           assistant_name?: string | null;
           assistant_email?: string | null;
+          converted_at?: string | null;
+          converted_customer_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -455,6 +459,8 @@ export type Database = {
           meeting_preference?: string | null;
           assistant_name?: string | null;
           assistant_email?: string | null;
+          converted_at?: string | null;
+          converted_customer_id?: string | null;
           updated_at?: string;
         };
         Relationships: [];

@@ -233,9 +233,10 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
     "convert_lead_to_customer",
     {
       title: "Convert lead to customer",
-      description: "Create a customer from a lead and delete the lead (same as Convert on the Leads page).",
+      description:
+        "Create a customer from a lead (same as Convert on the Leads page). The lead is kept, marked converted and hidden from search_leads.",
       inputSchema: { lead_id: id },
-      annotations: DESTRUCTIVE,
+      annotations: WRITE,
     },
     safe(async ({ lead_id }) => {
       const { data: lead } = await db
@@ -245,6 +246,7 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
         .eq("id", lead_id)
         .maybeSingle();
       if (!lead) return fail("Lead not found");
+      if (lead.converted_at) return fail("This lead has already been converted");
       const [firstName, ...rest] = (lead.name || "").split(" ");
       const { data: customer, error } = await db
         .from("customers")
@@ -264,9 +266,16 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
         .select()
         .single();
       if (error) return fail(error.message);
-      // Keep the people: re-point the lead's contacts at the new customer.
-      await db.from("contacts").update({ customer_id: customer.id, lead_id: null }).eq("organization_id", orgId).eq("lead_id", lead_id);
-      await db.from("leads").delete().eq("organization_id", orgId).eq("id", lead_id);
+      // Keep the lead and its history and stamp it, as convertLeadToCustomer does (037).
+      const { error: markError } = await db
+        .from("leads")
+        .update({ converted_at: new Date().toISOString(), converted_customer_id: customer.id })
+        .eq("organization_id", orgId)
+        .eq("id", lead_id);
+      if (markError) {
+        await db.from("customers").delete().eq("organization_id", orgId).eq("id", customer.id);
+        return fail(markError.message);
+      }
       return ok({ customer });
     }),
   );

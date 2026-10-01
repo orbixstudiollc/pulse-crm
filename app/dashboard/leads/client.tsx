@@ -42,7 +42,7 @@ import {
   type LeadSource,
 } from "@/lib/data/leads";
 import { cn, formatCurrency } from "@/lib/utils";
-import { createLead, updateLead, deleteLead, getLeadsAsJson } from "@/lib/actions/leads";
+import { createLead, updateLead, deleteLead, getLeadsAsJson, getConvertedLeadCount } from "@/lib/actions/leads";
 import { recalculateAllScores } from "@/lib/actions/scoring";
 import { aiScoreLead, aiScoreLeadsBatch } from "@/lib/actions/ai-scoring";
 import { exportLeadsToCSV } from "@/lib/actions/export";
@@ -135,13 +135,18 @@ function mapLead(l: LeadRecord) {
 export function LeadsPageClient() {
   const [leadsData, setLeadsData] = useState<LeadRecord[]>([]);
   const [leadsCount, setLeadsCount] = useState(0);
+  const [convertedCount, setConvertedCount] = useState(0);
   const [leadsLoading, setLeadsLoading] = useState(true);
 
   const fetchLeads = async () => {
     try {
-      const { json, count } = await getLeadsAsJson({ perPage: 100 });
+      const [{ json, count }, converted] = await Promise.all([
+        getLeadsAsJson({ perPage: 100 }),
+        getConvertedLeadCount(),
+      ]);
       setLeadsData(JSON.parse(json) ?? []);
       setLeadsCount(count);
+      setConvertedCount(converted.count);
     } catch (e) {
       console.error("Failed to fetch leads:", e);
     } finally {
@@ -203,7 +208,7 @@ export function LeadsPageClient() {
         website: editLead.website || "",
         linkedin: editLead.linkedin || "",
         twitter: editLead.twitter || "",
-        source: editLead.source.toLowerCase().replace(" ", "-"),
+        source: editLead.source,
         value: editLead.estimatedValue.toString(),
         notes: "",
         painPoints: editLead.painPoints || "",
@@ -292,82 +297,82 @@ export function LeadsPageClient() {
   };
 
   const handleAddLead = async (data: LeadFormData) => {
-    startTransition(async () => {
-      const result = await createLead({
-        name: `${data.firstName} ${data.lastName}`.trim(),
-        email: data.email,
-        company: data.company,
-        title: data.title || null,
-        phone: data.phone,
-        website: data.website || null,
-        linkedin: data.linkedin || null,
-        twitter: data.twitter || null,
-        source: data.source,
-        estimated_value: parseFloat(data.value) || 0,
-        status: "warm",
-        score: 50,
-        pain_points: data.painPoints || null,
-        trigger_event: data.triggerEvent || null,
-        personal_note: data.personalNote || null,
-        referred_by: data.referredBy || null,
-        revenue_range: data.revenueRange || null,
-        tech_stack: data.techStack || null,
-        funding_stage: data.fundingStage || null,
-        current_solution: data.currentSolution || null,
-        decision_role: data.decisionRole || null,
-        timezone: data.timezone || null,
-        preferred_language: data.preferredLanguage || null,
-        meeting_preference: data.meetingPreference || null,
-        tags: data.tags ? data.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
-        birthday: data.birthday || null,
-        content_interests: data.contentInterests ? data.contentInterests.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
-        assistant_name: data.assistantName || null,
-        assistant_email: data.assistantEmail || null,
-      });
-      if (!result.error) {
-        setShowAddLead(false);
-        fetchLeads();
-      }
+    const result = await createLead({
+      name: `${data.firstName} ${data.lastName}`.trim(),
+      email: data.email,
+      company: data.company,
+      title: data.title || null,
+      phone: data.phone,
+      website: data.website || null,
+      linkedin: data.linkedin || null,
+      twitter: data.twitter || null,
+      source: data.source,
+      estimated_value: parseFloat(data.value) || 0,
+      status: "warm",
+      score: 50,
+      pain_points: data.painPoints || null,
+      trigger_event: data.triggerEvent || null,
+      personal_note: data.personalNote || null,
+      referred_by: data.referredBy || null,
+      revenue_range: data.revenueRange || null,
+      tech_stack: data.techStack || null,
+      funding_stage: data.fundingStage || null,
+      current_solution: data.currentSolution || null,
+      decision_role: data.decisionRole || null,
+      timezone: data.timezone || null,
+      preferred_language: data.preferredLanguage || null,
+      meeting_preference: data.meetingPreference || null,
+      tags: data.tags ? data.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
+      birthday: data.birthday || null,
+      content_interests: data.contentInterests ? data.contentInterests.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
+      assistant_name: data.assistantName || null,
+      assistant_email: data.assistantEmail || null,
     });
+    if (result.error) {
+      toast.error(result.error);
+      return false;
+    }
+    toast.success("Lead added");
+    fetchLeads();
   };
 
   const handleEditLead = async (data: LeadFormData) => {
-    if (!editLead) return;
-    startTransition(async () => {
-      const result = await updateLead(editLead.id, {
-        name: `${data.firstName} ${data.lastName}`.trim(),
-        email: data.email,
-        company: data.company,
-        title: data.title || null,
-        phone: data.phone,
-        website: data.website || null,
-        linkedin: data.linkedin || null,
-        twitter: data.twitter || null,
-        source: data.source,
-        estimated_value: parseFloat(data.value) || 0,
-        pain_points: data.painPoints || null,
-        trigger_event: data.triggerEvent || null,
-        personal_note: data.personalNote || null,
-        referred_by: data.referredBy || null,
-        revenue_range: data.revenueRange || null,
-        tech_stack: data.techStack || null,
-        funding_stage: data.fundingStage || null,
-        current_solution: data.currentSolution || null,
-        decision_role: data.decisionRole || null,
-        timezone: data.timezone || null,
-        preferred_language: data.preferredLanguage || null,
-        meeting_preference: data.meetingPreference || null,
-        tags: data.tags ? data.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
-        birthday: data.birthday || null,
-        content_interests: data.contentInterests ? data.contentInterests.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
-        assistant_name: data.assistantName || null,
-        assistant_email: data.assistantEmail || null,
-      });
-      if (!result.error) {
-        setShowEditModal(false);
-        fetchLeads();
-      }
+    if (!editLead) return false;
+    const result = await updateLead(editLead.id, {
+      name: `${data.firstName} ${data.lastName}`.trim(),
+      email: data.email,
+      company: data.company,
+      title: data.title || null,
+      phone: data.phone,
+      website: data.website || null,
+      linkedin: data.linkedin || null,
+      twitter: data.twitter || null,
+      source: data.source,
+      estimated_value: parseFloat(data.value) || 0,
+      pain_points: data.painPoints || null,
+      trigger_event: data.triggerEvent || null,
+      personal_note: data.personalNote || null,
+      referred_by: data.referredBy || null,
+      revenue_range: data.revenueRange || null,
+      tech_stack: data.techStack || null,
+      funding_stage: data.fundingStage || null,
+      current_solution: data.currentSolution || null,
+      decision_role: data.decisionRole || null,
+      timezone: data.timezone || null,
+      preferred_language: data.preferredLanguage || null,
+      meeting_preference: data.meetingPreference || null,
+      tags: data.tags ? data.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
+      birthday: data.birthday || null,
+      content_interests: data.contentInterests ? data.contentInterests.split(",").map((t: string) => t.trim()).filter(Boolean) : [],
+      assistant_name: data.assistantName || null,
+      assistant_email: data.assistantEmail || null,
     });
+    if (result.error) {
+      toast.error(result.error);
+      return false;
+    }
+    toast.success("Lead updated");
+    fetchLeads();
   };
 
   const handleDeleteLead = async (id: string) => {
@@ -393,13 +398,18 @@ export function LeadsPageClient() {
       setConfirmDelete(null);
       startTransition(async () => {
         let deleted = 0;
+        let lastError = "";
         for (const id of ids) {
           const result = await deleteLead(id);
-          if (!result.error) deleted++;
+          if (result.error) lastError = result.error;
+          else deleted++;
         }
         setSelectedRows([]);
         fetchLeads();
-        toast.success(`Deleted ${deleted} lead${deleted !== 1 ? "s" : ""}`);
+        if (deleted) toast.success(`Deleted ${deleted} lead${deleted !== 1 ? "s" : ""}`);
+        if (deleted < ids.length) {
+          toast.error(`Couldn't delete ${ids.length - deleted} lead${ids.length - deleted !== 1 ? "s" : ""}: ${lastError}`);
+        }
       });
     }
   };
@@ -524,7 +534,7 @@ export function LeadsPageClient() {
         />
         <StatCard
           label="Converted"
-          value={leadsLoading ? "—" : "0"}
+          value={leadsLoading ? "—" : convertedCount.toString()}
           icon={
             <CheckCircleIcon
               size={24}

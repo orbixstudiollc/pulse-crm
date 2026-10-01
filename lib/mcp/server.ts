@@ -10,7 +10,7 @@ const INSTRUCTIONS = `Pulse CRM workspace tools.
 
 Data model: leads (prospects, status hot/warm/cold) become customers (paying accounts) via convert_lead_to_customer. Deals sit in a pipeline: discovery -> proposal -> negotiation -> closed_won / closed_lost. Contacts are people at a lead or customer account. Activities are calls, meetings, emails, notes and tasks (type "task", status pending -> completed), optionally linked to a lead, deal or customer. Follow-ups are dates on a lead (next_followup).
 
-Tips: call get_workspace_summary first. Search tools return compact rows; use get_lead / get_deal / get_customer for full detail with notes and timeline. Ids are UUIDs from search results; never invent one. Dates are YYYY-MM-DD. Empty fields are omitted from results. Confirm with the user before delete_record or convert_lead_to_customer.`;
+Tips: call get_workspace_summary first. Search tools return compact rows; use get_lead / get_deal / get_customer for full detail with notes and timeline. Ids are UUIDs from search results; never invent one. Dates are YYYY-MM-DD. Empty fields are omitted from results. Converted leads are kept (converted_customer_id points at the customer) and hidden from search_leads by default. Confirm with the user before delete_record.`;
 
 /**
  * Builds an MCP server bound to one workspace. Read-scope keys only get the
