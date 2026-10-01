@@ -1,20 +1,29 @@
-// OpenerWriter implementations.
-//
-// - With an ANTHROPIC_API_KEY app variable: the Anthropic Messages API.
-// - Otherwise: Twenty's built-in AI through the app's opener-writer agent
-//   (runAgent), which uses the workspace's configured model and billing.
+// OpenerWriter implementations, chosen by the AI_PROVIDER app variable:
+// - anthropic: the Anthropic Messages API.
+// - openai / openai-compatible: any Chat Completions API (OpenAI, OpenRouter,
+//   Groq, Together, Mistral, Gemini's OpenAI endpoint, local Ollama, ...).
+// - twenty (default): Twenty's built-in AI through the app's opener-writer
+//   agent (runAgent), which uses the workspace's configured model and billing.
 
 import { OPENER_INSTRUCTIONS, type OpenerWriter } from 'src/gtm/sequences/openers';
 
 export const ANTHROPIC_MODEL = 'claude-sonnet-5-5';
-const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
+const ANTHROPIC_BASE_URL = 'https://api.anthropic.com/v1';
+
+export const OPENAI_MODEL = 'gpt-4.1';
+const OPENAI_BASE_URL = 'https://api.openai.com/v1';
+
+export const AI_PROVIDERS = ['twenty', 'anthropic', 'openai', 'openai-compatible'] as const;
+export type AiProvider = (typeof AI_PROVIDERS)[number];
 
 export const anthropicOpenerWriter = (
   apiKey: string,
   fetchImpl: typeof fetch = fetch,
+  model: string = ANTHROPIC_MODEL,
+  baseUrl: string = ANTHROPIC_BASE_URL,
 ): OpenerWriter => ({
   async write(prompt) {
-    const res = await fetchImpl(ANTHROPIC_URL, {
+    const res = await fetchImpl(`${baseUrl.replace(/\/+$/, '')}/messages`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -22,7 +31,7 @@ export const anthropicOpenerWriter = (
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: ANTHROPIC_MODEL,
+        model,
         max_tokens: 400,
         system: OPENER_INSTRUCTIONS,
         messages: [{ role: 'user', content: prompt }],
@@ -37,6 +46,34 @@ export const anthropicOpenerWriter = (
       .filter((b) => b.type === 'text')
       .map((b) => b.text ?? '')
       .join('');
+  },
+});
+
+export const chatCompletionsOpenerWriter = (
+  options: { baseUrl: string; model: string; apiKey?: string },
+  fetchImpl: typeof fetch = fetch,
+): OpenerWriter => ({
+  async write(prompt) {
+    const headers: Record<string, string> = { 'content-type': 'application/json' };
+    if (options.apiKey) headers.authorization = `Bearer ${options.apiKey}`;
+    const res = await fetchImpl(`${options.baseUrl.replace(/\/+$/, '')}/chat/completions`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: options.model,
+        max_tokens: 400,
+        messages: [
+          { role: 'system', content: OPENER_INSTRUCTIONS },
+          { role: 'user', content: prompt },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      const detail = (await res.text().catch(() => '')).slice(0, 200);
+      throw new Error(`AI API ${res.status}${detail ? `: ${detail}` : ''}`);
+    }
+    const data = (await res.json()) as { choices?: { message?: { content?: string | null } }[] };
+    return data.choices?.[0]?.message?.content ?? '';
   },
 });
 
@@ -59,8 +96,30 @@ export const pickOpenerWriter = (
   agentUniversalIdentifier: string,
   fetchImpl?: typeof fetch,
 ): OpenerWriter => {
-  const key = env.ANTHROPIC_API_KEY?.trim();
-  return key
-    ? anthropicOpenerWriter(key, fetchImpl)
-    : agentOpenerWriter(runAgent, agentUniversalIdentifier);
+  const key = env.AI_API_KEY?.trim() || undefined;
+  const model = env.AI_MODEL?.trim() || undefined;
+  const baseUrl = env.AI_BASE_URL?.trim() || undefined;
+  const raw = env.AI_PROVIDER?.trim().toLowerCase();
+  if (raw && !(AI_PROVIDERS as readonly string[]).includes(raw)) {
+    throw new Error(`Unknown AI provider "${raw}". Use one of: ${AI_PROVIDERS.join(', ')}.`);
+  }
+  // Without a provider, a key alone means Anthropic (the original behaviour).
+  const provider = (raw as AiProvider | undefined) ?? (key ? 'anthropic' : 'twenty');
+
+  switch (provider) {
+    case 'anthropic':
+      if (!key) throw new Error('AI provider anthropic needs an AI API key.');
+      return anthropicOpenerWriter(key, fetchImpl, model ?? ANTHROPIC_MODEL, baseUrl ?? ANTHROPIC_BASE_URL);
+    case 'openai':
+      if (!key) throw new Error('AI provider openai needs an AI API key.');
+      return chatCompletionsOpenerWriter(
+        { baseUrl: baseUrl ?? OPENAI_BASE_URL, model: model ?? OPENAI_MODEL, apiKey: key },
+        fetchImpl,
+      );
+    case 'openai-compatible':
+      if (!baseUrl || !model) throw new Error('AI provider openai-compatible needs an AI base URL and an AI model.');
+      return chatCompletionsOpenerWriter({ baseUrl, model, apiKey: key }, fetchImpl);
+    default:
+      return agentOpenerWriter(runAgent, agentUniversalIdentifier);
+  }
 };

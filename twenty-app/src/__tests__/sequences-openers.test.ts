@@ -112,7 +112,7 @@ describe('opener writers', () => {
       calls.push(input);
       return { success: true, error: null, result: { opener: 'Hello' } };
     };
-    const writer = pickOpenerWriter({ ANTHROPIC_API_KEY: '  ' }, runAgent, 'agent-id');
+    const writer = pickOpenerWriter({ AI_API_KEY: '  ' }, runAgent, 'agent-id');
     expect(await writer.write('p')).toEqual({ opener: 'Hello' });
     expect(calls).toEqual([{ agentUniversalIdentifier: 'agent-id', prompt: 'p' }]);
     const failing = agentOpenerWriter(async () => ({ success: false, error: 'no model', result: null }), 'a');
@@ -180,5 +180,54 @@ describe('generateOpeners', () => {
 
   it('requires a target', async () => {
     await expect(generateOpeners({ store, writer, input: {} })).rejects.toThrow();
+  });
+});
+
+describe('pickOpenerWriter providers', () => {
+  const runAgent = async () => ({ success: true, error: null, result: {} });
+  const capture = () => {
+    const seen: { url?: string; init?: RequestInit } = {};
+    const f = (async (url: string, init: RequestInit) => {
+      seen.url = url;
+      seen.init = init;
+      const body = url.endsWith('/messages')
+        ? { content: [{ type: 'text', text: 'A' }] }
+        : { choices: [{ message: { content: 'B' } }] };
+      return new Response(JSON.stringify(body), { status: 200 });
+    }) as unknown as typeof fetch;
+    return { seen, f };
+  };
+
+  it('uses an OpenAI-compatible relay with the chosen model', async () => {
+    const { seen, f } = capture();
+    const w = pickOpenerWriter(
+      { AI_PROVIDER: 'openai-compatible', AI_BASE_URL: 'https://api.llmsrelay.com/v1/', AI_MODEL: 'claude-sonnet-4.6', AI_API_KEY: 'k' },
+      runAgent,
+      'a',
+      f,
+    );
+    expect(await w.write('p')).toBe('B');
+    expect(seen.url).toBe('https://api.llmsrelay.com/v1/chat/completions');
+    expect(JSON.parse(seen.init!.body as string).model).toBe('claude-sonnet-4.6');
+    expect((seen.init!.headers as Record<string, string>).authorization).toBe('Bearer k');
+  });
+
+  it('lets anthropic use a custom model and base URL', async () => {
+    const { seen, f } = capture();
+    const w = pickOpenerWriter(
+      { AI_PROVIDER: 'Anthropic', AI_MODEL: 'claude-opus-4.8', AI_API_KEY: 'k', AI_BASE_URL: 'https://api.llmsrelay.com/v1' },
+      runAgent,
+      'a',
+      f,
+    );
+    expect(await w.write('p')).toBe('A');
+    expect(seen.url).toBe('https://api.llmsrelay.com/v1/messages');
+    expect(JSON.parse(seen.init!.body as string).model).toBe('claude-opus-4.8');
+  });
+
+  it('rejects unknown providers and missing settings', () => {
+    expect(() => pickOpenerWriter({ AI_PROVIDER: 'foo' }, runAgent, 'a')).toThrow('Unknown AI provider');
+    expect(() => pickOpenerWriter({ AI_PROVIDER: 'openai-compatible', AI_MODEL: 'm' }, runAgent, 'a')).toThrow('base URL');
+    expect(() => pickOpenerWriter({ AI_PROVIDER: 'openai' }, runAgent, 'a')).toThrow('API key');
   });
 });
