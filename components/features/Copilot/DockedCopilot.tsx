@@ -165,6 +165,8 @@ export function CopilotChatView({ conversation, pageKey, context, starters }: Co
                 onApprove={chat.approve}
                 onDeny={chat.deny}
                 onUndo={() => undefined}
+                onPick={send}
+                pickDisabled={busy || blocked}
               />
             ),
           )

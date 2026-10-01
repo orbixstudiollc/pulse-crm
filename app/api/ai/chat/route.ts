@@ -7,6 +7,7 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse,
   getToolName,
+  hasToolCall,
   isToolUIPart,
   simulateStreamingMiddleware,
   stepCountIs,
@@ -78,6 +79,8 @@ const TOOL_PROVIDERS = new Set(["anthropic", "openrouter", "custom"]);
 const NO_TOOLS_NOTICE =
   "This AI provider can't use CRM tools, so Copilot answers from the page context only and can't look up or change records. Use Anthropic, OpenRouter or a custom Anthropic-compatible provider in Settings → AI Assistant for full Copilot.";
 const PROVIDER_FAILED = "The AI provider request failed. Please try again.";
+/** Stop condition: the last step offered the user clickable next steps. */
+const suggestedNext = hasToolCall("suggest_next");
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 type ClaimedApproval = { row: ApprovalRow; response: ApprovalResponse };
@@ -749,13 +752,16 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
       tools,
       activeTools,
       ...(sharedKey ? { maxOutputTokens: SHARED_CHAT_MAX_OUTPUT_TOKENS } : {}),
+      // suggest_next is the reply's last word: the turn ends after the step that called it.
+      // It is checked first so a finished turn never reserves budget for a step it won't run.
       stopWhen: turnBudget
         ? async (options) => {
+            if (await suggestedNext(options)) return true;
             const stop = await turnBudget.stopWhen(options);
             if (stop && options.steps.length < CHAT_MAX_STEPS) budgetStopped = true;
             return stop;
           }
-        : stepCountIs(CHAT_MAX_STEPS),
+        : [suggestedNext, stepCountIs(CHAT_MAX_STEPS)],
       // The shared key never forwards the client's abort: the provider call
       // finishes so onFinish can settle the real usage. Every turn is cut off
       // at the internal deadline, which aborts the stream (onAbort).

@@ -32,6 +32,7 @@ import {
   LOW_RISK_WRITES,
   NEVER_AUTO_ALLOW,
   TASK_MODE_EXCLUDED,
+  UI_TOOLS,
   WRITE_FANOUT_PER_TURN,
   isAlwaysAllowed,
 } from "./policy";
@@ -175,11 +176,14 @@ function allTools(): RegistryTool[] {
   };
 
   const lowRisk: readonly string[] = LOW_RISK_WRITES;
+  const uiOnly: readonly string[] = UI_TOOLS;
+  // The policy, not the tool module, decides what may skip approval. UI tools write nothing,
+  // so they run like reads.
+  const kindOf = (name: string): ToolKind => (lowRisk.includes(name) ? "low_risk_write" : uiOnly.includes(name) ? "read" : "write");
   cachedTools = [
     ...COPILOT_READ_TOOLS.map((name) => fromMcp(name, "read")),
     ...COPILOT_WRITE_TOOLS.map((name) => fromMcp(name, "write")),
-    // The policy, not the tool module, decides what may skip approval.
-    ...copilotOnlyTools.map((t): RegistryTool => ({ ...t, kind: lowRisk.includes(t.name) ? "low_risk_write" : "write" })),
+    ...copilotOnlyTools.map((t): RegistryTool => ({ ...t, kind: kindOf(t.name) })),
   ].filter((t) => !NEVER_AUTO_ALLOW.includes(t.name));
   return cachedTools;
 }

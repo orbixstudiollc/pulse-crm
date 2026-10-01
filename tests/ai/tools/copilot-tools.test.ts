@@ -25,12 +25,13 @@ function tool(name: string) {
 }
 
 describe("copilot-only tools", () => {
-  it("exposes the four tools with the declared kinds", () => {
+  it("exposes the five tools with the declared kinds", () => {
     expect(copilotOnlyTools.map((t) => [t.name, t.kind])).toEqual([
       ["save_artifact", "low_risk_write"],
       ["save_memory", "low_risk_write"],
       ["draft_email", "low_risk_write"],
       ["create_task", "write"],
+      ["suggest_next", "read"],
     ]);
   });
 

@@ -4,34 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { UIMessage } from "ai";
 import { cn } from "@/lib/utils";
-import {
-  CrosshairIcon,
-  ChartBarIcon,
-  EnvelopeIcon,
-  LightningIcon,
-  StarIcon,
-  ShieldIcon,
-  ChatCircleIcon,
-} from "@/components/ui";
+import type { AssistantBrief } from "@/lib/actions/copilot-brief";
+import { AssistantHome } from "./AssistantHome";
 import { ChatMessageParts } from "./ChatMessageParts";
 import { Composer } from "./Composer";
 import type { UndoInfo } from "./UndoButton";
 import { chatErrorMessage, useCopilotChat, type ChatContext } from "./useCopilotChat";
-import { SUGGESTION_CHIP } from "./styles";
 
 const COPILOT_CONTEXT: ChatContext = { page: "Copilot" };
 const PENDING_HINT = "Answer the pending changes first";
-
-const SUGGESTION_CHIPS = [
-  { label: "Find Ideal Prospects", icon: CrosshairIcon, color: "text-warning", prompt: "Help me find ideal prospects that match my ICP. Analyze my current leads and suggest the best profiles to target." },
-  { label: "Generate a Full Campaign", icon: LightningIcon, color: "text-accent-strong", prompt: "Generate a full outreach campaign for my top leads. Include email sequences, follow-up timing, and personalization suggestions." },
-  { label: "Write a Sequence", icon: EnvelopeIcon, color: "text-accent-strong", prompt: "Help me write an email sequence for lead outreach. I need a multi-step drip campaign." },
-  { label: "Campaign Ideas", icon: StarIcon, color: "text-accent-strong", prompt: "Give me creative campaign ideas based on my current pipeline and leads. What strategies would work best?" },
-  { label: "Weekly Analytics", icon: ChartBarIcon, color: "text-success", prompt: "Give me a weekly analytics summary. Include pipeline changes, lead activity, deals won/lost, and key metrics." },
-  { label: "Best Performing Campaigns", icon: ChartBarIcon, color: "text-success", prompt: "Analyze my campaigns and tell me which ones are performing best. Include open rates, reply rates, and conversion metrics." },
-  { label: "Get Advice", icon: ChatCircleIcon, color: "text-danger", prompt: "I need advice on my sales strategy. Review my pipeline and suggest improvements." },
-  { label: "Audit My Workspace", icon: ShieldIcon, color: "text-success", prompt: "Audit my CRM workspace. Check for stale leads, stuck deals, missing follow-ups, and data quality issues." },
-];
 
 export type ChatViewProps = {
   /** The stored conversation to continue, or null for a new chat. */
@@ -44,6 +25,8 @@ export type ChatViewProps = {
   onConversationCreated(id: string): void;
   /** A low-risk write (artifact or memory) made by Copilot was undone. */
   onUndo(info: UndoInfo): void;
+  /** The "Today" counts for the start screen, or null when they could not be loaded. */
+  brief: AssistantBrief | null;
 };
 
 export function ChatView({
@@ -53,6 +36,7 @@ export function ChatView({
   onPromptSent,
   onConversationCreated,
   onUndo,
+  brief,
 }: ChatViewProps) {
   const chat = useCopilotChat({ conversationId, pageKey: undefined, initialMessages, context: COPILOT_CONTEXT });
   const { messages, status, error, sendText, approve, deny, awaitingApproval } = chat;
@@ -110,19 +94,12 @@ export function ChatView({
 
   if (messages.length === 0 && !isLoading) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-8 max-sm:px-4">
-        <h2 className="mb-6 text-[22px] leading-7 font-semibold text-fg">What can I help with?</h2>
-        <div className="mb-6 w-full max-w-2xl">
+      <div className="min-h-0 flex-1 overflow-y-auto px-8 py-10 max-sm:px-4">
+        <div className="mx-auto w-full max-w-2xl">
+          <h2 className="mb-6 text-center text-[22px] leading-7 font-semibold text-fg">What can I help with?</h2>
           <Composer value={draft} onChange={setDraft} onSend={() => handleSend(draft)} isLoading={isLoading} />
-        </div>
-        {chatError && <ErrorLine error={chatError} className="mb-6 max-w-2xl" />}
-        <div className="flex max-w-2xl flex-wrap justify-center gap-2">
-          {SUGGESTION_CHIPS.map((chip) => (
-            <button key={chip.label} onClick={() => handleSend(chip.prompt)} className={SUGGESTION_CHIP}>
-              <chip.icon size={16} className={chip.color} weight="fill" />
-              {chip.label}
-            </button>
-          ))}
+          {chatError && <ErrorLine error={chatError} className="mt-4" />}
+          <AssistantHome brief={brief} onPick={handleSend} />
         </div>
       </div>
     );
@@ -146,6 +123,8 @@ export function ChatView({
                   onApprove={approve}
                   onDeny={deny}
                   onUndo={onUndo}
+                  onPick={handleSend}
+                  pickDisabled={isLoading || awaitingApproval}
                 />
               </div>
             </div>

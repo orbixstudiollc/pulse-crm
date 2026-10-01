@@ -699,6 +699,35 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
       expect(notice?.data?.code).toBe("budget_exhausted");
     });
 
+    it("a step that calls suggest_next ends the turn, on the workspace's key and on the shared key", async () => {
+      const suggestStep = () =>
+        streamOf([
+          { type: "stream-start", warnings: [] },
+          { type: "text-start", id: "t1" },
+          { type: "text-delta", id: "t1", delta: "Acme is your hottest lead." },
+          { type: "text-end", id: "t1" },
+          {
+            type: "tool-call",
+            toolCallId: "next-1",
+            toolName: "suggest_next",
+            input: JSON.stringify({ options: [{ label: "Draft to Acme", prompt: "Draft a follow-up email to Acme." }] }),
+          },
+          finish("tool-calls"),
+        ]);
+      for (const resolved of [
+        { provider: "anthropic", source: "org" as const, apiKey: "test-key" },
+        { provider: "anthropic", source: "env" as const, apiKey: "env-key" },
+      ]) {
+        h.resolved = resolved;
+        h.model = scriptedModel([suggestStep, () => streamOf(textParts("never sent"))]);
+        const chunks = chunksOf(await settle(await post({ conversationId: CONV_A, message: { text: "Which lead is hottest?" } })));
+        expect(model().doStreamCalls).toHaveLength(1);
+        expect(chunks.some((c) => c.type === "tool-input-available" && c.toolName === "suggest_next")).toBe(true);
+        expect(chunks.some((c) => c.type === "data-notice")).toBe(false);
+        expect(JSON.stringify(chunks)).not.toContain("never sent");
+      }
+    });
+
     it("a turn that ends normally carries no budget notice", async () => {
       h.resolved = { provider: "anthropic", source: "env", apiKey: "env-key" };
       const chunks = chunksOf(await settle(await post({ conversationId: CONV_A, message: { text: "Hi" } })));

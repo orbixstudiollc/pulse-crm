@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { getToolName, isToolUIPart, type UIMessage } from "ai";
 import type { FieldDiff } from "@/lib/ai/tools/diff";
 import { TOOL_LABELS } from "@/lib/ai/tools/labels";
@@ -8,6 +8,7 @@ import { ApprovalCard } from "./ApprovalCard";
 import { StepTrace, type TraceStep } from "./StepTrace";
 import { UndoButton, type UndoInfo } from "./UndoButton";
 import { MessageText } from "./MessageText";
+import { SUGGESTION_CHIP } from "./styles";
 
 export type ChatMessagePartsProps = {
   message: UIMessage;
@@ -20,6 +21,10 @@ export type ChatMessagePartsProps = {
   onDeny(approvalId: string, reason?: string): void;
   /** Called after a low-risk write was undone. */
   onUndo(info: UndoInfo): void;
+  /** Sends a suggested next step's prompt, as if the user had typed it. */
+  onPick?(prompt: string): void;
+  /** True while a turn is in flight or approvals wait for an answer: options cannot be picked. */
+  pickDisabled?: boolean;
 };
 
 type Part = UIMessage["parts"][number];
@@ -100,9 +105,57 @@ function toolStep(part: ToolPart, onUndo: (info: UndoInfo) => void): TraceStep {
   }
 }
 
-/** Renders one chat message: text, a step trace for tool calls, and approval cards for proposed writes. */
-export function ChatMessageParts({ message, isLatest, onApprove, onDeny, onUndo }: ChatMessagePartsProps) {
+type NextOption = { label: string; prompt: string };
+type NextSteps = { question?: string; options: NextOption[] };
+
+/** The suggest_next input, once its options are usable (it may still be streaming in). */
+function nextStepsOf(input: unknown): NextSteps | null {
+  const record = asRecord(input);
+  if (!record || !Array.isArray(record.options)) return null;
+  const options = record.options.flatMap((option): NextOption[] => {
+    const o = asRecord(option);
+    return o && typeof o.label === "string" && o.label && typeof o.prompt === "string" && o.prompt
+      ? [{ label: o.label, prompt: o.prompt }]
+      : [];
+  });
+  if (options.length === 0) return null;
+  return { ...(typeof record.question === "string" && record.question ? { question: record.question } : {}), options };
+}
+
+/** The suggested next steps under a reply: an optional question, then one button per option. */
+function NextStepOptions({ steps, disabled, onPick }: { steps: NextSteps; disabled: boolean; onPick(prompt: string): void }) {
+  const [picked, setPicked] = useState(false);
+  const inactive = disabled || picked;
+  return (
+    <div className="pt-3">
+      {steps.question && <p className="mb-2 text-[13px] text-fg-muted">{steps.question}</p>}
+      <div className="flex flex-wrap gap-2">
+        {steps.options.map((option, index) => (
+          <button
+            key={`${index}-${option.label}`}
+            type="button"
+            disabled={inactive}
+            onClick={() => {
+              setPicked(true);
+              onPick(option.prompt);
+            }}
+            className={`${SUGGESTION_CHIP} disabled:cursor-default disabled:opacity-50 disabled:hover:bg-surface`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Renders one chat message: text, a step trace for tool calls, approval cards for proposed
+ * writes, and the suggested next steps (suggest_next, never shown as a trace step).
+ */
+export function ChatMessageParts({ message, isLatest, onApprove, onDeny, onUndo, onPick, pickDisabled = false }: ChatMessagePartsProps) {
   const blocks: ReactNode[] = [];
+  let nextSteps = null as { key: string; steps: NextSteps } | null;
   let steps: TraceStep[] = [];
   // Keyed by the group's first tool call, so a group keeps its state (e.g. Undone) as parts stream in.
   const flushSteps = () => {
@@ -135,6 +188,11 @@ export function ChatMessageParts({ message, isLatest, onApprove, onDeny, onUndo 
     if (!isToolUIPart(part)) return;
 
     const tool = part as ToolPart;
+    if (getToolName(tool as Parameters<typeof getToolName>[0]) === "suggest_next") {
+      const steps = nextStepsOf((tool as { input?: unknown }).input);
+      if (steps) nextSteps = { key: (tool as { toolCallId: string }).toolCallId, steps };
+      return;
+    }
     if (tool.state === "approval-requested" || tool.state === "approval-responded") {
       flushSteps();
       const toolCallId = (tool as { toolCallId: string }).toolCallId;
@@ -155,6 +213,16 @@ export function ChatMessageParts({ message, isLatest, onApprove, onDeny, onUndo 
     steps.push(toolStep(tool, onUndo));
   });
   flushSteps();
+  if (nextSteps) {
+    blocks.push(
+      <NextStepOptions
+        key={`next-${nextSteps.key}`}
+        steps={nextSteps.steps}
+        disabled={!isLatest || pickDisabled || !onPick}
+        onPick={(prompt) => onPick?.(prompt)}
+      />,
+    );
+  }
 
   return <div>{blocks}</div>;
 }

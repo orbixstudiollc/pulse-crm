@@ -1,6 +1,6 @@
-// Copilot-only tools: save_artifact, save_memory, draft_email, create_task.
-// registry.ts decides each tool's kind from policy.ts (LOW_RISK_WRITES); the `kind` here is the
-// declared default. Nothing here sends email: draft_email only stores an artifact.
+// Copilot-only tools: save_artifact, save_memory, draft_email, create_task, suggest_next.
+// registry.ts decides each tool's kind from policy.ts (LOW_RISK_WRITES, UI_TOOLS); the `kind`
+// here is the declared default. Nothing here sends email: draft_email only stores an artifact.
 import { z } from "zod";
 import { computeNextRun, TASK_CAPS } from "@/lib/ai/tasks/schedule";
 import type { CopilotArtifactKind, Json } from "@/types/database";
@@ -37,6 +37,14 @@ const createTaskSchema = z.object({
   title: z.string().min(1).max(120),
   prompt: z.string().min(1).max(4000),
   schedule: z.enum(["daily", "weekly", "monthly"]),
+});
+
+const suggestNextSchema = z.object({
+  question: z.string().max(120).optional(),
+  options: z
+    .array(z.object({ label: z.string().min(1).max(40), prompt: z.string().min(1).max(300) }))
+    .min(1)
+    .max(4),
 });
 
 type SaveArtifactInput = z.infer<typeof saveArtifactSchema>;
@@ -155,5 +163,13 @@ export const copilotOnlyTools: RegistryTool[] = [
     inputSchema: createTaskSchema,
     kind: "write",
     execute: (input, env) => createTask(createTaskSchema.parse(input), env),
+  },
+  {
+    name: "suggest_next",
+    description:
+      "Offer the user 1-4 clickable next steps under your reply (or the choices for a question you ask). Each option has a short button label and the full prompt sent when it is clicked. Call it last: it ends your turn. Writes nothing.",
+    inputSchema: suggestNextSchema,
+    kind: "read",
+    execute: async () => ({ ok: true }),
   },
 ];

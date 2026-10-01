@@ -33,4 +33,6 @@ export const TOOL_LABELS: Record<string, string> = {
   save_memory: "Saved memory",
   draft_email: "Drafted email",
   create_task: "Created task",
+  // UI-only: never shown in the step trace (ChatMessageParts renders it as option buttons).
+  suggest_next: "Suggested next steps",
 };

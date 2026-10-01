@@ -42,6 +42,12 @@ export const COPILOT_WRITE_TOOLS: readonly string[] = [
 /** Copilot-only saves that execute without approval and can be undone. */
 export const LOW_RISK_WRITES = ["save_artifact", "save_memory", "draft_email"] as const;
 
+/**
+ * Copilot-only tools that only shape the reply in the UI (clickable next steps). They write
+ * nothing, so they run without approval, count toward no fan-out and are offered on every turn.
+ */
+export const UI_TOOLS = ["suggest_next"] as const;
+
 /** Never exposed to the Copilot and never auto-approved: delete_record plus every bulk_* / *_many tool in lib/mcp (none today). */
 export const NEVER_AUTO_ALLOW: readonly string[] = ["delete_record"];
 
@@ -49,10 +55,11 @@ export const NEVER_AUTO_ALLOW: readonly string[] = ["delete_record"];
 export const WRITE_FANOUT_PER_TURN = 20;
 
 /**
- * Tools a scheduled task run may not use: a task must not create more tasks, and an
- * unattended run must not persist workspace memory (which feeds every later prompt).
+ * Tools a scheduled task run may not use: a task must not create more tasks, an unattended
+ * run must not persist workspace memory (which feeds every later prompt), and nobody is
+ * there to pick a suggested next step.
  */
-export const TASK_MODE_EXCLUDED = ["create_task", "save_memory"] as const;
+export const TASK_MODE_EXCLUDED = ["create_task", "save_memory", "suggest_next"] as const;
 
 /** Tool result for a record write proposed past WRITE_FANOUT_PER_TURN (returned, never thrown). */
 export const FANOUT_LIMIT_RESULT = {

@@ -335,3 +335,77 @@ describe("ChatMessageParts tool results", () => {
     expect(container.textContent).not.toContain("cold");
   });
 });
+
+describe("ChatMessageParts suggested next steps", () => {
+  const nextMessage = (): UIMessage =>
+    ({
+      id: "m-next",
+      role: "assistant",
+      parts: [
+        { type: "tool-search_leads", toolCallId: "call-read", state: "output-available", input: {}, output: { ok: true, data: [] } },
+        { type: "text", text: "Acme and Globex are both hot." },
+        {
+          type: "tool-suggest_next",
+          toolCallId: "call-next",
+          state: "output-available",
+          input: {
+            question: "Which lead first?",
+            options: [
+              { label: "Acme", prompt: "Draft a follow-up to Acme." },
+              { label: "Globex", prompt: "Draft a follow-up to Globex." },
+            ],
+          },
+          output: { ok: true, data: { ok: true } },
+        },
+      ],
+    }) as unknown as UIMessage;
+
+  function renderNext(overrides: { isLatest?: boolean; pickDisabled?: boolean } = {}) {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+    const onPick = vi.fn();
+    const props = { message: nextMessage(), isLatest: true, onApprove: vi.fn(), onDeny: vi.fn(), onUndo: vi.fn(), onPick, ...overrides };
+    act(() => root!.render(createElement(ChatMessageParts, props)));
+    return { container, onPick };
+  }
+
+  it("renders the question and one button per option, and keeps suggest_next out of the step trace", () => {
+    const { container } = renderNext();
+
+    expect(container.textContent).toContain("Which lead first?");
+    expect(buttonByText(container, "Acme").disabled).toBe(false);
+    expect(buttonByText(container, "Globex").disabled).toBe(false);
+    const steps = Array.from(container.querySelectorAll('ul[aria-label="Steps"] li')).map((li) => li.textContent);
+    expect(steps).toHaveLength(1);
+    expect(steps[0]).toContain("Searched leads");
+    expect(container.textContent).not.toContain("suggest_next");
+    expect(container.textContent).not.toContain("Suggested next steps");
+  });
+
+  it("clicking an option calls onPick with its prompt, then disables the options", () => {
+    const { container, onPick } = renderNext();
+
+    act(() => buttonByText(container, "Globex").click());
+
+    expect(onPick).toHaveBeenCalledTimes(1);
+    expect(onPick).toHaveBeenCalledWith("Draft a follow-up to Globex.");
+    expect(buttonByText(container, "Acme").disabled).toBe(true);
+    expect(buttonByText(container, "Globex").disabled).toBe(true);
+  });
+
+  it("options on an older message are disabled and cannot be picked", () => {
+    const { container, onPick } = renderNext({ isLatest: false });
+
+    const acme = buttonByText(container, "Acme");
+    expect(acme.disabled).toBe(true);
+    act(() => acme.click());
+    expect(onPick).not.toHaveBeenCalled();
+  });
+
+  it("options are disabled while a turn is loading or approvals are pending", () => {
+    const { container } = renderNext({ pickDisabled: true });
+
+    expect(buttonByText(container, "Acme").disabled).toBe(true);
+  });
+});

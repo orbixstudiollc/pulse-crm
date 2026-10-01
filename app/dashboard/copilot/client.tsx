@@ -16,6 +16,7 @@ import { MemoryView } from "@/components/features/Copilot/MemoryView";
 import { TasksView } from "@/components/features/Copilot/TasksView";
 import { SettingsView } from "@/components/features/Copilot/SettingsView";
 import type { CopilotSettings } from "@/lib/actions/copilot-settings";
+import type { AssistantBrief } from "@/lib/actions/copilot-brief";
 import type { UndoInfo } from "@/components/features/Copilot/UndoButton";
 
 type Conversation = Awaited<ReturnType<typeof listConversations>>[number];
@@ -42,6 +43,8 @@ interface CopilotClientProps {
   initialPrompt: string | null;
   /** Deep link from an approval notification: ?view=approvals opens the pending approvals strip. */
   approvalsOpen: boolean;
+  /** The "Today" counts for the new-chat start screen, or null when they could not be loaded. */
+  brief: AssistantBrief | null;
 }
 
 const NAV_ITEMS: { id: CopilotView; label: string; icon: React.ReactNode }[] = [
@@ -65,6 +68,7 @@ export function CopilotClient({
   initialView,
   initialPrompt,
   approvalsOpen,
+  brief,
 }: CopilotClientProps) {
   const [view, setView] = useState<CopilotView>(initialView);
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
@@ -224,6 +228,7 @@ export function CopilotClient({
             onPromptSent={clearPrompt}
             onConversationCreated={handleConversationCreated}
             onUndo={handleUndo}
+            brief={brief}
           />
         ) : view === "artifacts" ? (
           <ArtifactsView initialArtifacts={initialArtifacts} initialOpenId={initialArtifactId} />
