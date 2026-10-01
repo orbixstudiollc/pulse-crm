@@ -5,6 +5,7 @@ import {
   CrosshairIcon,
   EnvelopeIcon,
   GearSixIcon,
+  KeyIcon,
   LightningIcon,
   LinkedinLogoIcon,
   LockIcon,
@@ -28,7 +29,8 @@ export type SettingsTab =
   | "billing"
   | "ai"
   | "automation"
-  | "lead-finder";
+  | "lead-finder"
+  | "api";
 
 export interface SettingsNavItem {
   id: SettingsTab;
@@ -56,6 +58,7 @@ export const SETTINGS_GROUPS: { label: string; items: SettingsNavItem[] }[] = [
       { id: "ai", label: "AI Assistant", icon: SparkleIcon },
       { id: "automation", label: "Automation", icon: LightningIcon },
       { id: "lead-finder", label: "Lead Finder", icon: CrosshairIcon },
+      { id: "api", label: "API & MCP", icon: KeyIcon },
       { id: "billing", label: "Billing", icon: CreditCardIcon },
     ],
   },

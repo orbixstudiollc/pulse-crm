@@ -32,6 +32,7 @@ const CSRF_EXEMPT_PREFIXES = [
   "/api/whatsapp/webhook",
   "/api/tracking",
   "/api/public/",
+  "/api/mcp",
   "/api/linkedin/oauth",
   "/api/email/oauth/",
 ];

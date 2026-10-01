@@ -61,6 +61,10 @@ Set `NEXT_PUBLIC_OPEN_ACCESS="true"` to skip login: each visitor gets an anonymo
 | `npx tsc --noEmit` | Type check |
 | `node scripts/check-vercel-config.mjs` | Sanity-checks `vercel.json` |
 
+## AI clients (MCP)
+
+Claude, Codex and other MCP clients can drive the CRM through `/api/mcp`. Create a key under Settings → API & MCP; setup for each client is in [docs/mcp.md](docs/mcp.md).
+
 ## Background jobs
 
 Several features run from cron routes under `app/api/cron/`, all protected by `Authorization: Bearer $CRON_SECRET`:

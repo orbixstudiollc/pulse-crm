@@ -48,6 +48,7 @@ import {
 import { DeleteConfirmModal } from "@/components/ui";
 import { PageTabs, Section, TableSection } from "@/components/dashboard";
 import { SETTINGS_GROUPS, parseSettingsTab } from "@/components/layout/settings-nav";
+import { ApiKeysSection } from "./api-keys-section";
 import {
   updateProfile,
   uploadAvatar,
@@ -3584,6 +3585,8 @@ export function SettingsPageClient({
         return <AutomationSection />;
       case "lead-finder":
         return <LeadFinderSettingsSection />;
+      case "api":
+        return <ApiKeysSection />;
       default:
         return <ProfileSection profile={initialProfile} />;
     }

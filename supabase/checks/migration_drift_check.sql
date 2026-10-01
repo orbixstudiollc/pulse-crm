@@ -97,7 +97,8 @@ migrations (ord, file) AS (
     (25, '032_avatar_storage.sql'),
     (26, '033_custom_ai_provider.sql'),
     (27, '034_normalize_seed_values.sql'),
-    (28, '035_deal_stage_changed_at.sql')
+    (28, '035_deal_stage_changed_at.sql'),
+    (29, '036_api_keys.sql')
 ),
 
 -- kind               sch      rel             obj           arg        pat
@@ -727,7 +728,11 @@ expected (seq, file, kind, sch, rel, obj, arg, pat, expect_present) AS (
     (606, '021_unmigrated_tables.sql', 'policy', 'public', 'sequence_tags', 'Users can manage sequence_tags', '', '', true),
     (607, '021_unmigrated_tables.sql', 'policy', 'public', 'tracking_scripts', 'Users can manage own org tracking scripts', '', '', true),
     (608, '021_unmigrated_tables.sql', 'policy', 'public', 'website_visitors', 'Users can manage own org visitors', '', '', true),
-    (609, '021_unmigrated_tables.sql', 'policy', 'public', 'website_visits', 'Users can view own org visits', '', '', true)
+    (609, '021_unmigrated_tables.sql', 'policy', 'public', 'website_visits', 'Users can view own org visits', '', '', true),
+    (610, '036_api_keys.sql', 'table', 'public', '', 'api_keys', '', '', true),
+    (611, '036_api_keys.sql', 'index', 'public', 'api_keys', 'idx_api_keys_org', '', '', true),
+    (612, '036_api_keys.sql', 'rls', 'public', 'api_keys', 'api_keys', '', '', true),
+    (613, '036_api_keys.sql', 'policy', 'public', 'api_keys', 'api_keys_select_admin', '', '', true)
 ),
 
 -- policies a repo migration created and a later one dropped: if still present
