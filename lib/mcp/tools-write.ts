@@ -107,6 +107,159 @@ const activityFields = {
   related_id: id.optional().describe("Lead, deal or customer id (with related_type)"),
 };
 
+// Input shapes, shared by the MCP registration and the toPatch mappers below.
+const WRITE_INPUTS = {
+  create_lead: { ...leadFields, name: z.string().min(1), email: z.string().email() },
+  update_lead: { id, ...leadFields },
+  set_followup: {
+    lead_id: id,
+    due: z.string().optional().describe("ISO date or datetime, e.g. 2026-10-08 or 2026-10-08T09:00:00Z"),
+    note: z.string().optional(),
+    clear: z.boolean().default(false),
+  },
+  convert_lead_to_customer: { lead_id: id },
+  create_deal: { ...dealFields, name: z.string().min(1) },
+  update_deal: { id, ...dealFields },
+  create_customer: { ...customerFields, first_name: z.string().min(1), email: z.string().email() },
+  update_customer: { id, ...customerFields },
+  create_contact: { ...contactFields, name: z.string().min(1) },
+  update_contact: { id, ...contactFields },
+  create_activity: { ...activityFields, type: z.enum(ACTIVITY_TYPES), title: z.string().min(1) },
+  update_activity: { id, ...activityFields },
+  create_calendar_event: {
+    title: z.string().min(1),
+    date: isoDate,
+    start_time: z.string().optional().describe("e.g. 14:30"),
+    end_time: z.string().optional().describe("e.g. 15:00"),
+    description: z.string().optional(),
+    type: z.enum(["meeting", "call", "task", "reminder"]).default("meeting"),
+    related_type: z.enum(RELATED_TYPES).optional(),
+    related_id: id.optional(),
+  },
+  add_note: {
+    record_type: z.enum(RELATED_TYPES),
+    record_id: id,
+    content: z.string().min(1),
+  },
+};
+
+type WriteInput<K extends keyof typeof WRITE_INPUTS> = z.infer<z.ZodObject<(typeof WRITE_INPUTS)[K]>>;
+
+/**
+ * Write-tool env. The two optional fields are set only by the Copilot adapter
+ * (lib/ai/tools/registry.ts); MCP clients never set them, so their behaviour is unchanged.
+ */
+export interface WriteToolEnv extends ToolEnv {
+  /** Copilot-origin writes: automation rules skip outbound actions; skipped action types are collected here. */
+  automation?: { origin: "copilot"; skipped: string[] };
+  /** Stale-write guard: updates only apply while the row's updated_at still equals this value. */
+  expectUpdatedAt?: string;
+}
+
+/** Error text a guarded update returns when the row changed (or vanished) since its diff was shown. */
+export const RECORD_CHANGED = "record_changed";
+
+export type WriteTable =
+  | "leads"
+  | "deals"
+  | "customers"
+  | "contacts"
+  | "activities"
+  | "calendar_events"
+  | "lead_notes"
+  | "deal_notes"
+  | "customer_notes";
+
+/** The exact column patch a write tool's handler writes (before workspace/author columns are added). */
+export interface WritePatch {
+  table: WriteTable;
+  /** Row id for updates; absent for inserts. */
+  id?: string;
+  patch: Record<string, unknown>;
+}
+
+function isValidDue(due: string | undefined): due is string {
+  return !!due && !Number.isNaN(Date.parse(due));
+}
+
+/**
+ * toPatch per write tool: the single place that maps tool input to DB columns.
+ * Handlers apply exactly this patch (plus workspace/author/derived columns), and the
+ * Copilot approval card diffs exactly this patch, so the card shows what will be written.
+ */
+export const WRITE_PATCHES = {
+  create_lead: (input: WriteInput<"create_lead">): WritePatch => ({ table: "leads", patch: definedOnly(input) }),
+  update_lead: ({ id: leadId, ...fields }: WriteInput<"update_lead">): WritePatch => ({
+    table: "leads",
+    id: leadId,
+    patch: definedOnly(fields),
+  }),
+  set_followup: ({ lead_id, due, note, clear }: WriteInput<"set_followup">): WritePatch => ({
+    table: "leads",
+    id: lead_id,
+    patch: clear
+      ? { next_followup: null, followup_note: null }
+      : { next_followup: isValidDue(due) ? new Date(due).toISOString() : null, followup_note: note ?? null },
+  }),
+  convert_lead_to_customer: ({ lead_id }: WriteInput<"convert_lead_to_customer">): WritePatch => ({
+    table: "leads",
+    id: lead_id,
+    patch: { converted_at: new Date().toISOString() },
+  }),
+  create_deal: (input: WriteInput<"create_deal">): WritePatch => ({
+    table: "deals",
+    patch: { ...definedOnly(input), stage: input.stage ?? "discovery" },
+  }),
+  update_deal: ({ id: dealId, ...fields }: WriteInput<"update_deal">): WritePatch => ({
+    table: "deals",
+    id: dealId,
+    patch: definedOnly(fields),
+  }),
+  create_customer: (input: WriteInput<"create_customer">): WritePatch => ({
+    table: "customers",
+    patch: { last_name: "", ...definedOnly(input) },
+  }),
+  update_customer: ({ id: customerId, ...fields }: WriteInput<"update_customer">): WritePatch => ({
+    table: "customers",
+    id: customerId,
+    patch: definedOnly(fields),
+  }),
+  create_contact: (input: WriteInput<"create_contact">): WritePatch => ({
+    table: "contacts",
+    patch: { buying_role: "end_user", influence_level: "medium", ...definedOnly(input) },
+  }),
+  update_contact: ({ id: contactId, ...fields }: WriteInput<"update_contact">): WritePatch => ({
+    table: "contacts",
+    id: contactId,
+    patch: definedOnly(fields),
+  }),
+  create_activity: (input: WriteInput<"create_activity">): WritePatch => ({
+    table: "activities",
+    patch: {
+      status: input.type === "task" ? "pending" : "completed",
+      date: new Date().toISOString().slice(0, 10),
+      ...definedOnly(input),
+    },
+  }),
+  update_activity: ({ id: activityId, ...fields }: WriteInput<"update_activity">): WritePatch => ({
+    table: "activities",
+    id: activityId,
+    patch: definedOnly(fields),
+  }),
+  create_calendar_event: (input: WriteInput<"create_calendar_event">): WritePatch => ({
+    table: "calendar_events",
+    patch: { ...definedOnly(input), status: "scheduled" },
+  }),
+  add_note: ({ record_type, record_id, content }: WriteInput<"add_note">): WritePatch =>
+    record_type === "lead"
+      ? { table: "lead_notes", patch: { lead_id: record_id, content } }
+      : record_type === "deal"
+        ? { table: "deal_notes", patch: { deal_id: record_id, content } }
+        : { table: "customer_notes", patch: { customer_id: record_id, content } },
+};
+
+export type PatchedWriteTool = keyof typeof WRITE_PATCHES;
+
 const RECORD_TABLES = {
   lead: "leads",
   deal: "deals",
@@ -116,7 +269,7 @@ const RECORD_TABLES = {
   calendar_event: "calendar_events",
 } as const;
 
-export function registerWriteTools(server: McpServer, env: ToolEnv) {
+export function registerWriteTools(server: McpServer, env: WriteToolEnv) {
   const { db, ctx } = env;
   const orgId = ctx.orgId;
 
@@ -144,11 +297,23 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
 
   function fireLeadRules(leadId: string, trigger: "lead_created" | "lead_updated", changed?: string[]) {
     // Same automation hook the Leads page fires (lib/actions/leads.ts).
+    const eventData = changed ? { changed_fields: changed } : {};
+    const origin = env.automation?.origin;
     return import("@/lib/automation/runner")
       .then(({ evaluateLeadAgainstRules }) =>
-        evaluateLeadAgainstRules(leadId, trigger, changed ? { changed_fields: changed } : {}),
+        origin
+          ? evaluateLeadAgainstRules(leadId, trigger, eventData, { origin })
+          : evaluateLeadAgainstRules(leadId, trigger, eventData),
       )
+      .then((outcome) => {
+        if (env.automation && outcome) env.automation.skipped.push(...outcome.skipped);
+      })
       .catch(() => undefined);
+  }
+
+  /** Not-found text, or record_changed when the Copilot stale-write guard is on. */
+  function missing(label: string): string {
+    return env.expectUpdatedAt ? RECORD_CHANGED : label;
   }
 
   // ── Leads ────────────────────────────────────────────────────────────────
@@ -158,13 +323,14 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
     {
       title: "Create lead",
       description: "Add a lead. Runs the workspace's lead_created automation rules.",
-      inputSchema: { ...leadFields, name: z.string().min(1), email: z.string().email() },
+      inputSchema: WRITE_INPUTS.create_lead,
       annotations: WRITE,
     },
     safe(async (input) => {
+      const { patch } = WRITE_PATCHES.create_lead(input);
       const { data, error } = await db
         .from("leads")
-        .insert({ ...definedOnly(input), organization_id: orgId, created_by: ctx.createdBy } as Tables["leads"]["Insert"])
+        .insert({ ...patch, organization_id: orgId, created_by: ctx.createdBy } as Tables["leads"]["Insert"])
         .select()
         .single();
       if (error) return fail(error.message);
@@ -178,22 +344,22 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
     {
       title: "Update lead",
       description: "Change fields on a lead. Only the fields you pass are changed. Runs lead_updated automation rules.",
-      inputSchema: { id, ...leadFields },
+      inputSchema: WRITE_INPUTS.update_lead,
       annotations: UPDATE,
     },
-    safe(async ({ id: leadId, ...fields }) => {
-      const patch = definedOnly(fields);
+    safe(async (input) => {
+      const { patch } = WRITE_PATCHES.update_lead(input);
       if (Object.keys(patch).length === 0) return fail("Nothing to update");
-      const { data, error } = await db
+      let q = db
         .from("leads")
         .update(patch as Tables["leads"]["Update"])
         .eq("organization_id", orgId)
-        .eq("id", leadId)
-        .select()
-        .maybeSingle();
+        .eq("id", input.id);
+      if (env.expectUpdatedAt) q = q.eq("updated_at", env.expectUpdatedAt);
+      const { data, error } = await q.select().maybeSingle();
       if (error) return fail(error.message);
-      if (!data) return fail("Lead not found");
-      await fireLeadRules(leadId, "lead_updated", Object.keys(patch));
+      if (!data) return fail(missing("Lead not found"));
+      await fireLeadRules(input.id, "lead_updated", Object.keys(patch));
       return ok({ updated: data });
     }),
   );
@@ -203,28 +369,21 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
     {
       title: "Set or clear a follow-up",
       description: "Schedule the next follow-up on a lead, or clear it by passing clear: true.",
-      inputSchema: {
-        lead_id: id,
-        due: z.string().optional().describe("ISO date or datetime, e.g. 2026-10-08 or 2026-10-08T09:00:00Z"),
-        note: z.string().optional(),
-        clear: z.boolean().default(false),
-      },
+      inputSchema: WRITE_INPUTS.set_followup,
       annotations: UPDATE,
     },
-    safe(async ({ lead_id, due, note, clear }) => {
-      if (!clear && (!due || Number.isNaN(Date.parse(due)))) return fail("Pass a valid due date, or clear: true");
-      const patch = clear
-        ? { next_followup: null, followup_note: null }
-        : { next_followup: new Date(due!).toISOString(), followup_note: note ?? null };
-      const { data, error } = await db
+    safe(async (input) => {
+      if (!input.clear && !isValidDue(input.due)) return fail("Pass a valid due date, or clear: true");
+      const { patch } = WRITE_PATCHES.set_followup(input);
+      let q = db
         .from("leads")
-        .update(patch)
+        .update(patch as Tables["leads"]["Update"])
         .eq("organization_id", orgId)
-        .eq("id", lead_id)
-        .select("id, name, next_followup, followup_note")
-        .maybeSingle();
+        .eq("id", input.lead_id);
+      if (env.expectUpdatedAt) q = q.eq("updated_at", env.expectUpdatedAt);
+      const { data, error } = await q.select("id, name, next_followup, followup_note").maybeSingle();
       if (error) return fail(error.message);
-      if (!data) return fail("Lead not found");
+      if (!data) return fail(missing("Lead not found"));
       return ok({ updated: data });
     }),
   );
@@ -235,17 +394,19 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
       title: "Convert lead to customer",
       description:
         "Create a customer from a lead (same as Convert on the Leads page). The lead is kept, marked converted and hidden from search_leads.",
-      inputSchema: { lead_id: id },
+      inputSchema: WRITE_INPUTS.convert_lead_to_customer,
       annotations: WRITE,
     },
-    safe(async ({ lead_id }) => {
+    safe(async (input) => {
+      const { lead_id } = input;
       const { data: lead } = await db
         .from("leads")
         .select("*")
         .eq("organization_id", orgId)
         .eq("id", lead_id)
         .maybeSingle();
-      if (!lead) return fail("Lead not found");
+      if (!lead) return fail(missing("Lead not found"));
+      if (env.expectUpdatedAt && lead.updated_at !== env.expectUpdatedAt) return fail(RECORD_CHANGED);
       if (lead.converted_at) return fail("This lead has already been converted");
       const [firstName, ...rest] = (lead.name || "").split(" ");
       const { data: customer, error } = await db
@@ -269,7 +430,10 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
       // Keep the lead and its history and stamp it, as convertLeadToCustomer does (037).
       const { error: markError } = await db
         .from("leads")
-        .update({ converted_at: new Date().toISOString(), converted_customer_id: customer.id })
+        .update({
+          ...WRITE_PATCHES.convert_lead_to_customer(input).patch,
+          converted_customer_id: customer.id,
+        } as Tables["leads"]["Update"])
         .eq("organization_id", orgId)
         .eq("id", lead_id);
       if (markError) {
@@ -287,7 +451,7 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
     {
       title: "Create deal",
       description: "Add a deal to the pipeline. Stage defaults to discovery.",
-      inputSchema: { ...dealFields, name: z.string().min(1) },
+      inputSchema: WRITE_INPUTS.create_deal,
       annotations: WRITE,
     },
     safe(async (input) => {
@@ -296,8 +460,7 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
       const { data, error } = await db
         .from("deals")
         .insert({
-          ...definedOnly(input),
-          stage: input.stage ?? "discovery",
+          ...WRITE_PATCHES.create_deal(input).patch,
           stage_changed_at: new Date().toISOString(),
           organization_id: orgId,
           created_by: ctx.createdBy,
@@ -315,13 +478,14 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
     {
       title: "Update deal",
       description: "Change fields on a deal, including moving it to another stage. Only the fields you pass are changed.",
-      inputSchema: { id, ...dealFields },
+      inputSchema: WRITE_INPUTS.update_deal,
       annotations: UPDATE,
     },
-    safe(async ({ id: dealId, ...fields }) => {
-      const patch: Record<string, unknown> = definedOnly(fields);
+    safe(async (input) => {
+      const dealId = input.id;
+      const patch: Record<string, unknown> = { ...WRITE_PATCHES.update_deal(input).patch };
       if (Object.keys(patch).length === 0) return fail("Nothing to update");
-      const refs = await checkRefs({ customer_id: fields.customer_id });
+      const refs = await checkRefs({ customer_id: input.customer_id });
       if (refs.error) return fail(refs.error);
       const { data: current } = await db
         .from("deals")
@@ -329,22 +493,24 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
         .eq("organization_id", orgId)
         .eq("id", dealId)
         .maybeSingle();
-      if (!current) return fail("Deal not found");
+      if (!current) return fail(missing("Deal not found"));
       // Restart the days-in-stage clock only on a real stage change (as updateDeal does).
-      if (fields.stage && fields.stage !== current.stage) patch.stage_changed_at = new Date().toISOString();
-      const { data, error } = await db
+      const stageChanged = !!input.stage && input.stage !== current.stage;
+      if (stageChanged) patch.stage_changed_at = new Date().toISOString();
+      let q = db
         .from("deals")
         .update(patch as Tables["deals"]["Update"])
         .eq("organization_id", orgId)
-        .eq("id", dealId)
-        .select()
-        .single();
+        .eq("id", dealId);
+      if (env.expectUpdatedAt) q = q.eq("updated_at", env.expectUpdatedAt);
+      const { data, error } = await q.select().maybeSingle();
       if (error) return fail(error.message);
-      if (fields.stage && fields.stage !== current.stage) {
+      if (!data) return fail(missing("Deal not found"));
+      if (stageChanged && input.stage) {
         await db.from("deal_activities").insert({
           deal_id: dealId,
           type: "deal",
-          title: `Stage changed to ${fields.stage.replace(/_/g, " ")}`,
+          title: `Stage changed to ${input.stage.replace(/_/g, " ")}`,
           description: `Moved from ${current.stage.replace(/_/g, " ")} by AI assistant`,
         });
       }
@@ -359,15 +525,14 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
     {
       title: "Create customer",
       description: "Add a customer account.",
-      inputSchema: { ...customerFields, first_name: z.string().min(1), email: z.string().email() },
+      inputSchema: WRITE_INPUTS.create_customer,
       annotations: WRITE,
     },
     safe(async (input) => {
       const { data, error } = await db
         .from("customers")
         .insert({
-          last_name: "",
-          ...definedOnly(input),
+          ...WRITE_PATCHES.create_customer(input).patch,
           organization_id: orgId,
           created_by: ctx.createdBy,
         } as Tables["customers"]["Insert"])
@@ -383,21 +548,21 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
     {
       title: "Update customer",
       description: "Change fields on a customer. Only the fields you pass are changed.",
-      inputSchema: { id, ...customerFields },
+      inputSchema: WRITE_INPUTS.update_customer,
       annotations: UPDATE,
     },
-    safe(async ({ id: customerId, ...fields }) => {
-      const patch = definedOnly(fields);
+    safe(async (input) => {
+      const { patch } = WRITE_PATCHES.update_customer(input);
       if (Object.keys(patch).length === 0) return fail("Nothing to update");
-      const { data, error } = await db
+      let q = db
         .from("customers")
         .update(patch as Tables["customers"]["Update"])
         .eq("organization_id", orgId)
-        .eq("id", customerId)
-        .select()
-        .maybeSingle();
+        .eq("id", input.id);
+      if (env.expectUpdatedAt) q = q.eq("updated_at", env.expectUpdatedAt);
+      const { data, error } = await q.select().maybeSingle();
       if (error) return fail(error.message);
-      if (!data) return fail("Customer not found");
+      if (!data) return fail(missing("Customer not found"));
       return ok({ updated: data });
     }),
   );
@@ -409,7 +574,7 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
     {
       title: "Create contact",
       description: "Add a person, usually linked to a lead or customer account.",
-      inputSchema: { ...contactFields, name: z.string().min(1) },
+      inputSchema: WRITE_INPUTS.create_contact,
       annotations: WRITE,
     },
     safe(async (input) => {
@@ -418,9 +583,7 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
       const { data, error } = await db
         .from("contacts")
         .insert({
-          buying_role: "end_user",
-          influence_level: "medium",
-          ...definedOnly(input),
+          ...WRITE_PATCHES.create_contact(input).patch,
           organization_id: orgId,
         } as Tables["contacts"]["Insert"])
         .select()
@@ -435,23 +598,23 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
     {
       title: "Update contact",
       description: "Change fields on a contact. Only the fields you pass are changed.",
-      inputSchema: { id, ...contactFields },
+      inputSchema: WRITE_INPUTS.update_contact,
       annotations: UPDATE,
     },
-    safe(async ({ id: contactId, ...fields }) => {
-      const patch = definedOnly(fields);
+    safe(async (input) => {
+      const { patch } = WRITE_PATCHES.update_contact(input);
       if (Object.keys(patch).length === 0) return fail("Nothing to update");
-      const refs = await checkRefs({ customer_id: fields.customer_id, lead_id: fields.lead_id });
+      const refs = await checkRefs({ customer_id: input.customer_id, lead_id: input.lead_id });
       if (refs.error) return fail(refs.error);
-      const { data, error } = await db
+      let q = db
         .from("contacts")
         .update(patch as Tables["contacts"]["Update"])
         .eq("organization_id", orgId)
-        .eq("id", contactId)
-        .select()
-        .maybeSingle();
+        .eq("id", input.id);
+      if (env.expectUpdatedAt) q = q.eq("updated_at", env.expectUpdatedAt);
+      const { data, error } = await q.select().maybeSingle();
       if (error) return fail(error.message);
-      if (!data) return fail("Contact not found");
+      if (!data) return fail(missing("Contact not found"));
       return ok({ updated: data });
     }),
   );
@@ -464,11 +627,7 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
       title: "Create activity or task",
       description:
         "Log a call, meeting, email or note, or create a task. Link it to a lead, deal or customer with related_type + related_id.",
-      inputSchema: {
-        ...activityFields,
-        type: z.enum(ACTIVITY_TYPES),
-        title: z.string().min(1),
-      },
+      inputSchema: WRITE_INPUTS.create_activity,
       annotations: WRITE,
     },
     safe(async (input) => {
@@ -477,9 +636,7 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
       const { data, error } = await db
         .from("activities")
         .insert({
-          status: input.type === "task" ? "pending" : "completed",
-          date: new Date().toISOString().slice(0, 10),
-          ...definedOnly(input),
+          ...WRITE_PATCHES.create_activity(input).patch,
           related_name: refs.related_name ?? null,
           organization_id: orgId,
           created_by: ctx.createdBy,
@@ -496,26 +653,26 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
     {
       title: "Update activity or task",
       description: "Change an activity, e.g. mark a task completed with status: completed.",
-      inputSchema: { id, ...activityFields },
+      inputSchema: WRITE_INPUTS.update_activity,
       annotations: UPDATE,
     },
-    safe(async ({ id: activityId, ...fields }) => {
-      const patch: Record<string, unknown> = definedOnly(fields);
+    safe(async (input) => {
+      const patch: Record<string, unknown> = { ...WRITE_PATCHES.update_activity(input).patch };
       if (Object.keys(patch).length === 0) return fail("Nothing to update");
-      if (fields.related_id || fields.related_type) {
-        const refs = await checkRefs({ related_type: fields.related_type, related_id: fields.related_id });
+      if (input.related_id || input.related_type) {
+        const refs = await checkRefs({ related_type: input.related_type, related_id: input.related_id });
         if (refs.error) return fail(refs.error);
         patch.related_name = refs.related_name;
       }
-      const { data, error } = await db
+      let q = db
         .from("activities")
         .update(patch as Tables["activities"]["Update"])
         .eq("organization_id", orgId)
-        .eq("id", activityId)
-        .select()
-        .maybeSingle();
+        .eq("id", input.id);
+      if (env.expectUpdatedAt) q = q.eq("updated_at", env.expectUpdatedAt);
+      const { data, error } = await q.select().maybeSingle();
       if (error) return fail(error.message);
-      if (!data) return fail("Activity not found");
+      if (!data) return fail(missing("Activity not found"));
       return ok({ updated: data });
     }),
   );
@@ -525,16 +682,7 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
     {
       title: "Create calendar event",
       description: "Put an event on the Pulse calendar (not an external calendar). Optionally link it to a lead, deal or customer.",
-      inputSchema: {
-        title: z.string().min(1),
-        date: isoDate,
-        start_time: z.string().optional().describe("e.g. 14:30"),
-        end_time: z.string().optional().describe("e.g. 15:00"),
-        description: z.string().optional(),
-        type: z.enum(["meeting", "call", "task", "reminder"]).default("meeting"),
-        related_type: z.enum(RELATED_TYPES).optional(),
-        related_id: id.optional(),
-      },
+      inputSchema: WRITE_INPUTS.create_calendar_event,
       annotations: WRITE,
     },
     safe(async (input) => {
@@ -543,9 +691,8 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
       const { data, error } = await db
         .from("calendar_events")
         .insert({
-          ...definedOnly(input),
+          ...WRITE_PATCHES.create_calendar_event(input).patch,
           related_name: refs.related_name ?? null,
-          status: "scheduled",
           organization_id: orgId,
           created_by: ctx.createdBy,
         } as Tables["calendar_events"]["Insert"])
@@ -563,23 +710,21 @@ export function registerWriteTools(server: McpServer, env: ToolEnv) {
     {
       title: "Add note",
       description: "Add a note to a lead, deal or customer timeline.",
-      inputSchema: {
-        record_type: z.enum(RELATED_TYPES),
-        record_id: id,
-        content: z.string().min(1),
-      },
+      inputSchema: WRITE_INPUTS.add_note,
       annotations: WRITE,
     },
-    safe(async ({ record_type, record_id, content }) => {
+    safe(async (input) => {
+      const { record_type, record_id } = input;
       if (!(await relatedName(env, record_type, record_id))) return fail(`${record_type} not found`);
       const author_name = await authorName(env);
       const author_id = ctx.createdBy;
+      const row = { ...WRITE_PATCHES.add_note(input).patch, author_id, author_name };
       const result =
         record_type === "lead"
-          ? await db.from("lead_notes").insert({ lead_id: record_id, author_id, author_name, content }).select().single()
+          ? await db.from("lead_notes").insert(row as Tables["lead_notes"]["Insert"]).select().single()
           : record_type === "deal"
-            ? await db.from("deal_notes").insert({ deal_id: record_id, author_id, author_name, content }).select().single()
-            : await db.from("customer_notes").insert({ customer_id: record_id, author_id, author_name, content }).select().single();
+            ? await db.from("deal_notes").insert(row as Tables["deal_notes"]["Insert"]).select().single()
+            : await db.from("customer_notes").insert(row as Tables["customer_notes"]["Insert"]).select().single();
       if (result.error) return fail(result.error.message);
       return ok({ created: result.data });
     }),

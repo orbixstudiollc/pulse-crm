@@ -20,13 +20,35 @@ type AdminClient = SupabaseClient<Database>;
 type LeadUpdate = Database["public"]["Tables"]["leads"]["Update"];
 type ActionResult = { type: string; success: boolean; error?: string };
 
+/** Where a rule evaluation came from. Copilot-origin runs only execute actions without outbound effect. */
+export interface EvaluateOptions {
+  origin?: "copilot";
+}
+
+/**
+ * Allowlist (not a denylist) of actions a Copilot-origin write may trigger: none of these
+ * sends anything outside the CRM. enroll_sequence (which leads to emails) and any action type
+ * added later are skipped and recorded as { success: false, error: SKIPPED_FOR_COPILOT }.
+ */
+export const COPILOT_SAFE_ACTIONS: ReadonlySet<string> = new Set([
+  "change_status",
+  "assign_to",
+  "update_field",
+  "add_activity",
+  "send_notification",
+  "add_tag",
+]);
+export const SKIPPED_FOR_COPILOT = "skipped_for_copilot";
+
 // ─── Core Engine ─────────────────────────────────────────────────────────────
 
 export async function evaluateLeadAgainstRules(
   leadId: string,
   triggerType: TriggerType,
   eventData: TriggerEventData = {},
-) {
+  options: EvaluateOptions = {},
+): Promise<{ skipped: string[] }> {
+  const skipped: string[] = [];
   try {
     const admin = createAdminClient();
 
@@ -37,7 +59,7 @@ export async function evaluateLeadAgainstRules(
       .eq("id", leadId)
       .single();
 
-    if (leadError || !lead) return;
+    if (leadError || !lead) return { skipped };
 
     // Fetch active rules for this org + trigger type
     const { data: rules, error: rulesError } = await admin
@@ -48,7 +70,7 @@ export async function evaluateLeadAgainstRules(
       .eq("trigger_type", triggerType)
       .order("execution_order", { ascending: true });
 
-    if (rulesError || !rules?.length) return;
+    if (rulesError || !rules?.length) return { skipped };
 
     const leadForEval: LeadForEvaluation = {
       id: lead.id,
@@ -84,11 +106,22 @@ export async function evaluateLeadAgainstRules(
       }
 
       // Execute actions
-      await executeRule(admin, rule.id, leadId, lead.organization_id, actions, triggerType, eventData);
+      const results = await executeRule(
+        admin,
+        rule.id,
+        leadId,
+        lead.organization_id,
+        actions,
+        triggerType,
+        eventData,
+        options,
+      );
+      for (const r of results) if (r.error === SKIPPED_FOR_COPILOT) skipped.push(r.type);
     }
   } catch (err) {
     console.error("[automation] Error evaluating rules:", err);
   }
+  return { skipped };
 }
 
 // ─── Rule Executor ───────────────────────────────────────────────────────────
@@ -101,8 +134,9 @@ async function executeRule(
   actions: AutomationAction[],
   triggerType: TriggerType,
   triggerData: TriggerEventData,
-) {
-  const actionsExecuted = await executeAutomationActions(admin, organizationId, leadId, actions);
+  options: EvaluateOptions,
+): Promise<ActionResult[]> {
+  const actionsExecuted = await executeAutomationActions(admin, organizationId, leadId, actions, undefined, options);
 
   // Log execution
   await admin.from("automation_executions").insert({
@@ -129,6 +163,8 @@ async function executeRule(
   await (admin as unknown as SupabaseClient).rpc("increment_automation_rule_count", {
     rule_id: ruleId,
   });
+
+  return actionsExecuted;
 }
 
 // ─── Action Executor ─────────────────────────────────────────────────────────
@@ -160,10 +196,15 @@ export async function executeAutomationActions(
   leadId: string,
   actions: AutomationAction[],
   defaults?: { activityTitle?: string; activityDescription?: string },
+  options: EvaluateOptions = {},
 ): Promise<ActionResult[]> {
   const actionsExecuted: ActionResult[] = [];
 
   for (const action of actions) {
+    if (options.origin === "copilot" && !COPILOT_SAFE_ACTIONS.has(action.type)) {
+      actionsExecuted.push({ type: action.type, success: false, error: SKIPPED_FOR_COPILOT });
+      continue;
+    }
     try {
       switch (action.type) {
         case "change_status": {
