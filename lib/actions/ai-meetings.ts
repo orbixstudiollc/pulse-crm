@@ -88,7 +88,7 @@ export async function aiGenerateBrief(
     const { data: deals } = await supabase
       .from("deals")
       .select(
-        "id, name, value, stage, probability, close_date, contact_name, contact_email, notes, days_in_stage"
+        "id, name, value, stage, probability, close_date, contact_name, contact_email, notes"
       )
       .eq("organization_id", orgId)
       .limit(10);

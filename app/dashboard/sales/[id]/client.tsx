@@ -48,6 +48,7 @@ import { deleteActivity } from "@/lib/actions/activities";
 import { deleteCalendarEvent } from "@/lib/actions/calendar";
 import { deleteRecordActivity, type LinkedItem } from "@/lib/actions/record-activities";
 import { daysToClose, parseDealDate, stageDays } from "@/lib/deals/metrics";
+import { absoluteDayLabel } from "@/lib/utils/local-date";
 import { toast } from "sonner";
 
 // --- Types ---
@@ -64,7 +65,7 @@ interface DealRow {
   probability: number | null;
   expected_close_date?: string | null;
   close_date?: string | null;
-  days_in_stage?: number | null;
+  stage_changed_at?: string | null;
   owner_name?: string | null;
   owner_avatar?: string | null;
   owner_id?: string | null;
@@ -264,7 +265,7 @@ export function DealDetailClient({
     () => false,
   );
   const now = isMounted ? new Date() : null;
-  const daysInStageLabel = now ? stageDays(deal.days_in_stage, deal.created_at, now) : "—";
+  const daysInStageLabel = now ? stageDays(deal.stage_changed_at, deal.created_at, now) : "—";
   const closeDays = now ? daysToClose(expectedClose, now) : null;
   const closeDaysLabel = isClosed
     ? "Closed"
@@ -282,13 +283,13 @@ export function DealDetailClient({
     }).format(value);
   };
 
+  // Before mount, timestamps (created_at) are printed in UTC so the server
+  // and the browser render the same day; the local day replaces it after.
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "—";
-    return parseDealDate(dateStr).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    const options: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", year: "numeric" };
+    if (!isMounted) return absoluteDayLabel(dateStr, options);
+    return parseDealDate(dateStr).toLocaleDateString("en-US", options);
   };
 
   const handleAddNote = () => {
@@ -369,25 +370,22 @@ export function DealDetailClient({
     setShowLostModal(false);
   };
 
-  const handleEditSubmit = (data: DealFormData) => {
-    startTransition(async () => {
-      const res = await updateDeal(deal.id, {
-        name: data.name,
-        contact_name: data.customer,
-        value: parseFloat(data.value) || 0,
-        stage: data.stage,
-        probability: parseInt(data.probability) || 0,
-        expected_close_date: data.expectedClose || null,
-        notes: data.notes || null,
-      });
-      if (res.error) {
-        toast.error(res.error);
-      } else {
-        toast.success("Deal updated");
-        setShowEditModal(false);
-        router.refresh();
-      }
+  const handleEditSubmit = async (data: DealFormData) => {
+    const res = await updateDeal(deal.id, {
+      name: data.name,
+      contact_name: data.customer,
+      value: parseFloat(data.value) || 0,
+      stage: data.stage,
+      probability: parseInt(data.probability) || 0,
+      close_date: data.expectedClose || null,
+      notes: data.notes || null,
     });
+    if (res.error) {
+      toast.error(res.error);
+      return false;
+    }
+    toast.success("Deal updated");
+    router.refresh();
   };
 
   const headerActions = useMemo(
@@ -661,7 +659,7 @@ export function DealDetailClient({
           value: (deal.value || 0).toString(),
           stage: deal.stage as "discovery" | "proposal" | "negotiation" | "closed_won" | "closed_lost",
           probability: (deal.probability || 0).toString(),
-          expectedClose: deal.expected_close_date || "",
+          expectedClose: deal.close_date || "",
           notes: deal.notes || "",
         }}
         onSubmit={handleEditSubmit}

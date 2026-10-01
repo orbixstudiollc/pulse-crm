@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { PageContext } from "./types";
 import { escapePostgrestLike } from "@/lib/security";
+import { stageDays } from "@/lib/deals/metrics";
 
 export async function assembleContext(pageContext: PageContext): Promise<string> {
   const supabase = await createClient();
@@ -127,7 +128,7 @@ Value: $${deal.value || 0}
 Stage: ${deal.stage}
 Close Date: ${deal.close_date || "N/A"}
 Probability: ${deal.probability || 0}%
-Days in Stage: ${deal.days_in_stage || 0}
+Days in Stage: ${stageDays(deal.stage_changed_at, deal.created_at)}
 Customer: ${customerInfo}
 Contact: ${deal.contact_name || "N/A"} (${deal.contact_email || "N/A"})
 Notes: ${deal.notes || "None"}`;

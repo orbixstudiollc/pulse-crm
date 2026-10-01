@@ -70,6 +70,17 @@ export function isClientFetch(req: Pick<GuestRequestInfo, "method" | "secFetchMo
   return req.secFetchMode != null && req.secFetchMode !== "navigate";
 }
 
+// Response to a signed-out client fetch(). The Next router treats any response
+// that is not ok or not RSC (text/x-component) as a cue for a full page load of
+// the URL, and prefetches discard it. 401 rather than an empty 200 so nothing
+// caching or monitoring these requests mistakes the empty body for a page.
+export function clientFetchRecoveryInit(): ResponseInit {
+  return {
+    status: 401,
+    headers: { "Content-Type": "text/plain", "Cache-Control": "no-store" },
+  };
+}
+
 export const GUEST_SIGNUPS_PER_HOUR_DEFAULT = 200;
 
 export function guestSignupsPerHour(env: string | undefined = process.env.GUEST_SIGNUPS_PER_HOUR): number {

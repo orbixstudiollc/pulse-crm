@@ -100,6 +100,7 @@ export async function POST(req: Request) {
             name: p.name,
             value: p.value ?? 0,
             stage: p.stage ?? "discovery",
+            stage_changed_at: new Date().toISOString(),
             contact_name: p.contact_name ?? null,
             contact_email: p.contact_email ?? null,
             notes: p.notes ?? null,
@@ -131,7 +132,7 @@ export async function POST(req: Request) {
           .update(
             {
               stage: p.newStage,
-              days_in_stage: 0,
+              stage_changed_at: new Date().toISOString(),
             },
             { count: "exact" }
           )

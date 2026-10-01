@@ -5,6 +5,7 @@ import { getAIClient, logTokenUsage } from "@/lib/ai/client";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
 import { getModelId } from "@/lib/ai/models";
 import { revalidatePath } from "next/cache";
+import { stageDays } from "@/lib/deals/metrics";
 
 /**
  * Parse a JSON response from the AI, handling markdown code block wrappers.
@@ -74,7 +75,7 @@ export async function aiAnalyzePipeline(): Promise<
     const { data: deals, error: dealsError } = await supabase
       .from("deals")
       .select(
-        "id, name, value, stage, probability, close_date, contact_name, contact_email, notes, days_in_stage, organization_id"
+        "id, name, value, stage, probability, close_date, contact_name, contact_email, notes, stage_changed_at, created_at, organization_id"
       )
       .eq("organization_id", orgId)
       .not("stage", "in", '("closed_won","closed_lost")')
@@ -100,7 +101,7 @@ export async function aiAnalyzePipeline(): Promise<
       const dealLines = deals
         .map(
           (d) =>
-            `- ${d.name}: $${d.value || 0} | Stage: ${d.stage} | Probability: ${d.probability || "N/A"}% | Close: ${d.close_date || "N/A"} | Days in Stage: ${d.days_in_stage || "N/A"} | Contact: ${d.contact_name || "N/A"}`
+            `- ${d.name}: $${d.value || 0} | Stage: ${d.stage} | Probability: ${d.probability || "N/A"}% | Close: ${d.close_date || "N/A"} | Days in Stage: ${stageDays(d.stage_changed_at, d.created_at)} | Contact: ${d.contact_name || "N/A"}`
         )
         .join("\n");
       sections.push(`## Active Pipeline (${deals.length} deals)\n${dealLines}`);
@@ -227,7 +228,7 @@ export async function aiPredictForecast(): Promise<
     const { data: deals, error: dealsError } = await supabase
       .from("deals")
       .select(
-        "id, name, value, stage, probability, close_date, days_in_stage, organization_id"
+        "id, name, value, stage, probability, close_date, stage_changed_at, created_at, organization_id"
       )
       .eq("organization_id", orgId)
       .not("stage", "in", '("closed_won","closed_lost")')
@@ -240,7 +241,7 @@ export async function aiPredictForecast(): Promise<
     // Also fetch recently won/lost for historical context
     const { data: closedDeals } = await supabase
       .from("deals")
-      .select("id, name, value, stage, probability, close_date, days_in_stage")
+      .select("id, name, value, stage, probability, close_date")
       .eq("organization_id", orgId)
       .in("stage", ["closed_won", "closed_lost"])
       .order("close_date", { ascending: false })
@@ -263,7 +264,7 @@ export async function aiPredictForecast(): Promise<
       const dealLines = deals
         .map(
           (d) =>
-            `- ${d.name}: $${d.value || 0} | Stage: ${d.stage} | Probability: ${d.probability || 0}% | Close: ${d.close_date || "N/A"} | Days in Stage: ${d.days_in_stage || "N/A"}`
+            `- ${d.name}: $${d.value || 0} | Stage: ${d.stage} | Probability: ${d.probability || 0}% | Close: ${d.close_date || "N/A"} | Days in Stage: ${stageDays(d.stage_changed_at, d.created_at)}`
         )
         .join("\n");
       sections.push(`## Active Deals (${deals.length})\n${dealLines}`);
@@ -397,11 +398,11 @@ export async function aiIdentifyRisks(): Promise<
 
     const supabase = await createClient();
 
-    // Fetch active deals with days_in_stage
+    // Fetch active deals with stage_changed_at (days in stage)
     const { data: deals, error: dealsError } = await supabase
       .from("deals")
       .select(
-        "id, name, value, stage, probability, close_date, days_in_stage, contact_name, notes, organization_id"
+        "id, name, value, stage, probability, close_date, stage_changed_at, created_at, contact_name, notes, organization_id"
       )
       .eq("organization_id", orgId)
       .not("stage", "in", '("closed_won","closed_lost")')
@@ -439,7 +440,7 @@ export async function aiIdentifyRisks(): Promise<
             dealActivities.length > 0
               ? (dealActivities[0].created_at as string)
               : "No activities";
-          return `- ${d.name}: $${d.value || 0} | Stage: ${d.stage} | Probability: ${d.probability || "N/A"}% | Close: ${d.close_date || "N/A"} | Days in Stage: ${d.days_in_stage || "N/A"} | Last Activity: ${lastActivity} | Activities Count: ${dealActivities.length}`;
+          return `- ${d.name}: $${d.value || 0} | Stage: ${d.stage} | Probability: ${d.probability || "N/A"}% | Close: ${d.close_date || "N/A"} | Days in Stage: ${stageDays(d.stage_changed_at, d.created_at)} | Last Activity: ${lastActivity} | Activities Count: ${dealActivities.length}`;
         })
         .join("\n");
       sections.push(`## Active Deals (${deals.length})\n${dealLines}`);
@@ -449,7 +450,7 @@ export async function aiIdentifyRisks(): Promise<
 
     sections.push(`
 Identify deals at risk. Consider these risk signals:
-- Deals stuck in a stage for too long (high days_in_stage)
+- Deals stuck in a stage for too long (high days in stage)
 - Deals with close dates in the past or very soon with low probability
 - Deals with no recent activities
 - Deals with declining probability or missing contact information
@@ -554,7 +555,7 @@ export async function aiGenerateInsightsSummary(): Promise<
     // Fetch deals summary
     const { data: deals } = await supabase
       .from("deals")
-      .select("id, name, value, stage, probability, close_date, days_in_stage")
+      .select("id, name, value, stage, probability, close_date")
       .eq("organization_id", orgId);
 
     // Fetch customers summary

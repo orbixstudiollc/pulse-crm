@@ -48,6 +48,7 @@ import {
 import { DeleteConfirmModal } from "@/components/ui";
 import { PageTabs, Section, TableSection } from "@/components/dashboard";
 import { SETTINGS_GROUPS, parseSettingsTab } from "@/components/layout/settings-nav";
+import { ApiKeysSection } from "./api-keys-section";
 import {
   updateProfile,
   uploadAvatar,
@@ -707,7 +708,13 @@ function buildTimezoneOptions(): { label: string; value: string }[] {
   return fallbackTimezoneOptions;
 }
 
-const timezoneOptions = buildTimezoneOptions();
+// Built on first use in the browser: the server's zone list can differ from
+// the browser's, so the pre-mount render uses the fallback list.
+let allTimezoneOptions: { label: string; value: string }[] | null = null;
+function getAllTimezoneOptions() {
+  allTimezoneOptions ??= buildTimezoneOptions();
+  return allTimezoneOptions;
+}
 
 function browserTimezone(): string {
   try {
@@ -766,6 +773,7 @@ function PreferencesSection({
     preferences?.time_format ?? "12h",
   );
   const [language, setLanguage] = useState(preferences?.language ?? "en-us");
+  const timezoneOptions = mounted ? getAllTimezoneOptions() : fallbackTimezoneOptions;
   const [isPending, startTransition] = useTransition();
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
@@ -3577,6 +3585,8 @@ export function SettingsPageClient({
         return <AutomationSection />;
       case "lead-finder":
         return <LeadFinderSettingsSection />;
+      case "api":
+        return <ApiKeysSection />;
       default:
         return <ProfileSection profile={initialProfile} />;
     }

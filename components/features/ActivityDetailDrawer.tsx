@@ -12,8 +12,6 @@ interface ActivityDetail {
     variant: BadgeVariant;
   };
   meta?: string;
-  /** Task priority (low/medium/high); shown as an em dash when missing. */
-  priority?: string | null;
   /** Event date (YYYY-MM-DD); enables the Add to Calendar actions. */
   date?: string | null;
   /** Event start time (HH:MM); omitted means an all-day event. */
@@ -264,15 +262,6 @@ function TaskDetails({ activity }: { activity: ActivityDetail }) {
               badgeVariant={activity.badge.variant}
             />
           )}
-          <DetailRow
-            label="Priority"
-            value={
-              activity.priority
-                ? activity.priority.charAt(0).toUpperCase() +
-                  activity.priority.slice(1)
-                : "—"
-            }
-          />
         </div>
       </div>
 

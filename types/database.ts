@@ -348,6 +348,8 @@ export type Database = {
           meeting_preference: string | null;
           assistant_name: string | null;
           assistant_email: string | null;
+          converted_at: string | null;
+          converted_customer_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -403,6 +405,8 @@ export type Database = {
           meeting_preference?: string | null;
           assistant_name?: string | null;
           assistant_email?: string | null;
+          converted_at?: string | null;
+          converted_customer_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -455,6 +459,8 @@ export type Database = {
           meeting_preference?: string | null;
           assistant_name?: string | null;
           assistant_email?: string | null;
+          converted_at?: string | null;
+          converted_customer_id?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -525,6 +531,7 @@ export type Database = {
           close_date: string | null;
           owner_id: string | null;
           days_in_stage: number;
+          stage_changed_at: string | null;
           days_to_close: number;
           last_activity: string | null;
           contact_name: string | null;
@@ -547,6 +554,7 @@ export type Database = {
           close_date?: string | null;
           owner_id?: string | null;
           days_in_stage?: number;
+          stage_changed_at?: string | null;
           days_to_close?: number;
           last_activity?: string | null;
           contact_name?: string | null;
@@ -566,6 +574,7 @@ export type Database = {
           close_date?: string | null;
           owner_id?: string | null;
           days_in_stage?: number;
+          stage_changed_at?: string | null;
           days_to_close?: number;
           last_activity?: string | null;
           contact_name?: string | null;
@@ -3674,6 +3683,38 @@ export type Database = {
           due_date?: string | null;
           completed_at?: string | null;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      api_keys: {
+        Row: {
+          id: string;
+          organization_id: string;
+          created_by: string | null;
+          name: string;
+          key_prefix: string;
+          key_hash: string;
+          scope: "read" | "write";
+          last_used_at: string | null;
+          revoked_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          created_by?: string | null;
+          name: string;
+          key_prefix: string;
+          key_hash: string;
+          scope?: "read" | "write";
+          last_used_at?: string | null;
+          revoked_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          name?: string;
+          last_used_at?: string | null;
+          revoked_at?: string | null;
         };
         Relationships: [];
       };
