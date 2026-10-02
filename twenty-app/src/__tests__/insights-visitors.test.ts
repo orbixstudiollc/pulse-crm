@@ -22,6 +22,10 @@ describe('IPinfo parsing', () => {
     expect(parseIpinfo({ as_name: 'Amazon.com, Inc.', as_domain: 'amazon.com' }).companyDomain).toBeNull();
     expect(parseIpinfo({ as_name: 'Comcast Cable Communications', as_domain: 'comcast.com' }).companyDomain).toBeNull();
     expect(parseIpinfo({ org: 'AS7922 Comcast Cable' })).toMatchObject({ companyDomain: null, network: 'Comcast Cable' });
+    // Real access networks seen on orbix.studio.
+    expect(parseIpinfo({ as_name: 'Antaranga Dot Com Ltd', as_domain: 'antbd.net' }).companyDomain).toBeNull();
+    expect(parseIpinfo({ as_name: 'QTnet,Inc.', as_domain: 'qtnet.co.jp' }).companyDomain).toBeNull();
+    expect(parseIpinfo({ as_name: 'Example Corp', as_domain: 'example.ne.jp' }).companyDomain).toBeNull();
   });
 
   it('cleans domains', () => {

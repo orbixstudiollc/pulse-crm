@@ -34,8 +34,14 @@ export const cleanDomain = (value: unknown): string | null => {
   return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain) ? domain : null;
 };
 
+// Access networks usually sit on .net or a "...net" brand (antbd.net, qtnet.co.jp, bbtec.net).
+const ACCESS_NETWORK_DOMAIN = /\.net(\.[a-z]{2})?$|^[a-z0-9-]*net\.|\.(ne|ad|or)\.jp$/i;
+
 const looksLikeBusiness = (name: string | null, domain: string | null) =>
-  Boolean(domain) && !NOT_A_BUSINESS_DOMAIN.test(domain as string) && !(name && NOT_A_BUSINESS.test(name));
+  Boolean(domain) &&
+  !NOT_A_BUSINESS_DOMAIN.test(domain as string) &&
+  !ACCESS_NETWORK_DOMAIN.test(domain as string) &&
+  !(name && NOT_A_BUSINESS.test(name));
 
 /** Read an IPinfo response (full or Lite format). */
 export const parseIpinfo = (json: Obj): IpCompany => {
