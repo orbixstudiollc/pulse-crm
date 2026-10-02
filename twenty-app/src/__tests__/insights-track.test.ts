@@ -144,6 +144,10 @@ describe('trackingSnippet', () => {
     expect(s).toContain('sendBeacon');
     expect(s).not.toContain('__ENDPOINT__');
     expect(trackingSnippet('https://crm.example.com/s/track')).toContain("'https://crm.example.com/s/track'");
+    // Twenty Cloud serves routes from a functions host without the /s prefix.
+    const cloud = trackingSnippet('https://ws.withtwenty.com/track');
+    expect(cloud).toContain("'https://ws.withtwenty.com/track'");
+    expect(cloud).not.toContain('/track/s/track');
   });
 
   it('is valid JavaScript', () => {

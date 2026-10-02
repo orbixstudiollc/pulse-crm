@@ -30,9 +30,13 @@ w.pulseTrack=function(m){send({type:'identify',email:m||null},1)};send({},1)}cat
 (window,document,'pulse_vid','__ENDPOINT__');
 </script>`;
 
-/** The snippet for a Twenty server, e.g. https://crm.example.com -> .../s/track */
+/**
+ * The snippet for a Twenty server. Takes either the server root
+ * (https://crm.example.com -> .../s/track) or the route's own URL, which on
+ * Twenty Cloud lives on a separate functions host (https://ws.withtwenty.com/track).
+ */
 export const trackingSnippet = (twentyUrl: string): string =>
   TRACKING_SNIPPET_TEMPLATE.replace('__ENDPOINT__', trackingEndpoint(twentyUrl));
 
 export const trackingEndpoint = (twentyUrl: string): string =>
-  /\/s\/track$/.test(twentyUrl) ? twentyUrl : `${twentyUrl.replace(/\/+$/, '')}/s/track`;
+  /\/track\/?$/.test(twentyUrl) ? twentyUrl.replace(/\/+$/, '') : `${twentyUrl.replace(/\/+$/, '')}/s/track`;
