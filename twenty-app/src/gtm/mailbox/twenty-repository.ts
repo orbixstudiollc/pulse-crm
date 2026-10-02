@@ -68,7 +68,7 @@ export const createTwentyMailboxRepository = (client: RestLike): MailboxReposito
 
 // What bulk imports need: existing mailboxes (for dedupe, and to move
 // password mailboxes onto Google delegation) and record writes.
-export type ExistingMailbox = Pick<MailboxRecord, 'id' | 'email' | 'provider' | 'authType'>;
+export type ExistingMailbox = Pick<MailboxRecord, 'id' | 'email' | 'provider' | 'authType' | 'status'>;
 
 export type MailboxImportStore = {
   listMailboxes(): Promise<ExistingMailbox[]>;

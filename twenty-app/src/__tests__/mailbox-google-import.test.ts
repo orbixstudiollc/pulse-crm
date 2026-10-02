@@ -218,7 +218,7 @@ describe('import runners', () => {
     const updated: [string, Record<string, unknown>][] = [];
     const s: MailboxImportStore = {
       listMailboxes: async () =>
-        existing.map((m, i) => (typeof m === 'string' ? { id: `old${i}`, email: m, provider: null, authType: null } : m)),
+        existing.map((m, i) => (typeof m === 'string' ? { id: `old${i}`, email: m, provider: null, authType: null, status: null } : m)),
       createMailbox: async (input) => {
         if (input.email.startsWith('fail')) throw new Error('boom');
         created.push(input);
@@ -277,10 +277,10 @@ describe('import runners', () => {
   it('moves existing Google password mailboxes onto delegation when pasted again without a password', async () => {
     const lookup = async () => 'GOOGLE' as const;
     const existing: ExistingMailbox[] = [
-      { id: 'm1', email: 'ann@acme.io', provider: 'GOOGLE', authType: 'PASSWORD' },
-      { id: 'm2', email: 'bad@acme.io', provider: 'GOOGLE', authType: 'PASSWORD' },
-      { id: 'm3', email: 'done@acme.io', provider: 'GOOGLE', authType: 'GOOGLE_DELEGATED' },
-      { id: 'm4', email: 'keep@gmail.com', provider: 'GOOGLE', authType: 'PASSWORD' },
+      { id: 'm1', email: 'ann@acme.io', provider: 'GOOGLE', authType: 'PASSWORD', status: 'WARMING' },
+      { id: 'm2', email: 'bad@acme.io', provider: 'GOOGLE', authType: 'PASSWORD', status: 'WARMING' },
+      { id: 'm3', email: 'done@acme.io', provider: 'GOOGLE', authType: 'GOOGLE_DELEGATED', status: 'WARMING' },
+      { id: 'm4', email: 'keep@gmail.com', provider: 'GOOGLE', authType: 'PASSWORD', status: 'WARMING' },
     ];
     const csv = 'Ann@acme.io\nbad@acme.io\ndone@acme.io\nkeep@gmail.com\tpw';
     const delegation = {
@@ -305,7 +305,8 @@ describe('import runners', () => {
       ['m2', { ...switchPatch }],
     ]);
     expect(real.created).toEqual([]);
-    expect(done.skippedExisting).toEqual(['done@acme.io', 'keep@gmail.com']);
+    expect(done.signInOk).toEqual(['done@acme.io']);
+    expect(done.skippedExisting).toEqual(['keep@gmail.com']);
 
     // Once switched, Check keeps testing the sign-in of delegated mailboxes.
     const later = await importCsvMailboxes({
@@ -318,6 +319,21 @@ describe('import runners', () => {
     });
     expect(later.signInOk).toEqual(['ann@acme.io']);
     expect(later.failed.map((f) => f.email)).toEqual(['bad@acme.io']);
+
+    // A delegated mailbox stuck in Error restarts warmup once its sign-in works.
+    const stuck = (status: 'ERROR') => [
+      { id: 'e1', email: 'ann@acme.io', provider: 'GOOGLE' as const, authType: 'GOOGLE_DELEGATED' as const, status },
+      { id: 'e2', email: 'bad@acme.io', provider: 'GOOGLE' as const, authType: 'GOOGLE_DELEGATED' as const, status },
+    ];
+    const peek = store(stuck('ERROR'));
+    const peekRun = await importCsvMailboxes({ store: peek.s, csv: 'ann@acme.io\nbad@acme.io', seal: (p) => p, dryRun: true, delegation, providerForDomain: lookup });
+    expect(peekRun.reactivated).toEqual(['ann@acme.io']);
+    expect(peek.updated).toEqual([]);
+    const fix = store(stuck('ERROR'));
+    const fixRun = await importCsvMailboxes({ store: fix.s, csv: 'ann@acme.io\nbad@acme.io', seal: (p) => p, delegation, providerForDomain: lookup });
+    expect(fixRun.reactivated).toEqual(['ann@acme.io']);
+    expect(fixRun.failed.map((f) => f.email)).toEqual(['bad@acme.io']);
+    expect(fix.updated).toEqual([['e1', { status: 'WARMING', lastError: null }]]);
 
     const noKey = await importCsvMailboxes({ store: store(existing).s, csv: 'ann@acme.io', seal: (p) => p, dryRun: true, providerForDomain: lookup });
     expect(noKey.switched).toEqual([]);

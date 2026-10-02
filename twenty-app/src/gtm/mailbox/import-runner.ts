@@ -98,7 +98,7 @@ export const importCsvMailboxes = async (input: {
   // password empty and sign in through domain-wide delegation. The dry run
   // mints a token per mailbox to prove each domain has authorised the client.
   delegation?: { verify: (email: string) => Promise<void> };
-}): Promise<ImportSummary & { parsed: number; delegated: string[]; switched: string[]; signInOk: string[] }> => {
+}): Promise<ImportSummary & { parsed: number; delegated: string[]; switched: string[]; signInOk: string[]; reactivated: string[] }> => {
   const parsed = parseMailboxCsv(input.csv, { passwordOptional: true });
   if (input.providerForDomain) {
     const lookups = new Map<string, Promise<MailboxProvider | null>>();
@@ -131,6 +131,7 @@ export const importCsvMailboxes = async (input: {
     delegated: [] as string[],
     switched: [] as string[],
     signInOk: [] as string[],
+    reactivated: [] as string[],
     skippedExisting: [] as string[],
     skippedDuplicate: plan.skippedDuplicate,
     failed,
@@ -147,12 +148,17 @@ export const importCsvMailboxes = async (input: {
     const row = rowByEmail.get(email);
     // Passwordless rows only got this far if MX says Google and delegation is set.
     const passwordless = row && !row.password && mailbox;
-    // Already on delegation: Check still tests the sign-in, so a domain that
-    // has not authorised the client yet shows up red.
-    if (passwordless && mailbox.authType === 'GOOGLE_DELEGATED' && summary.dryRun) {
+    // Already on delegation: both buttons test the sign-in, so a domain that
+    // has not authorised the client yet shows up red. A mailbox that went to
+    // Error before its domain was authorised never re-enters warmup on its own,
+    // so once the sign-in works it goes back to Warming.
+    if (passwordless && mailbox.authType === 'GOOGLE_DELEGATED') {
       try {
         await input.delegation!.verify(email);
-        summary.signInOk.push(email);
+        if (mailbox.status === 'ERROR') {
+          if (!summary.dryRun) await input.store.updateMailbox(mailbox.id, { status: 'WARMING', lastError: null });
+          summary.reactivated.push(email);
+        } else summary.signInOk.push(email);
       } catch (error) {
         summary.failed.push({ line: row.line, email, error: errorText(error) });
       }

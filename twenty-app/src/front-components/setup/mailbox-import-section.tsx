@@ -15,6 +15,7 @@ type ImportResult = {
   delegated?: string[];
   switched?: string[];
   signInOk?: string[];
+  reactivated?: string[];
   skippedExisting?: string[];
   skippedDuplicate?: string[];
   failed?: { email?: string; line?: number; error: string }[];
@@ -37,7 +38,7 @@ export const MailboxImportSection = () => {
         setText('');
         const switched = res.switched?.length ?? 0;
         enqueueSnackbar({
-          message: `Added ${res.created?.length ?? 0} mailboxes${switched ? `, moved ${switched} to Google sign-in` : ''}`,
+          message: `Added ${res.created?.length ?? 0} mailboxes${switched ? `, moved ${switched} to Google sign-in` : ''}${res.reactivated?.length ? `, restarted ${res.reactivated.length}` : ''}`,
           variant: 'success',
         });
       }
@@ -108,6 +109,7 @@ export const MailboxImportSection = () => {
               {list(result.dryRun ? 'Ready' : 'Added', result.created)}
               {list('Google sign-in without password', result.delegated)}
               {list(result.dryRun ? 'Already in Twenty, would move to Google sign-in without password' : 'Moved to Google sign-in without password', result.switched)}
+              {list(result.dryRun ? 'In Error, sign-in now works, would restart warmup' : 'Restarted warmup (was Error)', result.reactivated)}
               {list('Already in Twenty, Google sign-in works', result.signInOk)}
               {list('Already in Twenty', result.skippedExisting)}
               {list('Listed twice', result.skippedDuplicate)}
