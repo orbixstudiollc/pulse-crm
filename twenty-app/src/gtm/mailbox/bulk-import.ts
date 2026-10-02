@@ -43,7 +43,8 @@ export const dedupeNewMailboxes = <T extends { email: string }>(
 export type CsvMailboxRow = {
   line: number;
   email: string;
-  password: string;
+  // Null only when parsed with passwordOptional (Workspace delegation decides later).
+  password: string | null;
   displayName: string | null;
   provider: MailboxProvider | null;
   smtpHost: string | null;
@@ -128,7 +129,7 @@ const toPort = (value: string | undefined): number | null => {
 // headings. Without a
 // header the columns are: email, app password, display name. First and last
 // name columns are joined into the display name.
-export const parseMailboxCsv = (text: string): CsvParseResult => {
+export const parseMailboxCsv = (text: string, options: { passwordOptional?: boolean } = {}): CsvParseResult => {
   const result: CsvParseResult = { rows: [], errors: [] };
   const lines = text.replace(/^﻿/, '').split(/\r?\n/);
   let columns: (CsvColumn | null)[] | null = null;
@@ -141,8 +142,11 @@ export const parseMailboxCsv = (text: string): CsvParseResult => {
 
     // Spreadsheets often group rows under a domain heading ("acme.com" alone on a row).
     if (/^[^\s@,;]+\.[^\s@,;]+[,;]*$/.test(line)) return;
-    delimiter ??= line.includes('\t') ? '\t' : !line.includes(',') && line.includes(';') ? ';' : ',';
-    const cells = splitCsvLine(line, delimiter);
+    // Lock the separator on the first line that has one (an email-only line has none).
+    if (!delimiter && /[\t,;]/.test(rawLine)) {
+      delimiter = rawLine.includes('\t') ? '\t' : !rawLine.includes(',') && rawLine.includes(';') ? ';' : ',';
+    }
+    const cells = splitCsvLine(line, delimiter ?? ',');
 
     if (columns === null) {
       const mapped = cells.map((cell) => HEADER_ALIASES[cell.toLowerCase().replace(/[^a-z]/g, '')] ?? null);
@@ -168,13 +172,13 @@ export const parseMailboxCsv = (text: string): CsvParseResult => {
     const provider = explicitProvider
       ? (PROVIDERS[explicitProvider.toLowerCase()] ?? null)
       : guessProviderFromEmail(email);
-    let password = value('password');
-    if (!password) {
+    let password = value('password') ?? null;
+    if (!password && !options.passwordOptional) {
       result.errors.push({ line: lineNumber, message: `Missing app password for ${email}` });
       return;
     }
     // Google shows app passwords as "abcd efgh ijkl mnop"; the spaces are not part of it.
-    if (provider === 'GOOGLE' && /^[a-z]{4}( [a-z]{4}){3}$/i.test(password)) password = password.replace(/ /g, '');
+    if (password && provider === 'GOOGLE' && /^[a-z]{4}( [a-z]{4}){3}$/i.test(password)) password = password.replace(/ /g, '');
 
     result.rows.push({
       line: lineNumber,
@@ -194,13 +198,15 @@ export const parseMailboxCsv = (text: string): CsvParseResult => {
 
 // Mailbox record for a CSV row. Google and Microsoft hosts are filled in by
 // serverSettingsFor at send time, so they stay empty unless given.
-export const mailboxInputFromCsvRow = (row: CsvMailboxRow, credentialCiphertext: string): NewMailboxInput => {
+// Without a ciphertext the row is a Google Workspace mailbox signed in through
+// domain-wide delegation.
+export const mailboxInputFromCsvRow = (row: CsvMailboxRow, credentialCiphertext: string | null): NewMailboxInput => {
   const provider = row.provider ?? 'OTHER';
   return {
     email: row.email,
     displayName: row.displayName,
     provider,
-    authType: 'PASSWORD',
+    authType: credentialCiphertext ? 'PASSWORD' : 'GOOGLE_DELEGATED',
     status: 'WARMING',
     warmupEnabled: true,
     smtpHost: row.smtpHost,

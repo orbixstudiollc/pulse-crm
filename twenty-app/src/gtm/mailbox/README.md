@@ -37,6 +37,10 @@ Admin setup (done once by a Workspace super admin):
    ```
    Filters: `domain`, `orgUnitPath` (includes child OUs) and `emails` (list). Suspended and archived users are skipped, and so are addresses that are already mailboxes. New mailboxes are set to WARMING with warmup on. Use `dryRun` to preview.
 
+### Many separate Google Workspace accounts (one per domain)
+
+One service account works for any number of Workspace accounts. Do steps 1 to 3 above once. Then, in each Workspace's Admin console, do step 4 with the same client ID and only the `https://mail.google.com/` scope, and check step 5. Set **GOOGLE_SERVICE_ACCOUNT_JSON** in Twenty (the admin email is not needed for this route). Then paste the addresses, one per line with no password, into **Add mailboxes** on the Pulse settings tab (Apps > Pulse GTM). **Check** mints a test token for every address, so a domain that has not authorised the client shows up before anything is created.
+
 ### gmail.com, outlook.com and other non-Workspace accounts: CSV paste
 
 Delegation only works inside a Workspace domain. For other accounts, paste them all in one request; each password is sealed with MAILBOX_ENCRYPTION_KEY:

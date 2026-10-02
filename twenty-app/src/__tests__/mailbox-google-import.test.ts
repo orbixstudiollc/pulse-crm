@@ -227,6 +227,35 @@ describe('import runners', () => {
   };
   const key = 'import-test-key-0123456789';
 
+  it('imports Workspace rows without passwords through delegation, and checks each sign-in on a dry run', async () => {
+    const lookup = async () => 'GOOGLE' as const;
+    const csv = 'acme.io\t\nann@acme.io\t\nbad@acme.io\nbob@gmail.com\tpw';
+    const verified: string[] = [];
+    const delegation = {
+      verify: async (email: string) => {
+        if (email.startsWith('bad')) throw new Error('unauthorized_client');
+        verified.push(email);
+      },
+    };
+
+    const dry = await importCsvMailboxes({ store: store([]).s, csv, seal: (p) => p, dryRun: true, delegation, providerForDomain: lookup });
+    expect(dry.created).toEqual(['ann@acme.io', 'bob@gmail.com']);
+    expect(dry.delegated).toEqual(['ann@acme.io']);
+    expect(dry.failed).toEqual([{ line: 3, email: 'bad@acme.io', error: 'unauthorized_client' }]);
+
+    const { s, created } = store([]);
+    await importCsvMailboxes({ store: s, csv, seal: (p) => encryptMailboxSecret({ password: p }, key), delegation, providerForDomain: lookup });
+    expect(created.map((m) => [m.email, m.authType, Boolean(m.credentialCiphertext)])).toEqual([
+      ['ann@acme.io', 'GOOGLE_DELEGATED', false],
+      ['bad@acme.io', 'GOOGLE_DELEGATED', false],
+      ['bob@gmail.com', 'PASSWORD', true],
+    ]);
+
+    const without = await importCsvMailboxes({ store: store([]).s, csv, seal: (p) => p, dryRun: true, providerForDomain: lookup });
+    expect(without.created).toEqual(['bob@gmail.com']);
+    expect(without.failed[0].error).toMatch(/service account/);
+  });
+
   it('looks up the provider of custom domains once per domain', async () => {
     const { s, created } = store([]);
     const looked: string[] = [];

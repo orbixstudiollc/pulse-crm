@@ -12,6 +12,7 @@ type ImportResult = {
   dryRun?: boolean;
   parsed?: number;
   created?: string[];
+  delegated?: string[];
   skippedExisting?: string[];
   skippedDuplicate?: string[];
   failed?: { email?: string; line?: number; error: string }[];
@@ -54,9 +55,10 @@ export const MailboxImportSection = () => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <span style={sectionTitle}>Add mailboxes</span>
         <span style={{ fontSize: 13, color: theme.muted }}>
-          Copy the rows from your sheet, header row included, and paste them here. Recognised columns: email, password (or app
-          password), name or first/last name, provider, SMTP host/port, IMAP host/port. Gmail and Outlook need only email and app
-          password. New mailboxes start warming up.
+          Copy the rows from your sheet and paste them here. Recognised columns: email, password (or app password), name or
+          first/last name, provider, SMTP host/port, IMAP host/port. Gmail and Outlook need email and app password. Google
+          Workspace needs only the email once the Google service account key is set (no passwords). Check first: it also tests
+          the Google sign-in for each address. New mailboxes start warming up.
         </span>
       </div>
       <textarea
@@ -97,6 +99,7 @@ export const MailboxImportSection = () => {
                 {` of ${result.parsed ?? 0} rows read`}
               </span>
               {list(result.dryRun ? 'Ready' : 'Added', result.created)}
+              {list('Google sign-in without password', result.delegated)}
               {list('Already in Twenty', result.skippedExisting)}
               {list('Listed twice', result.skippedDuplicate)}
               {result.failed?.map((f, i) => (

@@ -63,6 +63,7 @@ export const importWorkspaceMailboxes = async (input: {
     listed: users.length,
     matched: matched.length,
     created: [] as string[],
+    delegated: [] as string[],
     skippedExisting: plan.skippedExisting,
     skippedDuplicate: plan.skippedDuplicate,
     failed: [] as ImportSummary['failed'],
@@ -91,8 +92,12 @@ export const importCsvMailboxes = async (input: {
   // Finds the provider of a custom domain (MX lookup), so Workspace and
   // Microsoft 365 addresses need no host columns.
   providerForDomain?: (domain: string) => Promise<MailboxProvider | null>;
-}): Promise<ImportSummary & { parsed: number }> => {
-  const parsed = parseMailboxCsv(input.csv);
+  // Set when a Google service account is configured: Google rows may leave the
+  // password empty and sign in through domain-wide delegation. The dry run
+  // mints a token per mailbox to prove each domain has authorised the client.
+  delegation?: { verify: (email: string) => Promise<void> };
+}): Promise<ImportSummary & { parsed: number; delegated: string[] }> => {
+  const parsed = parseMailboxCsv(input.csv, { passwordOptional: true });
   if (input.providerForDomain) {
     const lookups = new Map<string, Promise<MailboxProvider | null>>();
     for (const row of parsed.rows) {
@@ -104,7 +109,13 @@ export const importCsvMailboxes = async (input: {
   }
   const failed: ImportSummary['failed'] = parsed.errors.map((e) => ({ line: e.line, error: e.message }));
   const usable = parsed.rows.filter((row) => {
-    const problem = csvRowProblem(row);
+    const problem = row.password
+      ? csvRowProblem(row)
+      : row.provider !== 'GOOGLE'
+        ? `Missing app password for ${row.email}`
+        : !input.delegation
+          ? `Missing app password for ${row.email}. For Google Workspace without passwords, set the Google service account key first.`
+          : null;
     if (problem) failed.push({ line: row.line, email: row.email, error: problem });
     return !problem;
   });
@@ -114,18 +125,20 @@ export const importCsvMailboxes = async (input: {
     dryRun: Boolean(input.dryRun),
     parsed: parsed.rows.length,
     created: [] as string[],
+    delegated: [] as string[],
     skippedExisting: plan.skippedExisting,
     skippedDuplicate: plan.skippedDuplicate,
     failed,
   };
   for (const row of plan.fresh) {
-    if (summary.dryRun) {
-      summary.created.push(row.email);
-      continue;
-    }
     try {
-      await input.store.createMailbox(mailboxInputFromCsvRow(row, input.seal(row.password)));
+      if (summary.dryRun) {
+        if (!row.password) await input.delegation!.verify(row.email);
+      } else {
+        await input.store.createMailbox(mailboxInputFromCsvRow(row, row.password ? input.seal(row.password) : null));
+      }
       summary.created.push(row.email);
+      if (!row.password) summary.delegated.push(row.email);
     } catch (error) {
       summary.failed.push({ line: row.line, email: row.email, error: errorText(error) });
     }
