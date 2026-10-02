@@ -66,19 +66,26 @@ export const createTwentyMailboxRepository = (client: RestLike): MailboxReposito
     listAll<WarmupMessageRecord>(client, 'warmupMessages', { filter: `sentAt[gte]:${quote(since.toISOString())}` }),
 });
 
-// What bulk imports need: existing addresses (for dedupe) and record creation.
+// What bulk imports need: existing mailboxes (for dedupe, and to move
+// password mailboxes onto Google delegation) and record writes.
+export type ExistingMailbox = Pick<MailboxRecord, 'id' | 'email' | 'provider' | 'authType'>;
+
 export type MailboxImportStore = {
-  listMailboxEmails(): Promise<string[]>;
+  listMailboxes(): Promise<ExistingMailbox[]>;
   createMailbox(input: NewMailboxInput): Promise<{ id: string }>;
+  updateMailbox(id: string, patch: MailboxPatch): Promise<void>;
 };
 
 export const createMailboxImportStore = (client: RestLike): MailboxImportStore => ({
-  async listMailboxEmails() {
-    const mailboxes = await listAll<Pick<MailboxRecord, 'email'>>(client, 'mailboxes');
-    return mailboxes.map((mailbox) => mailbox.email).filter(Boolean);
+  async listMailboxes() {
+    const mailboxes = await listAll<ExistingMailbox>(client, 'mailboxes');
+    return mailboxes.filter((mailbox) => Boolean(mailbox.email));
   },
   async createMailbox(input) {
     const response = await client.post<{ data: { createMailbox: { id: string } } }>('/rest/mailboxes', input);
     return { id: response.data.createMailbox.id };
+  },
+  async updateMailbox(id, patch) {
+    await client.patch(`/rest/mailboxes/${id}`, patch);
   },
 });

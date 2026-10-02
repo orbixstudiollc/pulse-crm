@@ -21,7 +21,7 @@ import { listWorkspaceUsers } from 'src/gtm/mailbox/google-directory';
 import { providerFromMxHosts } from 'src/gtm/mailbox/server-settings';
 import { importCsvMailboxes, importWorkspaceMailboxes } from 'src/gtm/mailbox/import-runner';
 import { hasCredential } from 'src/gtm/mailbox/server-settings';
-import type { MailboxImportStore } from 'src/gtm/mailbox/twenty-repository';
+import type { ExistingMailbox, MailboxImportStore } from 'src/gtm/mailbox/twenty-repository';
 
 const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
 const pem = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
@@ -213,17 +213,22 @@ describe('provider from MX', () => {
 });
 
 describe('import runners', () => {
-  const store = (existing: string[]) => {
+  const store = (existing: (string | ExistingMailbox)[]) => {
     const created: Record<string, unknown>[] = [];
+    const updated: [string, Record<string, unknown>][] = [];
     const s: MailboxImportStore = {
-      listMailboxEmails: async () => existing,
+      listMailboxes: async () =>
+        existing.map((m, i) => (typeof m === 'string' ? { id: `old${i}`, email: m, provider: null, authType: null } : m)),
       createMailbox: async (input) => {
         if (input.email.startsWith('fail')) throw new Error('boom');
         created.push(input);
         return { id: `id${created.length}` };
       },
+      updateMailbox: async (id, patch) => {
+        updated.push([id, patch]);
+      },
     };
-    return { s, created };
+    return { s, created, updated };
   };
   const key = 'import-test-key-0123456789';
 
@@ -254,6 +259,54 @@ describe('import runners', () => {
     const without = await importCsvMailboxes({ store: store([]).s, csv, seal: (p) => p, dryRun: true, providerForDomain: lookup });
     expect(without.created).toEqual(['bob@gmail.com']);
     expect(without.failed[0].error).toMatch(/service account/);
+  });
+
+  const switchPatch = {
+    provider: 'GOOGLE',
+    authType: 'GOOGLE_DELEGATED',
+    credentialCiphertext: null,
+    username: null,
+    smtpHost: null,
+    smtpPort: null,
+    smtpSecure: null,
+    imapHost: null,
+    imapPort: null,
+    lastError: null,
+  };
+
+  it('moves existing Google password mailboxes onto delegation when pasted again without a password', async () => {
+    const lookup = async () => 'GOOGLE' as const;
+    const existing: ExistingMailbox[] = [
+      { id: 'm1', email: 'ann@acme.io', provider: 'GOOGLE', authType: 'PASSWORD' },
+      { id: 'm2', email: 'bad@acme.io', provider: 'GOOGLE', authType: 'PASSWORD' },
+      { id: 'm3', email: 'done@acme.io', provider: 'GOOGLE', authType: 'GOOGLE_DELEGATED' },
+      { id: 'm4', email: 'keep@gmail.com', provider: 'GOOGLE', authType: 'PASSWORD' },
+    ];
+    const csv = 'Ann@acme.io\nbad@acme.io\ndone@acme.io\nkeep@gmail.com\tpw';
+    const delegation = {
+      verify: async (email: string) => {
+        if (email.startsWith('bad')) throw new Error('unauthorized_client');
+      },
+    };
+
+    const dry = store(existing);
+    const check = await importCsvMailboxes({ store: dry.s, csv, seal: (p) => p, dryRun: true, delegation, providerForDomain: lookup });
+    expect(check.switched).toEqual(['ann@acme.io']);
+    expect(check.skippedExisting).toEqual(['done@acme.io', 'keep@gmail.com']);
+    expect(check.failed).toEqual([{ line: 2, email: 'bad@acme.io', error: 'unauthorized_client' }]);
+    expect(dry.updated).toEqual([]);
+
+    const real = store(existing);
+    const done = await importCsvMailboxes({ store: real.s, csv, seal: (p) => p, delegation, providerForDomain: lookup });
+    expect(done.switched).toEqual(['ann@acme.io', 'bad@acme.io']);
+    expect(real.updated).toEqual([
+      ['m1', { ...switchPatch }],
+      ['m2', { ...switchPatch }],
+    ]);
+    expect(real.created).toEqual([]);
+
+    const noKey = await importCsvMailboxes({ store: store(existing).s, csv: 'ann@acme.io', seal: (p) => p, dryRun: true, providerForDomain: lookup });
+    expect(noKey.switched).toEqual([]);
   });
 
   it('looks up the provider of custom domains once per domain', async () => {

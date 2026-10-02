@@ -13,6 +13,7 @@ type ImportResult = {
   parsed?: number;
   created?: string[];
   delegated?: string[];
+  switched?: string[];
   skippedExisting?: string[];
   skippedDuplicate?: string[];
   failed?: { email?: string; line?: number; error: string }[];
@@ -33,7 +34,11 @@ export const MailboxImportSection = () => {
       setResult(res);
       if (res.ok && !dryRun) {
         setText('');
-        enqueueSnackbar({ message: `Added ${res.created?.length ?? 0} mailboxes`, variant: 'success' });
+        const switched = res.switched?.length ?? 0;
+        enqueueSnackbar({
+          message: `Added ${res.created?.length ?? 0} mailboxes${switched ? `, moved ${switched} to Google sign-in` : ''}`,
+          variant: 'success',
+        });
       }
     } catch (err) {
       setResult({ ok: false, error: err instanceof Error ? err.message : String(err) });
@@ -96,10 +101,12 @@ export const MailboxImportSection = () => {
             <>
               <span style={{ fontWeight: 600 }}>
                 {result.dryRun ? `Check: ${result.created?.length ?? 0} would be added` : `Added ${result.created?.length ?? 0}`}
+                {result.switched?.length ? `, ${result.switched.length} ${result.dryRun ? 'would move' : 'moved'} to Google sign-in` : ''}
                 {` of ${result.parsed ?? 0} rows read`}
               </span>
               {list(result.dryRun ? 'Ready' : 'Added', result.created)}
               {list('Google sign-in without password', result.delegated)}
+              {list(result.dryRun ? 'Already in Twenty, would move to Google sign-in without password' : 'Moved to Google sign-in without password', result.switched)}
               {list('Already in Twenty', result.skippedExisting)}
               {list('Listed twice', result.skippedDuplicate)}
               {result.failed?.map((f, i) => (

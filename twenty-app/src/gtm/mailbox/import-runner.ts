@@ -4,6 +4,7 @@ import {
   filterWorkspaceUsers,
   mailboxInputFromCsvRow,
   mailboxInputFromDirectoryUser,
+  normalizeEmail,
   parseMailboxCsv,
   type DirectoryUser,
   type WorkspaceImportFilter,
@@ -56,7 +57,8 @@ export const importWorkspaceMailboxes = async (input: {
 }): Promise<ImportSummary & { listed: number; matched: number }> => {
   const users = await input.listUsers();
   const matched = filterWorkspaceUsers(users, input.filter);
-  const plan = dedupeNewMailboxes(matched.map(mailboxInputFromDirectoryUser), await input.store.listMailboxEmails());
+  const existing = (await input.store.listMailboxes()).map((mailbox) => mailbox.email);
+  const plan = dedupeNewMailboxes(matched.map(mailboxInputFromDirectoryUser), existing);
   const summary = {
     ok: true as const,
     dryRun: Boolean(input.dryRun),
@@ -96,7 +98,7 @@ export const importCsvMailboxes = async (input: {
   // password empty and sign in through domain-wide delegation. The dry run
   // mints a token per mailbox to prove each domain has authorised the client.
   delegation?: { verify: (email: string) => Promise<void> };
-}): Promise<ImportSummary & { parsed: number; delegated: string[] }> => {
+}): Promise<ImportSummary & { parsed: number; delegated: string[]; switched: string[] }> => {
   const parsed = parseMailboxCsv(input.csv, { passwordOptional: true });
   if (input.providerForDomain) {
     const lookups = new Map<string, Promise<MailboxProvider | null>>();
@@ -119,17 +121,55 @@ export const importCsvMailboxes = async (input: {
     if (problem) failed.push({ line: row.line, email: row.email, error: problem });
     return !problem;
   });
-  const plan = dedupeNewMailboxes(usable, await input.store.listMailboxEmails());
+  const existing = await input.store.listMailboxes();
+  const plan = dedupeNewMailboxes(usable, existing.map((mailbox) => mailbox.email));
   const summary = {
     ok: true as const,
     dryRun: Boolean(input.dryRun),
     parsed: parsed.rows.length,
     created: [] as string[],
     delegated: [] as string[],
-    skippedExisting: plan.skippedExisting,
+    switched: [] as string[],
+    skippedExisting: [] as string[],
     skippedDuplicate: plan.skippedDuplicate,
     failed,
   };
+
+  // A Google address pasted again without a password, already stored with a
+  // password (which Google refuses for Workspace accounts), moves onto
+  // delegation: the stored password and any typed-in hosts are dropped (Google
+  // defaults apply) and the old error is cleared.
+  const byEmail = new Map(existing.map((mailbox) => [normalizeEmail(mailbox.email), mailbox]));
+  const rowByEmail = new Map(usable.map((row) => [normalizeEmail(row.email), row]));
+  for (const email of plan.skippedExisting) {
+    const mailbox = byEmail.get(email);
+    const row = rowByEmail.get(email);
+    // Passwordless rows only got this far if MX says Google and delegation is set.
+    const canSwitch = row && !row.password && mailbox && mailbox.authType !== 'GOOGLE_DELEGATED';
+    if (!canSwitch) {
+      summary.skippedExisting.push(email);
+      continue;
+    }
+    try {
+      if (summary.dryRun) await input.delegation!.verify(email);
+      else
+        await input.store.updateMailbox(mailbox.id, {
+          provider: 'GOOGLE',
+          authType: 'GOOGLE_DELEGATED',
+          credentialCiphertext: null,
+          username: null,
+          smtpHost: null,
+          smtpPort: null,
+          smtpSecure: null,
+          imapHost: null,
+          imapPort: null,
+          lastError: null,
+        });
+      summary.switched.push(email);
+    } catch (error) {
+      summary.failed.push({ line: row.line, email, error: errorText(error) });
+    }
+  }
   for (const row of plan.fresh) {
     try {
       if (summary.dryRun) {
