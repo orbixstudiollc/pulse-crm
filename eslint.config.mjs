@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Separate Twenty app with its own toolchain.
+    "twenty-app/**",
   ]),
 ]);
 
