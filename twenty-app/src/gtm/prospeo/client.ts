@@ -50,27 +50,28 @@ export function getProspeoKey(env: Record<string, string | undefined> = process.
   const key = env.PROSPEO_API_KEY?.trim();
   if (!key) {
     throw new ProspeoError(
-      'Prospeo API key not configured. Set the PROSPEO_API_KEY variable in Settings > Applications > Pulse GTM.',
+      'Prospeo API key not configured. Set PROSPEO_API_KEY in Settings > Apps > Pulse GTM > Variables.',
       'NOT_CONFIGURED',
     );
   }
   return key;
 }
 
-export type ProspeoPath = '/search-person' | '/enrich-person';
+export type ProspeoPath = '/search-person' | '/enrich-person' | '/account-information';
 
 export async function prospeoRequest<T>(
   path: ProspeoPath,
-  body: Record<string, unknown>,
+  // null sends a GET (no body), which the account endpoint takes.
+  body: Record<string, unknown> | null,
   apiKey: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<T> {
   let res: Response;
   try {
     res = await fetchImpl(`${PROSPEO_BASE_URL}${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-KEY': apiKey },
-      body: JSON.stringify(body),
+      method: body ? 'POST' : 'GET',
+      headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), 'X-KEY': apiKey },
+      ...(body ? { body: JSON.stringify(body) } : {}),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
   } catch (err) {

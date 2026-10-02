@@ -3,13 +3,15 @@ import { defineFrontComponent } from 'twenty-sdk/define';
 import { PULSE_SETUP_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER } from 'src/constants/sequences-ids';
 import { AiModelSection } from 'src/front-components/setup/ai-model-section';
 import { MailboxImportSection } from 'src/front-components/setup/mailbox-import-section';
+import { ProspeoCreditsSection } from 'src/front-components/setup/prospeo-credits-section';
 import { useTheme } from 'src/insights/ui';
 
-// The Setup page in the sidebar: bulk mailbox import and the AI model picker.
+// The Setup page in the sidebar: Prospeo credits, bulk mailbox import and the AI model picker.
 const PulseSetup = () => {
   const theme = useTheme();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32, padding: 24, maxWidth: 760, fontFamily: 'inherit', color: theme.text }}>
+      <ProspeoCreditsSection />
       <MailboxImportSection />
       <AiModelSection />
     </div>

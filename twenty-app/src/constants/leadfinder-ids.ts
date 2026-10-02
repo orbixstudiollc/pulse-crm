@@ -25,3 +25,5 @@ export const FIND_LEADS_COMMAND_MENU_ITEM_UNIVERSAL_IDENTIFIER = 'f2de08d7-7094-
 // HTTP routes (served under /s/ by Twenty's functions gateway)
 export const FIND_LEADS_ROUTE_PATH = '/prospeo/find-leads';
 export const ENRICH_LEAD_ROUTE_PATH = '/prospeo/enrich-lead';
+export const PROSPEO_CREDITS_ROUTE_PATH = '/prospeo/credits';
+export const PROSPEO_CREDITS_FUNCTION_UNIVERSAL_IDENTIFIER = '09da5333-2a94-4866-b1b8-b8a3ac7bd8ec';
