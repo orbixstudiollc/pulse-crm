@@ -37,7 +37,7 @@ export const DEFAULT_WARMUP_CONFIG: WarmupConfig = {
   maxVolume: 40,
   rampDays: 24,
   stageStartDays: [8, 15, 22],
-  stageSendLimits: { STARTING: 0, BUILDING: 10, RAMPING: 25, MATURE: 40 },
+  stageSendLimits: { STARTING: 0, BUILDING: 10, RAMPING: 15, MATURE: 20 },
   replyRate: 0.35,
   sendWindowStartHourUtc: 7,
   sendWindowEndHourUtc: 19,

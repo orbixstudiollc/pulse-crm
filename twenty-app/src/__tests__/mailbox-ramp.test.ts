@@ -50,10 +50,10 @@ describe('warmup ramp', () => {
     expect(stageForDay(22)).toBe('MATURE');
     expect(dailySendLimitFor({ stage: 'STARTING', status: 'WARMING' })).toBe(0);
     expect(dailySendLimitFor({ stage: 'BUILDING', status: 'WARMING' })).toBe(10);
-    expect(dailySendLimitFor({ stage: 'MATURE', status: 'ACTIVE' })).toBe(40);
+    expect(dailySendLimitFor({ stage: 'MATURE', status: 'ACTIVE' })).toBe(20);
     expect(dailySendLimitFor({ stage: 'MATURE', status: 'PAUSED' })).toBe(0);
     expect(dailySendLimitFor({ stage: 'MATURE', status: 'ERROR' })).toBe(0);
-    expect(dailySendLimitFor({ stage: 'MATURE', status: 'ACTIVE', healthScore: 30 })).toBe(20);
+    expect(dailySendLimitFor({ stage: 'MATURE', status: 'ACTIVE', healthScore: 30 })).toBe(10);
   });
 
   it('spreads the day over the send window', () => {
@@ -89,6 +89,6 @@ describe('resolveWarmupConfig', () => {
     expect(config.stageSendLimits.MATURE).toBe(60);
     expect(config.stageSendLimits.BUILDING).toBe(10);
     expect(config.stageStartDays).toEqual([5, 10, 15]);
-    expect(DEFAULT_WARMUP_CONFIG.stageSendLimits.MATURE).toBe(40);
+    expect(DEFAULT_WARMUP_CONFIG.stageSendLimits.MATURE).toBe(20);
   });
 });

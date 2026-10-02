@@ -66,7 +66,7 @@ You need at least 2 mailboxes to start. The plan recommends about 10 or more, ac
 | `process-warmup-inboxes` | :10 and :40 | Over IMAP, finds unread tagged mail in INBOX and Junk, marks it read, flagged and (on Gmail) Important, moves it out of spam, and replies to a share of it. It then recomputes spam placement, bounce rate and health over 14 days, and auto-pauses a mailbox above 35% spam or 8% bounces. |
 | `reset-mailbox-daily-counters` | 00:05 | Resets `sentToday` and `warmupSentToday`, advances the warmup day and stage, recomputes `dailySendLimit` and promotes WARMING mailboxes to ACTIVE at the MATURE stage. |
 
-Stages and send caps: STARTING (days 1 to 7) sends 0 a day, BUILDING (8 to 14) sends 10, RAMPING (15 to 21) sends 25 and MATURE (22 onwards) sends 40. The cap is halved when health is below 50, and it is 0 while a mailbox is PAUSED or in ERROR. To retry a mailbox in ERROR, fix the problem and set its status back to WARMING, or store the password again.
+Stages and send caps: STARTING (days 1 to 7) sends 0 a day, BUILDING (8 to 14) sends 10, RAMPING (15 to 21) sends 15 and MATURE (22 onwards) sends 20. The cap is halved when health is below 50, and it is 0 while a mailbox is PAUSED or in ERROR. To retry a mailbox in ERROR, fix the problem and set its status back to WARMING, or store the password again.
 
 ## Warmup tag
 

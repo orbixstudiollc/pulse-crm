@@ -234,6 +234,6 @@ describe('warmup engine', () => {
     expect(world.boxes.get('a')).toMatchObject({ sentToday: 0, warmupSentToday: 0, warmupDay: 10, warmupStage: 'BUILDING', dailySendLimit: 10 });
     expect(world.boxes.get('b')).toMatchObject({ status: 'ACTIVE', warmupStage: 'MATURE', dailySendLimit: DEFAULT_WARMUP_CONFIG.stageSendLimits.MATURE });
     expect(world.boxes.get('c')).toMatchObject({ warmupStartedAt: now.toISOString(), warmupDay: 1, warmupStage: 'STARTING', dailySendLimit: 0 });
-    expect(world.boxes.get('d')).toMatchObject({ warmupStage: 'MATURE', dailySendLimit: 40, status: 'ACTIVE' });
+    expect(world.boxes.get('d')).toMatchObject({ warmupStage: 'MATURE', dailySendLimit: 20, status: 'ACTIVE' });
   });
 });
