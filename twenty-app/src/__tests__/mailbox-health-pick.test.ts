@@ -46,7 +46,9 @@ describe('placement stats and health', () => {
 describe('pickSendingMailbox', () => {
   const box = (over: Partial<SendingMailboxLike> & { id: string }): SendingMailboxLike => ({
     status: 'ACTIVE',
-    dailySendLimit: 40,
+    dailySendLimit: 20,
+    configuredDailySendLimit: over.dailySendLimit ?? 20,
+    warmupStage: 'MATURE',
     sentToday: 0,
     lastSentAt: '2026-10-10T08:00:00Z',
     healthScore: 90,
@@ -61,7 +63,7 @@ describe('pickSendingMailbox', () => {
           box({ id: 'full', sentToday: 40 }),
           box({ id: 'paused', status: 'PAUSED' }),
           box({ id: 'error', status: 'ERROR' }),
-          box({ id: 'cold', status: 'WARMING', dailySendLimit: 0 }),
+          box({ id: 'cold', status: 'WARMING', warmupStage: 'STARTING', dailySendLimit: 999 }),
         ],
         now,
       ),
@@ -83,7 +85,7 @@ describe('pickSendingMailbox', () => {
 
   it('treats yesterday\'s counter as stale', () => {
     const stale = box({ id: 'stale', sentToday: 40, lastSentAt: '2026-10-09T18:00:00Z' });
-    expect(remainingSendsToday(stale, now)).toBe(40);
+    expect(remainingSendsToday(stale, now)).toBe(20);
     expect(pickSendingMailbox([stale], now)?.id).toBe('stale');
   });
 

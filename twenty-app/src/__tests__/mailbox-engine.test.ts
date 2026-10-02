@@ -39,6 +39,7 @@ const mailbox = (id: string, email: string, over: Partial<MailboxRecord> = {}): 
   warmupStartedAt: '2026-10-10T00:00:00Z',
   warmupDay: 1,
   warmupStage: 'STARTING',
+  configuredDailySendLimit: 20,
   dailySendLimit: 0,
   sentToday: 0,
   warmupSentToday: 0,
@@ -233,7 +234,7 @@ describe('warmup engine', () => {
 
   it('resets counters daily and promotes mature mailboxes', async () => {
     const world = createWorld([
-      mailbox('a', 'ann@alpha.com', { warmupStartedAt: '2026-10-01T09:00:00Z', sentToday: 5, warmupSentToday: 9 }),
+      mailbox('a', 'ann@alpha.com', { warmupStartedAt: '2026-10-01T09:00:00Z', lastSentAt: '2026-10-09T09:00:00Z', sentToday: 5, warmupSentToday: 9 }),
       mailbox('b', 'bob@beta.com', { warmupStartedAt: '2026-09-01T09:00:00Z', healthScore: 95 }),
       mailbox('c', 'cat@gamma.com', { warmupStartedAt: null }),
       mailbox('d', 'dan@delta.com', { warmupStartedAt: null, warmupEnabled: false, status: 'ACTIVE', warmupStage: 'MATURE' }),

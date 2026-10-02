@@ -23,7 +23,11 @@ export type MailboxRecord = {
   warmupStartedAt: string | null;
   warmupDay: number | null;
   warmupStage: WarmupStage | null;
+  // Owner-managed sequence maximum. Missing/invalid values hold outreach.
+  configuredDailySendLimit?: number | null;
+  // Derived display fields; never used as authorization to send.
   dailySendLimit: number | null;
+  dailySendLimitReason?: string | null;
   sentToday: number | null;
   warmupSentToday: number | null;
   lastSentAt: string | null;
