@@ -65,6 +65,56 @@ export const dailySendLimitFor = (
   return base;
 };
 
+// Shared sequence policy. The stored dailySendLimit is only a display cache:
+// recompute from owner intent and warmup/health at refresh, selection and send.
+export type DailySendPolicyInput = {
+  configuredDailySendLimit?: number | null;
+  warmupStage?: WarmupStage | null;
+  warmupStartedAt?: string | null;
+  status: MailboxStatus | null;
+  healthScore?: number | null;
+};
+
+export const effectiveDailySendPolicy = (
+  input: DailySendPolicyInput,
+  now: Date,
+  config: WarmupConfig = DEFAULT_WARMUP_CONFIG,
+): { dailySendLimit: number; dailySendLimitReason: string } => {
+  const hold = (dailySendLimitReason: string) => ({ dailySendLimit: 0, dailySendLimitReason });
+  if (!Number.isFinite(now.getTime())) return hold('Invalid clock; outreach on hold');
+  if (input.warmupStartedAt && !Number.isFinite(new Date(input.warmupStartedAt).getTime())) {
+    return hold('Invalid warmup start date; outreach on hold');
+  }
+  if (input.status !== 'WARMING' && input.status !== 'ACTIVE') {
+    return hold(`Mailbox ${input.status ?? 'status missing'}; outreach on hold`);
+  }
+  const maximum = input.configuredDailySendLimit;
+  if (typeof maximum !== 'number' || !Number.isSafeInteger(maximum) || maximum < 0) {
+    return hold('Set Your daily maximum to a non-negative whole number; outreach on hold');
+  }
+  if (maximum === 0) return hold('Your daily maximum is 0; outreach on hold');
+  if (input.healthScore != null && (!Number.isFinite(input.healthScore) || input.healthScore < 0 || input.healthScore > 100)) {
+    return hold('Invalid health score; outreach on hold');
+  }
+  // A known start date takes precedence over a stale/manually edited stage.
+  const stage = input.warmupStartedAt
+    ? stageForDay(warmupDayFor(input.warmupStartedAt, now), config)
+    : (input.warmupStage ?? 'STARTING');
+  const allowance = dailySendLimitFor({ stage, status: input.status, healthScore: input.healthScore }, config);
+  if (!Number.isFinite(allowance) || allowance < 0) return hold('Invalid warmup allowance; outreach on hold');
+  const effective = Math.min(maximum, Math.floor(allowance));
+  const health = typeof input.healthScore === 'number' && input.healthScore < config.lowHealthScore
+    ? '; reduced for low health' : '';
+  const firstEligible = (['STARTING', 'BUILDING', 'RAMPING', 'MATURE'] as const)
+    .find((candidate) => config.stageSendLimits[candidate] >= 1);
+  const next = effective === 0 && stage === 'STARTING' && firstEligible
+    ? `; first eligible stage ${firstEligible}` : '';
+  return {
+    dailySendLimit: effective,
+    dailySendLimitReason: `Your maximum ${maximum}; warmup ${stage} allowance ${Math.floor(allowance)}${health}${next}`,
+  };
+};
+
 // How many cron runs are still to come today inside the send window,
 // counting the current one. 0 outside the window.
 export const runsLeftInWindow = (now: Date, config: WarmupConfig = DEFAULT_WARMUP_CONFIG): number => {

@@ -5,10 +5,12 @@
 
 import { getConnection } from 'twenty-sdk/logic-function';
 
+import { resolveWarmupConfig } from 'src/gtm/mailbox/config';
 import { resolveMailboxAuth } from 'src/gtm/mailbox/auth';
 import {
   createRestClient,
   MAILBOX_ENCRYPTION_KEY_VARIABLE,
+  MAILBOX_WARMUP_CONFIG_VARIABLE,
   readDelegatedTokenSource,
 } from 'src/gtm/mailbox/env';
 import { GMAIL_SCOPE } from 'src/gtm/mailbox/google-delegation';
@@ -25,6 +27,7 @@ export const createOutreachMailer = async (): Promise<OutreachMailer | null> => 
   const delegated = readDelegatedTokenSource();
 
   return buildOutreachMailer({
+    config: resolveWarmupConfig(process.env[MAILBOX_WARMUP_CONFIG_VARIABLE]),
     listMailboxes: () => repo.listMailboxes(),
     updateMailbox: (id, patch) => repo.updateMailbox(id, patch),
     resolveAuth: (mailbox) =>

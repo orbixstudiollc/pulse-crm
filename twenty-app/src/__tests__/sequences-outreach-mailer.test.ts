@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { resolveWarmupConfig } from 'src/gtm/mailbox/config';
 import { FakeStore } from 'src/__tests__/sequences-fakes';
 import { MailRejectedError, type MailSender, type OutgoingMail } from 'src/gtm/mailbox/transport';
 import type { MailboxPatch, MailboxRecord } from 'src/gtm/mailbox/types';
@@ -29,6 +30,7 @@ const mailbox = (id: string, over: Partial<MailboxRecord> = {}): MailboxRecord =
   warmupStartedAt: null,
   warmupDay: 30,
   warmupStage: 'MATURE',
+  configuredDailySendLimit: over.dailySendLimit ?? 2,
   dailySendLimit: 2,
   sentToday: 0,
   warmupSentToday: 0,
@@ -48,6 +50,7 @@ let authFails: Set<string>;
 let sendError: Error | null;
 
 const deps = () => ({
+  now: () => NOW,
   listMailboxes: async () => boxes,
   updateMailbox: async (id: string, patch: MailboxPatch) => void updates.push({ id, patch }),
   resolveAuth: async (m: MailboxRecord) => {
@@ -90,7 +93,7 @@ describe('pickMailboxForEnrollment', () => {
   });
 
   it('respects warmup caps: a STARTING mailbox with no sequence quota is never picked', () => {
-    expect(pickMailboxForEnrollment([mailbox('a', { dailySendLimit: 0, status: 'WARMING' })], null, NOW)).toBeNull();
+    expect(pickMailboxForEnrollment([mailbox('a', { dailySendLimit: 999, configuredDailySendLimit: 10, warmupStage: 'STARTING', status: 'WARMING' })], null, NOW)).toBeNull();
   });
 });
 
@@ -137,6 +140,106 @@ describe('buildOutreachMailer', () => {
     expect(await pick()).toBeNull();
     await mailer.close!();
     expect(closed).toBe(1);
+  });
+
+  it.each([
+    { warmupStage: 'STARTING' as const },
+    { configuredDailySendLimit: 0 },
+    { configuredDailySendLimit: undefined },
+    { configuredDailySendLimit: -1 },
+    { status: 'PAUSED' as const },
+    { status: 'ERROR' as const },
+    { configuredDailySendLimit: 10, warmupStage: 'BUILDING' as const, healthScore: 49, sentToday: 5, lastSentAt: NOW.toISOString() },
+    { configuredDailySendLimit: 10, sentToday: 10, lastSentAt: NOW.toISOString() },
+    { sentToday: NaN },
+  ])('blocks stale-cap direct transport sends before auth/SMTP: %j', async (over) => {
+    boxes = [mailbox('a', { ...over, dailySendLimit: 999 })];
+    const auth = vi.fn(deps().resolveAuth);
+    const open = vi.fn(deps().openSender);
+    const mailer = (await buildOutreachMailer({ ...deps(), resolveAuth: auth, openSender: open }))!;
+    const res = await mailer.transport.send({ from: 'a@send.test', to: 'x@y.z', subject: 's', text: 't', enrollmentId: 'e', sequenceId: 's', stepNumber: 1 });
+    expect(res).toMatchObject({ ok: false, retryable: true });
+    expect(auth).not.toHaveBeenCalled();
+    expect(open).not.toHaveBeenCalled();
+    expect(sent).toEqual([]);
+  });
+
+  it('rechecks a persisted owner change after selection', async () => {
+    const mailer = (await buildOutreachMailer({ ...deps(), listMailboxes: async () => boxes.map((m) => ({ ...m })) }))!;
+    const from = (await mailer.mailboxes.pickMailbox({ now: NOW, enrollmentId: 'e', sequenceId: 's' }))!;
+    boxes = boxes.map((m) => m.email === from ? { ...m, configuredDailySendLimit: 0 } : m);
+    expect(await mailer.transport.send({ from, to: 'x@y.z', subject: 's', text: 't', enrollmentId: 'e', sequenceId: 's', stepNumber: 1 })).toMatchObject({ ok: false, retryable: true });
+    expect(sent).toEqual([]);
+  });
+
+  it('retains successful sends when a fresh server read has stale usage', async () => {
+    boxes = [mailbox('a', { configuredDailySendLimit: 1 })];
+    const mailer = (await buildOutreachMailer({ ...deps(), listMailboxes: async () => boxes.map((m) => ({ ...m })) }))!;
+    const email = { from: 'a@send.test', to: 'x@y.z', subject: 's', text: 't', enrollmentId: 'e', sequenceId: 's', stepNumber: 1 };
+    expect(await mailer.transport.send(email)).toMatchObject({ ok: true });
+    await mailer.usage!.recordSend(email.from, NOW);
+    // The fake deliberately leaves server counters at zero.
+    expect(await mailer.transport.send(email)).toMatchObject({ ok: false, retryable: true });
+    expect(sent).toHaveLength(1);
+    expect(updates[0].patch.sentToday).toBe(1);
+  });
+
+  it('holds the mailbox for this run after usage persistence fails', async () => {
+    boxes = [mailbox('a')];
+    const mailer = (await buildOutreachMailer({ ...deps(), updateMailbox: async () => { throw new Error('write failed'); } }))!;
+    const email = { from: 'a@send.test', to: 'x@y.z', subject: 's', text: 't', enrollmentId: 'e', sequenceId: 's', stepNumber: 1 };
+    expect(await mailer.transport.send(email)).toMatchObject({ ok: true });
+    await expect(mailer.usage!.recordSend(email.from, NOW)).rejects.toThrow('write failed');
+    expect(await mailer.mailboxes.pickMailbox({ now: NOW, enrollmentId: 'e', sequenceId: 's', preferred: email.from })).toBeNull();
+    expect(await mailer.transport.send(email)).toMatchObject({ ok: false, retryable: true });
+    expect(sent).toHaveLength(1);
+  });
+
+  it('holds if fresh mailbox policy cannot be loaded', async () => {
+    let reads = 0;
+    const auth = vi.fn(deps().resolveAuth);
+    const mailer = (await buildOutreachMailer({ ...deps(), resolveAuth: auth, listMailboxes: async () => {
+      if (reads++ > 0) throw new Error('offline');
+      return boxes;
+    } }))!;
+    expect(await mailer.transport.send({ from: 'a@send.test', to: 'x@y.z', subject: 's', text: 't', enrollmentId: 'e', sequenceId: 's', stepNumber: 1 })).toMatchObject({ ok: false, retryable: true });
+    expect(auth).not.toHaveBeenCalled();
+  });
+
+  it('uses custom warmup settings for preferred selection, pool and transport', async () => {
+    boxes = [mailbox('a', { configuredDailySendLimit: 10, warmupStage: 'BUILDING', sentToday: 3, lastSentAt: NOW.toISOString() })];
+    const config = resolveWarmupConfig({ stageSendLimits: { BUILDING: 3 } });
+    const mailer = (await buildOutreachMailer({ ...deps(), config }))!;
+    expect(pickMailboxForEnrollment(boxes, 'a@send.test', NOW, config)).toBeNull();
+    expect(await mailer.mailboxes.pickMailbox({ now: NOW, enrollmentId: 'e', sequenceId: 's' })).toBeNull();
+    expect(await mailer.transport.send({ from: 'a@send.test', to: 'x@y.z', subject: 's', text: 't', enrollmentId: 'e', sequenceId: 's', stepNumber: 1 })).toMatchObject({ ok: false, retryable: true });
+  });
+
+  it('charges the actual UTC send day if the runner started before midnight', async () => {
+    const before = new Date('2026-10-01T23:59:59Z');
+    const after = new Date('2026-10-02T00:00:01Z');
+    boxes = [mailbox('a', { sentToday: 1, lastSentAt: before.toISOString() })];
+    let clock = before;
+    const mailer = (await buildOutreachMailer({ ...deps(), now: () => clock }))!;
+    expect(await mailer.mailboxes.pickMailbox({ now: before, enrollmentId: 'e', sequenceId: 's' })).toBe('a@send.test');
+    clock = after;
+    expect(await mailer.transport.send({ from: 'a@send.test', to: 'x@y.z', subject: 's', text: 't', enrollmentId: 'e', sequenceId: 's', stepNumber: 1 })).toMatchObject({ ok: true });
+    await mailer.usage!.recordSend('a@send.test', before);
+    expect(updates[0].patch).toEqual({ sentToday: 1, lastSentAt: after.toISOString() });
+  });
+
+  it('charges the new UTC day when SMTP itself finishes after midnight', async () => {
+    const before = new Date('2026-10-01T23:59:59Z');
+    const after = new Date('2026-10-02T00:00:01Z');
+    boxes = [mailbox('a', { sentToday: 1, lastSentAt: before.toISOString() })];
+    let clock = before;
+    const mailer = (await buildOutreachMailer({ ...deps(), now: () => clock, openSender: async () => ({
+      send: async () => { clock = after; return { messageId: '<midnight>' }; },
+      close: async () => {},
+    }) }))!;
+    expect(await mailer.transport.send({ from: 'a@send.test', to: 'x@y.z', subject: 's', text: 't', enrollmentId: 'e', sequenceId: 's', stepNumber: 1 })).toMatchObject({ ok: true });
+    await mailer.usage!.recordSend('a@send.test', before);
+    expect(updates[0].patch).toEqual({ sentToday: 1, lastSentAt: after.toISOString() });
   });
 
   it('resets a stale counter from an earlier day', async () => {
