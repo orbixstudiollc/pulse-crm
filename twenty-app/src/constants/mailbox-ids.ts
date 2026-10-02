@@ -42,29 +42,29 @@ export const WARMUP_MESSAGE_REPLIED_UID = '4c71194f-7e67-43c6-ac15-e17d93003556'
 export const WARMUP_MESSAGE_BOUNCED_UID = '2da26182-08c7-434a-9e90-3ef0b1ee7fdd';
 export const WARMUP_MESSAGE_PROCESSED_AT_UID = '1c9a4501-583e-4cba-8a43-bd0966d9c1c8';
 
-export const MAILBOXES_VIEW_VIEW_UID = '06ae53c7-4ccc-4577-990e-87d703df13d4';
-export const MAILBOXES_VIEW_F_EMAIL_UID = '14a82218-ca4f-4e94-a034-dbd312726592';
-export const MAILBOXES_VIEW_F_DISPLAY_NAME_UID = 'afb1c24f-8c0d-4cf0-bf6b-7476afaf65fe';
-export const MAILBOXES_VIEW_F_PROVIDER_UID = 'aa735d95-ff0e-434e-9182-6b4a76cf961c';
-export const MAILBOXES_VIEW_F_STATUS_UID = '03e6bd53-67c6-492b-80c6-0eeab1a28ae7';
-export const MAILBOXES_VIEW_F_WARMUP_ENABLED_UID = 'e3ed61ef-a515-47b8-819c-4f659da9ddc1';
-export const MAILBOXES_VIEW_F_WARMUP_STAGE_UID = '03ba93d3-bb78-4718-b7b5-05976306f09b';
-export const MAILBOXES_VIEW_F_WARMUP_DAY_UID = '01d54d7d-5dff-4353-9961-917bc3d818a4';
-export const MAILBOXES_VIEW_F_DAILY_LIMIT_UID = '789b7129-f078-4100-a652-fde83e67159e';
-export const MAILBOXES_VIEW_F_SENT_TODAY_UID = '05ece7b9-8ec9-43c1-8fac-452b3fac777d';
-export const MAILBOXES_VIEW_F_HEALTH_UID = '773ba5fd-30f2-413a-8d2f-43350e295546';
-export const MAILBOXES_VIEW_SORT_UID = '30913416-4642-4c03-885e-a4cbe7dbc368';
+export const MAILBOXES_VIEW_VIEW_UID = 'f98ed2de-0476-4cc3-955d-20abf433e3fe';
+export const MAILBOXES_VIEW_F_EMAIL_UID = 'b711f040-c2a7-400b-8615-109a3653b4ec';
+export const MAILBOXES_VIEW_F_DISPLAY_NAME_UID = '06778598-eb90-41d9-8253-e2ce71c192e4';
+export const MAILBOXES_VIEW_F_PROVIDER_UID = 'f55e5cea-fa5a-4241-8499-dfded6351e10';
+export const MAILBOXES_VIEW_F_STATUS_UID = '92522ef9-a5d9-4af2-be76-46cd4e3c9707';
+export const MAILBOXES_VIEW_F_WARMUP_ENABLED_UID = '71f59528-f6ec-4aea-a543-c84f4f7fe275';
+export const MAILBOXES_VIEW_F_WARMUP_STAGE_UID = '3fa39d9d-9b5b-4931-a69b-cfa0f5647f02';
+export const MAILBOXES_VIEW_F_WARMUP_DAY_UID = '93c708aa-7efb-43ee-9a19-cb1a84e00ce4';
+export const MAILBOXES_VIEW_F_DAILY_LIMIT_UID = 'e83239ea-d636-4e97-b1b8-8a5fa9efd4d9';
+export const MAILBOXES_VIEW_F_SENT_TODAY_UID = '2cb7f52a-1078-4b54-801c-251acdb4d1b7';
+export const MAILBOXES_VIEW_F_HEALTH_UID = 'fdea4977-4e7f-4f46-9f60-a8f6e35aaeea';
+export const MAILBOXES_VIEW_SORT_UID = '0ec56edf-6324-4d8f-8c10-327593e2704f';
 
-export const MAILBOX_HEALTH_VIEW_VIEW_UID = 'df1d946b-0eff-4909-800b-08c99cb19e6b';
-export const MAILBOX_HEALTH_VIEW_F_EMAIL_UID = '09c11ef1-a50c-4d83-a7b4-95c2ea76e58e';
-export const MAILBOX_HEALTH_VIEW_F_STATUS_UID = 'cac52452-115c-411b-9be3-3c2fbe3a6a96';
-export const MAILBOX_HEALTH_VIEW_F_HEALTH_UID = '84756c83-b6fd-406d-a252-84372ef6dd1a';
-export const MAILBOX_HEALTH_VIEW_F_SPAM_UID = 'b45db471-ff88-4c6c-b18c-301195fe59e7';
-export const MAILBOX_HEALTH_VIEW_F_BOUNCE_UID = '9696fe4e-6c2c-4b04-8613-da95c8a2c7d6';
-export const MAILBOX_HEALTH_VIEW_F_STAGE_UID = 'eadc0be8-6246-4457-bc4e-043c9aab8e02';
-export const MAILBOX_HEALTH_VIEW_F_LIMIT_UID = 'ec524e39-6dce-458b-a7b5-3189f1741410';
-export const MAILBOX_HEALTH_VIEW_F_LAST_ERROR_UID = 'ccfab06c-f71f-4b6e-b2e2-c9ee8b8ca679';
-export const MAILBOX_HEALTH_VIEW_SORT_UID = 'b7942aa1-d198-4fe4-ad4d-44f39741f654';
+export const MAILBOX_HEALTH_VIEW_VIEW_UID = '09252c03-6d8d-4223-9b55-36741d5ece3d';
+export const MAILBOX_HEALTH_VIEW_F_EMAIL_UID = '256dc1e2-92f5-402b-93da-fdcae80ff4b1';
+export const MAILBOX_HEALTH_VIEW_F_STATUS_UID = 'b80a223d-3ec1-4c4d-a2fa-0a356abd8a33';
+export const MAILBOX_HEALTH_VIEW_F_HEALTH_UID = '11c57844-c51b-4d35-b189-ee9777d0d380';
+export const MAILBOX_HEALTH_VIEW_F_SPAM_UID = '944eb8e6-bc7c-47e3-a20d-53ca28421167';
+export const MAILBOX_HEALTH_VIEW_F_BOUNCE_UID = 'ef15b8ab-cdae-4e75-923d-83d1e3c51f77';
+export const MAILBOX_HEALTH_VIEW_F_STAGE_UID = '5ad48bac-6708-48cf-a019-ce4e1135f1ca';
+export const MAILBOX_HEALTH_VIEW_F_LIMIT_UID = '3e278f68-3ddf-46bb-a951-26414296a131';
+export const MAILBOX_HEALTH_VIEW_F_LAST_ERROR_UID = '64d5a763-b918-42bb-8132-f716e35bdf2c';
+export const MAILBOX_HEALTH_VIEW_SORT_UID = '1c0ca8af-0360-479d-9db7-1213582f01db';
 
 export const WARMUP_LOG_VIEW_VIEW_UID = '7d7190ba-804f-4737-beff-5e6e5c6d4714';
 export const WARMUP_LOG_VIEW_F_SUBJECT_UID = '3ae5de27-da8b-45d4-b660-54f1ff9ee98d';
@@ -78,7 +78,7 @@ export const WARMUP_LOG_VIEW_F_BOUNCED_UID = '6e9b2473-6db9-4966-8149-28a3259dca
 export const WARMUP_LOG_VIEW_SORT_UID = 'c471678d-b86d-4229-8573-c4de15b86904';
 
 export const MAILBOX_NAV_FOLDER_UID = '31d8d396-6080-426e-8c4c-62dd671f830a';
-// Sidebar entries were re-issued with new ids on 2026-10-02: a workspace that
+// Sidebar entries and their views were re-issued with new ids on 2026-10-02: a workspace that
 // had removed them got them back only this way (apply saw no change otherwise).
 export const MAILBOX_NAV_MAILBOXES_UID = '68aaeaba-60d3-4c80-ba5c-1f78138235da';
 export const MAILBOX_NAV_HEALTH_UID = '686dcda1-9347-4a73-afac-3dbd5fa507fc';
