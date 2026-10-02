@@ -8,15 +8,16 @@
 // Call `pulseTrack('ada@example.com')` to link a visitor yourself.
 // Events are batched for a second (sent at once on form submit and when the
 // tab is hidden) so they reach the server in order. sendBeacon sends
-// text/plain, so there is no CORS preflight. Plain ES5 so GTM accepts it.
+// text/plain, so there is no CORS preflight. Plain ES5 so GTM accepts it:
+// no let/const/arrows, and no function declarations inside blocks.
 
 export const TRACKING_SNIPPET_TEMPLATE = `<script>
 (function(w,d,k,e){try{if(w.__pulseTrack)return;w.__pulseTrack=1;
 var s=w.localStorage,id=s.getItem(k);if(!id){id=w.crypto&&crypto.randomUUID?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2));s.setItem(k,id)}
 var q=[],tm=0,t0=Date.now(),max=0;
-function flush(){clearTimeout(tm);if(!q.length)return;var b=JSON.stringify({visitorId:id,url:location.href,referrer:d.referrer||null,events:q.splice(0,20)});
-if(navigator.sendBeacon){navigator.sendBeacon(e,b)}else{fetch(e,{method:'POST',body:b,keepalive:true,mode:'no-cors'})}if(q.length)flush()}
-function send(o,now){o.url=location.href;q.push(o);clearTimeout(tm);if(now)flush();else tm=setTimeout(flush,1000)}
+var flush=function(){clearTimeout(tm);if(!q.length)return;var b=JSON.stringify({visitorId:id,url:location.href,referrer:d.referrer||null,events:q.splice(0,20)});
+if(navigator.sendBeacon){navigator.sendBeacon(e,b)}else{fetch(e,{method:'POST',body:b,keepalive:true,mode:'no-cors'})}if(q.length)flush()};
+var send=function(o,now){o.url=location.href;q.push(o);clearTimeout(tm);if(now)flush();else tm=setTimeout(flush,1000)};
 w.addEventListener('scroll',function(){var h=d.documentElement,p=Math.round((w.scrollY+w.innerHeight)*100/Math.max(h.scrollHeight,1));if(p>max)max=Math.min(p,100)},{passive:true});
 d.addEventListener('visibilitychange',function(){if(d.visibilityState==='hidden'){send({type:'engage',seconds:Math.round((Date.now()-t0)/1000),scroll:max},1)}else{t0=Date.now()}});
 d.addEventListener('click',function(ev){var a=ev.target&&ev.target.closest&&ev.target.closest('a,button,[role=button],input[type=submit]');if(!a)return;

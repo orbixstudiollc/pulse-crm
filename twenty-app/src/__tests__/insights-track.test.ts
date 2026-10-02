@@ -150,6 +150,15 @@ describe('trackingSnippet', () => {
     const body = trackingSnippet('https://crm.example.com').replace(/^<script>/, '').replace(/<\/script>$/, '');
     expect(() => new Function(body)).not.toThrow();
   });
+
+  it('only uses ES5, which Google Tag Manager requires', () => {
+    const body = trackingSnippet('https://crm.example.com');
+    // GTM rejects function declarations inside blocks, let/const, arrows and template strings.
+    expect(body).not.toMatch(/[{;]\s*function\s+\w+\s*\(/);
+    expect(body).not.toMatch(/\b(let|const)\s/);
+    expect(body).not.toContain('=>');
+    expect(body).not.toContain('`');
+  });
 });
 
 describe('behaviour tracking', () => {
