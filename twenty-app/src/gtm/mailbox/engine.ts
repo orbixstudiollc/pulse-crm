@@ -3,12 +3,13 @@ import { generateWarmupEmail, generateWarmupReply } from 'src/gtm/mailbox/conten
 import { autoPauseReason, computeHealthScore, computePlacementStats } from 'src/gtm/mailbox/health';
 import { planWarmupPairs, type WarmupPair } from 'src/gtm/mailbox/pairing';
 import {
-  dailySendLimitFor,
+  effectiveDailySendPolicy,
   sendsThisRun,
   stageForDay,
   warmupDayFor,
   warmupVolumeForDay,
 } from 'src/gtm/mailbox/ramp';
+import { sentTodayFor } from 'src/gtm/mailbox/pick-sending-mailbox';
 import { hasCredential, serverSettingsFor } from 'src/gtm/mailbox/server-settings';
 import {
   MailRejectedError,
@@ -309,7 +310,7 @@ export const refreshMailboxStats = async (
       now,
       config.statsWindowDays,
     );
-    let status: MailboxStatus = mailbox.status ?? 'WARMING';
+    let status = mailbox.status;
     let lastError = mailbox.lastError;
     const reason = status === 'PAUSED' ? null : autoPauseReason(stats, config);
     if (reason) {
@@ -320,15 +321,14 @@ export const refreshMailboxStats = async (
     const healthScore = computeHealthScore({
       spamPlacementRate: stats.spamPlacementRate,
       bounceRate: stats.bounceRate,
-      status,
+      status: status ?? 'ERROR',
       hasRecentError: Boolean(lastError) && status === 'ERROR',
     });
-    const stage = mailbox.warmupStage ?? 'STARTING';
     const patch: MailboxPatch = {
       spamPlacementRate: stats.spamPlacementRate,
       bounceRate: stats.bounceRate,
       healthScore,
-      dailySendLimit: dailySendLimitFor({ stage, status, healthScore }, config),
+      ...effectiveDailySendPolicy({ ...mailbox, status, healthScore }, now, config),
     };
     if (status !== mailbox.status) patch.status = status;
     if (lastError !== mailbox.lastError) patch.lastError = lastError;
@@ -354,18 +354,21 @@ export const resetDailyCounters = async (
     }
     const day = warmupStartedAt ? warmupDayFor(warmupStartedAt, now) : (mailbox.warmupDay ?? 0);
     const stage = warmupStartedAt ? stageForDay(day, config) : (mailbox.warmupStage ?? 'STARTING');
-    let status: MailboxStatus = mailbox.status ?? 'WARMING';
+    let status = mailbox.status;
     if (status === 'WARMING' && stage === 'MATURE') {
       status = 'ACTIVE';
       promoted.push(mailbox.email);
     }
     const patch: MailboxPatch = {
-      sentToday: 0,
       warmupSentToday: 0,
       warmupDay: day,
       warmupStage: stage,
-      dailySendLimit: dailySendLimitFor({ stage, status, healthScore: mailbox.healthScore }, config),
+      ...effectiveDailySendPolicy({ ...mailbox, warmupStartedAt, warmupStage: stage, status }, now, config),
     };
+    // Do not erase sequence sends already made today before this cron runs.
+    // Keep malformed usage untouched (the picker fails closed on it).
+    const sentToday = sentTodayFor(mailbox, now);
+    if (Number.isFinite(sentToday)) patch.sentToday = sentToday;
     if (warmupStartedAt !== mailbox.warmupStartedAt) patch.warmupStartedAt = warmupStartedAt;
     if (status !== mailbox.status) patch.status = status;
     await repo.updateMailbox(mailbox.id, patch);
