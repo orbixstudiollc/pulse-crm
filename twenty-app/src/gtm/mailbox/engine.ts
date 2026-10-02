@@ -22,6 +22,7 @@ import type {
   WarmupMessageInput,
   WarmupMessageRecord,
 } from 'src/gtm/mailbox/types';
+import { INBOX_CHECK_ERROR_PREFIX, isInboxCheckError } from 'src/gtm/mailbox/types';
 import type { MailboxStatus } from 'src/gtm/mailbox/values';
 import {
   detectWarmupTag,
@@ -270,10 +271,15 @@ export const processWarmupInboxes = async (deps: EngineDeps): Promise<ProcessInb
           });
         }
       }
+      // The inbox opened, so an earlier sign-in failure no longer applies.
+      if (isInboxCheckError(mailbox.lastError)) {
+        await repo.updateMailbox(mailbox.id, { lastError: null });
+        mailbox.lastError = null;
+      }
     } catch (error) {
       summary.failedMailboxes.push(mailbox.email);
       deps.log?.(`warmup inbox failed for ${mailbox.email}: ${errorText(error)}`);
-      await repo.updateMailbox(mailbox.id, { status: 'ERROR', lastError: `Inbox check failed: ${errorText(error)}` });
+      await repo.updateMailbox(mailbox.id, { status: 'ERROR', lastError: `${INBOX_CHECK_ERROR_PREFIX}${errorText(error)}` });
       mailbox.status = 'ERROR';
     } finally {
       await inbox?.close().catch(() => undefined);

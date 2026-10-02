@@ -51,3 +51,9 @@ export type WarmupMessageRecord = {
 };
 
 export type WarmupMessageInput = Omit<WarmupMessageRecord, 'id'>;
+
+// lastError written when the warmup engine cannot open a mailbox's inbox.
+export const INBOX_CHECK_ERROR_PREFIX = 'Inbox check failed: ';
+
+export const isInboxCheckError = (lastError: string | null | undefined) =>
+  Boolean(lastError?.startsWith(INBOX_CHECK_ERROR_PREFIX));

@@ -1,5 +1,6 @@
 import type { MailboxAuth } from 'src/gtm/mailbox/transport';
 import type { MailboxRecord } from 'src/gtm/mailbox/types';
+import { isInboxCheckError } from 'src/gtm/mailbox/types';
 import { verifyWarmupTag } from 'src/gtm/mailbox/warmup-tag';
 import { isAutomatedSender } from 'src/gtm/sequences/inbound';
 import type { InboundEmail, MarkReplyResult } from 'src/gtm/sequences/mark-reply';
@@ -53,6 +54,8 @@ export type InboxSyncDeps = {
   recordReply(email: InboundEmail): Promise<Pick<MarkReplyResult, 'matched'>>;
   hasItem(messageId: string): Promise<boolean>;
   createItem(item: NewEmailItem): Promise<void>;
+  // Clears a mailbox's stale sign-in error once its inbox opens again.
+  clearError?(mailboxId: string): Promise<void>;
   tagSecret: string;
   now: Date;
   log?: (message: string) => void;
@@ -150,6 +153,7 @@ const syncOne = async (
     // Saved last, so a failed run re-reads the same mail next time (duplicates
     // are skipped by Message-ID).
     await deps.setCursor(mailbox.id, result.cursor);
+    if (deps.clearError && isInboxCheckError(mailbox.lastError)) await deps.clearError(mailbox.id);
   } catch (error) {
     summary.failed.push({ email: mailbox.email, error: errorText(error) });
     deps.log?.(`inbox sync failed for ${mailbox.email}: ${errorText(error)}`);

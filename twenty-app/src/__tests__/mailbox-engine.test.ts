@@ -211,6 +211,16 @@ describe('warmup engine', () => {
     }
   });
 
+  it('clears a stale inbox sign-in error once the inbox opens', async () => {
+    const boxes = pool();
+    boxes[0] = { ...boxes[0], lastError: 'Inbox check failed: unauthorized_client' };
+    boxes[1] = { ...boxes[1], lastError: 'Sending failed: quota' };
+    const world = createWorld(boxes);
+    await processWarmupInboxes(world.deps(new Date('2026-10-10T19:10:00Z')));
+    expect(world.boxes.get('a')?.lastError).toBeFalsy();
+    expect(world.boxes.get('b')?.lastError).toBe('Sending failed: quota');
+  });
+
   it('auto-pauses a mailbox that keeps landing in spam', async () => {
     const world = createWorld(pool(), { spamFor: ['ann@alpha.com', 'bob@beta.com', 'cat@gamma.com', 'dan@delta.com'] });
     const config = { minSampleForAutoPause: 2 };

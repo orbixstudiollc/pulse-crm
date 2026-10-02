@@ -20,8 +20,9 @@ export const createInboxSyncDeps = (now = new Date()): InboxSyncDeps => {
   const delegated = readDelegatedTokenSource();
   const client = new CoreApiClient() as unknown as GraphqlClient;
   const store = createTwentyStore(client);
+  const repo = createTwentyMailboxRepository(createRestClient());
   return {
-    listMailboxes: () => createTwentyMailboxRepository(createRestClient()).listMailboxes(),
+    listMailboxes: () => repo.listMailboxes(),
     resolveAuth: (mailbox) =>
       resolveMailboxAuth(mailbox, {
         encryptionKey,
@@ -40,6 +41,7 @@ export const createInboxSyncDeps = (now = new Date()): InboxSyncDeps => {
     async createItem(item) {
       await client.mutation({ createInboxItem: { __args: { data: { ...item, kind: 'EMAIL' } }, id: true } });
     },
+    clearError: (mailboxId) => repo.updateMailbox(mailboxId, { lastError: null }),
     tagSecret: warmupTagSecret(encryptionKey),
     now,
     log: (message) => console.warn(`[inbox-sync] ${message}`),

@@ -133,6 +133,22 @@ describe('inbox sync', () => {
   });
 });
 
+describe('inbox sync errors', () => {
+  it('clears a stale inbox sign-in error after a successful sync', async () => {
+    const { deps } = setup({ 'a@orbix.com': [msg(1)] }, { failAuth: ['b@orbix.com'] });
+    const cleared: string[] = [];
+    deps.listMailboxes = async () => [
+      mailbox('a', 'a@orbix.com', { lastError: 'Inbox check failed: unauthorized_client' }),
+      mailbox('b', 'b@orbix.com', { lastError: 'Inbox check failed: unauthorized_client' }),
+      mailbox('c', 'c@orbix.com', { lastError: 'Sending failed: quota' }),
+    ];
+    deps.clearError = async (id) => void cleared.push(id);
+    const summary = await syncMailboxInboxes(deps);
+    expect(cleared).toEqual(['a']);
+    expect(summary.failed.map((f) => f.email)).toEqual(['b@orbix.com']);
+  });
+});
+
 describe('imap reader helpers', () => {
   it('prefers text/plain and skips attachments', () => {
     expect(
