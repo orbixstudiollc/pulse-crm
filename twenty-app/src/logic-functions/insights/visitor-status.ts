@@ -1,13 +1,23 @@
 import { RestApiClient } from 'twenty-client-sdk/rest';
 import { defineLogicFunction } from 'twenty-sdk/define';
+import { kv } from 'twenty-sdk/logic-function';
 
-import { TRACKING_SNIPPET_FUNCTION_ID, VISITOR_STATUS_ROUTE_PATH } from 'src/constants/insights-ids';
+import { RB2B_KEY_KV, TRACKING_SNIPPET_FUNCTION_ID, VISITOR_STATUS_ROUTE_PATH } from 'src/constants/insights-ids';
 import { failure } from 'src/gtm/leadfinder/payload';
 import { filterValue } from 'src/gtm/leadfinder/twenty';
 import { DEFAULT_VISITOR_SEQUENCE_NAME, visitorEnrichConfig } from 'src/insights/enrich-visitors-runtime';
 
 // Route behind the Setup page: is tracking live, and what is set up.
 type Count = { totalCount?: number };
+
+// The RB2B webhook key, created on first use. Only signed-in users reach this route.
+const rb2bKey = async () => {
+  const existing = await kv.get<string>(RB2B_KEY_KV);
+  if (existing) return existing;
+  const key = crypto.randomUUID().replace(/-/g, '');
+  await kv.set(RB2B_KEY_KV, key);
+  return key;
+};
 
 const handler = async () => {
   try {
@@ -23,7 +33,7 @@ const handler = async () => {
     const sequences = await rest.get<{ data?: { sequences?: { id: string }[] } }>('/rest/sequences', {
       query: { filter: `name[eq]:${filterValue(sequenceName)}`, limit: 1, depth: 0 },
     });
-    const [visitors, lastDay, companies, withLeads, lastVisit] = await Promise.all([
+    const [visitors, lastDay, companies, withLeads, lastVisit, rb2bVisitors, key] = await Promise.all([
       count(),
       count(`visitedAt[gte]:${filterValue(since)}`),
       count('companyId[is]:NOT_NULL'),
@@ -31,6 +41,8 @@ const handler = async () => {
       rest.get<{ data?: { websiteVisits?: { visitedAt?: string | null }[] } }>('/rest/websiteVisits', {
         query: { limit: 1, depth: 0, order_by: 'visitedAt[DescNullsLast]' },
       }),
+      count('visitorId[like]:"rb2b:%"'),
+      rb2bKey(),
     ]);
     const config = visitorEnrichConfig();
     return {
@@ -46,6 +58,8 @@ const handler = async () => {
       dailyLeadCap: config.dailyLeadCap,
       sequenceName,
       sequenceFound: Boolean(sequences.data?.sequences?.[0]),
+      rb2bVisitors,
+      rb2bKey: key,
     };
   } catch (error) {
     return failure(error);

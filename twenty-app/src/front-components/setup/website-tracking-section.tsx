@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { RestApiClient } from 'twenty-client-sdk/rest';
 import { copyToClipboard, getApplicationVariable } from 'twenty-sdk/front-component';
 
-import { VISITOR_STATUS_ROUTE_PATH } from 'src/constants/insights-ids';
+import { RB2B_ROUTE_PATH, VISITOR_STATUS_ROUTE_PATH } from 'src/constants/insights-ids';
 import { trackingSnippet } from 'src/insights/tracking-snippet';
 import { useTheme } from 'src/insights/ui';
 import { borderColor, buttonStyle, sectionTitle } from 'src/front-components/setup/styles';
@@ -21,6 +21,8 @@ type Status =
       dailyLeadCap: number;
       sequenceName: string;
       sequenceFound: boolean;
+      rb2bVisitors: number;
+      rb2bKey: string;
     }
   | { ok: false; error: string };
 
@@ -28,7 +30,7 @@ type Status =
 export const WebsiteTrackingSection = () => {
   const theme = useTheme();
   const [status, setStatus] = useState<Status | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<'tag' | 'rb2b' | null>(null);
 
   const endpoint = getApplicationVariable('TRACKING_ENDPOINT_URL')?.trim() || new RestApiClient().resolveUrl('/s/track');
   const snippet = trackingSnippet(endpoint);
@@ -44,9 +46,13 @@ export const WebsiteTrackingSection = () => {
     void refresh();
   }, []);
 
-  const copy = async () => {
-    await copyToClipboard(snippet);
-    setCopied(true);
+  const rb2bUrl = status?.ok ? `${new RestApiClient().resolveUrl(`/s${RB2B_ROUTE_PATH}`)}?key=${status.rb2bKey}` : null;
+
+  const copy = async (what: 'tag' | 'rb2b') => {
+    const text = what === 'tag' ? snippet : rb2bUrl;
+    if (!text) return;
+    await copyToClipboard(text);
+    setCopied(what);
   };
 
   const check = (done: boolean, text: string) => (
@@ -83,8 +89,8 @@ export const WebsiteTrackingSection = () => {
         {snippet}
       </pre>
       <div style={{ display: 'flex', gap: 8 }}>
-        <button type="button" style={buttonStyle(theme, false)} onClick={() => void copy()}>
-          {copied ? 'Copied' : 'Copy tag'}
+        <button type="button" style={buttonStyle(theme, false)} onClick={() => void copy('tag')}>
+          {copied === 'tag' ? 'Copied' : 'Copy tag'}
         </button>
         <button type="button" style={buttonStyle(theme, false)} onClick={() => void refresh()}>
           Refresh status
@@ -105,6 +111,14 @@ export const WebsiteTrackingSection = () => {
           {check(status.sequenceFound, status.sequenceFound
             ? `New visitor leads and form fills go into the "${status.sequenceName}" sequence`
             : `Create a sequence named "${status.sequenceName}" to email visitor leads automatically`)}
+          {check(status.rb2bVisitors > 0, status.rb2bVisitors > 0
+            ? `RB2B connected: ${status.rb2bVisitors} identified visitors`
+            : 'Optional, RB2B: in RB2B go to Integrations > Webhook, paste the webhook URL, and Save')}
+          <div>
+            <button type="button" style={buttonStyle(theme, false)} onClick={() => void copy('rb2b')}>
+              {copied === 'rb2b' ? 'Copied' : 'Copy RB2B webhook URL'}
+            </button>
+          </div>
         </div>
       ) : status && !status.ok ? (
         <span style={{ color: theme.color('red'), fontSize: 13 }}>{status.error}</span>

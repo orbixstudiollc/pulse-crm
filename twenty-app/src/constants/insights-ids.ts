@@ -102,3 +102,8 @@ export const VAR_VISITOR_LEADS_DAILY_CAP_ID = '4f782fa7-83dd-4606-bfc6-00146a662
 export const VAR_VISITOR_SEQUENCE_NAME_ID = '427acb59-6bee-4da3-a72a-3cae4102660a';
 export const VAR_TRACKING_ENDPOINT_ID = 'd91fbde3-d0a6-4374-ad59-ecb2638949be';
 export const VISITOR_STATUS_ROUTE_PATH = '/visitors/status';
+
+// RB2B identified-visitor webhook.
+export const RB2B_WEBHOOK_FUNCTION_ID = 'a5aa1f8f-62ec-4adc-8646-294120d71710';
+export const RB2B_ROUTE_PATH = '/rb2b';
+export const RB2B_KEY_KV = 'rb2b-webhook-key';
