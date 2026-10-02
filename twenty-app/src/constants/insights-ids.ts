@@ -66,6 +66,8 @@ export const WV_VIEW_F_PAGE_VIEWS_ID = '0a96edba-bff6-4887-8491-e2b31f580fdb';
 export const WV_VIEW_F_VISITED_AT_ID = '9c2c94c4-f5ab-46a0-988c-f7fbb89f4e1a';
 export const WV_VIEW_SORT_ID = '11725cd4-9aa1-457f-ac3c-8f5930040039';
 export const WEBSITE_VISITS_NAV_ID = '859969ea-0c9c-4dfa-89ef-943cc08ede7b';
+// The sidebar link is an OBJECT item; the VIEW item vanished from the sidebar.
+export const WEBSITE_VISITS_NAV_OBJECT_ID = 'a9521483-75ed-46fc-94a7-2d163441d87d';
 
 export const TRACK_LOGIC_FUNCTION_ID = '7d28087e-72c8-4af6-9d2f-41d535de4717';
 

@@ -1,12 +1,14 @@
 import { defineNavigationMenuItem, NavigationMenuItemType } from 'twenty-sdk/define';
 
-import { WEBSITE_VISITS_NAV_ID, WEBSITE_VISITS_VIEW_ID } from 'src/constants/insights-ids';
+import { WEBSITE_VISIT_OBJECT_ID, WEBSITE_VISITS_NAV_OBJECT_ID } from 'src/constants/insights-ids';
 
+// Opens the Website visits object. An OBJECT item, not a VIEW item: the view
+// item vanished from the sidebar (same fix as Inbox and All mailboxes).
 export default defineNavigationMenuItem({
-  universalIdentifier: WEBSITE_VISITS_NAV_ID,
+  universalIdentifier: WEBSITE_VISITS_NAV_OBJECT_ID,
   name: 'Website Visitors',
   icon: 'IconWorldWww',
   position: 11,
-  type: NavigationMenuItemType.VIEW,
-  viewUniversalIdentifier: WEBSITE_VISITS_VIEW_ID,
+  type: NavigationMenuItemType.OBJECT,
+  targetObjectUniversalIdentifier: WEBSITE_VISIT_OBJECT_ID,
 });
