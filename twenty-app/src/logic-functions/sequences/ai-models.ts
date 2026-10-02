@@ -7,7 +7,7 @@ import { toolOrRouteInput } from 'src/gtm/leadfinder/payload';
 
 type AiModelsInput = { action?: 'status' | 'list' | 'select' | 'clear'; model?: string };
 
-// Route behind the Pulse settings tab on Apps > Pulse GTM: lists the provider's models and
+// Route behind the Pulse Setup page: lists the provider's models and
 // stores the picked one (it overrides the AI model variable).
 const handler = async (payload: unknown) => {
   const input = toolOrRouteInput<AiModelsInput>(payload);

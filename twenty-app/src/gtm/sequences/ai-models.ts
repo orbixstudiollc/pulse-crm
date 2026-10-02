@@ -1,5 +1,5 @@
 // Fetches the model list from the configured AI provider so the model can be
-// picked from a list (the Pulse settings tab on Apps > Pulse GTM) instead of typed by hand.
+// picked from a list (the Setup page in the Pulse sidebar) instead of typed by hand.
 // The picked model is kept in the app's key-value store and wins over the
 // AI_MODEL variable until it is cleared.
 

@@ -3,7 +3,7 @@ import { RestApiClient } from 'twenty-client-sdk/rest';
 import { enqueueSnackbar } from 'twenty-sdk/front-component';
 
 import { MAILBOX_IMPORT_CSV_ROUTE_PATH } from 'src/constants/mailbox-ids';
-import { borderColor, buttonStyle, sectionTitle } from 'src/front-components/settings/styles';
+import { borderColor, buttonStyle, sectionTitle } from 'src/front-components/setup/styles';
 import { useTheme } from 'src/insights/ui';
 
 type ImportResult = {

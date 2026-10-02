@@ -5,7 +5,7 @@ import { enqueueSnackbar } from 'twenty-sdk/front-component';
 import { AI_MODELS_ROUTE_PATH } from 'src/constants/sequences-ids';
 import type { ModelOption } from 'src/gtm/sequences/ai-models';
 import { useTheme } from 'src/insights/ui';
-import { borderColor, buttonStyle, sectionTitle } from 'src/front-components/settings/styles';
+import { borderColor, buttonStyle, sectionTitle } from 'src/front-components/setup/styles';
 
 type AiModelsResult = {
   ok: boolean;

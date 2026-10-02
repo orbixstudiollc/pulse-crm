@@ -39,7 +39,7 @@ Admin setup (done once by a Workspace super admin):
 
 ### Many separate Google Workspace accounts (one per domain)
 
-One service account works for any number of Workspace accounts. Do steps 1 to 3 above once. Then, in each Workspace's Admin console, do step 4 with the same client ID and only the `https://mail.google.com/` scope, and check step 5. Set **GOOGLE_SERVICE_ACCOUNT_JSON** in Twenty (the admin email is not needed for this route). Then paste the addresses, one per line with no password, into **Add mailboxes** on the Pulse settings tab (Apps > Pulse GTM). **Check** mints a test token for every address, so a domain that has not authorised the client shows up before anything is created.
+One service account works for any number of Workspace accounts. Do steps 1 to 3 above once. Then, in each Workspace's Admin console, do step 4 with the same client ID and only the `https://mail.google.com/` scope, and check step 5. Set **GOOGLE_SERVICE_ACCOUNT_JSON** in Twenty (the admin email is not needed for this route). Then paste the addresses, one per line with no password, into **Add mailboxes** on the **Setup** page in the Pulse sidebar. **Check** mints a test token for every address, so a domain that has not authorised the client shows up before anything is created.
 
 ### gmail.com, outlook.com and other non-Workspace accounts: CSV paste
 

@@ -29,7 +29,7 @@ export const SEQUENCES_APPLICATION_VARIABLES: NonNullable<ApplicationConfig['app
     universalIdentifier: AI_MODEL_VARIABLE_UNIVERSAL_IDENTIFIER,
     label: 'AI model',
     description:
-      'Optional model id, e.g. claude-sonnet-4.6. Or pick one from a list on the Pulse settings tab.',
+      'Optional model id, e.g. claude-sonnet-4.6. Or pick one from a list on the Setup page.',
     type: FieldType.TEXT,
     isRequired: false,
   },

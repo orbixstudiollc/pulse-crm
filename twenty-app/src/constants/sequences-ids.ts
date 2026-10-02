@@ -200,7 +200,13 @@ export const AI_PROVIDER_VARIABLE_UNIVERSAL_IDENTIFIER = '3a72511c-74f3-48e5-b19
 export const AI_MODEL_VARIABLE_UNIVERSAL_IDENTIFIER = '0d6ecfc2-713a-4c0d-9cfd-3502bd1de4d3';
 export const AI_BASE_URL_VARIABLE_UNIVERSAL_IDENTIFIER = 'ff7e5594-bc93-47c6-b809-e60549ce04fd';
 
-// Pulse settings tab on Apps > Pulse GTM (mailbox import, AI model picker)
+// Pulse setup page in the sidebar (mailbox import, AI model picker). It is a
+// page, not a settings tab: Twenty hides an app's Variables tab once the app
+// adds its own settings tab.
 export const AI_MODELS_FUNCTION_UNIVERSAL_IDENTIFIER = '06e8b58f-d3a3-4282-9c9a-8ac5acf93e0d';
-export const PULSE_SETTINGS_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER = '27a846ca-6d33-4c4d-bc25-f69abe3d6b03';
+export const PULSE_SETUP_FRONT_COMPONENT_UNIVERSAL_IDENTIFIER = '3c4c35b6-6ba3-420f-a787-023e35b8958b';
+export const PULSE_SETUP_PAGE_LAYOUT_UNIVERSAL_IDENTIFIER = 'ba313d82-6034-413e-8651-446e9c1319c0';
+export const PULSE_SETUP_TAB_UNIVERSAL_IDENTIFIER = 'c5f78879-22b4-4e9e-9bfd-879ea9eef0d6';
+export const PULSE_SETUP_WIDGET_UNIVERSAL_IDENTIFIER = 'dca85817-f50e-4790-90f1-b31f383ef8e8';
+export const PULSE_SETUP_NAV_UNIVERSAL_IDENTIFIER = 'c9c6c35e-00bd-4180-ab00-fb25b3a599c1';
 export const AI_MODELS_ROUTE_PATH = '/ai/models';
