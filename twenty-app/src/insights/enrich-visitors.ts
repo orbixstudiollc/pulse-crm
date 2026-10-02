@@ -1,7 +1,10 @@
 import type { IpCompany } from 'src/insights/ip-company';
+import { allowedCountries, countryAllowed } from 'src/insights/visitor-regions';
 import type { VisitorEnrichStatus } from 'src/insights/visitor-values';
 
 // Turns website visitors into leads, a batch at a time:
+// 0. visitors from countries outside VISITOR_COUNTRIES cost nothing: no
+//    lookup, no Prospeo (form fills still go into the sequence);
 // 1. the company: from the visitor's work email, else an IP lookup;
 // 2. our own mailboxes' domains are marked as our team and skipped;
 // 3. the Company record is found or created and linked to the visit;
@@ -17,6 +20,7 @@ export type PendingVisit = {
   companyName: string | null;
   personId: string | null;
   intentScore: number | null;
+  country?: string | null;
 };
 
 export type VisitPatch = Partial<{
@@ -37,6 +41,8 @@ export type VisitorEnrichConfig = {
   // Days before the same company can bring in new leads again.
   companyCooldownDays: number;
   batchSize: number;
+  // ISO codes worth spending on; null allows every country.
+  countries: Set<string> | null;
 };
 
 export const DEFAULT_VISITOR_ENRICH_CONFIG: VisitorEnrichConfig = {
@@ -44,6 +50,7 @@ export const DEFAULT_VISITOR_ENRICH_CONFIG: VisitorEnrichConfig = {
   dailyLeadCap: 20,
   companyCooldownDays: 30,
   batchSize: 25,
+  countries: allowedCountries(undefined),
 };
 
 export type VisitorEnrichDeps = {
@@ -71,6 +78,7 @@ export type VisitorEnrichSummary = {
   matched: number;
   noMatch: number;
   ownTeam: number;
+  outOfRegion: number;
   leadsAdded: number;
   enrolled: number;
   waitingForIpToken: number;
@@ -83,7 +91,7 @@ const domainOf = (value: string) => value.toLowerCase().replace(/^www\./, '');
 
 export const enrichWebsiteVisitors = async (deps: VisitorEnrichDeps): Promise<VisitorEnrichSummary> => {
   const { config, now } = deps;
-  const summary: VisitorEnrichSummary = { visits: 0, matched: 0, noMatch: 0, ownTeam: 0, leadsAdded: 0, enrolled: 0, waitingForIpToken: 0, errors: [] };
+  const summary: VisitorEnrichSummary = { visits: 0, matched: 0, noMatch: 0, ownTeam: 0, outOfRegion: 0, leadsAdded: 0, enrolled: 0, waitingForIpToken: 0, errors: [] };
   // Warmest visitors first, so the daily cap goes to them.
   const visits = [...(await deps.listPending(config.batchSize))].sort((a, b) => (b.intentScore ?? 0) - (a.intentScore ?? 0));
   if (visits.length === 0) return summary;
@@ -100,6 +108,15 @@ export const enrichWebsiteVisitors = async (deps: VisitorEnrichDeps): Promise<Vi
       let domain = visit.companyDomain ? domainOf(visit.companyDomain) : null;
       let name = visit.companyName;
       const patch: VisitPatch = {};
+      const outOfRegion = async (extra: VisitPatch = {}) => {
+        await deps.updateVisit(visit.id, { ...extra, enrichStatus: 'OUT_OF_REGION' });
+        summary.outOfRegion++;
+        if (visit.personId) toEnroll.push(visit.personId);
+      };
+      if (!countryAllowed(visit.country, config.countries)) {
+        await outOfRegion();
+        continue;
+      }
 
       if (!domain && visit.ipAddress) {
         if (!deps.lookupIp) {
@@ -118,6 +135,10 @@ export const enrichWebsiteVisitors = async (deps: VisitorEnrichDeps): Promise<Vi
         patch.companyName = name;
         domain = found.companyDomain ? domainOf(found.companyDomain) : null;
         if (domain) patch.companyDomain = domain;
+        if (!countryAllowed(found.country, config.countries)) {
+          await outOfRegion(patch);
+          continue;
+        }
       }
       summary.visits++;
       if (visit.personId) toEnroll.push(visit.personId);

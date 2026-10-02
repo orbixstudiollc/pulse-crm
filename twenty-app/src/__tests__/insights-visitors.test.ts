@@ -69,6 +69,7 @@ describe('enrichWebsiteVisitors', () => {
   const ips: Record<string, IpCompany> = {
     '1.1.1.1': { companyName: 'Acme', companyDomain: 'acme.com', city: 'NYC', country: 'US', network: 'Acme' },
     '2.2.2.2': { companyName: null, companyDomain: null, city: 'Dhaka', country: 'BD', network: 'Grameenphone' },
+    '4.4.4.4': { companyName: null, companyDomain: null, city: 'London', country: 'GB', network: 'BT' },
     '3.3.3.3': { companyName: 'Orbix', companyDomain: 'orbixstudio.co', city: null, country: null, network: 'Orbix' },
   };
 
@@ -103,24 +104,30 @@ describe('enrichWebsiteVisitors', () => {
     return { deps, patches, kv, leadCalls, enrolled };
   };
 
-  it('matches companies, skips our team and ISPs, adds leads within the cap and enrolls them', async () => {
+  it('matches companies, skips our team, ISPs and other regions, adds leads within the cap and enrolls them', async () => {
     const { deps, patches, leadCalls, enrolled } = setup([
-      visit('isp', { ipAddress: '2.2.2.2' }),
+      visit('isp', { ipAddress: '4.4.4.4' }),
+      visit('bd', { ipAddress: '2.2.2.2' }),
+      visit('bd-known', { ipAddress: '2.2.2.2', country: 'BD', personId: 'p-bd' }),
       visit('acme', { ipAddress: '1.1.1.1', intentScore: 50 }),
       visit('acme2', { ipAddress: '1.1.1.1' }),
       visit('us', { ipAddress: '3.3.3.3' }),
       visit('form', { companyDomain: 'beta.io', personId: 'p-form', intentScore: 30 }),
     ]);
     const summary = await enrichWebsiteVisitors(deps);
-    expect(patches.get('isp')).toMatchObject({ enrichStatus: 'NO_MATCH', companyName: 'Grameenphone', country: 'BD' });
+    expect(patches.get('isp')).toMatchObject({ enrichStatus: 'NO_MATCH', companyName: 'BT', country: 'GB' });
+    // Outside the regions: no Prospeo; known countries skip the IP lookup too.
+    expect(patches.get('bd')).toMatchObject({ enrichStatus: 'OUT_OF_REGION', country: 'BD' });
+    expect(patches.get('bd-known')).toEqual({ enrichStatus: 'OUT_OF_REGION' });
     expect(patches.get('acme')).toMatchObject({ enrichStatus: 'LEADS_ADDED', companyId: 'company-acme.com', companyDomain: 'acme.com', leadsAdded: 3 });
     // Same company again in this run: linked, no second search.
     expect(patches.get('acme2')).toMatchObject({ enrichStatus: 'MATCHED', companyId: 'company-acme.com' });
     expect(patches.get('us')).toMatchObject({ enrichStatus: 'OWN_TEAM' });
     // Only 1 lead left under the daily cap of 4.
     expect(leadCalls).toEqual([{ domain: 'acme.com', max: 3 }, { domain: 'beta.io', max: 1 }]);
-    expect(enrolled).toEqual([['lead-1', 'lead-2', 'lead-3', 'p-form', 'lead-4']]);
-    expect(summary).toMatchObject({ visits: 5, matched: 3, noMatch: 1, ownTeam: 1, leadsAdded: 4, enrolled: 5 });
+    // A form fill from outside the regions still gets the sequence (no credits used).
+    expect(enrolled).toEqual([['lead-1', 'lead-2', 'lead-3', 'p-form', 'lead-4', 'p-bd']]);
+    expect(summary).toMatchObject({ visits: 5, matched: 3, noMatch: 1, ownTeam: 1, outOfRegion: 2, leadsAdded: 4, enrolled: 6 });
   });
 
   it('respects the company cooldown across runs', async () => {

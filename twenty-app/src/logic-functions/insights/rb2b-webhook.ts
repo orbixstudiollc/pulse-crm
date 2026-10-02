@@ -6,6 +6,7 @@ import { RB2B_KEY_KV, RB2B_ROUTE_PATH, RB2B_WEBHOOK_FUNCTION_ID } from 'src/cons
 import { enrichPerson } from 'src/gtm/prospeo/api';
 import { enrichedContact } from 'src/gtm/prospeo/people';
 import { visitorEnrichConfig } from 'src/insights/enrich-visitors-runtime';
+import { countryAllowed } from 'src/insights/visitor-regions';
 import { isPerson, parseRb2b, rb2bPersonPayload, rb2bVisitorId, rb2bVisitRecord, sameKey } from 'src/insights/rb2b';
 import { parseBody, type ExistingVisit } from 'src/insights/track-payload';
 
@@ -86,7 +87,8 @@ const addEmail = async (client: RestApiClient, personId: string, linkedinUrl: st
   if (!apiKey) return;
   const day = new Date().toISOString().slice(0, 10);
   const used = (await kv.get<number>(`visitor-leads:${day}`).catch(() => 0)) ?? 0;
-  if (used >= visitorEnrichConfig().dailyLeadCap) return;
+  const config = visitorEnrichConfig();
+  if (used >= config.dailyLeadCap || !countryAllowed('US', config.countries)) return;
   try {
     const contact = enrichedContact(await enrichPerson(apiKey, { linkedin_url: linkedinUrl }));
     await kv.set(`visitor-leads:${day}`, used + 1);

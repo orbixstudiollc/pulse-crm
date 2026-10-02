@@ -100,6 +100,7 @@ export const VAR_IPINFO_TOKEN_ID = '03d3abb1-4c08-416a-a874-3214710b7326';
 export const VAR_VISITOR_LEADS_PER_COMPANY_ID = 'c5ade3e0-3e89-49f0-909d-01643dd4bba3';
 export const VAR_VISITOR_LEADS_DAILY_CAP_ID = '4f782fa7-83dd-4606-bfc6-00146a6628fa';
 export const VAR_VISITOR_SEQUENCE_NAME_ID = '427acb59-6bee-4da3-a72a-3cae4102660a';
+export const VAR_VISITOR_COUNTRIES_ID = 'd206f913-c8ec-48f4-8c72-5f03182f8d8e';
 export const VAR_TRACKING_ENDPOINT_ID = 'd91fbde3-d0a6-4374-ad59-ecb2638949be';
 export const VISITOR_STATUS_ROUTE_PATH = '/visitors/status';
 

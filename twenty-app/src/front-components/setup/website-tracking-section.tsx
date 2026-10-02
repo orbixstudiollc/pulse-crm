@@ -22,6 +22,8 @@ type Status =
       sequenceName: string;
       sequenceFound: boolean;
       rb2bVisitors: number;
+      countries: string;
+      outOfRegion: number;
       rb2bKey: string;
     }
   | { ok: false; error: string };
@@ -108,6 +110,7 @@ export const WebsiteTrackingSection = () => {
           {check(status.prospeo && status.leadsPerCompany > 0, status.prospeo && status.leadsPerCompany > 0
             ? `Prospeo adds up to ${status.leadsPerCompany} ICP people per company, ${status.dailyLeadCap} a day at most (${status.withLeads} companies so far)`
             : 'Visitor leads off: set the Prospeo API key and Leads per visiting company')}
+          {check(true, `Credits only for visitors from ${status.countries} (${status.outOfRegion} others skipped). Change it in Variables > Visitor countries`)}
           {check(status.sequenceFound, status.sequenceFound
             ? `New visitor leads and form fills go into the "${status.sequenceName}" sequence`
             : `Create a sequence named "${status.sequenceName}" to email visitor leads automatically`)}

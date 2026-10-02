@@ -132,6 +132,8 @@ export const rb2bVisitRecord = (
     ...merged,
     companyName: v.companyName,
     city: v.city,
+    // RB2B only identifies US visitors.
+    ...(existing?.country ? {} : { country: 'US' }),
     ...(companyId && !existing?.companyId ? { companyId } : {}),
     lastAction: v.tags ? `Identified by RB2B (${v.tags})` : 'Identified by RB2B',
     // New records start PENDING so the enrichment adds leads and enrolls them.

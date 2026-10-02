@@ -6,6 +6,7 @@ import { RB2B_KEY_KV, TRACKING_SNIPPET_FUNCTION_ID, VISITOR_STATUS_ROUTE_PATH } 
 import { failure } from 'src/gtm/leadfinder/payload';
 import { filterValue } from 'src/gtm/leadfinder/twenty';
 import { DEFAULT_VISITOR_SEQUENCE_NAME, visitorEnrichConfig } from 'src/insights/enrich-visitors-runtime';
+import { DEFAULT_VISITOR_COUNTRIES } from 'src/insights/visitor-regions';
 
 // Route behind the Setup page: is tracking live, and what is set up.
 type Count = { totalCount?: number };
@@ -59,6 +60,8 @@ const handler = async () => {
       sequenceName,
       sequenceFound: Boolean(sequences.data?.sequences?.[0]),
       rb2bVisitors,
+      countries: process.env.VISITOR_COUNTRIES?.trim() || DEFAULT_VISITOR_COUNTRIES,
+      outOfRegion: await count('enrichStatus[eq]:"OUT_OF_REGION"'),
       rb2bKey: key,
     };
   } catch (error) {

@@ -14,6 +14,7 @@ import {
   type VisitorEnrichDeps,
 } from 'src/insights/enrich-visitors';
 import { lookupIp } from 'src/insights/ip-company';
+import { allowedCountries } from 'src/insights/visitor-regions';
 
 export const DEFAULT_VISITOR_SEQUENCE_NAME = 'Website visitors';
 
@@ -26,6 +27,7 @@ export const visitorEnrichConfig = (env: Record<string, string | undefined> = pr
   ...DEFAULT_VISITOR_ENRICH_CONFIG,
   leadsPerCompany: positiveInt(env.VISITOR_LEADS_PER_COMPANY, DEFAULT_VISITOR_ENRICH_CONFIG.leadsPerCompany),
   dailyLeadCap: positiveInt(env.VISITOR_LEADS_DAILY_CAP, DEFAULT_VISITOR_ENRICH_CONFIG.dailyLeadCap),
+  countries: allowedCountries(env.VISITOR_COUNTRIES),
 });
 
 const hasProspeoKey = () => {
