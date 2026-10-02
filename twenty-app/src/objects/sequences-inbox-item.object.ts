@@ -4,16 +4,16 @@ import * as ID from 'src/constants/sequences-ids';
 import { manyToOne } from 'src/gtm/sequences/relation-fields';
 import { INBOX_ITEM_KINDS, INBOX_ITEM_STATUSES, toOptions } from 'src/gtm/sequences/values';
 
-// One inbound reply (or bounce) to a sequence, for the unified Inbox. Twenty's
-// own message objects hold the full email; this is the triage list on top,
-// since a plain view over `message` cannot tell sequence replies apart.
+// One inbound email for the unified Inbox: a reply or bounce from someone in a
+// sequence, or (kind EMAIL) any other mail that reached one of the mailboxes,
+// synced over IMAP by sync-mailbox-inboxes.
 export default defineObject({
   universalIdentifier: ID.INBOX_ITEM_OBJECT_UNIVERSAL_IDENTIFIER,
   nameSingular: 'inboxItem',
   namePlural: 'inboxItems',
   labelSingular: 'Inbox item',
   labelPlural: 'Inbox',
-  description: 'Replies and bounces from people in sequences',
+  description: 'Mail that reached your mailboxes, with sequence replies and bounces marked',
   icon: 'IconInbox',
   labelIdentifierFieldMetadataUniversalIdentifier: ID.INBOX_ITEM_SUBJECT_UNIVERSAL_IDENTIFIER,
   fields: [
@@ -77,7 +77,7 @@ export default defineObject({
       name: 'messageId',
       label: 'Message id',
       icon: 'IconHash',
-      description: 'Twenty message id (or provider id) of the reply',
+      description: 'Message-ID of the email (or Twenty message id), used to skip duplicates',
     },
     manyToOne({
       universalIdentifier: ID.INBOX_ITEM_PERSON_UNIVERSAL_IDENTIFIER,

@@ -39,6 +39,7 @@ export const CAMPAIGN_STATUSES = [
 export const INBOX_ITEM_KINDS = [
   { label: 'Reply', value: 'REPLY', color: 'green' },
   { label: 'Bounce', value: 'BOUNCE', color: 'orange' },
+  { label: 'Email', value: 'EMAIL', color: 'blue' },
 ] as const;
 
 export const INBOX_ITEM_STATUSES = [

@@ -102,3 +102,9 @@ export const MAILBOX_IMPORT_WORKSPACE_FRONT_UID = 'fc6f65c0-046a-4aa9-8987-ef512
 export const MAILBOX_IMPORT_WORKSPACE_CMD_UID = '00ddef17-ec2d-421d-980f-806ac0b33836';
 export const MAILBOX_IMPORT_WORKSPACE_ROUTE_PATH = '/mailboxes/import-workspace';
 export const MAILBOX_IMPORT_CSV_ROUTE_PATH = '/mailboxes/import-csv';
+
+// Inbox sync: every mailbox's new INBOX mail into the Inbox list.
+export const MAILBOX_FN_SYNC_INBOXES_UID = '83b4721c-6313-42c5-886d-372ddf374eac';
+// "All mailboxes" now opens the Mailboxes object (any view) instead of one saved
+// view, which some browsers failed to resolve and dropped from the sidebar.
+export const MAILBOX_NAV_MAILBOXES_OBJECT_UID = 'f6a6cf93-5a12-46c1-974b-8f4ba80a3227';

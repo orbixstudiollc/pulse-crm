@@ -7,7 +7,7 @@ import {
 
 import * as ID from 'src/constants/sequences-ids';
 
-// Unified Inbox: replies and bounces from every sequence, newest first,
+// Unified Inbox: mail from every mailbox plus sequence replies and bounces, newest first,
 // archived items hidden.
 export default defineView({
   universalIdentifier: ID.INBOX_VIEW_UNIVERSAL_IDENTIFIER,
