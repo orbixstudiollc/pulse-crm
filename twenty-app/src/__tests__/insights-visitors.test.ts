@@ -16,8 +16,12 @@ describe('IPinfo parsing', () => {
     expect(parseIpinfo({ company: { name: 'Comcast', domain: 'comcast.net', type: 'isp' }, asn: { type: 'isp' } })).toMatchObject({ companyDomain: null, network: 'Comcast' });
   });
 
-  it('guesses from the network owner on the Lite plan', () => {
-    expect(parseIpinfo({ as_name: 'Stripe, Inc.', as_domain: 'stripe.com', country_code: 'US' })).toMatchObject({ companyName: 'Stripe, Inc.', companyDomain: 'stripe.com', country: 'US' });
+  it('never treats an untyped network owner as a company', () => {
+    expect(parseIpinfo({ as_name: 'Stripe, Inc.', as_domain: 'stripe.com', country_code: 'US' })).toMatchObject({ companyDomain: null, network: 'Stripe, Inc.', country: 'US' });
+    // ISPs that earlier slipped through as companies.
+    expect(parseIpinfo({ as_name: 'Bell Canada', as_domain: 'bell.ca' }).companyDomain).toBeNull();
+    expect(parseIpinfo({ as_name: 'Space Exploration Technologies Corporation', as_domain: 'spacex.com' }).companyDomain).toBeNull();
+    expect(parseIpinfo({ asn: { name: 'Netia SA', domain: 'netia.pl' } }).companyDomain).toBeNull();
     expect(parseIpinfo({ as_name: 'Grameenphone Ltd.', as_domain: 'grameenphone.com' }).companyDomain).toBeNull();
     expect(parseIpinfo({ as_name: 'Amazon.com, Inc.', as_domain: 'amazon.com' }).companyDomain).toBeNull();
     expect(parseIpinfo({ as_name: 'Comcast Cable Communications', as_domain: 'comcast.com' }).companyDomain).toBeNull();
@@ -33,14 +37,14 @@ describe('IPinfo parsing', () => {
     expect(cleanDomain('not a domain')).toBeNull();
   });
 
-  it('falls back to Lite when the free full response has no owner domain', async () => {
+  it('falls back to Lite for the network name when the free response has no owner', async () => {
     const calls: string[] = [];
     const fake = (async (url: string) => {
       calls.push(url);
       const body = url.includes('/lite/') ? { as_name: 'Acme Corp', as_domain: 'acme.com' } : { city: 'Dhaka', country: 'BD', org: 'AS1 Acme Corp' };
       return new Response(JSON.stringify(body), { status: 200 });
     }) as typeof fetch;
-    expect(await lookupIp('198.51.100.7', 't', fake)).toEqual({ companyName: 'Acme Corp', companyDomain: 'acme.com', city: 'Dhaka', country: 'BD', network: 'Acme Corp' });
+    expect(await lookupIp('198.51.100.7', 't', fake)).toEqual({ companyName: null, companyDomain: null, city: 'Dhaka', country: 'BD', network: 'Acme Corp' });
     expect(calls).toHaveLength(2);
     expect(await lookupIp('10.1.2.3', 't', fake)).toMatchObject({ companyDomain: null });
     expect(calls).toHaveLength(2);

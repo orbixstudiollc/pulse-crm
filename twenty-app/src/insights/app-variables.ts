@@ -15,7 +15,7 @@ export const VISITOR_APPLICATION_VARIABLES: NonNullable<ApplicationConfig['appli
     universalIdentifier: VAR_IPINFO_TOKEN_ID,
     label: 'IPinfo token',
     description:
-      'Finds the company behind a visitor from their IP address. Free token at ipinfo.io/signup; a plan with company data matches more visitors.',
+      'Finds the country of each visitor from their IP address (free token at ipinfo.io/signup). Naming the visitor\'s company needs an IPinfo plan with company data; on the free plan only form fills and RB2B name companies.',
     isSecret: true,
     isRequired: false,
   },

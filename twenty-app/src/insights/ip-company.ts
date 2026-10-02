@@ -1,8 +1,7 @@
-// IP-to-company lookup with IPinfo (ipinfo.io). Paid IPinfo plans return the
-// company that owns the IP range (`company`, `asn` with a type); the free Lite
-// API only returns the network owner (`as_name`, `as_domain`), which is a real
-// company for business networks and an ISP or cloud host otherwise. Home and
-// mobile visitors resolve to their ISP and stay unmatched.
+// IP-to-company lookup with IPinfo (ipinfo.io). Only paid IPinfo plans say
+// which company uses an IP range (`company` / `asn` typed "business"); the
+// free and Lite APIs only name the network owner, which is the visitor's ISP
+// for nearly all traffic, so those give a network name and no company.
 
 export type IpCompany = {
   // A business we can prospect, or null when the IP belongs to an ISP, host or school.
@@ -18,13 +17,6 @@ type Obj = Record<string, unknown>;
 
 const str = (value: unknown) => (typeof value === 'string' && value.trim() ? value.trim() : null);
 
-// Network owners that are carriers, clouds or hosts, not prospects.
-const NOT_A_BUSINESS =
-  /telecom|telekom|communications?|broadband|cable|wireless|mobile|cellular|internet|\bisp\b|\bnet(works?)?\b|fiber|fibre|dsl|telefonica|vodafone|verizon|comcast|at&t|t-mobile|charter|spectrum|orange|airtel|jio|grameenphone|robi|banglalink|hosting|\bhost|datacenter|data center|cloud|amazon|aws|google|microsoft|azure|oracle|digitalocean|ovh|hetzner|linode|akamai|cloudflare|fastly|vultr|leaseweb|contabo|university|college|school|edu\b/i;
-
-const NOT_A_BUSINESS_DOMAIN =
-  /(^|\.)(amazon|amazonaws|google|googleusercontent|microsoft|azure|oracle|digitalocean|ovh|hetzner|linode|akamai|cloudflare|fastly|vultr|leaseweb|contabo|comcast|verizon|att|t-mobile|vodafone|orange|airtel|jio)\.|\.edu$|\.ac\.[a-z]{2}$/i;
-
 const BUSINESS_TYPES = new Set(['business']);
 
 export const cleanDomain = (value: unknown): string | null => {
@@ -33,15 +25,6 @@ export const cleanDomain = (value: unknown): string | null => {
   const domain = raw.replace(/^https?:\/\//i, '').replace(/^www\./i, '').split('/')[0].toLowerCase();
   return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain) ? domain : null;
 };
-
-// Access networks usually sit on .net or a "...net" brand (antbd.net, qtnet.co.jp, bbtec.net).
-const ACCESS_NETWORK_DOMAIN = /\.net(\.[a-z]{2})?$|^[a-z0-9-]*net\.|\.(ne|ad|or)\.jp$/i;
-
-const looksLikeBusiness = (name: string | null, domain: string | null) =>
-  Boolean(domain) &&
-  !NOT_A_BUSINESS_DOMAIN.test(domain as string) &&
-  !ACCESS_NETWORK_DOMAIN.test(domain as string) &&
-  !(name && NOT_A_BUSINESS.test(name));
 
 /** Read an IPinfo response (full or Lite format). */
 export const parseIpinfo = (json: Obj): IpCompany => {
@@ -53,22 +36,16 @@ export const parseIpinfo = (json: Obj): IpCompany => {
   const network = str(company?.name) ?? str(asn?.name) ?? str(json.as_name) ?? orgName;
   const base = { city, country, network };
 
-  // Paid plans say what kind of owner it is.
+  // Only an owner IPinfo itself types as a business counts. Without a type
+  // (free and Lite plans) the network owner is nearly always the visitor's
+  // ISP, mobile carrier or host (live data: Bell Canada, Starlink, Netia), so
+  // it is shown as the network but never prospected.
   for (const owner of [company, asn]) {
-    if (!owner) continue;
-    const type = str(owner.type);
-    const domain = cleanDomain(owner.domain);
-    const name = str(owner.name);
-    if (type ? BUSINESS_TYPES.has(type) && domain : looksLikeBusiness(name, domain)) {
-      return { ...base, companyName: name, companyDomain: domain };
+    const domain = cleanDomain(owner?.domain);
+    if (owner && str(owner.type) && BUSINESS_TYPES.has(str(owner.type) as string) && domain) {
+      return { ...base, companyName: str(owner.name), companyDomain: domain };
     }
   }
-  if (company || asn) return { ...base, companyName: null, companyDomain: null };
-
-  // Lite: guess from the network owner's name and domain.
-  const liteName = str(json.as_name);
-  const liteDomain = cleanDomain(json.as_domain);
-  if (looksLikeBusiness(liteName, liteDomain)) return { ...base, companyName: liteName, companyDomain: liteDomain };
   return { ...base, companyName: null, companyDomain: null };
 };
 
