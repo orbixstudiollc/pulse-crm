@@ -14,6 +14,7 @@ type ImportResult = {
   created?: string[];
   delegated?: string[];
   switched?: string[];
+  signInOk?: string[];
   skippedExisting?: string[];
   skippedDuplicate?: string[];
   failed?: { email?: string; line?: number; error: string }[];
@@ -107,6 +108,7 @@ export const MailboxImportSection = () => {
               {list(result.dryRun ? 'Ready' : 'Added', result.created)}
               {list('Google sign-in without password', result.delegated)}
               {list(result.dryRun ? 'Already in Twenty, would move to Google sign-in without password' : 'Moved to Google sign-in without password', result.switched)}
+              {list('Already in Twenty, Google sign-in works', result.signInOk)}
               {list('Already in Twenty', result.skippedExisting)}
               {list('Listed twice', result.skippedDuplicate)}
               {result.failed?.map((f, i) => (

@@ -98,7 +98,7 @@ export const importCsvMailboxes = async (input: {
   // password empty and sign in through domain-wide delegation. The dry run
   // mints a token per mailbox to prove each domain has authorised the client.
   delegation?: { verify: (email: string) => Promise<void> };
-}): Promise<ImportSummary & { parsed: number; delegated: string[]; switched: string[] }> => {
+}): Promise<ImportSummary & { parsed: number; delegated: string[]; switched: string[]; signInOk: string[] }> => {
   const parsed = parseMailboxCsv(input.csv, { passwordOptional: true });
   if (input.providerForDomain) {
     const lookups = new Map<string, Promise<MailboxProvider | null>>();
@@ -130,6 +130,7 @@ export const importCsvMailboxes = async (input: {
     created: [] as string[],
     delegated: [] as string[],
     switched: [] as string[],
+    signInOk: [] as string[],
     skippedExisting: [] as string[],
     skippedDuplicate: plan.skippedDuplicate,
     failed,
@@ -145,8 +146,19 @@ export const importCsvMailboxes = async (input: {
     const mailbox = byEmail.get(email);
     const row = rowByEmail.get(email);
     // Passwordless rows only got this far if MX says Google and delegation is set.
-    const canSwitch = row && !row.password && mailbox && mailbox.authType !== 'GOOGLE_DELEGATED';
-    if (!canSwitch) {
+    const passwordless = row && !row.password && mailbox;
+    // Already on delegation: Check still tests the sign-in, so a domain that
+    // has not authorised the client yet shows up red.
+    if (passwordless && mailbox.authType === 'GOOGLE_DELEGATED' && summary.dryRun) {
+      try {
+        await input.delegation!.verify(email);
+        summary.signInOk.push(email);
+      } catch (error) {
+        summary.failed.push({ line: row.line, email, error: errorText(error) });
+      }
+      continue;
+    }
+    if (!passwordless || mailbox.authType === 'GOOGLE_DELEGATED') {
       summary.skippedExisting.push(email);
       continue;
     }

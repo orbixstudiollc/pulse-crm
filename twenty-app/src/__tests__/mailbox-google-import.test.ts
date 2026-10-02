@@ -292,7 +292,8 @@ describe('import runners', () => {
     const dry = store(existing);
     const check = await importCsvMailboxes({ store: dry.s, csv, seal: (p) => p, dryRun: true, delegation, providerForDomain: lookup });
     expect(check.switched).toEqual(['ann@acme.io']);
-    expect(check.skippedExisting).toEqual(['done@acme.io', 'keep@gmail.com']);
+    expect(check.signInOk).toEqual(['done@acme.io']);
+    expect(check.skippedExisting).toEqual(['keep@gmail.com']);
     expect(check.failed).toEqual([{ line: 2, email: 'bad@acme.io', error: 'unauthorized_client' }]);
     expect(dry.updated).toEqual([]);
 
@@ -304,6 +305,19 @@ describe('import runners', () => {
       ['m2', { ...switchPatch }],
     ]);
     expect(real.created).toEqual([]);
+    expect(done.skippedExisting).toEqual(['done@acme.io', 'keep@gmail.com']);
+
+    // Once switched, Check keeps testing the sign-in of delegated mailboxes.
+    const later = await importCsvMailboxes({
+      store: store(existing.map((m) => ({ ...m, authType: 'GOOGLE_DELEGATED' as const }))).s,
+      csv: 'ann@acme.io\nbad@acme.io',
+      seal: (p) => p,
+      dryRun: true,
+      delegation,
+      providerForDomain: lookup,
+    });
+    expect(later.signInOk).toEqual(['ann@acme.io']);
+    expect(later.failed.map((f) => f.email)).toEqual(['bad@acme.io']);
 
     const noKey = await importCsvMailboxes({ store: store(existing).s, csv: 'ann@acme.io', seal: (p) => p, dryRun: true, providerForDomain: lookup });
     expect(noKey.switched).toEqual([]);
