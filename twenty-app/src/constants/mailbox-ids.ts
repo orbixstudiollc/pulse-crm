@@ -78,8 +78,10 @@ export const WARMUP_LOG_VIEW_F_BOUNCED_UID = '6e9b2473-6db9-4966-8149-28a3259dca
 export const WARMUP_LOG_VIEW_SORT_UID = 'c471678d-b86d-4229-8573-c4de15b86904';
 
 export const MAILBOX_NAV_FOLDER_UID = '31d8d396-6080-426e-8c4c-62dd671f830a';
-export const MAILBOX_NAV_MAILBOXES_UID = 'ae8624d3-2abd-4a72-a7c6-da09dc3a7400';
-export const MAILBOX_NAV_HEALTH_UID = 'f3cfa3c1-642b-4ad8-9fbb-c95c10a8fc6d';
+// Sidebar entries were re-issued with new ids on 2026-10-02: a workspace that
+// had removed them got them back only this way (apply saw no change otherwise).
+export const MAILBOX_NAV_MAILBOXES_UID = '68aaeaba-60d3-4c80-ba5c-1f78138235da';
+export const MAILBOX_NAV_HEALTH_UID = '686dcda1-9347-4a73-afac-3dbd5fa507fc';
 export const MAILBOX_NAV_WARMUP_LOG_UID = '3f2c4c38-e613-4c97-9ae4-9577b787f1c6';
 
 export const MAILBOX_FN_RUN_WARMUP_UID = 'c64abaff-576e-4cef-8a2b-d52a977d3eb0';

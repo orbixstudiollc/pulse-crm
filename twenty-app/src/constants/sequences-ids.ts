@@ -123,7 +123,9 @@ export const ENROLLMENTS_VIEW_F_MAILBOX_UNIVERSAL_IDENTIFIER = '76a6c91d-3e62-4d
 export const ENROLLMENTS_VIEW_SORT_UNIVERSAL_IDENTIFIER = '210ea641-7c85-46c6-af95-8a4d73eff42f';
 
 // Navigation
-export const INBOX_NAV_UNIVERSAL_IDENTIFIER = '6dc93c6d-6815-4ad8-8699-10bd156eccef';
+// Sidebar entries were re-issued with new ids on 2026-10-02: a workspace that
+// had removed them got them back only this way (apply saw no change otherwise).
+export const INBOX_NAV_UNIVERSAL_IDENTIFIER = '545f3bbd-1e77-4ccd-83f9-1d7f5aab3cd4';
 export const SEQUENCES_NAV_UNIVERSAL_IDENTIFIER = '61570c06-9968-4ead-b710-f9113882dc90';
 export const CAMPAIGNS_NAV_UNIVERSAL_IDENTIFIER = '333d40f6-aa1b-4774-a5ec-0a6973c982d7';
 export const TEMPLATES_NAV_UNIVERSAL_IDENTIFIER = '7c948105-b607-41ab-8ef6-d228f3d80b29';
