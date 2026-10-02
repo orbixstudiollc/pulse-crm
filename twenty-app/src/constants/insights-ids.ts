@@ -68,3 +68,37 @@ export const WV_VIEW_SORT_ID = '11725cd4-9aa1-457f-ac3c-8f5930040039';
 export const WEBSITE_VISITS_NAV_ID = '859969ea-0c9c-4dfa-89ef-943cc08ede7b';
 
 export const TRACK_LOGIC_FUNCTION_ID = '7d28087e-72c8-4af6-9d2f-41d535de4717';
+
+// Website visitors v2: behaviour, IP-to-company and visitor leads
+export const WV_IP_ADDRESS_FIELD_ID = '83b020b0-3a6d-4e57-bbba-af0f1722184b';
+export const WV_COUNTRY_FIELD_ID = 'b9f8b962-01f1-46f4-b52f-62f3111eb714';
+export const WV_CITY_FIELD_ID = 'f07b5e48-3b26-4dd6-98da-cae2e04b1d44';
+export const WV_COMPANY_NAME_FIELD_ID = 'b716bf66-ac7d-410e-bdeb-ff84318fa3ed';
+export const WV_COMPANY_FIELD_ID = '2c251d3d-9184-4be4-a224-99a1636fd982';
+export const COMPANY_WEBSITE_VISITS_FIELD_ID = 'a5e89601-fc90-4ddf-828b-113d1577142c';
+export const WV_AD_CLICK_FIELD_ID = 'bcb94a3f-6f0c-4bb2-9278-2161f3ccb1dd';
+export const WV_DEVICE_FIELD_ID = 'cdb18c34-62bd-4957-b2b1-d4565c3ecc39';
+export const WV_SESSIONS_FIELD_ID = '579f33e7-22e0-4438-b06a-af265bfa9479';
+export const WV_ENGAGED_SECONDS_FIELD_ID = 'd8852257-df14-4630-b11d-4706094a4520';
+export const WV_MAX_SCROLL_FIELD_ID = '4e05d0bb-5ed3-40f2-b14e-c7e8fcda0b71';
+export const WV_CTA_CLICKS_FIELD_ID = '711b4ea3-c148-46f6-b455-382d99445783';
+export const WV_LAST_ACTION_FIELD_ID = 'd4637184-69a3-49d5-b2c8-0da7a5dcf0a7';
+export const WV_RECENT_PAGES_FIELD_ID = '27fe93db-f08e-453d-bf5b-722bbc2db491';
+export const WV_INTENT_SCORE_FIELD_ID = '6bf0cc3c-5dae-4302-a6fe-e278fdfc2be4';
+export const WV_ENRICH_STATUS_FIELD_ID = 'bff48c48-0e84-4ab3-954e-ccecb9d72a3a';
+export const WV_LEADS_ADDED_FIELD_ID = '9007a23d-3e1f-45fc-855b-50ba5b6d373e';
+export const WV_VIEW_F_COMPANY_ID = '4f938f6f-a0fd-4b0a-81a4-413d2ceeb6bb';
+export const WV_VIEW_F_COMPANY_NAME_ID = 'b19e7a5a-879e-4b5a-afac-1c3dda30f79f';
+export const WV_VIEW_F_INTENT_ID = 'd109418f-ec1e-4d6e-9299-3695109443a4';
+export const WV_VIEW_F_AD_CLICK_ID = '4168a2f3-35c4-4212-acfc-76f0fb0ba4ab';
+export const WV_VIEW_F_LOCATION_ID = 'de69c8bb-af98-43c0-9665-66f3ffd2e6ec';
+export const WV_VIEW_F_ENRICH_STATUS_ID = 'e5aeb42c-165c-4de1-90dc-e8481092c1dd';
+export const WV_VIEW_F_RECENT_PAGES_ID = '86edf197-5a01-4a06-8e27-89b3c77a0e77';
+export const ENRICH_VISITORS_FUNCTION_ID = '7f58d43c-6e05-41ca-ac83-13254c014579';
+export const TRACKING_SNIPPET_FUNCTION_ID = '889c3c82-bc9a-4804-ab84-8f819d381423';
+export const VAR_IPINFO_TOKEN_ID = '03d3abb1-4c08-416a-a874-3214710b7326';
+export const VAR_VISITOR_LEADS_PER_COMPANY_ID = 'c5ade3e0-3e89-49f0-909d-01643dd4bba3';
+export const VAR_VISITOR_LEADS_DAILY_CAP_ID = '4f782fa7-83dd-4606-bfc6-00146a6628fa';
+export const VAR_VISITOR_SEQUENCE_NAME_ID = '427acb59-6bee-4da3-a72a-3cae4102660a';
+export const VAR_TRACKING_ENDPOINT_ID = 'd91fbde3-d0a6-4374-ad59-ecb2638949be';
+export const VISITOR_STATUS_ROUTE_PATH = '/visitors/status';

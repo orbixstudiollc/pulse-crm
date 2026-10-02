@@ -1,6 +1,7 @@
 import { defineObject, FieldType, OnDeleteAction, RelationType, STANDARD_OBJECT } from 'twenty-sdk/define';
 
 import {
+  COMPANY_WEBSITE_VISITS_FIELD_ID,
   PERSON_WEBSITE_VISITS_FIELD_ID,
   WEBSITE_VISIT_OBJECT_ID,
   WV_COMPANY_DOMAIN_FIELD_ID,
@@ -16,11 +17,30 @@ import {
   WV_UTM_TERM_FIELD_ID,
   WV_VISITED_AT_FIELD_ID,
   WV_VISITOR_ID_FIELD_ID,
+  WV_AD_CLICK_FIELD_ID,
+  WV_CITY_FIELD_ID,
+  WV_COMPANY_FIELD_ID,
+  WV_COMPANY_NAME_FIELD_ID,
+  WV_COUNTRY_FIELD_ID,
+  WV_CTA_CLICKS_FIELD_ID,
+  WV_DEVICE_FIELD_ID,
+  WV_ENGAGED_SECONDS_FIELD_ID,
+  WV_ENRICH_STATUS_FIELD_ID,
+  WV_INTENT_SCORE_FIELD_ID,
+  WV_IP_ADDRESS_FIELD_ID,
+  WV_LAST_ACTION_FIELD_ID,
+  WV_LEADS_ADDED_FIELD_ID,
+  WV_MAX_SCROLL_FIELD_ID,
+  WV_RECENT_PAGES_FIELD_ID,
+  WV_SESSIONS_FIELD_ID,
 } from 'src/constants/insights-ids';
+import { VISITOR_ENRICH_STATUSES } from 'src/insights/visitor-values';
 
 // One record per website visitor (keyed by the snippet's visitorId). The
 // `track` route upserts it: latest page and visit time move on, UTM fields
-// keep the first touch, and a known email links the visitor to a Person.
+// keep the first touch, behaviour adds up, and a known email links the
+// visitor to a Person. The enrich-website-visitors cron looks the IP up,
+// links the Company and adds its ICP people as leads.
 
 const text = (universalIdentifier: string, name: string, label: string, icon: string) => ({
   universalIdentifier,
@@ -28,6 +48,15 @@ const text = (universalIdentifier: string, name: string, label: string, icon: st
   name,
   label,
   icon,
+});
+
+const number = (universalIdentifier: string, name: string, label: string, icon: string) => ({
+  universalIdentifier,
+  type: FieldType.NUMBER as const,
+  name,
+  label,
+  icon,
+  defaultValue: 0,
 });
 
 export default defineObject({
@@ -85,6 +114,44 @@ export default defineObject({
         onDelete: OnDeleteAction.SET_NULL,
         joinColumnName: 'personId',
       },
+    },
+    text(WV_COMPANY_NAME_FIELD_ID, 'companyName', 'Company name', 'IconBuildingSkyscraper'),
+    {
+      universalIdentifier: WV_COMPANY_FIELD_ID,
+      type: FieldType.RELATION,
+      name: 'company',
+      label: 'Company',
+      icon: 'IconBuildingSkyscraper',
+      isNullable: true,
+      relationTargetObjectMetadataUniversalIdentifier: STANDARD_OBJECT.company.universalIdentifier,
+      relationTargetFieldMetadataUniversalIdentifier: COMPANY_WEBSITE_VISITS_FIELD_ID,
+      universalSettings: {
+        relationType: RelationType.MANY_TO_ONE,
+        onDelete: OnDeleteAction.SET_NULL,
+        joinColumnName: 'companyId',
+      },
+    },
+    text(WV_AD_CLICK_FIELD_ID, 'adClick', 'Ad click', 'IconAd'),
+    text(WV_RECENT_PAGES_FIELD_ID, 'recentPages', 'Recent pages', 'IconFiles'),
+    text(WV_LAST_ACTION_FIELD_ID, 'lastAction', 'Last action', 'IconClick'),
+    text(WV_IP_ADDRESS_FIELD_ID, 'ipAddress', 'IP address', 'IconNetwork'),
+    text(WV_COUNTRY_FIELD_ID, 'country', 'Country', 'IconFlag'),
+    text(WV_CITY_FIELD_ID, 'city', 'City', 'IconMapPin'),
+    text(WV_DEVICE_FIELD_ID, 'device', 'Device', 'IconDevices'),
+    number(WV_SESSIONS_FIELD_ID, 'sessions', 'Visits', 'IconRepeat'),
+    number(WV_ENGAGED_SECONDS_FIELD_ID, 'engagedSeconds', 'Time on site (s)', 'IconHourglass'),
+    number(WV_MAX_SCROLL_FIELD_ID, 'maxScroll', 'Max scroll %', 'IconArrowsVertical'),
+    number(WV_CTA_CLICKS_FIELD_ID, 'ctaClicks', 'Button clicks', 'IconHandFinger'),
+    number(WV_INTENT_SCORE_FIELD_ID, 'intentScore', 'Intent score', 'IconFlame'),
+    number(WV_LEADS_ADDED_FIELD_ID, 'leadsAdded', 'Leads added', 'IconUserPlus'),
+    {
+      universalIdentifier: WV_ENRICH_STATUS_FIELD_ID,
+      type: FieldType.SELECT,
+      name: 'enrichStatus',
+      label: 'Lookup',
+      icon: 'IconSearch',
+      options: VISITOR_ENRICH_STATUSES.map((option, position) => ({ ...option, position })),
+      defaultValue: "'PENDING'",
     },
   ],
 });
