@@ -126,6 +126,8 @@ export const ENROLLMENTS_VIEW_SORT_UNIVERSAL_IDENTIFIER = '210ea641-7c85-46c6-af
 // Sidebar entries and their views were re-issued with new ids on 2026-10-02: a workspace that
 // had removed them got them back only this way (apply saw no change otherwise).
 export const INBOX_NAV_UNIVERSAL_IDENTIFIER = '545f3bbd-1e77-4ccd-83f9-1d7f5aab3cd4';
+// The Inbox sidebar link as an OBJECT item (the VIEW item above did not render in one workspace).
+export const INBOX_NAV_OBJECT_UNIVERSAL_IDENTIFIER = '3336b878-8de5-493d-ae88-23fb5e34169d';
 export const SEQUENCES_NAV_UNIVERSAL_IDENTIFIER = '61570c06-9968-4ead-b710-f9113882dc90';
 export const CAMPAIGNS_NAV_UNIVERSAL_IDENTIFIER = '333d40f6-aa1b-4774-a5ec-0a6973c982d7';
 export const TEMPLATES_NAV_UNIVERSAL_IDENTIFIER = '7c948105-b607-41ab-8ef6-d228f3d80b29';
