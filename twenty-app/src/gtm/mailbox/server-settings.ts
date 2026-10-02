@@ -57,3 +57,11 @@ const PROVIDER_BY_DOMAIN: Record<string, MailboxProvider> = {
 // Best guess of the provider from the address; custom domains return null.
 export const guessProviderFromEmail = (email: string): MailboxProvider | null =>
   PROVIDER_BY_DOMAIN[email.slice(email.lastIndexOf('@') + 1).toLowerCase()] ?? null;
+
+// Custom domains: Google Workspace and Microsoft 365 show up in the MX records.
+export const providerFromMxHosts = (hosts: readonly string[]): MailboxProvider | null => {
+  const lower = hosts.map((h) => h.toLowerCase().replace(/\.$/, ''));
+  if (lower.some((h) => h.endsWith('google.com') || h.endsWith('googlemail.com'))) return 'GOOGLE';
+  if (lower.some((h) => h.endsWith('outlook.com') || h.endsWith('protection.outlook.com'))) return 'MICROSOFT';
+  return null;
+};

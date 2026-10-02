@@ -18,6 +18,7 @@ import {
   parseServiceAccountKey,
 } from 'src/gtm/mailbox/google-delegation';
 import { listWorkspaceUsers } from 'src/gtm/mailbox/google-directory';
+import { providerFromMxHosts } from 'src/gtm/mailbox/server-settings';
 import { importCsvMailboxes, importWorkspaceMailboxes } from 'src/gtm/mailbox/import-runner';
 import { hasCredential } from 'src/gtm/mailbox/server-settings';
 import type { MailboxImportStore } from 'src/gtm/mailbox/twenty-repository';
@@ -189,6 +190,26 @@ describe('CSV paste', () => {
     expect(errors).toEqual([]);
     expect(rows[0]).toMatchObject({ email: 'me@custom.io', password: 'secret', provider: 'OTHER', smtpHost: 'mail.custom.io', smtpPort: 465, imapHost: 'mail.custom.io', imapPort: null });
   });
+
+  it('skips lone domain headings and joins first and last name', () => {
+    const { rows, errors } = parseMailboxCsv(
+      'acme.com\t\nEmail\tPassword\tFirst name\tLast name\tProvider\nann@acme.com\tpw\tAnn\tLee\tgoogle\n\t\nbeta.io\t\nbob@beta.io\tpw2\t\t\tgoogle\n',
+    );
+    expect(errors).toEqual([]);
+    expect(rows.map((r) => [r.email, r.displayName, r.provider])).toEqual([
+      ['ann@acme.com', 'Ann Lee', 'GOOGLE'],
+      ['bob@beta.io', null, 'GOOGLE'],
+    ]);
+  });
+});
+
+describe('provider from MX', () => {
+  it('spots Google Workspace and Microsoft 365', () => {
+    expect(providerFromMxHosts(['smtp.google.com.'])).toBe('GOOGLE');
+    expect(providerFromMxHosts(['aspmx.l.google.com', 'alt1.aspmx.l.google.com'])).toBe('GOOGLE');
+    expect(providerFromMxHosts(['acme-io.mail.protection.outlook.com'])).toBe('MICROSOFT');
+    expect(providerFromMxHosts(['mx.zoho.com'])).toBeNull();
+  });
 });
 
 describe('import runners', () => {
@@ -205,6 +226,24 @@ describe('import runners', () => {
     return { s, created };
   };
   const key = 'import-test-key-0123456789';
+
+  it('looks up the provider of custom domains once per domain', async () => {
+    const { s, created } = store([]);
+    const looked: string[] = [];
+    const summary = await importCsvMailboxes({
+      store: s,
+      csv: 'a@acme.io,pw\nb@acme.io,pw\nc@other.io,pw',
+      seal: (p) => encryptMailboxSecret({ password: p }, key),
+      providerForDomain: async (domain) => {
+        looked.push(domain);
+        return domain === 'acme.io' ? 'GOOGLE' : null;
+      },
+    });
+    expect(looked).toEqual(['acme.io', 'other.io']);
+    expect(summary.created).toEqual(['a@acme.io', 'b@acme.io']);
+    expect(created.map((m) => m.provider)).toEqual(['GOOGLE', 'GOOGLE']);
+    expect(summary.failed.map((f) => f.email)).toEqual(['c@other.io']);
+  });
 
   it('imports a CSV, sealing passwords and skipping existing, duplicate and unusable rows', async () => {
     const { s, created } = store(['old@gmail.com']);

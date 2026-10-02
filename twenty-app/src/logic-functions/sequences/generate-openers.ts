@@ -1,5 +1,5 @@
 import { defineLogicFunction } from 'twenty-sdk/define';
-import { runAgent } from 'twenty-sdk/logic-function';
+import { kv, runAgent } from 'twenty-sdk/logic-function';
 
 import {
   GENERATE_OPENERS_FUNCTION_UNIVERSAL_IDENTIFIER,
@@ -10,6 +10,7 @@ import {
   MAX_OPENERS_PER_CALL,
   type GenerateOpenersInput,
 } from 'src/gtm/sequences/generate-openers';
+import { PICKED_AI_MODEL_KV_KEY, withPickedModel } from 'src/gtm/sequences/ai-models';
 import { pickOpenerWriter } from 'src/gtm/sequences/opener-writers';
 import { createTwentyStore } from 'src/gtm/sequences/twenty-store';
 
@@ -17,7 +18,8 @@ import { createTwentyStore } from 'src/gtm/sequences/twenty-store';
 // enrollments). Drafts are saved as DRAFT for review in "Openers to review".
 const handler = async (input: GenerateOpenersInput) => {
   try {
-    const writer = pickOpenerWriter(process.env, runAgent, OPENER_WRITER_AGENT_UNIVERSAL_IDENTIFIER);
+    const env = withPickedModel(process.env, await kv.get<string>(PICKED_AI_MODEL_KV_KEY));
+    const writer = pickOpenerWriter(env, runAgent, OPENER_WRITER_AGENT_UNIVERSAL_IDENTIFIER);
     return { ok: true, ...(await generateOpeners({ store: createTwentyStore(), writer, input })) };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) };

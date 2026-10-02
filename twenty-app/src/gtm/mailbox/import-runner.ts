@@ -9,6 +9,7 @@ import {
   type WorkspaceImportFilter,
 } from 'src/gtm/mailbox/bulk-import';
 import type { MailboxImportStore } from 'src/gtm/mailbox/twenty-repository';
+import type { MailboxProvider } from 'src/gtm/mailbox/values';
 
 export type ImportSummary = {
   ok: true;
@@ -87,8 +88,20 @@ export const importCsvMailboxes = async (input: {
   csv: string;
   seal: (password: string) => string;
   dryRun?: boolean;
+  // Finds the provider of a custom domain (MX lookup), so Workspace and
+  // Microsoft 365 addresses need no host columns.
+  providerForDomain?: (domain: string) => Promise<MailboxProvider | null>;
 }): Promise<ImportSummary & { parsed: number }> => {
   const parsed = parseMailboxCsv(input.csv);
+  if (input.providerForDomain) {
+    const lookups = new Map<string, Promise<MailboxProvider | null>>();
+    for (const row of parsed.rows) {
+      if (row.provider || row.smtpHost) continue;
+      const domain = row.email.slice(row.email.lastIndexOf('@') + 1);
+      if (!lookups.has(domain)) lookups.set(domain, input.providerForDomain(domain).catch(() => null));
+      row.provider = await lookups.get(domain)!;
+    }
+  }
   const failed: ImportSummary['failed'] = parsed.errors.map((e) => ({ line: e.line, error: e.message }));
   const usable = parsed.rows.filter((row) => {
     const problem = csvRowProblem(row);

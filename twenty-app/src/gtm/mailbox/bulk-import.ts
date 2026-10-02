@@ -78,22 +78,34 @@ const splitCsvLine = (line: string, delimiter: string): string[] => {
   return cells;
 };
 
-const HEADER_ALIASES: Record<string, keyof Omit<CsvMailboxRow, 'line'>> = {
+type CsvColumn = keyof Omit<CsvMailboxRow, 'line'> | 'firstName' | 'lastName';
+
+// Keys are header cells lowercased with everything but letters removed.
+const HEADER_ALIASES: Record<string, CsvColumn> = {
   email: 'email',
   emailaddress: 'email',
+  mailbox: 'email',
   password: 'password',
   apppassword: 'password',
+  appspecificpassword: 'password',
+  smtppassword: 'password',
+  pass: 'password',
   displayname: 'displayName',
   name: 'displayName',
   sendername: 'displayName',
+  fromname: 'displayName',
+  firstname: 'firstName',
+  lastname: 'lastName',
   provider: 'provider',
   smtphost: 'smtpHost',
+  smtpserver: 'smtpHost',
   smtpport: 'smtpPort',
   imaphost: 'imapHost',
+  imapserver: 'imapHost',
   imapport: 'imapPort',
 };
 
-const POSITIONAL: (keyof Omit<CsvMailboxRow, 'line'>)[] = ['email', 'password', 'displayName'];
+const POSITIONAL: CsvColumn[] = ['email', 'password', 'displayName'];
 
 const PROVIDERS: Record<string, MailboxProvider> = {
   google: 'GOOGLE',
@@ -112,12 +124,14 @@ const toPort = (value: string | undefined): number | null => {
 
 // Parses a pasted list of mailboxes. Accepts comma, semicolon or tab
 // separators, an optional header row (email, password, display name, provider,
-// smtp host/port, imap host/port), blank lines and "#" comments. Without a
-// header the columns are: email, app password, display name.
+// smtp host/port, imap host/port), blank lines, "#" comments and lone domain
+// headings. Without a
+// header the columns are: email, app password, display name. First and last
+// name columns are joined into the display name.
 export const parseMailboxCsv = (text: string): CsvParseResult => {
   const result: CsvParseResult = { rows: [], errors: [] };
   const lines = text.replace(/^﻿/, '').split(/\r?\n/);
-  let columns: (keyof Omit<CsvMailboxRow, 'line'> | null)[] | null = null;
+  let columns: (CsvColumn | null)[] | null = null;
   let delimiter: string | null = null;
 
   lines.forEach((rawLine, index) => {
@@ -125,6 +139,8 @@ export const parseMailboxCsv = (text: string): CsvParseResult => {
     const line = rawLine.trim();
     if (!line || line.startsWith('#')) return;
 
+    // Spreadsheets often group rows under a domain heading ("acme.com" alone on a row).
+    if (/^[^\s@,;]+\.[^\s@,;]+[,;]*$/.test(line)) return;
     delimiter ??= line.includes('\t') ? '\t' : !line.includes(',') && line.includes(';') ? ';' : ',';
     const cells = splitCsvLine(line, delimiter);
 
@@ -137,7 +153,7 @@ export const parseMailboxCsv = (text: string): CsvParseResult => {
       columns = POSITIONAL;
     }
 
-    const value = (key: keyof Omit<CsvMailboxRow, 'line'>) => {
+    const value = (key: CsvColumn) => {
       const position = columns!.indexOf(key);
       const cell = position >= 0 ? cells[position] : undefined;
       return cell === undefined || cell === '' ? undefined : cell;
@@ -164,7 +180,7 @@ export const parseMailboxCsv = (text: string): CsvParseResult => {
       line: lineNumber,
       email: normalizeEmail(email),
       password,
-      displayName: value('displayName') ?? null,
+      displayName: value('displayName') ?? ([value('firstName'), value('lastName')].filter(Boolean).join(' ') || null),
       provider,
       smtpHost: value('smtpHost') ?? null,
       smtpPort: toPort(value('smtpPort')),

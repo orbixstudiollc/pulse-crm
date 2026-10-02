@@ -1,9 +1,12 @@
+import { resolveMx } from 'dns/promises';
+
 import { defineLogicFunction } from 'twenty-sdk/define';
 
 import { MAILBOX_FN_IMPORT_CSV_UID, MAILBOX_IMPORT_CSV_ROUTE_PATH } from 'src/constants/mailbox-ids';
 import { encryptMailboxSecret } from 'src/gtm/mailbox/credentials';
 import { createRestClient, readEncryptionKey } from 'src/gtm/mailbox/env';
 import { importCsvMailboxes, toolOrRouteInput } from 'src/gtm/mailbox/import-runner';
+import { providerFromMxHosts } from 'src/gtm/mailbox/server-settings';
 import { createMailboxImportStore } from 'src/gtm/mailbox/twenty-repository';
 
 type Input = { csv?: string; dryRun?: boolean };
@@ -28,6 +31,7 @@ export default defineLogicFunction({
         csv: input.csv,
         seal: (password) => encryptMailboxSecret({ password }, key),
         dryRun: input.dryRun === true,
+        providerForDomain: async (domain) => providerFromMxHosts((await resolveMx(domain)).map((mx) => mx.exchange)),
       });
     } catch (error) {
       return { ok: false, error: error instanceof Error ? error.message : String(error) };

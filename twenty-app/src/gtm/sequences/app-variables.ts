@@ -15,15 +15,21 @@ export const SEQUENCES_APPLICATION_VARIABLES: NonNullable<ApplicationConfig['app
     universalIdentifier: AI_PROVIDER_VARIABLE_UNIVERSAL_IDENTIFIER,
     label: 'AI provider',
     description:
-      "Optional. One of: twenty (default, uses Settings > AI), anthropic, openai, or openai-compatible (OpenRouter, Groq, Together, Mistral, Gemini, a local Ollama, ...). Used to write personalised openers.",
-    type: FieldType.TEXT,
+      'Optional. twenty (default) uses Settings > AI. openai-compatible covers LLMsRelay, OpenRouter, Groq, Together, Mistral, Gemini, a local Ollama, ... Used to write personalised openers.',
+    type: FieldType.SELECT,
+    options: [
+      { label: 'Twenty AI (default)', value: 'twenty' },
+      { label: 'Anthropic', value: 'anthropic' },
+      { label: 'OpenAI', value: 'openai' },
+      { label: 'OpenAI-compatible', value: 'openai-compatible' },
+    ],
     isRequired: false,
   },
   AI_MODEL: {
     universalIdentifier: AI_MODEL_VARIABLE_UNIVERSAL_IDENTIFIER,
     label: 'AI model',
     description:
-      'Optional model id for the provider, e.g. claude-sonnet-5-5, gpt-4.1, openai/gpt-4.1 on OpenRouter, llama3.1 on Ollama.',
+      'Optional model id, e.g. claude-sonnet-4.6. Or pick one from a list on the Pulse settings tab.',
     type: FieldType.TEXT,
     isRequired: false,
   },
