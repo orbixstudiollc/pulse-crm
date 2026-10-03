@@ -132,7 +132,7 @@ const loadRecentNotes = async (records: Records, projectId: string, since: Date)
 export const latestClientContact = async (records: Records, personId: string): Promise<string | null> => {
   const sent = await records.findMany<{ messageId: string | null }>(
     'messageParticipants',
-    { and: [{ personId: { eq: personId } }, { role: { eq: 'from' } }] },
+    { and: [{ personId: { eq: personId } }, { role: { eq: 'FROM' } }] },
     { messageId: true },
     100,
   );

@@ -119,7 +119,7 @@ describe('weeklyClientUpdates', () => {
     const db = setup({ lastClientContactAt: null, startDate: '2026-08-01' });
     const oldMsg = db.add('messages', { receivedAt: daysAgo(NOW, 20) });
     const otherMsg = db.add('messages', { receivedAt: daysAgo(NOW, 1) });
-    db.add('messageParticipants', { messageId: oldMsg, personId: 'person-1', role: 'from' });
+    db.add('messageParticipants', { messageId: oldMsg, personId: 'person-1', role: 'FROM' });
     db.add('messageParticipants', { messageId: otherMsg, personId: 'person-1', role: 'to' });
     db.add('inboxItems', { personId: 'person-1', kind: 'BOUNCE', receivedAt: daysAgo(NOW, 2) });
     db.add('inboxItems', { personId: 'person-1', kind: 'EMAIL', receivedAt: daysAgo(NOW, 16) });
@@ -136,7 +136,7 @@ describe('weeklyClientUpdates', () => {
   it('a recent message from the client keeps it on track', async () => {
     const db = setup({ lastClientContactAt: daysAgo(NOW, 30), health: 'QUIET' });
     const msg = db.add('messages', { receivedAt: daysAgo(NOW, 2) });
-    db.add('messageParticipants', { messageId: msg, personId: 'person-1', role: 'from' });
+    db.add('messageParticipants', { messageId: msg, personId: 'person-1', role: 'FROM' });
     await run(db);
     expect(db.rows('clientProjects')[0]).toMatchObject({ health: 'ON_TRACK', lastClientContactAt: daysAgo(NOW, 2) });
   });
