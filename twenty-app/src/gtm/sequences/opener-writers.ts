@@ -16,13 +16,19 @@ const OPENAI_BASE_URL = 'https://api.openai.com/v1';
 export const AI_PROVIDERS = ['twenty', 'anthropic', 'openai', 'openai-compatible'] as const;
 export type AiProvider = (typeof AI_PROVIDERS)[number];
 
+// Lets other features (reply triage) reuse the provider plumbing with their own
+// instructions. Defaults keep the opener behaviour.
+export type WriterPrompt = { system?: string; maxTokens?: number };
+const DEFAULT_PROMPT: Required<WriterPrompt> = { system: OPENER_INSTRUCTIONS, maxTokens: 400 };
+
 export const anthropicOpenerWriter = (
   apiKey: string,
   fetchImpl: typeof fetch = fetch,
   model: string = ANTHROPIC_MODEL,
   baseUrl: string = ANTHROPIC_BASE_URL,
+  prompt: WriterPrompt = {},
 ): OpenerWriter => ({
-  async write(prompt) {
+  async write(userPrompt) {
     const res = await fetchImpl(`${baseUrl.replace(/\/+$/, '')}/messages`, {
       method: 'POST',
       headers: {
@@ -32,9 +38,9 @@ export const anthropicOpenerWriter = (
       },
       body: JSON.stringify({
         model,
-        max_tokens: 400,
-        system: OPENER_INSTRUCTIONS,
-        messages: [{ role: 'user', content: prompt }],
+        max_tokens: prompt.maxTokens ?? DEFAULT_PROMPT.maxTokens,
+        system: prompt.system ?? DEFAULT_PROMPT.system,
+        messages: [{ role: 'user', content: userPrompt }],
       }),
     });
     if (!res.ok) {
@@ -52,8 +58,9 @@ export const anthropicOpenerWriter = (
 export const chatCompletionsOpenerWriter = (
   options: { baseUrl: string; model: string; apiKey?: string },
   fetchImpl: typeof fetch = fetch,
+  prompt: WriterPrompt = {},
 ): OpenerWriter => ({
-  async write(prompt) {
+  async write(userPrompt) {
     const headers: Record<string, string> = { 'content-type': 'application/json' };
     if (options.apiKey) headers.authorization = `Bearer ${options.apiKey}`;
     const res = await fetchImpl(`${options.baseUrl.replace(/\/+$/, '')}/chat/completions`, {
@@ -61,10 +68,10 @@ export const chatCompletionsOpenerWriter = (
       headers,
       body: JSON.stringify({
         model: options.model,
-        max_tokens: 400,
+        max_tokens: prompt.maxTokens ?? DEFAULT_PROMPT.maxTokens,
         messages: [
-          { role: 'system', content: OPENER_INSTRUCTIONS },
-          { role: 'user', content: prompt },
+          { role: 'system', content: prompt.system ?? DEFAULT_PROMPT.system },
+          { role: 'user', content: userPrompt },
         ],
       }),
     });
@@ -95,6 +102,7 @@ export const pickOpenerWriter = (
   runAgent: RunAgent,
   agentUniversalIdentifier: string,
   fetchImpl?: typeof fetch,
+  prompt: WriterPrompt = {},
 ): OpenerWriter => {
   const key = env.AI_API_KEY?.trim() || undefined;
   const model = env.AI_MODEL?.trim() || undefined;
@@ -109,16 +117,17 @@ export const pickOpenerWriter = (
   switch (provider) {
     case 'anthropic':
       if (!key) throw new Error('AI provider anthropic needs an AI API key.');
-      return anthropicOpenerWriter(key, fetchImpl, model ?? ANTHROPIC_MODEL, baseUrl ?? ANTHROPIC_BASE_URL);
+      return anthropicOpenerWriter(key, fetchImpl, model ?? ANTHROPIC_MODEL, baseUrl ?? ANTHROPIC_BASE_URL, prompt);
     case 'openai':
       if (!key) throw new Error('AI provider openai needs an AI API key.');
       return chatCompletionsOpenerWriter(
         { baseUrl: baseUrl ?? OPENAI_BASE_URL, model: model ?? OPENAI_MODEL, apiKey: key },
         fetchImpl,
+        prompt,
       );
     case 'openai-compatible':
       if (!baseUrl || !model) throw new Error('AI provider openai-compatible needs an AI base URL and an AI model.');
-      return chatCompletionsOpenerWriter({ baseUrl, model, apiKey: key }, fetchImpl);
+      return chatCompletionsOpenerWriter({ baseUrl, model, apiKey: key }, fetchImpl, prompt);
     default:
       return agentOpenerWriter(runAgent, agentUniversalIdentifier);
   }
