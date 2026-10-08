@@ -118,7 +118,8 @@ const handler = async (payload: unknown) => {
         }
       }
       const score = scoreLead(leadProfileFromProspeo(lead), profiles);
-      await createRecord('people', personPayloadFromProspeo(lead, { companyId, score }));
+      // Queued for qualification (website, company and title checks, the 85% gates).
+      await createRecord('people', { ...personPayloadFromProspeo(lead, { companyId, score }), qualificationStatus: 'PENDING' });
       if (score) grades[score.grade]++;
       created++;
     }

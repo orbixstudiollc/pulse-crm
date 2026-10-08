@@ -8,6 +8,7 @@ import {
 import { PROSPEO_API_KEY_VARIABLE_UNIVERSAL_IDENTIFIER } from 'src/constants/leadfinder-ids';
 import { AGENCY_APPLICATION_VARIABLES } from 'src/gtm/agency/app-variables';
 import { MAILBOX_APPLICATION_VARIABLES } from 'src/gtm/mailbox/app-variables';
+import { QUALIFY_APPLICATION_VARIABLES } from 'src/gtm/qualify/app-variables';
 import { REPLIES_APPLICATION_VARIABLES } from 'src/gtm/replies/app-variables';
 import { SEQUENCES_APPLICATION_VARIABLES } from 'src/gtm/sequences/app-variables';
 import { VISITOR_APPLICATION_VARIABLES } from 'src/insights/app-variables';
@@ -22,6 +23,7 @@ export default defineApplication({
     ...REPLIES_APPLICATION_VARIABLES,
     ...AGENCY_APPLICATION_VARIABLES,
     ...VISITOR_APPLICATION_VARIABLES,
+    ...QUALIFY_APPLICATION_VARIABLES,
     PROSPEO_API_KEY: {
       universalIdentifier: PROSPEO_API_KEY_VARIABLE_UNIVERSAL_IDENTIFIER,
       label: 'Prospeo API key',
