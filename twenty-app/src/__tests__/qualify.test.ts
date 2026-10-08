@@ -10,7 +10,7 @@ import { choiceOf, companyDecision, jevClassifier, noulProbability } from 'src/g
 import { qualifyPending, type EmailVerifier } from 'src/gtm/qualify/run';
 import type { ImportStore, QualifyCompany, QualifyIcp, QualifyPerson, QualifyStore } from 'src/gtm/qualify/store';
 import { classify, clampConfidence, readThreshold } from 'src/gtm/qualify/values';
-import { htmlLinks, htmlToText, pickAboutPages, researchWebsite } from 'src/gtm/qualify/website';
+import { htmlLinks, htmlToText, pickAboutPages, pickPageReader, researchWebsite, spiderPageReader } from 'src/gtm/qualify/website';
 import type { SequenceStore } from 'src/gtm/sequences/store';
 
 const APOLLO_HEADER =
@@ -427,5 +427,35 @@ describe('enroll qualified', () => {
     expect(r).toMatchObject({ eligible: 1, enrolled: 1 });
     expect(r.skipped.map((s) => s.reason)).toEqual(['Email not verified', 'Suppressed: on the blocklist']);
     expect(store.people.get('a').qualificationStatus).toBe('ENROLLED');
+  });
+});
+
+describe('website readers', () => {
+  const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+
+  it('reads a Spider page and keeps same-site links', async () => {
+    const fetchImpl = (async () =>
+      json([{ url: 'https://acme.co', status: 200, content: '# Acme\nWe build [services](https://acme.co/services) and [x](https://other.com/a)' }])) as unknown as typeof fetch;
+    const page = await spiderPageReader('key', fetchImpl)('https://acme.co');
+    expect(page?.text).toContain('Acme');
+    expect(page?.links).toEqual(['https://acme.co/services']);
+  });
+
+  it('takes turns between Firecrawl and Spider per website and falls back when one fails', async () => {
+    const calls: string[] = [];
+    const fetchImpl = (async (input: string, init?: RequestInit) => {
+      const body = init?.body ? JSON.parse(String(init.body)) : {};
+      if (String(input).includes('firecrawl')) {
+        calls.push(`firecrawl ${body.url}`);
+        return json({ error: 'no credits' }, 402);
+      }
+      calls.push(`spider ${body.url}`);
+      return json([{ url: body.url, status: 200, content: 'hello' }]);
+    }) as unknown as typeof fetch;
+    const { read, source } = pickPageReader({ FIRECRAWL_API_KEY: 'fc', SPIDER_API_KEY: 'sp' }, fetchImpl);
+    expect(source).toBe('firecrawl+spider');
+    expect((await read('https://a.co'))?.text).toBe('hello');
+    expect((await read('https://b.co'))?.text).toBe('hello');
+    expect(calls).toEqual(['spider https://a.co', 'firecrawl https://b.co', 'spider https://b.co']);
   });
 });

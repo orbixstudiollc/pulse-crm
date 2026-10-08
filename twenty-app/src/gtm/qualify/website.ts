@@ -1,6 +1,6 @@
 // Website research: read a company's homepage and one or two pages about what
 // it does, as plain text for the classifier. Firecrawl (FIRECRAWL_API_KEY)
-// when set, otherwise a direct fetch.
+// and Spider (SPIDER_API_KEY) when set, taking turns, otherwise a direct fetch.
 
 export type WebsitePage = { url: string; text: string; links: string[] };
 export type PageReader = (url: string) => Promise<WebsitePage | null>;
@@ -141,14 +141,92 @@ export const firecrawlPageReader =
     return { url: base, text, links };
   };
 
-/** Firecrawl when a key is set, falling back to a direct fetch when Firecrawl has nothing. */
+const sameSite = (links: unknown[], base: string): string[] => {
+  const host = new URL(base).hostname.replace(/^www\./, '');
+  const out = new Set<string>();
+  for (const l of links) {
+    if (typeof l !== 'string') continue;
+    try {
+      const url = new URL(l, base);
+      if (url.hostname.replace(/^www\./, '') === host) out.add(url.origin + url.pathname);
+    } catch {
+      // not a URL
+    }
+  }
+  return [...out];
+};
+
+// Links written in markdown, for when Spider sends no link list.
+const markdownLinks = (markdown: string): string[] => [...markdown.matchAll(/\]\(([^)\s]+)/g)].map((m) => m[1]);
+
+// Spider (spider.cloud) scrape: one page as markdown. The answer is a list of
+// pages ({ content, url, status, error, links? }); a single object is accepted too.
+export const spiderPageReader =
+  (apiKey: string, fetchImpl: typeof fetch = fetch): PageReader =>
+  async (url) => {
+    const res = await fetchImpl('https://api.spider.cloud/scrape', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ url, return_format: 'markdown', return_page_links: true, request: 'smart', limit: 1 }),
+      signal: AbortSignal.timeout(45_000),
+    });
+    if (res.status === 401 || res.status === 402) {
+      const detail = (await res.text().catch(() => '')).slice(0, 200);
+      throw new Error(`Spider ${res.status}${detail ? `: ${detail}` : ''}`);
+    }
+    if (!res.ok) return null;
+    const json = (await res.json()) as unknown;
+    const page = (Array.isArray(json) ? json[0] : json) as
+      | { content?: unknown; url?: string; error?: unknown; status?: number; links?: unknown[] }
+      | undefined;
+    if (!page || typeof page.content !== 'string' || !page.content.trim()) return null;
+    if (typeof page.status === 'number' && page.status >= 400) return null;
+    const base = page.url || url;
+    const links = sameSite(Array.isArray(page.links) && page.links.length ? page.links : markdownLinks(page.content), base);
+    return { url: base, text: page.content, links };
+  };
+
+// Tries each reader in turn until one returns a page. A reader that throws
+// (bad key, out of credits) is skipped, so the next one still gets a go.
+export const chainReaders =
+  (...readers: PageReader[]): PageReader =>
+  async (url) => {
+    for (const read of readers) {
+      const page = await read(url).catch(() => null);
+      if (page?.text.trim()) return page;
+    }
+    return null;
+  };
+
+/**
+ * Firecrawl and Spider when their keys are set, falling back to a direct fetch.
+ * With both keys they take turns going first, one website at a time, so
+ * neither runs out of credits alone and either covers for the other.
+ */
 export const pickPageReader = (env: Record<string, string | undefined>, fetchImpl: typeof fetch = fetch): { read: PageReader; source: string } => {
   const direct = directPageReader(fetchImpl);
-  const key = env.FIRECRAWL_API_KEY?.trim();
-  if (!key) return { read: direct, source: 'direct' };
-  const firecrawl = firecrawlPageReader(key, fetchImpl);
-  return {
-    read: async (url) => (await firecrawl(url)) ?? (await direct(url).catch(() => null)),
-    source: 'firecrawl',
-  };
+  const firecrawlKey = env.FIRECRAWL_API_KEY?.trim();
+  const spiderKey = env.SPIDER_API_KEY?.trim();
+  const firecrawl = firecrawlKey ? firecrawlPageReader(firecrawlKey, fetchImpl) : null;
+  const spider = spiderKey ? spiderPageReader(spiderKey, fetchImpl) : null;
+  if (firecrawl && spider) {
+    const turns = [chainReaders(firecrawl, spider, direct), chainReaders(spider, firecrawl, direct)];
+    let site = 0;
+    let lastHost = '';
+    return {
+      // Pages of one website stay with the same reader.
+      read: (url) => {
+        const host = new URL(url).hostname.replace(/^www\./, '');
+        if (host !== lastHost) {
+          lastHost = host;
+          site += 1;
+        }
+        return turns[site % 2](url);
+      },
+      source: 'firecrawl+spider',
+    };
+  }
+  if (firecrawl) return { read: chainReaders(firecrawl, direct), source: 'firecrawl' };
+  if (spider) return { read: chainReaders(spider, direct), source: 'spider' };
+  return { read: direct, source: 'direct' };
 };

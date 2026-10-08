@@ -7,6 +7,7 @@ import {
   QUALIFY_DAILY_VERIFICATIONS_VARIABLE_UNIVERSAL_IDENTIFIER,
   QUALIFY_REVIEW_MODEL_VARIABLE_UNIVERSAL_IDENTIFIER,
   QUALIFY_THRESHOLD_VARIABLE_UNIVERSAL_IDENTIFIER,
+  SPIDER_API_KEY_VARIABLE_UNIVERSAL_IDENTIFIER,
 } from 'src/constants/qualify-ids';
 import { JEV_DEFAULT_MODEL } from 'src/gtm/qualify/jev';
 
@@ -15,7 +16,14 @@ export const QUALIFY_APPLICATION_VARIABLES: NonNullable<ApplicationConfig['appli
   FIRECRAWL_API_KEY: {
     universalIdentifier: FIRECRAWL_API_KEY_VARIABLE_UNIVERSAL_IDENTIFIER,
     label: 'Firecrawl API key',
-    description: 'Reads company websites for lead qualification (fc-...). Without it the site is fetched directly, which misses script-only sites.',
+    description: 'Reads company websites for lead qualification (fc-...). Without it (or Spider) the site is fetched directly, which misses script-only sites.',
+    isSecret: true,
+    isRequired: false,
+  },
+  SPIDER_API_KEY: {
+    universalIdentifier: SPIDER_API_KEY_VARIABLE_UNIVERSAL_IDENTIFIER,
+    label: 'Spider API key',
+    description: 'Spider (spider.cloud) also reads company websites. With both keys set, Firecrawl and Spider take turns and each covers for the other when it fails or runs out of credits.',
     isSecret: true,
     isRequired: false,
   },

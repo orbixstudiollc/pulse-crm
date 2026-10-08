@@ -15,9 +15,18 @@ import { useTheme } from 'src/insights/ui';
 
 const CHUNK = 200;
 
-type Status = { ok: boolean; error?: string; counts?: Record<string, number>; tools?: { firecrawl: boolean; jev: boolean; prospeo: boolean } };
+type Status = { ok: boolean; error?: string; counts?: Record<string, number>; tools?: { firecrawl: boolean; spider?: boolean; jev: boolean; prospeo: boolean } };
 type ImportTotals = { created: number; companiesCreated: number; skippedExisting: number; skippedDuplicate: number; failed: number };
 type Named = { id: string; name?: string | null };
+
+const websiteReader = (tools: NonNullable<Status['tools']>) =>
+  tools.firecrawl && tools.spider
+    ? 'Firecrawl and Spider, taking turns'
+    : tools.firecrawl
+      ? 'Firecrawl'
+      : tools.spider
+        ? 'Spider'
+        : 'direct fetch (add a Firecrawl or Spider API key for better coverage)';
 
 const post = <T,>(path: string, body: Record<string, unknown>) => new RestApiClient().post<T>(`/s${path}`, body);
 
@@ -156,7 +165,7 @@ export const LeadQualificationSection = () => {
       ) : null}
       {status?.tools ? (
         <span style={{ fontSize: 12, color: theme.muted }}>
-          Website reader: {status.tools.firecrawl ? 'Firecrawl' : 'direct fetch (add a Firecrawl API key for better coverage)'} · Bulk classifier:{' '}
+          Website reader: {websiteReader(status.tools)} · Bulk classifier:{' '}
           {status.tools.jev ? 'Jev via OpenRouter' : 'your AI model (add an OpenRouter API key to use Jev)'} · Email check:{' '}
           {status.tools.prospeo ? 'Prospeo' : 'off (no Prospeo key)'}
         </span>

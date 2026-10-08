@@ -18,6 +18,7 @@ export default defineLogicFunction({
         counts: await qualificationCounts(),
         tools: {
           firecrawl: Boolean(process.env.FIRECRAWL_API_KEY?.trim()),
+          spider: Boolean(process.env.SPIDER_API_KEY?.trim()),
           jev: Boolean(process.env.OPENROUTER_API_KEY?.trim()),
           prospeo: Boolean(process.env.PROSPEO_API_KEY?.trim()),
         },
