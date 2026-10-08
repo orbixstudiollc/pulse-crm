@@ -459,3 +459,35 @@ describe('website readers', () => {
     expect(calls).toEqual(['spider https://a.co', 'firecrawl https://b.co', 'spider https://b.co']);
   });
 });
+
+describe('fresh ICP for find leads', () => {
+  it('turns size ranges into ICP buckets', async () => {
+    const { headcountValues } = await import('src/gtm/qualify/icp');
+    expect(headcountValues(['11-50']).values).toEqual(['SIZE_11_20', 'SIZE_21_50']);
+    expect(headcountValues(['51-100', 'SIZE_1_10']).values).toEqual(['SIZE_1_10', 'SIZE_51_100']);
+    expect(headcountValues(['5000+']).values).toEqual(['SIZE_2001_5000', 'SIZE_5001_10000', 'SIZE_10000_PLUS']);
+    expect(headcountValues(['small']).unknown).toEqual(['small']);
+  });
+
+  it('creates the ICP active and turns the others off', async () => {
+    const { startIcp } = await import('src/gtm/qualify/icp');
+    const updates: [string, Record<string, unknown>][] = [];
+    let created: Record<string, unknown> | null = null;
+    const records = {
+      findMany: async () => [{ id: 'old' }, { id: 'new' }],
+      findOne: async () => null,
+      create: async (_: string, data: Record<string, unknown>) => {
+        created = data;
+        return 'new';
+      },
+      update: async (_: string, id: string, data: Record<string, unknown>) => {
+        updates.push([id, data]);
+      },
+    } as never;
+    const res = await startIcp(records, { description: 'US marketing agencies', locations: ['United States'], headcount: ['11-50'] });
+    expect(res).toMatchObject({ ok: true, icpProfileId: 'new', turnedOff: 1 });
+    expect(created).toMatchObject({ isActive: true, locations: ['United States'], headcount: ['SIZE_11_20', 'SIZE_21_50'] });
+    expect(updates).toEqual([['old', { isActive: false }]]);
+    expect(await startIcp(records, {})).toMatchObject({ ok: false });
+  });
+});

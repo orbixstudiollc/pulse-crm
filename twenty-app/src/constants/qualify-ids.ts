@@ -12,6 +12,7 @@ export const PERSON_QUALIFICATION_NOTES_UNIVERSAL_IDENTIFIER = 'b5991897-9c8e-49
 export const IMPORT_LEADS_FUNCTION_UNIVERSAL_IDENTIFIER = 'd08e5674-2ba2-471c-9915-5c8caa93be43';
 export const QUALIFY_LEADS_FUNCTION_UNIVERSAL_IDENTIFIER = '3e529d47-75f0-47da-b090-9423ad57688a';
 export const ENROLL_QUALIFIED_FUNCTION_UNIVERSAL_IDENTIFIER = 'd9835bc4-9ac0-460b-93d8-2566a3f2d94d';
+export const START_ICP_FUNCTION_UNIVERSAL_IDENTIFIER = '75e5f15e-8481-4072-8e79-f23d3e507bdb';
 export const QUALIFICATION_STATUS_FUNCTION_UNIVERSAL_IDENTIFIER = '3a05c6fb-967c-4896-b08f-b2c571a7bd46';
 
 // Twenty AI agent used when AI_PROVIDER is twenty
@@ -45,3 +46,7 @@ export const IMPORT_LEADS_ROUTE_PATH = '/qualify/import';
 export const QUALIFY_LEADS_ROUTE_PATH = '/qualify/run';
 export const ENROLL_QUALIFIED_ROUTE_PATH = '/qualify/enroll';
 export const QUALIFICATION_STATUS_ROUTE_PATH = '/qualify/status';
+export const START_ICP_ROUTE_PATH = '/qualify/start-icp';
+
+// Chat skill: "find leads" interviews for a fresh ICP, then sources and qualifies
+export const FIND_LEADS_SKILL_UNIVERSAL_IDENTIFIER = 'f6e2a5a4-997c-450e-8954-79f5c44a9fc7';
