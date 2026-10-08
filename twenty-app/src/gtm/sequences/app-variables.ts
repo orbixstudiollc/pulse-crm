@@ -15,10 +15,10 @@ export const SEQUENCES_APPLICATION_VARIABLES: NonNullable<ApplicationConfig['app
     universalIdentifier: AI_PROVIDER_VARIABLE_UNIVERSAL_IDENTIFIER,
     label: 'AI provider',
     description:
-      'Optional. twenty (default) uses Settings > AI. openai-compatible covers LLMsRelay, OpenRouter, Groq, Together, Mistral, Gemini, a local Ollama, ... Used to write personalised openers.',
+      'Which AI every Pulse AI step uses (chat, openers, reply triage, agency writing, lead qualification review). For LLMsRelay pick OpenAI-compatible and set AI base URL https://api.llmsrelay.com/v1. Also covers OpenRouter, Groq, Together, a local Ollama... Twenty AI spends Twenty credits and is only used when picked here.',
     type: FieldType.SELECT,
     options: [
-      { label: 'Twenty AI (default)', value: 'twenty' },
+      { label: 'Twenty AI (uses Twenty credits)', value: 'twenty' },
       { label: 'Anthropic', value: 'anthropic' },
       { label: 'OpenAI', value: 'openai' },
       { label: 'OpenAI-compatible', value: 'openai-compatible' },

@@ -3,7 +3,7 @@
 // The picked model is kept in the app's key-value store and wins over the
 // AI_MODEL variable until it is cleared.
 
-import { AI_PROVIDERS, type AiProvider } from 'src/gtm/sequences/opener-writers';
+import { resolveProvider, type AiProvider } from 'src/gtm/sequences/opener-writers';
 
 export const PICKED_AI_MODEL_KV_KEY = 'ai:pickedModel';
 
@@ -14,13 +14,7 @@ const DEFAULT_BASE_URLS: Partial<Record<AiProvider, string>> = {
   openai: 'https://api.openai.com/v1',
 };
 
-export const resolveAiProvider = (env: Env): AiProvider => {
-  const raw = env.AI_PROVIDER?.trim().toLowerCase();
-  if (raw && !(AI_PROVIDERS as readonly string[]).includes(raw)) {
-    throw new Error(`Unknown AI provider "${raw}". Use one of: ${AI_PROVIDERS.join(', ')}.`);
-  }
-  return (raw as AiProvider | undefined) || (env.AI_API_KEY?.trim() ? 'anthropic' : 'twenty');
-};
+export const resolveAiProvider = (env: Env): AiProvider => resolveProvider(env);
 
 /** The env the opener writer should see: a picked model overrides AI_MODEL. */
 export const withPickedModel = (env: Env, picked: string | null | undefined): Env =>

@@ -33,12 +33,20 @@ const llm = (env: Env, model?: string): Classifier => {
  * Bulk and review classifiers from the variables:
  * - OpenRouter key set: Jev classifies everything; the review model (or the AI model) re-checks borderline results.
  * - No key: the AI model classifies everything; QUALIFY_REVIEW_MODEL, when set, re-checks borderline results.
+ * The AI model is always your own provider (llmsrelay etc.); with none set, there is no Twenty AI fallback.
  */
 export const pickClassifiers = (env: Env): { bulk: Classifier; review: Classifier | null } => {
   const reviewModel = env.QUALIFY_REVIEW_MODEL?.trim() || undefined;
   const openrouter = env.OPENROUTER_API_KEY?.trim();
   if (openrouter) {
-    return { bulk: jevClassifier(jevClient(openrouter), env.JEV_MODEL?.trim() || JEV_DEFAULT_MODEL), review: llm(env, reviewModel) };
+    // Without an AI provider Jev still classifies; borderline results just go to Review unchecked.
+    let review: Classifier | null = null;
+    try {
+      review = llm(env, reviewModel);
+    } catch {
+      review = null;
+    }
+    return { bulk: jevClassifier(jevClient(openrouter), env.JEV_MODEL?.trim() || JEV_DEFAULT_MODEL), review };
   }
   return { bulk: llm(env), review: reviewModel ? llm(env, reviewModel) : null };
 };
