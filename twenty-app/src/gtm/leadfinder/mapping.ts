@@ -67,6 +67,8 @@ export type TwentyPersonRecord = {
   prospeoPersonId?: string | null;
   leadScore?: number | null;
   icpGrade?: string | null;
+  // Set once lead qualification has scored the person; ICP rescoring then leaves the score alone.
+  qualificationVersion?: string | null;
   companyId?: string | null;
   company?: TwentyCompanyRecord | null;
 };
@@ -117,8 +119,13 @@ export function icpCriteria(icp: TwentyIcpRecord): IcpCriteria {
 }
 
 /** Fields to write back after scoring, or null when nothing would change (avoids event loops). */
-export function scoreUpdate(person: Pick<TwentyPersonRecord, 'leadScore' | 'icpGrade'>, result: ScoreResult | null): Obj | null {
+export function scoreUpdate(
+  person: Pick<TwentyPersonRecord, 'leadScore' | 'icpGrade' | 'qualificationVersion'>,
+  result: ScoreResult | null,
+): Obj | null {
   if (!result) return null;
+  // Lead qualification owns the score (confidence x 100) once it has run.
+  if (person.qualificationVersion) return null;
   if (person.leadScore === result.score && person.icpGrade === result.grade) return null;
   return { leadScore: result.score, icpGrade: result.grade };
 }

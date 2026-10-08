@@ -106,13 +106,17 @@ describe('opener writers', () => {
     await expect(anthropicOpenerWriter('k', fakeFetch).write('x')).rejects.toThrow('Anthropic API 429: rate limited');
   });
 
-  it('uses the built-in agent without a key', async () => {
+  it('never falls back to Twenty AI when nothing is set', () => {
+    expect(() => pickOpenerWriter({ AI_API_KEY: '  ' }, async () => ({ success: true, error: null, result: {} }), 'a')).toThrow('No AI provider set');
+  });
+
+  it('uses the built-in agent only when twenty is picked', async () => {
     const calls: any[] = [];
     const runAgent = async (input: any) => {
       calls.push(input);
       return { success: true, error: null, result: { opener: 'Hello' } };
     };
-    const writer = pickOpenerWriter({ AI_API_KEY: '  ' }, runAgent, 'agent-id');
+    const writer = pickOpenerWriter({ AI_PROVIDER: 'twenty' }, runAgent, 'agent-id');
     expect(await writer.write('p')).toEqual({ opener: 'Hello' });
     expect(calls).toEqual([{ agentUniversalIdentifier: 'agent-id', prompt: 'p' }]);
     const failing = agentOpenerWriter(async () => ({ success: false, error: 'no model', result: null }), 'a');

@@ -2,8 +2,9 @@
 // - anthropic: the Anthropic Messages API.
 // - openai / openai-compatible: any Chat Completions API (OpenAI, OpenRouter,
 //   Groq, Together, Mistral, Gemini's OpenAI endpoint, local Ollama, ...).
-// - twenty (default): Twenty's built-in AI through the app's opener-writer
-//   agent (runAgent), which uses the workspace's configured model and billing.
+// - twenty (only when chosen): Twenty's built-in AI through the app's
+//   opener-writer agent (runAgent), billed as Twenty credits.
+// Nothing set is an error, so no AI step falls back to Twenty's credits.
 
 import { OPENER_INSTRUCTIONS, type OpenerWriter } from 'src/gtm/sequences/openers';
 
@@ -15,6 +16,20 @@ const OPENAI_BASE_URL = 'https://api.openai.com/v1';
 
 export const AI_PROVIDERS = ['twenty', 'anthropic', 'openai', 'openai-compatible'] as const;
 export type AiProvider = (typeof AI_PROVIDERS)[number];
+
+export const NO_AI_PROVIDER =
+  'No AI provider set. In the Pulse app variables set AI provider to openai-compatible, AI base URL to https://api.llmsrelay.com/v1 and your llmsrelay AI API key, then pick a model on the Setup page.';
+
+/** The provider from the variables: a key alone means Anthropic; nothing set is an error. */
+export const resolveProvider = (env: Record<string, string | undefined>): AiProvider => {
+  const raw = env.AI_PROVIDER?.trim().toLowerCase();
+  if (raw && !(AI_PROVIDERS as readonly string[]).includes(raw)) {
+    throw new Error(`Unknown AI provider "${raw}". Use one of: ${AI_PROVIDERS.join(', ')}.`);
+  }
+  if (raw) return raw as AiProvider;
+  if (env.AI_API_KEY?.trim()) return 'anthropic';
+  throw new Error(NO_AI_PROVIDER);
+};
 
 // Lets other features (reply triage) reuse the provider plumbing with their own
 // instructions. Defaults keep the opener behaviour.
@@ -107,12 +122,7 @@ export const pickOpenerWriter = (
   const key = env.AI_API_KEY?.trim() || undefined;
   const model = env.AI_MODEL?.trim() || undefined;
   const baseUrl = env.AI_BASE_URL?.trim() || undefined;
-  const raw = env.AI_PROVIDER?.trim().toLowerCase();
-  if (raw && !(AI_PROVIDERS as readonly string[]).includes(raw)) {
-    throw new Error(`Unknown AI provider "${raw}". Use one of: ${AI_PROVIDERS.join(', ')}.`);
-  }
-  // Without a provider, a key alone means Anthropic (the original behaviour).
-  const provider = (raw as AiProvider | undefined) ?? (key ? 'anthropic' : 'twenty');
+  const provider = resolveProvider(env);
 
   switch (provider) {
     case 'anthropic':

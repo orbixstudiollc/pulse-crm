@@ -16,9 +16,10 @@ describe('modelListRequest', () => {
     expect(req.headers['anthropic-version']).toBeDefined();
   });
 
-  it('explains that twenty has no list here', () => {
-    expect(() => modelListRequest({})).toThrow(/Settings > AI/);
-    expect(() => modelListRequest({ AI_PROVIDER: '' })).toThrow(/Settings > AI/);
+  it('asks for a provider when none is set, and explains that twenty has no list here', () => {
+    expect(() => modelListRequest({})).toThrow(/llmsrelay/);
+    expect(() => modelListRequest({ AI_PROVIDER: '' })).toThrow(/llmsrelay/);
+    expect(() => modelListRequest({ AI_PROVIDER: 'twenty' })).toThrow(/Settings > AI/);
   });
 
   it('needs a base URL for openai-compatible', () => {
