@@ -24,6 +24,8 @@ export type ChatContext = ChatRequestContext;
 
 /** Wire body of one chat request; keys match chatRequestSchema exactly. */
 export type CopilotRequestBody = {
+  crmSource?: "pulse" | "twenty";
+  connectionId?: string;
   conversationId: string | undefined;
   pageKey: string | undefined;
   context: ChatContext | undefined;
@@ -94,10 +96,11 @@ function lastUserTextIfNew(messages: UIMessage[]): string | undefined {
 /** Builds the request body: a new user message, or else the approval answers. */
 export function copilotRequestBody(
   messages: UIMessage[],
-  scope: { conversationId: string | null; pageKey?: string; context?: ChatContext },
+  scope: { conversationId: string | null; pageKey?: string; context?: ChatContext; crmSource?: "pulse" | "twenty"; connectionId?: string },
 ): CopilotRequestBody {
   const text = lastUserTextIfNew(messages);
   return {
+    ...(!scope.conversationId && scope.crmSource ? { crmSource: scope.crmSource, connectionId: scope.connectionId } : {}),
     conversationId: scope.conversationId ?? undefined,
     pageKey: scope.pageKey,
     context: scope.context,
@@ -126,6 +129,8 @@ function noticeText(data: unknown): string | null {
 }
 
 export function useCopilotChat(args: {
+  crmSource?: "pulse" | "twenty";
+  connectionId?: string;
   conversationId: string | null;
   pageKey?: string;
   initialMessages: UIMessage[];
@@ -148,7 +153,7 @@ export function useCopilotChat(args: {
 
   // The transport is created once, so it reads the current values through refs.
   const conversationIdRef = useRef(conversationId);
-  const scopeRef = useRef({ pageKey: args.pageKey, context: args.context });
+  const scopeRef = useRef({ pageKey: args.pageKey, context: args.context, crmSource: args.crmSource, connectionId: args.connectionId });
   const reloadRef = useRef<() => Promise<void>>(async () => undefined);
   const dropOptimisticRef = useRef<() => void>(() => undefined);
   // Whether the request in flight carries a new user message (not approval answers).
@@ -159,8 +164,8 @@ export function useCopilotChat(args: {
     conversationIdRef.current = conversationId;
   }, [conversationId]);
   useEffect(() => {
-    scopeRef.current = { pageKey: args.pageKey, context: args.context };
-  }, [args.pageKey, args.context]);
+    scopeRef.current = { pageKey: args.pageKey, context: args.context, crmSource: args.crmSource, connectionId: args.connectionId };
+  }, [args.pageKey, args.context, args.crmSource, args.connectionId]);
 
   const [transport] = useState(
     // eslint-disable-next-line react-hooks/refs -- the refs are read when a request is sent, never during render

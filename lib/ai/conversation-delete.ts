@@ -16,7 +16,7 @@ type AdminClient = SupabaseClient<Database>;
 type ApprovalUpdate = Database["public"]["Tables"]["copilot_approvals"]["Update"];
 
 /** Statuses of approvals the user granted: kept (detached) when their conversation is deleted. */
-const KEPT_APPROVAL_STATUSES = ["approved", "applied", "failed", "stale"];
+const KEPT_APPROVAL_STATUSES = ["approved", "applied", "failed", "stale", "partial", "unknown_outcome"];
 
 function fail(op: string, error: { message: string }): never {
   throw new Error(`copilot conversation delete: ${op} failed: ${error.message}`);

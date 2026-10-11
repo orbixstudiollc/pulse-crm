@@ -248,6 +248,19 @@ describe("prepareSendMessagesRequest", () => {
 });
 
 describe("useCopilotChat over fetch", () => {
+  it("binds a new Twenty chat once and resumes using only its stored conversation ID", async () => {
+    const fetchMock = vi.fn().mockImplementation(async () => sseResponse(textReply("reply", "Twenty answer"), { "x-conversation-id": CONV_ID }));
+    vi.stubGlobal("fetch", fetchMock);
+    render({ conversationId: null, crmSource: "twenty", connectionId: "22222222-2222-4222-8222-222222222222", initialMessages: [] });
+    await act(async () => hook.sendText("First"));
+    await vi.waitFor(() => expect(hook.status).toBe("ready"));
+    expect(sentBody(fetchMock, 0)).toMatchObject({ crmSource: "twenty", connectionId: "22222222-2222-4222-8222-222222222222" });
+    await act(async () => hook.sendText("Second"));
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(sentBody(fetchMock, 1)).toMatchObject({ conversationId: CONV_ID });
+    expect(sentBody(fetchMock, 1)).not.toHaveProperty("crmSource");
+    expect(sentBody(fetchMock, 1)).not.toHaveProperty("connectionId");
+  });
   it("posts a message without history, learns the conversation id and shows notices", async () => {
     const fetchMock = vi
       .fn()

@@ -12,6 +12,7 @@ import {
   type ResolvedAIProvider,
 } from "@/lib/ai/provider-resolver";
 import { createCustomFetch, customModelFor } from "@/lib/ai/custom-provider";
+import { createRelayGPTFetch, isRelayGPTModel } from "@/lib/twenty/gpt-fetch";
 import {
   recordSharedUsage,
   reserveSharedTokens,
@@ -531,14 +532,15 @@ async function completeWith(
     // to its validated public addresses.
     const pinned = await createCustomFetch(customBaseUrl);
     try {
+      const relayGPT = isRelayGPTModel(pinned.base, model);
       // authToken: null so ANTHROPIC_AUTH_TOKEN from env is never sent to the tenant URL.
       const client = new Anthropic({
         apiKey: customKey,
         authToken: null,
         baseURL: pinned.base,
-        fetch: pinned.fetch,
+        fetch: relayGPT ? createRelayGPTFetch(customKey, pinned.fetch) : pinned.fetch,
         timeout: 60_000,
-        maxRetries: 1,
+        maxRetries: relayGPT ? 0 : 1,
       });
       const systemMessage =
         messages.find((m) => m.role === "system")?.content ?? "";

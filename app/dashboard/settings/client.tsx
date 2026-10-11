@@ -1,5 +1,7 @@
 "use client";
 
+import { TwentySettings } from "@/components/features/Twenty/TwentySettings";
+
 import { useState, useEffect, useRef, useTransition, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -1139,9 +1141,9 @@ const integrationDefaults = [
 function IntegrationsSection() {
   return (
     <>
+      <TwentySettings />
       <SettingsIntro>
-        Third-party integrations are coming soon. Email and LinkedIn can
-        already be set up from their own tabs.
+        Connect Twenty for LLMsRelay-powered Copilot and approved sales workflows. Email and LinkedIn can also be set up from their own tabs.
       </SettingsIntro>
 
       {/* Integration rows */}

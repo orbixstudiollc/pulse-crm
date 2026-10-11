@@ -48,7 +48,7 @@ const isUniqueViolation = (error: { code?: string } | null) => error?.code === U
  */
 export async function getOrCreateConversation(
   db: AdminClient,
-  args: { orgId: string; userId: string; conversationId?: string | null; pageKey?: string | null; title?: string },
+  args: { orgId: string; userId: string; conversationId?: string | null; pageKey?: string | null; title?: string; crmSource?: "pulse" | "twenty"; connectionId?: string | null },
 ): Promise<{ id: string } | { error: "not_found" }> {
   if (args.conversationId) {
     const { data, error } = await db
@@ -62,9 +62,11 @@ export async function getOrCreateConversation(
     return data ? { id: data.id } : { error: "not_found" };
   }
 
-  const pageKey = args.pageKey ?? null;
+  const pageKey = args.pageKey && args.crmSource === "twenty"
+    ? `twenty:${args.connectionId}:${args.pageKey}` : args.pageKey ?? null;
+  if (args.crmSource !== "twenty" && pageKey?.startsWith("twenty:")) return { error: "not_found" };
   if (pageKey) {
-    const existing = await findPageConversation(db, args.orgId, args.userId, pageKey);
+    const existing = await findPageConversation(db, args.orgId, args.userId, pageKey, args.crmSource ?? "pulse", args.connectionId ?? null);
     if (existing) return existing;
   }
 
@@ -73,6 +75,7 @@ export async function getOrCreateConversation(
     .insert({
       organization_id: args.orgId,
       user_id: args.userId,
+      ...(args.crmSource === "twenty" ? { crm_source: "twenty" as const, integration_connection_id: args.connectionId } : {}),
       page_key: pageKey,
       ...(args.title ? { title: args.title } : {}),
     })
@@ -82,7 +85,7 @@ export async function getOrCreateConversation(
 
   // Another request created this page's conversation between our select and insert.
   if (pageKey && isUniqueViolation(error)) {
-    const winner = await findPageConversation(db, args.orgId, args.userId, pageKey);
+    const winner = await findPageConversation(db, args.orgId, args.userId, pageKey, args.crmSource ?? "pulse", args.connectionId ?? null);
     if (winner) return winner;
   }
   fail("conversation insert", error);
@@ -93,14 +96,21 @@ async function findPageConversation(
   orgId: string,
   userId: string,
   pageKey: string,
+  crmSource: "pulse" | "twenty",
+  connectionId: string | null,
 ): Promise<{ id: string } | null> {
-  const { data, error } = await db
+  const query = db
     .from("copilot_conversations")
     .select("id")
     .eq("organization_id", orgId)
     .eq("user_id", userId)
     .eq("page_key", pageKey)
-    .maybeSingle();
+    .eq("crm_source", crmSource);
+  if (crmSource === "twenty") {
+    if (!connectionId) return null;
+    query.eq("integration_connection_id", connectionId);
+  } else query.is("integration_connection_id", null);
+  const { data, error } = await query.maybeSingle();
   if (error) fail("page conversation lookup", error);
   return data ? { id: data.id } : null;
 }

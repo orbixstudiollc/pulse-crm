@@ -16,6 +16,10 @@ import {
   type UIMessage,
   type UIMessageChunk,
 } from "ai";
+import { conversationBinding, loadTwentyMemory, TWENTY_SYSTEM_PROMPT } from "@/lib/ai/crm-source";
+import { requireTwentyConnection } from "@/lib/twenty/connections";
+import { resolveTwentyRelay, validateTwentyRelayModels } from "@/lib/twenty/relay";
+import { createRelayGPTFetch, isRelayGPTModel } from "@/lib/twenty/gpt-fetch";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
 import { assembleContext, loadMemoryBlock } from "@/lib/ai/context";
 import { createAIMessagesClient, logTokenUsage, tokenLimitReason } from "@/lib/ai/client";
@@ -125,7 +129,10 @@ async function claimApprovals(
 /** The approval outcome a write tool's result stands for. */
 function resultOutcome(output: unknown): ApprovalOutcome {
   const o = output as { ok?: unknown; error?: unknown } | null;
-  if (o && typeof o === "object" && o.ok === false) return o.error === RECORD_CHANGED ? "stale" : "failed";
+  if (o && typeof o === "object" && o.ok === false) {
+    const outcome = (o as { outcome?: unknown }).outcome;
+    return outcome === "partial" || outcome === "unknown_outcome" ? outcome : o.error === RECORD_CHANGED ? "stale" : "failed";
+  }
   return "applied";
 }
 
@@ -314,8 +321,24 @@ export async function POST(req: Request) {
       return end(new Response("No organization found", { status: 400 }));
     }
 
+    let raw: unknown;
+    try { raw = await req.json(); } catch { return end(Response.json({ error: "invalid_request" }, { status: 400 })); }
+    const parsed = chatRequestSchema.safeParse(raw);
+    if (!parsed.success) return end(Response.json({ error: "invalid_request", issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })) }, { status: 400 }));
+    const body = parsed.data;
+    if (body.message && body.approvals.length > 0) return end(Response.json({ error: "approvals_with_message" }, { status: 400 }));
+    if (!body.message && body.approvals.length === 0) return end(Response.json({ error: "empty_turn" }, { status: 400 }));
+
     // Get AI settings for API key (secret columns are only readable with the service role)
     const admin = createAdminClient();
+    const binding = await conversationBinding(admin, {
+      orgId: profile.organization_id, userId: user.id, conversationId: body.conversationId,
+      crmSource: body.crmSource, connectionId: body.connectionId,
+    });
+    const isTwenty = binding.crmSource === "twenty";
+    if (isTwenty && user.is_anonymous) return end(Response.json({ error: "Twenty requires an owner or admin account" }, { status: 403 }));
+    const twentyConnection = isTwenty ? await requireTwentyConnection({ db: admin, orgId: profile.organization_id, userId: user.id, connectionId: binding.connectionId ?? undefined }) : null;
+
     const { data: settings } = await admin
       .from("ai_settings")
       .select(
@@ -334,7 +357,9 @@ export async function POST(req: Request) {
           status: 400,
         })
       );
-    const resolved = resolveAIProvider(settings ?? {}, process.env);
+    const twentyRelay = isTwenty ? resolveTwentyRelay(settings ?? {}, process.env) : null;
+    if (twentyRelay) await validateTwentyRelayModels(twentyRelay);
+    const resolved = twentyRelay ?? resolveAIProvider(settings ?? {}, process.env);
     if (!resolved) return notConfigured();
     const provider = resolved.provider;
 
@@ -350,7 +375,7 @@ export async function POST(req: Request) {
     switch (provider) {
       case "custom": {
         // The env fallback uses its own models, never the org's custom_* fields.
-        const customModel = customModelFor("sonnet", customModelSettingsFor(resolved, settings) ?? {});
+        const customModel = isTwenty ? resolved.model : customModelFor("sonnet", customModelSettingsFor(resolved, settings) ?? {});
         if (!customModel || !resolved.baseURL) return notConfigured();
         // Without a key the SDK would fall back to ANTHROPIC_API_KEY from env.
         if (!resolved.apiKey) return notConfigured();
@@ -363,7 +388,9 @@ export async function POST(req: Request) {
       default:
         modelId = "claude-sonnet-4-6";
     }
+    const relayGPT = provider === "custom" && isRelayGPTModel(resolved.baseURL, modelId);
     const toolsSupported = TOOL_PROVIDERS.has(provider);
+    if (!toolsSupported && body.approvals.length > 0) return end(Response.json({ error: "no_tools" }, { status: 400 }));
 
     const orgId = profile.organization_id;
     const userId = user.id;
@@ -398,28 +425,9 @@ export async function POST(req: Request) {
     if (!sharedKey) req.signal.addEventListener("abort", guardedRelease);
 
     // ── Request body: one human action, never history ─────────────────────
-    let raw: unknown;
-    try {
-      raw = await req.json();
-    } catch {
-      return reject(400, { error: "invalid_request" });
-    }
-    const parsed = chatRequestSchema.safeParse(raw);
-    if (!parsed.success) {
-      return reject(400, {
-        error: "invalid_request",
-        issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
-      });
-    }
-    const body = parsed.data;
-    // Approvals continue the last assistant message; a new message starts a new one.
-    // The SDK can only run approved tools when the approvals are the newest input.
-    if (body.message && body.approvals.length > 0) return reject(400, { error: "approvals_with_message" });
-    if (!body.message && body.approvals.length === 0) return reject(400, { error: "empty_turn" });
-    if (!toolsSupported && body.approvals.length > 0) return reject(400, { error: "no_tools" });
-
     let anthropicOptions: Parameters<typeof createAnthropic>[0] = { apiKey: resolved.apiKey };
     if (provider === "custom" && resolved.baseURL) {
+      if (!resolved.apiKey) return reject(400, { error: "Custom AI provider not configured" });
       // SECURITY: the resolved URL (the org's, or the env fallback's, always
       // paired with its own key) goes through a fetch pinned to the validated
       // public addresses. Closed exactly once when the
@@ -442,7 +450,7 @@ export async function POST(req: Request) {
       anthropicOptions = {
         apiKey: resolved.apiKey,
         baseURL: aiSdkBaseUrl(pinned.base),
-        fetch: pinned.fetch,
+        fetch: relayGPT ? createRelayGPTFetch(resolved.apiKey, pinned.fetch) : pinned.fetch,
       };
     } else if (provider === "openrouter") {
       anthropicOptions = {
@@ -462,9 +470,14 @@ export async function POST(req: Request) {
       conversationId: body.conversationId ?? null,
       pageKey: body.pageKey ?? null,
       title: body.message?.text.slice(0, 60),
+      crmSource: binding.crmSource,
+      connectionId: twentyConnection?.id ?? null,
     });
     if ("error" in conversation) return reject(404, { error: "conversation_not_found" });
     const conversationId = conversation.id;
+    // A page-key lookup is also a resume. Revalidate its stored source before
+    // loading server-owned history through the privileged client.
+    await conversationBinding(admin, { orgId, userId, conversationId, crmSource: binding.crmSource, connectionId: twentyConnection?.id });
 
     const lockToken = await acquireTurnLock(admin, { conversationId, orgId });
     if (!lockToken) return reject(409, { error: "turn_in_progress" });
@@ -502,15 +515,17 @@ export async function POST(req: Request) {
       answeringApprovals: body.approvals.length > 0,
       lastAssistantText,
     };
-    const writesOffered = wantsWriteTools(selection);
+    const writesOffered = isTwenty || wantsWriteTools(selection);
 
     // ── System prompt: base + page context + workspace memory ─────────────
     // Built before any approval is claimed: a failure here leaves every card pending.
-    const contextStr = body.context ? await assembleContext(body.context, orgId) : "";
-    const memory = await loadMemoryBlock(supabase, orgId, MEMORY_CAP_TOKENS);
+    const contextStr = !isTwenty && body.context ? await assembleContext(body.context, orgId) : "";
+    const memory = twentyConnection
+      ? await loadTwentyMemory(supabase, orgId, twentyConnection.id, MEMORY_CAP_TOKENS)
+      : await loadMemoryBlock(supabase, orgId, MEMORY_CAP_TOKENS);
     const fullName = user.user_metadata?.full_name;
     const userLabel = (typeof fullName === "string" && fullName) || user.email;
-    const systemMessage = `${SYSTEM_PROMPTS.chat}
+    const systemMessage = `${isTwenty ? TWENTY_SYSTEM_PROMPT : SYSTEM_PROMPTS.chat}
 ${contextStr ? `\n---\nCurrent CRM Context:\n${contextStr}` : ""}
 ${memory.text ? `\n---\n${memory.text}` : ""}
 
@@ -679,16 +694,16 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
     // the moment needsApproval resolves, before its card streams to the client.
     const env: CopilotToolEnv = {
       db: supabase,
-      ctx: { orgId, userId, isGuest, source: "chat", conversationId, taskId: null },
+      ctx: { orgId, userId, isGuest, source: "chat", conversationId, taskId: null, crmSource: binding.crmSource, connectionId: twentyConnection?.id, connectionRevision: twentyConnection?.revision },
     };
     const approvedDiffs = new Map(approvedRows.map((row) => [row.tool_call_id, row.diff as unknown as FieldDiff | null]));
     /** This request's proposed diffs, emitted as data-approval-diff parts by decorateStream. */
     const descriptors = new Map<string, FieldDiff>();
     const tools = buildCopilotToolSet(env, {
-      alwaysAllow: sanitizeAlwaysAllow(settings?.copilot_always_allow),
+      alwaysAllow: isTwenty ? [] : sanitizeAlwaysAllow(settings?.copilot_always_allow),
       descriptors,
       onWriteRequested: async (info) => {
-        await recordPendingApproval(admin, { ...info, orgId, userId, conversationId, taskId: null, source: "chat" });
+        await recordPendingApproval(admin, { ...info, orgId, userId, conversationId, taskId: null, source: "chat", crmSource: isTwenty ? "twenty" : undefined, connectionId: twentyConnection?.id, connectionRevision: twentyConnection?.revision });
       },
       resolveDiff: async (toolCallId) => approvedDiffs.get(toolCallId) ?? null,
       hasApprovalRow: async (toolCallId) => {
@@ -728,10 +743,10 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
     // Only server-loaded history reaches the model. Unanswered approval cards and
     // interrupted tool calls are dropped (ignoreIncompleteToolCalls).
     const modelMessages = await convertToModelMessages(modelHistory, { tools, ignoreIncompleteToolCalls: true });
-    const activeTools = selectActiveTools({
+    const activeTools = isTwenty ? Object.keys(tools) : selectActiveTools({
       ...selection,
       allTools: Object.keys(tools),
-      writeTools: COPILOT_WRITE_TOOLS,
+      writeTools: isTwenty ? Object.keys(tools).filter((name) => !/twenty_(search|get|list|save_artifact|save_memory)/.test(name)) : COPILOT_WRITE_TOOLS,
       historyToolNames: modelHistory.flatMap((m) => m.parts.filter(isToolUIPart).map((p) => getToolName(p))),
     });
 
@@ -751,6 +766,7 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
       messages: modelMessages,
       tools,
       activeTools,
+      ...(isTwenty || relayGPT ? { maxRetries: 0, maxOutputTokens: SHARED_CHAT_MAX_OUTPUT_TOKENS } : {}),
       ...(sharedKey ? { maxOutputTokens: SHARED_CHAT_MAX_OUTPUT_TOKENS } : {}),
       // suggest_next is the reply's last word: the turn ends after the step that called it.
       // It is checked first so a finished turn never reserves budget for a step it won't run.
@@ -834,7 +850,7 @@ Current date: ${new Date().toLocaleDateString()}${userLabel ? `\nUser: ${userLab
     console.error("AI Chat error:", error);
     return new Response(
       error instanceof Error ? error.message : "Internal server error",
-      { status: 500 }
+      { status: error instanceof Error && /^(Twenty access requires|Twenty requires|Forbidden:)/.test(error.message) ? 403 : error instanceof Error && /conversation_not_found/.test(error.message) ? 404 : error instanceof Error && /^(conversation_source_mismatch|invalid_crm_binding)$/.test(error.message) ? 400 : 500 }
     );
   }
 }

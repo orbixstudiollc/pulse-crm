@@ -8,14 +8,14 @@
  * calling `workerPump()` repeatedly is idempotent.
  */
 export async function register(): Promise<void> {
-  if (process.env.NEXT_RUNTIME !== "nodejs") return;
-
-  try {
-    const { workerPump } = await import("./lib/lead-finder/enrichment/worker");
-    workerPump();
-  } catch (err) {
-    // Never crash the server if the worker fails to boot — the cron and
-    // per-request `workerPump()` kicks will still cover ongoing jobs.
-    console.error("[instrumentation] lead-finder worker boot failed:", err);
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    try {
+      const { workerPump } = await import("./lib/lead-finder/enrichment/worker");
+      workerPump();
+    } catch (err) {
+      // Never crash the server if the worker fails to boot — the cron and
+      // per-request `workerPump()` kicks will still cover ongoing jobs.
+      console.error("[instrumentation] lead-finder worker boot failed:", err);
+    }
   }
 }

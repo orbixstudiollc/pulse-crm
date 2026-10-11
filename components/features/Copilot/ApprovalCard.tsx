@@ -95,6 +95,11 @@ export function ApprovalCard({ toolName, diff, onApprove, onDeny, responded, exp
           {statusText(responded, expired)}
         </span>
       </div>
+      {hasDetails && (
+        <p className="mt-2 break-words text-[13px] text-fg-secondary">
+          {diff.recordType}{diff.recordId ? ` · Record ${diff.recordId}` : ""}
+        </p>
+      )}
       {hasDetails ? (
         diff.kind === "update" ? (
           <UpdateTable fields={diff.fields} />

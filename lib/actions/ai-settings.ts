@@ -231,7 +231,9 @@ async function fetchCustomModelIds(
   try {
     const res = await pinned.fetch(`${pinned.base}/v1/models`, {
       method: "GET",
-      headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", accept: "application/json" },
+      headers: base === "https://api.llmsrelay.com"
+        ? { authorization: `Bearer ${apiKey}`, accept: "application/json" }
+        : { "x-api-key": apiKey, "anthropic-version": "2023-06-01", accept: "application/json" },
       signal: AbortSignal.timeout(CUSTOM_MODELS_TIMEOUT_MS),
     });
     if (res.status === 401 || res.status === 403) {

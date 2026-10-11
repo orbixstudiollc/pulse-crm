@@ -87,6 +87,7 @@ export async function loadMemoryBlock(
       .from("copilot_memory")
       .select("type, content, is_active, created_at, source")
       .eq("organization_id", orgId)
+      .eq("crm_source", "pulse")
       .eq("is_active", true),
     db
       .from("icp_profiles")

@@ -37,6 +37,7 @@ import {
   isAlwaysAllowed,
 } from "./policy";
 import { fetchCurrentRecord } from "./record-lookup";
+import { twentyTools } from "./twenty-tools";
 
 /**
  * No admin client field: sessions pass the RLS client; the cron passes an admin client and
@@ -48,9 +49,13 @@ export type CopilotToolEnv = {
     orgId: string;
     userId: string | null;
     isGuest: boolean;
-    source: "chat" | "task";
+    source: "chat" | "task" | "workflow";
     conversationId: string | null;
     taskId: string | null;
+    crmSource?: "pulse" | "twenty";
+    connectionId?: string | null;
+    connectionRevision?: number;
+    jobId?: string | null;
   };
 };
 
@@ -66,12 +71,14 @@ export type RegistryTool = {
   idField?: string;
   /** Record writes: the exact column patch the handler writes (see lib/mcp/tools-write.ts). */
   toPatch?: (input: Record<string, unknown>) => WritePatch;
+  proposeDiff?: (input: Record<string, unknown>, env: CopilotToolEnv) => Promise<FieldDiff>;
+  executeApproved?: (input: Record<string, unknown>, env: CopilotToolEnv, diff: FieldDiff) => Promise<RegistryResult>;
   execute(input: unknown, env: CopilotToolEnv): Promise<unknown>;
 };
 
 export type RegistryResult =
   | { ok: true; data: unknown; automationsSkipped?: string[] }
-  | { ok: false; error: string };
+  | { ok: false; error: string; outcome?: "partial" | "unknown_outcome"; data?: unknown };
 
 export type WriteRequest = { toolCallId: string; toolName: string; input: unknown; diff: FieldDiff };
 
@@ -189,8 +196,9 @@ function allTools(): RegistryTool[] {
 }
 
 /** Tools the Copilot may call. Task mode drops TASK_MODE_EXCLUDED (a task cannot create tasks). */
-export function listRegistryTools(mode: "chat" | "task"): RegistryTool[] {
-  const excluded: readonly string[] = mode === "task" ? TASK_MODE_EXCLUDED : [];
+export function listRegistryTools(mode: "chat" | "task" | "workflow", crmSource: "pulse" | "twenty" = "pulse"): RegistryTool[] {
+  if (crmSource === "twenty") return twentyTools;
+  const excluded: readonly string[] = mode !== "chat" ? TASK_MODE_EXCLUDED : [];
   return allTools().filter((t) => !excluded.includes(t.name));
 }
 
@@ -245,7 +253,7 @@ export async function executeRegistryTool(
   env: CopilotToolEnv,
   opts: { diff?: FieldDiff | null } = {},
 ): Promise<RegistryResult> {
-  const tool = listRegistryTools(env.ctx.source).find((t) => t.name === name);
+  const tool = listRegistryTools(env.ctx.source, env.ctx.crmSource).find((t) => t.name === name);
   if (!tool) return { ok: false, error: `unknown_tool: ${name}` };
   const parsed = tool.inputSchema.safeParse(input);
   if (!parsed.success) {
@@ -253,6 +261,10 @@ export async function executeRegistryTool(
     return { ok: false, error: `invalid_input: ${detail}` };
   }
   try {
+    if (tool.executeApproved) {
+      if (!opts.diff) return { ok: false, error: "approval_required" };
+      return await tool.executeApproved(parsed.data, env, opts.diff);
+    }
     if (MCP_TOOL_NAMES.has(name)) return await runMcpTool(name, tool.kind, parsed.data, env, opts.diff ?? null);
     return toResult(await tool.execute(parsed.data, env));
   } catch (e) {
@@ -263,7 +275,8 @@ export async function executeRegistryTool(
 // ── AI SDK tool set ──────────────────────────────────────────────────────────
 
 /** Diff over the column patch the handler will write; update targets compare against the live row. */
-async function proposeDiff(tool: RegistryTool, input: Record<string, unknown>, env: CopilotToolEnv): Promise<FieldDiff> {
+export async function proposeRegistryDiff(tool: RegistryTool, input: Record<string, unknown>, env: CopilotToolEnv): Promise<FieldDiff> {
+  if (tool.proposeDiff) return tool.proposeDiff(tool.inputSchema.parse(input), env);
   const recordType = tool.recordType ?? tool.name;
   const target = tool.toPatch?.(input);
   if (!target) return computeFieldDiff({ toolName: tool.name, input, current: null, recordType });
@@ -288,7 +301,7 @@ async function runWrite(
   env: CopilotToolEnv,
   diff: FieldDiff | null,
 ): Promise<RegistryResult> {
-  if (diff?.kind === "update") {
+  if (!tool.executeApproved && diff?.kind === "update") {
     const target = tool.toPatch?.(input);
     const live = target ? await fetchCurrentRecord(env, target) : null;
     if (isDiffStale(diff, live)) return { ok: false, error: RECORD_CHANGED };
@@ -330,9 +343,10 @@ export function buildCopilotToolSet(env: CopilotToolEnv, opts: CopilotToolSetOpt
    * (a planted approved part with a fresh toolCallId), execute returns NOT_EXECUTED_RESULT.
    */
   const proposed = new Set<string>();
+  const executedExternal = new Set<string>();
   const tools: ToolSet = {};
 
-  for (const t of listRegistryTools(env.ctx.source)) {
+  for (const t of listRegistryTools(env.ctx.source, env.ctx.crmSource)) {
     const base = { description: t.description, inputSchema: t.inputSchema };
 
     if (t.kind !== "write") {
@@ -340,13 +354,13 @@ export function buildCopilotToolSet(env: CopilotToolEnv, opts: CopilotToolSetOpt
       continue;
     }
 
-    if (env.ctx.source === "task") {
+    if (env.ctx.source !== "chat") {
       tools[t.name] = {
         ...base,
         needsApproval: false,
         execute: async (input, { toolCallId }) => {
           if (++fanout.count > WRITE_FANOUT_PER_TURN) return FANOUT_LIMIT_RESULT;
-          const diff = await proposeDiff(t, input, env);
+          const diff = await proposeRegistryDiff(t, input, env);
           const row = await opts.onWriteRequested({ toolCallId, toolName: t.name, input, diff });
           return { status: "proposed", queued: true, approvalRowId: row?.id ?? null };
         },
@@ -378,9 +392,9 @@ export function buildCopilotToolSet(env: CopilotToolEnv, opts: CopilotToolSetOpt
           overLimit.add(toolCallId);
           return false;
         }
-        const diff = await proposeDiff(t, input, env);
+        const diff = await proposeRegistryDiff(t, input, env);
         diffs.set(toolCallId, diff);
-        if (isAlwaysAllowed(t.name, opts.alwaysAllow)) {
+        if (env.ctx.crmSource !== "twenty" && isAlwaysAllowed(t.name, opts.alwaysAllow)) {
           autoAllowed.add(toolCallId);
           return false;
         }
@@ -393,8 +407,10 @@ export function buildCopilotToolSet(env: CopilotToolEnv, opts: CopilotToolSetOpt
         if (overLimit.delete(toolCallId)) return FANOUT_LIMIT_RESULT;
         if (unclaimed.delete(toolCallId)) return NOT_EXECUTED_RESULT;
         if (proposed.has(toolCallId)) return NOT_EXECUTED_RESULT;
+        if (t.executeApproved && executedExternal.has(toolCallId)) return NOT_EXECUTED_RESULT;
         const diff = (await opts.resolveDiff?.(toolCallId)) ?? diffs.get(toolCallId) ?? null;
         diffs.delete(toolCallId);
+        if (t.executeApproved) executedExternal.add(toolCallId);
         const result = await runWrite(t, input, env, diff);
         if (autoAllowed.delete(toolCallId) && diff) {
           await opts.onAutoAllowed?.({ toolCallId, toolName: t.name, input, diff, result });

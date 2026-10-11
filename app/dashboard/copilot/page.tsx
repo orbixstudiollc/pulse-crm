@@ -7,7 +7,7 @@ import { getAssistantBrief } from "@/lib/actions/copilot-brief";
 import { CopilotClient, type CopilotView } from "./client";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const VIEWS: readonly CopilotView[] = ["chat", "artifacts", "memory", "tasks", "settings"];
+const VIEWS: readonly CopilotView[] = ["chat", "artifacts", "memory", "tasks", "settings", "twenty-workflows"];
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 
@@ -22,19 +22,23 @@ export default async function CopilotPage({ searchParams }: { searchParams: Prom
   const requestedArtifact = single(params.artifact);
   const requestedView = single(params.view);
 
-  const [conversations, memoryResult, tasksResult, pending, artifacts, settings, brief] = await Promise.all([
-    listConversations(),
-    getMemoryItems(),
-    getCopilotTasks(),
+  const conversations = await listConversations();
+  const stored = conversations.find((item) => item.id === requestedChat);
+  const crmSource = stored?.crm_source ?? (single(params.source) === "twenty" ? "twenty" : "pulse");
+  const connectionId = stored?.integration_connection_id ?? (UUID.test(single(params.connection) ?? "") ? single(params.connection) : undefined);
+  const artifactScope = { crmSource, connectionId: connectionId ?? undefined };
+  const [memoryResult, tasksResult, pending, artifacts, settings, brief] = await Promise.all([
+    crmSource === "twenty" ? Promise.resolve({ data: [] }) : getMemoryItems(),
+    crmSource === "twenty" ? Promise.resolve({ data: [] }) : getCopilotTasks(),
     listPendingApprovalsAction(),
-    listArtifacts(),
+    listArtifacts(artifactScope).catch(() => []),
     // The settings view shows an error state when this cannot be read; it must not break the chat page.
     getCopilotSettings().catch((error) => {
       console.error("Copilot: loading settings failed:", error);
       return null;
     }),
     // The start screen renders without its "Today" counts when they cannot be read.
-    getAssistantBrief().catch((error) => {
+    crmSource === "twenty" ? Promise.resolve(null) : getAssistantBrief().catch((error) => {
       console.error("Copilot: loading the brief failed:", error);
       return null;
     }),
@@ -51,7 +55,7 @@ export default async function CopilotPage({ searchParams }: { searchParams: Prom
   let initialArtifactId: string | null = null;
   let initialArtifacts = artifacts;
   if (requestedArtifact && UUID.test(requestedArtifact)) {
-    const artifact = artifacts.find((item) => item.id === requestedArtifact) ?? (await getArtifact(requestedArtifact));
+    const artifact = artifacts.find((item) => item.id === requestedArtifact) ?? (await getArtifact(requestedArtifact, artifactScope));
     if (artifact) {
       initialArtifactId = artifact.id;
       if (!artifacts.some((item) => item.id === artifact.id)) initialArtifacts = [artifact, ...artifacts];
@@ -67,7 +71,9 @@ export default async function CopilotPage({ searchParams }: { searchParams: Prom
   return (
     <CopilotClient
       // A link to this page with other params (a notification) starts a fresh client; the prompt is excluded because the client strips it itself.
-      key={[conversationId, requestedArtifact, requestedView].join("|")}
+      key={[conversationId, requestedArtifact, requestedView, crmSource, connectionId].join("|")}
+      initialSource={crmSource}
+      initialConnectionId={connectionId ?? undefined}
       initialConversations={conversations}
       initialConversationId={conversationId}
       initialMessages={messages}

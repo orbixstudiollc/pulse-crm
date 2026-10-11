@@ -1,5 +1,5 @@
-# Runs four cron calls every 5 minutes: the lead-finder worker, the lead-finder
-# scheduler, the automation executor and the sequence executor.
+# Runs CRM cron calls every 5 minutes, including external Twenty polling and
+# approval-only workflow preparation. Twenty workflows start disabled.
 #
 # Vercel's Hobby plan only allows the two daily crons in vercel.json, so these
 # routes are triggered from GitHub Actions instead. The repo is public, so
@@ -25,7 +25,7 @@ concurrency:
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 16
+    timeout-minutes: 21
     env:
       CRON_SECRET: ${{ secrets.CRON_SECRET }}
     steps:
@@ -65,6 +65,20 @@ jobs:
         run: |
           curl -fsS --max-time 120 -H "Authorization: Bearer $CRON_SECRET" https://pulse-crm-weld.vercel.app/api/cron/sequence-executor
 
+      - name: Poll Twenty sales workflows
+        id: twenty_poll
+        if: steps.check.outputs.skip != 'true'
+        continue-on-error: true
+        run: |
+          curl -fsS --max-time 120 -H "Authorization: Bearer $CRON_SECRET" https://pulse-crm-weld.vercel.app/api/cron/twenty-poll
+
+      - name: Prepare Twenty workflow approvals
+        id: twenty_worker
+        if: steps.check.outputs.skip != 'true'
+        continue-on-error: true
+        run: |
+          curl -fsS --max-time 180 -H "Authorization: Bearer $CRON_SECRET" https://pulse-crm-weld.vercel.app/api/cron/twenty-worker
+
       - name: Fail if any request failed
-        if: steps.check.outputs.skip != 'true' && (steps.worker.outcome == 'failure' || steps.scheduler.outcome == 'failure' || steps.automation.outcome == 'failure' || steps.sequences.outcome == 'failure')
+        if: steps.check.outputs.skip != 'true' && (steps.worker.outcome == 'failure' || steps.scheduler.outcome == 'failure' || steps.automation.outcome == 'failure' || steps.sequences.outcome == 'failure' || steps.twenty_poll.outcome == 'failure' || steps.twenty_worker.outcome == 'failure')
         run: echo '::error::a cron request failed' && exit 1

@@ -6,6 +6,8 @@ import { createPinnedFetch } from "@/lib/security/safe-fetch";
 import { AIFeature, AIModel, AISettings } from "./types";
 import { convertModelForProvider, getModelName } from "./models";
 import { createCustomFetch, type CustomModelSettings } from "./custom-provider";
+import { createRelayGPTFetch, isRelayGPTModel, RelayGPTRequestError } from "@/lib/twenty/gpt-fetch";
+import { TwentyGPTResponseError } from "@/lib/twenty/gpt-client";
 import {
   AI_PROVIDER_ORDER,
   customModelSettingsFor,
@@ -177,16 +179,18 @@ function customClient(
         // use time and pin the resolved addresses for this call only.
         const pinned = await createCustomFetch(resolved.baseURL ?? "");
         try {
+          const model = toCustomModel(params.model, settings);
+          const relayGPT = isRelayGPTModel(pinned.base, model);
           // authToken: null so ANTHROPIC_AUTH_TOKEN from env is never sent to the tenant URL.
           const client = new Anthropic({
             apiKey: resolved.apiKey,
             authToken: null,
             baseURL: pinned.base,
-            fetch: pinned.fetch,
+            fetch: relayGPT ? createRelayGPTFetch(resolved.apiKey, pinned.fetch) : pinned.fetch,
             timeout: 60_000,
-            maxRetries: 1,
+            maxRetries: relayGPT ? 0 : 1,
           });
-          return await client.messages.create({ ...params, model: toCustomModel(params.model, settings) });
+          return await client.messages.create({ ...params, model });
         } finally {
           await pinned.close();
         }
@@ -514,6 +518,12 @@ export async function callAIWithFallback(params: {
  * Determine if an error warrants trying a fallback provider.
  */
 function isRetriableError(error: Error): boolean {
+  let cause: unknown = error;
+  for (let depth = 0; depth < 4 && cause instanceof Error; depth++) {
+    if (cause instanceof RelayGPTRequestError) return cause.retryable;
+    if (cause instanceof TwentyGPTResponseError) return false;
+    cause = cause.cause;
+  }
   const msg = error.message.toLowerCase();
   // Network errors
   if (msg.includes("fetch failed") || msg.includes("econnrefused") || msg.includes("timeout")) {

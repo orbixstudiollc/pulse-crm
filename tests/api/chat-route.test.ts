@@ -11,7 +11,7 @@ import { createTestDb, type TestDb } from "../helpers/pglite";
 
 // ─── Shared mock state (hoisted above the vi.mock factories) ────────────────
 
-type Resolved = { provider: string; source: "org" | "env"; apiKey?: string };
+type Resolved = { provider: string; source: "org" | "env"; apiKey?: string; baseURL?: string; model?: string; fastModel?: string };
 const h = vi.hoisted(() => ({
   db: null as unknown,
   user: null as null | { id: string; email: string; is_anonymous: boolean; user_metadata: Record<string, unknown> },
@@ -28,6 +28,9 @@ const h = vi.hoisted(() => ({
   limitReason: null as string | null,
   /** Called inside auth.getUser(), the first thing the route awaits. */
   onGetUser: null as null | (() => void),
+  fallbackCalls: 0,
+  providerOptions: [] as unknown[],
+  catalogModels: ["gpt-main", "gpt-fast"] as string[],
 }));
 
 vi.mock("server-only", () => ({}));
@@ -46,11 +49,19 @@ vi.mock("@/lib/supabase/server", () => ({
     },
     from: (table: string) => new PgQuery(h.db as TestDb, table),
   }),
-  createAdminClient: () => ({ from: (table: string) => new PgQuery(h.db as TestDb, table) }),
+  createAdminClient: () => ({ from: (table: string) => new PgQuery(h.db as TestDb, table), auth: { admin: { getUserById: async () => ({ data: { user: h.user }, error: null }) } } }),
 }));
 vi.mock("@/lib/ai/provider-resolver", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/ai/provider-resolver")>()),
-  resolveAIProvider: () => h.resolved,
+  resolveAIProvider: () => { h.fallbackCalls++; return h.resolved; },
+}));
+vi.mock("@/lib/twenty/connections", async (original) => ({
+  ...await original<typeof import("@/lib/twenty/connections")>(),
+  requireTwentyConnection: async () => ({ id: "44444444-4444-4444-8444-444444444444", revision: 1, writes_enabled: false }),
+}));
+vi.mock("@/lib/ai/custom-provider", async (original) => ({
+  ...await original<typeof import("@/lib/ai/custom-provider")>(),
+  createCustomFetch: async (base: string) => ({ base, close: async () => {}, fetch: async () => new Response(JSON.stringify({ data: h.catalogModels.map(id => ({ id })) })) }),
 }));
 vi.mock("@/lib/ai/client", () => ({
   tokenLimitReason: () => h.limitReason,
@@ -82,7 +93,7 @@ vi.mock("@/lib/ai/shared-budget", () => ({
     };
   },
 }));
-vi.mock("@ai-sdk/anthropic", () => ({ createAnthropic: () => () => h.model }));
+vi.mock("@ai-sdk/anthropic", () => ({ createAnthropic: (options: unknown) => { h.providerOptions.push(options); return () => h.model; } }));
 vi.mock("@/lib/automation/runner", () => ({
   evaluateLeadAgainstRules: vi.fn(async () => ({ skipped: [] })),
 }));
@@ -312,6 +323,10 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
         ('${ORG_B}', '${USER_B}', 'business_details', 'About', 'Org B secret memory');
     `);
     await db.applyMigration("042_copilot_v2_history_approvals.sql");
+    await db.exec(`
+      ALTER TABLE copilot_conversations ADD COLUMN crm_source text NOT NULL DEFAULT 'pulse', ADD COLUMN integration_connection_id uuid;
+      ALTER TABLE copilot_memory ADD COLUMN crm_source text NOT NULL DEFAULT 'pulse', ADD COLUMN connection_id uuid;
+    `);
     ({ POST } = await import("@/app/api/ai/chat/route"));
     convertSpy = vi.mocked((await import("ai")).convertToModelMessages) as unknown as ReturnType<typeof vi.fn>;
     automationSpy = vi.mocked((await import("@/lib/automation/runner")).evaluateLeadAgainstRules) as unknown as ReturnType<typeof vi.fn>;
@@ -326,6 +341,8 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
       DELETE FROM copilot_approvals; DELETE FROM copilot_messages; DELETE FROM copilot_conversations;
       DELETE FROM leads;
       UPDATE ai_settings SET copilot_always_allow = '[]'::jsonb;
+      UPDATE profiles SET role='member';
+      DELETE FROM copilot_memory WHERE crm_source='twenty';
       INSERT INTO leads (id, organization_id, name, email, status) VALUES
         ('${LEAD}', '${ORG_A}', 'Acme Lead', 'lead@acme.test', 'cold');
       UPDATE leads SET updated_at = '${LEAD_BASELINE}' WHERE id = '${LEAD}';
@@ -344,6 +361,8 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
     h.stepRefusal = false;
     h.limitReason = null;
     h.onGetUser = null;
+    h.fallbackCalls = 0; h.providerOptions = []; h.catalogModels = ["gpt-main", "gpt-fast"];
+    vi.unstubAllEnvs();
     convertSpy.mockClear();
     automationSpy.mockClear();
   });
@@ -445,6 +464,15 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
   // ── Conversation ownership ───────────────────────────────────────────────
 
   describe("conversation ownership", () => {
+    it("a Pulse page key cannot resume Twenty history after owner demotion", async () => {
+      const pageKey = `twenty:${LEAD}:leads`;
+      await db.query("UPDATE copilot_conversations SET crm_source='twenty',integration_connection_id=$1,page_key=$2 WHERE id=$3", [LEAD, pageKey, CONV_A]);
+      await seedHistory(CONV_A, ORG_A, [assistantMsg("secret", "Twenty private history")]);
+      const res = await post({ pageKey, message: { text: "Show context" } });
+      expect(res.status).toBe(404);
+      expect(model().doStreamCalls).toHaveLength(0);
+      expect(await messageRows(CONV_A)).toHaveLength(1);
+    });
     it("conversationId of another org -> 404 and nothing is written there", async () => {
       const res = await post({ conversationId: CONV_B_OTHER_ORG, message: { text: "hi" } });
       expect(res.status).toBe(404);
@@ -458,6 +486,45 @@ describe("POST /api/ai/chat against PGlite + 042", () => {
       expect(res.status).toBe(404);
       expect(await messageRows(CONV_A2_OTHER_USER)).toHaveLength(0);
       expect(model().doStreamCalls).toHaveLength(0);
+    });
+  });
+
+  describe("Twenty chat routing", () => {
+    async function configure() {
+      await db.exec(`UPDATE profiles SET role='owner' WHERE id='${USER_A}';
+        INSERT INTO copilot_memory(organization_id,user_id,type,title,content,crm_source,connection_id) VALUES ('${ORG_A}','${USER_A}','custom','Twenty fact','Twenty memory only','twenty','${LEAD}');`);
+      for (const [key, value] of Object.entries({ CUSTOM_AI_BASE_URL: "https://api.llmsrelay.com", CUSTOM_AI_API_KEY: "relay-test-key", CUSTOM_AI_MODEL: "gpt-main", CUSTOM_AI_FAST_MODEL: "gpt-fast" })) vi.stubEnv(key, value);
+      h.model = new MockLanguageModelV3({ doGenerate: async () => ({ content: [{ type: "text", text: "Twenty answer" }], finishReason: { unified: "stop", raw: "stop" }, usage: USAGE, warnings: [] }) });
+    }
+    it("uses only Relay, Twenty tools and Twenty memory even when Pulse context is supplied", async () => {
+      await configure();
+      const res = await post({ crmSource: "twenty", connectionId: LEAD, message: { text: "Summarize sales" }, context: { page: "leads", entityType: "lead", entityId: LEAD } });
+      expect(res.status).toBe(200); await settle(res);
+      expect(h.fallbackCalls).toBe(0); expect(h.textClientCalls).toHaveLength(0);
+      expect(h.providerOptions[0]).toMatchObject({ apiKey: "relay-test-key", baseURL: "https://api.llmsrelay.com/v1" });
+      const call = model().doGenerateCalls[0];
+      expect(model().doStreamCalls).toHaveLength(0);
+      expect(call.tools?.every(t => t.type === "function" && t.name.startsWith("twenty_"))).toBe(true);
+      const system = call.prompt.find(m => m.role === "system")!.content as string;
+      expect(system).toContain("Twenty memory only"); expect(system).not.toContain("industrial widgets"); expect(system).not.toContain("Acme Lead");
+      const [stored] = await db.query<{ crm_source: string; integration_connection_id: string }>("SELECT crm_source,integration_connection_id FROM copilot_conversations WHERE id=$1", [res.headers.get("x-conversation-id")]);
+      expect(stored).toEqual({ crm_source: "twenty", integration_connection_id: LEAD });
+    });
+    it("stops before inference and fallback on an unavailable Relay model", async () => {
+      await configure(); h.catalogModels = ["gpt-main"];
+      const res = await post({ crmSource: "twenty", message: { text: "Summarize sales" } });
+      expect(res.status).toBe(500); expect(await res.text()).toContain("unavailable");
+      expect(model().doGenerateCalls).toHaveLength(0); expect(h.fallbackCalls).toBe(0); expect(h.providerOptions).toHaveLength(0);
+    });
+    it("also preserves Pulse tools when the shared custom provider uses Relay GPT", async () => {
+      h.resolved = { provider: "custom", source: "env", apiKey: "relay-test-key", baseURL: "https://api.llmsrelay.com", model: "gpt-main", fastModel: "gpt-fast" };
+      h.model = new MockLanguageModelV3({ doGenerate: async () => ({ content: [{ type: "text", text: "Pulse answer" }], finishReason: { unified: "stop", raw: "stop" }, usage: USAGE, warnings: [] }) });
+      const res = await post({ message: { text: "Find leads" } });
+      expect(res.status).toBe(200); await settle(res);
+      expect(h.textClientCalls).toHaveLength(0);
+      expect(model().doStreamCalls).toHaveLength(0);
+      expect(model().doGenerateCalls[0].tools?.some(t => t.type === "function" && t.name === "search_leads")).toBe(true);
+      expect(model().doGenerateCalls[0].tools?.some(t => t.type === "function" && t.name.startsWith("twenty_"))).toBe(false);
     });
   });
 

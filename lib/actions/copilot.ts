@@ -63,6 +63,7 @@ export async function getMemoryItems() {
     .from("copilot_memory")
     .select("*")
     .eq("organization_id", orgId)
+    .eq("crm_source", "pulse")
     .order("created_at", { ascending: false });
 
   if (error) return { error: error.message, data: [] };
@@ -77,6 +78,7 @@ export async function listMemoryByType(types: CopilotMemoryType[]) {
     .from("copilot_memory")
     .select("*")
     .eq("organization_id", orgId)
+    .eq("crm_source", "pulse")
     .in("type", types)
     .order("created_at", { ascending: false });
 

@@ -33,7 +33,7 @@ export async function listConversations() {
 
   const { data, error } = await supabase
     .from("copilot_conversations")
-    .select("id, title, summary, is_pinned, page_key, created_at, updated_at")
+    .select("id, title, summary, is_pinned, page_key, created_at, updated_at, crm_source, integration_connection_id")
     .eq("organization_id", orgId)
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });

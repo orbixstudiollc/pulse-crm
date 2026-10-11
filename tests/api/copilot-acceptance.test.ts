@@ -444,6 +444,10 @@ describe("Copilot done flow: acceptance over PGlite + 042/043 with one scripted 
     `);
     await db.applyMigration("042_copilot_v2_history_approvals.sql");
     await db.applyMigration("043_copilot_v2_artifacts_memory_notifications.sql");
+    await db.exec(`
+      ALTER TABLE copilot_conversations ADD COLUMN crm_source text NOT NULL DEFAULT 'pulse', ADD COLUMN integration_connection_id uuid;
+      ALTER TABLE copilot_memory ADD COLUMN crm_source text NOT NULL DEFAULT 'pulse';
+    `);
     ({ POST } = await import("@/app/api/ai/chat/route"));
     ({ loadUiMessages } = await import("@/lib/ai/history"));
     ({ runCopilotTask } = await import("@/lib/ai/tasks/run-task"));

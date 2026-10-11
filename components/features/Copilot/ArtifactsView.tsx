@@ -206,9 +206,13 @@ function ArtifactDetail({
 // ── Artifacts view ─────────────────────────────────────────────────────────
 
 export function ArtifactsView({
+  crmSource = "pulse",
+  connectionId,
   initialArtifacts,
   initialOpenId,
 }: {
+  crmSource?: "pulse" | "twenty";
+  connectionId?: string;
   initialArtifacts: Artifact[];
   initialOpenId: string | null;
 }) {
@@ -226,7 +230,7 @@ export function ArtifactsView({
     const request = ++requestRef.current;
     const timer = setTimeout(
       () => {
-        listArtifacts({ q: query.trim() || undefined, kind: kind === "all" ? undefined : kind })
+        listArtifacts({ q: query.trim() || undefined, kind: kind === "all" ? undefined : kind, crmSource, connectionId })
           .then((rows) => {
             if (requestRef.current === request) setItems(rows);
           })
@@ -235,7 +239,7 @@ export function ArtifactsView({
       query ? SEARCH_DEBOUNCE_MS : 0,
     );
     return () => clearTimeout(timer);
-  }, [query, kind]);
+  }, [query, kind, crmSource, connectionId]);
 
   const needle = query.trim().toLowerCase();
   const visible = items.filter(

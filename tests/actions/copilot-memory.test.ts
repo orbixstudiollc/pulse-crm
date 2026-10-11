@@ -301,7 +301,7 @@ describe("deleteConversation", () => {
     expect(detach.calls).toContainEqual({ method: "in", args: ["conversation_id", ["c1"]] });
     expect(detach.calls).toContainEqual({
       method: "or",
-      args: ["source.eq.task,status.in.(approved,applied,failed,stale)"],
+      args: ["source.eq.task,status.in.(approved,applied,failed,stale,partial,unknown_outcome)"],
     });
 
     expect(methodsOf(del)).toContain("delete");

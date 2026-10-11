@@ -223,6 +223,15 @@ describe("M2: the model is fixed on env credentials", () => {
     expect(h.anthropicCtor[0]).toMatchObject({ apiKey: "env-custom", baseURL: "https://relay.example.com" });
   });
 
+  it("uses the Relay GPT bridge without hidden Anthropic SDK retries", async () => {
+    resolveTo({ provider: "custom", source: "env", apiKey: "relay-test-key", baseURL: "https://api.llmsrelay.com", model: "gpt-main" });
+    await generateCompletion(MESSAGES, "custom", ORG);
+    expect(h.anthropicCtor[0]).toMatchObject({ apiKey: "relay-test-key", maxRetries: 0, authToken: null });
+    expect(h.anthropicParams[0].model).toBe("gpt-main");
+    expect(h.events).toEqual(["reserve", "call", "settle", "record"]);
+    expect(h.openaiParams).toHaveLength(0);
+  });
+
   it("the org's own key still honours the saved and requested models", async () => {
     h.settings = { ai_provider: "openai", default_model: "gpt-4o-mini" };
     resolveTo({ provider: "openai", source: "org", apiKey: "org-openai" });

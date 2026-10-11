@@ -16,8 +16,8 @@ import type { FieldDiff } from "@/lib/ai/tools/diff";
 
 type AdminClient = SupabaseClient<Database>;
 export type ApprovalRow = Database["public"]["Tables"]["copilot_approvals"]["Row"];
-export type ApprovalSource = "chat" | "task";
-export type ApprovalOutcome = "applied" | "failed" | "stale";
+export type ApprovalSource = "chat" | "task" | "workflow";
+export type ApprovalOutcome = "applied" | "failed" | "stale" | "partial" | "unknown_outcome";
 
 export type ApprovalResponse = { approvalId: string; approved: boolean; reason?: string };
 
@@ -49,8 +49,18 @@ export async function recordPendingApproval(
     toolName: string;
     input: unknown;
     diff: FieldDiff;
+    crmSource?: "pulse" | "twenty";
+    connectionId?: string | null;
+    connectionRevision?: number;
+    workflowJobId?: string | null;
   },
 ): Promise<{ id: string }> {
+  if (args.crmSource === "twenty" && (!args.userId || !args.connectionId || args.connectionRevision === undefined || args.diff.approvalBinding?.connectionId !== args.connectionId || args.diff.approvalBinding?.connectionRevision !== args.connectionRevision || args.diff.approvalBinding?.userId !== args.userId)) {
+    throw new Error("Invalid Twenty approval binding");
+  }
+  if (args.source === "workflow" && (!args.workflowJobId || !args.userId || args.crmSource !== "twenty" || args.conversationId || args.taskId)) {
+    throw new Error("Invalid workflow approval source");
+  }
   // INSERT ... ON CONFLICT (organization_id, tool_call_id) DO NOTHING RETURNING id.
   // An insert has no filter to scope; the org is the row's own organization_id.
   const { data: inserted, error: insertError } = await admin
@@ -66,6 +76,10 @@ export async function recordPendingApproval(
         tool_name: args.toolName,
         input: (args.input ?? null) as Json,
         diff: args.diff as unknown as Json,
+        ...(args.crmSource ? { crm_source: args.crmSource } : {}),
+        ...(args.connectionId ? { connection_id: args.connectionId } : {}),
+        ...(args.connectionRevision !== undefined ? { connection_revision: args.connectionRevision } : {}),
+        ...(args.workflowJobId ? { workflow_job_id: args.workflowJobId } : {}),
       },
       { onConflict: "organization_id,tool_call_id", ignoreDuplicates: true },
     )
@@ -148,7 +162,8 @@ export async function markApprovalOutcome(
     .from(TABLE)
     .update({ status: outcome, result: (result ?? null) as Json })
     .eq("organization_id", orgId)
-    .eq("id", id);
+    .eq("id", id)
+    .eq("status", "approved");
   if (error) fail("mark outcome", error);
 }
 

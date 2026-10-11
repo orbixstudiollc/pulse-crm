@@ -17,7 +17,9 @@ export type CopilotApprovalStatus =
   | "applied"
   | "failed"
   | "stale"
-  | "expired";
+  | "expired"
+  | "partial"
+  | "unknown_outcome";
 
 export type CopilotArtifactKind = "email_draft" | "lead_list" | "report" | "note";
 
@@ -2090,6 +2092,8 @@ export type Database = {
       };
       copilot_conversations: {
         Row: {
+          crm_source?: "pulse" | "twenty";
+          integration_connection_id?: string | null;
           id: string;
           organization_id: string;
           user_id: string;
@@ -2103,6 +2107,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          crm_source?: "pulse" | "twenty";
+          integration_connection_id?: string | null;
           id?: string;
           organization_id: string;
           user_id: string;
@@ -2168,6 +2174,10 @@ export type Database = {
       };
       copilot_approvals: {
         Row: {
+          crm_source?: "pulse" | "twenty";
+          connection_id?: string | null;
+          connection_revision?: number | null;
+          workflow_job_id?: string | null;
           id: string;
           organization_id: string;
           user_id: string | null;
@@ -2178,13 +2188,17 @@ export type Database = {
           tool_name: string;
           input: Json;
           diff: Json;
-          source: "chat" | "task";
+          source: "chat" | "task" | "workflow";
           status: CopilotApprovalStatus;
           result: Json | null;
           created_at: string;
           resolved_at: string | null;
         };
         Insert: {
+          crm_source?: "pulse" | "twenty";
+          connection_id?: string | null;
+          connection_revision?: number | null;
+          workflow_job_id?: string | null;
           id?: string;
           organization_id: string;
           user_id?: string | null;
@@ -2195,7 +2209,7 @@ export type Database = {
           tool_name: string;
           input: Json;
           diff: Json;
-          source: "chat" | "task";
+          source: "chat" | "task" | "workflow";
           status?: CopilotApprovalStatus;
           result?: Json | null;
           created_at?: string;
@@ -2211,6 +2225,9 @@ export type Database = {
       };
       copilot_artifacts: {
         Row: {
+          crm_source?: "pulse" | "twenty";
+          connection_id?: string | null;
+          external_record_ref?: Json | null;
           id: string;
           organization_id: string;
           user_id: string | null;
@@ -2227,6 +2244,9 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          crm_source?: "pulse" | "twenty";
+          connection_id?: string | null;
+          external_record_ref?: Json | null;
           id?: string;
           organization_id: string;
           user_id?: string | null;
@@ -2243,6 +2263,9 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          crm_source?: "pulse" | "twenty";
+          connection_id?: string | null;
+          external_record_ref?: Json | null;
           title?: string;
           content?: Json;
           starred?: boolean;
@@ -2283,6 +2306,8 @@ export type Database = {
       };
       copilot_memory: {
         Row: {
+          crm_source?: "pulse" | "twenty";
+          connection_id?: string | null;
           id: string;
           organization_id: string;
           user_id: string;
@@ -2296,6 +2321,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          crm_source?: "pulse" | "twenty";
+          connection_id?: string | null;
           id?: string;
           organization_id: string;
           user_id: string;
@@ -2309,6 +2336,8 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          crm_source?: "pulse" | "twenty";
+          connection_id?: string | null;
           type?: CopilotMemoryType;
           title?: string;
           content?: string;

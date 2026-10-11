@@ -74,6 +74,7 @@ function buttonByText(container: HTMLElement, text: string): HTMLButtonElement {
 describe("ChatMessageParts approval cards", () => {
   it("renders before/after diff rows from the approval descriptor", () => {
     const { container } = render(approvalMessage({ state: "approval-requested", descriptor: updateDiff }));
+    expect(container.textContent).toContain("lead · Record lead-1");
 
     const rows = Array.from(container.querySelectorAll("tbody tr")).map((tr) =>
       Array.from(tr.querySelectorAll("td")).map((td) => td.textContent),

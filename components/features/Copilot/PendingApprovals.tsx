@@ -14,11 +14,13 @@ const RESOLVE_MESSAGES = {
   stale: { ok: false, text: "This record changed since the proposal, so nothing was applied" },
   failed: { ok: false, text: "The change could not be applied" },
   invalid: { ok: false, text: "This approval is no longer pending" },
+  partial: { ok: false, text: "Part of this change completed. Review the result before proposing another change." },
+  unknown_outcome: { ok: false, text: "The external result could not be confirmed. Check Twenty before trying again." },
 } as const;
 
 /** Approvals proposed by scheduled tasks; chat approvals are answered inside their chat. */
 function taskApprovals(rows: PendingApproval[]): PendingApproval[] {
-  return rows.filter((row) => row.source === "task");
+  return rows.filter((row) => row.source === "task" || row.source === "workflow");
 }
 
 function formatDate(iso: string): string {
@@ -84,7 +86,7 @@ export function PendingApprovals({
                 onApprove={() => void answer(row, true)}
                 onDeny={() => void answer(row, false)}
               />
-              <p className="pb-3 text-[12px] text-fg-muted">Proposed by a scheduled task on {formatDate(row.createdAt)}</p>
+              <p className="pb-3 text-[12px] text-fg-muted">Proposed by {row.source === "workflow" ? "a Twenty workflow" : "a scheduled task"} on {formatDate(row.createdAt)}</p>
             </div>
           ))}
         </div>

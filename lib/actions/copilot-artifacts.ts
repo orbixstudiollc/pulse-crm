@@ -1,7 +1,9 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getOrgId } from "./helpers";
+import { requireTwentyConnection } from "@/lib/twenty/connections";
+import type { CrmSource } from "@/lib/ai/crm-source";
 import type { CopilotArtifactKind } from "@/types/database";
 
 // Artifacts are soft-deleted (deleted_at); every query is scoped by organization_id.
@@ -20,16 +22,24 @@ function likePattern(q: string): string {
 }
 
 export async function listArtifacts(
-  opts: { q?: string; kind?: CopilotArtifactKind; starred?: boolean; limit?: number } = {},
+  opts: { q?: string; kind?: CopilotArtifactKind; starred?: boolean; limit?: number; crmSource?: CrmSource; connectionId?: string } = {},
 ) {
   const supabase = await createClient();
   const orgId = await getOrgId();
 
+  let connectionId = opts.connectionId;
+  if (opts.crmSource === "twenty") {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.is_anonymous) throw new Error("Twenty requires an owner/admin and connection");
+    connectionId = (await requireTwentyConnection({ db: createAdminClient(), orgId, userId: user.id, connectionId })).id;
+  }
   let query = supabase
     .from("copilot_artifacts")
     .select("*")
     .eq("organization_id", orgId)
+    .eq("crm_source", opts.crmSource ?? "pulse")
     .is("deleted_at", null);
+  if (opts.crmSource === "twenty") query = query.eq("connection_id", connectionId!);
   if (opts.kind) query = query.eq("kind", opts.kind);
   if (opts.starred) query = query.eq("starred", true);
   const q = opts.q?.trim();
@@ -42,17 +52,25 @@ export async function listArtifacts(
   return data ?? [];
 }
 
-export async function getArtifact(id: string) {
+export async function getArtifact(id: string, opts: { crmSource?: CrmSource; connectionId?: string } = {}) {
   const supabase = await createClient();
   const orgId = await getOrgId();
 
-  const { data, error } = await supabase
+  let connectionId = opts.connectionId;
+  if (opts.crmSource === "twenty") {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || user.is_anonymous) throw new Error("Twenty requires an owner/admin account");
+    connectionId = (await requireTwentyConnection({ db: createAdminClient(), orgId, userId: user.id, connectionId })).id;
+  }
+  let query = supabase
     .from("copilot_artifacts")
     .select("*")
     .eq("id", id)
     .eq("organization_id", orgId)
-    .is("deleted_at", null)
-    .maybeSingle();
+    .eq("crm_source", opts.crmSource ?? "pulse")
+    .is("deleted_at", null);
+  if (opts.crmSource === "twenty") query = query.eq("connection_id", connectionId!);
+  const { data, error } = await query.maybeSingle();
   if (error) throw new Error(`getArtifact failed: ${error.message}`);
   return data;
 }
@@ -115,6 +133,7 @@ export async function listArtifactsForRecord(type: LinkedRecordType, id: string,
     .from("copilot_artifacts")
     .select("*")
     .eq("organization_id", orgId)
+    .eq("crm_source", "pulse")
     .eq("linked_record_type", type)
     .eq("linked_record_id", id)
     .is("deleted_at", null)

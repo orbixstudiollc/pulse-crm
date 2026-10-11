@@ -8,6 +8,15 @@ export type FieldDiff = {
   /** The record's updated_at when the diff was computed (write precondition). */
   baselineUpdatedAt?: string;
   fields: Array<{ name: string; before?: unknown; after: unknown }>;
+  /** External approvals bind their visible diff, input and connection to the initiating owner. */
+  approvalBinding?: {
+    crmSource: "twenty";
+    connectionId: string;
+    connectionRevision: number;
+    userId: string;
+    payloadHash: string;
+    preconditions?: Record<string, unknown>;
+  };
 };
 
 const DATE_LIKE = /^\d{4}-\d{2}-\d{2}(?:[T ].*)?$/;

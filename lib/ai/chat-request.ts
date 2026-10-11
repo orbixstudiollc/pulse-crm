@@ -13,6 +13,8 @@ export const CHAT_ENTITY_TYPES = ["lead", "deal", "customer", "competitor", "con
 export const chatRequestSchema = z
   .object({
     conversationId: z.string().uuid().optional(),
+    crmSource: z.enum(["pulse", "twenty"]).optional(),
+    connectionId: z.string().uuid().optional(),
     pageKey: z.string().max(64).optional(),
     message: z.object({ text: z.string().min(1).max(8000) }).strict().optional(),
     approvals: z

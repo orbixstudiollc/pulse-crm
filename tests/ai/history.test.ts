@@ -163,6 +163,7 @@ describe("conversation history against PGlite + 042", () => {
         ('${USER_A}', '${ORG_A}', 'a@example.test'), ('${USER_B}', '${ORG_A}', 'b@example.test');
     `);
     await db.applyMigration("042_copilot_v2_history_approvals.sql");
+    await db.exec("ALTER TABLE copilot_conversations ADD COLUMN crm_source text NOT NULL DEFAULT 'pulse', ADD COLUMN integration_connection_id uuid;");
     admin = pgAdmin(db);
   });
 

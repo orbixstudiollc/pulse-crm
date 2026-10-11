@@ -12,6 +12,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { generateText, stepCountIs, type LanguageModel } from "ai";
 import { recordPendingApproval } from "@/lib/ai/approvals";
 import { aiSdkBaseUrl, createCustomFetch, customModelFor } from "@/lib/ai/custom-provider";
+import { createRelayGPTFetch, isRelayGPTModel } from "@/lib/twenty/gpt-fetch";
 import { buildMemoryBlock, type MemoryBlockIcp, type MemoryBlockMemory } from "@/lib/ai/memory-block";
 import { customModelSettingsFor, resolveAIProvider } from "@/lib/ai/provider-resolver";
 import { sharedCallerIsGuest, sharedTurnBudget } from "@/lib/ai/shared-budget";
@@ -115,7 +116,7 @@ async function withinTaskCap(admin: Admin, task: CopilotTaskRow, isGuest: boolea
 async function resolveTaskModel(
   admin: Admin,
   orgId: string,
-): Promise<{ model: LanguageModel; sharedKey: boolean; close?: () => void } | { error: string }> {
+): Promise<{ model: LanguageModel; sharedKey: boolean; maxRetries?: number; close?: () => void } | { error: string }> {
   const { data: settings, error } = await admin
     .from("ai_settings")
     .select(SETTINGS_COLUMNS)
@@ -133,9 +134,10 @@ async function resolveTaskModel(
     // Without a key the SDK would fall back to ANTHROPIC_API_KEY from env.
     if (!modelId || !resolved.baseURL || !resolved.apiKey) return { error: "provider_not_configured" };
     const pinned = await createCustomFetch(resolved.baseURL);
-    const anthropic = createAnthropic({ apiKey: resolved.apiKey, baseURL: aiSdkBaseUrl(pinned.base), fetch: pinned.fetch });
+    const relayGPT = isRelayGPTModel(pinned.base, modelId);
+    const anthropic = createAnthropic({ apiKey: resolved.apiKey, baseURL: aiSdkBaseUrl(pinned.base), fetch: relayGPT ? createRelayGPTFetch(resolved.apiKey, pinned.fetch) : pinned.fetch });
     const close = () => void pinned.close().catch((e) => console.error("[run-task] closing custom fetch failed:", errorMessage(e)));
-    return { model: anthropic(modelId), sharedKey, close };
+    return { model: anthropic(modelId), sharedKey, ...(relayGPT ? { maxRetries: 0 } : {}), close };
   }
   if (resolved.provider === "openrouter") {
     const anthropic = createAnthropic({
@@ -354,6 +356,7 @@ async function executeClaimedTask(
 
     const generated = await generateText({
       model: resolved.model,
+      ...(resolved.maxRetries !== undefined ? { maxRetries: resolved.maxRetries } : {}),
       system,
       prompt: task.prompt,
       tools,

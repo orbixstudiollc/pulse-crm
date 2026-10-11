@@ -15,6 +15,9 @@ const COPILOT_CONTEXT: ChatContext = { page: "Copilot" };
 const PENDING_HINT = "Answer the pending changes first";
 
 export type ChatViewProps = {
+  onBusyChange?(busy: boolean): void;
+  crmSource?: "pulse" | "twenty";
+  connectionId?: string;
   /** The stored conversation to continue, or null for a new chat. */
   conversationId: string | null;
   initialMessages: UIMessage[];
@@ -30,6 +33,9 @@ export type ChatViewProps = {
 };
 
 export function ChatView({
+  onBusyChange,
+  crmSource = "pulse",
+  connectionId,
   conversationId,
   initialMessages,
   initialPrompt,
@@ -38,9 +44,10 @@ export function ChatView({
   onUndo,
   brief,
 }: ChatViewProps) {
-  const chat = useCopilotChat({ conversationId, pageKey: undefined, initialMessages, context: COPILOT_CONTEXT });
+  const chat = useCopilotChat({ conversationId, pageKey: undefined, initialMessages, context: COPILOT_CONTEXT, crmSource, connectionId });
   const { messages, status, error, sendText, approve, deny, awaitingApproval } = chat;
   const isLoading = status === "submitted" || status === "streaming";
+  useEffect(() => { onBusyChange?.(isLoading); }, [isLoading, onBusyChange]);
 
   const [draft, setDraft] = useState("");
   // The text of the turn in flight: a 4xx before streaming means the server never took it,
@@ -99,7 +106,14 @@ export function ChatView({
           <h2 className="mb-6 text-center text-[22px] leading-7 font-semibold text-fg">What can I help with?</h2>
           <Composer value={draft} onChange={setDraft} onSend={() => handleSend(draft)} isLoading={isLoading} />
           {chatError && <ErrorLine error={chatError} className="mt-4" />}
-          <AssistantHome brief={brief} onPick={handleSend} />
+          {crmSource === "pulse" ? <AssistantHome brief={brief} onPick={handleSend} /> : (
+            <div className="mt-6 space-y-2">
+              <p className="text-sm text-fg-secondary">Connected Twenty sales data · LLMsRelay · Changes require approval</p>
+              {["Summarize my Twenty sales pipeline", "Qualify leads against our Twenty ICP", "Draft personalized follow-ups", "Triage replies and draft responses", "Draft a proposal using our service catalog"].map((prompt) => (
+                <button key={prompt} className="block w-full rounded-md border border-divider px-3 py-2 text-left text-sm hover:bg-subtle" onClick={() => handleSend(prompt)}>{prompt}</button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
