@@ -84,7 +84,7 @@ export function ActivityFeed({
 
               {/* Content */}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[14px] font-medium text-fg">
+                <p className="truncate text-[13px] font-medium text-fg">
                   {activity.title}
                 </p>
                 <p className="truncate text-[13px] text-fg-muted">
@@ -106,7 +106,7 @@ export function ActivityFeed({
         })
       ) : (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="text-[14px] font-medium text-fg">
+          <p className="text-[13px] font-medium text-fg">
             No recent activity
           </p>
           <p className="mt-1 text-[13px] text-fg-muted">

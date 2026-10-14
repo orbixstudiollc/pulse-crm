@@ -61,12 +61,12 @@ function SectionBody({ section }: { section: ProposalSection }) {
   return (
     <>
       {section.text && (
-        <p className="whitespace-pre-line text-[14px] leading-6 text-fg-secondary">
+        <p className="whitespace-pre-line text-[13px] leading-6 text-fg-secondary">
           {section.text}
         </p>
       )}
       {section.items && (
-        <ul className="list-disc space-y-1 pl-5 text-[14px] leading-6 text-fg-secondary">
+        <ul className="list-disc space-y-1 pl-5 text-[13px] leading-6 text-fg-secondary">
           {section.items.map((item, i) => (
             <li key={i}>{item}</li>
           ))}
@@ -82,7 +82,7 @@ function PricingGrid({ tiers }: { tiers: PricingTier[] }) {
       {tiers.map((tier, i) => (
         <div key={`${tier.name}-${i}`} className="rounded-lg border border-line bg-surface p-4" data-clay-box>
           <div className="flex items-center justify-between gap-2">
-            <h3 className="text-[14px] font-semibold text-fg">{tier.name}</h3>
+            <h3 className="text-[13px] font-semibold text-fg">{tier.name}</h3>
             {tier.recommended && <Badge variant="info">Recommended</Badge>}
           </div>
           {tier.price && (

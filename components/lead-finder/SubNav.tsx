@@ -22,7 +22,7 @@ export function LeadFinderSubNav() {
             key={tab.href}
             href={tab.href}
             aria-current={isActive ? "page" : undefined}
-            className={`relative inline-flex h-10 shrink-0 items-center whitespace-nowrap text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent ${
+            className={`relative inline-flex h-10 shrink-0 items-center whitespace-nowrap text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent ${
               isActive ? "text-accent-strong" : "text-fg hover:text-fg-secondary"
             }`}
           >

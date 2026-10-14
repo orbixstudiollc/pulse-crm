@@ -179,11 +179,11 @@ export default function CampaignsPage() {
                       className="group cursor-pointer transition-colors"
                       onClick={() => router.push(`/dashboard/lead-finder/campaigns/${campaign.id}`)}
                     >
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <div className="flex min-w-0 items-center gap-2">
                           <TargetIcon size={16} className="shrink-0 text-fg-muted" />
                           <div className="min-w-0">
-                            <p className="truncate text-[14px] font-medium text-fg">{campaign.name}</p>
+                            <p className="truncate text-[13px] font-medium text-fg">{campaign.name}</p>
                             <p className="truncate text-xs text-fg-secondary">{campaign.target_niche}</p>
                             {campaign.description && (
                               <p className="max-w-[320px] truncate text-xs text-fg-muted">{campaign.description}</p>
@@ -191,7 +191,7 @@ export default function CampaignsPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <Badge variant={statusCfg.color as "neutral" | "success" | "warning" | "info" | "error"}>
                           <span className="flex items-center gap-1">
                             {statusCfg.icon}
@@ -199,8 +199,8 @@ export default function CampaignsPage() {
                           </span>
                         </Badge>
                       </td>
-                      <td className="py-2 text-[14px] font-medium text-fg">{campaign.leadCount}</td>
-                      <td className="py-2 text-[14px] font-medium text-fg">
+                      <td className="py-2 text-[13px] font-medium text-fg">{campaign.leadCount}</td>
+                      <td className="py-2 text-[13px] font-medium text-fg">
                         {campaign.enrichedCount}
                         {campaign.leadCount > 0 && (
                           <span className="text-xs font-sans font-normal text-fg-muted">
@@ -208,7 +208,7 @@ export default function CampaignsPage() {
                           </span>
                         )}
                       </td>
-                      <td className={`py-2 text-[14px] font-medium ${campaign.avgScore >= 70 ? "text-success" : campaign.avgScore >= 40 ? "text-warning" : "text-fg"}`}>
+                      <td className={`py-2 text-[13px] font-medium ${campaign.avgScore >= 70 ? "text-success" : campaign.avgScore >= 40 ? "text-warning" : "text-fg"}`}>
                         {campaign.avgScore}
                       </td>
                       <td className="whitespace-nowrap py-2 text-xs text-fg-secondary">

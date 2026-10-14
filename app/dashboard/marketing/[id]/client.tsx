@@ -486,7 +486,7 @@ export function AuditDetailClient({ audit, actionItems, content, reports }: Prop
             >
               <gen.icon className="mt-0.5 h-[18px] w-[18px] shrink-0 text-accent-strong" weight="regular" />
               <div className="min-w-0">
-                <p className="text-[14px] font-semibold text-fg">{gen.label}</p>
+                <p className="text-[13px] font-semibold text-fg">{gen.label}</p>
                 <p className="mt-0.5 text-[13px] text-fg-muted">{gen.description}</p>
                 {generating === gen.id && (
                   <div className="mt-3 flex items-center gap-2 text-sm text-accent-strong">

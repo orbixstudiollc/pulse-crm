@@ -343,7 +343,7 @@ export default function LeadFinderOverviewPage() {
                     <tbody>
                       {data.recentActivity.map((event) => (
                         <tr key={event.id}>
-                          <td className="text-[14px] text-fg">
+                          <td className="text-[13px] text-fg">
                             <div className="flex items-center gap-3">
                               <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${event.type === "discovery_success" ? "bg-success" : event.type === "lead_added" ? "bg-accent-strong" : "bg-fg-muted"}`} />
                               <span className="truncate">{event.description}</span>
@@ -401,7 +401,7 @@ export default function LeadFinderOverviewPage() {
                               >
                                 <TargetIcon size={16} className="shrink-0 text-fg-muted" />
                                 <span className="min-w-0">
-                                  <span className="block truncate text-[14px] font-medium text-fg">
+                                  <span className="block truncate text-[13px] font-medium text-fg">
                                     {campaign.name}
                                   </span>
                                   {campaign.target_niche && (
@@ -419,9 +419,9 @@ export default function LeadFinderOverviewPage() {
                                 {campaign.status}
                               </span>
                             </td>
-                            <td className="text-[14px] font-medium text-fg">{campaign.leadCount ?? 0}</td>
-                            <td className="text-[14px] font-medium text-accent-strong">{newCount}</td>
-                            <td className="text-[14px] font-medium text-fg">{campaign.avgScore ?? 0}</td>
+                            <td className="text-[13px] font-medium text-fg">{campaign.leadCount ?? 0}</td>
+                            <td className="text-[13px] font-medium text-accent-strong">{newCount}</td>
+                            <td className="text-[13px] font-medium text-fg">{campaign.avgScore ?? 0}</td>
                             <td className="whitespace-nowrap text-[13px] text-fg-secondary">
                               {campaign.schedule_frequency
                                 ? `Runs ${campaign.schedule_frequency}`

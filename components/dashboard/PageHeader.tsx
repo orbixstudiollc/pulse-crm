@@ -9,19 +9,19 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, icon, children }: PageHeaderProps) {
   return (
-    <div className="flex items-center justify-between gap-4 px-8 pt-7 pb-6 max-sm:flex-col max-sm:items-start max-sm:px-4">
+    <div className="flex items-center justify-between gap-4 px-8 pt-6 pb-5 max-sm:flex-col max-sm:items-start max-sm:px-4">
       <div className="flex min-w-0 items-center gap-3">
         {icon && (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-subtle text-fg-secondary [&_svg]:size-[18px]">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm bg-muted text-fg-secondary [&_svg]:size-4">
             {icon}
           </div>
         )}
         <div className="min-w-0">
-          <h1 className="text-[20px] leading-7 font-semibold text-fg">
+          <h1 className="text-[16px] leading-6 font-semibold text-fg">
             {title}
           </h1>
           {description && (
-            <div className="text-[13px] text-fg-muted">{description}</div>
+            <div className="text-[12px] text-fg-muted">{description}</div>
           )}
         </div>
       </div>

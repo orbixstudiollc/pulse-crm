@@ -111,5 +111,5 @@ export function MessageText({ text }: { text: string }) {
       </List>
     );
   });
-  return <div className="py-1.5 text-[14px] leading-6 text-fg">{nodes}</div>;
+  return <div className="py-1.5 text-[13px] leading-6 text-fg">{nodes}</div>;
 }

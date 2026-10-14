@@ -111,7 +111,7 @@ export function ActionMenu({ items, className, label = "More actions" }: ActionM
 
   const itemClassName = (variant?: "default" | "danger") =>
     cn(
-      "flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-[14px] text-left transition-colors focus-visible:outline-none",
+      "flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-[13px] text-left transition-colors focus-visible:outline-none",
       variant === "danger"
         ? "text-danger hover:bg-subtle focus-visible:bg-subtle"
         : "text-fg hover:bg-subtle focus-visible:bg-subtle",

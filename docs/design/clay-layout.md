@@ -1,5 +1,7 @@
 # Clay layout: structure, not just colour
 
+> **2026-10: the app is moving to a Twenty-style design.** Tokens (colours, 13px type, 4px controls / 8px panels) follow Twenty's MIT `twenty-ui` values in `styles/globals.css`. The shell changed: the sidebar (220px, with the workspace row and Search at the top) sits on the grey `bg-app` background, and the page is a white rounded panel holding the top bar. Nav rows are 28px with a soft grey fill when active, not a left bar. Tables are a 32px grid with hairline cell borders. Where this file disagrees, the code wins.
+
 `clay.md` set the palette and component skins. This file sets the page anatomy, which is what actually makes Clay look like Clay. It overrides `clay.md` wherever they disagree (in particular "style, not structure" no longer holds).
 
 Measurements come from the Mobbin captures (1920px wide at about 1.33× device scale, so a capture pixel divided by 1.33 gives the CSS pixel). The reference screens are Home 27, Campaigns 165, Signals 164, Usage 203, Workbook 120 and Table 37.

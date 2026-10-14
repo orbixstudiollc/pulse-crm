@@ -113,7 +113,7 @@ export function TabsTrigger({
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       className={cn(
-        "relative inline-flex h-9 items-center gap-2 px-1 text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-50",
+        "relative inline-flex h-9 items-center gap-2 px-1 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-50",
         isActive
           ? "font-medium text-fg"
           : "text-fg-secondary hover:text-fg",
@@ -125,7 +125,7 @@ export function TabsTrigger({
       {isActive && (
         <span
           aria-hidden
-          className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-accent"
+          className="absolute inset-x-0 -bottom-px h-px bg-fg"
         />
       )}
     </button>

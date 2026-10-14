@@ -109,7 +109,7 @@ export function ConfirmDialog({
             <div className="pr-4 pb-4 pl-15">
               <p
                 id="confirm-dialog-description"
-                className="text-[14px] leading-5 text-fg-secondary"
+                className="text-[13px] leading-5 text-fg-secondary"
               >
                 {message}
               </p>

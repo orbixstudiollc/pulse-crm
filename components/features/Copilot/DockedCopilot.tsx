@@ -153,7 +153,7 @@ export function CopilotChatView({ conversation, pageKey, context, starters }: Co
           chat.messages.map((message, index) =>
             message.role === "user" ? (
               <div key={message.id} className="border-t border-divider py-2 first:border-t-0">
-                <p className="whitespace-pre-wrap text-[14px] font-medium leading-6 text-fg">
+                <p className="whitespace-pre-wrap text-[13px] font-medium leading-6 text-fg">
                   {message.parts.map((part) => (part.type === "text" ? part.text : "")).join("")}
                 </p>
               </div>
@@ -226,7 +226,7 @@ export function CopilotChatView({ conversation, pageKey, context, starters }: Co
           aria-label="Message Copilot"
           aria-describedby={blocked ? hintId : undefined}
           maxLength={MESSAGE_MAX_LENGTH}
-          className="max-h-[120px] min-h-9 flex-1 resize-none rounded-md border border-line bg-surface px-3 py-2 text-[14px] text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-accent"
+          className="max-h-[120px] min-h-9 flex-1 resize-none rounded-md border border-line bg-surface px-3 py-2 text-[13px] text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-accent"
         />
         {busy ? (
           <button
@@ -392,7 +392,7 @@ function DockColumn({ width, minWidth, maxWidth, onClose, onResize }: DockColumn
       />
       <div className="flex h-11 shrink-0 items-center gap-2 border-b border-divider px-4">
         <SparkleIcon className="h-4 w-4 text-fg" weight="fill" />
-        <span className="text-[14px] font-semibold text-fg">Copilot</span>
+        <span className="text-[13px] font-semibold text-fg">Copilot</span>
         <span className="truncate text-[13px] text-fg-muted">{label}</span>
         <div className="ml-auto flex items-center gap-1">
           {conversationId && (

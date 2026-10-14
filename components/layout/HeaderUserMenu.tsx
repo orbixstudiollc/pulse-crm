@@ -108,7 +108,7 @@ export function HeaderUserMenu() {
               <Link
                 href="/dashboard/settings"
                 onClick={() => setOpen(false)}
-                className="flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[14px] text-fg hover:bg-subtle transition-colors"
+                className="flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[13px] text-fg hover:bg-subtle transition-colors"
               >
                 <GearIcon size={16} />
                 Settings
@@ -116,7 +116,7 @@ export function HeaderUserMenu() {
               {!openAccess && (
               <button
                 onClick={handleSignOut}
-                className="flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[14px] text-danger hover:bg-danger-surface transition-colors"
+                className="flex h-8 w-full items-center gap-2.5 rounded-md px-2.5 text-[13px] text-danger hover:bg-danger-surface transition-colors"
               >
                 <svg
                   width="16"

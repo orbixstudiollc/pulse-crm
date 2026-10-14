@@ -102,7 +102,7 @@ const QUICK_ACTIONS: { group: string; actions: { label: string; prompt: string }
   },
 ];
 
-const ROW = "flex h-11 w-full items-center gap-3 border-b border-divider px-2 text-left text-[14px] text-fg transition-colors hover:bg-subtle";
+const ROW = "flex h-11 w-full items-center gap-3 border-b border-divider px-2 text-left text-[13px] text-fg transition-colors hover:bg-subtle";
 
 function RowContent({ icon: Icon, tone, children }: { icon: typeof FireIcon; tone: string; children: ReactNode }) {
   return (

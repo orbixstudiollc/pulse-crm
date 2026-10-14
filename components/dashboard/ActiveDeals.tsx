@@ -39,7 +39,7 @@ export function ActiveDeals({
     <div className={className}>
       {/* Total */}
       <p className="flex items-baseline gap-2 border-b border-divider px-8 py-3 max-sm:px-4">
-        <span className="text-[18px] leading-6 font-semibold text-fg">
+        <span className="text-[15px] leading-6 font-semibold text-fg">
           {formatCurrency(total)}
         </span>
         <span className="text-[13px] text-fg-muted">
@@ -75,7 +75,7 @@ export function ActiveDeals({
                     onMouseEnter={() => setHoveredStage(stage.name)}
                     onMouseLeave={() => setHoveredStage(null)}
                   >
-                    <td className="text-[14px] text-fg">
+                    <td className="text-[13px] text-fg">
                       <div className="flex items-center gap-2">
                         <div
                           className={cn(
@@ -87,8 +87,8 @@ export function ActiveDeals({
                         {stage.name}
                       </div>
                     </td>
-                    <td className="text-[14px] text-fg-secondary">{stage.count}</td>
-                    <td className="text-[14px] font-medium text-fg">
+                    <td className="text-[13px] text-fg-secondary">{stage.count}</td>
+                    <td className="text-[13px] font-medium text-fg">
                       {formatCurrency(stage.value)}
                     </td>
                     <td>
@@ -112,7 +112,7 @@ export function ActiveDeals({
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="text-[14px] font-medium text-fg">
+          <p className="text-[13px] font-medium text-fg">
             No active deals yet
           </p>
           <p className="mt-1 text-[13px] text-fg-muted">

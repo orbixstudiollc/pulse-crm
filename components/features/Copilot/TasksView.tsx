@@ -102,7 +102,7 @@ export function TasksView({ tasks, setTasks }: { tasks: CopilotTask[]; setTasks:
                 <div key={task.id} className="group flex items-start justify-between gap-3 px-8 py-3 border-b border-divider transition-colors hover:bg-subtle max-sm:px-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-[14px] font-medium text-fg">{task.title}</h4>
+                      <h4 className="text-[13px] font-medium text-fg">{task.title}</h4>
                       <span className={cn(
                         "text-[12px] px-2 py-0.5 rounded-full font-medium",
                         task.is_active

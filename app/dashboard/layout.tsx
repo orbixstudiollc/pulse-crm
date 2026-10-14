@@ -38,20 +38,26 @@ export default async function DashboardLayout({
         <HeaderProvider>
           <AIChatProvider>
             <SelectionProvider>
-              <div className="flex h-screen flex-col overflow-hidden bg-page">
-                <Header />
-                <div className="relative flex flex-1 overflow-hidden">
-                  <Sidebar />
-                  <MobileSidebar />
-                  <DockedContent>
-                    <div className="px-4 pt-4 empty:hidden lead-finder-banner-slot">
-                      <EnrichmentProgressBanner />
+              {/* Twenty-style frame: the sidebar sits on the grey app background and
+                  the page lives in a white, rounded panel beside it. */}
+              <div className="flex h-screen overflow-hidden bg-page lg:bg-app">
+                <Sidebar />
+                <MobileSidebar />
+                <div className="flex min-w-0 flex-1 flex-col overflow-hidden lg:py-2 lg:pr-2">
+                  <div className="flex flex-1 flex-col overflow-hidden bg-page lg:rounded-lg lg:border lg:border-line">
+                    <Header />
+                    <div className="relative flex flex-1 overflow-hidden">
+                      <DockedContent>
+                        <div className="px-4 pt-4 empty:hidden lead-finder-banner-slot">
+                          <EnrichmentProgressBanner />
+                        </div>
+                        <main className="flex-1 overflow-auto bg-page">
+                          <div className="h-full w-full">{children}</div>
+                        </main>
+                      </DockedContent>
+                      <DockedCopilot />
                     </div>
-                    <main className="flex-1 overflow-auto bg-page">
-                      <div className="h-full w-full">{children}</div>
-                    </main>
-                  </DockedContent>
-                  <DockedCopilot />
+                  </div>
                 </div>
               </div>
               <AIChatPanel />

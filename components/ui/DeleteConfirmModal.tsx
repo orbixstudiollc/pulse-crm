@@ -41,7 +41,7 @@ export function DeleteConfirmModal({
         </h3>
 
         {/* Description */}
-        <p className="text-[14px] leading-5 text-fg-secondary">
+        <p className="text-[13px] leading-5 text-fg-secondary">
           {description || defaultDescription}
         </p>
 

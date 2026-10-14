@@ -169,7 +169,7 @@ export function Composer({
           aria-label="Message Pulse Copilot"
           aria-describedby={blockedReason ? hintId : undefined}
           maxLength={MESSAGE_MAX_LENGTH}
-          className="flex-1 min-w-0 pb-1 text-[14px] leading-5 text-fg placeholder:text-fg-muted bg-transparent outline-none resize-none min-h-[40px]"
+          className="flex-1 min-w-0 pb-1 text-[13px] leading-5 text-fg placeholder:text-fg-muted bg-transparent outline-none resize-none min-h-[40px]"
           rows={1}
           disabled={isLoading}
         />

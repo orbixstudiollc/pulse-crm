@@ -260,7 +260,7 @@ export function MarketingPageClient({
                   className="hover:bg-subtle transition-colors cursor-pointer"
                   onClick={() => router.push(`/dashboard/marketing/${audit.id}`)}
                 >
-                  <td className="py-2 text-[14px] text-fg">
+                  <td className="py-2 text-[13px] text-fg">
                     <div className="flex items-start gap-2">
                       <ChartBarIcon size={16} className="mt-0.5 shrink-0 text-fg-muted" />
                       <div className="min-w-0">
@@ -344,7 +344,7 @@ export function MarketingPageClient({
             <tbody>
               {initialContent.map((item) => (
                 <tr key={item.id} className="hover:bg-subtle transition-colors">
-                  <td className="py-2 text-[14px] text-fg">
+                  <td className="py-2 text-[13px] text-fg">
                     <div className="flex items-center gap-2">
                       <SparkleIcon size={16} className="shrink-0 text-fg-muted" />
                       <p className="font-medium text-fg truncate">{item.title}</p>
@@ -386,7 +386,7 @@ export function MarketingPageClient({
             <tbody>
               {initialReports.map((report) => (
                 <tr key={report.id} className="hover:bg-subtle transition-colors">
-                  <td className="py-2 text-[14px] text-fg">
+                  <td className="py-2 text-[13px] text-fg">
                     <div className="flex items-center gap-2">
                       <FileTextIcon size={16} className="shrink-0 text-fg-muted" />
                       <p className="font-medium text-fg">{report.title}</p>

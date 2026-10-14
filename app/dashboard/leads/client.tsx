@@ -705,7 +705,7 @@ export function LeadsPageClient() {
                       className="hover:bg-subtle transition-colors cursor-pointer"
                     >
                       <td
-                        className="w-10 py-2 text-[14px] text-fg"
+                        className="w-10 py-2 text-[13px] text-fg"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Checkbox
@@ -713,11 +713,11 @@ export function LeadsPageClient() {
                           onChange={() => toggleSelectRow(lead.id)}
                         />
                       </td>
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <div className="flex items-center gap-3">
                           <Avatar name={lead.name} />
                           <div>
-                            <p className="text-[14px] font-medium text-fg">
+                            <p className="text-[13px] font-medium text-fg">
                               {lead.name}
                             </p>
                             <p className="text-xs text-fg-secondary">
@@ -726,7 +726,7 @@ export function LeadsPageClient() {
                           </div>
                         </div>
                       </td>
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <Badge
                           variant={
                             leadStatusConfig[lead.status as keyof typeof leadStatusConfig]
@@ -738,18 +738,18 @@ export function LeadsPageClient() {
                             ?.label ?? lead.status}
                         </Badge>
                       </td>
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <span className="text-[13px] text-fg-secondary">
                           {lead.source}
                         </span>
                       </td>
-                      <td className="py-2 text-[14px] text-fg">
-                        <span className="text-[14px] font-medium text-fg">
+                      <td className="py-2 text-[13px] text-fg">
+                        <span className="text-[13px] font-medium text-fg">
                           {formatCurrency(lead.estimatedValue)}
                         </span>
                       </td>
                       <td
-                        className="py-2 text-[14px] text-fg"
+                        className="py-2 text-[13px] text-fg"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="relative">
@@ -783,7 +783,7 @@ export function LeadsPageClient() {
                           )}
                         </div>
                       </td>
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         {lead.qualificationGrade ? (
                           <span
                             className={cn(
@@ -803,13 +803,13 @@ export function LeadsPageClient() {
                           <span className="text-[13px] text-fg-muted">—</span>
                         )}
                       </td>
-                      <td className="py-2 text-[14px] text-fg">
+                      <td className="py-2 text-[13px] text-fg">
                         <span className="text-[13px] text-fg-secondary">
                           {lead.createdDate}
                         </span>
                       </td>
                       <td
-                        className="py-2 text-[14px] text-fg"
+                        className="py-2 text-[13px] text-fg"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex justify-end">

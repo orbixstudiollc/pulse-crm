@@ -780,7 +780,7 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
                         key={lead.id}
                         className="hover:bg-subtle transition-colors"
                       >
-                        <td className="py-2 text-[14px] text-fg">
+                        <td className="py-2 text-[13px] text-fg">
                           <div className="flex items-start gap-2">
                             <UserIcon size={16} className="mt-0.5 shrink-0 text-fg-muted" />
                             <div className="min-w-0">
@@ -793,10 +793,10 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
                             </div>
                           </div>
                         </td>
-                        <td className="py-2 text-[14px] text-fg-secondary">
+                        <td className="py-2 text-[13px] text-fg-secondary">
                           {lead.company || "--"}
                         </td>
-                        <td className="py-2 text-[14px] text-fg">
+                        <td className="py-2 text-[13px] text-fg">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-semibold text-fg">
                               {score}%
@@ -804,13 +804,13 @@ export function ICPDetailClient({ profile, matchedLeads }: ICPDetailClientProps)
                             <Badge variant={gradeVariant}>{grade}</Badge>
                           </div>
                         </td>
-                        <td className="py-2 text-[14px] text-fg-secondary">
+                        <td className="py-2 text-[13px] text-fg-secondary">
                           {lead.industry || "--"}
                         </td>
-                        <td className="py-2 text-[14px] text-fg-secondary">
+                        <td className="py-2 text-[13px] text-fg-secondary">
                           {lead.employees || "--"}
                         </td>
-                        <td className="py-2 text-right text-[14px] font-medium text-fg">
+                        <td className="py-2 text-right text-[13px] font-medium text-fg">
                           {formatCurrency(lead.estimated_value)}
                         </td>
                       </tr>

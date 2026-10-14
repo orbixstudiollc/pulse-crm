@@ -35,7 +35,7 @@ export function EmptyState({
       </div>
 
       {/* Title */}
-      <h3 className="text-[14px] font-medium text-fg">
+      <h3 className="text-[13px] font-medium text-fg">
         {title}
       </h3>
 
